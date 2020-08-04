@@ -48,7 +48,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.SortGraph as SortGraph
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -86,7 +85,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -595,14 +593,6 @@ test_functionIntegration =
                 (Mock.f (mkElemVar Mock.x))
         assertEqual "" expect actual-}
     ]
-  where
-    evaluate
-        :: BuiltinAndAxiomSimplifierMap
-        -> TermLike VariableName
-        -> IO (Pattern VariableName)
-    evaluate functionIdToEvaluator patt =
-        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt SideCondition.top
 
 test_functionIntegrationUnification :: [TestTree]
 test_functionIntegrationUnification =
@@ -935,14 +925,6 @@ test_functionIntegrationUnification =
                 (Mock.f (mkElemVar Mock.x))
         assertEqual "" expect actual
     ]
-  where
-    evaluate
-        :: BuiltinAndAxiomSimplifierMap
-        -> TermLike VariableName
-        -> IO (Pattern VariableName)
-    evaluate functionIdToEvaluator patt =
-        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt SideCondition.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -1060,10 +1042,19 @@ equalsUnification comment term results =
         assertEqual "" expect actual
 
 simplify :: TermLike VariableName -> IO (OrPattern VariableName)
-simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
+simplify = runSimplifier testEnv . TermLike.simplify SideCondition.top
 
 simplifyUnification :: TermLike VariableName -> IO (OrPattern VariableName)
-simplifyUnification = runSimplifier testEnvUnification . TermLike.simplifyToOr SideCondition.top
+simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideCondition.top
+
+evaluate
+    :: BuiltinAndAxiomSimplifierMap
+    -> TermLike VariableName
+    -> IO (Pattern VariableName)
+evaluate functionIdToEvaluator termLike =
+    runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
+        patterns <- TermLike.simplify SideCondition.top termLike
+        pure (OrPattern.toPattern patterns)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -1926,9 +1917,6 @@ testConditionSimplifier =
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
 
-testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create
-
 testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
@@ -1937,7 +1925,6 @@ testEnv :: Env Simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
-        , simplifierTermLike = testTermLikeSimplifier
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms =
             mconcat

@@ -23,9 +23,6 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -66,7 +63,6 @@ import Kore.Step.Step
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
-    , mkRewritingPattern
     , unifyRules
     )
 import qualified Logic

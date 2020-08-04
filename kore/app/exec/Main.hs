@@ -3,9 +3,9 @@ module Main (main) where
 import Prelude.Kore
 
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     , SomeException
-    , displayException
+    , fromException
     , handle
     , throwM
     )
@@ -23,9 +23,6 @@ import Data.List
     ( intercalate
     )
 import Data.Reflection
-import Data.Semigroup
-    ( (<>)
-    )
 import Data.Text
     ( Text
     , unpack
@@ -56,6 +53,11 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
+    )
 import System.Directory
     ( copyFile
     , doesFileExist
@@ -67,8 +69,7 @@ import System.Directory
     , setPermissions
     )
 import System.Exit
-    ( ExitCode (..)
-    , exitWith
+    ( exitWith
     )
 import System.FilePath
     ( (</>)
@@ -89,11 +90,11 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
@@ -109,8 +110,7 @@ import Kore.Internal.TermLike
     , noLocationId
     )
 import Kore.Log
-    ( ExeName (..)
-    , KoreLogOptions (..)
+    ( KoreLogOptions (..)
     , LogMessage
     , SomeEntry (..)
     , WithLog
@@ -122,15 +122,15 @@ import Kore.Log
 import Kore.Log.ErrorException
     ( errorException
     )
+import Kore.Log.WarnIfLowProductivity
+    ( warnIfLowProductivity
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
     )
 import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
-    )
-import Kore.Profiler.Data
-    ( MonadProfiler
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
@@ -169,6 +169,9 @@ import Pretty
     , hPutDoc
     , putDoc
     , vsep
+    )
+import Prof
+    ( MonadProf
     )
 import SMT
     ( MonadSMT
@@ -304,8 +307,8 @@ data KoreExecOptions = KoreExecOptions
     }
 
 -- | Command Line Argument Parser
-parseKoreExecOptions :: Parser KoreExecOptions
-parseKoreExecOptions =
+parseKoreExecOptions :: TimeSpec -> Parser KoreExecOptions
+parseKoreExecOptions startTime =
     applyKoreSearchOptions
         <$> optional parseKoreSearchOptions
         <*> parseKoreExecOptions0
@@ -349,7 +352,7 @@ parseKoreExecOptions =
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
-        <*> parseKoreLogOptions (ExeName "kore-exec")
+        <*> parseKoreLogOptions (ExeName "kore-exec") startTime
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
@@ -554,7 +557,12 @@ exeName = ExeName "kore-exec"
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
 main = do
-    options <- mainGlobal Main.exeName parseKoreExecOptions parserInfoModifiers
+    startTime <- getTime Monotonic
+    options <-
+        mainGlobal
+            Main.exeName
+            (parseKoreExecOptions startTime)
+            parserInfoModifiers
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
@@ -563,10 +571,9 @@ mainWithOptions execOptions = do
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
-            go
+            go <* warnIfLowProductivity
                 & handle handleWithConfiguration
-                & handle handleSomeEntry
-                & handle (handleSomeException tmpDir)
+                & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
@@ -577,20 +584,12 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
 
-    handleSomeEntry
-        :: SomeEntry -> Main ExitCode
-    handleSomeEntry (SomeEntry entry) = do
-        logEntry entry
-        return $ ExitFailure 1
-
-    handleSomeException :: FilePath -> SomeException -> Main ExitCode
-    handleSomeException tempDirectory someException = do
-        errorException someException
-        lift
-            $ writeFile
-                (tempDirectory <> "/error.log")
-                (displayException someException)
-        return $ ExitFailure 1
+    handleSomeException :: SomeException -> Main ExitCode
+    handleSomeException someException = do
+        case fromException someException of
+            Just (SomeEntry entry) -> logEntry entry
+            Nothing -> errorException someException
+        throwM someException
 
     handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
     handleWithConfiguration
@@ -646,10 +645,9 @@ koreRun execOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
-    (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec breadthLimit mainModule strategy' initial
-        exitCode <- execGetExitCode mainModule strategy' final
-        return (exitCode, final)
+    (exitCode, final) <-
+        execute execOptions mainModule
+        $ exec breadthLimit mainModule strategy' initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -679,12 +677,15 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left Stuck { stuckPattern, provenClaims } -> do
+        Left Stuck { stuckPatterns, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
                 saveProofs
-            return (failure $ Pattern.toTermLike stuckPattern)
+            stuckPatterns
+                & OrPattern.toTermLike
+                & failure
+                & return
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)
@@ -809,10 +810,10 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadCatch exe
+    ( MonadMask exe
     , MonadIO exe
-    , MonadProfiler exe
     , MonadSMT exe
+    , MonadProf exe
     , WithLog LogMessage exe
     )
 

@@ -36,6 +36,13 @@ module Kore.Repl.Data
     , ScriptModeOutput (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
+    , GraphView (..)
+    , GeneralLogOptions (..)
+    , generalLogOptionsTransformer
+    , debugAttemptEquationTransformer
+    , debugApplyEquationTransformer
+    , debugEquationTransformer
+    , entriesForHelp
     ) where
 
 import Prelude.Kore
@@ -53,10 +60,7 @@ import Data.Graph.Inductive.PatriciaTree
     )
 import qualified Data.GraphViz as Graph
 import Data.List
-    ( intercalate
-    )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
+    ( sort
     )
 import Data.Map.Strict
     ( Map
@@ -85,10 +89,12 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Log
-import qualified Kore.Log.Registry as Log
-import Kore.Profiler.Data
-    ( MonadProfiler
+    ( ActualEntry (..)
+    , LogAction (..)
+    , MonadLog (..)
     )
+import qualified Kore.Log as Log
+import qualified Kore.Log.Registry as Log
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -194,6 +200,82 @@ data RuleReference
     | ByName RuleName
     deriving (Eq, Show)
 
+-- | Option for viewing the full (expanded) graph
+-- or the collapsed graph where only the branching nodes,
+-- their direct descendents and leafs are visible
+data GraphView
+    = Collapsed
+    | Expanded
+    deriving (Eq, Show)
+
+-- | Log options which can be changed by the log command.
+data GeneralLogOptions =
+    GeneralLogOptions
+        { logType :: !Log.KoreLogType
+        , logLevel :: !Log.Severity
+        , timestampsSwitch :: !Log.TimestampsSwitch
+        , logEntries :: !Log.EntryTypes
+        }
+    deriving (Eq, Show)
+
+generalLogOptionsTransformer
+    :: GeneralLogOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+generalLogOptionsTransformer
+    logOptions@(GeneralLogOptions _ _ _ _)
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.logLevel = logLevel
+        , Log.logEntries = logEntries
+        , Log.logType = logType
+        , Log.timestampsSwitch = timestampsSwitch
+        }
+  where
+    GeneralLogOptions
+        { logLevel
+        , logType
+        , logEntries
+        , timestampsSwitch
+        } = logOptions
+
+debugAttemptEquationTransformer
+    :: Log.DebugAttemptEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugAttemptEquationTransformer
+    debugAttemptEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugAttemptEquationOptions = debugAttemptEquationOptions
+        }
+
+debugApplyEquationTransformer
+    :: Log.DebugApplyEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugApplyEquationTransformer
+    debugApplyEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugApplyEquationOptions = debugApplyEquationOptions
+        }
+
+debugEquationTransformer
+    :: Log.DebugEquationOptions
+    -> Log.KoreLogOptions
+    -> Log.KoreLogOptions
+debugEquationTransformer
+    debugEquationOptions
+    koreLogOptions
+  =
+    koreLogOptions
+        { Log.debugEquationOptions = debugEquationOptions
+        }
+
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
@@ -207,7 +289,10 @@ data ReplCommand
     -- ^ Show the nth axiom.
     | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph !(Maybe FilePath) !(Maybe Graph.GraphvizOutput)
+    | ShowGraph
+        !(Maybe GraphView)
+        !(Maybe FilePath)
+        !(Maybe Graph.GraphvizOutput)
     -- ^ Show the current execution graph.
     | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
@@ -217,12 +302,17 @@ data ReplCommand
     -- ^ Select a different node in the graph.
     | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
+    | ShowDest !(Maybe ReplNode)
+    -- ^ Show the destination from the current node.
     | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
     | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
     | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
+    | ShowRules !(ReplNode, ReplNode)
+    -- ^ Show the rules which were applied from the first node
+    -- to reach the second.
     | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
     | ShowChildren !(Maybe ReplNode)
@@ -257,8 +347,19 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log KoreLogOptions
+    -- TODO(Ana): 'Log (KoreLogOptions -> KoreLogOptions)', this would need
+    -- the parts of the code which depend on the 'Show' instance of 'ReplCommand'
+    -- to change. Do the same for Debug..Equation.
+    | Log GeneralLogOptions
     -- ^ Setup the Kore logger.
+    | DebugAttemptEquation Log.DebugAttemptEquationOptions
+    -- ^ Log debugging information about attempting to
+    -- apply specific equations.
+    | DebugApplyEquation Log.DebugApplyEquationOptions
+    -- ^ Log when specific equations apply.
+    | DebugEquation Log.DebugEquationOptions
+    -- ^ Log the attempts and the applications of specific
+    -- equations.
     | Exit
     -- ^ Exit the repl.
     deriving (Eq, Show)
@@ -297,30 +398,24 @@ helpText =
     "Available commands in the Kore REPL: \n\
     \help                                     shows this help message\n\
     \claim [n|<name>]                         shows the nth claim, the claim with\
-                                              \ <name> or if used without args\
-                                              \ shows the currently focused claim\
-                                              \ in the form: LHS => (modality) RHS \n\
+                                              \ <name> or (default) the currently\
+                                              \ focused claim\n\
     \axiom <n|name>                           shows the nth axiom or the axiom\
                                               \ with <name>\n\
     \prove <n|name>                           initializes proof mode for the nth\
                                               \ claim or for the claim with <name>\n\
-    \graph [file] [format]                    shows the current proof graph (*)(**);\
-                                              \ note that in the case of large graphs\
-                                              \ the image might be very zoomed out;\n\
-    \                                         (saves image in [format] if file\
-                                              \ argument is given; default is .svg\
-                                              \ in order to support large graphs;\n\
-    \                                         file extension is added automatically);\
-                                              \ accepted formats: svg, jpeg, png, pdf;\n\
+    \graph [view] [file] [format]             shows the current proof graph (*),\
+                                              \ 'expanded' or 'collapsed';\
+                                              \ or saves it as jpeg, png, pdf or svg\n\
     \step [n]                                 attempts to run 'n' proof steps at\
                                               \ the current node (n=1 by default)\n\
-    \stepf [n]                                attempts to run 'n' proof steps at\
-                                              \ the current node, stepping through\
-                                              \ branchings (n=1 by default);\n\
-    \                                         current node is advanced to the first\
-                                              \ interesting branching node (***)\n\
+    \stepf [n]                                like step, but goes through\
+                                              \ branchings to the first\
+                                              \ interesting branching node (**)\n\
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
+                                              \ (defaults to current node)\n\
+    \dest [n]                                 shows the destination for node 'n'\
                                               \ (defaults to current node)\n\
     \omit [cell]                              adds or removes cell to omit list\
                                               \ (defaults to showing the omit\
@@ -328,6 +423,8 @@ helpText =
     \leafs                                    shows unevaluated or stuck leafs\n\
     \rule [n]                                 shows the rule for node 'n'\
                                               \ (defaults to current node)\n\
+    \rules <n1> <n2>                          shows the rules applied on the path\
+                                              \ between nodes n1 and n2\n\
     \prec-branch [n]                          shows first preceding branch\
                                               \ (defaults to current node)\n\
     \children [n]                             shows direct children of node\
@@ -339,39 +436,22 @@ helpText =
     \label <-l>                               remove a label\n\
     \try (<a|c><num>)|<name>                  attempts <a>xiom or <c>laim at\
                                               \ index <num> or rule with <name>\n\
-    \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
-                                              \ index <num> or rule with <name>,\
-                                              \ and if successful, it will apply it.\n\
-    \clear [n]                                removes all node children from the\
-                                              \ proof graph\n\
-    \                                         (defaults to current node)\n\
+    \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
+    \clear [n]                                removes all the node's children from the\
+                                              \ proof graph (***)\
+                                              \ (defaults to current node)\n\
     \save-session file                        saves the current session to file\n\
-    \save-partial-proof [n] file              creates a file, <file>.kore, containing a kore module\
-                                              \ with the name uppercase(<file>)-SPEC, a new claim\n\
-    \                                         with the current config (or config <n>) as its LHS\
-                                              \ and all other claims (including the original claim)\
-                                              \ marked as trusted\n\
+    \save-partial-proof [n] file              writes a new claim with the\
+                                              \ config 'n' as its LHS and all\
+                                              \ other claims marked as trusted\n\
     \alias <name> = <command>                 adds as an alias for <command>\n\
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log <severity> \"[\"<entry>\"]\" <type>      configures the logging output\n\
-    \    <switch-timestamp>                   <severity> can be debug, info,\
-                                              \ warning, error, or critical;\
-                                              \ is optional and defaults to warning\n\
-    \                                         [<entry>] is the list of entries\
-                                              \ separated by white spaces or\
-                                              \ commas, e.g. '[entry1, entry2]';\n\
-    \                                         these entries are used for filtering\
-                                              \ the logged information, for example,\
-                                              \ '[]' will log all entries with <severity>;\n\
-    \                                         '[entry1, entry2]' will only log entries of\
-                                              \ types entry1 or entry2 as well as entries of\
-                                              \ severity <severity>.\n\
-    \                                         See available entry types below.\n\
-    \                                         <type> can be 'stderr' or 'file filename'\n\
-    \                                         <switch-timestamp> can be enable-log-timestamps\
-                                              \ or disable-log-timestamps\n\
+    \log [<severity>] \"[\"<entry>\"]\"           configures logging; <severity> can be debug ... error; [<entry>] is a list formed by types below;\n\
+    \    <type> <switch-timestamp>            <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
+    \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
+                                              \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -379,43 +459,55 @@ helpText =
                                               \ to file\n\
     \<command> >> file                        appends the output of 'command'\
                                               \ to file\n\
-    \<command> | external script              pipes command to external script\
+    \<command> | external_script              pipes command to external script\
                                               \ and prints the result in the\
-                                              \ repl\n\
-    \<command> | external script > file       pipes and then redirects the output\
-                                              \ of the piped command to a file\n\
-    \<command> | external script >> file      pipes and then appends the output\
-                                              \ of the piped command to a file\n\
+                                              \ repl; can be redirected using > or >>\n\
     \\n\
-    \(*) If an edge is labeled as Simpl/RD it means that either the target node\n\
-    \ was reached using the SMT solver or it was reached through the Remove \n\
-    \ Destination step.\n\
-    \(**) A green node represents the proof has completed on\
+    \Rule names can be added in two ways:\n\
+    \    a) rule <k> ... </k> [label(myName)]\n\
+    \       - can be used as-is\n\
+    \       - ! do not add names which match the indexing syntax for the try command\n\
+    \    b) rule [myName] : <k> ... </k>\n\
+    \       - need to be prefixed with the module name, e.g. IMP.myName\n\
+    \\nAvailable entry types:\n"
+    <> entriesForHelp
+    <>
+    "\n\
+    \(*) If an edge is labeled as Simpl/RD it means that the target node\n\
+    \ was reached using either the SMT solver or the Remove Destination step.\n\
+    \    A green node represents the proof has completed on\
     \ that respective branch. \n\
-    \ A red node represents a stuck configuration.\n\
-    \(***) An interesting branching node has at least two children which\n\
+    \    A red node represents a stuck configuration.\n\
+    \(**) An interesting branching node has at least two children which\n\
     \ contain non-bottom leaves in their subtrees. If no such node exists,\n\
     \ the current node is advanced to the (only) non-bottom leaf. If no such\n\
     \ leaf exists (i.e the proof is complete), the current node remains the same\n\
     \ and a message is emitted.\n\
-    \\n\n\
-    \Rule names can be added in two ways:\n\
-    \    a) rule <k> ... </k> [label(myName)]\n\
-    \    b) rule [myName] : <k> ... </k>\n\
-    \Names added via a) can be used as-is. Note that names which match the\n\
-    \ indexing syntax for the try and tryf commands shouldn't be added\n\
-    \ (e.g. a5 as a rule name).\n\
-    \Names added via b) need to be prefixed with the module name followed by\n\
-    \ dot, e.g. IMP.myName\n\
-    \Available entry types:\n    "
-    <> intercalate "\n    " Log.getEntryTypesAsText
-    <> "\n\n\
-    \For logging the succesfully applied equations, attempted equations, or both,\n\
-    \launch kore-repl with the appropriate flags:\n\
-    \--debug-apply-equation EQUATION_IDENTIFIER\n\
-    \--debug-attempt-equation EQUATION_IDENTIFIER\n\
-    \--debug-equation EQUATION_IDENTIFIER;\n\
-    \For more details run: kore-repl --help\n"
+    \(***) The clear command doesn't allow the removal of nodes which are direct\n\
+    \ descendants of branchings. The steps which create branchings cannot be\n\
+    \ partially redone. Therefore, if this were allowed it would result in invalid proofs.\n"
+    <> "\nFor more details see https://github.com/kframework/kore/wiki/Kore-REPL#available-commands-in-the-kore-repl\n"
+
+
+entriesForHelp :: String
+entriesForHelp =
+    zipWith3
+        (\e1 e2 e3 -> align e1 <> align e2 <> align e3)
+        column1
+        column2
+        column3
+    & unlines
+  where
+    entries :: [String]
+    entries =
+        Log.entryTypeReps
+        & fmap show
+        & sort
+        & (<> ["", ""])
+    align entry = entry <> replicate (40 - length entry) ' '
+    columnLength = length entries `div` 3
+    (column1And2, column3) = splitAt (2 * columnLength) entries
+    (column1, column2) = splitAt columnLength column1And2
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
@@ -426,7 +518,7 @@ shouldStore =
         Help             -> False
         ShowClaim _      -> False
         ShowAxiom _      -> False
-        ShowGraph _ _     -> False
+        ShowGraph _ _ _  -> False
         ShowConfig _     -> False
         ShowLeafs        -> False
         ShowRule _       -> False
@@ -472,7 +564,7 @@ data ReplState = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , koreLogOptions :: !KoreLogOptions
+    , koreLogOptions :: !Log.KoreLogOptions
     -- ^ The log level, log scopes and log type decide what gets logged and
     -- where.
     }
@@ -481,13 +573,12 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: Claim
-        -> [Claim]
+        :: [Claim]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+    -- ^ Stepper function
     , unifier
         :: SideCondition VariableName
         -> TermLike VariableName
@@ -522,8 +613,6 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
-
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift
     {-# INLINE lift #-}
@@ -536,12 +625,8 @@ instance MonadLog m => MonadLog (UnifierWithExplanation m) where
     {-# INLINE logWhile #-}
 
 instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m) where
-    localSimplifierTermLike locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierTermLike locally unifierT
     localSimplifierAxioms locally (UnifierWithExplanation unifierT) =
-        UnifierWithExplanation
-        $ localSimplifierAxioms locally unifierT
+        UnifierWithExplanation $ localSimplifierAxioms locally unifierT
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
     explainBottom info first second =

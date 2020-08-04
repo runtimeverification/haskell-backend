@@ -14,9 +14,6 @@ module Kore.Log.SQLite
 
 import Prelude.Kore
 
-import Colog
-    ( unLogAction
-    )
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Extra as Monad
 import Control.Monad.Reader
@@ -35,8 +32,8 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.DebugSubstitutionSimplifier
     ( DebugSubstitutionSimplifier
     )
-import Kore.Log.WarnBottomTotalFunction
-    ( WarnBottomTotalFunction
+import Kore.Log.ErrorBottomTotalFunction
+    ( ErrorBottomTotalFunction
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
@@ -127,7 +124,7 @@ foldMapEntries mapEntry =
     mconcat
         [ mapEntry (Proxy @DebugEvaluateCondition)
         , mapEntry (Proxy @DebugSubstitutionSimplifier)
-        , mapEntry (Proxy @WarnBottomTotalFunction)
+        , mapEntry (Proxy @ErrorBottomTotalFunction)
         , mapEntry (Proxy @WarnFunctionWithoutEvaluators)
         , mapEntry (Proxy @WarnSymbolSMTRepresentation)
         ]

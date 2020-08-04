@@ -55,6 +55,10 @@ module Prelude.Kore
     , Category (..)
     , (<<<)
     , (>>>)
+    -- * Semigroup
+    , Semigroup (..)
+    -- * NonEmpty
+    , NonEmpty (..)
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -106,10 +110,16 @@ import Data.Function
 import Data.Hashable
     ( Hashable (..)
     )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Maybe
     ( fromMaybe
     , isJust
     , isNothing
+    )
+import Data.Semigroup
+    ( Semigroup (..)
     )
 import Data.Typeable
     ( Typeable
@@ -118,7 +128,10 @@ import Data.Witherable
     ( Filterable (..)
     , Witherable (..)
     )
-import Debug.Trace
+import Debug.Trace hiding
+    ( traceEvent
+    , traceEventIO
+    )
 import GHC.Stack
     ( HasCallStack
     )

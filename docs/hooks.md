@@ -225,10 +225,21 @@ The result is `bottom{}()` if the second argument is zero.
         [hook{}("INT.tmod")]
 ~~~
 
+### INT.ediv
+
+Quotient of the first argument divided by the second (using the euclidean
+algorithm).
+The result is `bottom{}()` if the second argument is zero.
+
+~~~
+    hooked-symbol ediv{}(Int{}, Int{}) : Int{}
+        [hook{}("INT.emod")]
+~~~
+
 ### INT.emod
 
 Remainder of the first argument divided by the second (using the euclidean
-algorithm).
+algorithm). The result is guaranteed to be positive.
 The result is `bottom{}()` if the second argument is zero.
 
 ~~~
@@ -753,6 +764,15 @@ Is the element a member of the given set?
 ~~~
     hooked-symbol in{}(Elem{}, Set{}) : Bool{}
         [hook{}("SET.in")]
+~~~
+
+### SET.inclusion
+
+Is the first set a subset of the second?
+
+~~~
+    hooked-symbol inclusion{}(Set{}, Set{}) :: Bool{}
+        [hook{}("SET.inclusion")]
 ~~~
 
 ### SET.list2set

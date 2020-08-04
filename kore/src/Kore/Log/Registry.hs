@@ -62,6 +62,12 @@ import Kore.Log.DebugSubstitutionSimplifier
 import Kore.Log.DebugUnification
     ( DebugUnification
     )
+import Kore.Log.ErrorBottomTotalFunction
+    ( ErrorBottomTotalFunction
+    )
+import Kore.Log.ErrorDecidePredicateUnknown
+    ( ErrorDecidePredicateUnknown
+    )
 import Kore.Log.ErrorException
     ( ErrorException
     )
@@ -74,17 +80,26 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
+import Kore.Log.InfoExecBreadth
+    ( InfoExecBreadth
+    )
+import Kore.Log.InfoExecDepth
+    ( InfoExecDepth
+    )
+import Kore.Log.InfoProofDepth
+    ( InfoProofDepth
+    )
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
-import Kore.Log.WarnBottomTotalFunction
-    ( WarnBottomTotalFunction
-    )
-import Kore.Log.WarnDecidePredicateUnknown
-    ( WarnDecidePredicateUnknown
-    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
+    )
+import Kore.Log.WarnIfLowProductivity
+    ( WarnIfLowProductivity
+    )
+import Kore.Log.WarnStuckProofState
+    ( WarnStuckProofState
     )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
@@ -131,20 +146,25 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugProofState
     , mk $ Proxy @DebugAppliedRewriteRules
     , mk $ Proxy @DebugSubstitutionSimplifier
-    , mk $ Proxy @WarnBottomTotalFunction
-    , mk $ Proxy @WarnDecidePredicateUnknown
+    , mk $ Proxy @ErrorBottomTotalFunction
+    , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
+    , mk $ Proxy @WarnStuckProofState
+    , mk $ Proxy @WarnIfLowProductivity
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop
     , mk $ Proxy @LogMessage
     , mk $ Proxy @InfoAttemptUnification
     , mk $ Proxy @InfoReachability
+    , mk $ Proxy @InfoExecBreadth
     , mk $ Proxy @ErrorRewritesInstantiation
     , mk $ Proxy @DebugAttemptEquation
     , mk $ Proxy @DebugApplyEquation
     , mk $ Proxy @DebugUnification
+    , mk $ Proxy @InfoProofDepth
+    , mk $ Proxy @InfoExecDepth
     ]
   where
     mk proxy =

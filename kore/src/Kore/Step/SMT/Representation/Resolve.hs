@@ -311,12 +311,14 @@ resolveKoreSymbolDeclaration
     (SymbolBuiltin indirectDeclaration)
   =
     SymbolBuiltin
-        <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+    <$> resolveIndirectBuiltinSymbolDeclaration
+            resolvers
+            indirectDeclaration
 resolveKoreSymbolDeclaration
     resolvers@Resolvers {sortDeclaresSymbol}
     symbolId
     (SymbolConstructor indirectDeclaration@IndirectSymbolDeclaration
-        {resultSort}
+        { sortDependencies }
     )
   = do
     -- If the sort does not declare the constructor symbol, and we would try to
@@ -327,26 +329,41 @@ resolveKoreSymbolDeclaration
     --
     -- Note that direct smtlib declarations take precedence over constructors,
     -- so we would not reach this line if this symbol had a smtlib attribute.
-    assertMay (sortDeclaresSymbol resultSort symbolId)
+    assertMay
+        $ any (flip sortDeclaresSymbol symbolId) sortDependencies
 
     SymbolConstructor
-        <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+        <$> resolveIndirectConstructorSymbolDeclaration
+            resolvers
+            indirectDeclaration
 
-resolveIndirectSymbolDeclaration
+resolveIndirectBuiltinSymbolDeclaration
     :: Resolvers sort symbol name
     -> UnresolvedIndirectSymbolDeclaration
     -> Maybe (IndirectSymbolDeclaration sort name)
-resolveIndirectSymbolDeclaration
-    Resolvers {sortResolver, nameResolver}
+resolveIndirectBuiltinSymbolDeclaration
+    Resolvers { nameResolver }
     IndirectSymbolDeclaration
-        {name, resultSort, argumentSorts}
-  = do
-    newResultSort <- sortResolver resultSort
-    newArgumentSorts <- mapM sortResolver argumentSorts
+        { name }
+  =
     return IndirectSymbolDeclaration
         { name = nameResolver name
-        , resultSort = newResultSort
-        , argumentSorts = newArgumentSorts
+        , sortDependencies = []
+        }
+
+resolveIndirectConstructorSymbolDeclaration
+    :: Resolvers sort symbol name
+    -> UnresolvedIndirectSymbolDeclaration
+    -> Maybe (IndirectSymbolDeclaration sort name)
+resolveIndirectConstructorSymbolDeclaration
+    Resolvers { nameResolver, sortResolver }
+    IndirectSymbolDeclaration
+        { name, sortDependencies }
+  = do
+    newSortDependencies <- mapM sortResolver sortDependencies
+    return IndirectSymbolDeclaration
+        { name = nameResolver name
+        , sortDependencies = newSortDependencies
         }
 
 resolveFunctionDeclaration

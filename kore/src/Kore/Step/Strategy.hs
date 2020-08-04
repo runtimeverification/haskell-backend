@@ -101,15 +101,8 @@ import qualified Data.List as List
 import Data.Maybe
     ( fromJust
     )
-import Data.Sequence
-    ( Seq
-    )
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.Transition
 import Numeric.Natural
 
@@ -450,9 +443,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (MonadProfiler m, MonadThrow m)
-    => Show instr
-    => Typeable instr
+    .  MonadThrow m
     => Limit Natural
     -> (instr -> config -> TransitionT rule m config)
     -> [instr]
@@ -464,15 +455,11 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     & flip State.execStateT execGraph
   where
     execGraph = emptyExecutionGraph config0
+    dropStrategy = snd
 
     mkQueue = \as ->
         unfoldSearchOrder searchOrder0 as
-        >=> applyBreadthLimit breadthLimit
-        >=> profileQueueLength
-
-    profileQueueLength queue = do
-        Profile.executionQueueLength (Seq.length queue)
-        pure queue
+        >=> applyBreadthLimit breadthLimit dropStrategy
 
     transit' =
         updateGraph $ \instr config ->
@@ -546,14 +533,15 @@ unfoldSearchOrder DepthFirst = unfoldDepthFirst
 unfoldSearchOrder BreadthFirst = unfoldBreadthFirst
 
 applyBreadthLimit
-    :: Exception (LimitExceeded a)
+    :: Exception (LimitExceeded b)
     => MonadThrow m
     => Limit Natural
+    -> (a -> b)
     -> Seq a
     -> m (Seq a)
-applyBreadthLimit breadthLimit as
-  | _ Seq.:<| as' <- as, exceedsLimit as' =
-    Exception.throwM (LimitExceeded as)
+applyBreadthLimit breadthLimit transf as
+  | exceedsLimit as =
+    Exception.throwM (LimitExceeded (transf <$> as))
   | otherwise = pure as
   where
     exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
@@ -636,9 +624,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
+    .  MonadThrow m
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
@@ -652,9 +638,7 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  (MonadProfiler m, MonadThrow m)
-    => Show prim
-    => Typeable prim
+    .  MonadThrow m
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule

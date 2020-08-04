@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , RewritingVariable
     , isConfigVariable
     , isRuleVariable
     , isSomeConfigVariable
@@ -26,6 +27,8 @@ module Kore.Rewriting.RewritingVariable
     , getResultPattern
     , getRemainderPredicate
     , getRemainderPattern
+    -- * Exported for reachability rule unparsing
+    , getRewritingVariable
     ) where
 
 import Prelude.Kore
@@ -41,13 +44,8 @@ import qualified GHC.Generics as GHC
 import Debug
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -122,6 +120,8 @@ instance From VariableName RewritingVariableName where
     from = RuleVariableName
 
 instance FreshName RewritingVariableName
+
+type RewritingVariable = Variable RewritingVariableName
 
 mkElementConfigVariable
     :: ElementVariable VariableName
@@ -210,11 +210,7 @@ getResultPattern initial config@Conditional { substitution } =
         . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
         $ refreshVariables avoiding introduced
     renamed :: Pattern RewritingVariableName
-    renamed =
-        filtered
-            { term = TermLike.substitute renaming (term filtered)
-            , predicate = Predicate.substitute renaming (predicate filtered)
-            }
+    renamed = filtered & Pattern.substitute renaming
 
 {- | Prepare a rule for unification or matching with the configuration.
 

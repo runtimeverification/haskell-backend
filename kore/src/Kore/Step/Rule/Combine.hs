@@ -21,8 +21,8 @@ import Data.Default
     ( Default (..)
     )
 import qualified Data.Foldable as Foldable
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( antiLeftPredicate
     )
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -41,6 +41,7 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeCeilPredicate_
     , makeMultipleAndPredicate
+    , makeNotPredicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -117,20 +118,20 @@ mergeRulePairPredicate
 mergeRulePairPredicate
     ( RewriteRule RulePattern { rhs = RHS {right = right1, ensures = ensures1}}
     , RewriteRule RulePattern
-        {left = left2, requires = requires2, antiLeft = Nothing}
+        {left = left2, requires = requires2, antiLeft = antiLeft2}
     )
   =
     makeMultipleAndPredicate
         [ makeCeilPredicate_ (mkAnd right1 left2)
         , ensures1
         , requires2
+        , antiLeftPredicate
         ]
-mergeRulePairPredicate
-    ( _
-    , RewriteRule RulePattern {antiLeft = Just _}
-    )
-  =
-    error "AntiLeft(priority-based rules) not handled when merging yet."
+  where
+    antiLeftPredicate = case antiLeft2 of
+        Nothing -> makeTruePredicate_
+        Just antiLeft ->
+            makeNotPredicate $ AntiLeft.antiLeftPredicate antiLeft right1
 
 renameRulesVariables
     :: forall variable

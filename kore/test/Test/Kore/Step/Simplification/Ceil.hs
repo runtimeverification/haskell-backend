@@ -36,9 +36,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     , simplify
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
-    )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -106,7 +103,7 @@ test_ceilSimplification =
             -- ceil(top{testSort}) = top
             actual1 <- evaluate
                 (makeCeil
-                    [Pattern.fromConditionSorted Mock.testSort Condition.top]
+                    [Pattern.fromCondition Mock.testSort Condition.top]
                 )
             assertEqual "ceil(top)"
                 (OrPattern.fromPatterns

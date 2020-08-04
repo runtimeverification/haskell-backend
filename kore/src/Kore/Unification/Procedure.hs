@@ -25,15 +25,16 @@ import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
     )
+import Kore.Sort
+    ( predicateSort
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
-    )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    , makeEvaluateTermCeil
     , simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
@@ -42,8 +43,7 @@ import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
 import Kore.Unification.Unify
-    ( InternalVariable
-    , MonadUnify
+    ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
 import Logic
@@ -68,7 +68,7 @@ unificationProcedureWorker sideCondition p1 p2
     pat <- termUnification Not.notSimplifier p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
-    orCeil <- Ceil.makeEvaluateTerm sideCondition term
+    orCeil <- makeEvaluateTermCeil sideCondition predicateSort term
     ceil' <- Monad.Unify.scatter orCeil
     lowerLogicT . simplifyCondition sideCondition
         $ Conditional.andCondition ceil' conditions

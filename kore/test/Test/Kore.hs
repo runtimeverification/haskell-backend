@@ -65,7 +65,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal
     ( Symbol (Symbol)
     )
-import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Internal.TermLike as TermLike hiding
     ( Alias
     , Symbol
@@ -74,8 +73,7 @@ import qualified Kore.Log as Log
     ( emptyLogger
     )
 import Kore.Parser
-    ( ParsedPattern
-    , asParsedPattern
+    ( asParsedPattern
     )
 import Kore.Parser.Parser
     ( parseVariableCounter

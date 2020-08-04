@@ -32,6 +32,7 @@ module Kore.Internal.Substitution
     , isNormalized
     , isSimplified
     , forgetSimplified
+    , markSimplified
     , simplifiedAttribute
     , null
     , variables
@@ -45,6 +46,7 @@ module Kore.Internal.Substitution
     , wrapNormalization
     , mkNormalization
     , applyNormalized
+    , substitute
     ) where
 
 import Prelude.Kore hiding
@@ -56,9 +58,6 @@ import Control.DeepSeq
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -70,6 +69,7 @@ import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import ErrorContext
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified (..)
@@ -93,7 +93,12 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
-    ( unparseToString
+    ( Unparse
+    , unparse
+    , unparseToString
+    )
+import Pretty
+    ( Pretty
     )
 import qualified Pretty
 import qualified SQL
@@ -118,6 +123,14 @@ instance
 instance NFData variable => NFData (Assignment variable)
 
 instance Hashable variable => Hashable (Assignment variable)
+
+instance (Ord variable, Unparse variable) => Pretty (Assignment variable) where
+    pretty Assignment_ { assignedVariable, assignedTerm } =
+        Pretty.vsep
+        [ Pretty.hsep ["assigned variable:", unparse assignedVariable]
+        , "assigned term:"
+        , Pretty.indent 4 (unparse assignedTerm)
+        ]
 
 -- | Smart constructor for 'Assignment'. It enforces the invariant
 -- that for variable renaming, the smaller variable will be on the
@@ -420,7 +433,7 @@ wrap xs = Substitution xs
 -- this unless you are sure you need it.
 unsafeWrap
     :: HasCallStack
-    => Ord variable
+    => InternalVariable variable
     => [(SomeVariable variable, TermLike variable)]
     -> Substitution variable
 unsafeWrap =
@@ -437,7 +450,9 @@ unsafeWrap =
         & assert (not $ any depends $ Map.keys subst)
         -- and if this is an element variable substitution, the substitution
         -- must be defined.
+        -- TODO (thomas.tuegel): isBottom -> isDefinedPattern
         & assert (not $ isElementVariable var && isBottom termLike)
+        & withErrorContext "while wrapping substitution" (assign var termLike)
       where
         Variable { variableName } = var
         occurs = TermLike.hasFreeVariable variableName
@@ -445,7 +460,8 @@ unsafeWrap =
             TermLike.hasFreeVariable variableName' termLike
 
 unsafeWrapFromAssignments
-    :: Ord variable
+    :: HasCallStack
+    => InternalVariable variable
     => [Assignment variable]
     -> Substitution variable
 unsafeWrapFromAssignments =
@@ -501,6 +517,14 @@ forgetSimplified
 forgetSimplified =
     wrap
     . fmap (mapAssignedTerm TermLike.forgetSimplified)
+    . unwrap
+
+markSimplified
+    :: InternalVariable variable
+    => Substitution variable -> Substitution variable
+markSimplified =
+    wrap
+    . fmap (mapAssignedTerm TermLike.markSimplified)
     . unwrap
 
 simplifiedAttribute
@@ -671,6 +695,23 @@ instance Semigroup (Normalization variable) where
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
 
+instance InternalVariable variable => Pretty (Normalization variable) where
+    pretty Normalization { normalized, denormalized } =
+        Pretty.vsep
+        [ "normalized:"
+        , (Pretty.indent 4 . Pretty.vsep) (map prettyPair normalized)
+        , "denormalized:"
+        , (Pretty.indent 4 . Pretty.vsep) (map prettyPair denormalized)
+        ]
+      where
+        prettyPair assignment =
+            Pretty.vsep
+            [ "variable:"
+            , Pretty.indent 4 (unparse $ assignedVariable assignment)
+            , "term:"
+            , Pretty.indent 4 (unparse $ assignedTerm assignment)
+            ]
+
 mkNormalization
     :: InternalVariable variable
     => [(SomeVariable variable, TermLike variable)]
@@ -693,15 +734,29 @@ applyNormalized
 applyNormalized Normalization { normalized, denormalized } =
     Normalization
         { normalized
-        , denormalized =
-            mapAssignedTerm substitute <$> denormalized
+        , denormalized = mapAssignedTerm substitute' <$> denormalized
         }
   where
-    substitute =
+    substitute' =
         TermLike.substitute
         $ Map.mapKeys variableName
         $ Map.fromList
         $ map assignmentToPair normalized
+
+{- | Apply a 'Map' from names to terms to a substitution.
+
+The given mapping will be applied only to the right-hand sides of the
+substitutions (see 'mapAssignedTerm').  The result will not be a normalized
+'Substitution'.
+
+ -}
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> Substitution variable
+    -> Substitution variable
+substitute subst =
+    wrap . (map . mapAssignedTerm) (TermLike.substitute subst) . unwrap
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 

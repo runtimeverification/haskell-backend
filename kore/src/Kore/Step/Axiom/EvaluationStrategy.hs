@@ -15,9 +15,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import Control.Category
-    ( (>>>)
-    )
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
@@ -46,9 +43,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
     )
 import Kore.Unparser
     ( unparse
@@ -79,13 +73,9 @@ definitionEvaluation equations =
                 Equation.mapVariables (pure fromVariableName)
                 <$> equations
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-            condition' =
-                SideCondition.mapVariables
-                    Target.mkUnifiedNonTarget
-                    condition
         let -- Attempt an equation, pairing it with its result, if applicable.
             attemptEquation equation =
-                Equation.attemptEquation condition' term' equation
+                Equation.attemptEquation condition term' equation
                 >>= return . Bifunctor.second apply
               where
                 apply = Equation.applyEquation condition equation
@@ -117,11 +107,7 @@ simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
         let equation' = Equation.mapVariables (pure fromVariableName) equation
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-            condition' =
-                SideCondition.mapVariables
-                    Target.mkUnifiedNonTarget
-                    condition
-        result <- Equation.attemptEquation condition' term' equation'
+        result <- Equation.attemptEquation condition term' equation'
         let apply = Equation.applyEquation condition equation'
         case result of
             Right applied -> do

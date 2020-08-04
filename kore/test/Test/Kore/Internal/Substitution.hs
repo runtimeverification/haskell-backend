@@ -1,10 +1,11 @@
 module Test.Kore.Internal.Substitution
     ( test_substitution
     , test_toPredicate
+    , test_substitute
     -- * Re-exports
     , TestAssignment
     , TestSubstitution
-    , module Kore.Internal.Substitution
+    , module Substitution
     , module Test.Kore.Internal.TermLike
     ) where
 
@@ -14,9 +15,10 @@ import Prelude.Kore hiding
 
 import Test.Tasty
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
-import Kore.Internal.Substitution
+import Kore.Internal.Substitution as Substitution
 import Kore.TopBottom
     ( isBottom
     , isTop
@@ -37,7 +39,10 @@ import Test.Kore.Internal.TermLike hiding
     ( forgetSimplified
     , isSimplified
     , mapVariables
+    , markSimplified
     , simplifiedAttribute
+    , substitute
+    , test_substitute
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
@@ -360,3 +365,33 @@ pr1 =
 a, b :: Sort -> ElementVariable'
 a = fmap ElementVariableName . Variable (VariableName (testId "a") mempty)
 b = fmap ElementVariableName . Variable (VariableName (testId "b") mempty)
+
+test_substitute :: [TestTree]
+test_substitute =
+    [ testGroup "is denormalized"
+        [ testCase "Denormalized" $ do
+            let input = wrap [assign (inject Mock.x) Mock.a]
+                actual = Substitution.substitute Map.empty input
+            assertDenormalized actual
+        , testCase "Normalized" $ do
+            let input = unsafeWrap [(inject Mock.x, Mock.a)]
+                actual = Substitution.substitute Map.empty input
+            assertDenormalized actual
+        ]
+    , testCase "applies to right-hand side" $ do
+        let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
+            subst = Map.singleton (inject $ variableName Mock.y) Mock.a
+            expect = wrap [assign (inject Mock.x) (Mock.f Mock.a)]
+            actual = Substitution.substitute subst input
+        assertEqual "" expect actual
+    , testCase "does not apply to left-hand side" $ do
+        let input = wrap [assign (inject Mock.x) (Mock.f (mkElemVar Mock.y))]
+            subst = Map.singleton (inject $ variableName Mock.x) Mock.a
+            expect = input
+            actual = Substitution.substitute subst input
+        assertEqual "" expect actual
+    ]
+
+assertDenormalized :: HasCallStack => Substitution VariableName -> Assertion
+assertDenormalized =
+    assertBool "expected denormalized substitution" . (not . isNormalized)

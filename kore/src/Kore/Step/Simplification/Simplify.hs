@@ -8,15 +8,11 @@ module Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify (..)
     , simplifyConditionalTerm
-    , simplifyConditionalTermToOr
     , TermSimplifier
     -- * Condition simplifiers
     , ConditionSimplifier (..)
     , emptyConditionSimplifier
     , liftConditionSimplifier
-    -- * Term simplifiers
-    , TermLikeSimplifier
-    , termLikeSimplifier
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
@@ -33,6 +29,11 @@ module Kore.Step.Simplification.Simplify
     , notApplicableAxiomEvaluator
     , purePatternAxiomEvaluator
     , isConstructorOrOverloaded
+    -- * Term and predicate simplifiers
+    , makeEvaluateTermCeil
+    , makeEvaluateCeil
+    -- * Re-exports
+    , MonadSMT, MonadLog
     ) where
 
 import Prelude.Kore
@@ -64,10 +65,15 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -75,6 +81,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -84,17 +92,13 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , InternalVariable
-    , Symbol
+    , Sort
     , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
-    )
-import Kore.Profiler.Data
-    ( MonadProfiler (..)
     )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
@@ -122,9 +126,7 @@ import SMT
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
-class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
-    => MonadSimplify m
-  where
+class (MonadLog m, MonadSMT m) => MonadSimplify m where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools
@@ -133,21 +135,21 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     askMetadataTools = lift askMetadataTools
     {-# INLINE askMetadataTools #-}
 
-    askSimplifierTermLike :: m TermLikeSimplifier
-    default askSimplifierTermLike
-        :: (MonadTrans t, MonadSimplify n, m ~ t n)
-        => m TermLikeSimplifier
-    askSimplifierTermLike = lift askSimplifierTermLike
-    {-# INLINE askSimplifierTermLike #-}
-
-    localSimplifierTermLike
-        :: (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
-    default localSimplifierTermLike
-        :: (MFunctor t, MonadSimplify n, m ~ t n)
-        => (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
-    localSimplifierTermLike locally =
-        Monad.Morph.hoist (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
+    {- | Simplify a 'TermLike' to a disjunction of function-like 'Pattern's.
+     -}
+    simplifyTermLike
+        :: InternalVariable variable
+        => SideCondition variable
+        -> TermLike variable
+        -> m (OrPattern variable)
+    default simplifyTermLike
+        :: InternalVariable variable
+        => (MonadTrans t, MonadSimplify n, m ~ t n)
+        => SideCondition variable
+        -> TermLike variable
+        -> m (OrPattern variable)
+    simplifyTermLike sideCondition termLike =
+        lift (simplifyTermLike sideCondition termLike)
 
     simplifyCondition
         :: InternalVariable variable
@@ -214,10 +216,6 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
   where
-    localSimplifierTermLike locally =
-        mapAccumT (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
-
     localSimplifierAxioms locally =
         mapAccumT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
@@ -229,10 +227,6 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (LogicT m) where
-    localSimplifierTermLike locally =
-        mapLogicT (localSimplifierTermLike locally)
-    {-# INLINE localSimplifierTermLike #-}
-
     localSimplifierAxioms locally =
         mapLogicT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
@@ -247,76 +241,17 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 -- TODO (thomas.tuegel): Factor out these types.
 
-{-| Wraps a function that evaluates Kore functions on TermLikes.
--}
-newtype TermLikeSimplifier =
-    TermLikeSimplifier
-        (  forall variable simplifier
-        .  HasCallStack
-        => InternalVariable variable
-        => (MonadLogic simplifier, MonadSimplify simplifier)
-        => SideCondition variable
-        -> TermLike variable
-        -> simplifier (Pattern variable)
-        )
-
-{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
- -}
-simplifyConditionalTermToOr
-    :: forall variable simplifier
-    .   ( HasCallStack
-        , InternalVariable variable
-        , MonadSimplify simplifier
-        )
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
-simplifyConditionalTermToOr sideCondition termLike = do
-    results <- observeAllT $ simplifyConditionalTerm sideCondition termLike
-    return (OrPattern.fromPatterns results)
-
-{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
+{- | Simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .  HasCallStack
-    => InternalVariable variable
+    .  InternalVariable variable
     => (MonadLogic simplifier, MonadSimplify simplifier)
     => SideCondition variable
     -> TermLike variable
     -> simplifier (Pattern variable)
-simplifyConditionalTerm sideCondition termLike = do
-    TermLikeSimplifier simplify <- askSimplifierTermLike
-    simplify sideCondition termLike
-
-{- | Construct a 'TermLikeSimplifier' from a term simplifier.
-
-The constructed simplifier does not consider the initial condition during
-simplification, but only attaches it unmodified to the final result.
-
- -}
-termLikeSimplifier
-    ::  ( forall variable m
-        . (HasCallStack, InternalVariable variable, MonadSimplify m)
-        => SideCondition variable
-        -> TermLike variable
-        -> m (OrPattern variable)
-        )
-    -> TermLikeSimplifier
-termLikeSimplifier simplifier =
-    TermLikeSimplifier termLikeSimplifierWorker
-  where
-    termLikeSimplifierWorker
-        :: forall variable simplifier
-        .  HasCallStack
-        => InternalVariable variable
-        => (MonadLogic simplifier, MonadSimplify simplifier)
-        => SideCondition variable
-        -> TermLike variable
-        -> simplifier (Pattern variable)
-    termLikeSimplifierWorker sideCondition termLike = do
-        results <- simplifier sideCondition termLike
-        scatter (OrPattern.toPatterns results)
+simplifyConditionalTerm sideCondition termLike =
+    simplifyTermLike sideCondition termLike >>= Logic.scatter
 
 -- * Predicate simplifiers
 
@@ -614,7 +549,7 @@ applicationAxiomSimplifier applicationSimplifier =
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
 
--- |Checks whether symbol is constructor or overloaded
+-- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded
     :: MonadSimplify unifier
     => Symbol
@@ -623,3 +558,33 @@ isConstructorOrOverloaded s
   = do
     OverloadSimplifier { isOverloaded } <- askOverloadSimplifier
     return (isConstructor s || isOverloaded s)
+
+makeEvaluateTermCeil
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> Sort
+    -> TermLike variable
+    -> simplifier (OrCondition variable)
+makeEvaluateTermCeil sideCondition sort child =
+    Predicate.makeCeilPredicate sort child
+    & Condition.fromPredicate
+    & simplifyCondition sideCondition
+    & OrCondition.observeAllT
+
+makeEvaluateCeil
+    :: MonadSimplify simplifier
+    => InternalVariable variable
+    => SideCondition variable
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+makeEvaluateCeil sideCondition child =
+    do
+        let (childTerm, childCondition) = Pattern.splitTerm child
+        ceilCondition <-
+            Predicate.makeCeilPredicate_ childTerm
+            & Condition.fromPredicate
+            & simplifyCondition sideCondition
+        Pattern.andCondition Pattern.top (ceilCondition <> childCondition)
+            & pure
+    & OrPattern.observeAllT

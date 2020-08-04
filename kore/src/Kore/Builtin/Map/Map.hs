@@ -61,9 +61,6 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
 import Kore.Internal.TermLike as TermLike
-import Kore.Sort
-    ( Sort
-    )
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"

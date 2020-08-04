@@ -1,6 +1,6 @@
 module Test.Kore.Step.RulePattern
     ( test_freeVariables
-    , test_refreshRulePattern
+    , test_refreshRule
     ) where
 
 import Prelude.Kore
@@ -16,10 +16,11 @@ import qualified Data.Set as Set
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern
-import Kore.Step.Step
-    ( refreshRule
+import Kore.Step.AntiLeft
+    ( AntiLeft (AntiLeft)
     )
+import qualified Kore.Step.AntiLeft as AntiLeft.DoNotUse
+import Kore.Step.RulePattern
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -32,9 +33,9 @@ test_freeVariables =
             actual = freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
-test_refreshRulePattern :: TestTree
-test_refreshRulePattern =
-    testCase "Rename target variables" $ do
+test_refreshRule :: [TestTree]
+test_refreshRule =
+    [ testCase "Rename target variables" $ do
         let avoiding :: FreeVariables VariableName
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
@@ -54,6 +55,26 @@ test_refreshRulePattern =
         assertBool
             "Expected no free variables in common with original RulePattern"
             (all notAvoided (FreeVariables.toList free'))
+    , testCase "no stale variables" $ do
+        let (renaming, _) = refreshRule mempty testRulePattern
+        assertBool "expected not to rename variables" (null renaming)
+    , testGroup "stale existentials" $
+        let assertions (renaming, RulePattern { rhs }) = do
+                assertBool "expected to refresh existentials"
+                    (notElem Mock.y $ existentials rhs)
+                assertBool "expected to substitute fresh variables"
+                    ((/=) (mkElemVar Mock.y) $ right rhs)
+                assertBool "expected not to rename free variables"
+                    (null renaming)
+        in
+        [ testCase "from outside" $ do
+            let stale = freeVariable (inject Mock.y)
+            assertions $ refreshRule stale testRulePattern
+        , testCase "from left-hand side" $ do
+            let input = testRulePattern { left = mkElemVar Mock.y }
+            assertions $ refreshRule mempty input
+        ]
+    ]
 
 testRulePattern :: RulePattern VariableName
 testRulePattern =
@@ -61,7 +82,11 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
-        , antiLeft = Just $ mkElemVar Mock.u
+        , antiLeft = Just $ AntiLeft
+            { aliasTerm = mkElemVar Mock.u
+            , maybeInner = Nothing
+            , leftHands = []
+            }
         , requires = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
         , rhs = RHS
             { existentials = [Mock.y]

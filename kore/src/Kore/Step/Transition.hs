@@ -40,9 +40,6 @@ import Data.Sequence
     )
 import qualified Data.Sequence as Seq
 
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     )
@@ -107,8 +104,6 @@ instance MonadReader e m => MonadReader e (TransitionT rule m) where
     {-# INLINE local #-}
 
 deriving instance MonadSMT m => MonadSMT (TransitionT rule m)
-
-deriving instance MonadProfiler m => MonadProfiler (TransitionT rule m)
 
 deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 

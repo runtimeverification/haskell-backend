@@ -32,9 +32,6 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
-import qualified Kore.Profiler.Profile as Profile
-    ( simplificationBranching
-    )
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )
@@ -70,13 +67,7 @@ simplify sideCondition application = do
         traverse
             (makeAndEvaluateApplications sideCondition symbol)
             childrenCrossProduct
-    let result = OrPattern.flatten evaluated
-    Profile.simplificationBranching
-        "Application"
-        (symbolConstructor symbol)
-        (length childrenCrossProduct)
-        (length result)
-    return result
+    return (OrPattern.flatten evaluated)
   where
     Application
         { applicationSymbolOrAlias = symbol

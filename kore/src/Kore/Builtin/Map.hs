@@ -32,7 +32,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (MaybeT)
-    , fromMaybe
     , hoistMaybe
     , runMaybeT
     )
@@ -71,9 +70,6 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
@@ -91,7 +87,6 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
-    , InternalVariable
     , TermLike
     , termLikeSort
     )
@@ -100,9 +95,6 @@ import Kore.Sort
     ( Sort
     )
 import qualified Kore.Sort as Sort
-import Kore.Step.Simplification.CeilSimplifier
-    ( CeilSimplifier (..)
-    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
@@ -614,17 +606,10 @@ unifyNotInKeys
     => MonadUnify unifier
     => TermSimplifier variable unifier
     -> NotSimplifier unifier
-    -> CeilSimplifier unifier (TermLike variable) (OrCondition variable)
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyNotInKeys
-    unifyChildren
-    (NotSimplifier notSimplifier)
-    (CeilSimplifier ceilSimplifier)
-    a
-    b
-  =
+unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
     normalizedOrBottom
@@ -634,16 +619,12 @@ unifyNotInKeys
 
     defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
     defineTerm termLike =
-        ceilSimplifier
-            TermLike.Ceil
-                { ceilResultSort = Sort.predicateSort
-                , ceilOperandSort = TermLike.termLikeSort termLike
-                , ceilChild = termLike
-                }
-        >>= lift . Unify.scatter
+        makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
+        >>= Unify.scatter
+        & lift
 
     eraseTerm =
-        Pattern.fromCondition . Pattern.withoutTerm
+        Pattern.fromCondition_ . Pattern.withoutTerm
 
     unifyAndNegate t1 t2 = do
         -- Erasing the unified term is valid here because
@@ -658,7 +639,7 @@ unifyNotInKeys
 
     collectConditions terms =
         Foldable.fold terms
-        & Pattern.fromCondition
+        & Pattern.fromCondition_
 
     worker
         :: TermLike variable

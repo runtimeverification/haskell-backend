@@ -9,9 +9,6 @@ import Test.Tasty
 import Data.List
     ( inits
     )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike

@@ -9,7 +9,8 @@ module Kore.Internal.Pattern
     , coerceSort
     , patternSort
     , fromCondition
-    , fromConditionSorted
+    , fromCondition_
+    , fromTermAndPredicate
     , fromPredicateSorted
     , bottom
     , bottomOf
@@ -24,9 +25,11 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , forgetSimplified
+    , markSimplified
     , simplifiedAttribute
     , assign
     , requireDefined
+    , substitute
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -38,6 +41,10 @@ module Kore.Internal.Pattern
     ) where
 
 import Prelude.Kore
+
+import Data.Map.Strict
+    ( Map
+    )
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
@@ -63,8 +70,7 @@ import Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( ElementVariable
-    , InternalVariable
+    ( InternalVariable
     , Sort
     , TermLike
     , mkAnd
@@ -91,25 +97,37 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromCondition
+fromTermAndPredicate
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate variable
+    -> Pattern variable
+fromTermAndPredicate term predicate =
+    Conditional
+        { term
+        , predicate
+        , substitution = mempty
+        }
+
+fromCondition_
     :: InternalVariable variable
     => Condition variable
     -> Pattern variable
-fromCondition = (<$) mkTop_
+fromCondition_ = (<$) mkTop_
 
-fromConditionSorted
+fromCondition
     :: InternalVariable variable
     => Sort
     -> Condition variable
     -> Pattern variable
-fromConditionSorted sort = (<$) (mkTop sort)
+fromCondition sort = (<$) (mkTop sort)
 
 fromPredicateSorted
     :: InternalVariable variable
     => Sort
     -> Predicate variable
     -> Pattern variable
-fromPredicateSorted sort = fromConditionSorted sort . Condition.fromPredicate
+fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
 
 isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
@@ -121,6 +139,14 @@ forgetSimplified
 forgetSimplified patt =
     TermLike.forgetSimplified term
         `withCondition` Condition.forgetSimplified condition
+  where
+    (term, condition) = Conditional.splitTerm patt
+
+markSimplified
+    :: InternalVariable variable => Pattern variable -> Pattern variable
+markSimplified patt =
+    TermLike.markSimplified term
+        `withCondition` Condition.markSimplified condition
   where
     (term, condition) = Conditional.splitTerm patt
 
@@ -341,3 +367,20 @@ requireDefined Conditional { term, predicate, substitution } =
         }
   where
     sort = termLikeSort term
+
+{- | Apply a normalized 'Substitution' to a 'Pattern'.
+
+The 'Substitution' of the result will not be normalized.
+
+ -}
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> Pattern variable
+    -> Pattern variable
+substitute subst Conditional { term, predicate, substitution } =
+    Conditional
+    { term = TermLike.substitute subst term
+    , predicate = Predicate.substitute subst predicate
+    , substitution = Substitution.substitute subst substitution
+    }

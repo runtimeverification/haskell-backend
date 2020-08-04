@@ -29,9 +29,12 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( forgetSimplified
+    , substitute
+    )
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
@@ -72,10 +75,10 @@ simplifyRulePattern rule = do
             -- existentially quantified.
             let subst = Substitution.toMap substitution
                 left' = TermLike.substitute subst term
-                antiLeft' = TermLike.substitute subst <$> antiLeft
+                antiLeft' = AntiLeft.substitute subst <$> antiLeft
                   where
                     RulePattern { antiLeft } = rule
-                requires' = TermLike.substitute subst <$> requires
+                requires' = Predicate.substitute subst requires
                   where
                     RulePattern { requires } = rule
                 rhs' = rhsSubstitute subst rhs
@@ -84,7 +87,7 @@ simplifyRulePattern rule = do
                 RulePattern { attributes } = rule
             return RulePattern
                 { left = TermLike.forgetSimplified left'
-                , antiLeft = TermLike.forgetSimplified <$> antiLeft'
+                , antiLeft = AntiLeft.forgetSimplified <$> antiLeft'
                 , requires = Predicate.forgetSimplified requires'
                 , rhs = rhsForgetSimplified rhs'
                 , attributes = attributes
@@ -101,6 +104,5 @@ simplifyPattern
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =
-    Simplifier.localSimplifierTermLike (const Simplifier.create)
-    $ Simplifier.localSimplifierAxioms (const mempty)
+    Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)

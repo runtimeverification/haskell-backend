@@ -8,6 +8,7 @@ module Kore.Internal.Condition
     , isSimplified
     , simplifiedAttribute
     , forgetSimplified
+    , markSimplified
     , Conditional.markPredicateSimplified
     , Conditional.markPredicateSimplifiedConditional
     , Conditional.setPredicateSimplified
@@ -36,6 +37,7 @@ module Kore.Internal.Condition
 
 import Prelude.Kore
 
+import ErrorContext
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
     , isFreeVariable
@@ -85,6 +87,16 @@ forgetSimplified Conditional { term = (), predicate, substitution } =
         { term = ()
         , predicate = Predicate.forgetSimplified predicate
         , substitution = Substitution.forgetSimplified substitution
+        }
+
+markSimplified
+    :: InternalVariable variable
+    => Condition variable -> Condition variable
+markSimplified Conditional { term = (), predicate, substitution } =
+    Conditional
+        { term = ()
+        , predicate = Predicate.markSimplified predicate
+        , substitution = Substitution.markSimplified substitution
         }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
@@ -171,11 +183,15 @@ The 'normalized' part becomes the normalized 'substitution', while the
 
  -}
 fromNormalizationSimplified
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => Normalization variable
     -> Condition variable
-fromNormalizationSimplified Normalization { normalized, denormalized } =
+fromNormalizationSimplified
+    normalization@Normalization { normalized, denormalized }
+  =
     predicate' <> substitution'
+    & withErrorContext "while normalizing substitution" normalization
   where
     predicate' =
         Conditional.fromPredicate
@@ -184,7 +200,7 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
-        $ Substitution.unsafeWrap (Substitution.assignmentToPair <$> normalized)
+        $ Substitution.unsafeWrapFromAssignments normalized
     markSimplifiedIfChildrenSimplified childrenList result =
         Predicate.setSimplified childrenSimplified result
       where

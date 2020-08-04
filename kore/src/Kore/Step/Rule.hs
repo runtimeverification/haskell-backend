@@ -52,33 +52,48 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias
     ( Alias (..)
     )
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.TermLike
+    ( weakAlwaysFinally
+    , weakExistsFinally
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     , VariableName
     )
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
 import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
-import Kore.Step.RulePattern
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( parse
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
-    , ImplicationRule (..)
+    , ClaimPattern (ClaimPattern)
     , OnePathRule (..)
+    , allPathRuleToTerm
+    , onePathRuleToTerm
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
+import Kore.Step.RulePattern
+    ( ImplicationRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , allPathGlobally
-    , allPathRuleToTerm
     , implicationRuleToTerm
     , injectTermIntoRHS
-    , onePathRuleToTerm
     , rewriteRuleToTerm
     , termToRHS
-    , weakAlwaysFinally
-    , weakExistsFinally
     )
+import qualified Kore.Step.RulePattern as OLD
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
     )
@@ -99,12 +114,22 @@ newtype AxiomPatternError = AxiomPatternError ()
 
 instance NFData AxiomPatternError
 
+reachabilityModalityToConstructor
+    :: Alias (TermLike.TermLike VariableName)
+    -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
+reachabilityModalityToConstructor patternHead
+    | headName == weakExistsFinally = Just $ OnePathClaimPatternNEW . OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPatternNEW . AllPathRule
+    | otherwise = Nothing
+  where
+    headName = getId (aliasConstructor patternHead)
+
 qualifiedAxiomOpToConstructor
     :: Alias (TermLike.TermLike VariableName)
     -> Maybe (RulePattern VariableName -> QualifiedAxiomPattern VariableName)
 qualifiedAxiomOpToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OLD.OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . OLD.AllPathRule
     | otherwise = Nothing
   where
     headName = getId (aliasConstructor patternHead)
@@ -114,8 +139,10 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern OnePathRule
-    | AllPathClaimPattern AllPathRule
+    | OnePathClaimPattern OLD.OnePathRule
+    | AllPathClaimPattern OLD.AllPathRule
+    | OnePathClaimPatternNEW OnePathRule
+    | AllPathClaimPatternNEW AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
@@ -266,18 +293,37 @@ complexRewriteTermToRule attributes pat =
             (TermLike.And_ _
                 (TermLike.Not_ _ antiLeft)
                 (TermLike.And_ _ requires lhs))
-            rhs ->
-                RewriteRule RulePattern
-                    { left = lhs
-                    , antiLeft = Just antiLeft
-                    , requires = Predicate.wrapPredicate requires
-                    , rhs = termToRHS rhs
-                    , attributes
-                    }
+            rhs -> case AntiLeft.parse antiLeft of
+                Nothing -> (error . show. Pretty.vsep)
+                    [ "Could not parse antileft term"
+                    , Pretty.indent 4 $ unparse antiLeft
+                    , "from pattern"
+                    , Pretty.indent 4 $ unparse pat
+                    ]
+                Just parsedAntiLeft ->
+                    RewriteRule RulePattern
+                        { left = lhs
+                        , antiLeft = Just parsedAntiLeft
+                        , requires = makePredicate "requires" requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
         _ -> (error . show. Pretty.vsep)
             [ "Expected complex rewrite rule form, but got"
             , Pretty.indent 4 $ unparse pat
             ]
+  where
+    makePredicate
+        :: InternalVariable variable
+        => String -> TermLike.TermLike variable -> Predicate.Predicate variable
+    makePredicate name term = case Predicate.makePredicate term of
+        Left err ->
+            (error . show . Pretty.vsep)
+                [ Pretty.sep ["Error for ", Pretty.pretty name]
+                , unparse term
+                , Pretty.pretty err
+                ]
+        Right predicate -> predicate
 
 {- | Match a term encoding an 'QualifiedAxiomPattern'.
 
@@ -290,7 +336,7 @@ termToAxiomPattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 termToAxiomPattern attributes pat =
     case pat of
-        -- Reachability claims
+        -- OLD: Reachability claims
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
@@ -301,6 +347,23 @@ termToAxiomPattern attributes pat =
                 , requires = Predicate.wrapPredicate requires
                 , rhs = termToRHS rhs
                 , attributes
+                }
+        -- NEW: Reachability claims
+        TermLike.Implies_ _
+            (TermLike.And_ _ requires lhs)
+            (TermLike.ApplyAlias_ op [rhs])
+          | Just constructor <- reachabilityModalityToConstructor op ->
+            let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                attributes' = Attribute.mapAxiomVariables (pure mkRuleVariable) attributes
+             in pure $ constructor ClaimPattern
+                { ClaimPattern.left =
+                    Pattern.fromTermAndPredicate
+                        lhs
+                        (Predicate.wrapPredicate requires)
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                , ClaimPattern.right = OrPattern.parseFromTermLike rhs'
+                , ClaimPattern.existentials = ClaimPattern.termToExistentials rhs'
+                , ClaimPattern.attributes = attributes'
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:
@@ -341,10 +404,13 @@ axiomPatternToTerm
     -> TermLike.TermLike VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
-    OnePathClaimPattern rule -> onePathRuleToTerm rule
-    AllPathClaimPattern rule -> allPathRuleToTerm rule
+    OnePathClaimPattern rule -> OLD.onePathRuleToTerm rule
+    AllPathClaimPattern rule -> OLD.allPathRuleToTerm rule
+    OnePathClaimPatternNEW rule -> onePathRuleToTerm rule
+    AllPathClaimPatternNEW rule -> allPathRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
 
+-- TODO(Ana): are these three functions used anywhere anymore?
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
 The requires clause must be a predicate, i.e. it can occur in any sort.

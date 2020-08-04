@@ -57,6 +57,14 @@ module Kore.Builtin.Int
     , powKey
     , powmodKey
     , log2Key
+      -- * implementations (for testing)
+    , tdiv
+    , tmod
+    , ediv
+    , emod
+    , pow
+    , powmod
+    , log2
     ) where
 
 import Prelude.Kore
@@ -64,6 +72,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.Bits
     ( complement
     , shift
@@ -97,6 +106,11 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
@@ -252,7 +266,7 @@ builtinFunctions =
 
     , comparator gtKey (>)
     , comparator geKey (>=)
-    , comparator eqKey (==)
+    , (eqKey, Builtin.functionEvaluator evalEq)
     , comparator leKey (<=)
     , comparator ltKey (<)
     , comparator neKey (/=)
@@ -267,8 +281,8 @@ builtinFunctions =
     , binaryOperator mulKey (*)
     , unaryOperator absKey abs
 
-      -- TODO (thomas.tuegel): Implement division.
-    , (edivKey, Builtin.notImplemented)
+      -- Division operations
+    , partialBinaryOperator edivKey ediv
     , partialBinaryOperator emodKey emod
     , partialBinaryOperator tdivKey tdiv
     , partialBinaryOperator tmodKey tmod
@@ -305,23 +319,69 @@ builtinFunctions =
     partialTernaryOperator name op =
         ( name, Builtin.ternaryOperator extractIntDomainValue
             asPartialPattern name op )
-    tdiv n d
-        | d == 0 = Nothing
-        | otherwise = Just (quot n d)
-    tmod n d
-        | d == 0 = Nothing
-        | otherwise = Just (rem n d)
-    emod a b
-        | b == 0 = Nothing
-        | b < 0  = Just (rem a b)
-        | otherwise = Just (mod a b)
-    pow b e
-        | e < 0 = Nothing
-        | otherwise = Just (b ^ e)
-    powmod b e m
-        | m == 0 = Nothing
-        | e < 0 && recipModInteger b m == 0 = Nothing
-        | otherwise = Just (powModInteger b e m)
-    log2 n
-        | n > 0 = Just (smallInteger (integerLog2# n))
-        | otherwise = Nothing
+
+tdiv, tmod, ediv, emod, pow
+    :: Integer -> Integer -> Maybe Integer
+tdiv n d
+    | d == 0 = Nothing
+    | otherwise = Just (quot n d)
+tmod n d
+    | d == 0 = Nothing
+    | otherwise = Just (rem n d)
+ediv n d
+    | d == 0 = Nothing
+    | n < 0, d < 0, mod n d /= 0 =
+        Just (1 + div (-n) (-d))
+    | d < 0 = Just (quot n d)
+    | otherwise = Just (div n d)
+emod n d
+    | d == 0 = Nothing
+    | n < 0, d < 0, mod n d /= 0 =
+        Just (n - d * (1 + div (-n) (-d)))
+    | d < 0  = Just (rem n d)
+    | otherwise = Just (mod n d)
+pow b e
+    | e < 0 = Nothing
+    | otherwise = Just (b ^ e)
+
+log2
+    :: Integer -> Maybe Integer
+log2 n
+    | n > 0 = Just (smallInteger (integerLog2# n))
+    | otherwise = Nothing
+
+powmod
+    :: Integer -> Integer -> Integer -> Maybe Integer
+powmod b e m
+    | m == 0 = Nothing
+    | e < 0 && recipModInteger b m == 0 = Nothing
+    | otherwise = Just (powModInteger b e m)
+
+evalEq :: Builtin.Function
+evalEq resultSort arguments@[_intLeft, _intRight] =
+    concrete <|> symbolicReflexivity
+  where
+    concrete = do
+        _intLeft <- expectBuiltinInt eqKey _intLeft
+        _intRight <- expectBuiltinInt eqKey _intRight
+        _intLeft == _intRight
+            & Bool.asPattern resultSort
+            & return
+
+    symbolicReflexivity = do
+        Monad.guard (TermLike.isFunctionPattern _intLeft)
+        -- Do not need to check _intRight because we only return a result
+        -- when _intLeft and _intRight are equal.
+        if _intLeft == _intRight then
+            True & Bool.asPattern resultSort & returnPattern
+        else
+            empty
+
+    mkCeilUnlessDefined termLike
+      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | otherwise =
+        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+    returnPattern = return . flip Pattern.andCondition conditions
+    conditions = foldMap mkCeilUnlessDefined arguments
+
+evalEq _ _ = Builtin.wrongArity eqKey

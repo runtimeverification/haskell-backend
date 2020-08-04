@@ -14,6 +14,7 @@ module Kore.Step
     , rewriteStep
     , priorityAllStrategy
     , priorityAnyStrategy
+    , TransitionRule
     , transitionRule
     , heatingCooling
       -- * Re-exports
@@ -88,18 +89,22 @@ rewriteStep :: rewrite -> Strategy (Prim rewrite)
 rewriteStep a =
     Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
 
+{- | @TransitionRule@ is the general type of transition rules over 'Prim'.
+ -}
+type TransitionRule monad rule state =
+    Prim rule -> state -> Strategy.TransitionT rule monad state
+
 {- | Transition rule for primitive strategies in 'Prim'.
 
 @transitionRule@ is intended to be partially applied and passed to
 'Strategy.runStrategy'.
  -}
 transitionRule
-    :: forall m
-    .  MonadSimplify m
-    => Prim (RewriteRule RewritingVariableName)
-    -> Pattern VariableName
-    -- ^ Configuration being rewritten
-    -> TransitionT (RewriteRule RewritingVariableName) m (Pattern VariableName)
+    ::  forall simplifier
+    .   MonadSimplify simplifier
+    =>  TransitionRule simplifier
+            (RewriteRule RewritingVariableName)
+            (Pattern VariableName)
 transitionRule =
     \case
         Simplify -> transitionSimplify
@@ -151,7 +156,7 @@ anyRewrite rewrites =
     Strategy.any (rewriteStep <$> rewrites)
 
 priorityAllStrategy
-    :: From rewrite (Attribute.Priority, Attribute.Owise)
+    :: From rewrite Attribute.PriorityAttributes
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
@@ -160,7 +165,7 @@ priorityAllStrategy rewrites =
     priorityGroups = groupSortOn Attribute.getPriorityOfAxiom rewrites
 
 priorityAnyStrategy
-    :: From rewrite (Attribute.Priority, Attribute.Owise)
+    :: From rewrite Attribute.PriorityAttributes
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAnyStrategy rewrites =

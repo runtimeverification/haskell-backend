@@ -14,6 +14,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import Data.Kind
+    ( Type
+    )
 import Data.String
     ( IsString
     )
@@ -62,7 +65,7 @@ They correspond to the second, third and forth non-terminals of the @definition@
 syntactic category from the Semantics of K, Section 9.1.6
 (Declaration and Definitions).
 -}
-data Module (sentence :: *) =
+data Module (sentence :: Type) =
     Module
         { moduleName       :: !ModuleName
         , moduleSentences  :: ![sentence]

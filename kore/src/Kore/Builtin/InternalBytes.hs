@@ -63,9 +63,6 @@ import Kore.Internal.ApplicationSorts
     ( applicationSortsResult
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Symbol
-    ( symbolSorts
-    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier

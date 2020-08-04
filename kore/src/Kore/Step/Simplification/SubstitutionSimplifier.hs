@@ -32,9 +32,6 @@ import Control.Monad.State.Strict
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Map.Strict
     ( Map
@@ -92,7 +89,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
-    , simplifyConditionalTermToOr
+    , simplifyTermLike
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
@@ -345,18 +342,18 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             SomeVariableNameElement _
               | isSimplified -> return subst
               | otherwise -> do
-                termLike' <- simplifyTermLike termLike
+                termLike' <- simplifyTermLike' termLike
                 return $ Substitution.assign uVar termLike'
               where
                 isSimplified = TermLike.isSimplified
                     sideConditionRepresentation
                     termLike
 
-    simplifyTermLike
+    simplifyTermLike'
         :: TermLike variable
         -> Impl variable simplifier (TermLike variable)
-    simplifyTermLike termLike = do
-        orPattern <- simplifyConditionalTermToOr sideCondition termLike
+    simplifyTermLike' termLike = do
+        orPattern <- simplifyTermLike sideCondition termLike
         case OrPattern.toPatterns orPattern of
             [        ] -> do
                 addCondition Condition.bottom

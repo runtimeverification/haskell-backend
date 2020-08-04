@@ -5,28 +5,21 @@
 
 let
   sources = import ./nix/sources.nix;
-  haskell-nix = import sources."haskell.nix" {};
-  nixpkgs =
+
+  pkgs =
     let
+      haskell-nix = import sources."haskell.nix" {};
       inherit (haskell-nix) nixpkgsArgs;
-      args = nixpkgsArgs // {
-        overlays =
-          (nixpkgsArgs.overlays or [])
-          ++ [ (import ./nix/ghcide.nix { inherit sources; }) ]
-          ;
-        config =
-          (nixpkgsArgs.config or {})
-          ;
-      };
-    in import haskell-nix.sources.nixpkgs-1909 args;
-  pkgs = nixpkgs;
+      args = nixpkgsArgs // { };
+    in import haskell-nix.sources.nixpkgs-2003 args;
+
   local =
     if builtins.pathExists ./local.nix
     then import ./local.nix { inherit default; }
     else x: x;
-  stackProject = args: pkgs.haskell-nix.stackProject (local args);
+
   project =
-    stackProject {
+    (args: pkgs.haskell-nix.stackProject (local args)) {
       src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
       modules = [
         {
@@ -45,14 +38,22 @@ let
         }
       ];
     };
+
   shell = import ./shell.nix { inherit default; };
+
+  version = project.kore.components.exes.kore-exec.version;
+
   default =
     {
       inherit pkgs project;
       cache = [
-        pkgs.haskell-nix.haskellNixRoots
+        project.roots
         (pkgs.haskell-nix.withInputs shell)
       ];
+      kore = pkgs.symlinkJoin {
+        name = "kore-${version}";
+        paths = pkgs.lib.attrValues project.kore.components.exes;
+      };
     };
 
 in default

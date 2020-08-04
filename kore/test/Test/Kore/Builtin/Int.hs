@@ -1,22 +1,25 @@
-{-# LANGUAGE MagicHash #-}
-
 module Test.Kore.Builtin.Int
     (
       test_gt, test_ge, test_eq, test_le, test_lt, test_ne
     , test_min, test_max
     , test_add, test_sub, test_mul, test_abs
     , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
-    , test_emod
+    , test_ediv_property, test_emod_property, test_edivZero, test_emodZero
+    , test_ediv, test_emod
+    , test_euclidian_division_theorem
     , test_and, test_or, test_xor, test_not
     , test_shl, test_shr
     , test_pow, test_powmod, test_log2
     , test_tdiv_evaluated_arguments
+    , test_ediv_evaluated_arguments
     , test_unifyEqual_NotEqual
     , test_unifyEqual_Equal
     , test_unifyAnd_NotEqual
     , test_unifyAnd_Equal
     , test_unifyAndEqual_Equal
     , test_unifyAnd_Fn
+    , test_reflexivity_symbolic
+    , test_symbolic_eq_not_conclusive
     , hprop_unparse
     --
     , asInternal
@@ -48,21 +51,20 @@ import Data.Bits
     )
 import Data.Semigroup
     ( Endo (..)
-    , stimes
     )
 import qualified Data.Text as Text
-import GHC.Integer
-    ( smallInteger
-    )
-import GHC.Integer.GMP.Internals
-    ( powModInteger
-    , recipModInteger
-    )
-import GHC.Integer.Logarithms
-    ( integerLog2#
-    )
 
+import Kore.Builtin.Int
+    ( ediv
+    , emod
+    , log2
+    , pow
+    , powmod
+    , tdiv
+    , tmod
+    )
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -71,6 +73,7 @@ import Kore.Internal.TermLike
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
+    , testId
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
@@ -249,38 +252,142 @@ test_tdiv = testPartialBinary tdivIntSymbol tdiv
 
 test_tdiv_evaluated_arguments :: TestTree
 test_tdiv_evaluated_arguments =
-    testPropertyWithSolver (Text.unpack name) $ do
-        a <- forAll genInteger
-        b <- forAll genInteger
-        na <- forAll $ Gen.integral (Range.linear 0 5)
-        nb <- forAll $ Gen.integral (Range.linear 0 5)
-        let expect = asPartialPattern $ tdiv a b
-        actual <- evaluateT
-            $ mkApplySymbol tdivIntSymbol [evaluated na a, evaluated nb b]
-        (===) expect actual
-  where
-    name = expectHook tdivIntSymbol <> " with evaluated arguments"
-    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
-    evaluated n x = compose n mkEvaluated $ asInternal x
-
-tdiv :: Integer -> Integer -> Maybe Integer
-tdiv n d
-  | d == 0 = Nothing
-  | otherwise = Just (quot n d)
+    testDivEvaluatedArguments tdivIntSymbol tdiv
 
 test_tmod :: TestTree
 test_tmod = testPartialBinary tmodIntSymbol tmod
-
-tmod :: Integer -> Integer -> Maybe Integer
-tmod n d
-  | d == 0 = Nothing
-  | otherwise = Just (rem n d)
 
 test_tdivZero :: TestTree
 test_tdivZero = testPartialBinaryZero tdivIntSymbol tdiv
 
 test_tmodZero :: TestTree
 test_tmodZero = testPartialBinaryZero tmodIntSymbol tmod
+
+test_ediv_property :: TestTree
+test_ediv_property = testPartialBinary edivIntSymbol ediv
+
+test_ediv_evaluated_arguments :: TestTree
+test_ediv_evaluated_arguments =
+    testDivEvaluatedArguments edivIntSymbol ediv
+
+test_emod_property :: TestTree
+test_emod_property = testPartialBinary emodIntSymbol emod
+
+test_edivZero :: TestTree
+test_edivZero = testPartialBinaryZero edivIntSymbol tdiv
+
+test_emodZero :: TestTree
+test_emodZero = testPartialBinaryZero emodIntSymbol tmod
+
+test_ediv :: [TestTree]
+test_ediv =
+    [ testInt
+        "ediv normal"
+        edivIntSymbol
+        (asInternal <$> [193, 12])
+        (asPattern 16)
+    , testInt
+        "ediv negative lhs"
+        edivIntSymbol
+        (asInternal <$> [-193, 12])
+        (asPattern (-17))
+    , testInt
+        "ediv negative rhs"
+        edivIntSymbol
+        (asInternal <$> [193, -12])
+        (asPattern (-16))
+    , testInt
+        "ediv both negative"
+        edivIntSymbol
+        (asInternal <$> [-193, -12])
+        (asPattern 17)
+    , testInt
+        "ediv bottom"
+        edivIntSymbol
+        (asInternal <$> [193, 0])
+        bottom
+    ]
+
+test_emod :: [TestTree]
+test_emod =
+    [ testInt
+        "emod normal"
+        emodIntSymbol
+        (asInternal <$> [193, 12])
+        (asPattern 1)
+    , testInt
+        "emod negative lhs"
+        emodIntSymbol
+        (asInternal <$> [-193, 12])
+        (asPattern 11)
+    , testInt
+        "emod negative rhs"
+        emodIntSymbol
+        (asInternal <$> [193, -12])
+        (asPattern 1)
+    , testInt
+        "emod both negative"
+        emodIntSymbol
+        (asInternal <$> [-193, -12])
+        (asPattern 11)
+    , testInt
+        "emod bottom"
+        emodIntSymbol
+        (asInternal <$> [193, 0])
+        bottom
+    ]
+
+test_euclidian_division_theorem :: TestTree
+test_euclidian_division_theorem =
+    testPropertyWithSolver "Euclidian division theorem" $ do
+        dividend <- forAll genInteger
+        divisor <- forAll genInteger
+        unless (divisor /= 0) discard
+        quotient <-
+            evaluate'
+                edivIntSymbol
+                dividend
+                divisor
+        remainder <-
+            evaluate'
+                emodIntSymbol
+                dividend
+                divisor
+        (===) (remainder >= 0 && remainder < abs divisor) True
+        (===) (divisor * quotient + remainder) dividend
+  where
+    evaluate' symbol a b =
+        mkApplySymbol
+            symbol
+            (asInternal <$> [a, b])
+        & evaluateT
+        & fmap extractValue
+    extractValue :: Pattern VariableName -> Integer
+    extractValue (Pattern.toTermLike -> term) =
+        case term of
+            Builtin_
+                (Domain.BuiltinInt Domain.InternalInt { builtinIntValue }) ->
+                    builtinIntValue
+            _ -> error "Expecting builtin int."
+
+testDivEvaluatedArguments
+    :: Symbol
+    -> (Integer -> Integer -> Maybe Integer)
+    -> TestTree
+testDivEvaluatedArguments symbol expected =
+    testPropertyWithSolver (Text.unpack name) $ do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        na <- forAll $ Gen.integral (Range.linear 0 5)
+        nb <- forAll $ Gen.integral (Range.linear 0 5)
+        let expect = asPartialPattern $ expected a b
+        actual <- evaluateT
+            $ mkApplySymbol symbol [evaluated na a, evaluated nb b]
+        (===) expect actual
+  where
+    name = expectHook edivIntSymbol <> " with evaluated arguments"
+    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
+    evaluated n x = compose n mkEvaluated $ asInternal x
 
 -- Bitwise operations
 test_and :: TestTree
@@ -304,59 +411,14 @@ test_shr = testBinary shrIntSymbol shr
   where shr a = shift a . fromInteger . negate
 
 -- Exponential and logarithmic operations
-pow :: Integer -> Integer -> Maybe Integer
-pow b e
-    | e < 0 = Nothing
-    | otherwise = Just (b ^ e)
-
 test_pow :: TestTree
 test_pow = testPartialBinary powIntSymbol pow
-
-powmod :: Integer -> Integer -> Integer -> Maybe Integer
-powmod b e m
-    | m == 0 = Nothing
-    | e < 0 && recipModInteger b m == 0 = Nothing
-    | otherwise = Just (powModInteger b e m)
 
 test_powmod :: TestTree
 test_powmod = testPartialTernary powmodIntSymbol powmod
 
-log2 :: Integer -> Maybe Integer
-log2 n
-    | n > 0 = Just (smallInteger (integerLog2# n))
-    | otherwise = Nothing
-
 test_log2 :: TestTree
 test_log2 = testPartialUnary log2IntSymbol log2
-
-test_emod :: [TestTree]
-test_emod =
-    [ testInt
-        "emod normal"
-        emodIntSymbol
-        (asInternal <$> [193, 12])
-        (asPattern 1)
-    , testInt
-        "emod negative lhs"
-        emodIntSymbol
-        (asInternal <$> [-193, 12])
-        (asPattern 11)
-    , testInt
-        "emod negative rhs"
-        emodIntSymbol
-        (asInternal <$> [193, -12])
-        (asPattern 1)
-    , testInt
-        "emod both negative"
-        emodIntSymbol
-        (asInternal <$> [-193, -12])
-        (asPattern (-1))
-    , testInt
-        "emod bottom"
-        emodIntSymbol
-        (asInternal <$> [193, 0])
-        bottom
-    ]
 
 -- | Another name for asInternal.
 intLiteral :: Integer -> TermLike VariableName
@@ -444,6 +506,28 @@ test_unifyAnd_Fn =
         actual <- evaluateT $ mkAnd dv fnPat
         (===) expect actual
 
+test_reflexivity_symbolic :: TestTree
+test_reflexivity_symbolic =
+    testCaseWithSMT "evaluate symbolic reflexivity for equality" $ do
+        let x = mkElemVar $ "x" `ofSort` intSort
+            expect = Test.Bool.asPattern True
+        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
+        assertEqual' "" expect actual
+  where
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    ofSort idName sort = mkElementVariable (testId idName) sort
+
+test_symbolic_eq_not_conclusive :: TestTree
+test_symbolic_eq_not_conclusive =
+    testCaseWithSMT "evaluate symbolic equality for different variables" $ do
+        let x = mkElemVar $ "x" `ofSort` intSort
+            y = mkElemVar $ "y" `ofSort` intSort
+            expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
+        actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
+        assertEqual' "" expect actual
+  where
+    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+    ofSort idName sort = mkElementVariable (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

@@ -25,9 +25,6 @@ import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
@@ -57,8 +54,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     , Variable (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -66,11 +62,8 @@ import Kore.Log.DebugEvaluateCondition
     ( debugEvaluateConditionResult
     , whileDebugEvaluateCondition
     )
-import Kore.Log.WarnDecidePredicateUnknown
-    ( warnDecidePredicateUnknown
-    )
-import qualified Kore.Profiler.Profile as Profile
-    ( smtDecision
+import Kore.Log.ErrorDecidePredicateUnknown
+    ( errorDecidePredicateUnknown
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
@@ -183,7 +176,7 @@ decidePredicate predicates =
     $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         predicates' <- traverse (translatePredicate tools) predicates
-        result <- Profile.smtDecision predicates' $ SMT.withSolver $ do
+        result <- SMT.withSolver $ do
             Foldable.traverse_ SMT.assert predicates'
             SMT.check
         debugEvaluateConditionResult result
@@ -191,7 +184,7 @@ decidePredicate predicates =
             Unsat -> return False
             Sat -> empty
             Unknown -> do
-                warnDecidePredicateUnknown predicates
+                errorDecidePredicateUnknown predicates
                 empty
 
 translatePredicate

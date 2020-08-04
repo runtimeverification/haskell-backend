@@ -46,8 +46,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -69,9 +68,6 @@ import Kore.Log.DebugUnification
     ( debugUnificationSolved
     , debugUnificationUnsolved
     , whileDebugUnification
-    )
-import Kore.Step.Simplification.CeilSimplifier
-    ( CeilSimplifier (..)
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.ExpandAlias
@@ -96,10 +92,6 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
 import qualified Pretty
-
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
-    )
 
 data SimplificationTarget = AndT | EqualsT | BothT
 
@@ -248,7 +240,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s)
-    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier ceilSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
     , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s)
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
@@ -256,11 +248,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
-  where
-
-    ceilSimplifier =
-        CeilSimplifier $ \Ceil { ceilChild } ->
-            Ceil.makeEvaluateTerm SideCondition.topTODO ceilChild
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -360,8 +347,7 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm sideCondition second
-
+    secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
@@ -431,7 +417,8 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm sideCondition second
+                let sort = termLikeSort first
+                resultOr <- makeEvaluateTermCeil sideCondition sort second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom

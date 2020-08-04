@@ -14,6 +14,64 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.26.0.0] - 2020-07-24
+
+### Added
+
+- Speedscope is now supported for profiling proofs.
+- kore-repl can list rules applied between any related nodes.
+- kore-repl allows enabling debug-equation dynamically.
+- A warning is emitted to distinguish the types of proof failure.
+
+### Fixed
+
+- A bug is fixed where variables introduced by symbolic narrowing could be
+  captured incorrectly.
+- A more helpful message is provided when the external solver crashes.
+- The interrupt signal no longer triggers the creation of a bug report archive
+  automatically.
+- The overhead of logging is significantly reduced.
+- Polymorphic symbols can now be encoded for the external solver.
+
+## [0.25.0.0] - 2020-07-08
+
+### Added
+
+- The `simplification` attribute takes an optional integer argument indicating
+  the priority of the simplification rule.
+- The hooked function `INT.ediv` implements Euclidean division.
+
+### Changed
+
+- `ErrorBottomTotalFunction` is thrown when a function declared total
+  (`functional`) returns `\bottom`.
+- `ErrorDecidePredicateUnknown` is thrown when the solver cannot decide if a
+  condition is satisfiable or unsatisfiable.
+
+### Fixed
+
+- `kore-exec` exits with the code specified by the semantics, even when the
+  final configuration has side conditions.
+- `kore-exec` and `kore-repl` halt when the limit specified by the `--breadth`
+  option is exceeded.
+- Proofs are no longer incomplete when the final configuration is undefined.
+- `kore-repl` does not allow `clear`-ing the direct child of a branching node
+  because this can invalidate a proof.
+
+## [0.24.0.0] - 2020-06-25
+
+### Added
+
+- The hook `INT.eq` is reflexive with symbolic arguments.
+- The unification-based interpretation of function equations is supported.
+
+### Fixed
+
+- Improved function evaluation performance by reducing book-keeping.
+- Improved unification performance by removing excess logs.
+- Improved execution performance by discarding historical configurations.
+- `kore-repl` respects all logging options.
+
 ## [0.23.0.0] - 2020-06-10
 
 ### Added

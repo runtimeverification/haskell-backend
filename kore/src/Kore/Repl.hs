@@ -22,7 +22,7 @@ import Control.Monad
     , void
     )
 import Control.Monad.Catch
-    ( MonadCatch
+    ( MonadMask
     )
 import qualified Control.Monad.Catch as Exception
 import Control.Monad.Reader
@@ -46,6 +46,9 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Kore.Attribute.RuleIndex
+    ( RuleIndex (..)
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
 import System.IO
     ( hFlush
     , stdout
@@ -77,12 +80,20 @@ import Kore.Syntax.Module
     ( ModuleName (..)
     )
 import Kore.Syntax.Variable
+import Prof
+    ( MonadProf
+    )
 
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
     )
 import Kore.Unparser
     ( unparseToString
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec
+    , getTime
     )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
@@ -92,7 +103,8 @@ runRepl
     :: forall m
     .  MonadSimplify m
     => MonadIO m
-    => MonadCatch m
+    => MonadProf m
+    => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [ReachabilityRule]
@@ -127,8 +139,9 @@ runRepl
     mainModuleName
     logOptions
     = do
+    startTime <- liftIO $ getTime Monotonic
     (newState, _) <-
-            (\rwst -> execRWST rwst config state)
+            (\rwst -> execRWST rwst config (state startTime))
             $ evaluateScript replScript scriptModeOutput
     case replMode of
         Interactive -> do
@@ -153,20 +166,24 @@ runRepl
         -> ScriptModeOutput
         -> RWST (Config m) String ReplState m ()
     evaluateScript script outputFlag =
-        maybe (pure ()) (flip parseEvalScript outputFlag) (unReplScript script)
+        maybe
+            (pure ())
+            (flip parseEvalScript outputFlag)
+            (unReplScript script)
 
     repl0 :: ReaderT (Config m) (StateT ReplState m) ()
     repl0 = do
         str <- prompt
-        let command = fromMaybe ShowUsage $ parseMaybe commandParser str
+        let command =
+                fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState
-    state =
+    state :: TimeSpec -> ReplState
+    state startTime =
         ReplState
             { axioms         = addIndexesToAxioms axioms'
-            , claims         = addIndexesToClaims (length axioms') claims'
+            , claims         = addIndexesToClaims claims'
             , claim          = firstClaim
             , claimIndex     = firstClaimIndex
             , graphs         = Map.singleton firstClaimIndex firstClaimExecutionGraph
@@ -179,7 +196,9 @@ runRepl
             , aliases        = Map.empty
             , koreLogOptions =
                 logOptions
-                    { Log.exeName = Log.ExeName "kore-repl" }
+                    { Log.exeName = Log.ExeName "kore-repl"
+                    , Log.startTime = startTime
+                    }
             }
 
     config :: Config m
@@ -201,19 +220,17 @@ runRepl
     addIndexesToAxioms
         :: [Axiom]
         -> [Axiom]
-    addIndexesToAxioms axs =
-        fmap addIndex (zip axs [0..])
+    addIndexesToAxioms =
+        initializeRuleIndexes Attribute.AxiomIndex lensAttribute
+      where
+        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: Int
+        :: [ReachabilityRule]
         -> [ReachabilityRule]
-        -> [ReachabilityRule]
-    addIndexesToClaims len claims'' =
-        zipWith addIndexToClaim [len..] claims''
+    addIndexesToClaims =
+        initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
-        addIndexToClaim n =
-            Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n)
-
         lensAttribute =
             Lens.lens
                 (\case
@@ -233,16 +250,14 @@ runRepl
                         & AllPath
                 )
 
-    addIndex
-        :: (Axiom, Int)
-        -> Axiom
-    addIndex (rw, n) =
-        Lens.over (lensAttribute . field @"identifier") (makeRuleIndex n) rw
+    initializeRuleIndexes ctor lens rules =
+        zipWith addIndex rules [0..]
       where
-        lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
-
-    makeRuleIndex :: Int -> RuleIndex -> RuleIndex
-    makeRuleIndex n _ = RuleIndex (Just n)
+        addIndex rule index =
+            Lens.set
+                (lens . field @"identifier")
+                (index & ctor & Just & RuleIndex)
+                rule
 
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
@@ -251,19 +266,18 @@ runRepl
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: ReachabilityRule
-        -> [ReachabilityRule]
+        :: [ReachabilityRule]
         -> [Axiom]
         -> ExecutionGraph Axiom
         -> ReplNode
         -> m (ExecutionGraph Axiom)
-    stepper0 claim claims axioms graph rnode = do
+    stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchEverything graph
                 $ catchInterruptWithDefault graph
-                $ verifyClaimStep claim claims axioms graph node
+                $ verifyClaimStep claims axioms graph node
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a

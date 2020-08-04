@@ -9,18 +9,27 @@ module Kore.Step.Rule.Expand
 
 import Prelude.Kore
 
-import Data.List
-    ( foldl'
-    , foldr
+import Control.Lens
+    ( (%=)
     )
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
+import Control.Monad.State.Strict
+    ( State
+    , evalState
+    )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
+import Data.Generics.Product
+    ( field
+    )
+import Data.Map.Strict
+    ( Map
     )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified GHC.Generics as GHC
 
 import qualified Debug
 import Kore.Attribute.Pattern.FreeVariables
@@ -37,31 +46,48 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     , findSortConstructors
     )
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( TermLike
+    ( InternalVariable
+    , TermLike
     , mkApplySymbol
     , mkElemVar
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( substitute
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort (..)
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
-import Kore.Step.RulePattern
+import qualified Kore.Step.AntiLeft as AntiLeft
+    ( substitute
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
+    , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RulePattern (RulePattern)
+    , freeVariablesLeft
     )
-import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.RulePattern
+    ( RulePattern (RulePattern)
+    )
+import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -85,8 +111,8 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
         rule@(RulePattern _ _ _ _ _)
       = case rule of
         RulePattern
-            {left, antiLeft, requires
-            , rhs = RulePattern.RHS {existentials, right, ensures}
+            { left, antiLeft, requires
+            , rhs = OLD.RHS {existentials, right, ensures}
             } ->
             let leftVariables :: [ElementVariable VariableName]
                 leftVariables =
@@ -119,19 +145,95 @@ instance ExpandSingleConstructors (RulePattern VariableName) where
                         (Map.toList expansion)
                 subst = Map.mapKeys variableName expansion
             in rule
-                { RulePattern.left = TermLike.substitute subst left
-                , RulePattern.antiLeft =
-                    TermLike.substitute subst <$> antiLeft
-                , RulePattern.requires =
+                { OLD.left = TermLike.substitute subst left
+                , OLD.antiLeft =
+                    AntiLeft.substitute subst <$> antiLeft
+                , OLD.requires =
                     makeAndPredicate
                         (Predicate.substitute subst requires)
                         substitutionPredicate
-                , RulePattern.rhs = RulePattern.RHS
+                , OLD.rhs = OLD.RHS
                     { existentials
                     , right = TermLike.substitute subst right
                     , ensures = Predicate.substitute subst ensures
                     }
                 }
+
+instance ExpandSingleConstructors OLD.OnePathRule where
+    expandSingleConstructors tools =
+        OLD.OnePathRule . expandSingleConstructors tools . OLD.getOnePathRule
+
+instance ExpandSingleConstructors OLD.AllPathRule where
+    expandSingleConstructors tools =
+        OLD.AllPathRule . expandSingleConstructors tools . OLD.getAllPathRule
+
+instance ExpandSingleConstructors OLD.ReachabilityRule where
+    expandSingleConstructors tools (OLD.OnePath rule) =
+        OLD.OnePath
+        . OLD.OnePathRule
+        . expandSingleConstructors tools
+        . OLD.getOnePathRule
+        $ rule
+    expandSingleConstructors tools (OLD.AllPath rule) =
+        OLD.AllPath
+        . OLD.AllPathRule
+        . expandSingleConstructors tools
+        . OLD.getAllPathRule
+        $ rule
+
+instance ExpandSingleConstructors ClaimPattern where
+    expandSingleConstructors
+        metadataTools
+        rule@(ClaimPattern _ _ _ _)
+      = case rule of
+        ClaimPattern
+            { left
+            , existentials
+            , right
+            } ->
+            let leftElementVariables
+                    :: [ElementVariable RewritingVariableName]
+                leftElementVariables =
+                    extractFreeElementVariables
+                    . freeVariablesLeft
+                    $ rule
+                freeElementVariables
+                    :: [ElementVariable RewritingVariableName]
+                freeElementVariables =
+                    extractFreeElementVariables
+                    . freeVariables
+                    $ rule
+                allElementVariableNames
+                    :: Set (ElementVariableName RewritingVariableName)
+                allElementVariableNames =
+                    variableName <$> freeElementVariables <> existentials
+                    & Set.fromList
+                expansion
+                    ::  Map.Map
+                            (SomeVariable RewritingVariableName)
+                            (TermLike RewritingVariableName)
+                expansion =
+                    expandVariables
+                        metadataTools
+                        leftElementVariables
+                        allElementVariableNames
+                substitutionPredicate =
+                    Substitution.toPredicate
+                    . from @(Map _ _) @(Substitution _)
+                    $ expansion
+                subst = Map.mapKeys variableName expansion
+            in rule
+                { left =
+                    Pattern.andCondition
+                        (Pattern.substitute subst left)
+                        (Condition.fromPredicate substitutionPredicate)
+                , existentials
+                , right = OrPattern.substitute subst right
+                }
+      where
+        extractFreeElementVariables =
+            mapMaybe retractElementVariable
+            . FreeVariables.toList
 
 instance ExpandSingleConstructors OnePathRule where
     expandSingleConstructors tools =
@@ -155,114 +257,85 @@ instance ExpandSingleConstructors ReachabilityRule where
         . getAllPathRule
         $ rule
 
+newtype Expansion variable =
+    Expansion { stale :: Set (ElementVariableName variable) }
+    deriving (GHC.Generic)
+
+type Expander variable = State (Expansion variable)
+
 expandVariables
-    :: SmtMetadataTools attributes
-    -> [ElementVariable VariableName]
-    -> Set.Set (ElementVariableName VariableName)
-    -> Map.Map (SomeVariable VariableName) (TermLike VariableName)
-expandVariables metadataTools variables toAvoid =
-    fst $ foldl' expandAddVariable (Map.empty, toAvoid) variables
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> [ElementVariable variable]
+    -> Set (ElementVariableName variable)
+    -> Map (SomeVariable variable) (TermLike variable)
+expandVariables metadataTools variables stale =
+    wither expandAddVariable variables
+    & flip evalState Expansion { stale }
+    & (map . Bifunctor.first) inject
+    & Map.fromList
   where
     expandAddVariable
-        ::  ( Map.Map (SomeVariable VariableName) (TermLike VariableName)
-            , Set.Set (ElementVariableName VariableName)
-            )
-        -> ElementVariable VariableName
-        ->  ( Map.Map (SomeVariable VariableName) (TermLike VariableName)
-            , Set.Set (ElementVariableName VariableName)
-            )
-    expandAddVariable (substitution, toAvoid') variable =
-        case expandVariable metadataTools toAvoid' variable of
-            (newVariables, term) ->
-                ( if mkElemVar variable == term
-                    then substitution
-                    else Map.insert (inject variable) term substitution
-                , foldr Set.insert toAvoid' newVariables
-                )
+        ::  ElementVariable variable
+        ->  Expander variable
+                (Maybe (ElementVariable variable, TermLike variable))
+    expandAddVariable variable = do
+        term <- expandVariable metadataTools variable
+        if mkElemVar variable == term
+            then return Nothing
+            else return $ Just (variable, term)
 
 expandVariable
-    :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariableName VariableName)
-    -> ElementVariable VariableName
-    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
-expandVariable
-    metadataTools
-    usedVariables
-    variable@Variable { variableSort }
-  = expandSort metadataTools usedVariables variable UseDirectly variableSort
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
+    -> Expander variable (TermLike variable)
+expandVariable metadataTools variable@Variable { variableSort } =
+    expandSort metadataTools variable UseDirectly variableSort
 
 expandSort
-    :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariableName VariableName)
-    -> ElementVariable VariableName
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
     -> VariableUsage
     -> Sort
-    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
-expandSort
-    _metadataTools
-    usedVariables
-    defaultVariable
-    variableUsage
-    sort@(SortVariableSort _)
-  =
-    (updatedUsedVariables, variable)
+    -> Expander variable (TermLike variable)
+expandSort metadataTools defaultVariable variableUsage sort =
+    case findSingleConstructor sort of
+        Just constructor ->
+            expandConstructor metadataTools defaultVariable constructor
+        Nothing ->
+            maybeNewVariable defaultVariable sort variableUsage
   where
-    (updatedUsedVariables, variable) =
-        maybeNewVariable usedVariables defaultVariable sort variableUsage
-expandSort
-    metadataTools
-    usedVariables
-    defaultVariable
-    variableUsage
-    sort@(SortActualSort SortActual { sortActualName })
-  =
-    case findSortConstructors metadataTools sortActualName of
-        Just
-            (Attribute.Constructors.Constructors
-                (Just
-                    ( Attribute.Constructors.ConstructorLikeConstructor
-                        constructor
-                    :| []
-                    )
-                )
-            ) ->
-                expandConstructor
-                    metadataTools
-                    usedVariables
-                    defaultVariable
-                    constructor
-        _ -> maybeNewVariable usedVariables defaultVariable sort variableUsage
+    findSingleConstructor (SortVariableSort _) = Nothing
+    findSingleConstructor (SortActualSort SortActual { sortActualName }) = do
+        Attribute.Constructors.Constructors ctors <-
+            findSortConstructors metadataTools sortActualName
+        ctorLikes <- ctors
+        case ctorLikes of
+            Attribute.Constructors.ConstructorLikeConstructor ctor :| [] ->
+                Just ctor
+            _ -> Nothing
 
 expandConstructor
-    :: SmtMetadataTools attributes
-    -> Set.Set (ElementVariableName VariableName)
-    -> ElementVariable VariableName
+    :: forall variable attributes
+    .  InternalVariable variable
+    => SmtMetadataTools attributes
+    -> ElementVariable variable
     -> Attribute.Constructors.Constructor
-    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
+    -> Expander variable (TermLike variable)
 expandConstructor
     metadataTools
-    usedVariables
     defaultVariable
     Attribute.Constructors.Constructor { name = symbol, sorts }
-  = (finalUsedVariables, mkApplySymbol symbol children)
+  =
+    mkApplySymbol symbol <$> traverse expandChildSort sorts
   where
-    (children, finalUsedVariables) =
-        foldr expandChildSort ([], usedVariables) sorts
-
-    expandChildSort
-        :: Sort
-        -> ([TermLike VariableName], Set.Set (ElementVariableName VariableName))
-        -> ([TermLike VariableName], Set.Set (ElementVariableName VariableName))
-    expandChildSort sort (terms, beforeUsedVariables) =
-        (term : terms, afterUsedVariables)
-      where
-        (afterUsedVariables, term) =
-            expandSort
-                metadataTools
-                beforeUsedVariables
-                defaultVariable
-                UseAsPrototype
-                sort
+    expandChildSort :: Sort -> Expander variable (TermLike variable)
+    expandChildSort = expandSort metadataTools defaultVariable UseAsPrototype
 
 {-| Context: we have a TermLike that contains a variables, and we
 attempt to expand them into constructor applications whenever that's possible.
@@ -287,32 +360,33 @@ data VariableUsage =
     -- variable, so we need to generate a new one based on it.
 
 maybeNewVariable
-    :: Set.Set (ElementVariableName VariableName)
-    -> ElementVariable VariableName
+    :: forall variable
+    .  InternalVariable variable
+    => HasCallStack
+    => ElementVariable variable
     -> Sort
     -> VariableUsage
-    -> (Set.Set (ElementVariableName VariableName), TermLike VariableName)
+    -> Expander variable (TermLike variable)
 maybeNewVariable
-    usedVariables
     variable@Variable { variableSort }
     sort
     UseDirectly
   =
     if sort /= variableSort
         then error "Unmatching sort for direct use variable."
-        else (usedVariables, mkElemVar variable)
-maybeNewVariable usedVariables variable sort UseAsPrototype =
-    case refreshVariable usedVariables variable' of
-        Just newVariable ->
-            ( Set.insert (variableName newVariable) usedVariables
-            , mkElemVar newVariable
-            )
+        else pure (mkElemVar variable)
+maybeNewVariable variable sort UseAsPrototype = do
+    Expansion { stale } <- State.get
+    case refreshVariable stale variable' of
+        Just newVariable -> do
+            field @"stale" %= Set.insert (variableName newVariable)
+            pure (mkElemVar newVariable)
         Nothing ->
             (error . show . Pretty.hang 4 . Pretty.vsep)
                 [ "Failed to generate a new name for:"
                 , Pretty.indent 4 $ Debug.debug variable'
                 , "while avoiding:"
-                , Pretty.indent 4 $ Debug.debug usedVariables
+                , Pretty.indent 4 $ Debug.debug stale
                 ]
   where
     variable' = resort variable

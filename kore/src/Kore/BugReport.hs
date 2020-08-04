@@ -16,10 +16,15 @@ import Prelude.Kore
 
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
+import Control.Exception
+    ( AsyncException (UserInterrupt)
+    , fromException
+    )
 import Control.Monad.Catch
     ( ExitCase (..)
     , displayException
     , generalBracket
+    , handleAll
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Foldable as Foldable
@@ -56,9 +61,9 @@ parseBugReport =
     BugReport
         <$> optional
             ( strOption
-                ( metavar "REPORT FILE"
+                ( metavar "REPORT_FILE"
                 <> long "bug-report"
-                <> help "Whether to report a bug"
+                <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
                 )
             )
 
@@ -78,7 +83,8 @@ writeBugReportArchive base tar = do
 {- | Run the inner action with a temporary directory holding the bug report.
 
 The bug report will be saved as an archive if that was requested by the user, or
-if there is an error in the inner action.
+if there is an error in the inner action other than
+'UserInterrupt' or 'ExitSuccess'.
 
  -}
 withBugReport
@@ -86,24 +92,33 @@ withBugReport
     -> BugReport
     -> (FilePath -> IO ExitCode)
     -> IO ExitCode
-withBugReport exeName bugReport act = do
-    (exitCode, _) <-
-        generalBracket
-            acquireTempDirectory
-            releaseTempDirectory
-            act
-    pure exitCode
+withBugReport exeName bugReport act =
+    do
+        (exitCode, _) <-
+            generalBracket
+                acquireTempDirectory
+                releaseTempDirectory
+                act
+        pure exitCode
+    & handleAll handler
   where
+    handler _ = pure (ExitFailure 1)
     acquireTempDirectory = do
         tmp <- getCanonicalTemporaryDirectory
         createTempDirectory tmp (getExeName exeName)
     releaseTempDirectory tmpDir exitCase = do
         case exitCase of
             ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
-            ExitCaseException someException -> do
-                let message = displayException someException
-                writeFile (tmpDir </> "error" <.> "log") message
-                alwaysWriteBugReport tmpDir
+            ExitCaseException someException
+              | Just ExitSuccess == fromException someException
+                    {- User exits the repl after the proof was finished -} ->
+                    optionalWriteBugReport tmpDir
+              | Just UserInterrupt == fromException someException ->
+                    optionalWriteBugReport tmpDir
+              | otherwise -> do
+                    let message = displayException someException
+                    writeFile (tmpDir </> "error" <.> "log") message
+                    alwaysWriteBugReport tmpDir
             ExitCaseAbort -> alwaysWriteBugReport tmpDir
         removePathForcibly tmpDir
     alwaysWriteBugReport tmpDir =

@@ -17,9 +17,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT (..)
     )
-import Control.Monad.Trans.Class
-    ( lift
-    )
 import Numeric.Natural
     ( Natural
     )

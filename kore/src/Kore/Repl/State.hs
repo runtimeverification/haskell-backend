@@ -17,7 +17,7 @@ module Kore.Repl.State
     , getTargetNode, getInnerGraph, getExecutionGraph
     , smoothOutGraph
     , getInterestingBranchingNode
-    , getConfigAt, getRuleFor, getLabels, setLabels
+    , getProofStateAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
@@ -46,7 +46,6 @@ import Control.Monad.State.Strict
     , modify
     )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Data.Bifunctor as Bifunctor
 import Data.Bitraversable
     ( bisequence
     , bitraverse
@@ -67,9 +66,6 @@ import qualified Data.Graph.Inductive.Query.DFS as Graph
 import Data.List.Extra
     ( findIndex
     , groupSort
-    )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
     )
 import Data.Map.Strict
     ( Map
@@ -110,9 +106,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -127,10 +120,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Repl.Data
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
-    )
 import Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -140,6 +129,7 @@ import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
+    , extractUnproven
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
@@ -158,11 +148,7 @@ import Kore.Syntax.Variable
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
 emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
-  where
-    extractConfig :: RewriteRule VariableName -> CommonProofState
-    extractConfig (RewriteRule RulePattern { left, requires }) =
-        Goal $ Conditional left requires mempty
+    Strategy.emptyExecutionGraph . Goal
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
@@ -426,12 +412,12 @@ getTargetNode maybeNode = do
        then pure . Just . ReplNode $ node'
        else pure Nothing
 
--- | Get the configuration at selected node (or current node for 'Nothing').
-getConfigAt
+-- | Get the proof state at selected node (or current node for 'Nothing').
+getProofStateAt
     :: MonadState ReplState m
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonProofState))
-getConfigAt maybeNode = do
+getProofStateAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure Nothing
@@ -472,12 +458,14 @@ liftSimplifierWithLogger
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Log.KoreLogOptions { logType, timestampsSwitch, exeName } = koreLogOptions
+    let Log.KoreLogOptions
+            { logType, timestampsSwitch, exeName, startTime } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Log.koreLogFilters koreLogOptions
             $ Log.makeKoreLogger
                 exeName
+                startTime
                 timestampsSwitch
                 textLogger
     _ <-
@@ -529,12 +517,11 @@ runStepper'
     -> ReplNode
     -> t m (ExecutionGraph Axiom, StepResult)
 runStepper' claims axioms node = do
-    ReplState { claim } <- get
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
-        liftSimplifierWithLogger mvar $ stepper claim claims axioms gph node
+        liftSimplifierWithLogger mvar $ stepper claims axioms gph node
     pure . (,) gr
         $ case Graph.suc innerGraph (unReplNode node) of
             []       -> NoResult
@@ -576,18 +563,12 @@ getNodeState graph node =
         . Graph.context graph
         $ node
 
-nodeToPattern
+nodeToGoal
     :: InnerGraph axiom
     -> Graph.Node
-    -> Maybe (Pattern VariableName)
-nodeToPattern graph node =
-    proofState ProofStateTransformer
-        { goalTransformer = Just
-        , goalRemainderTransformer = Just
-        , goalRewrittenTransformer = Just
-        , goalStuckTransformer = Just
-        , provenValue = Nothing
-        }
+    -> Maybe ReachabilityRule
+nodeToGoal graph node =
+    extractUnproven
     . Graph.lab'
     . Graph.context graph
     $ node
@@ -697,18 +678,10 @@ generateInProgressClaims
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
-    let started = startedClaims graphs claims
+    let started = unprovenGoals graphs
         notStarted = notStartedClaims graphs claims
     return $ started <> notStarted
   where
-    startedClaims
-        :: Map.Map ClaimIndex (ExecutionGraph Axiom)
-        -> [ReachabilityRule]
-        -> [ReachabilityRule]
-    startedClaims graphs claims =
-        fmap (uncurry createClaim)
-        $ claimsWithPatterns graphs claims
-        >>= sequence
     notStartedClaims
         :: Map.Map ClaimIndex (ExecutionGraph Axiom)
         -> [ReachabilityRule]
@@ -728,21 +701,17 @@ generateInProgressClaims = do
                     )
                 )
 
-claimsWithPatterns
+unprovenGoals
     :: Map ClaimIndex (ExecutionGraph axiom)
-    -> [claim]
-    -> [(claim, [Pattern VariableName])]
-claimsWithPatterns graphs claims =
-    Bifunctor.bimap
-        ((claims !!) . unClaimIndex)
-        (findTerminalPatterns . Strategy.graph)
-    <$> Map.toList graphs
+    -> [ReachabilityRule]
+unprovenGoals graphs =
+    findUnprovenGoals =<< Map.elems graphs
 
-findTerminalPatterns
-    :: InnerGraph axiom
-    -> [Pattern VariableName]
-findTerminalPatterns graph =
-    mapMaybe (nodeToPattern graph)
+findUnprovenGoals
+    :: ExecutionGraph axiom
+    -> [ReachabilityRule]
+findUnprovenGoals (Strategy.graph -> graph) =
+    mapMaybe (nodeToGoal graph)
     . findLeafNodes
     $ graph
 

@@ -46,7 +46,6 @@ import Prelude.Kore
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( MaybeT (..)
-    , fromMaybe
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text
@@ -57,7 +56,6 @@ import qualified Data.Text as Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
@@ -103,9 +101,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( predicateSort
     )
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
-    )
 import Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
     )
@@ -113,9 +108,9 @@ import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
-    , InternalVariable
     , MonadSimplify
     , applicationAxiomSimplifier
+    , makeEvaluateTermCeil
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
@@ -491,7 +486,11 @@ unifyEqualsUnsolved
     -> unifier (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
-    orCondition <- Ceil.makeEvaluateTerm SideCondition.topTODO unified
+    orCondition <-
+        makeEvaluateTermCeil
+            SideCondition.topTODO
+            predicateSort
+            unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =

@@ -12,9 +12,6 @@ module Kore.Log.DebugEvaluateCondition
 
 import Prelude.Kore
 
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

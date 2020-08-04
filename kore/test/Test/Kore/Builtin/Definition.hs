@@ -240,6 +240,11 @@ powmodIntSymbol =
 log2IntSymbol :: Internal.Symbol
 log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2" & function
 
+edivIntSymbol :: Internal.Symbol
+edivIntSymbol =
+    binaryIntSymbol "edivInt"
+    & hook "INT.ediv" & smthook "div" & function
+
 emodIntSymbol :: Internal.Symbol
 emodIntSymbol =
     binaryIntSymbol "emodInt"
@@ -624,6 +629,11 @@ list2setSetSymbol :: Internal.Symbol
 list2setSetSymbol =
     builtinSymbol "list2setSet" setSort [listSort] & hook "SET.list2set"
 
+inclusionSetSymbol :: Internal.Symbol
+inclusionSetSymbol =
+    builtinSymbol "inclusionSet" boolSort [setSort, setSort]
+        & hook "SET.inclusion"
+
 intersectionSet
     :: TermLike VariableName
     -> TermLike VariableName
@@ -636,6 +646,13 @@ list2setSet
     -> TermLike VariableName
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
+
+inclusionSet
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+inclusionSet setLeft setRight =
+    mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 
 -- ** String
 
@@ -1368,6 +1385,7 @@ intModule =
             , hookedSymbolDecl absIntSymbol
             , hookedSymbolDecl tdivIntSymbol
             , hookedSymbolDecl tmodIntSymbol
+            , hookedSymbolDecl edivIntSymbol
             , hookedSymbolDecl emodIntSymbol
             , symbolDecl dummyIntSymbol
             , hookedSymbolDecl andIntSymbol
@@ -1592,6 +1610,7 @@ setModule =
             , hookedSymbolDecl sizeSetSymbol
             , hookedSymbolDecl intersectionSetSymbol
             , hookedSymbolDecl list2setSetSymbol
+            , hookedSymbolDecl inclusionSetSymbol
             ]
         }
 

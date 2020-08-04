@@ -29,6 +29,7 @@ module SMT
     , declareFun_
     , setInfo
     , NoSMT (..), runNoSMT
+    , SimpleSMT.SolverException (..)
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.Logger
@@ -48,7 +49,9 @@ module SMT
     , SimpleSMT.existsQ
     ) where
 
-import Prelude
+import Prelude.Kore hiding
+    ( assert
+    )
 
 import Control.Concurrent.MVar
 import Control.Exception
@@ -62,9 +65,6 @@ import Control.Monad.Catch
     )
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
-import Control.Monad.IO.Class
-    ( MonadIO
-    )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
     ( ReaderT (..)
@@ -83,10 +83,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.Profiler.Data
-    ( MonadProfiler (..)
-    , profileEvent
-    )
 import Log
     ( LogAction
     , LoggerT
@@ -98,6 +94,7 @@ import Logic
     ( LogicT
     , mapLogicT
     )
+import Prof
 import SMT.SimpleSMT
     ( Constructor (..)
     , ConstructorArgument (..)
@@ -225,6 +222,10 @@ newtype NoSMT a = NoSMT { getNoSMT :: LoggerT IO a }
 runNoSMT :: NoSMT a -> LoggerT IO a
 runNoSMT = getNoSMT
 
+instance MonadProf NoSMT where
+    traceEvent name = NoSMT (traceEvent name)
+    {-# INLINE traceEvent #-}
+
 instance MonadLog NoSMT where
     logEntry entry = NoSMT $ logEntry entry
     {-# INLINE logEntry #-}
@@ -243,11 +244,6 @@ instance MonadSMT NoSMT where
     ackCommand _ = return ()
     assert _ = return ()
     check = return Unknown
-
-instance MonadProfiler NoSMT where
-    profile a action = do
-        configuration <- profileConfiguration
-        profileEvent configuration a action
 
 -- * Implementation
 
@@ -272,6 +268,10 @@ newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
         , MonadThrow
         , MonadMask
         )
+
+instance MonadProf SMT where
+    traceEvent name = SMT (traceEvent name)
+    {-# INLINE traceEvent #-}
 
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
@@ -322,9 +322,11 @@ instance MonadSMT SMT where
     declareDatatypes datatypes =
         withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
 
-    assert fact = withSolver' $ \solver -> SimpleSMT.assert solver fact
+    assert fact =
+        traceProf ":solver:assert"
+        $ withSolver' $ \solver -> SimpleSMT.assert solver fact
 
-    check = withSolver' SimpleSMT.check
+    check = traceProf ":solver:check" $ withSolver' SimpleSMT.check
 
     ackCommand command =
         withSolver' $ \solver -> SimpleSMT.ackCommand solver command
@@ -335,13 +337,6 @@ instance MonadSMT SMT where
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
-
-instance MonadProfiler SMT
-  where
-    profile a action = do
-        configuration <- profileConfiguration
-        SMT (profileEvent configuration a (getSMT action))
-    {-# INLINE profile #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 

@@ -17,6 +17,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
+import Data.Kind
+    ( Type
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -37,7 +40,7 @@ syntactic category from the Semantics of K, Section 9.1.6
 'definitionAttributes' corresponds to the first non-terminal of @definition@,
 while the remaining three are grouped into 'definitionModules'.
 -}
-data Definition (sentence :: *) =
+data Definition (sentence :: Type) =
     Definition
         { definitionAttributes :: !Attributes
         , definitionModules    :: ![Module sentence]

@@ -9,9 +9,6 @@ import Test.Tasty.HUnit.Ext hiding
     ( assert
     )
 
-import Control.Exception
-    ( assert
-    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr

@@ -10,6 +10,7 @@ module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
     , Evaluated (..)
+    , Defined (..)
     , Builtin
     , extractAttributes
     , isSimplified
@@ -44,6 +45,11 @@ module Kore.Internal.TermLike
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort
+    -- * Reachability modalities and application
+    , Modality (..)
+    , weakExistsFinally
+    , weakAlwaysFinally
+    , applyModality
     -- * Pure Kore pattern constructors
     , mkAnd
     , mkApplyAlias
@@ -83,6 +89,7 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
+    , mkDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -137,6 +144,7 @@ module Kore.Internal.TermLike
     , pattern SetVar_
     , pattern StringLiteral_
     , pattern Evaluated_
+    , pattern Defined_
     , pattern Endianness_
     , pattern Signedness_
     , pattern Inj_
@@ -172,10 +180,13 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Variable
+    -- * For testing
+    , mkDefinedAtTop
     ) where
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Data.Align
     ( alignWith
     )
@@ -191,6 +202,9 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
@@ -268,9 +282,7 @@ import Kore.Unparser
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
-    ( FreshName
-    , FreshPartialOrd
-    , refreshElementVariable
+    ( refreshElementVariable
     , refreshSetVariable
     )
 import qualified Kore.Variables.Fresh as Fresh
@@ -439,7 +451,8 @@ simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 assertConstructorLikeKeys
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a
@@ -450,9 +463,10 @@ assertConstructorLikeKeys keys a
                 filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
-                [ "Map and Set may only contain constructor-like \
-                  \keys (resp. elements)."
-                , Pretty.indent 2 "Simplifiable keys:"
+                [ "Internal error: expected constructor-like patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isFullySimplified) keys =
@@ -460,9 +474,10 @@ assertConstructorLikeKeys keys a
                 filter (not . isFullySimplified) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
-                [ "Map and Set may only contain simplified \
-                  \keys."
-                , Pretty.indent 2 "Simplifiable keys:"
+                [ "Internal error: expected fully simplified patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Unsimplified patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
@@ -641,6 +656,7 @@ forceSortPredicate
     case pattern' of
         -- Recurse
         EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
+        DefinedF defined -> DefinedF (Right <$> defined)
         -- Predicates: Force sort and stop.
         BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
         TopF top' -> TopF top' { topSort = forcedSort }
@@ -1432,6 +1448,115 @@ mkEvaluated
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
+-- | 'mkDefined' will wrap the 'TermLike' in a 'Defined' node based on
+-- the available information about the term. When possible, it will recurse
+-- to distribute the 'Defined' wrapper.
+mkDefined
+    :: forall variable
+    .  HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+mkDefined = updateCallStack . worker
+  where
+    mkDefined1 term
+      | isDefinedPattern term = term
+      | otherwise = mkDefinedAtTop term
+
+    worker
+        :: TermLike variable
+        -> TermLike variable
+    worker term
+      | isDefinedPattern term = term
+      | otherwise =
+        let (_ :< termF) = Recursive.project term
+         in case termF of
+                AndF And { andFirst, andSecond } ->
+                    mkDefinedAtTop
+                        ( mkAnd
+                            (worker andFirst)
+                            (worker andSecond)
+                        )
+                ApplySymbolF
+                    Application
+                        { applicationSymbolOrAlias
+                        , applicationChildren
+                        } ->
+                    mkDefined1
+                    $ mkApplySymbol applicationSymbolOrAlias
+                    $ fmap worker applicationChildren
+                ApplyAliasF _ ->
+                    mkDefinedAtTop term
+                BottomF _ ->
+                    error
+                        "Internal error: cannot mark\
+                        \ a \\bottom pattern as defined."
+                CeilF _ -> term
+                DomainValueF _  -> term
+                BuiltinF (Domain.BuiltinBool _) -> term
+                BuiltinF (Domain.BuiltinInt _) -> term
+                BuiltinF (Domain.BuiltinString _) -> term
+                BuiltinF (Domain.BuiltinList internalList) ->
+                    -- mkDefinedAtTop is not needed because the list is always
+                    -- defined if its elements are all defined.
+                    mkBuiltinList $ mkDefined <$> internalList
+                BuiltinF (Domain.BuiltinMap internalMap) ->
+                    mkDefined1 . mkBuiltinMap
+                    $ mkDefinedInternalAc internalMap
+                BuiltinF (Domain.BuiltinSet internalSet) ->
+                    mkDefined1 . mkBuiltinSet
+                    $ mkDefinedInternalAc internalSet
+                EqualsF _ -> term
+                ExistsF _ -> mkDefinedAtTop term
+                FloorF _ -> term
+                ForallF Forall { forallVariable, forallChild } ->
+                    mkDefinedAtTop
+                        ( mkForall
+                            forallVariable
+                            (worker forallChild)
+                        )
+                IffF _ -> mkDefinedAtTop term
+                ImpliesF _ -> mkDefinedAtTop term
+                InF _ -> term
+                MuF _ -> mkDefinedAtTop term
+                NextF _ -> mkDefinedAtTop term
+                NotF _ -> mkDefinedAtTop term
+                NuF _ -> mkDefinedAtTop term
+                OrF _ -> mkDefinedAtTop term
+                RewritesF _ -> mkDefinedAtTop term
+                TopF _ -> term
+                VariableF (Const someVariable) ->
+                    if isElementVariable someVariable
+                        then term
+                        else mkDefinedAtTop term
+                StringLiteralF _ -> term
+                EvaluatedF (Evaluated child) -> worker child
+                DefinedF _ -> term
+                EndiannessF _ -> term
+                SignednessF _ -> term
+                InjF _ -> mkDefinedAtTop term
+                InhabitantF _ -> mkDefinedAtTop term
+                InternalBytesF _ -> term
+
+    mkDefinedInternalAc internalAc =
+        Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
+      where
+        mkDefinedNormalized =
+            Domain.unwrapAc
+            >>> Lens.over (field @"concreteElements") mkDefinedConcrete
+            >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
+            >>> Lens.over (field @"opaque") mkDefinedOpaque
+            >>> Domain.wrapAc
+        mkDefinedConcrete =
+            (fmap . fmap) mkDefined
+            . Map.mapKeys mkDefined
+        mkDefinedAbstract = (fmap . fmap) mkDefined
+        mkDefinedOpaque = map mkDefined
+
+-- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
+mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
+mkDefinedAtTop = synthesize . DefinedF . Defined
+
 {- | Construct an 'Endianness' pattern.
  -}
 mkEndianness
@@ -1703,6 +1828,8 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
+pattern Defined_ :: TermLike variable -> TermLike variable
+
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1851,6 +1978,9 @@ pattern StringLiteral_ str <-
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))
 
+pattern Defined_ child <-
+    (Recursive.project -> _ :< DefinedF (Defined child))
+
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-
     (Recursive.project -> _ :< EndiannessF (Const endianness))
@@ -1900,3 +2030,60 @@ refreshSetBinder
     -> Binder (SetVariable variable) (TermLike variable)
     -> Binder (SetVariable variable) (TermLike variable)
 refreshSetBinder = refreshBinder refreshSetVariable
+
+data Modality = WEF | WAF
+
+-- | Weak exists finally modality symbol.
+weakExistsFinally :: Text
+weakExistsFinally = "weakExistsFinally"
+
+-- | Weak always finally modality symbol.
+weakAlwaysFinally :: Text
+weakAlwaysFinally = "weakAlwaysFinally"
+
+-- | 'Alias' construct for weak exist finally.
+wEF :: Sort -> Alias (TermLike VariableName)
+wEF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = [sort]
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+-- | 'Alias' construct for weak always finally.
+wAF :: Sort -> Alias (TermLike VariableName)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = [sort]
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+-- | Apply one of the reachability modality aliases
+-- to a term.
+applyModality
+    :: Modality
+    -> TermLike VariableName
+    -> TermLike VariableName
+applyModality modality term =
+    case modality of
+        WEF ->
+            mkApplyAlias (wEF sort) [term]
+        WAF ->
+            mkApplyAlias (wAF sort) [term]
+  where
+    sort = termLikeSort term

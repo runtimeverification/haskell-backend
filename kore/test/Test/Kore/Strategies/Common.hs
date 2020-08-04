@@ -17,14 +17,13 @@ import Numeric.Natural
     ( Natural
     )
 
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.OrPattern
+    ( OrPattern
     )
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , rulePattern
+    ( rulePattern
     )
 import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy
@@ -59,7 +58,7 @@ runVerificationToPattern
     -> [Rule ReachabilityRule]
     -> [ReachabilityRule]
     -> [ReachabilityRule]
-    -> IO (Either (Pattern VariableName) ())
+    -> IO (Either (OrPattern VariableName) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
         stuck <- runVerification
@@ -70,7 +69,8 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
-    toPattern = Bifunctor.first stuckPattern
+    toPattern =
+        Bifunctor.first stuckPatterns
 
 runVerification
     :: Limit Natural

@@ -25,8 +25,7 @@ import Control.Monad
     )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
-    ( ReaderT
-    , runReaderT
+    ( ReaderT (..)
     )
 import Data.Profunctor
     ( Profunctor (..)

@@ -10,7 +10,6 @@ Expose concrete execution as a library
 -}
 module Kore.Exec
     ( exec
-    , execGetExitCode
     , extractRules
     , mergeAllRules
     , mergeRulesConsecutiveBatches
@@ -33,8 +32,7 @@ import Control.Monad
     ( (>=>)
     )
 import Control.Monad.Catch
-    ( MonadCatch
-    , MonadThrow
+    ( MonadMask
     )
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -46,9 +44,7 @@ import Data.Foldable
     ( find
     , traverse_
     )
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -103,16 +99,11 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
+import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
-import Kore.Profiler.Data
-    ( MonadProfiler
-    )
-import qualified Kore.Profiler.Profile as Profiler
-    ( initialization
-    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -135,7 +126,6 @@ import Kore.Step.RulePattern
     ( ImplicationRule (..)
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
     , ToRulePattern (..)
     , getRewriteRule
     , lhsEqualsRhs
@@ -148,7 +138,8 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
-    ( evalSimplifier
+    ( MonadProf
+    , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -199,9 +190,9 @@ newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 exec
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -210,12 +201,12 @@ exec
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
-    -> smt (TermLike VariableName)
+    -> smt (ExitCode, TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        finalConfig <-
+        (execDepth, finalConfig) <-
             getFinalConfigOf $ do
                 initialConfig <-
                     Pattern.simplify SideCondition.top
@@ -224,26 +215,36 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 let
                     updateQueue = \as ->
                         Strategy.unfoldDepthFirst as
-                        >=> lift . Strategy.applyBreadthLimit breadthLimit
+                        >=> lift
+                            . Strategy.applyBreadthLimit
+                                breadthLimit
+                                dropStrategy
                     transit instr config =
-                        Strategy.transitionRule transitionRule instr config
+                        Strategy.transitionRule
+                            (transitionRule & trackExecDepth)
+                            instr
+                            config
                         & runTransitionT
                         & fmap (map fst)
                         & lift
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    (strategy rewriteRules, initialConfig)
+                    (strategy rewriteRules, (ExecDepth 0, initialConfig))
+        infoExecDepth execDepth
+        exitCode <- getExitCode verifiedModule finalConfig
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig
-        return finalTerm
+        return (exitCode, finalTerm)
   where
+    dropStrategy = snd
     -- Get the first final configuration of an execution graph.
     getFinalConfigOf = takeFirstResult >=> orElseBottom
       where
         takeResult = snd
         takeFirstResult act =
             Logic.observeT (takeResult <$> lift act) & runMaybeT
-        orElseBottom = pure . fromMaybe (Pattern.bottomOf initialSort)
+        orElseBottom =
+            pure . fromMaybe (ExecDepth 0, Pattern.bottomOf initialSort)
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -255,42 +256,58 @@ exec breadthLimit verifiedModule strategy initialTerm =
     metadataTools = MetadataTools.build verifiedModule
     initialSort = termLikeSort initialTerm
 
+{- | Modify a 'TransitionRule' to track the depth of the execution graph.
+ -}
+trackExecDepth
+    :: TransitionRule monad rule state
+    -> TransitionRule monad rule (ExecDepth, state)
+trackExecDepth transit prim (execDepth, execState) = do
+    execState' <- transit prim execState
+    let execDepth' = (if didRewrite execState' then succ else id) execDepth
+    pure (execDepth', execState')
+  where
+    didRewrite _ = isRewrite prim
+
+    isRewrite Simplify = False
+    isRewrite (Rewrite _) = True
+
 -- | Project the value of the exit cell, if it is present.
-execGetExitCode
-    ::  ( MonadIO smt
-        , MonadLog smt
-        , MonadProfiler smt
-        , MonadSMT smt
-        , MonadThrow smt
-        )
+getExitCode
+    :: (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
-    -> TermLike VariableName
-    -- ^ The final pattern (top cell) to extract the exit code
-    -> smt ExitCode
-execGetExitCode indexedModule strategy' finalTerm =
-    case resolveInternalSymbol indexedModule $ noLocationId "LblgetExitCode" of
-        Nothing -> return ExitSuccess
-        Just mkExitCodeSymbol -> do
-            exitCodePattern <-
-                -- TODO (thomas.tuegel): Run in original execution context.
-                exec (Limit 1) indexedModule strategy'
-                $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
-            case exitCodePattern of
-                Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
-                  | exit == 0 -> return ExitSuccess
-                  | otherwise -> return $ ExitFailure $ fromInteger exit
-                _ -> return $ ExitFailure 111
+    -> Pattern VariableName
+    -- ^ The final configuration(s) of execution
+    -> simplifier ExitCode
+getExitCode indexedModule finalConfig =
+    takeExitCode $ \mkExitCodeSymbol -> do
+        let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
+        exitCodePattern <-
+            Pattern.simplifyTopConfiguration (mkGetExitCode <$> finalConfig)
+            >>= Logic.scatter
+        case Pattern.term exitCodePattern of
+            Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+              | exit == 0 -> return ExitSuccess
+              | otherwise -> return $ ExitFailure $ fromInteger exit
+            _ -> return $ ExitFailure 111
+  where
+    resolve = resolveInternalSymbol indexedModule . noLocationId
+    takeExitCode act =
+        case resolve "LblgetExitCode" of
+            Nothing -> pure ExitSuccess
+            Just mkGetExitCodeSymbol -> do
+                exitCodes <- Logic.observeAllT (act mkGetExitCodeSymbol)
+                case List.nub exitCodes of
+                    [exit] -> pure exit
+                    _      -> pure $ ExitFailure 111
 
 -- | Symbolic search
 search
     ::  ( MonadIO smt
         , MonadLog smt
-        , MonadProfiler smt
         , MonadSMT smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -339,11 +356,11 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  forall smt
-      . ( Log.WithLog Log.LogMessage smt
-        , MonadCatch smt
-        , MonadProfiler smt
+      . ( MonadLog smt
+        , MonadMask smt
         , MonadIO smt
         , MonadSMT smt
+        , MonadProf smt
         )
     => Strategy.GraphSearchOrder
     -> Limit Natural
@@ -439,11 +456,11 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
-        , MonadThrow smt
+        , MonadMask smt
+        , MonadProf smt
         )
     => Limit Natural
     -> Limit Natural
@@ -471,10 +488,11 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
 
 -- | Rule merging
 mergeAllRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -485,10 +503,11 @@ mergeAllRules = mergeRules Rules.mergeRules
 
 -- | Rule merging
 mergeRulesConsecutiveBatches
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     => Int
     -- ^ Batch size
@@ -502,10 +521,11 @@ mergeRulesConsecutiveBatches batchSize =
 
 -- | Rule merging in batches
 mergeRules
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
+    ::  ( MonadLog smt
         , MonadSMT smt
         , MonadIO smt
+        , MonadProf smt
+        , MonadMask smt
         )
     =>  (  NonEmpty (RewriteRule VariableName)
         -> Simplifier.SimplifierT smt [RewriteRule VariableName]
@@ -641,8 +661,7 @@ initialize verifiedModule = do
     traverse_
         errorRewriteLoop
         $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
-    rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
-        mapM simplifyToList rewriteRules
+    rewriteAxioms <- mapM simplifyToList rewriteRules
     pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
 
 data InitializedProver =
@@ -693,8 +712,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- Profiler.initialization "simplifyRuleOnSecond"
-        $ traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }

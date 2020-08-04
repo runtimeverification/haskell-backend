@@ -9,13 +9,7 @@ module Kore.Attribute.Sort.Element
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Default
-import GHC.Generics
-    ( Generic
-    )
 
 import Kore.Attribute.Parser
 

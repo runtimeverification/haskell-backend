@@ -15,15 +15,11 @@ import Control.Exception
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import Data.List.NonEmpty
-    ( NonEmpty ((:|))
-    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
 
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top

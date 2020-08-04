@@ -104,7 +104,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                     )
                                 )
                             ),
-                            /* Fl Fn D Sfa */ VarDotVar2:SortK{}
+                            /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
                         )
                     ),
                     /* Fl Fn D Spa */
@@ -139,7 +139,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                 ),
                 /* Fl Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa */ VarDotVar3:SortInt{}
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortInt{}
                 )
             )
         ),
@@ -150,7 +150,9 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                 /* Fn Spa */
                 Lbl'-LT-'T'-GT-'{}(
                     /* Fl Fn D Spa */
-                    Lbl'-LT-'k'-GT-'{}(/* Fl Fn D Sfa */ VarDotVar2:SortK{}),
+                    Lbl'-LT-'k'-GT-'{}(
+                        /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
+                    ),
                     /* Fn Spa */
                     Lbl'-LT-'state'-GT-'{}(
                         /* Fn Spa */
@@ -200,7 +202,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                 ),
                 /* Fl Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa */ VarDotVar3:SortInt{}
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortInt{}
                 )
             )
         )

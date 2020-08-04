@@ -35,8 +35,7 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import Kore.Variables.Fresh
-    ( FreshName (..)
-    , FreshPartialOrd (..)
+    ( FreshPartialOrd (..)
     )
 
 {- | Distinguish variables by their source.

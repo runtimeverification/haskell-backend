@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Exists
     ( simplify
     , makeEvaluate
+    , simplifyEvaluated
     ) where
 
 import Prelude.Kore
@@ -59,7 +60,6 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
     , Exists (Exists)
-    , InternalVariable
     , SomeVariableName
     , Sort
     , TermLike
