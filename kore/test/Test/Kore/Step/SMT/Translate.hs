@@ -1,5 +1,5 @@
 module Test.Kore.Step.SMT.Translate
-    ( test_goTranslatePredicate
+    ( test_translatePredicateWith
     ) where
 
 import Prelude.Kore hiding
@@ -30,8 +30,8 @@ import Kore.Step.SMT.Translate
 import SMT
 import qualified SMT.SimpleSMT
 
-test_goTranslatePredicate :: [TestTree]
-test_goTranslatePredicate =
+test_translatePredicateWith :: [TestTree]
+test_translatePredicateWith =
     [ testCase "true" $
         translating true `yields` smtTrue
     , testCase "n = n" $
