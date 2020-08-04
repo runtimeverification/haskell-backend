@@ -688,10 +688,6 @@ initializeProver
     -> Maybe (VerifiedModule StepperAttributes)
     -> simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
-    traceM $
-        "\nLoc"
-        <> (show . Attribute.sourceLocation . fst . head . indexedModuleClaims)
-            specModule
     initialized <- initialize definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized

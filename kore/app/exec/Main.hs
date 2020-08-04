@@ -660,20 +660,16 @@ koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
     let KoreExecOptions { definitionFileName } = execOptions
         KoreProveOptions { specFileName } = proveOptions
+    traceM $ "Spec File Name: " <> specFileName
     definition <- loadDefinitions [definitionFileName, specFileName]
+    traceM $ show $
+        fmap (fmap (Attribute.Axiom.sourceLocation . fst). indexedModuleClaims)
+        . fst
+        $ definition
     let KoreExecOptions { mainModuleName } = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
-    traceM $
-        "\nLoc koreProve: "
-        <>  ( show
-            . Attribute.Axiom.sourceLocation
-            . fst
-            . head
-            . indexedModuleClaims
-            )
-            specModule
     let KoreProveOptions { saveProofs } = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     proveResult <- execute execOptions mainModule $ do

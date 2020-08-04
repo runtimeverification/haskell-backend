@@ -6,6 +6,6 @@ endmodule
 module A-TO-C-SPEC
   imports VERIFICATION
 
-  rule a => c
+  rule a #And b => c
 
 endmodule
