@@ -431,21 +431,23 @@ test_difference =
 
 test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
-    [ testCaseWithSMT
-        "[X, 0, 1] -Set [X, 0] === [1] \
-            \\\and \\ceil [X, 0, 1] \\and \\ceil [X, 0]"
-        (do
+    [ testCase
+        "[X, 0, 1] -Set [X, 0]"
+        $ do
             let args =
-                    [ concatSets [xSingleton, zeroSingleton, oneSingleton]
-                    , concatSets [xSingleton, zeroSingleton]
+                    [ builtinSet_ [x, zero, one]
+                    , builtinSet_ [x, zero]
                     ]
-                patDifference = mkApplySymbol differenceSetSymbol args
-            expect <-
-                mkAnd oneSingleton (foldr1 mkAnd (mkCeil_ <$> args))
-                & evaluate
-            actual <- evaluate patDifference
-            assertEqual "" expect actual
-        )
+                expect =
+                    makeMultipleAndPredicate
+                        (makeCeilPredicate setSort <$> args)
+                    & Condition.fromPredicate
+                    & Pattern.withCondition oneSingleton
+            actual <-
+                Set.evalDifference setSort args
+                & runMaybeT
+                & runSimplifierNoSMT testEnv
+            assertEqual "" (Just expect) actual
     , testCase "[X, 1] -Set [X, Y]" $ do
         let args =
                 [ builtinSet_ [x, one]
@@ -460,19 +462,20 @@ test_difference_symbolic =
             & runMaybeT
             & runSimplifierNoSMT testEnv
         assertEqual "" (Just expect) actual
-    , testCaseWithSMT
-        "[f(X), 1] -Set [f(X)] === [1] \\and \\ceil [f(X), 1]"
-        (do
-            let args =
-                    [ fxSingleton `concatSet` oneSingleton
-                    , fxSingleton
-                    ]
-                patLeftDifference = mkApplySymbol differenceSetSymbol args
-                patRight = mkAnd oneSingleton (foldr1 mkAnd (mkCeil_ <$> args))
-            expect <- evaluate patRight
-            actual <- evaluate patLeftDifference
-            assertEqual "" expect actual
-        )
+    , testCase "[f(X), 1] -Set [f(X)]" $ do
+        let args =
+                [ builtinSet_ [fx, one]
+                , builtinSet_ [fx]
+                ]
+            expect =
+                makeCeilPredicate setSort (head args)
+                & Condition.fromPredicate
+                & Pattern.withCondition oneSingleton
+        actual <-
+            Set.evalDifference setSort args
+            & runMaybeT
+            & runSimplifierNoSMT testEnv
+        assertEqual "" (Just expect) actual
     ]
   where
     x = mkElemVar ("x" `ofSort` intSort)
@@ -480,12 +483,8 @@ test_difference_symbolic =
     zero = Int.asInternal 0
     one = Int.asInternal 1
     fx = addInt x one
-    xSingleton = builtinSet_ [x]
     ySingleton = builtinSet_ [y]
-    zeroSingleton = builtinSet_ [zero]
     oneSingleton = builtinSet_ [one]
-    fxSingleton = builtinSet_ [fx]
-    concatSets = foldr1 concatSet
 
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
     idName `ofSort` sort = mkElementVariable (testId idName) sort

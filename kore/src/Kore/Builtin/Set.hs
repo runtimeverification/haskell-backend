@@ -40,6 +40,7 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
+import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
     ( toList
     )
@@ -81,6 +82,7 @@ import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
     )
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
@@ -341,27 +343,79 @@ evalDifference resultSort args@[_set1, _set2] = do
             _set1 <- expectBuiltinSet ctx _set1
             _set2 <- expectBuiltinSet ctx _set2
             let symbolicKeys2 = Domain.getSymbolicKeysOfAc _set2
-                set1withoutSymbolicKeys2 =
+                commonSymbolicKeys =
+                    filter (`Domain.isSymbolicKeyOfAc` _set1) symbolicKeys2
+                set1withoutCommonSymbolicKeys =
                     foldr
                         Domain.removeSymbolicKeyOfAc
                         (Domain.getNormalizedSet _set1)
-                        symbolicKeys2
+                        commonSymbolicKeys
                 concreteKeys2 = Domain.getConcreteKeysOfAc _set2
-                difference =
+                commonConcreteKeys =
+                    filter (`Domain.isConcreteKeyOfAc` _set1) concreteKeys2
+                set1WithoutCommonKeys =
                     foldr
                         Domain.removeConcreteKeyOfAc
-                        set1withoutSymbolicKeys2
-                        concreteKeys2
+                        set1withoutCommonSymbolicKeys
+                        commonConcreteKeys
+                set2WithoutCommonSymbolicKeys =
+                    foldr
+                        Domain.removeSymbolicKeyOfAc
+                        (Domain.getNormalizedSet _set2)
+                        commonSymbolicKeys
+                set2WithoutCommonKeys =
+                    foldr
+                        Domain.removeConcreteKeyOfAc
+                        set2WithoutCommonSymbolicKeys
+                        commonConcreteKeys
                 definedArgs =
                     filter (not . TermLike.isDefinedPattern) args
                     & map (makeCeilPredicate resultSort)
                     & makeMultipleAndPredicate
                     & Conditional.fromPredicate
+            patSet1 <-
+                Ac.returnAc
+                    resultSort
+                    (Domain.NormalizedSet set1WithoutCommonKeys)
+            patSet2 <-
+                Ac.returnAc
+                    resultSort
+                    (Domain.NormalizedSet set2WithoutCommonKeys)
+            let patDiff
+                  | set1WithoutCommonKeys == Domain.emptyNormalizedAc
+                    = patSet1
+                  | set2WithoutCommonKeys == Domain.emptyNormalizedAc
+                    = patSet1
+                  | otherwise = differenceSet <$> patSet1 <*> patSet2
             flip Pattern.andCondition definedArgs
-                <$> Ac.returnAc resultSort (Domain.NormalizedSet difference)
+                <$> return patDiff
     rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
+    binarySymbol :: Text -> Sort -> Internal.Symbol.Symbol
+    binarySymbol name symbolSort =
+        builtinSymbol name symbolSort [symbolSort, symbolSort]
+    builtinSymbol :: Text -> Sort -> [Sort] -> Internal.Symbol.Symbol
+    builtinSymbol name symbolSort operandSorts =
+        Internal.Symbol.Symbol
+            { symbolConstructor = TermLike.Id name TermLike.AstLocationTest
+            , symbolParams = []
+            , symbolAttributes = Default.def
+            , symbolSorts =
+                Internal.Symbol.applicationSorts operandSorts symbolSort
+            }
+        & Internal.Symbol.function
+    differenceSetSymbol :: Internal.Symbol.Symbol
+    differenceSetSymbol =
+        binarySymbol "differenceSet" resultSort
+        & Internal.Symbol.hook "SET.difference"
+    differenceSet
+        :: InternalVariable variable
+        => TermLike variable
+        -> TermLike variable
+        -> TermLike variable
+    differenceSet set1 set2 =
+        TermLike.mkApplySymbol differenceSetSymbol [set1, set2]
 evalDifference _ _ = Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
