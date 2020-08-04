@@ -41,6 +41,8 @@ let
 
   shell = import ./shell.nix { inherit default; };
 
+  version = project.kore.components.exes.kore-exec.version;
+
   default =
     {
       inherit pkgs project;
@@ -48,6 +50,10 @@ let
         project.roots
         (pkgs.haskell-nix.withInputs shell)
       ];
+      kore = pkgs.symlinkJoin {
+        name = "kore-${version}";
+        paths = pkgs.lib.attrValues project.kore.components.exes;
+      };
     };
 
 in default

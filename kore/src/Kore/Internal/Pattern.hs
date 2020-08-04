@@ -10,6 +10,7 @@ module Kore.Internal.Pattern
     , patternSort
     , fromCondition
     , fromCondition_
+    , fromTermAndPredicate
     , fromPredicateSorted
     , bottom
     , bottomOf
@@ -95,6 +96,18 @@ program configuration for Kore execution.
 
  -}
 type Pattern variable = Conditional variable (TermLike variable)
+
+fromTermAndPredicate
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate variable
+    -> Pattern variable
+fromTermAndPredicate term predicate =
+    Conditional
+        { term
+        , predicate
+        , substitution = mempty
+        }
 
 fromCondition_
     :: InternalVariable variable

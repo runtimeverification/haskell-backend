@@ -11,10 +11,18 @@ module Pretty
     , renderString
     , renderIO
     , hPutDoc, putDoc
+    , prettyException
     ) where
 
 import Prelude.Kore
 
+import Control.Exception
+    ( Exception
+    , displayException
+    )
+import Data.String
+    ( fromString
+    )
 import Data.Text
     ( Text
     )
@@ -52,3 +60,8 @@ flattenSimpleDocStream = worker
 
 renderText :: SimpleDocStream ann -> Text
 renderText = renderStrict
+
+{- | Display an 'Exception' nicely for the user.
+ -}
+prettyException :: Exception exn => exn -> Doc ann
+prettyException = vsep . map fromString . lines . displayException
