@@ -186,6 +186,16 @@ orElse first second = do
     if null results then second else scatter results
 
 {- | Logical conditional: if-then-else
+
+If the conditional returns /any/ values, send /all/ such values down the "then"
+branch; otherwise, proceed down the "else" branch. In pseudo-Haskell:
+
+@
+ifte cond thenBranch elseBranch
+  | cond /= empty = cond >>= thenBranch
+  | otherwise     = elseBranch
+@
+
  -}
 ifte
     :: Monad m
