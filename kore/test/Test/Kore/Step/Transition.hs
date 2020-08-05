@@ -20,4 +20,12 @@ test_ifte =
                     (\_ -> return True)
                     (return False)
         on (assertEqual "") runTransition expect actual
+    , testCase "chooses the \"then\" branch" $ do
+        let expect = return True
+            actual =
+                ifte
+                    (return 1 :: Transition Integer Integer)
+                    (\_ -> return True)
+                    (return False)
+        on (assertEqual "") runTransition expect actual
     ]
