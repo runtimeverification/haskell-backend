@@ -30,6 +30,14 @@ test_ifte =
                         (\() -> return 0)
                         (return 1 <|> return 2)
             check expect actual
+        , testCase "forgets accumulator from conditional" $ do
+            let expect = return False
+                actual =
+                    ifte
+                        (addRule 0 >> empty)
+                        (\() -> return True)
+                        (return False)
+            check expect actual
         ]
     , testGroup "\"then\" branch"
         [ testCase "returns value" $ do
