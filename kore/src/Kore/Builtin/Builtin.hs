@@ -271,22 +271,11 @@ type Function
 
 functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
-    applicationAxiomSimplifier evaluator
-  where
-    evaluator
-        :: InternalVariable variable
-        => MonadSimplify simplifier
-        => CofreeF
-            (Application Symbol)
-            (Attribute.Pattern variable)
-            (TermLike variable)
-        -> simplifier (AttemptedAxiom variable)
-    evaluator (valid :< app) = do
-        let args = map TermLike.removeEvaluated applicationChildren
-        getAttemptedAxiom (impl resultSort args >>= appliedFunction)
-      where
-        Application { applicationChildren } = app
-        Attribute.Pattern { Attribute.patternSort = resultSort } = valid
+    applicationEvaluator $ \app -> do
+        let Application { applicationSymbolOrAlias = symbol } = app
+            Application { applicationChildren = args } = app
+            resultSort = symbolSorts symbol & applicationSortsResult
+        impl resultSort args
 
 applicationEvaluator
     ::  ( forall variable simplifier
