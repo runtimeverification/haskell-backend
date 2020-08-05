@@ -80,6 +80,7 @@ import System.IO
     )
 
 import qualified Data.Limit as Limit
+import qualified Data.Map.Strict as Map
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -660,11 +661,10 @@ koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
     let KoreExecOptions { definitionFileName } = execOptions
         KoreProveOptions { specFileName } = proveOptions
-    traceM $ "Spec File Name: " <> specFileName
     definition <- loadDefinitions [definitionFileName, specFileName]
     traceM $ show $
         fmap (fmap (Attribute.Axiom.sourceLocation . fst). indexedModuleClaims)
-        . fst
+        . Map.elems . fst
         $ definition
     let KoreExecOptions { mainModuleName } = execOptions
     mainModule <- loadModule mainModuleName definition
