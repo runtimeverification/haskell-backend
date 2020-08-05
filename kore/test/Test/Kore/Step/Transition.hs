@@ -21,6 +21,11 @@ test_ifte =
             let thenBranch () = return True
                 elseBranch = return False <|> return False
             checkElse empty thenBranch elseBranch
+        , testCase "is empty when branch is empty" $ do
+            let thenBranch () = return True
+                elseBranch = empty
+                condition = empty
+            checkElse condition thenBranch elseBranch
         , testCase "forgets accumulator from conditional" $ do
             let thenBranch () = return True
                 elseBranch = return False
@@ -39,6 +44,11 @@ test_ifte =
             checkThen condition thenBranch elseBranch
         , testCase "returns multiple values" $ do
             let thenBranch () = return True <|> return True
+                elseBranch = return False
+                condition = return ()
+            checkThen condition thenBranch elseBranch
+        , testCase "is empty when branch is empty" $ do
+            let thenBranch () = empty
                 elseBranch = return False
                 condition = return ()
             checkThen condition thenBranch elseBranch
