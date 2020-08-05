@@ -80,14 +80,12 @@ import System.IO
     )
 
 import qualified Data.Limit as Limit
-import qualified Data.Map.Strict as Map
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , indexedModuleRawSentences
-    , IndexedModule (..)
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
@@ -100,7 +98,6 @@ import Kore.Internal.Pattern
 import Kore.Internal.Predicate
     ( makePredicate
     )
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Internal.TermLike
     ( pattern And_
     , TermLike
