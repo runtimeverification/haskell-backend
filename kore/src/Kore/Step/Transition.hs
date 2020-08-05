@@ -10,7 +10,9 @@ License     : NCSA
 
 module Kore.Step.Transition
     ( TransitionT (..)
+    , Transition
     , runTransitionT
+    , runTransition
     , tryTransitionT
     , mapTransitionT
     , scatter
@@ -35,6 +37,10 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Accum
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
+import Data.Functor.Identity
+    ( Identity
+    , runIdentity
+    )
 import Data.Sequence
     ( Seq
     )
@@ -78,6 +84,8 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
+type Transition r = TransitionT r Identity
+
 instance MonadLog m => MonadLog (TransitionT rule m) where
     logWhile entry = mapTransitionT $ logWhile entry
 
@@ -119,6 +127,9 @@ instance MonadCatch m => MonadCatch (TransitionT rule m) where
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = Logic.observeAllT (runAccumT edge mempty)
+
+runTransition :: Transition rule a -> [(a, Seq rule)]
+runTransition = runIdentity . runTransitionT
 
 tryTransitionT
     :: Monad m
