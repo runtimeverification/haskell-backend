@@ -432,7 +432,7 @@ test_difference =
 test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
     [ testCase
-        "[X, 0, 1] -Set [X, 0]"
+        "[X, 0, 1] -Set [X, 0] = [1]"
         $ do
             let args =
                     [ builtinSet_ [x, zero, one]
@@ -448,7 +448,7 @@ test_difference_symbolic =
                 & runMaybeT
                 & runSimplifierNoSMT testEnv
             assertEqual "" (Just expect) actual
-    , testCase "[X, 1] -Set [X, Y]" $ do
+    , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
         let args =
                 [ builtinSet_ [x, one]
                 , builtinSet_ [x, y]
@@ -462,7 +462,7 @@ test_difference_symbolic =
             & runMaybeT
             & runSimplifierNoSMT testEnv
         assertEqual "" (Just expect) actual
-    , testCase "[f(X), 1] -Set [f(X)]" $ do
+    , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
         let args =
                 [ builtinSet_ [fx, one]
                 , builtinSet_ [fx]
