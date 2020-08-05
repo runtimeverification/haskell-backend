@@ -20,6 +20,7 @@ module Kore.Step.Transition
     , addRules
     , mapRules
     , orElse
+    , ifte
     -- * Re-exports
     , Seq
     ) where
@@ -183,3 +184,12 @@ orElse
 orElse first second = do
     results <- tryTransitionT first
     if null results then second else scatter results
+
+{- | Logical conditional: if-then-else
+ -}
+ifte
+    :: TransitionT rule m a
+    -> (a -> TransitionT rule m b)
+    -> TransitionT rule m b
+    -> TransitionT rule m b
+ifte _ _ e = e
