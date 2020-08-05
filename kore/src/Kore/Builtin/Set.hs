@@ -40,7 +40,6 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
     ( toList
     )
@@ -73,6 +72,9 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
@@ -82,7 +84,6 @@ import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
     )
-import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern Builtin_
@@ -328,8 +329,18 @@ evalConcat resultSort [set1, set2] =
         (Ac.toNormalized set2)
 evalConcat _ _ = Builtin.wrongArity Set.concatKey
 
-evalDifference :: Builtin.Function
-evalDifference resultSort args@[_set1, _set2] = do
+evalDifference
+        :: forall variable simplifier
+        .  InternalVariable variable
+        => MonadSimplify simplifier
+        => TermLike.Application TermLike.Symbol (TermLike variable)
+        -> MaybeT simplifier (Pattern variable)
+evalDifference
+    ( TermLike.Application
+        symbol@TermLike.Symbol { symbolSorts = ApplicationSorts _ resultSort }
+        args@[_set1, _set2]
+    )
+  = do
     let rightIdentity = do
             _set2 <- expectConcreteBuiltinSet ctx _set2
             if Map.null _set2
@@ -392,31 +403,9 @@ evalDifference resultSort args@[_set1, _set2] = do
     rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
-    binarySymbol :: Text -> Sort -> Internal.Symbol.Symbol
-    binarySymbol name symbolSort =
-        builtinSymbol name symbolSort [symbolSort, symbolSort]
-    builtinSymbol :: Text -> Sort -> [Sort] -> Internal.Symbol.Symbol
-    builtinSymbol name symbolSort operandSorts =
-        Internal.Symbol.Symbol
-            { symbolConstructor = TermLike.Id name TermLike.AstLocationTest
-            , symbolParams = []
-            , symbolAttributes = Default.def
-            , symbolSorts =
-                Internal.Symbol.applicationSorts operandSorts symbolSort
-            }
-        & Internal.Symbol.function
-    differenceSetSymbol :: Internal.Symbol.Symbol
-    differenceSetSymbol =
-        binarySymbol "differenceSet" resultSort
-        & Internal.Symbol.hook "SET.difference"
-    differenceSet
-        :: InternalVariable variable
-        => TermLike variable
-        -> TermLike variable
-        -> TermLike variable
-    differenceSet set1 set2 =
-        TermLike.mkApplySymbol differenceSetSymbol [set1, set2]
-evalDifference _ _ = Builtin.wrongArity Set.differenceKey
+    differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
+evalDifference _ =
+    Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
 evalToList resultSort [_set] = do
@@ -477,7 +466,7 @@ builtinFunctions =
         , (Set.elementKey, Builtin.functionEvaluator evalElement)
         , (Set.unitKey, Builtin.functionEvaluator evalUnit)
         , (Set.inKey, Builtin.functionEvaluator evalIn)
-        , (Set.differenceKey, Builtin.functionEvaluator evalDifference)
+        , (Set.differenceKey, Builtin.applicationEvaluator evalDifference)
         , (Set.toListKey, Builtin.functionEvaluator evalToList)
         , (Set.sizeKey, Builtin.functionEvaluator evalSize)
         , (Set.intersectionKey, Builtin.functionEvaluator evalIntersection)

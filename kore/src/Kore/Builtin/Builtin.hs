@@ -22,6 +22,7 @@ module Kore.Builtin.Builtin
     , binaryOperator
     , ternaryOperator
     , functionEvaluator
+    , applicationEvaluator
     , verifierBug
     , wrongArity
     , runParser
@@ -286,6 +287,29 @@ functionEvaluator impl =
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
+
+applicationEvaluator
+    ::  ( forall variable simplifier
+        .  InternalVariable variable
+        => MonadSimplify simplifier
+        => Application Symbol (TermLike variable)
+        -> MaybeT simplifier (Pattern variable)
+        )
+    -> BuiltinAndAxiomSimplifier
+applicationEvaluator impl =
+    applicationAxiomSimplifier evaluator
+  where
+    evaluator
+        :: InternalVariable variable
+        => MonadSimplify simplifier
+        => CofreeF
+            (Application Symbol)
+            (Attribute.Pattern variable)
+            (TermLike variable)
+        -> simplifier (AttemptedAxiom variable)
+    evaluator (_ :< app) = do
+        let app' = fmap TermLike.removeEvaluated app
+        getAttemptedAxiom (impl app' >>= appliedFunction)
 
 {- | Run a parser on a verified domain value.
 

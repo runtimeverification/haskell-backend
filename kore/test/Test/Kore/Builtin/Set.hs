@@ -444,7 +444,7 @@ test_difference_symbolic =
                     & Condition.fromPredicate
                     & Pattern.withCondition oneSingleton
             actual <-
-                Set.evalDifference setSort args
+                Set.evalDifference (Application differenceSetSymbol args)
                 & runMaybeT
                 & runSimplifierNoSMT testEnv
             assertEqual "" (Just expect) actual
@@ -458,7 +458,7 @@ test_difference_symbolic =
                 & Condition.fromPredicate
                 & Pattern.withCondition (differenceSet oneSingleton ySingleton)
         actual <-
-            Set.evalDifference setSort args
+            Set.evalDifference (Application differenceSetSymbol args)
             & runMaybeT
             & runSimplifierNoSMT testEnv
         assertEqual "" (Just expect) actual
@@ -472,7 +472,7 @@ test_difference_symbolic =
                 & Condition.fromPredicate
                 & Pattern.withCondition oneSingleton
         actual <-
-            Set.evalDifference setSort args
+            Set.evalDifference (Application differenceSetSymbol args)
             & runMaybeT
             & runSimplifierNoSMT testEnv
         assertEqual "" (Just expect) actual
