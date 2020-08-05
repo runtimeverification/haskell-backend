@@ -18,7 +18,7 @@ module Kore.Step.ClaimPattern
     , getConfiguration
     , getDestination
     , lensAttribute
-    , refreshClaim
+    , topExistsToImplicitForall
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -48,6 +48,7 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -56,6 +57,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -79,6 +81,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import Kore.Rewriting.UnifyingRule
     ( Renaming
+    , UnifyingRule (..)
     )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom
@@ -308,6 +311,36 @@ termToExistentials (TermLike.Exists_ _ v term) =
     v : termToExistentials term
 termToExistentials _ = []
 
+-- | Given a collection of 'FreeVariables', a collection of existentially
+-- quantified variables, and a pattern, it converts the existential
+-- quantifications at the top of the term to implicit universal quantification,
+-- renaming them (if needed) to avoid clashing with the given free variables.
+-- This is used when applying claims to the configuration, for each pattern in the
+-- claim's RHS disjunction.
+topExistsToImplicitForall
+    :: FreeVariables RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+topExistsToImplicitForall avoid' existentials' rightPattern =
+    Pattern.fromTermAndPredicate
+        (TermLike.substitute subst right)
+        (Predicate.substitute subst ensures)
+  where
+    (right, ensuresCondition) = Pattern.splitTerm rightPattern
+    ensures = Condition.toPredicate ensuresCondition
+    avoid = FreeVariables.toNames avoid'
+    bindExistsFreeVariables =
+        freeVariables right <> freeVariables ensures
+        & FreeVariables.bindVariables
+            (TermLike.mkSomeVariable <$> existentials')
+        & FreeVariables.toNames
+    rename =
+        refreshVariables
+            (avoid <> bindExistsFreeVariables)
+            (Set.fromList $ TermLike.mkSomeVariable <$> existentials')
+    subst = TermLike.mkVar <$> rename
+
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =
     OnePathRule { getOnePathRule :: ClaimPattern }
@@ -502,34 +535,43 @@ lensAttribute =
                 & AllPath
         )
 
-refreshClaim
-    :: FreeVariables RewritingVariableName
-    -> ClaimPattern
-    -> (Renaming RewritingVariableName, ClaimPattern)
-refreshClaim stale claim@(ClaimPattern _ _ _ _) =
-    let staleNames = FreeVariables.toNames stale
-        freeVariablesClaim = freeVariables claim & FreeVariables.toSet
-        renaming = refreshVariables staleNames freeVariablesClaim
-        freeVariablesClaim1 =
-            Set.map (renameVariable renaming) freeVariablesClaim
-            & foldMap FreeVariables.freeVariable
-        existentials' =
-            existentials
-            & fmap inject
-            & Set.fromList
-        staleNames1 = FreeVariables.toNames freeVariablesClaim1 <> staleNames
-        renamingExists = refreshVariables staleNames1 existentials'
-        subst = TermLike.mkVar <$> renaming
-        refreshedClaim =
-            claim
-                { left = left claim & Pattern.substitute subst
-                , attributes = attributes claim
-                }
-            & renameExistentials renamingExists
-            & substituteRight subst
-     in (renaming, refreshedClaim)
-  where
-    renameVariable map' var =
-        Map.lookup (variableName var) map'
-        & fromMaybe var
-    ClaimPattern { existentials } = claim
+instance UnifyingRule ClaimPattern where
+    type UnifyingRuleVariable ClaimPattern = RewritingVariableName
+
+    matchingPattern claim@(ClaimPattern _ _ _ _) =
+        Pattern.term left
+      where
+        ClaimPattern { left } = claim
+
+    precondition claim@(ClaimPattern _ _ _ _) =
+        Condition.toPredicate . Pattern.withoutTerm $ left
+      where
+        ClaimPattern { left } = claim
+
+    refreshRule stale claim@(ClaimPattern _ _ _ _) =
+        let staleNames = FreeVariables.toNames stale
+            freeVariablesClaim = freeVariables claim & FreeVariables.toSet
+            renaming = refreshVariables staleNames freeVariablesClaim
+            freeVariablesClaim1 =
+                Set.map (renameVariable renaming) freeVariablesClaim
+                & foldMap FreeVariables.freeVariable
+            existentials' =
+                existentials
+                & fmap inject
+                & Set.fromList
+            staleNames1 = FreeVariables.toNames freeVariablesClaim1 <> staleNames
+            renamingExists = refreshVariables staleNames1 existentials'
+            subst = TermLike.mkVar <$> renaming
+            refreshedClaim =
+                claim
+                    { left = left claim & Pattern.substitute subst
+                    , attributes = attributes claim
+                    }
+                & renameExistentials renamingExists
+                & substituteRight subst
+         in (renaming, refreshedClaim)
+      where
+        renameVariable map' var =
+            Map.lookup (variableName var) map'
+            & fromMaybe var
+        ClaimPattern { existentials } = claim

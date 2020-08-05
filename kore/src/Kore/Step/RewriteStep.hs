@@ -43,6 +43,11 @@ import Kore.Log.ErrorRewritesInstantiation
     ( checkSubstitutionCoverage
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    , freeVariablesRight
+    )
+import qualified Kore.Step.ClaimPattern as Claim
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
@@ -123,6 +128,53 @@ finalizeAppliedRule renamedRule appliedConditions =
             finalTerm' = TermLike.substitute substitution' finalTerm
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
+finalizeAppliedClaim
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => ClaimPattern
+    -- ^ Applied rule
+    -> OrCondition RewritingVariableName
+    -- ^ Conditions of applied rule
+    -> simplifier (OrPattern RewritingVariableName)
+finalizeAppliedClaim renamedRule appliedConditions =
+    MultiOr.observeAllT
+    $ finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
+  where
+    ClaimPattern { right, existentials } = renamedRule
+    finalizeAppliedRuleWorker appliedCondition = do
+        rightPattern <- Logic.scatter right
+        -- Combine the initial conditions, the unification conditions, and the
+        -- axiom ensures clause. The axiom requires clause is included by
+        -- unifyRule.
+        let
+            avoidVars =
+                freeVariables appliedCondition
+                <> freeVariablesRight renamedRule
+            finalPattern =
+                Claim.topExistsToImplicitForall
+                    avoidVars
+                    existentials
+                    rightPattern
+            Conditional { predicate = ensures } = finalPattern
+            ensuresCondition = Condition.fromPredicate ensures
+        finalCondition <-
+            do
+                partial <-
+                    simplifyCondition
+                        (SideCondition.fromCondition appliedCondition)
+                        ensuresCondition
+                simplifyCondition SideCondition.top
+                    (appliedCondition <> partial)
+            & Logic.lowerLogicT
+        -- Apply the normalized substitution to the right-hand side of the
+        -- axiom.
+        let
+            Conditional { substitution } = finalCondition
+            substitution' = Substitution.toMap substitution
+            Conditional { term = finalTerm} = finalPattern
+            finalTerm' = TermLike.substitute substitution' finalTerm
+        return (finalTerm' `Pattern.withCondition` finalCondition)
+
 finalizeRule
     :: MonadSimplify simplifier
     => FreeVariables RewritingVariableName
@@ -142,6 +194,25 @@ finalizeRule initialVariables initial unifiedRule =
         let result = getResultPattern' initialVariables <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
+finalizeClaim
+    :: MonadSimplify simplifier
+    => FreeVariables RewritingVariableName
+    -> Pattern RewritingVariableName
+    -- ^ Initial conditions
+    -> UnifiedRule ClaimPattern
+    -- ^ Rewriting axiom
+    -> simplifier [Result ClaimPattern]
+finalizeClaim initialVariables initial unifiedRule =
+    Logic.observeAllT $ do
+        let initialCondition = Conditional.withoutTerm initial
+        let unificationCondition = Conditional.withoutTerm unifiedRule
+        applied <- applyInitialConditions initialCondition unificationCondition
+        -- checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
+        let renamedRule = Conditional.term unifiedRule
+        final <- finalizeAppliedClaim renamedRule applied
+        let result = getResultPattern' initialVariables <$> final
+        return Step.Result { appliedRule = unifiedRule, result }
+
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer simplifier =
         MonadSimplify simplifier
@@ -149,6 +220,14 @@ type Finalizer simplifier =
     ->  Pattern RewritingVariableName
     ->  [UnifiedRule (RulePattern RewritingVariableName)]
     ->  simplifier (Results (RulePattern RewritingVariableName))
+
+-- | Finalizes a list of applied claims into 'Results'.
+type FinalizerClaims simplifier =
+        MonadSimplify simplifier
+    =>  FreeVariables RewritingVariableName
+    ->  Pattern RewritingVariableName
+    ->  [UnifiedRule ClaimPattern]
+    ->  simplifier (Results ClaimPattern)
 
 finalizeRulesParallel :: forall simplifier. Finalizer simplifier
 finalizeRulesParallel initialVariables initial unifiedRules = do
@@ -196,6 +275,36 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
         State.put (remainder `Conditional.andCondition` remainder')
         return results
 
+finalizeClaimsSequence :: forall simplifier. FinalizerClaims simplifier
+finalizeClaimsSequence initialVariables initial unifiedRules = do
+    (results, remainder) <-
+        State.runStateT
+            (traverse finalizeRuleSequence' unifiedRules)
+            (Conditional.withoutTerm initial)
+    remainders <-
+        applyRemainder initial remainder
+        & Logic.observeAllT
+        & fmap OrPattern.fromPatterns -- . map getRemainderPattern)
+    return Step.Results
+        { results = Seq.fromList $ Foldable.fold results
+        , remainders
+        }
+  where
+    initialTerm = Conditional.term initial
+    finalizeRuleSequence' unifiedRule = do
+        remainder <- State.get
+        let remainderPattern = Conditional.withCondition initialTerm remainder
+        results <-
+            finalizeClaim initialVariables remainderPattern unifiedRule
+            & Monad.Trans.lift
+        let unification = Conditional.withoutTerm unifiedRule
+            remainder' =
+                Condition.fromPredicate
+                $ Remainder.remainder'
+                $ MultiOr.singleton unification
+        State.put (remainder `Conditional.andCondition` remainder')
+        return results
+
 applyRulesWithFinalizer
     :: forall simplifier
     .  MonadSimplify simplifier
@@ -212,6 +321,25 @@ applyRulesWithFinalizer finalize unificationProcedure rules initial = do
     let initialVariables = freeVariables initial
     finalize initialVariables initial results
 {-# INLINE applyRulesWithFinalizer #-}
+
+applyClaimsWithFinalizer
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => FinalizerClaims simplifier
+    -> UnificationProcedure simplifier
+    -> [ClaimPattern]
+    -- ^ Rewrite rules
+    -> Pattern RewritingVariableName
+    -- ^ Configuration being rewritten
+    -> simplifier (Results ClaimPattern)
+applyClaimsWithFinalizer finalize unificationProcedure rules initial = do
+    results <- unifyRules unificationProcedure initial rules
+    debugAppliedClaims initial results
+    let initialVariables = freeVariables initial
+    finalize initialVariables initial results
+{-# INLINE applyClaimsWithFinalizer #-}
+
+debugAppliedClaims = undefined
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -289,5 +417,24 @@ applyRewriteRulesSequence
     (map getRewriteRule -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
+    assertFunctionLikeResults (term initialConfig) results
+    return results
+
+applyClaimsSequence
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => UnificationProcedure simplifier
+    -> Pattern RewritingVariableName
+    -- ^ Configuration being rewritten
+    -> [ClaimPattern]
+    -- ^ Rewrite rules
+    -> simplifier (Results ClaimPattern)
+applyClaimsSequence unificationProcedure initialConfig claims = do
+    results <-
+        applyClaimsWithFinalizer
+            finalizeClaimsSequence
+            unificationProcedure
+            claims
+            initialConfig
     assertFunctionLikeResults (term initialConfig) results
     return results

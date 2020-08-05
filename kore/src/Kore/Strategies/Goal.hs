@@ -301,7 +301,7 @@ instance Goal OnePathRule where
 
     checkImplication = checkImplication' _Unwrapped
 
-    applyClaims claims = deriveSeqClaimOnePath claims
+    applyClaims claims = deriveSeqClaim claims
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
@@ -309,7 +309,12 @@ instance Goal OnePathRule where
 
     inferDefined = inferDefined' _Unwrapped
 
-deriveSeqClaimOnePath = undefined
+deriveSeqClaim
+    :: MonadSimplify m
+    => [goal]
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+deriveSeqClaim = undefined
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
@@ -333,7 +338,7 @@ instance Goal AllPathRule where
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
     inferDefined = inferDefined' _Unwrapped
-    applyClaims claims = deriveSeqClaimAllPath claims
+    applyClaims claims = deriveSeqClaim claims
 
     applyAxioms axiomss = \goal ->
         foldM applyAxioms1 (GoalRemainder goal) axiomss
