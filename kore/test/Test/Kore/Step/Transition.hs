@@ -49,6 +49,14 @@ test_ifte =
                         (\() -> return 1 <|> return 2)
                         (return 0)
             check expect actual
+        , testCase "branches on multiple values" $ do
+            let expect = return True <|> return True
+                actual =
+                    ifte
+                        (return () <|> return ())
+                        (\() -> return True)
+                        (return False)
+            check expect actual
         ]
     ]
   where
