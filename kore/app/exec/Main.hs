@@ -662,10 +662,6 @@ koreProve execOptions proveOptions = do
     let KoreExecOptions { definitionFileName } = execOptions
         KoreProveOptions { specFileName } = proveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
-    traceM $ show $
-        fmap (fmap (Attribute.Axiom.sourceLocation . fst). indexedModuleClaims)
-        . Map.elems . fst
-        $ definition
     let KoreExecOptions { mainModuleName } = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
