@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , Claim
     , Axiom
+    , AppliedRule
     , ReplState (..)
     , ReplOutput (..)
     , ReplOut (..)
@@ -103,7 +104,10 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal
+import Kore.Strategies.Goal hiding
+    ( AppliedRule
+    )
+import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )
@@ -534,16 +538,17 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph rule =
+type ExecutionGraph =
     Strategy.ExecutionGraph
         CommonProofState
-        rule
+        AppliedRule
 
-type InnerGraph rule =
-    Gr CommonProofState (Seq rule)
+type InnerGraph =
+    Gr CommonProofState (Seq AppliedRule)
 
 type Claim = ReachabilityRule
 type Axiom = Rule Claim
+type AppliedRule = Goal.AppliedRule Claim
 
 -- | State for the repl.
 data ReplState = ReplState
@@ -555,7 +560,7 @@ data ReplState = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph Axiom)
+    , graphs     :: Map ClaimIndex ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -578,9 +583,9 @@ data Config m = Config
     { stepper
         :: [Claim]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph Axiom)
+        -> m ExecutionGraph
     -- ^ Stepper function
     , unifier
         :: SideCondition RewritingVariableName

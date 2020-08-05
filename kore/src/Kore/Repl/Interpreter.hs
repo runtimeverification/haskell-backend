@@ -663,7 +663,7 @@ allProofs = do
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
     inProgressProofs
-        :: ExecutionGraph Axiom
+        :: ExecutionGraph
         -> GraphProofStatus
     inProgressProofs =
         findProofStatus
@@ -671,7 +671,7 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Map.Map ClaimIndex (ExecutionGraph Axiom)
+        :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex ReachabilityRule
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -1041,7 +1041,7 @@ clear maybeNode = do
               putStrLn' "Cannot clear a direct descendant of a branching node."
           | otherwise -> clear0 node graph
   where
-    clear0 :: ReplNode -> InnerGraph Axiom -> m ()
+    clear0 :: ReplNode -> InnerGraph -> m ()
     clear0 rnode graph = do
         let node = unReplNode rnode
         let
@@ -1051,16 +1051,16 @@ clear maybeNode = do
         field @"node" .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
-    next :: InnerGraph axiom -> Graph.Node -> [Graph.Node]
+    next :: InnerGraph -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
-    prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
+    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
 
-    isDirectDescendentOfBranching :: ReplNode -> InnerGraph axiom -> Bool
+    isDirectDescendentOfBranching :: ReplNode -> InnerGraph -> Bool
     isDirectDescendentOfBranching (ReplNode node) graph =
         let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
          in length childrenOfParent /= 1

@@ -262,15 +262,15 @@ runRepl
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph Axiom
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
         :: [ReachabilityRule]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph Axiom)
+        -> m ExecutionGraph
     stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0

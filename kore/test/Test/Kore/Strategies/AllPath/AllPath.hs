@@ -261,7 +261,7 @@ test_runStrategy =
     run
         :: [Goal.Rule Goal]
         -> Goal.Rule Goal
-        -> Strategy.ExecutionGraph ProofState (Goal.Rule Goal)
+        -> Strategy.ExecutionGraph ProofState (Goal.AppliedRule Goal)
     run axioms goal =
         runIdentity
         . unAllPathIdentity
@@ -299,7 +299,7 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.Rule Goal)
+type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.AppliedRule Goal)
 
 emptyExecutionGraph :: ProofState.ProofState Integer -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph

@@ -70,7 +70,9 @@ import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Strategies.Goal
+import Kore.Strategies.Goal hiding
+    ( AppliedRule
+    )
 import Kore.Strategies.Verification
     ( verifyClaimStep
     )
@@ -819,9 +821,9 @@ mkConfig logger =
     stepper0
         :: [Claim]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> Simplifier (ExecutionGraph Axiom)
+        -> Simplifier ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         verifyClaimStep claims' axioms' graph node
 

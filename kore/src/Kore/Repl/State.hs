@@ -157,7 +157,7 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph Axiom
+emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . Goal
 
@@ -280,33 +280,33 @@ switchToProof claim cindex =
         })
 
 -- | Get the internal representation of the execution graph.
-getInnerGraph :: MonadState ReplState m => m (InnerGraph Axiom)
+getInnerGraph :: MonadState ReplState m => m InnerGraph
 getInnerGraph =
     fmap Strategy.graph getExecutionGraph
 
 -- | Get the current execution graph
-getExecutionGraph :: MonadState ReplState m => m (ExecutionGraph Axiom)
+getExecutionGraph :: MonadState ReplState m => m ExecutionGraph
 getExecutionGraph = do
     ReplState { claimIndex, graphs, claim } <- get
     let mgraph = Map.lookup claimIndex graphs
     return $ fromMaybe (emptyExecutionGraph claim) mgraph
 
 -- | Update the internal representation of the current execution graph.
-updateInnerGraph :: forall m. MonadState ReplState m => InnerGraph Axiom -> m ()
+updateInnerGraph :: forall m. MonadState ReplState m => InnerGraph -> m ()
 updateInnerGraph ig = do
     ReplState { claimIndex, graphs } <- get
     field @"graphs" Lens..=
         Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
     updateInnerGraph0
-        :: InnerGraph Axiom
-        -> ExecutionGraph Axiom
-        -> ExecutionGraph Axiom
+        :: InnerGraph
+        -> ExecutionGraph
+        -> ExecutionGraph
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
 -- | Update the current execution graph.
-updateExecutionGraph :: MonadState ReplState m => ExecutionGraph Axiom -> m ()
+updateExecutionGraph :: MonadState ReplState m => ExecutionGraph -> m ()
 updateExecutionGraph gph = do
     ReplState { claimIndex, graphs } <- get
     field @"graphs" Lens..= Map.insert claimIndex gph graphs
@@ -368,7 +368,7 @@ non-bottom leaf. If no such leaf exists, it returns Nothing.
 -}
 getInterestingBranchingNode
     :: Natural
-    -> InnerGraph axiom
+    -> InnerGraph
     -> ReplNode
     -> Maybe ReplNode
 getInterestingBranchingNode n graph node
@@ -443,7 +443,7 @@ getRuleFor
     :: MonadState ReplState m
     => Maybe ReplNode
     -- ^ node index
-    -> m (Maybe Axiom)
+    -> m (Maybe AppliedRule)
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
@@ -526,7 +526,7 @@ runStepper'
     => [ReachabilityRule]
     -> [Axiom]
     -> ReplNode
-    -> t m (ExecutionGraph Axiom, StepResult)
+    -> t m (ExecutionGraph, StepResult)
 runStepper' claims axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
@@ -560,7 +560,7 @@ runUnifier sideCondition first second = do
         . runUnifierWithExplanation
         $ unifier sideCondition first second
 
-getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
+getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
         . proofState ProofStateTransformer
@@ -575,7 +575,7 @@ getNodeState graph node =
         $ node
 
 nodeToGoal
-    :: InnerGraph axiom
+    :: InnerGraph
     -> Graph.Node
     -> Maybe ReachabilityRule
 nodeToGoal graph node =
@@ -679,7 +679,7 @@ generateInProgressClaims = do
     return $ started <> notStarted
   where
     notStartedClaims
-        :: Map.Map ClaimIndex (ExecutionGraph Axiom)
+        :: Map.Map ClaimIndex ExecutionGraph
         -> [ReachabilityRule]
         -> [ReachabilityRule]
     notStartedClaims graphs claims =
@@ -698,13 +698,13 @@ generateInProgressClaims = do
                 )
 
 unprovenGoals
-    :: Map ClaimIndex (ExecutionGraph axiom)
+    :: Map ClaimIndex ExecutionGraph
     -> [ReachabilityRule]
 unprovenGoals graphs =
     findUnprovenGoals =<< Map.elems graphs
 
 findUnprovenGoals
-    :: ExecutionGraph axiom
+    :: ExecutionGraph
     -> [ReachabilityRule]
 findUnprovenGoals (Strategy.graph -> graph) =
     mapMaybe (nodeToGoal graph)
@@ -719,7 +719,7 @@ currentClaimSort = do
         . Goal.getConfiguration
         $ claim
 
-sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]
+sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
     Map.fromList
         . groupSort
@@ -728,7 +728,7 @@ sortLeafsByType graph =
         $ graph
 
 
-findLeafNodes :: InnerGraph axiom -> [Graph.Node]
+findLeafNodes :: InnerGraph -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 

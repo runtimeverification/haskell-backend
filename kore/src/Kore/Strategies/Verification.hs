@@ -119,7 +119,7 @@ import Prof
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
 type CommonTransitionRule m =
-    TransitionRule m (Rule ReachabilityRule) CommonProofState
+    TransitionRule m (AppliedRule ReachabilityRule) CommonProofState
 
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
@@ -338,11 +338,11 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule ReachabilityRule)
+    -> ExecutionGraph CommonProofState (AppliedRule ReachabilityRule)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
+    -> simplifier (ExecutionGraph CommonProofState (AppliedRule ReachabilityRule))
 verifyClaimStep claims axioms executionGraph node =
     executionHistoryStep
         (transitionRule' claims axioms)

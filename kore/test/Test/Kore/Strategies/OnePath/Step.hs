@@ -829,7 +829,7 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Goal goal
     => Limit Natural
-    -> ( ExecutionGraph (ProofState.ProofState goal) (Rule goal)
+    -> ( ExecutionGraph (ProofState.ProofState goal) (AppliedRule goal)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)

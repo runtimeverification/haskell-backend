@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , AppliedRule (..)
     , strategy
     , TransitionRule
     , Prim
@@ -62,8 +63,17 @@ import Data.Stream.Infinite
 import qualified Data.Stream.Infinite as Stream
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import qualified Kore.Attribute.Label as Attribute
+    ( Label
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
+    ( RuleIndex
+    )
+import qualified Kore.Attribute.SourceLocation as Attribute
+    ( SourceLocation
     )
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
@@ -169,7 +179,7 @@ import Kore.TopBottom
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
-    ( unparse
+    ( Unparse (..)
     )
 import qualified Kore.Verified as Verified
 import qualified Pretty
@@ -204,7 +214,7 @@ class Goal goal where
     inferDefined
         :: MonadSimplify m
         => goal
-        -> Strategy.TransitionT (Rule goal) m goal
+        -> Strategy.TransitionT (AppliedRule goal) m goal
 
     checkImplication
         :: MonadSimplify m
@@ -213,7 +223,7 @@ class Goal goal where
     simplify
         :: MonadSimplify m
         => goal
-        -> Strategy.TransitionT (Rule goal) m goal
+        -> Strategy.TransitionT (AppliedRule goal) m goal
 
     {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
 
@@ -231,13 +241,43 @@ class Goal goal where
         :: MonadSimplify m
         => [goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule goal]]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+
+data AppliedRule goal
+    = AppliedAxiom (Rule goal)
+    | AppliedClaim goal
+
+instance (From goal Attribute.Label, From (Rule goal) Attribute.Label)
+  => From (AppliedRule goal) Attribute.Label
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (From goal Attribute.RuleIndex, From (Rule goal) Attribute.RuleIndex)
+  => From (AppliedRule goal) Attribute.RuleIndex
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (From goal Attribute.SourceLocation, From (Rule goal) Attribute.SourceLocation)
+  => From (AppliedRule goal) Attribute.SourceLocation
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (Unparse goal, Unparse (Rule goal)) => Unparse (AppliedRule goal)
+  where
+    unparse (AppliedAxiom rule) = unparse rule
+    unparse (AppliedClaim goal) = unparse goal
+
+    unparse2 (AppliedAxiom rule) = unparse2 rule
+    unparse2 (AppliedClaim goal) = unparse2 goal
 
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
@@ -313,7 +353,7 @@ deriveSeqClaim
     => Lens' goal ClaimPattern
     -> [goal]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 deriveSeqClaim lensClaimPattern claims goal =
     getCompose
     $ Lens.forOf lensClaimPattern goal
@@ -325,15 +365,17 @@ deriveSeqClaim lensClaimPattern claims goal =
                 Step.applyClaimsSequence
                     Unification.unificationProcedure
                     config
-                    claims
+                    (undefined claims)
                     & lift
             deriveResults' results
+  where
+    deriveResults' = undefined
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
-    ->  Strategy.TransitionT (Rule OnePathRule) simplifier
+    ->  Strategy.TransitionT (AppliedRule OnePathRule) simplifier
             (ProofState OnePathRule)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
@@ -382,7 +424,7 @@ deriveParAxiomAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
-    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
+    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
             (ProofState AllPathRule)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
@@ -393,7 +435,7 @@ deriveSeqAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
-    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
+    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
             (ProofState AllPathRule)
 deriveSeqAllPath rules =
     deriveSeq' _Unwrapped AllPathRewriteRule rewrites
@@ -452,14 +494,14 @@ instance ClaimExtractor ReachabilityRule where
 
 allPathTransition
     :: Monad m
-    => Strategy.TransitionT (Rule AllPathRule) m a
-    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule AllPathRule) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
 allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
 
 onePathTransition
     :: Monad m
-    => Strategy.TransitionT (Rule OnePathRule) m a
-    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule OnePathRule) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
 onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
 
 maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
@@ -471,14 +513,20 @@ maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 ruleAllPathToRuleReachability
-    :: Rule AllPathRule
-    -> Rule ReachabilityRule
-ruleAllPathToRuleReachability = coerce
+    :: AppliedRule AllPathRule
+    -> AppliedRule ReachabilityRule
+ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
+    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
+ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
+    AppliedClaim (AllPath allPathRule)
 
 ruleOnePathToRuleReachability
-    :: Rule OnePathRule
-    -> Rule ReachabilityRule
-ruleOnePathToRuleReachability = coerce
+    :: AppliedRule OnePathRule
+    -> AppliedRule ReachabilityRule
+ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
+    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
+ruleOnePathToRuleReachability (AppliedClaim onePathRule) =
+    AppliedClaim (OnePath onePathRule)
 
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
@@ -489,13 +537,13 @@ transitionRule
     => Goal goal
     => [goal]
     -> [[Rule goal]]
-    -> TransitionRule m (Rule goal) (ProofState goal)
+    -> TransitionRule m (AppliedRule goal) (ProofState goal)
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
         -> ProofState goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
@@ -687,7 +735,7 @@ simplify'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
     -> goal
-    -> Strategy.TransitionT (Rule goal) m goal
+    -> Strategy.TransitionT (AppliedRule goal) m goal
 simplify' lensClaimPattern =
     Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
         configs <-
@@ -701,7 +749,7 @@ inferDefined'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
     -> goal
-    -> Strategy.TransitionT (Rule goal) m goal
+    -> Strategy.TransitionT (AppliedRule goal) m goal
 inferDefined' lensRulePattern =
     Lens.traverseOf (lensRulePattern . field @"left") $ \config -> do
         let definedConfig =
@@ -734,7 +782,7 @@ derivePar'
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -753,7 +801,7 @@ deriveWith
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 deriveWith lensClaimPattern mkRule takeStep rewrites goal =
     getCompose
     $ Lens.forOf lensClaimPattern goal
@@ -772,7 +820,7 @@ deriveSeq'
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
@@ -780,7 +828,7 @@ deriveSeq' lensRulePattern mkRule =
 deriveResults
     :: (RewriteRule RewritingVariableName -> Rule goal)
     -> Step.Results (RulePattern RewritingVariableName)
-    -> Strategy.TransitionT (Rule goal) simplifier
+    -> Strategy.TransitionT (AppliedRule goal) simplifier
         (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
 deriveResults mkRule Results { results, remainders } =
@@ -803,7 +851,11 @@ deriveResults mkRule Results { results, remainders } =
 
     addRule = Transition.addRule . fromAppliedRule
 
-    fromAppliedRule = mkRule . RewriteRule . Step.withoutUnification
+    fromAppliedRule =
+        AppliedAxiom
+        . mkRule
+        . RewriteRule
+        . Step.withoutUnification
 
 {- | The predicate to remove the destination from the present configuration.
  -}
