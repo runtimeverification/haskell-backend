@@ -196,7 +196,10 @@ ifte
 ifte p t e = TransitionT $ AccumT $ \w0 ->
     Logic.ifte
         (toLogicT w0 p)
-        (\(a, w1) -> toLogicT w1 (t a))
+        (\(a, w1) -> do
+            (b, w2) <- toLogicT w1 (t a)
+            pure (b, w1 <> w2)
+        )
         (toLogicT w0 e)
   where
     toLogicT w = flip runAccumT w . getTransitionT
