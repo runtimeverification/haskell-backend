@@ -176,16 +176,28 @@ mapRules f trans = do
     let results' = map (fmap (fmap f)) results
     scatter results'
 
+{- |
+
+If the first branch returns /any/ values, return /all/ such values; otherwise,
+proceed down the second branch. In pseudo-Haskell:
+
+@
+orElse first second
+  | first /= empty = first
+  | otherwise      = second
+@
+
+See also: 'ifte'
+
+ -}
 orElse
     :: Monad m
     => TransitionT rule m a
     -> TransitionT rule m a
     -> TransitionT rule m a
-orElse first second = do
-    results <- tryTransitionT first
-    if null results then second else scatter results
+orElse first = ifte first return -- 'return' is the unit of '>>='
 
-{- | Logical conditional: if-then-else
+{- |
 
 If the conditional returns /any/ values, send /all/ such values down the "then"
 branch; otherwise, proceed down the "else" branch. In pseudo-Haskell:
