@@ -14,7 +14,7 @@ module Kore.Exec
     , mergeAllRules
     , mergeRulesConsecutiveBatches
     , search
-    , proveQ
+    , prove
     , proveWithRepl
     , boundedModelCheck
     , Rewrite
@@ -355,7 +355,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
 
 
 -- | Proving a spec given as a module containing rules to be proven
-proveQ
+prove
     ::  forall smt
       . ( MonadLog smt
         , MonadMask smt
@@ -373,7 +373,7 @@ proveQ
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
     -> smt (Either Stuck ())
-proveQ
+prove
     searchOrder
     breadthLimit
     depthLimit

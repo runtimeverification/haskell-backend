@@ -668,7 +668,7 @@ koreProve execOptions proveOptions = do
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
             KoreProveOptions { graphSearch } = proveOptions
-        proveQ
+        prove
             graphSearch
             breadthLimit
             depthLimit
