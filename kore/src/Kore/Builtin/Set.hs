@@ -49,6 +49,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -353,52 +354,56 @@ evalDifference
         symbolic = do
             _set1 <- expectBuiltinSet ctx _set1
             _set2 <- expectBuiltinSet ctx _set2
-            let symbolicKeys2 = Domain.getSymbolicKeysOfAc _set2
-                commonSymbolicKeys =
-                    filter (`Domain.isSymbolicKeyOfAc` _set1) symbolicKeys2
-                set1withoutCommonSymbolicKeys =
-                    foldr
-                        Domain.removeSymbolicKeyOfAc
-                        (Domain.getNormalizedSet _set1)
-                        commonSymbolicKeys
-                concreteKeys2 = Domain.getConcreteKeysOfAc _set2
-                commonConcreteKeys =
-                    filter (`Domain.isConcreteKeyOfAc` _set1) concreteKeys2
-                set1WithoutCommonKeys =
-                    foldr
-                        Domain.removeConcreteKeyOfAc
-                        set1withoutCommonSymbolicKeys
-                        commonConcreteKeys
-                set2WithoutCommonSymbolicKeys =
-                    foldr
-                        Domain.removeSymbolicKeyOfAc
-                        (Domain.getNormalizedSet _set2)
-                        commonSymbolicKeys
-                set2WithoutCommonKeys =
-                    foldr
-                        Domain.removeConcreteKeyOfAc
-                        set2WithoutCommonSymbolicKeys
-                        commonConcreteKeys
-                definedArgs =
+            let definedArgs =
                     filter (not . TermLike.isDefinedPattern) args
                     & map (makeCeilPredicate resultSort)
                     & makeMultipleAndPredicate
                     & Conditional.fromPredicate
-            patSet1 <-
-                Ac.returnAc
-                    resultSort
-                    (Domain.NormalizedSet set1WithoutCommonKeys)
-            patSet2 <-
-                Ac.returnAc
-                    resultSort
-                    (Domain.NormalizedSet set2WithoutCommonKeys)
-            let patDiff
-                  | set1WithoutCommonKeys == Domain.emptyNormalizedAc
-                    = patSet1
-                  | set2WithoutCommonKeys == Domain.emptyNormalizedAc
-                    = patSet1
-                  | otherwise = differenceSet <$> patSet1 <*> patSet2
-            return (flip Pattern.andCondition definedArgs patDiff)
+            let Domain.NormalizedAc
+                    { concreteElements = concrete1
+                    , elementsWithVariables = symbolic1'
+                    , opaque = opaque1'
+                    }
+                  = Domain.unwrapAc _set1
+                symbolic1 =
+                    Domain.unwrapElement <$> symbolic1'
+                    & Map.fromList
+                opaque1 = Set.fromList opaque1'
+            let Domain.NormalizedAc
+                    { concreteElements = concrete2
+                    , elementsWithVariables = symbolic2'
+                    , opaque = opaque2'
+                    }
+                  = Domain.unwrapAc _set2
+                symbolic2 =
+                    Domain.unwrapElement <$> symbolic2'
+                    & Map.fromList
+                opaque2 = Set.fromList opaque2'
+            let set1' =
+                    Domain.NormalizedAc
+                    { concreteElements = Map.difference concrete1 concrete2
+                    , elementsWithVariables =
+                        Map.difference symbolic1 symbolic2
+                        & Map.toList
+                        & map Domain.wrapElement
+                    , opaque = Set.difference opaque1 opaque2 & Set.toList
+                    }
+                set2' =
+                    Domain.NormalizedAc
+                    { concreteElements = Map.difference concrete2 concrete1
+                    , elementsWithVariables =
+                        Map.difference symbolic2 symbolic1
+                        & Map.toList
+                        & map Domain.wrapElement
+                    , opaque = Set.difference opaque1 opaque1 & Set.toList
+                    }
+            pat1 <- Ac.returnAc resultSort (Domain.NormalizedSet set1')
+            pat2 <- Ac.returnAc resultSort (Domain.NormalizedSet set2')
+            let pat
+                  | (not . Domain.nullAc) set1', (not . Domain.nullAc) set2' =
+                    differenceSet <$> pat1 <*> pat2
+                  | otherwise = pat1
+            return (Pattern.andCondition pat definedArgs)
 
     rightIdentity <|> bothConcrete <|> symbolic
   where
