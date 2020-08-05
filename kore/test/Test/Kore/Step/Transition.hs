@@ -12,20 +12,33 @@ import Test.Tasty.HUnit.Ext
 
 test_ifte :: [TestTree]
 test_ifte =
-    [ testCase "chooses \"else\" branch" $ do
-        let expect = return False
-            actual =
-                ifte
-                    (empty :: Transition Integer Integer)
-                    (\_ -> return True)
-                    (return False)
-        on (assertEqual "") runTransition expect actual
-    , testCase "chooses the \"then\" branch" $ do
-        let expect = return True
-            actual =
-                ifte
-                    (return 1 :: Transition Integer Integer)
-                    (\_ -> return True)
-                    (return False)
-        on (assertEqual "") runTransition expect actual
+    [ testGroup "\"else\" branch"
+        [ testCase "chooses value" $ do
+            let expect = return False
+                actual =
+                    ifte
+                        empty
+                        (\() -> return True)
+                        (return False)
+            check expect actual
+        ]
+    , testGroup "\"then\" branch"
+        [ testCase "chooses value" $ do
+            let expect = return True
+                actual =
+                    ifte
+                        (return ())
+                        (\() -> return True)
+                        (return False)
+            check expect actual
+        ]
     ]
+  where
+    check
+        :: HasCallStack
+        => (Debug a, Diff a)
+        => Transition Integer a
+        -> Transition Integer a
+        -> Assertion
+    check expect actual =
+        on (assertEqual "") runTransition expect actual
