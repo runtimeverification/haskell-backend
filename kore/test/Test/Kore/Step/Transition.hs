@@ -26,6 +26,10 @@ test_ifte =
                 elseBranch = return False
                 condition = addRule 0 >> empty
             checkElse condition thenBranch elseBranch
+        , testCase "takes accumulator from branch" $ do
+            let thenBranch () = return True
+                elseBranch = addRule 2 >> return False
+            checkElse empty thenBranch elseBranch
         ]
     , testGroup "\"then\" branch"
         [ testCase "returns value" $ do
@@ -45,6 +49,11 @@ test_ifte =
             checkThen condition thenBranch elseBranch
         , testCase "remembers accumulator from conditional" $ do
             let thenBranch () = return True
+                elseBranch = return False
+                condition = addRule 0 >> return ()
+            checkThen condition thenBranch elseBranch
+        , testCase "takes accumulator from branch" $ do
+            let thenBranch () = addRule 1 >> return True
                 elseBranch = return False
                 condition = addRule 0 >> return ()
             checkThen condition thenBranch elseBranch
