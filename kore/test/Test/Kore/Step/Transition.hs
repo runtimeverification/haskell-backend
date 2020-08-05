@@ -13,7 +13,7 @@ import Test.Tasty.HUnit.Ext
 test_ifte :: [TestTree]
 test_ifte =
     [ testGroup "\"else\" branch"
-        [ testCase "chooses value" $ do
+        [ testCase "returns value" $ do
             let expect = return False
                 actual =
                     ifte
@@ -21,15 +21,33 @@ test_ifte =
                         (\() -> return True)
                         (return False)
             check expect actual
+        , testCase "returns multiple values" $ do
+            let expect, actual :: Transition Integer Integer
+                expect = return 1 <|> return 2
+                actual =
+                    ifte
+                        empty
+                        (\() -> return 0)
+                        (return 1 <|> return 2)
+            check expect actual
         ]
     , testGroup "\"then\" branch"
-        [ testCase "chooses value" $ do
+        [ testCase "returns value" $ do
             let expect = return True
                 actual =
                     ifte
                         (return ())
                         (\() -> return True)
                         (return False)
+            check expect actual
+        , testCase "returns multiple values" $ do
+            let expect, actual :: Transition Integer Integer
+                expect = return 1 <|> return 2
+                actual =
+                    ifte
+                        (return ())
+                        (\() -> return 1 <|> return 2)
+                        (return 0)
             check expect actual
         ]
     ]
