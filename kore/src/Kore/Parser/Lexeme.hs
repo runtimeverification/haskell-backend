@@ -267,7 +267,7 @@ sourcePosToFileLocation
 -}
 stringParserToIdParser :: Parser String -> Parser Id
 stringParserToIdParser stringRawParser = do
-    pos <- sourcePosToFileLocation <$> getSourcePos
+    !pos <- sourcePosToFileLocation <$> getSourcePos
     name <- lexeme stringRawParser
     return Id
         { getId = Text.pack name

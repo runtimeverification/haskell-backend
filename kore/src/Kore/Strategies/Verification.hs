@@ -411,7 +411,7 @@ trackProofDepth
     :: forall m rule goal
     .  TransitionRule m rule (ProofState goal)
     -> TransitionRule m rule (ProofDepth, ProofState goal)
-trackProofDepth rule prim (proofDepth, proofState) = do
+trackProofDepth rule prim (!proofDepth, proofState) = do
     proofState' <- rule prim proofState
     let proofDepth' = (if didRewrite proofState' then succ else id) proofDepth
     pure (proofDepth', proofState')

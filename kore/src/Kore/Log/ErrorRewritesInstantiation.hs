@@ -15,8 +15,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Foldable as Foldable
-import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -40,7 +38,9 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.TermLike
+    ( isConstructorLike
+    )
 import Kore.Internal.Variable
     ( SomeVariableName
     )
@@ -158,8 +158,6 @@ checkSubstitutionCoverage configuration solution
     substitutionCoverageError =
         SubstitutionCoverageError { solution, missingVariables }
 
-    Conditional { substitution } = solution
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith solution
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic = Foldable.any isSomeConfigVariableName substitutionVariables
+    isSymbolic = (not . isConstructorLike) (term configuration)
