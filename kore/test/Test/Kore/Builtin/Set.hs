@@ -451,6 +451,17 @@ test_difference_symbolic =
                 & Condition.fromPredicate
                 & Pattern.withCondition (differenceSet oneSingleton ySingleton)
         evalDifference (Just expect) args
+    , testCase "[X] -Set [X, Y] = []" $ do
+        let args =
+                [ builtinSet_ [x]
+                , builtinSet_ [x, y]
+                ]
+            expect =
+                makeMultipleAndPredicate
+                    (makeCeilPredicate setSort <$> tail args)
+                & Condition.fromPredicate
+                & Pattern.withCondition (builtinSet_ [])
+        evalDifference (Just expect) args
     , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
         let args =
                 [ builtinSet_ [fx, one]
