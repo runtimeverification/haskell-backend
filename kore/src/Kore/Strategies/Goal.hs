@@ -61,7 +61,10 @@ import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Debug
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Label as Attribute
     ( Label
@@ -191,7 +194,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
     MultiOr.MultiOr
@@ -202,7 +205,7 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
 
@@ -252,6 +255,27 @@ class Goal goal where
 data AppliedRule goal
     = AppliedAxiom (Rule goal)
     | AppliedClaim goal
+    deriving (GHC.Generic)
+
+instance SOP.Generic goal => SOP.Generic (AppliedRule goal)
+
+instance SOP.HasDatatypeInfo goal => SOP.HasDatatypeInfo (AppliedRule goal)
+
+instance
+    ( Debug goal
+    , SOP.HasDatatypeInfo goal
+    , Debug (Rule goal)
+    , SOP.HasDatatypeInfo (Rule goal)
+    ) => Debug (AppliedRule goal)
+
+instance
+    ( Diff goal
+    , Debug goal
+    , SOP.HasDatatypeInfo goal
+    , Diff (Rule goal)
+    , Debug (Rule goal)
+    , SOP.HasDatatypeInfo (Rule goal)
+    ) => Diff (AppliedRule goal)
 
 instance (From goal Attribute.Label, From (Rule goal) Attribute.Label)
   => From (AppliedRule goal) Attribute.Label
