@@ -188,8 +188,15 @@ orElse first second = do
 {- | Logical conditional: if-then-else
  -}
 ifte
-    :: TransitionT rule m a
+    :: Monad m
+    => TransitionT rule m a
     -> (a -> TransitionT rule m b)
     -> TransitionT rule m b
     -> TransitionT rule m b
-ifte _ _ e = e
+ifte p t e = TransitionT $ AccumT $ \w0 ->
+    Logic.ifte
+        (toLogicT w0 p)
+        (\(a, w1) -> toLogicT w1 (t a))
+        (toLogicT w0 e)
+  where
+    toLogicT w = flip runAccumT w . getTransitionT
