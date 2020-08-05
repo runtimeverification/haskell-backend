@@ -373,7 +373,7 @@ transitionRule'
     -> [Rule ReachabilityRule]
     -> CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState ->
-    (deepseq proofState)
+    deepseq proofState
     (transitionRule claims axiomGroups
         & profTransitionRule
         & withConfiguration
