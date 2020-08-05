@@ -110,7 +110,6 @@ import Kore.Step.ClaimPattern
     , ReachabilityRule (..)
     , getConfiguration
     , getDestination
-    , refreshClaim
     )
 import Kore.Step.Result
     ( Result (..)
@@ -301,7 +300,7 @@ instance Goal OnePathRule where
 
     checkImplication = checkImplication' _Unwrapped
 
-    applyClaims claims = deriveSeqClaim claims
+    applyClaims claims = deriveSeqClaim _Unwrapped claims
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
@@ -311,10 +310,24 @@ instance Goal OnePathRule where
 
 deriveSeqClaim
     :: MonadSimplify m
-    => [goal]
+    => Lens' goal ClaimPattern
+    -> [goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-deriveSeqClaim = undefined
+deriveSeqClaim lensClaimPattern claims goal =
+    getCompose
+    $ Lens.forOf lensClaimPattern goal
+    $ \claimPattern ->
+        fmap (snd . Step.refreshRule mempty)
+        $ Lens.forOf (field @"left") claimPattern
+        $ \config -> Compose $ do
+            results <-
+                Step.applyClaimsSequence
+                    Unification.unificationProcedure
+                    config
+                    claims
+                    & lift
+            deriveResults' results
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
@@ -338,7 +351,7 @@ instance Goal AllPathRule where
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
     inferDefined = inferDefined' _Unwrapped
-    applyClaims claims = deriveSeqClaim claims
+    applyClaims claims = deriveSeqClaim _Unwrapped claims
 
     applyAxioms axiomss = \goal ->
         foldM applyAxioms1 (GoalRemainder goal) axiomss
@@ -364,8 +377,6 @@ instance Goal AllPathRule where
           | all isTriviallyValid proofState = pure Proven
           | otherwise = pure proofState
 
-
-deriveSeqClaimAllPath = undefined
 
 deriveParAxiomAllPath
     ::  MonadSimplify simplifier
@@ -733,7 +744,6 @@ type Deriver monad =
     ->  Pattern RewritingVariableName
     ->  monad (Step.Results (RulePattern RewritingVariableName))
 
--- TODO: UnifyRule instance for ClaimPattern
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
     :: forall m goal
@@ -748,7 +758,7 @@ deriveWith lensClaimPattern mkRule takeStep rewrites goal =
     getCompose
     $ Lens.forOf lensClaimPattern goal
     $ \claimPattern ->
-        fmap (snd . refreshClaim mempty)
+        fmap (snd . Step.refreshRule mempty)
         $ Lens.forOf (field @"left") claimPattern
         $ \config -> Compose $ do
             results <- takeStep rewrites config & lift

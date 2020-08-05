@@ -10,6 +10,7 @@ module Kore.Step.RewriteStep
     ( applyRewriteRulesParallel
     , withoutUnification
     , applyRewriteRulesSequence
+    , applyClaimsSequence
     ) where
 
 import Prelude.Kore
