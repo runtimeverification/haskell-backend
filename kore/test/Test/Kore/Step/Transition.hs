@@ -14,65 +14,40 @@ test_ifte :: [TestTree]
 test_ifte =
     [ testGroup "\"else\" branch"
         [ testCase "returns value" $ do
-            let expect = return False
-                actual =
-                    ifte
-                        empty
-                        (\() -> return True)
-                        (return False)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False
+            checkElse empty thenBranch elseBranch
         , testCase "returns multiple values" $ do
-            let expect, actual :: Transition Integer Integer
-                expect = return 1 <|> return 2
-                actual =
-                    ifte
-                        empty
-                        (\() -> return 0)
-                        (return 1 <|> return 2)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False <|> return False
+            checkElse empty thenBranch elseBranch
         , testCase "forgets accumulator from conditional" $ do
-            let expect = return False
-                actual =
-                    ifte
-                        (addRule 0 >> empty)
-                        (\() -> return True)
-                        (return False)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False
+                condition = addRule 0 >> empty
+            checkElse condition thenBranch elseBranch
         ]
     , testGroup "\"then\" branch"
         [ testCase "returns value" $ do
-            let expect = return True
-                actual =
-                    ifte
-                        (return ())
-                        (\() -> return True)
-                        (return False)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False
+                condition = return ()
+            checkThen condition thenBranch elseBranch
         , testCase "returns multiple values" $ do
-            let expect, actual :: Transition Integer Integer
-                expect = return 1 <|> return 2
-                actual =
-                    ifte
-                        (return ())
-                        (\() -> return 1 <|> return 2)
-                        (return 0)
-            check expect actual
+            let thenBranch () = return True <|> return True
+                elseBranch = return False
+                condition = return ()
+            checkThen condition thenBranch elseBranch
         , testCase "branches on multiple values" $ do
-            let expect = return True <|> return True
-                actual =
-                    ifte
-                        (return () <|> return ())
-                        (\() -> return True)
-                        (return False)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False
+                condition = return () <|> return ()
+            checkThen condition thenBranch elseBranch
         , testCase "remembers accumulator from conditional" $ do
-            let expect = addRule 0 >> return True
-                actual =
-                    ifte
-                        (addRule 0 >> return ())
-                        (\() -> return True)
-                        (return False)
-            check expect actual
+            let thenBranch () = return True
+                elseBranch = return False
+                condition = addRule 0 >> return ()
+            checkThen condition thenBranch elseBranch
         ]
     ]
   where
@@ -82,5 +57,26 @@ test_ifte =
         => Transition Integer a
         -> Transition Integer a
         -> Assertion
-    check expect actual =
-        on (assertEqual "") runTransition expect actual
+    check = on (assertEqual "") runTransition
+
+    checkThen
+        :: HasCallStack
+        => Transition Integer a
+        -> (a -> Transition Integer Bool)
+        -> Transition Integer Bool
+        -> Assertion
+    checkThen condition thenBranch elseBranch =
+        let expect = condition >>= thenBranch
+            actual = ifte condition thenBranch elseBranch
+        in check expect actual
+
+    checkElse
+        :: HasCallStack
+        => Transition Integer a
+        -> (a -> Transition Integer Bool)
+        -> Transition Integer Bool
+        -> Assertion
+    checkElse condition thenBranch elseBranch =
+        let expect = elseBranch
+            actual = ifte condition thenBranch elseBranch
+        in check expect actual
