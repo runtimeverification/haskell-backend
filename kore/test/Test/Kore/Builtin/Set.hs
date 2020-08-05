@@ -431,23 +431,16 @@ test_difference =
 
 test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
-    [ testCase
-        "[X, 0, 1] -Set [X, 0] = [1]"
-        $ do
-            let args =
-                    [ builtinSet_ [x, zero, one]
-                    , builtinSet_ [x, zero]
-                    ]
-                expect =
-                    makeMultipleAndPredicate
-                        (makeCeilPredicate setSort <$> args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition oneSingleton
-            actual <-
-                Set.evalDifference (Application differenceSetSymbol args)
-                & runMaybeT
-                & runSimplifierNoSMT testEnv
-            assertEqual "" (Just expect) actual
+    [ testCase "[X, 0, 1] -Set [X, 0] = [1]" $ do
+        let args =
+                [ builtinSet_ [x, zero, one]
+                , builtinSet_ [x, zero]
+                ]
+            expect =
+                makeMultipleAndPredicate (makeCeilPredicate setSort <$> args)
+                & Condition.fromPredicate
+                & Pattern.withCondition oneSingleton
+        evalDifference (Just expect) args
     , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
         let args =
                 [ builtinSet_ [x, one]
@@ -457,11 +450,7 @@ test_difference_symbolic =
                 makeMultipleAndPredicate (makeCeilPredicate setSort <$> args)
                 & Condition.fromPredicate
                 & Pattern.withCondition (differenceSet oneSingleton ySingleton)
-        actual <-
-            Set.evalDifference (Application differenceSetSymbol args)
-            & runMaybeT
-            & runSimplifierNoSMT testEnv
-        assertEqual "" (Just expect) actual
+        evalDifference (Just expect) args
     , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
         let args =
                 [ builtinSet_ [fx, one]
@@ -471,11 +460,7 @@ test_difference_symbolic =
                 makeCeilPredicate setSort (head args)
                 & Condition.fromPredicate
                 & Pattern.withCondition oneSingleton
-        actual <-
-            Set.evalDifference (Application differenceSetSymbol args)
-            & runMaybeT
-            & runSimplifierNoSMT testEnv
-        assertEqual "" (Just expect) actual
+        evalDifference (Just expect) args
     ]
   where
     x = mkElemVar ("x" `ofSort` intSort)
@@ -488,6 +473,18 @@ test_difference_symbolic =
 
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
     idName `ofSort` sort = mkElementVariable (testId idName) sort
+
+    evalDifference
+        :: HasCallStack
+        => Maybe (Pattern VariableName)  -- ^ expected result
+        -> [TermLike VariableName]  -- ^ arguments of 'differenceSet'
+        -> Assertion
+    evalDifference expect args = do
+        actual <-
+            Set.evalDifference (Application differenceSetSymbol args)
+            & runMaybeT
+            & runSimplifierNoSMT testEnv
+        assertEqual "" expect actual
 
 test_toList :: TestTree
 test_toList =
