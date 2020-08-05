@@ -65,6 +65,14 @@ test_ifte =
                         (\() -> return True)
                         (return False)
             check expect actual
+        , testCase "remembers accumulator from conditional" $ do
+            let expect = addRule 0 >> return True
+                actual =
+                    ifte
+                        (addRule 0 >> return ())
+                        (\() -> return True)
+                        (return False)
+            check expect actual
         ]
     ]
   where
