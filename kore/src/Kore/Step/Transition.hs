@@ -8,7 +8,9 @@ License     : NCSA
 
 module Kore.Step.Transition
     ( TransitionT (..)
+    , Transition
     , runTransitionT
+    , runTransition
     , tryTransitionT
     , mapTransitionT
     , scatter
@@ -16,6 +18,7 @@ module Kore.Step.Transition
     , addRules
     , mapRules
     , orElse
+    , ifte
     -- * Re-exports
     , Seq
     ) where
@@ -33,6 +36,10 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Accum
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
+import Data.Functor.Identity
+    ( Identity
+    , runIdentity
+    )
 import Data.Sequence
     ( Seq
     )
@@ -76,6 +83,8 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
+type Transition r = TransitionT r Identity
+
 instance MonadLog m => MonadLog (TransitionT rule m) where
     logWhile entry = mapTransitionT $ logWhile entry
 
@@ -117,6 +126,9 @@ instance MonadCatch m => MonadCatch (TransitionT rule m) where
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = Logic.observeAllT (runAccumT edge mempty)
+
+runTransition :: Transition rule a -> [(a, Seq rule)]
+runTransition = runIdentity . runTransitionT
 
 tryTransitionT
     :: Monad m
@@ -162,11 +174,52 @@ mapRules f trans = do
     let results' = map (fmap (fmap f)) results
     scatter results'
 
+{- |
+
+If the first branch returns /any/ values, return /all/ such values; otherwise,
+proceed down the second branch. In pseudo-Haskell:
+
+@
+orElse first second
+  | first /= empty = first
+  | otherwise      = second
+@
+
+See also: 'ifte'
+
+ -}
 orElse
     :: Monad m
     => TransitionT rule m a
     -> TransitionT rule m a
     -> TransitionT rule m a
-orElse first second = do
-    results <- tryTransitionT first
-    if null results then second else scatter results
+orElse first = ifte first return -- 'return' is the unit of '>>='
+
+{- |
+
+If the conditional returns /any/ values, send /all/ such values down the "then"
+branch; otherwise, proceed down the "else" branch. In pseudo-Haskell:
+
+@
+ifte cond thenBranch elseBranch
+  | cond /= empty = cond >>= thenBranch
+  | otherwise     = elseBranch
+@
+
+ -}
+ifte
+    :: Monad m
+    => TransitionT rule m a
+    -> (a -> TransitionT rule m b)
+    -> TransitionT rule m b
+    -> TransitionT rule m b
+ifte p t e = TransitionT $ AccumT $ \w0 ->
+    Logic.ifte
+        (toLogicT w0 p)
+        (\(a, w1) -> do
+            (b, w2) <- toLogicT w1 (t a)
+            pure (b, w1 <> w2)
+        )
+        (toLogicT w0 e)
+  where
+    toLogicT w = flip runAccumT w . getTransitionT
