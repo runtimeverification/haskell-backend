@@ -34,7 +34,7 @@ instance Pretty WarnTrivialClaim where
     pretty (WarnTrivialClaimRemoved rule) =
         Pretty.hsep
             [ "trivial claim removed:"
-            , Pretty.pretty $ show (from rule :: SourceLocation)
+            , Pretty.pretty (from rule :: SourceLocation)
             ]
 
 
