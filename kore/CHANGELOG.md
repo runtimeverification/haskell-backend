@@ -14,6 +14,24 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.27.0.0] - 2020-08-05
+
+### Added
+
+- Add symbolic reasoning for SET.difference.
+- Add SET.inclusion hook.
+
+### Changed
+
+- Add more context to some error messages.
+- Update stack.yaml to GHC 8.10.
+
+### Fixed
+
+- Fix several memory leaks.
+- Enable RTS statistics by default in all build configurations.
+- Allow narrowing on uninterpreted functions.
+
 ## [0.26.0.0] - 2020-07-24
 
 ### Added
