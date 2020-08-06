@@ -312,13 +312,15 @@ verifyClaim
             pure proofDepth
         & Logic.observeAllT
 
+    discardAppliedRules = map fst
+
     transit instr config =
         Strategy.transitionRule
             (transitionRule' claims axioms & trackProofDepth)
             instr
             config
         & runTransitionT
-        & fmap (map fst)
+        & fmap discardAppliedRules
         & traceProf ":transit"
         & lift
 
