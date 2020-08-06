@@ -1558,6 +1558,8 @@ mkDefined = updateCallStack . worker
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
 mkDefinedAtTop = synthesize . DefinedF . Defined
 
+{- | Remove (recursively) the 'Defined' wrappers throughout a 'TermLike'.
+ -}
 unDefined :: TermLike variable -> TermLike variable
 unDefined =
     Recursive.unfold $ \termLike ->
