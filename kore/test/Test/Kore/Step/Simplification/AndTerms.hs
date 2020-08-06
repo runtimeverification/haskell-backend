@@ -1217,11 +1217,13 @@ test_Defined =
             defined = mkDefined partial
         in
             [ testCase "\\and(partial, defined)" $ do
+                -- equalAndEquals returns the first argument
                 let expect = [Pattern.fromTermLike partial]
                 (actualAnd, actualUnify) <- simplifyUnify partial defined
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
             , testCase "\\and(defined, partial)" $ do
+                -- equalAndEquals returns the first argument
                 let expect = [Pattern.fromTermLike defined]
                 (actualAnd, actualUnify) <- simplifyUnify defined partial
                 assertEqual "" expect actualAnd
