@@ -172,6 +172,11 @@
 
 - ignore: {name: "Redundant compare", within: [Kore.Syntax.Id]}
 
+- ignore:
+    name: "Use void"
+    within:
+      - Test.Kore.Step.Transition
+
 
 # Define some custom infix operators
 # - fixity: infixr 3 ~^#^~
