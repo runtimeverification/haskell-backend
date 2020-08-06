@@ -6,8 +6,6 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
-{-# OPTIONS_GHC -fno-prof-auto #-}
-
 module SMT
     ( SMT, getSMT
     , Solver

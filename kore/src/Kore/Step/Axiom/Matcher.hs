@@ -171,6 +171,7 @@ matchOne pair =
     <|> matchBuiltinSet  pair
     <|> matchInj         pair
     <|> matchOverload    pair
+    <|> matchDefined     pair
     )
     & Error.maybeT (defer pair) return
 
@@ -407,6 +408,15 @@ matchOverload
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
+
+matchDefined
+    :: (MatchingVariable variable, MonadSimplify simplifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable simplifier) ()
+matchDefined (Pair term1 term2)
+  | Defined_ def1 <- term1 = push (Pair def1 term2)
+  | Defined_ def2 <- term2 = push (Pair term1 def2)
+  | otherwise = empty
 
 -- * Implementation
 
