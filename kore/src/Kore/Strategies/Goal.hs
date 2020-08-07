@@ -83,6 +83,7 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -185,6 +186,7 @@ import Kore.Unparser
     ( Unparse (..)
     )
 import qualified Kore.Verified as Verified
+import qualified Logic
 import qualified Pretty
 
 {- | The final nodes of an execution graph which were not proven.
@@ -713,8 +715,75 @@ checkImplication' lensRulePattern goal =
     checkImplicationWorker
         :: ClaimPattern
         -> m (CheckImplicationResult ClaimPattern)
-    checkImplicationWorker = -- (snd . Step.refreshRule mempty -> rulePattern) =
-        undefined
+    checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) = do
+        unificationResults <- OrPattern.observeAllT $ do
+            rightPatt <- Logic.scatter right
+            let rightTerm = Pattern.term rightPatt
+            mkIn leftSort leftTerm rightTerm
+                & Pattern.fromTermLike
+                & Pattern.simplify sideCondition
+        if isBottom (OrPattern.flatten unificationResults)
+            then return (NotImplied claimPattern)
+            else do
+                x <-
+                    OrPattern.observeAllT $ do
+                        singleUnificationCondition <-
+                            Logic.scatter
+                                ((fmap . fmap) Conditional.withoutTerm unificationResults)
+                        rightCondition <-
+                            Logic.scatter (Conditional.withoutTerm <$> right)
+                        simplifiedRightCondition <-
+                            Condition.simplifyCondition sideCondition rightCondition
+                            & OrCondition.observeAllT
+                        remainderConditions <-
+                            simplifyEvaluatedMultiPredicate
+                                sideCondition
+                                (MultiAnd.make
+                                    [ singleUnificationCondition
+                                    , simplifiedRightCondition
+                                    ]
+                                )
+                        let remainderPatterns =
+                                fmap Pattern.fromCondition_ remainderConditions
+                        existentialRemainders <-
+                            foldM
+                                (Exists.simplifyEvaluated sideCondition & flip)
+                                remainderPatterns
+                                existentials
+                        Not.simplifyEvaluated sideCondition existentialRemainders
+                    & (fmap . fmap) Conditional.withoutTerm
+                let x1 = MultiAnd.make . MultiOr.extractPatterns $ x
+                    definedConfigCondition =
+                        Conditional.andCondition
+                            leftCondition
+                            (Conditional.fromPredicate (makeCeilPredicate_ leftTerm))
+                simplifiedDefinedConfigCondition <-
+                    Condition.simplifyCondition sideCondition definedConfigCondition
+                    & OrCondition.observeAllT
+                x2 <-
+                    simplifyEvaluatedMultiPredicate
+                        sideCondition
+                        (x1 <> MultiAnd.make [simplifiedDefinedConfigCondition])
+                if isBottom x2
+                    then return Implied
+                    else
+                        let stuckConfiguration =
+                                Pattern.andCondition left
+                                . Condition.fromPredicate
+                                . OrCondition.toPredicate
+                                . fmap Condition.toPredicate
+                                $ x2
+                         in claimPattern
+                                & Lens.set (field @"left") stuckConfiguration
+                                & NotImpliedStuck
+                                & return
+      where
+        ClaimPattern { right, left, existentials } = claimPattern
+        leftTerm = Pattern.term left
+        leftCondition = Pattern.withoutTerm left
+        leftSort = termLikeSort leftTerm
+        sideCondition = SideCondition.assumeTrueCondition leftCondition
+
 --         do
 --             removal <- removalPatterns destination configuration existentials
 --             when (isTop removal) (succeed . NotImplied $ rulePattern)
