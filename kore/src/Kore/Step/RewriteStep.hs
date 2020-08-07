@@ -71,6 +71,9 @@ import Kore.Step.Step
     , assertFunctionLikeResults
     , unifyRules
     )
+import Log
+    ( logDebug
+    )
 import qualified Logic
 
 withoutUnification :: UnifiedRule rule -> rule
@@ -340,7 +343,7 @@ applyClaimsWithFinalizer finalize unificationProcedure rules initial = do
     finalize initialVariables initial results
 {-# INLINE applyClaimsWithFinalizer #-}
 
-debugAppliedClaims = undefined
+debugAppliedClaims _ _ = logDebug "TODO: make log entry for this!"
 
 {- | Apply the given rules to the initial configuration in parallel.
 

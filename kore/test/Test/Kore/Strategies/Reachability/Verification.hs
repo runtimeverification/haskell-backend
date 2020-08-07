@@ -6,8 +6,12 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Control.Lens as Lens
 import Data.Default
     ( def
+    )
+import Data.Generics.Product
+    ( field
     )
 import Data.Limit
     ( Limit (..)
@@ -18,23 +22,24 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( mkRewritingPattern
+    , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
+    , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    )
-import Kore.Step.RulePattern
-    ( RulePattern (..)
-    , injectTermIntoRHS
+    , lensAttribute
     )
 import Kore.Strategies.Goal
 
@@ -1288,66 +1293,62 @@ simpleAxiom
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
+simpleClaim
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> ClaimPattern
+simpleClaim
+    (TermLike.mapVariables (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables (pure mkRuleVariable) -> right)
+  =
+    ClaimPattern
+            { left =
+                Pattern.fromTermAndPredicate
+                    left
+                    makeTruePredicate_
+            , right =
+                Pattern.fromTermAndPredicate
+                    right
+                    makeTruePredicate_
+                & OrPattern.fromPattern
+            , existentials = []
+            , attributes = def
+            }
+
 simpleOnePathClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathClaim left right =
-    undefined
---     OnePath . OnePathRule
---     $ RulePattern
---             { left = left
---             , antiLeft = Nothing
---             , requires = makeTruePredicate_
---             , rhs = injectTermIntoRHS right
---             , attributes = def
---             }
+    OnePath . OnePathRule $ simpleClaim left right
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathClaim left right =
-    undefined
---     AllPath . AllPathRule
---     $ RulePattern
---             { left = left
---             , antiLeft = Nothing
---             , requires = makeTruePredicate_
---             , rhs = injectTermIntoRHS right
---             , attributes = def
---             }
+    AllPath . AllPathRule $ simpleClaim left right
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathTrustedClaim left right =
-    undefined
---     OnePath
---     . OnePathRule
---     $ RulePattern
---             { left = left
---             , antiLeft = Nothing
---             , requires = makeTruePredicate_
---             , rhs = injectTermIntoRHS right
---             , attributes = def
---                 { Attribute.trusted = Attribute.Trusted True }
---             }
+    Lens.set
+        (lensAttribute . field @"trusted")
+        (Attribute.Trusted True)
+    . OnePath
+    . OnePathRule
+    $ simpleClaim left right
 
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathTrustedClaim left right =
-    undefined
---     AllPath
---     . AllPathRule
---     $ RulePattern
---             { left
---             , antiLeft = Nothing
---             , requires = makeTruePredicate_
---             , rhs = injectTermIntoRHS right
---             , attributes = def
---                 { Attribute.trusted = Attribute.Trusted True }
---             }
+    Lens.set
+        (lensAttribute . field @"trusted")
+        (Attribute.Trusted True)
+    . AllPath
+    . AllPathRule
+    $ simpleClaim left right

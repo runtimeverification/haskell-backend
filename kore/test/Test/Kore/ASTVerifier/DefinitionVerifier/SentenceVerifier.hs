@@ -18,6 +18,8 @@ import Kore.Builtin.External
     ( externalize
     )
 import Kore.Error
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( mkElemVar
@@ -25,6 +27,9 @@ import Kore.Internal.TermLike
     , mkTop
     , mkTop
     , weakExistsFinally
+    )
+import Kore.Rewriting.RewritingVariable
+    ( mkElementRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
@@ -93,18 +98,23 @@ patternFreeVarInRHS =
     $ OnePathRule rulePatternFreeVarInRHS
   where
     rulePatternFreeVarInRHS :: ClaimPattern
-    rulePatternFreeVarInRHS = undefined -- RulePattern
---         { left = mkTop Mock.testSort
---         , antiLeft = Nothing
---         , requires = makeTruePredicate Mock.testSort
---         , rhs =
---             RHS
---                 { existentials = []
---                 , right = mkElemVar (mkElementVariable "x" Mock.testSort)
---                 , ensures = makeTruePredicate Mock.testSort
---                 }
---         , attributes = Default.def
---         }
+    rulePatternFreeVarInRHS = ClaimPattern
+        { left =
+            Pattern.fromTermAndPredicate
+                (mkTop Mock.testSort)
+                (makeTruePredicate Mock.testSort)
+        , existentials = []
+        , right =
+            Pattern.fromTermAndPredicate
+                ( mkElemVar
+                    ( mkElementVariable "x" Mock.testSort
+                    & mkElementRuleVariable
+                    )
+                )
+                (makeTruePredicate Mock.testSort)
+            & OrPattern.fromPattern
+        , attributes = Default.def
+        }
 
 patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
@@ -113,15 +123,23 @@ patternNoFreeVarInRHS =
     $ OnePathRule rulePatternNoFreeVarInRHS
   where
     rulePatternNoFreeVarInRHS :: ClaimPattern
-    rulePatternNoFreeVarInRHS = undefined -- RulePattern
---         { left = mkTop Mock.testSort
---         , antiLeft = Nothing
---         , requires = makeTruePredicate Mock.testSort
---         , rhs =
---             RHS
---                 { existentials = [mkElementVariable "x" Mock.testSort]
---                 , right = mkElemVar (mkElementVariable "x" Mock.testSort)
---                 , ensures = makeTruePredicate Mock.testSort
---                 }
---         , attributes = Default.def
---         }
+    rulePatternNoFreeVarInRHS = ClaimPattern
+        { left =
+            Pattern.fromTermAndPredicate
+                (mkTop Mock.testSort)
+                (makeTruePredicate Mock.testSort)
+        , existentials =
+            [ mkElementVariable "x" Mock.testSort
+            & mkElementRuleVariable
+            ]
+        , right =
+            Pattern.fromTermAndPredicate
+                ( mkElemVar
+                    ( mkElementVariable "x" Mock.testSort
+                    & mkElementRuleVariable
+                    )
+                )
+                (makeTruePredicate Mock.testSort)
+            & OrPattern.fromPattern
+        , attributes = Default.def
+        }

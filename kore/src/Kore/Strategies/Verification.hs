@@ -43,6 +43,9 @@ import Data.Coerce
     ( coerce
     )
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
@@ -495,10 +498,10 @@ withConfiguration
     :: MonadCatch monad
     => CommonTransitionRule monad
     -> CommonTransitionRule monad
-withConfiguration transit prim proofState = undefined
---     handle' (transit prim proofState)
---   where
---     config =
---         ProofState.extractUnproven proofState
---         & fmap (Lens.view leftPattern . toRulePattern)
---     handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
+withConfiguration transit prim proofState =
+    handle' (transit prim proofState)
+  where
+    config =
+        ProofState.extractUnproven proofState
+        & fmap getConfiguration
+    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config

@@ -644,13 +644,13 @@ makeImplicationRule
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
-simplifyReachabilityRule
-    :: MonadSimplify simplifier
-    => ReachabilityRule
-    -> simplifier ReachabilityRule
-simplifyReachabilityRule rule = undefined -- do
---     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
---     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
+-- simplifyReachabilityRule
+--     :: MonadSimplify simplifier
+--     => ReachabilityRule
+--     -> simplifier ReachabilityRule
+-- simplifyReachabilityRule rule = undefined -- do
+-- --     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
+-- --     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
@@ -721,8 +721,10 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    -- TODO: is this really needed?
+    -- claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
+        claims = concat simplifiedSpecClaims
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where

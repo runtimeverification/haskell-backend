@@ -6,8 +6,12 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Control.Lens as Lens
 import Data.Default
     ( def
+    )
+import Data.Generics.Product
+    ( field
     )
 import Data.Limit
     ( Limit (..)
@@ -18,16 +22,20 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( OnePathRule (..)
+    ( ClaimPattern (..)
+    , OnePathRule (..)
     , ReachabilityRule (..)
+    , lensAttribute
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
@@ -492,29 +500,31 @@ simpleClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
-simpleClaim left right =
-    undefined
---     (OnePath . OnePathRule)
---     RulePattern
---         { left = left
---         , antiLeft = Nothing
---         , requires = makeTruePredicate_
---         , rhs = injectTermIntoRHS right
---         , attributes = def
---         }
+simpleClaim
+    (TermLike.mapVariables (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables (pure mkRuleVariable) -> right)
+  =
+    (OnePath . OnePathRule)
+    $ ClaimPattern
+            { left =
+                Pattern.fromTermAndPredicate
+                    left
+                    makeTruePredicate_
+            , right =
+                Pattern.fromTermAndPredicate
+                    right
+                    makeTruePredicate_
+                & OrPattern.fromPattern
+            , existentials = []
+            , attributes = def
+            }
 
 simpleTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleTrustedClaim left right =
-    undefined
---     (OnePath . OnePathRule)
---     RulePattern
---         { left = left
---         , antiLeft = Nothing
---         , requires = makeTruePredicate_
---         , rhs = injectTermIntoRHS right
---         , attributes = def
---             { Attribute.trusted = Attribute.Trusted True }
---         }
+    Lens.set
+        (lensAttribute . field @"trusted")
+        (Attribute.Trusted True)
+    $ simpleClaim left right
