@@ -294,8 +294,8 @@ test_removeAll =
             when (set == Set.empty) discard
             let key = Set.elemAt 0 set
                 diffSet = Set.delete key set
-                patSet = Test.Set.asTermLike set
-                patDiffSet = Test.Set.asTermLike diffSet
+                patSet = builtinSet_ set & fromConcrete
+                patDiffSet = builtinSet_ diffSet & fromConcrete
                 patKey = fromConcrete key
                 patRemoveAll1 = removeAllMap map' patSet
                 patRemoveAll2 = removeAllMap
@@ -426,7 +426,7 @@ test_keysUnit =
             let
                 patUnit = unitMap
                 patKeys = keysMap patUnit
-                patExpect = Test.Set.asTermLike Set.empty
+                patExpect = builtinSet_ Set.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
@@ -440,7 +440,7 @@ test_keysElement =
             key <- forAll genConcreteIntegerPattern
             val <- forAll genIntegerPattern
             let patMap = asTermLike $ Map.singleton key val
-                patKeys = Test.Set.asTermLike $ Set.singleton key
+                patKeys = builtinSet_ (Set.singleton key) & fromConcrete
                 patSymbolic = keysMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
@@ -455,7 +455,7 @@ test_keys =
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
             let keys1 = Map.keysSet map1
-                patConcreteKeys = Test.Set.asTermLike keys1
+                patConcreteKeys = builtinSet_ keys1 & fromConcrete
                 patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys

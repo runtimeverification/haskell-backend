@@ -6,6 +6,7 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
     )
@@ -99,11 +100,9 @@ test_andSimplification =
 
         , testCase "And function terms" $ do
             let expect =
-                    Conditional
-                        { term = fOfX
-                        , predicate = makeEqualsPredicate_ fOfX gOfX
-                        , substitution = mempty
-                        }
+                    makeEqualsPredicate_ fOfX gOfX
+                    & Condition.fromPredicate
+                    & Pattern.withCondition fOfX
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -332,11 +331,9 @@ test_andSimplification =
     , testCase "And-Or distribution" $ do
         let expect =
                 OrPattern.fromPatterns
-                    [ Conditional
-                        { term = fOfX
-                        , predicate = makeEqualsPredicate_ fOfX gOfX
-                        , substitution = mempty
-                        }
+                    [ makeEqualsPredicate_ fOfX gOfX
+                        & Condition.fromPredicate
+                        & Pattern.withCondition fOfX
                     , Conditional
                         { term = fOfX
                         , predicate = makeCeilPredicate Mock.testSort gOfX

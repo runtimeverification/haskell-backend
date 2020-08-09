@@ -7,6 +7,7 @@ import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
@@ -32,6 +33,7 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
@@ -614,6 +616,12 @@ differenceSetSymbol :: Internal.Symbol
 differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
 
+differenceSet
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
+
 toListSetSymbol :: Internal.Symbol
 toListSetSymbol =
     builtinSymbol "toListSet" listSort [setSort] & hook "SET.set2list"
@@ -1165,38 +1173,37 @@ testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
 
 builtinSet
-    :: [TermLike Concrete]
-    -> InternalSet (TermLike Concrete) (TermLike VariableName)
-builtinSet children =
-    InternalAc
+    :: InternalVariable variable
+    => Foldable f
+    => f (TermLike variable)
+    -> [TermLike variable]
+    -> TermLike variable
+builtinSet elements opaque =
+    mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
         , builtinAcConcat = concatSetSymbol
         , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements =
-                Map.fromList (map (\x -> (x, SetValue)) children)
-            , opaque = []
+            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+            , concreteElements
+            , opaque
             }
         }
+  where
+    asKey key =
+        (,) <$> Builtin.toKey key <*> pure Domain.SetValue
+        & maybe (Left (key, Domain.SetValue)) Right
+    (abstractElements, Map.fromList -> concreteElements) =
+        asKey <$> Foldable.toList elements
+        & partitionEithers
 
-builtinSymbolicSet
-    :: [TermLike VariableName]
-    -> InternalSet key (TermLike VariableName)
-builtinSymbolicSet children =
-    InternalAc
-        { builtinAcSort = setSort
-        , builtinAcUnit = unitSetSymbol
-        , builtinAcElement = elementSetSymbolTestSort
-        , builtinAcConcat = concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables =
-                fmap (\x -> wrapElement (x, SetValue)) children
-            , concreteElements = Map.empty
-            , opaque = []
-            }
-        }
+builtinSet_
+    :: InternalVariable variable
+    => Foldable f
+    => f (TermLike variable)
+    -> TermLike variable
+builtinSet_ items = builtinSet items []
 
 -- ** String
 

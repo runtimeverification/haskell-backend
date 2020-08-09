@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds    #-}
-{-# OPTIONS_GHC -fno-prof-auto #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2018
