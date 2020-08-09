@@ -27,6 +27,7 @@ module Kore.Builtin.Set
     , evalConcat
     , evalElement
     , evalUnit
+    , evalDifference
       -- * Unification
     , unifyEquals
     ) where
@@ -48,6 +49,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -71,6 +73,9 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
@@ -78,6 +83,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
+    , makeMultipleAndPredicate
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -324,8 +330,18 @@ evalConcat resultSort [set1, set2] =
         (Ac.toNormalized set2)
 evalConcat _ _ = Builtin.wrongArity Set.concatKey
 
-evalDifference :: Builtin.Function
-evalDifference resultSort [_set1, _set2] = do
+evalDifference
+        :: forall variable simplifier
+        .  InternalVariable variable
+        => MonadSimplify simplifier
+        => TermLike.Application TermLike.Symbol (TermLike variable)
+        -> MaybeT simplifier (Pattern variable)
+evalDifference
+    ( TermLike.Application
+        symbol@TermLike.Symbol { symbolSorts = ApplicationSorts _ resultSort }
+        args@[_set1, _set2]
+    )
+  = do
     let rightIdentity = do
             _set2 <- expectConcreteBuiltinSet ctx _set2
             if Map.null _set2
@@ -335,10 +351,66 @@ evalDifference resultSort [_set1, _set2] = do
             _set1 <- expectConcreteBuiltinSet ctx _set1
             _set2 <- expectConcreteBuiltinSet ctx _set2
             returnConcreteSet resultSort (Map.difference _set1 _set2)
-    rightIdentity <|> bothConcrete
+        symbolic = do
+            _set1 <- expectBuiltinSet ctx _set1
+            _set2 <- expectBuiltinSet ctx _set2
+            let definedArgs =
+                    filter (not . TermLike.isDefinedPattern) args
+                    & map (makeCeilPredicate resultSort)
+                    & makeMultipleAndPredicate
+                    & Conditional.fromPredicate
+            let Domain.NormalizedAc
+                    { concreteElements = concrete1
+                    , elementsWithVariables = symbolic1'
+                    , opaque = opaque1'
+                    }
+                  = Domain.unwrapAc _set1
+                symbolic1 =
+                    Domain.unwrapElement <$> symbolic1'
+                    & Map.fromList
+                opaque1 = Set.fromList opaque1'
+            let Domain.NormalizedAc
+                    { concreteElements = concrete2
+                    , elementsWithVariables = symbolic2'
+                    , opaque = opaque2'
+                    }
+                  = Domain.unwrapAc _set2
+                symbolic2 =
+                    Domain.unwrapElement <$> symbolic2'
+                    & Map.fromList
+                opaque2 = Set.fromList opaque2'
+            let set1' =
+                    Domain.NormalizedAc
+                    { concreteElements = Map.difference concrete1 concrete2
+                    , elementsWithVariables =
+                        Map.difference symbolic1 symbolic2
+                        & Map.toList
+                        & map Domain.wrapElement
+                    , opaque = Set.difference opaque1 opaque2 & Set.toList
+                    }
+                set2' =
+                    Domain.NormalizedAc
+                    { concreteElements = Map.difference concrete2 concrete1
+                    , elementsWithVariables =
+                        Map.difference symbolic2 symbolic1
+                        & Map.toList
+                        & map Domain.wrapElement
+                    , opaque = Set.difference opaque1 opaque1 & Set.toList
+                    }
+            pat1 <- Ac.returnAc resultSort (Domain.NormalizedSet set1')
+            pat2 <- Ac.returnAc resultSort (Domain.NormalizedSet set2')
+            let pat
+                  | (not . Domain.nullAc) set1', (not . Domain.nullAc) set2' =
+                    differenceSet <$> pat1 <*> pat2
+                  | otherwise = pat1
+            return (Pattern.andCondition pat definedArgs)
+
+    rightIdentity <|> bothConcrete <|> symbolic
   where
     ctx = Set.differenceKey
-evalDifference _ _ = Builtin.wrongArity Set.differenceKey
+    differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
+evalDifference _ =
+    Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
 evalToList resultSort [_set] = do
@@ -399,7 +471,7 @@ builtinFunctions =
         , (Set.elementKey, Builtin.functionEvaluator evalElement)
         , (Set.unitKey, Builtin.functionEvaluator evalUnit)
         , (Set.inKey, Builtin.functionEvaluator evalIn)
-        , (Set.differenceKey, Builtin.functionEvaluator evalDifference)
+        , (Set.differenceKey, Builtin.applicationEvaluator evalDifference)
         , (Set.toListKey, Builtin.functionEvaluator evalToList)
         , (Set.sizeKey, Builtin.functionEvaluator evalSize)
         , (Set.intersectionKey, Builtin.functionEvaluator evalIntersection)

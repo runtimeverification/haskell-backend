@@ -18,6 +18,7 @@ module Kore.Domain.Builtin
     , wrapConcreteElement
     , InternalAc (..)
     , NormalizedAc (..)
+    , nullAc
     , emptyNormalizedAc
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
@@ -175,6 +176,12 @@ data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
     -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }
     deriving (GHC.Generic)
+
+nullAc :: NormalizedAc normalized key child -> Bool
+nullAc normalizedAc =
+    null (elementsWithVariables normalizedAc)
+    && null (concreteElements normalizedAc)
+    && null (opaque normalizedAc)
 
 isSymbolicKeyOfAc
     :: AcWrapper normalized

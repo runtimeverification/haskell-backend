@@ -6,8 +6,6 @@ Representation of conditional terms.
 
 -}
 
-{-# OPTIONS_GHC -fno-prof-auto #-}
-
 module Kore.Internal.Conditional
     ( Conditional (..)
     , withoutTerm
