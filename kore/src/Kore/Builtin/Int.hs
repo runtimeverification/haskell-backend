@@ -29,6 +29,7 @@ module Kore.Builtin.Int
     , asPattern
     , asPartialPattern
     , parse
+    , termIntEquals
       -- * keys
     , randKey
     , srandKey
@@ -107,13 +108,23 @@ import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Step.Simplification.NotSimplifier
+    ( NotSimplifier (..)
+    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
+    , TermSimplifier
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
     )
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
@@ -385,3 +396,15 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
     conditions = foldMap mkCeilUnlessDefined arguments
 
 evalEq _ _ = Builtin.wrongArity eqKey
+
+termIntEquals
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+termIntEquals unifyChildren (NotSimplifier notSimplifier) a b =
+    undefined

@@ -42,6 +42,9 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
+import Control.Monad.Trans.Maybe
+    ( runMaybeT
+    )
 import Data.Bits
     ( complement
     , shift
@@ -69,6 +72,19 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
+import Kore.Step.Simplification.Data
+    ( runSimplifierBranch
+    )
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
+import SMT
+    ( SMT
+    )
 
 import Test.Kore
     ( elementVariableGen
@@ -513,9 +529,6 @@ test_reflexivity_symbolic =
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
-  where
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    ofSort idName sort = mkElementVariable (testId idName) sort
 
 test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
@@ -525,9 +538,36 @@ test_symbolic_eq_not_conclusive =
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
-  where
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    ofSort idName sort = mkElementVariable (testId idName) sort
+
+ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+idName `ofSort` sort = mkElementVariable (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
+
+test_IntEqualSimplification :: [TestTree]
+test_IntEqualSimplification =
+    [ testCaseWithSMT "constructor1 =/=Int constructor2" $ do
+        let term1 = Test.Bool.asInternal False
+            term2 =
+                eqInt
+                    (mkElemVar $ "x" `ofSort` intSort)
+                    (mkElemVar $ "y" `ofSort` intSort)
+            expect = [Just Pattern.top]
+        actual <- runIntEqualSimplification term1 term2
+        assertEqual' "" expect actual
+    ]
+
+runIntEqualSimplification
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> SMT [Maybe (Pattern VariableName)]
+runIntEqualSimplification term1 term2 =
+    runSimplifierBranch testEnv
+    . evalEnvUnifierT Not.notSimplifier
+    . runMaybeT
+    $ Int.termIntEquals
+        (termUnification Not.notSimplifier)
+        Not.notSimplifier
+        term1
+        term2
