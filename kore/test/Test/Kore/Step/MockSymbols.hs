@@ -593,7 +593,9 @@ greaterEqIntSymbol =
 tdivIntSymbol :: Symbol
 tdivIntSymbol =
     symbol tdivIntId [intSort, intSort] intSort
-    & function & hook "INT.tdiv"
+    & function
+    & hook "INT.tdiv"
+    & smthook "div"
 
 concatListSymbol :: Symbol
 concatListSymbol =
@@ -1544,6 +1546,7 @@ smtUnresolvedDeclarations = SMT.Declarations
         , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
         , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
+        , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
         , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
         ]
     }

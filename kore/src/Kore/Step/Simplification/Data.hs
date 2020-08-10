@@ -9,7 +9,6 @@ Portability : portable
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-prof-auto #-}
 
 module Kore.Step.Simplification.Data
     ( Simplifier

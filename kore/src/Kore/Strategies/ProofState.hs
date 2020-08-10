@@ -42,9 +42,6 @@ data Prim
     | Simplify
     | CheckImplication
     -- ^ Check if the claim's implication is valid.
-    | InferDefined
-    -- ^ Infer that the left-hand side of the claim is defined. This is related
-    -- to 'CheckImplication', but separated as an optimization.
     | TriviallyValid
     | ApplyClaims
     | ApplyAxioms
@@ -55,9 +52,8 @@ instance Pretty Prim where
     pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
     pretty ResetGoal = "Transition ResetGoal."
-    pretty Simplify = "Transition Simplify."
+    pretty Simplify = "simplify the claim"
     pretty CheckImplication = "Transition CheckImplication."
-    pretty InferDefined = "infer left-hand side is defined"
     pretty TriviallyValid = "Transition TriviallyValid."
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"

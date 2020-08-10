@@ -7,6 +7,9 @@ pipeline {
   options {
     ansiColor('xterm')
   }
+  environment {
+    LONG_REV = """${sh(returnStdout: true, script: 'git rev-parse HEAD').trim()}"""
+  }
   stages {
     stage('Init title') {
       when { changeRequest() }
@@ -74,11 +77,10 @@ pipeline {
     stage('Update K Submodules') {
       when { branch 'master' }
       steps {
-        build job: 'rv-devops/master', propagate: false, wait: false                                                            \
-            , parameters: [ booleanParam(name: 'UPDATE_DEPS_SUBMODULE', value: true)                                            \
-                          , string(name: 'PR_REVIEWER', value: 'ttuegel')                                                       \
-                          , string(name: 'UPDATE_DEPS_REPOSITORY', value: 'kframework/k')                                       \
-                          , string(name: 'UPDATE_DEPS_SUBMODULE_DIR', value: 'haskell-backend/src/main/native/haskell-backend') \
+        build job: 'rv-devops/master', propagate: false, wait: false                                \
+            , parameters: [ booleanParam ( name: 'UPDATE_DEPS'         , value: true              ) \
+                          , string       ( name: 'UPDATE_DEPS_REPO'    , value: 'kframework/kore' ) \
+                          , string       ( name: 'UPDATE_DEPS_VERSION' , value: "${env.LONG_REV}" ) \
                           ]
       }
     }
