@@ -8,7 +8,6 @@ module Test.Kore.Builtin.KEqual
 
 import Prelude.Kore
 
-import Kore.Unparser
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty

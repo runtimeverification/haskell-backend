@@ -35,8 +35,6 @@ module Test.Kore.Builtin.Int
     ) where
 
 import Prelude.Kore
-import Kore.Unparser
-import Data.Maybe
 
 import Hedgehog hiding
     ( Concrete
@@ -75,7 +73,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -551,31 +548,21 @@ hprop_unparse = hpropUnparse (asInternal <$> genInteger)
 
 test_IntEqualSimplification :: [TestTree]
 test_IntEqualSimplification =
-    [ testCaseWithSMT "qqconstructor1 =/=Int constructor2" $ do
+    [ testCaseWithSMT "constructor1 =/=Int constructor2" $ do
         let term1 = Test.Bool.asInternal False
             term2 =
                 eqInt
                     (mkElemVar $ "x" `ofSort` intSort)
                     (mkElemVar $ "y" `ofSort` intSort)
-            expect =
-                [ Just $
-                    (from)
-                        ( mkNot
-                            (mkEquals_
-                                (mkElemVar $ "x" `ofSort` intSort)
-                                (mkElemVar $ "y" `ofSort` intSort)
-                            )
-                        )
-                ]
+        notEq <-
+            evaluate $
+                mkNot
+                    ( mkEquals_
+                        (mkElemVar $ "x" `ofSort` intSort)
+                        (mkElemVar $ "y" `ofSort` intSort)
+                    )
+        let expect = [ Just notEq ]
         actual <- runIntEqualSimplification term1 term2
-        traceM $ "\n\nexpect:"
-        traceM $ unparseToString $ (fromJust . head) expect
-        traceM $ "\n\nactual:"
-        traceM $ unparseToString $ (fromJust . head) expect
-        traceM $ "\nexpected length:"
-        traceM $ show $ length expect
-        traceM $ "\nactual length:"
-        traceM $ show $ length actual
         assertEqual' "" expect actual
     ]
 
