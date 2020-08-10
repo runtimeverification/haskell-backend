@@ -20,6 +20,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAnd_Fn
     , test_reflexivity_symbolic
     , test_symbolic_eq_not_conclusive
+    , test_IntEqualSimplification
     , hprop_unparse
     --
     , asInternal
