@@ -22,14 +22,15 @@ import Pretty
 import qualified Pretty
 
 data WarnTrivialClaim
-    = WarnProvenClaimZeroDepth
+    = WarnProvenClaimZeroDepth ReachabilityRule
     | WarnTrivialClaimRemoved ReachabilityRule
     deriving Show
 
 instance Pretty WarnTrivialClaim where
-    pretty WarnProvenClaimZeroDepth =
+    pretty (WarnProvenClaimZeroDepth rule) =
         Pretty.hsep
             [ "claim proven without taking any steps:"
+            , Pretty.pretty (from rule :: SourceLocation)
             ]
     pretty (WarnTrivialClaimRemoved rule) =
         Pretty.hsep
@@ -46,9 +47,10 @@ instance Entry WarnTrivialClaim where
 warnIfProvenWithZeroDepth
     :: MonadLog log
     => ProofDepth
+    -> ReachabilityRule
     -> log ()
-warnIfProvenWithZeroDepth (ProofDepth depth) =
-    when (depth == 0) $ logEntry WarnProvenClaimZeroDepth
+warnIfProvenWithZeroDepth (ProofDepth depth) rule =
+    when (depth == 0) $ logEntry (WarnProvenClaimZeroDepth rule)
 
 warnTrivialClaimRemoved
     :: MonadLog log
