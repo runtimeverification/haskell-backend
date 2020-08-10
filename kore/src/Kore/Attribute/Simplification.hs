@@ -27,7 +27,6 @@ import Prelude.Kore
 import Data.Maybe
     ( maybeToList
     )
-import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -88,18 +87,18 @@ instance ParseAttributes Simplification where
             Parser.getZeroParams params
             arg <- Parser.getZeroOrOneArguments args
             case arg of
-                Just arg' -> do
-                    stringLiteral <- Parser.getStringLiteral arg'
-                    let StringLiteral str = stringLiteral
-                    if Text.null str
-                        then return (IsSimplification Nothing)
-                        else do
-                            integer <- Parser.parseInteger stringLiteral
-                            return (IsSimplification (Just integer))
-                Nothing ->
-                    return (IsSimplification Nothing)
+                Just arg' ->
+                    Parser.getStringLiteral arg'
+                    >>= Parser.parseStringLiteral readPriority
+                Nothing -> pure (IsSimplification Nothing)
         parseSimplification _ _ _ =
             failDuplicate'
+
+        readPriority str
+          | null str = pure (IsSimplification Nothing, "")
+          | otherwise = do
+            (integer, rest) <- reads str
+            pure (IsSimplification (Just integer), rest)
 
         withApplication' = Parser.withApplication simplificationId
         failDuplicate' = Parser.failDuplicate simplificationId
