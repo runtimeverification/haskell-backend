@@ -26,6 +26,7 @@ module SMT
     , escapeId
     , declareFun_
     , setInfo
+    , setOption
     , NoSMT (..), runNoSMT
     , SimpleSMT.SolverException (..)
     -- * Expressions
@@ -456,6 +457,11 @@ setInfo :: MonadSMT m => Text -> SExpr -> m ()
 setInfo infoFlag expr =
     ackCommand $ List (Atom "set-info" : Atom infoFlag : [expr])
 
+-- | SMT-LIB @set-option@ command.
+setOption :: MonadSMT m => Text -> SExpr -> m ()
+setOption infoFlag expr =
+    ackCommand $ List (Atom "set-option" : Atom infoFlag : [expr])
+
 -- --------------------------------
 -- Internal
 
@@ -464,6 +470,6 @@ setTimeOut :: MonadSMT m => TimeOut -> m ()
 setTimeOut TimeOut { getTimeOut } =
     case getTimeOut of
         Limit timeOut ->
-            setInfo ":time" (SimpleSMT.int timeOut)
+            setOption ":timeout" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
