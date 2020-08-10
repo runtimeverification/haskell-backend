@@ -102,18 +102,26 @@ import GHC.Integer.Logarithms
     )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.Symbol
+    ( symbolHook
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.NotSimplifier
@@ -123,9 +131,7 @@ import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
     , TermSimplifier
     )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
+import Kore.Unification.Unify as Unify
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -397,6 +403,25 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
 
 evalEq _ _ = Builtin.wrongArity eqKey
 
+{- The @INT.eq hooked symbol applied to @term@-type arguments.
+-}
+
+data IntEqual term =
+    IntEqual
+        { symbol :: !Symbol
+        , operand1, operand2 :: !term
+        }
+    deriving Show
+
+{- | Match the @Int.eq@ hooked symbol.
+-}
+matchIntEqual :: TermLike variable -> Maybe (IntEqual (TermLike variable))
+matchIntEqual (App_ symbol [operand1, operand2]) = do
+    hook2 <- (getHook . symbolHook) symbol
+    Monad.guard (hook2 == eqKey)
+    return IntEqual { symbol, operand1, operand2 }
+matchIntEqual _ = Nothing
+
 termIntEquals
     :: forall variable unifier
     .  InternalVariable variable
@@ -407,4 +432,22 @@ termIntEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 termIntEquals unifyChildren (NotSimplifier notSimplifier) a b =
-    undefined
+    worker a b <|> worker b a
+  where
+    eraseTerm = Pattern.fromCondition_ . Pattern.withoutTerm
+    worker termLike1 termLike2
+      | Just IntEqual { operand1, operand2 } <- matchIntEqual termLike1
+      , isFunctionPattern termLike1
+      , Just value2 <- Bool.matchBool termLike2
+      = lift $ do
+        solution <-
+            fmap OrPattern.fromPatterns
+            <$> Unify.gather
+            $ unifyChildren operand1 operand2
+        let solution' = fmap eraseTerm solution
+        finalSolution <-
+            if value2
+                then return solution'
+                else notSimplifier SideCondition.top solution'
+        Unify.scatter finalSolution
+    worker _ _ = empty
