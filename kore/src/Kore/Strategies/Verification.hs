@@ -79,6 +79,10 @@ import Kore.Log.InfoProofDepth
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
+import Kore.Step.ClaimPattern
+    ( lensClaimPattern
+    , mkGoal
+    )
 import Kore.Step.RulePattern
     ( leftPattern
     , toRulePattern
@@ -270,7 +274,7 @@ verifyClaim
     -- TODO: make variables config variables
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startGoal = ProofState.Goal goal
+        startGoal = ProofState.Goal (Lens.over lensClaimPattern mkGoal goal)
         limitedStrategy =
             strategy
             & Foldable.toList

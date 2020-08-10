@@ -26,6 +26,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
@@ -509,11 +510,11 @@ simpleClaim
             { left =
                 Pattern.fromTermAndPredicate
                     left
-                    makeTruePredicate_
+                    (makeTruePredicate (termLikeSort left))
             , right =
                 Pattern.fromTermAndPredicate
                     right
-                    makeTruePredicate_
+                    (makeTruePredicate (termLikeSort right))
                 & OrPattern.fromPattern
             , existentials = []
             , attributes = def

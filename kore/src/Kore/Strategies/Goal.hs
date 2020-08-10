@@ -184,6 +184,7 @@ import Kore.TopBottom
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( Unparse (..)
+    , unparseToString
     )
 import qualified Kore.Verified as Verified
 import qualified Logic
@@ -725,7 +726,7 @@ checkImplication' lensRulePattern goal =
         if isBottom (OrPattern.flatten unificationResults)
             then return (NotImplied claimPattern)
             else do
-                x <-
+                removal <-
                     OrPattern.observeAllT $ do
                         singleUnificationCondition <-
                             Logic.scatter
@@ -751,32 +752,30 @@ checkImplication' lensRulePattern goal =
                                 remainderPatterns
                                 existentials
                         Not.simplifyEvaluated sideCondition existentialRemainders
-                    & (fmap . fmap) Conditional.withoutTerm
-                let x1 = MultiAnd.make . MultiOr.extractPatterns $ x
-                    definedConfigCondition =
-                        Conditional.andCondition
-                            leftCondition
-                            (Conditional.fromPredicate (makeCeilPredicate_ leftTerm))
-                simplifiedDefinedConfigCondition <-
-                    Condition.simplifyCondition sideCondition definedConfigCondition
-                    & OrCondition.observeAllT
-                x2 <-
-                    simplifyEvaluatedMultiPredicate
-                        sideCondition
-                        (x1 <> MultiAnd.make [simplifiedDefinedConfigCondition])
-                if isBottom x2
+                if isBottom removal
                     then return Implied
-                    else
-                        let stuckConfiguration =
+                    else do
+                        let removalDisjunction =
+                                fmap (MultiAnd.toPattern . MultiAnd.make)
+                                . MultiOr.fullCrossProduct
+                                . MultiOr.extractPatterns
+                                $ removal
+                            definedConfig =
                                 Pattern.andCondition left
-                                . Condition.fromPredicate
-                                . OrCondition.toPredicate
-                                . fmap Condition.toPredicate
-                                $ x2
-                         in claimPattern
-                                & Lens.set (field @"left") stuckConfiguration
-                                & NotImpliedStuck
-                                & return
+                                $ from $ makeCeilPredicate_ (Conditional.term left)
+                            configAndRemoval = fmap (definedConfig <*) removalDisjunction
+                        simplifiedRemoval <-
+                            simplifyConditionsWithSmt
+                                sideCondition
+                                configAndRemoval
+                        if isBottom simplifiedRemoval
+                            then return Implied
+                            else do
+                                let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+                                claimPattern
+                                    & Lens.set (field @"left") stuckConfiguration
+                                    & NotImpliedStuck
+                                    & pure
       where
         ClaimPattern { right, left, existentials } = claimPattern
         leftTerm = Pattern.term left

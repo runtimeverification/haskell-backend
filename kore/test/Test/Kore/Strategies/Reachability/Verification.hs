@@ -18,6 +18,7 @@ import Data.Limit
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
@@ -26,6 +27,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
@@ -598,24 +600,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -639,24 +636,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -683,24 +675,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -1305,11 +1292,11 @@ simpleClaim
             { left =
                 Pattern.fromTermAndPredicate
                     left
-                    makeTruePredicate_
+                    (makeTruePredicate (termLikeSort left))
             , right =
                 Pattern.fromTermAndPredicate
                     right
-                    makeTruePredicate_
+                    (makeTruePredicate (termLikeSort right))
                 & OrPattern.fromPattern
             , existentials = []
             , attributes = def

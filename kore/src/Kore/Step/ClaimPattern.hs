@@ -19,6 +19,8 @@ module Kore.Step.ClaimPattern
     , getDestination
     , lensAttribute
     , topExistsToImplicitForall
+    , lensClaimPattern
+    , mkGoal
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -78,6 +80,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingVariable
+    , mkConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
     ( Renaming
@@ -541,6 +544,30 @@ lensAttribute =
                 & AllPath
         )
 
+lensClaimPattern
+    :: Functor f
+    => (ClaimPattern -> f ClaimPattern)
+    -> ReachabilityRule
+    -> f ReachabilityRule
+lensClaimPattern =
+    Lens.lens
+        (\case
+            OnePath onePathRule ->
+                Lens.view _Unwrapped onePathRule
+            AllPath allPathRule ->
+                Lens.view _Unwrapped allPathRule
+        )
+        (\case
+            OnePath onePathRule -> \attrs ->
+                onePathRule
+                & Lens.set _Unwrapped attrs
+                & OnePath
+            AllPath allPathRule -> \attrs ->
+                allPathRule
+                & Lens.set _Unwrapped attrs
+                & AllPath
+        )
+
 instance UnifyingRule ClaimPattern where
     type UnifyingRuleVariable ClaimPattern = RewritingVariableName
 
@@ -581,3 +608,19 @@ instance UnifyingRule ClaimPattern where
             Map.lookup (variableName var) map'
             & fromMaybe var
         ClaimPattern { existentials } = claim
+
+mkGoal :: ClaimPattern -> ClaimPattern
+mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
+    claimPattern'
+        { left =
+            Pattern.mapVariables asConfiguration left
+        , right =
+            Pattern.mapVariables asConfiguration <$> right
+        , existentials =
+            TermLike.mapElementVariable asConfiguration
+            <$> existentials
+        }
+  where
+    ClaimPattern { left, right, existentials } = claimPattern'
+    asConfiguration =
+        pure (.) <*> pure mkConfigVariable <*> getRewritingVariable

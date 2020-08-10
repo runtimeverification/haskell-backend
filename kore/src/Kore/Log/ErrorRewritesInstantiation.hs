@@ -144,6 +144,7 @@ checkSubstitutionCoverage
 checkSubstitutionCoverage configuration solution
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise =
+    trace (show configuration) $
     -- The substitution does not cover all the variables on the left-hand side
     -- of the rule *and* we did not generate a substitution for a symbolic
     -- initial configuration. This is a fatal error because it indicates
