@@ -207,7 +207,7 @@ claimPatternToTerm
     -> TermLike VariableName
 claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
     TermLike.mkImplies
-        (TermLike.mkAnd leftTerm leftCondition)
+        (TermLike.mkAnd leftCondition leftTerm)
         (TermLike.applyModality modality rightPattern)
   where
     ClaimPattern { left, right, existentials } = representation

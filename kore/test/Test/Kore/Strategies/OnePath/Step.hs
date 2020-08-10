@@ -495,7 +495,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expectedGoal =
-                makeOnePathRuleFromPatterns
+                makeOnePathGoalFromPatterns
                     Conditional
                         { term =
                             Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)

@@ -4,6 +4,9 @@ module Test.Kore.Step.Rule
     , test_rewritePatternToRewriteRuleAndBack
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Test.Tasty
@@ -268,7 +271,7 @@ test_patternToAxiomPatternAndBack =
                         (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in
-                testCase "Reachability claim wAF" $
+                testCase "Reachability claim wAF" $ do
                     assertEqual ""
                         (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
