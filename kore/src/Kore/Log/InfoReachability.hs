@@ -36,7 +36,6 @@ instance Entry InfoReachability where
 primDoc :: Prim -> Maybe (Doc ann)
 primDoc Simplify = Just "simplifying the claim"
 primDoc CheckImplication = Just "checking the implication"
-primDoc InferDefined = Just "inferring that the configuration is defined"
 primDoc ApplyClaims = Just "applying claims"
 primDoc ApplyAxioms = Just "applying axioms"
 primDoc _ = Nothing

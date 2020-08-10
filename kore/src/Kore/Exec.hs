@@ -24,6 +24,9 @@ module Kore.Exec
 import Prelude.Kore
 
 import Control.Concurrent.MVar
+import Control.DeepSeq
+    ( deepseq
+    )
 import Control.Error
     ( note
     , runMaybeT
@@ -39,10 +42,6 @@ import Control.Monad.Trans.Except
     )
 import Data.Coerce
     ( coerce
-    )
-import Data.Foldable
-    ( find
-    , traverse_
     )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -172,6 +171,9 @@ import Log
     ( MonadLog
     )
 import qualified Log
+import Logic
+    ( LogicT
+    )
 import qualified Logic
 import SMT
     ( MonadSMT
@@ -651,19 +653,21 @@ initialize
     => VerifiedModule StepperAttributes
     -> simplifier Initialized
 initialize verifiedModule = do
-    let rewriteRules = extractRewriteAxioms verifiedModule
-        simplifyToList
-            :: SimplifyRuleLHS rule
-            => rule
-            -> simplifier [rule]
-        simplifyToList rule = do
-            simplified <- simplifyRuleLhs rule
-            return (MultiAnd.extractPatterns simplified)
-    traverse_
-        errorRewriteLoop
-        $ find (lhsEqualsRhs . getRewriteRule) rewriteRules
-    rewriteAxioms <- mapM simplifyToList rewriteRules
-    pure Initialized { rewriteRules = mkRewritingRule <$> concat rewriteAxioms }
+    rewriteRules <-
+        Logic.observeAllT $ do
+            rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
+            initializeRule rule
+    pure Initialized { rewriteRules }
+  where
+    initializeRule
+        :: RewriteRule VariableName
+        -> LogicT simplifier (RewriteRule RewritingVariableName)
+    initializeRule rule = do
+        simplRule <- simplifyRuleLhs rule >>= Logic.scatter
+        when (lhsEqualsRhs $ getRewriteRule simplRule)
+            (errorRewriteLoop simplRule)
+        let renamedRule = mkRewritingRule simplRule
+        deepseq renamedRule pure renamedRule
 
 data InitializedProver =
     InitializedProver

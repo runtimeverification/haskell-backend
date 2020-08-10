@@ -36,9 +36,6 @@ import qualified Control.Lens as Lens
 import qualified Control.Lens.Combinators as Lens.Combinators
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
-import Data.Functor.Adjunction
-    ( Adjunction (..)
-    )
 import Data.Functor.Compose
     ( Compose (..)
     )
@@ -801,21 +798,6 @@ instance AstWithLocation variable => AstWithLocation (TermLike variable)
   where
     locationFromAst = locationFromAst . tailF . Recursive.project
 
-{- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
-
-__Warning__: @mapVariablesF@ will capture variables if the provided mapping is
-not injective!
-
--}
-mapVariablesF
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> TermLikeF variable1 child
-    -> TermLikeF variable2 child
-mapVariablesF adj =
-    runIdentity . traverseVariablesF adj'
-  where
-    adj' = (.) pure <$> adj
-
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
 __Warning__: @traverseVariablesF@ will capture variables if the provided
@@ -902,62 +884,8 @@ mapVariables
     -> TermLike variable1
     -> TermLike variable2
 mapVariables adj termLike =
-    Recursive.unfold worker (Env.env freeVariables0 termLike)
-  where
-    adjIdentity = (.) pure <$> adj
-    adjReader = (.) pure <$> adj
-
-    trElemVar = traverse $ traverseElementVariableName adjReader
-    trSetVar = traverse $ traverseSetVariableName adjReader
-
-    freeVariables0 :: VariableNameMap variable1 variable2
-    Identity freeVariables0 =
-        freeVariables @(TermLike variable1) @variable1 termLike
-        & renameFreeVariables adjIdentity
-
-    mapExists avoiding =
-        sequenceAdjunct $ existsBinder $ renameElementBinder trElemVar avoiding
-    mapForall avoiding =
-        sequenceAdjunct $ forallBinder $ renameElementBinder trElemVar avoiding
-    mapMu avoiding =
-        sequenceAdjunct $ muBinder $ renameSetBinder trSetVar avoiding
-    mapNu avoiding =
-        sequenceAdjunct $ nuBinder $ renameSetBinder trSetVar avoiding
-
-    askSomeVariableName' = rightAdjunct <$> askSomeVariableName
-    askSomeVariable' = rightAdjunct askSomeVariable
-
-    renameAttrs renaming =
-        Attribute.mapVariables
-        (fmap (. Env.env renaming) askSomeVariableName')
-
-    worker
-        ::  Renaming variable1 variable2 (TermLike variable1)
-        ->  Base
-                (TermLike variable2)
-                (Renaming variable1 variable2 (TermLike variable1))
-    worker env =
-        let attrs :< termLikeF = Recursive.project (extract env)
-            renaming = Env.ask env
-            attrs' = renameAttrs renaming attrs
-            avoiding = freeVariables attrs'
-            termLikeF' =
-                case termLikeF of
-                    VariableF (Const unifiedVariable) ->
-                        (VariableF . Const)
-                            (askSomeVariable' (env $> unifiedVariable))
-                    ExistsF exists ->
-                        ExistsF (mapExists avoiding (env $> exists))
-                    ForallF forall ->
-                        ForallF (mapForall avoiding (env $> forall))
-                    MuF mu -> MuF (mapMu avoiding (env $> mu))
-                    NuF nu -> NuF (mapNu avoiding (env $> nu))
-                    _ ->
-                        -- mapVariablesF will not actually call the mapping
-                        -- function because all the cases with variables are
-                        -- handled above.
-                        mapVariablesF adj $ Env.env renaming <$> termLikeF
-        in attrs' :< termLikeF'
+    runIdentity (traverseVariables ((.) pure <$> adj) termLike)
+{-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
 
@@ -1015,51 +943,6 @@ traverseVariables adj termLike =
                 -- because all the cases with variables are handled above.
                 traverseVariablesF askSomeVariableName
         (pure . Recursive.embed) (attrs' :< termLikeF')
-
-{- | Transform a 'sequence'-like function into its dual with an 'Adjunction'.
-
-The @sequence@-like argument is a generalization of 'sequence': it lifts a
-functor @g@ over a functor @t1@, allowing @t1@ to be transformed into @t2@ in
-the process. The 'Adjunction' is used to transform the generalized 'sequence'
-into a \"co-sequence\" which /lowers/ the adjoint functor @f@ through @t1@.
-
-In practice,
-
-* @f ~ Env e@ and @g ~ Reader e@
-* the generalized sequence is 'renameElementBinder' or 'renameSetBinder'
-* @t1@ and @t2@ are 'Binder' types with different variable types.
-
- -}
-sequenceAdjunct
-    :: forall t1 t2 g f any2
-    .  Functor t1
-    => Adjunction f g
-    => (forall any1. t1 (g any1) -> g (t2 any1))  -- ^ 'sequence'-like function
-    -> (f (t1 any2) -> t2 (f any2))
-sequenceAdjunct gsequence =
-    contract
-    . fmap  -- inside @f@
-        ( split  -- split the wrappers by lifting g out of t1
-        . expand  -- wrap all values in t1
-        )
-  where
-    -- "Expand" the values in t1 by constructing a g-f wrapper.
-    -- The Adjunction allows us to "invent" a g-f wrapper for any type.
-    expand :: t1 (  any2) -> t1 (g (f any2))
-    --            ^              ^--^
-    expand = fmap unit
-
-    -- "Split" the g-f wrapper by lifting g over t1.
-    split :: t1 (g (f any2)) -> g (t2 (f any2))
-    --           ^--^           ^------^
-    split = gsequence
-
-    -- "Contract" the outer f-g wrapper to remove it
-    -- The Adjunction allows us to "annihilate" an f-g wrapper.
-    contract :: f (g (t2 (f any2))) ->   (t2 (f any2))
-    --          ^--^                   ^
-    contract = counit
-{-# INLINE sequenceAdjunct #-}
 
 updateCallStack
     :: forall variable
