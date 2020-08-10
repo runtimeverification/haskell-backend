@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Log.WarnTrivialClaim
     ( WarnTrivialClaim (..)
-    , warnIfProvenWithZeroDepth
+    , warnProvenClaimZeroDepth
     , warnTrivialClaimRemoved
     ) where
 
@@ -44,12 +44,12 @@ instance Entry WarnTrivialClaim where
     helpDoc _ =
         "warn when a claim is removed or proven without taking any steps"
 
-warnIfProvenWithZeroDepth
+warnProvenClaimZeroDepth
     :: MonadLog log
     => ProofDepth
     -> ReachabilityRule
     -> log ()
-warnIfProvenWithZeroDepth (ProofDepth depth) rule =
+warnProvenClaimZeroDepth (ProofDepth depth) rule =
     when (depth == 0) $ logEntry (WarnProvenClaimZeroDepth rule)
 
 warnTrivialClaimRemoved

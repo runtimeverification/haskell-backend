@@ -279,7 +279,7 @@ verifyClaim
             & handle handleLimitExceeded
     let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
     infoProvenDepth maxProofDepth
-    warnIfProvenWithZeroDepth maxProofDepth goal
+    warnProvenClaimZeroDepth maxProofDepth goal
   where
     discardStrategy = snd
 
