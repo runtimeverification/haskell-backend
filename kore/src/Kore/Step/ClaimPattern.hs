@@ -204,12 +204,18 @@ claimPatternToTerm
     -> TermLike VariableName
 claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
     TermLike.mkImplies
-        leftPattern
+        (TermLike.mkAnd leftTerm leftCondition)
         (TermLike.applyModality modality rightPattern)
   where
     ClaimPattern { left, right, existentials } = representation
-    leftPattern =
-        Pattern.toTermLike left
+    leftTerm =
+        Pattern.term left
+        & TermLike.mapVariables getRewritingVariable
+    sort = TermLike.termLikeSort leftTerm
+    leftCondition =
+        Pattern.withoutTerm left
+        & Pattern.fromCondition sort
+        & Pattern.toTermLike
         & TermLike.mapVariables getRewritingVariable
     rightPattern =
         TermLike.mkExistsN existentials (OrPattern.toTermLike right)
