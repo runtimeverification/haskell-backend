@@ -1,5 +1,4 @@
 {- |
-Description : Built-in arbitrary-precision integer sort
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
