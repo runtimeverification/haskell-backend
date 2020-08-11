@@ -317,10 +317,10 @@ isFreeOf rule =
 -- | Extracts all top level existential quantifications.
 termToExistentials
     :: TermLike RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
+    -> (TermLike RewritingVariableName, [ElementVariable RewritingVariableName])
 termToExistentials (TermLike.Exists_ _ v term) =
-    v : termToExistentials term
-termToExistentials _ = []
+    fmap (v :) (termToExistentials term)
+termToExistentials term = (term, [])
 
 -- | Given a collection of 'FreeVariables', a collection of existentially
 -- quantified variables, and a pattern, it converts the existential

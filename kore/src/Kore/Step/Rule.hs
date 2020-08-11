@@ -331,14 +331,15 @@ termToAxiomPattern attributes pat =
           | Just constructor <- reachabilityModalityToConstructor op ->
             let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
                 attributes' = Attribute.mapAxiomVariables (pure mkRuleVariable) attributes
+                (right', existentials') = ClaimPattern.termToExistentials rhs'
              in pure $ constructor ClaimPattern
                 { ClaimPattern.left =
                     Pattern.fromTermAndPredicate
                         lhs
                         (Predicate.wrapPredicate requires)
                     & Pattern.mapVariables (pure mkRuleVariable)
-                , ClaimPattern.right = OrPattern.parseFromTermLike rhs'
-                , ClaimPattern.existentials = ClaimPattern.termToExistentials rhs'
+                , ClaimPattern.right = OrPattern.parseFromTermLike right'
+                , ClaimPattern.existentials = existentials'
                 , ClaimPattern.attributes = attributes'
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
