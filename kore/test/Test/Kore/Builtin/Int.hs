@@ -561,20 +561,20 @@ test_termIntEquals =
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.withCondition mkTop_
-        actual <- runIntEqualSimplification term1 term2
+        actual <- termIntEquals term1 term2
         assertEqual' "" [Just expect] actual
     ]
-
-runIntEqualSimplification
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> SMT [Maybe (Pattern VariableName)]
-runIntEqualSimplification term1 term2 =
-    runSimplifierBranch testEnv
-    . evalEnvUnifierT Not.notSimplifier
-    . runMaybeT
-    $ Int.termIntEquals
-        (termUnification Not.notSimplifier)
-        Not.notSimplifier
-        term1
-        term2
+  where
+    termIntEquals
+        :: TermLike VariableName
+        -> TermLike VariableName
+        -> SMT [Maybe (Pattern VariableName)]
+    termIntEquals term1 term2 =
+        runSimplifierBranch testEnv
+        . evalEnvUnifierT Not.notSimplifier
+        . runMaybeT
+        $ Int.termIntEquals
+            (termUnification Not.notSimplifier)
+            Not.notSimplifier
+            term1
+            term2
