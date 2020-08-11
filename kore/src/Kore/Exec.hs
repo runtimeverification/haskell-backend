@@ -102,6 +102,7 @@ import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
+import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
@@ -697,12 +698,13 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         changedSpecClaims =
             expandClaim tools <$> Goal.extractClaims specModule
         simplifyToList
-            :: SimplifyRuleLHS rule
-            => rule
-            -> simplifier [rule]
+            :: ReachabilityRule
+            -> simplifier [ReachabilityRule]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
-            return (MultiAnd.extractPatterns simplified)
+            let result = MultiAnd.extractPatterns simplified
+            when (null result) $ warnTrivialClaimRemoved rule
+            return result
 
         trustedClaims :: [ReachabilityRule]
         trustedClaims =

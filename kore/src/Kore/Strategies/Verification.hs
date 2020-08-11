@@ -20,6 +20,9 @@ module Kore.Strategies.Verification
 
 import Prelude.Kore
 
+import Control.DeepSeq
+    ( deepseq
+    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -73,6 +76,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnTrivialClaim
 import Kore.Step.RulePattern
     ( leftPattern
     , toRulePattern
@@ -278,6 +282,7 @@ verifyClaim
             & handle handleLimitExceeded
     let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
     infoProvenDepth maxProofDepth
+    warnProvenClaimZeroDepth maxProofDepth goal
   where
     discardStrategy = snd
 
@@ -312,13 +317,15 @@ verifyClaim
             pure proofDepth
         & Logic.observeAllT
 
+    discardAppliedRules = map fst
+
     transit instr config =
         Strategy.transitionRule
             (transitionRule' claims axioms & trackProofDepth)
             instr
             config
         & runTransitionT
-        & fmap (map fst)
+        & fmap discardAppliedRules
         & traceProf ":transit"
         & lift
 
@@ -369,12 +376,15 @@ transitionRule'
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
     -> CommonTransitionRule simplifier
-transitionRule' claims axioms =
-    transitionRule claims axiomGroups
-    & profTransitionRule
-    & withConfiguration
-    & withDebugProofState
-    & logTransitionRule
+transitionRule' claims axioms = \prim proofState ->
+    deepseq proofState
+    (transitionRule claims axiomGroups
+        & profTransitionRule
+        & withConfiguration
+        & withDebugProofState
+        & logTransitionRule
+    )
+    prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
