@@ -46,6 +46,8 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -60,7 +62,10 @@ import Kore.Repl.Interpreter
 import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( ClaimPattern
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    , claimPattern
     )
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -651,17 +656,17 @@ add1 =
     plusOne = n `addInt` one
 
 zeroToTen :: Claim
-zeroToTen = undefined
---     OnePath . coerce
---     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
---   where
---     zero = Int.asInternal intSort 0
---     ten  = Int.asInternal intSort 10
+zeroToTen =
+    OnePath . OnePathRule
+    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+  where
+    zero = Int.asInternal intSort 0
+    ten  = Int.asInternal intSort 10
 
 emptyClaim :: Claim
-emptyClaim = undefined
---     OnePath . coerce
---     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+emptyClaim =
+    OnePath . OnePathRule
+    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom
     :: TermLike VariableName
@@ -678,14 +683,18 @@ mkNamedAxiom left right name =
     label = Attribute.Label . pure $ pack name
 
 claimWithName
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
-    -> RewriteRule VariableName
-claimWithName left right name =
-    rulePattern left right
-    & Lens.set (field @"attributes" . typed @Attribute.Label) label
-    & RewriteRule
+    -> ClaimPattern
+claimWithName leftTerm rightTerm name =
+    let left =
+            Pattern.fromTermLike leftTerm
+        right =
+            Pattern.fromTermLike rightTerm
+            & OrPattern.fromPattern
+     in claimPattern left right []
+        & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
 
