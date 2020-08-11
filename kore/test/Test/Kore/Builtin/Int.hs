@@ -68,6 +68,7 @@ import Kore.Builtin.Int
     )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -553,16 +554,15 @@ test_termIntEquals =
                 eqInt
                     (mkElemVar $ "x" `ofSort` intSort)
                     (mkElemVar $ "y" `ofSort` intSort)
-        notEq <-
-            evaluate $
-                mkNot
-                    ( mkEquals_
-                        (mkElemVar $ "x" `ofSort` intSort)
-                        (mkElemVar $ "y" `ofSort` intSort)
-                    )
-        let expect = [ Just notEq ]
+            expect =
+                makeEqualsPredicate_
+                    (mkElemVar $ "x" `ofSort` intSort)
+                    (mkElemVar $ "y" `ofSort` intSort)
+                & makeNotPredicate
+                & Condition.fromPredicate
+                & Pattern.withCondition mkTop_
         actual <- runIntEqualSimplification term1 term2
-        assertEqual' "" expect actual
+        assertEqual' "" [Just expect] actual
     ]
 
 runIntEqualSimplification
