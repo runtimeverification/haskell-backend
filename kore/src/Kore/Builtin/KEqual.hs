@@ -17,7 +17,7 @@ builtin modules.
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
-    , termKEquals
+    , unifyKequalsEq
     , unifyIfThenElse
       -- * keys
     , eqKey
@@ -217,7 +217,7 @@ matchKequalEq =
             Monad.guard (hook2 == eqKey)
         & isJust
 
-termKEquals
+unifyKequalsEq
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
@@ -226,7 +226,7 @@ termKEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termKEquals unifyChildren notSimplifier a b =
+unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
     worker termLike1 termLike2
