@@ -556,8 +556,17 @@ test_termIntEquals =
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.fromCondition_
-        actual <- termIntEquals term1 term2
-        assertEqual "" [Just expect] actual
+        -- unit test
+        do
+            actual <- termIntEquals term1 term2
+            assertEqual "" [Just expect] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
     , testCase "\\equals(true, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqInt (mkElemVar x) (mkElemVar y)
