@@ -546,7 +546,7 @@ hprop_unparse = hpropUnparse (asInternal <$> genInteger)
 
 test_termIntEquals :: [TestTree]
 test_termIntEquals =
-    [ testCase "constructor1 =/=Int constructor2" $ do
+    [ testCase "\\equals(false, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal False
             term2 =
                 eqInt
@@ -558,7 +558,25 @@ test_termIntEquals =
                     (mkElemVar $ "y" `ofSort` intSort)
                 & makeNotPredicate
                 & Condition.fromPredicate
-                & Pattern.withCondition mkTop_
+                & Pattern.fromCondition_
+        actual <- termIntEquals term1 term2
+        assertEqual "" [Just expect] actual
+    , testCase "\\equals(true, X ==Int Y)" $ do
+        let term1 = Test.Bool.asInternal True
+            term2 =
+                eqInt
+                    (mkElemVar $ "x" `ofSort` intSort)
+                    (mkElemVar $ "y" `ofSort` intSort)
+            expect =
+                (Condition.assign
+                    (inject $ "x" `ofSort` intSort)
+                    (mkElemVar $ "y" `ofSort` intSort)
+                )
+                -- TODO (thomas.tuegel): Remove predicate sorts to eliminate
+                -- this inconsistency.
+                { predicate = makeTruePredicate intSort
+                , term = mkTop_
+                }
         actual <- termIntEquals term1 term2
         assertEqual "" [Just expect] actual
     ]
