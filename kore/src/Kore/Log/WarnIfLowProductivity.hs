@@ -40,5 +40,6 @@ warnIfLowProductivity = do
     let gcTimeOver10Percent = gc_cpu_ns * 10 > cpu_ns
         gcPercentage = gc_cpu_ns * 100 `div` cpu_ns
         productivity = 100 - gcPercentage & fromIntegral
-    when gcTimeOver10Percent . logEntry
+        runTimeOver60Seconds = cpu_ns >= 60 * 10 ^ (9 :: Int)
+    when (runTimeOver60Seconds && gcTimeOver10Percent) . logEntry
         $ WarnIfLowProductivity productivity
