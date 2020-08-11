@@ -35,6 +35,7 @@ import Data.String
 
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
+import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
@@ -235,6 +236,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
+    , (EqualsT, \_ _ s -> Builtin.Int.termIntEquals s notSimplifier)
     , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier)
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
