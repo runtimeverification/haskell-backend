@@ -440,10 +440,7 @@ termIntEquals unifyChildren (NotSimplifier notSimplifier) a b =
       , isFunctionPattern termLike1
       , Just value2 <- Bool.matchBool termLike2
       = lift $ do
-        solution <-
-            fmap OrPattern.fromPatterns
-            <$> Unify.gather
-            $ unifyChildren operand1 operand2
+        solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = fmap eraseTerm solution
         finalSolution <-
             if value2
