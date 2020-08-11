@@ -1,6 +1,5 @@
 module Test.Kore.Builtin.Int
-    (
-      test_gt, test_ge, test_eq, test_le, test_lt, test_ne
+    ( test_gt, test_ge, test_eq, test_le, test_lt, test_ne
     , test_min, test_max
     , test_add, test_sub, test_mul, test_abs
     , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
@@ -20,7 +19,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAnd_Fn
     , test_reflexivity_symbolic
     , test_symbolic_eq_not_conclusive
-    , test_IntEqualSimplification
+    , test_termIntEquals
     , hprop_unparse
     --
     , asInternal
@@ -546,8 +545,8 @@ idName `ofSort` sort = mkElementVariable (testId idName) sort
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
 
-test_IntEqualSimplification :: [TestTree]
-test_IntEqualSimplification =
+test_termIntEquals :: [TestTree]
+test_termIntEquals =
     [ testCaseWithSMT "constructor1 =/=Int constructor2" $ do
         let term1 = Test.Bool.asInternal False
             term2 =
