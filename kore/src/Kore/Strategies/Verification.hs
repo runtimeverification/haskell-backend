@@ -74,6 +74,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Log.DebugProofState
+import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnTrivialClaim
@@ -382,6 +383,7 @@ transitionRule' claims axioms = \prim proofState ->
         & profTransitionRule
         & withConfiguration
         & withDebugProofState
+        & withDebugProven
         & logTransitionRule
     )
     prim proofState
@@ -496,6 +498,22 @@ withDebugProofState transitionFunc =
                 state
                 transition
             )
+
+withDebugProven
+    :: forall monad
+    .  MonadLog monad
+    => CommonTransitionRule monad
+    -> CommonTransitionRule monad
+withDebugProven rule prim state =
+    rule prim state >>= debugProven
+  where
+    debugProven state'
+      | ProofState.Proven <- state'
+      , Just claim <- ProofState.extractUnproven state
+      = do
+        Log.logEntry DebugProven { claim }
+        pure state'
+      | otherwise = pure state'
 
 withConfiguration
     :: MonadCatch monad
