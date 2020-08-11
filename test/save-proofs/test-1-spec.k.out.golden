@@ -1,3 +1,3 @@
 <k>
-  AA ( X ) ~> _DotVar1 ~> .
+  AA ( ConfigVarX ) ~> ConfigVarDotVar1 ~> .
 </k>
