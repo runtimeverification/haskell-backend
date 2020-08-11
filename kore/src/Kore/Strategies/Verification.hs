@@ -120,7 +120,7 @@ import Prof
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
 type CommonTransitionRule m =
-    TransitionRule m (Rule ReachabilityRule) CommonProofState
+    TransitionRule' m (Rule ReachabilityRule) CommonProofState
 
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
