@@ -83,9 +83,6 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
-import SMT
-    ( SMT
-    )
 
 import Test.Kore
     ( elementVariableGen
@@ -96,6 +93,7 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -548,7 +546,7 @@ hprop_unparse = hpropUnparse (asInternal <$> genInteger)
 
 test_termIntEquals :: [TestTree]
 test_termIntEquals =
-    [ testCaseWithSMT "constructor1 =/=Int constructor2" $ do
+    [ testCase "constructor1 =/=Int constructor2" $ do
         let term1 = Test.Bool.asInternal False
             term2 =
                 eqInt
@@ -562,19 +560,20 @@ test_termIntEquals =
                 & Condition.fromPredicate
                 & Pattern.withCondition mkTop_
         actual <- termIntEquals term1 term2
-        assertEqual' "" [Just expect] actual
+        assertEqual "" [Just expect] actual
     ]
   where
     termIntEquals
         :: TermLike VariableName
         -> TermLike VariableName
-        -> SMT [Maybe (Pattern VariableName)]
+        -> IO [Maybe (Pattern VariableName)]
     termIntEquals term1 term2 =
-        runSimplifierBranch testEnv
-        . evalEnvUnifierT Not.notSimplifier
-        . runMaybeT
-        $ Int.termIntEquals
+        Int.termIntEquals
             (termUnification Not.notSimplifier)
             Not.notSimplifier
             term1
             term2
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
