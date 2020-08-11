@@ -352,7 +352,7 @@ verifyClaimStep
     -> simplifier (ExecutionGraph CommonProofState (AppliedRule ReachabilityRule))
 verifyClaimStep claims axioms executionGraph node =
     executionHistoryStep
-        (transitionRule' claims axioms)
+        transitionRule''
         strategy'
         executionGraph
         node
@@ -372,6 +372,16 @@ verifyClaimStep claims axioms executionGraph node =
 
     isRoot :: Bool
     isRoot = node == root
+
+    transitionRule'' prim state
+        | isRoot =
+            transitionRule'
+                claims
+                axioms
+                prim
+                (Lens.over lensClaimPattern mkGoal <$> state)
+        | otherwise =
+            transitionRule' claims axioms prim state
 
 transitionRule'
     :: MonadSimplify simplifier
