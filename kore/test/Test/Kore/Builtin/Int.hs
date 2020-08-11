@@ -550,14 +550,9 @@ test_termIntEquals :: [TestTree]
 test_termIntEquals =
     [ testCase "\\equals(false, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal False
-            term2 =
-                eqInt
-                    (mkElemVar $ "x" `ofSort` intSort)
-                    (mkElemVar $ "y" `ofSort` intSort)
+            term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
-                makeEqualsPredicate_
-                    (mkElemVar $ "x" `ofSort` intSort)
-                    (mkElemVar $ "y" `ofSort` intSort)
+                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.fromCondition_
@@ -565,24 +560,17 @@ test_termIntEquals =
         assertEqual "" [Just expect] actual
     , testCase "\\equals(true, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal True
-            term2 =
-                eqInt
-                    (mkElemVar $ "x" `ofSort` intSort)
-                    (mkElemVar $ "y" `ofSort` intSort)
+            term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
-                (Condition.assign
-                    (inject $ "x" `ofSort` intSort)
-                    (mkElemVar $ "y" `ofSort` intSort)
-                )
-                -- TODO (thomas.tuegel): Remove predicate sorts to eliminate
-                -- this inconsistency.
-                { predicate = makeTruePredicate intSort
-                , term = mkTop_
-                }
+                Condition.assign (inject x) (mkElemVar y)
+                & Pattern.fromCondition_
         -- unit test
         do
             actual <- termIntEquals term1 term2
-            assertEqual "" [Just expect] actual
+            -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
+            -- inconsistency.
+            let expect' = expect { predicate = makeTruePredicate intSort }
+            assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
@@ -592,6 +580,10 @@ test_termIntEquals =
             assertEqual "" [expect { term = () }] actual
     ]
   where
+    x, y :: ElementVariable VariableName
+    x = "x" `ofSort` intSort
+    y = "y" `ofSort` intSort
+
     termIntEquals
         :: TermLike VariableName
         -> TermLike VariableName
