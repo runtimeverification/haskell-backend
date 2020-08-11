@@ -303,8 +303,13 @@ throwSolverException solverHandle someException
   | Just _ <- Exception.fromException someException :: Maybe AsyncException =
     Exception.throwM someException
   | otherwise = do
-    exitCode <- getProcessExitCode solverHandle
-    Exception.throwM SolverException { exitCode, someException }
+    newExitCode <- getProcessExitCode solverHandle
+    Exception.throwM $
+        case Exception.fromException someException of
+            Just solverException@(SolverException _ _) ->
+                solverException { exitCode = newExitCode }
+            Nothing ->
+                SolverException newExitCode someException
 
 trySolver :: ProcessHandle -> IO a -> IO a
 trySolver hProc = Exception.handle (throwSolverException hProc)
