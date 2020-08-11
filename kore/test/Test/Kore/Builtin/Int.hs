@@ -72,12 +72,14 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import Kore.Step.Simplification.Data
     ( runSimplifierBranch
+    , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
@@ -577,8 +579,17 @@ test_termIntEquals =
                 { predicate = makeTruePredicate intSort
                 , term = mkTop_
                 }
-        actual <- termIntEquals term1 term2
-        assertEqual "" [Just expect] actual
+        -- unit test
+        do
+            actual <- termIntEquals term1 term2
+            assertEqual "" [Just expect] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
     ]
   where
     termIntEquals
@@ -593,5 +604,13 @@ test_termIntEquals =
             term2
         & runMaybeT
         & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv
         & runNoSMT
