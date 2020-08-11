@@ -107,6 +107,9 @@ import Kore.Log.WarnStuckProofState
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
     )
+import Kore.Log.WarnTrivialClaim
+    ( WarnTrivialClaim
+    )
 import Log
     ( Entry (..)
     , LogMessage
@@ -155,6 +158,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckProofState
     , mk $ Proxy @WarnIfLowProductivity
+    , mk $ Proxy @WarnTrivialClaim
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop

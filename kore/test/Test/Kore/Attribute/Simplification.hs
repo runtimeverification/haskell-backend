@@ -1,6 +1,7 @@
 module Test.Kore.Attribute.Simplification
     ( test_simplification
     , test_simplification_with_argument
+    , test_simplification_with_empty_argument
     , test_Attributes
     , test_Attributes_with_argument
     , test_duplicate
@@ -33,6 +34,14 @@ test_simplification_with_argument =
     testCase "[simplification{}(\"5\")] :: Simplification"
         $ expectSuccess (IsSimplification (Just 5))
         $ parseSimplification $ Attributes [ simplificationAttribute (Just 5) ]
+
+test_simplification_with_empty_argument :: TestTree
+test_simplification_with_empty_argument =
+    testCase "[simplification{}(\"\")]"
+        $ expectSuccess (IsSimplification Nothing)
+        $ parseSimplification $ Attributes [ attr ]
+  where
+    attr = attributePattern simplificationSymbol [attributeString ""]
 
 test_Attributes :: TestTree
 test_Attributes =

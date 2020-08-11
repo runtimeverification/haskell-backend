@@ -13,6 +13,9 @@ module Kore.Strategies.ProofState
 
 import Prelude.Kore
 
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -73,6 +76,8 @@ data ProofState goal
     deriving (Eq, Show, Ord)
     deriving (Foldable, Functor)
     deriving (GHC.Generic)
+
+instance NFData goal => NFData (ProofState goal)
 
 instance Hashable goal => Hashable (ProofState goal)
 
