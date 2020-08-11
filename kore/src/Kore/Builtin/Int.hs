@@ -403,7 +403,7 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
 
 evalEq _ _ = Builtin.wrongArity eqKey
 
-{- The @INT.eq hooked symbol applied to @term@-type arguments.
+{- The @INT.eq@ hooked symbol applied to @term@-type arguments.
 -}
 
 data IntEqual term =
