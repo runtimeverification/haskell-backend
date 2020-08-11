@@ -19,7 +19,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAnd_Fn
     , test_reflexivity_symbolic
     , test_symbolic_eq_not_conclusive
-    , test_termIntEquals
+    , test_unifyIntEq
     , hprop_unparse
     --
     , asInternal
@@ -546,8 +546,8 @@ idName `ofSort` sort = mkElementVariable (testId idName) sort
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
 
-test_termIntEquals :: [TestTree]
-test_termIntEquals =
+test_unifyIntEq :: [TestTree]
+test_unifyIntEq =
     [ testCase "\\equals(false, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal False
             term2 = eqInt (mkElemVar x) (mkElemVar y)
@@ -558,7 +558,7 @@ test_termIntEquals =
                 & Pattern.fromCondition_
         -- unit test
         do
-            actual <- termIntEquals term1 term2
+            actual <- unifyIntEq term1 term2
             assertEqual "" [Just expect] actual
         -- integration test
         do
@@ -575,7 +575,7 @@ test_termIntEquals =
                 & Pattern.fromCondition_
         -- unit test
         do
-            actual <- termIntEquals term1 term2
+            actual <- unifyIntEq term1 term2
             -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
             -- inconsistency.
             let expect' = expect { predicate = makeTruePredicate intSort }
@@ -593,12 +593,12 @@ test_termIntEquals =
     x = "x" `ofSort` intSort
     y = "y" `ofSort` intSort
 
-    termIntEquals
+    unifyIntEq
         :: TermLike VariableName
         -> TermLike VariableName
         -> IO [Maybe (Pattern VariableName)]
-    termIntEquals term1 term2 =
-        Int.termIntEquals
+    unifyIntEq term1 term2 =
+        Int.unifyIntEq
             (termUnification Not.notSimplifier)
             Not.notSimplifier
             term1

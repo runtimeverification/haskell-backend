@@ -29,7 +29,7 @@ module Kore.Builtin.Int
     , asPattern
     , asPartialPattern
     , parse
-    , termIntEquals
+    , unifyIntEq
       -- * keys
     , randKey
     , srandKey
@@ -412,12 +412,12 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
         & isJust
 
-termIntEquals
 {- | Unification of the @INT.eq@ symbol.
 
 This function is suitable only for equality simplification.
 
  -}
+unifyIntEq
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
@@ -426,7 +426,7 @@ This function is suitable only for equality simplification.
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termIntEquals unifyChildren notSimplifier a b =
+unifyIntEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
     worker termLike1 termLike2
