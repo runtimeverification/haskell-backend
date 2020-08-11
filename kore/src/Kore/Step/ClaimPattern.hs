@@ -9,6 +9,7 @@ module Kore.Step.ClaimPattern
     , freeVariablesLeft
     , freeVariablesRight
     , claimPattern
+    , substitute
     , OnePathRule (..)
     , AllPathRule (..)
     , ReachabilityRule (..)
@@ -21,6 +22,7 @@ module Kore.Step.ClaimPattern
     , topExistsToImplicitForall
     , lensClaimPattern
     , mkGoal
+    , forgetSimplified
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -83,8 +85,7 @@ import Kore.Rewriting.RewritingVariable
     , mkConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
-    ( Renaming
-    , UnifyingRule (..)
+    ( UnifyingRule (..)
     )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom
@@ -92,6 +93,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( Unparse (..)
+    , unparseToString
     )
 import Kore.Variables.Fresh
     ( refreshVariables
@@ -349,6 +351,15 @@ topExistsToImplicitForall avoid' existentials' rightPattern =
             (avoid <> bindExistsFreeVariables)
             (Set.fromList $ TermLike.mkSomeVariable <$> existentials')
     subst = TermLike.mkVar <$> rename
+
+forgetSimplified :: ClaimPattern -> ClaimPattern
+forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
+    claimPattern'
+        { left = Pattern.forgetSimplified left
+        , right = OrPattern.forgetSimplified right
+        }
+  where
+    ClaimPattern { left, right } = claimPattern'
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =

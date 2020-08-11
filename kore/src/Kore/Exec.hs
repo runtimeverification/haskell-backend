@@ -28,6 +28,7 @@ import Control.Error
     ( note
     , runMaybeT
     )
+import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
@@ -110,6 +111,7 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
+    , lensClaimPattern
     )
 import Kore.Step.Rule
     ( extractImplicationClaims
@@ -644,13 +646,14 @@ makeImplicationRule
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
--- simplifyReachabilityRule
---     :: MonadSimplify simplifier
---     => ReachabilityRule
---     -> simplifier ReachabilityRule
--- simplifyReachabilityRule rule = undefined -- do
--- --     rule' <- Rule.simplifyRewriteRule (RewriteRule . toRulePattern $ rule)
--- --     return (Goal.fromRulePattern rule . getRewriteRule $ rule')
+simplifyReachabilityRule
+    :: MonadSimplify simplifier
+    => ReachabilityRule
+    -> simplifier ReachabilityRule
+simplifyReachabilityRule rule = do
+    let claim = Lens.view lensClaimPattern rule
+    claim' <- Rule.simplifyClaimPattern claim
+    return $ Lens.set lensClaimPattern claim' rule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
@@ -722,7 +725,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
     -- TODO: is this really needed?
-    -- claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         claims = concat simplifiedSpecClaims
         alreadyProven = trustedClaims

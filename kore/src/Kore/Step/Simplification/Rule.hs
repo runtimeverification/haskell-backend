@@ -5,10 +5,12 @@ License     : NCSA
 module Kore.Step.Simplification.Rule
     ( simplifyRulePattern
     , simplifyRewriteRule
+    , simplifyClaimPattern
     ) where
 
 import Prelude.Kore
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -33,6 +35,10 @@ import qualified Kore.Step.AntiLeft as AntiLeft
     ( forgetSimplified
     , substitute
     )
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
@@ -97,6 +103,40 @@ simplifyRulePattern rule = do
             -- original pattern in the hope that we can do something with it
             -- later.
             return rule
+
+{- | Simplify a 'ClaimPattern' using only matching logic rules.
+
+The original rule is returned unless the simplification result matches certain
+narrowly-defined criteria.
+
+ -}
+simplifyClaimPattern
+    :: MonadSimplify simplifier
+    => ClaimPattern
+    -> simplifier ClaimPattern
+simplifyClaimPattern claim = do
+    let ClaimPattern { left } = claim
+    simplifiedLeft <- simplifyPattern (Pattern.term left)
+    case OrPattern.toPatterns simplifiedLeft of
+        [ Conditional { term, predicate, substitution } ]
+          | PredicateTrue <- predicate ->
+            -- TODO (virgil): Dropping the substitution for equations
+            -- and for rewrite rules where the substituted variables occur
+            -- in the RHS is wrong because those variables are not
+            -- existentially quantified.
+            let subst = Substitution.toMap substitution
+                left' = Pattern.withCondition term (Pattern.withoutTerm left)
+             in return
+                . ClaimPattern.forgetSimplified
+                . ClaimPattern.substitute subst
+                $ claim
+                    { ClaimPattern.left = left'
+                    }
+        _ ->
+            -- Unable to simplify the given claim pattern, so we return the
+            -- original pattern in the hope that we can do something with it
+            -- later.
+            return claim
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
