@@ -442,9 +442,6 @@ termIntEquals unifyChildren (NotSimplifier notSimplifier) a b =
       = lift $ do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = fmap eraseTerm solution
-        finalSolution <-
-            if value2
-                then return solution'
-                else notSimplifier SideCondition.top solution'
-        Unify.scatter finalSolution
+        (if value2 then pure else notSimplifier SideCondition.top) solution'
+            >>= Unify.scatter
     worker _ _ = empty
