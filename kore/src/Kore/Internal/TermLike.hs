@@ -1458,7 +1458,7 @@ mkDefined
     => InternalVariable variable
     => TermLike variable
     -> TermLike variable
-mkDefined = updateCallStack . worker
+mkDefined = worker
   where
     mkDefined1 term
       | isDefinedPattern term = term
@@ -1473,7 +1473,7 @@ mkDefined = updateCallStack . worker
         let (_ :< termF) = Recursive.project term
          in case termF of
                 AndF And { andFirst, andSecond } ->
-                    mkDefinedAtTop
+                    mkDefined1
                         ( mkAnd
                             (worker andFirst)
                             (worker andSecond)
@@ -1487,7 +1487,7 @@ mkDefined = updateCallStack . worker
                     $ mkApplySymbol applicationSymbolOrAlias
                     $ fmap worker applicationChildren
                 ApplyAliasF _ ->
-                    mkDefinedAtTop term
+                    mkDefined1 term
                 BottomF _ ->
                     error
                         "Internal error: cannot mark\
@@ -1511,32 +1511,32 @@ mkDefined = updateCallStack . worker
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
                 ForallF Forall { forallVariable, forallChild } ->
-                    mkDefinedAtTop
+                    mkDefined1
                         ( mkForall
                             forallVariable
                             (worker forallChild)
                         )
-                IffF _ -> mkDefinedAtTop term
-                ImpliesF _ -> mkDefinedAtTop term
+                IffF _ -> mkDefined1 term
+                ImpliesF _ -> mkDefined1 term
                 InF _ -> term
-                MuF _ -> mkDefinedAtTop term
-                NextF _ -> mkDefinedAtTop term
-                NotF _ -> mkDefinedAtTop term
-                NuF _ -> mkDefinedAtTop term
-                OrF _ -> mkDefinedAtTop term
-                RewritesF _ -> mkDefinedAtTop term
+                MuF _ -> mkDefined1 term
+                NextF _ -> mkDefined1 term
+                NotF _ -> mkDefined1 term
+                NuF _ -> mkDefined1 term
+                OrF _ -> mkDefined1 term
+                RewritesF _ -> mkDefined1 term
                 TopF _ -> term
                 VariableF (Const someVariable) ->
                     if isElementVariable someVariable
                         then term
-                        else mkDefinedAtTop term
+                        else mkDefined1 term
                 StringLiteralF _ -> term
                 EvaluatedF (Evaluated child) -> worker child
                 DefinedF _ -> term
                 EndiannessF _ -> term
                 SignednessF _ -> term
-                InjF _ -> mkDefinedAtTop term
-                InhabitantF _ -> mkDefinedAtTop term
+                InjF _ -> mkDefined1 term
+                InhabitantF _ -> mkDefined1 term
                 InternalBytesF _ -> term
 
     mkDefinedInternalAc internalAc =
