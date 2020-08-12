@@ -57,6 +57,8 @@ import Data.Reflection
     ( Given
     )
 import qualified Data.Reflection as Reflection
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
@@ -67,6 +69,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
+import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -333,6 +336,7 @@ also allows bottom values.
 data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
+    deriving (GHC.Generic)
 
 deriving instance
     Eq (TermNormalizedAc collection variable)
@@ -345,6 +349,20 @@ deriving instance
 deriving instance
     Show (TermNormalizedAc collection variable)
     => Show (NormalizedOrBottom collection variable)
+
+instance SOP.Generic (NormalizedOrBottom collection variable)
+
+instance SOP.HasDatatypeInfo (NormalizedOrBottom collection variable)
+
+instance
+    Debug (collection (TermLike Concrete) (TermLike variable))
+    => Debug (NormalizedOrBottom collection variable)
+
+instance
+    ( Debug (collection (TermLike Concrete) (TermLike variable))
+    , Diff (collection (TermLike Concrete) (TermLike variable))
+    )
+    => Diff (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
