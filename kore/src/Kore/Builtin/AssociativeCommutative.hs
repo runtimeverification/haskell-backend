@@ -98,6 +98,7 @@ import Kore.Internal.TermLike
     ( pattern App_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
+    , pattern Defined_
     , pattern ElemVar_
     , TermLike
     , mkApplySymbol
@@ -229,6 +230,7 @@ instance TermWrapper Domain.NormalizedMap where
         case args of
             [map1, map2] -> toNormalized map1 <> toNormalized map2
             _ -> Builtin.wrongArity "MAP.concat"
+    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
@@ -295,11 +297,8 @@ instance TermWrapper Domain.NormalizedSet where
             [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "SET.concat"
     toNormalized patt =
-        (Normalized . Domain.wrapAc) Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.empty
-            , opaque = [patt]
-            }
+        (Normalized . Domain.wrapAc)
+        Domain.emptyNormalizedAc { Domain.opaque = [patt] }
 
     simplifiedAttributeValue Domain.SetValue = mempty
 
