@@ -302,6 +302,8 @@ throwSolverException :: ProcessHandle -> SomeException -> IO a
 throwSolverException solverHandle someException
   | Just _ <- Exception.fromException someException :: Maybe AsyncException =
     Exception.throwM someException
+  | Just _ <- Exception.fromException someException :: Maybe SolverException =
+    Exception.throwM someException
   | otherwise = do
     exitCode <- getProcessExitCode solverHandle
     Exception.throwM SolverException { exitCode, someException }

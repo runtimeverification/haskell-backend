@@ -211,6 +211,7 @@ translatePredicateWith translateTerm predicate =
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tInt pat)
+            DefinedF (Defined child) -> translateInt child
             _ -> empty
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
@@ -230,6 +231,7 @@ translatePredicateWith translateTerm predicate =
                 (<|>)
                     (translateApplication app)
                     (translateUninterpreted SMT.tBool pat)
+            DefinedF (Defined child) -> translateBool child
             _ -> empty
 
     translateApplication :: Application Symbol p -> Translator m variable SExpr

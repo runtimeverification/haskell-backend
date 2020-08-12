@@ -87,14 +87,18 @@ instance ParseAttributes Simplification where
             Parser.getZeroParams params
             arg <- Parser.getZeroOrOneArguments args
             case arg of
-                Just arg' -> do
-                    stringLiteral <- Parser.getStringLiteral arg'
-                    integer <- Parser.parseInteger stringLiteral
-                    return (IsSimplification (Just integer))
-                Nothing ->
-                    return (IsSimplification Nothing)
+                Just arg' ->
+                    Parser.getStringLiteral arg'
+                    >>= Parser.parseStringLiteral readPriority
+                Nothing -> pure (IsSimplification Nothing)
         parseSimplification _ _ _ =
             failDuplicate'
+
+        readPriority str
+          | null str = pure (IsSimplification Nothing, "")
+          | otherwise = do
+            (integer, rest) <- reads str
+            pure (IsSimplification (Just integer), rest)
 
         withApplication' = Parser.withApplication simplificationId
         failDuplicate' = Parser.failDuplicate simplificationId

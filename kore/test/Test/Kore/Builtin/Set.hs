@@ -123,6 +123,7 @@ import SMT
     ( SMT
     )
 
+import Test.Expect
 import Test.Kore
     ( elementVariableGen
     , standaloneGen
@@ -1902,15 +1903,16 @@ unifiedBy
     -> [(SomeVariable VariableName, TermLike VariableName)]
     -> TestName
     -> TestTree
-unifiedBy (termLike1, termLike2) substitution testName =
+unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
     testCase testName $ do
-        actual <-
+        actuals <-
             runSimplifier testEnv
             $ runUnifierT Not.notSimplifier
             $ termUnification Not.notSimplifier termLike1 termLike2
-        liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
-  where
-    expect = Condition.fromSubstitution $ Substitution.unsafeWrap substitution
+        liftIO $ do
+            actual <- expectOne actuals
+            assertBool "expected \\top predicate" (isTop $ predicate actual)
+            assertEqual "" expect (substitution actual)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set (TermLike Concrete) -> TermLike VariableName
