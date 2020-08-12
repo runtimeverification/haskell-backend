@@ -296,6 +296,7 @@ instance TermWrapper Domain.NormalizedSet where
         case args of
             [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "SET.concat"
+    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . Domain.wrapAc)
         Domain.emptyNormalizedAc { Domain.opaque = [patt] }
