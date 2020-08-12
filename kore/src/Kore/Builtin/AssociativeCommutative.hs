@@ -257,6 +257,7 @@ instance TermWrapper Domain.NormalizedSet where
 
     matchBuiltin (BuiltinSet_ internalSet) =
         Just (Domain.builtinAcChild internalSet)
+    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
