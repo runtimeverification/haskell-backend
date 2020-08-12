@@ -723,6 +723,12 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
+eqString
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+eqString i j = mkApplySymbol eqStringSymbol [i, j]
+
 -- * Bytes
 
 littleEndianBytesSymbol :: Internal.Symbol

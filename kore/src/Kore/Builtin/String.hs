@@ -26,6 +26,7 @@ module Kore.Builtin.String
     , asTermLike
     , asPartialPattern
     , parse
+    , unifyStringEq
       -- * keys
     , ltKey
     , plusKey
@@ -46,6 +47,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.Char
     ( chr
     , ord
@@ -68,18 +70,32 @@ import Numeric
     )
 import qualified Text.Megaparsec as Parsec
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
+    ( symbolHook
+    )
 import Kore.Internal.TermLike as TermLike
+import Kore.Step.Simplification.NotSimplifier
+    ( NotSimplifier (..)
+    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
+    , TermSimplifier
     )
-
+import Kore.Unification.Unify as Unify
 
 {- | Verify that the sort is hooked to the builtin @String@ sort.
 
@@ -387,3 +403,36 @@ builtinFunctions =
     binaryOperator name op =
         ( name, Builtin.binaryOperator extractStringDomainValue
             asPattern name op )
+
+{- | Match the @STRING.eq@ hooked symbol.
+-}
+matchStringEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
+matchStringEqual =
+    matchEqTerm $ \symbol ->
+        do
+            hook2 <- (getHook . symbolHook) symbol
+            Monad.guard (hook2 == eqKey)
+        & isJust
+
+{- | Unification of the @STRING.eq@ symbol
+
+This function is suitable only for equality simplification.
+
+-}
+unifyStringEq
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyStringEq unifyChildren notSimplifier a b =
+    worker a b <|> worker b a
+  where
+    worker termLike1 termLike2
+      | Just eqTerm <- matchStringEqual termLike1
+      , isFunctionPattern termLike1
+      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+      | otherwise = empty
