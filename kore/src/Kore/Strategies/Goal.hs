@@ -125,6 +125,7 @@ import Kore.Step.ClaimPattern
     , getConfiguration
     , getDestination
     )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -718,7 +719,7 @@ checkImplication' lensRulePattern goal =
         -> m (CheckImplicationResult ClaimPattern)
     checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) = do
         unificationResults <- OrPattern.observeAllT $ do
-            rightPatt <- Logic.scatter right
+            rightPatt <- Logic.scatter right'
             let rightTerm = Pattern.term rightPatt
             mkIn leftSort leftTerm rightTerm
                 & Pattern.fromTermLike
@@ -732,7 +733,7 @@ checkImplication' lensRulePattern goal =
                             Logic.scatter
                                 ((fmap . fmap) Conditional.withoutTerm unificationResults)
                         rightCondition <-
-                            Logic.scatter (Conditional.withoutTerm <$> right)
+                            Logic.scatter (Conditional.withoutTerm <$> right')
                         simplifiedRightCondition <-
                             Condition.simplifyCondition sideCondition rightCondition
                             & OrCondition.observeAllT
@@ -778,10 +779,12 @@ checkImplication' lensRulePattern goal =
                                     & pure
       where
         ClaimPattern { right, left, existentials } = claimPattern
+        leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
+        right' = fmap (ClaimPattern.topExistsToImplicitForall leftFreeVars existentials) right
         leftTerm = Pattern.term left
         leftCondition = Pattern.withoutTerm left
         leftSort = termLikeSort leftTerm
-        sideCondition = SideCondition.assumeTrueCondition leftCondition
+        sideCondition = SideCondition.assumeTrueCondition (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
 --         do
 --             removal <- removalPatterns destination configuration existentials

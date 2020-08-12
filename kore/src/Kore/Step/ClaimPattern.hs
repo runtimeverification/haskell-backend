@@ -23,6 +23,7 @@ module Kore.Step.ClaimPattern
     , lensClaimPattern
     , mkGoal
     , forgetSimplified
+    , freeVariablesLeft
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -608,11 +609,8 @@ instance UnifyingRule ClaimPattern where
             subst = TermLike.mkVar <$> renaming
             refreshedClaim =
                 claim
-                    { left = left claim & Pattern.substitute subst
-                    , attributes = attributes claim
-                    }
                 & renameExistentials renamingExists
-                & substituteRight subst
+                & substitute subst
          in (renaming, refreshedClaim)
       where
         renameVariable map' var =

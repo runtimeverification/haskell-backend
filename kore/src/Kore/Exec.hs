@@ -238,7 +238,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     (Strategy.unfoldTransition transit)
                     (strategy rewriteRules, (ExecDepth 0, mkRewritingPattern initialConfig))
         infoExecDepth execDepth
-        let finalConfig' = getRemainderPattern finalConfig
+        let finalConfig' = getPatternAux finalConfig
         exitCode <- getExitCode verifiedModule finalConfig'
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig'
         return (exitCode, finalTerm)

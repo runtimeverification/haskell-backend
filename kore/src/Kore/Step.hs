@@ -41,6 +41,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -120,10 +121,12 @@ transitionRule =
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
                 [rule]
-                config
+                (Pattern.mapVariables asConfiguration config)
             & lift
         Foldable.asum
             (pure <$> Step.gatherResults results)
+    asConfiguration =
+        pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
 
 
 {- | A strategy that applies all the rewrites in parallel.
