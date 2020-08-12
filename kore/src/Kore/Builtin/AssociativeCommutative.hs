@@ -189,6 +189,7 @@ instance TermWrapper Domain.NormalizedMap where
 
     matchBuiltin (BuiltinMap_ internalMap) =
         Just (Domain.builtinAcChild internalMap)
+    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
