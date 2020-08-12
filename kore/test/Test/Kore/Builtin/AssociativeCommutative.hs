@@ -2,6 +2,7 @@ module Test.Kore.Builtin.AssociativeCommutative
     ( test_toNormalized_Map
     , test_matchBuiltin_Map
     , test_toNormalized_Set
+    , test_matchBuiltin_Set
     ) where
 
 import Prelude.Kore
@@ -61,4 +62,13 @@ test_toNormalized_Set =
             expect = Normalized normalizedMap
             actual = toNormalized $ mkDefined $ Mock.builtinSet elements
         assertEqual "" expect actual
+    ]
+
+test_matchBuiltin_Set :: [TestTree]
+test_matchBuiltin_Set =
+    [ testCase "removes Defined" $ do
+        let input :: TermLike VariableName
+            input = mkDefinedAtTop $ Mock.builtinSet [Mock.a]
+            actual = matchBuiltin @NormalizedSet input
+        assertBool "expected to match Defined builtin Set" (isJust actual)
     ]
