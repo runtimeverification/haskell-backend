@@ -129,7 +129,7 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     , ReachabilityRule (..)
     , allPathRuleToTerm
-    , lensAttribute
+    , lensClaimPattern
     , onePathRuleToTerm
     )
 import Kore.Step.Simplification.Data
@@ -795,7 +795,8 @@ createNewDefinition mainModuleName name claims =
       where
         Attribute.Trusted { isTrusted } =
             Lens.view
-                ( lensAttribute
+                ( lensClaimPattern
+                . field @"attributes"
                 . field @"trusted"
                 )
                 claim

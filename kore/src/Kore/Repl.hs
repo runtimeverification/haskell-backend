@@ -68,7 +68,7 @@ import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( lensClaimPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -231,24 +231,7 @@ runRepl
     addIndexesToClaims =
         initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
-        lensAttribute =
-            Lens.lens
-                (\case
-                    OnePath onePathRule ->
-                        Lens.view (_Unwrapped . field @"attributes") onePathRule
-                    AllPath allPathRule ->
-                        Lens.view (_Unwrapped . field @"attributes") allPathRule
-                )
-                (\case
-                    OnePath onePathRule -> \attrs ->
-                        onePathRule
-                        & Lens.set (_Unwrapped . field @"attributes") attrs
-                        & OnePath
-                    AllPath allPathRule -> \attrs ->
-                        allPathRule
-                        & Lens.set (_Unwrapped . field @"attributes") attrs
-                        & AllPath
-                )
+        lensAttribute = lensClaimPattern . field @"attributes"
 
     initializeRuleIndexes ctor lens rules =
         zipWith addIndex rules [0..]

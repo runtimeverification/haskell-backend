@@ -35,7 +35,7 @@ import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern (..)
     , ReachabilityRule (..)
-    , lensAttribute
+    , lensClaimPattern
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
@@ -428,6 +428,6 @@ simpleTrustedClaim
     -> ReachabilityRule
 simpleTrustedClaim left right =
     Lens.set
-        (lensAttribute . field @"trusted")
+        (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     $ simpleClaim left right

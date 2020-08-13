@@ -41,7 +41,7 @@ import Kore.Step.ClaimPattern
     , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , lensAttribute
+    , lensClaimPattern
     )
 import Kore.Strategies.Goal
 
@@ -1322,7 +1322,7 @@ simpleOnePathTrustedClaim
     -> ReachabilityRule
 simpleOnePathTrustedClaim left right =
     Lens.set
-        (lensAttribute . field @"trusted")
+        (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . OnePath
     . OnePathRule
@@ -1334,7 +1334,7 @@ simpleAllPathTrustedClaim
     -> ReachabilityRule
 simpleAllPathTrustedClaim left right =
     Lens.set
-        (lensAttribute . field @"trusted")
+        (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . AllPath
     . AllPathRule

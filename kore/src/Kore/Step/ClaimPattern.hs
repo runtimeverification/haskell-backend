@@ -18,12 +18,12 @@ module Kore.Step.ClaimPattern
     , termToExistentials
     , getConfiguration
     , getDestination
-    , lensAttribute
     , topExistsToImplicitForall
     , lensClaimPattern
     , mkGoal
     , forgetSimplified
     , freeVariablesLeft
+    , makeTrusted
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -530,32 +530,6 @@ getDestination :: ReachabilityRule -> OrPattern RewritingVariableName
 getDestination (OnePath (OnePathRule ClaimPattern { right })) = right
 getDestination (AllPath (AllPathRule ClaimPattern { right })) = right
 
-lensAttribute
-    :: Functor f
-    => ( Attribute.Axiom Symbol RewritingVariableName
-        ->f (Attribute.Axiom Symbol RewritingVariableName)
-       )
-    -> ReachabilityRule
-    -> f ReachabilityRule
-lensAttribute =
-    Lens.lens
-        (\case
-            OnePath onePathRule ->
-                Lens.view (_Unwrapped . field @"attributes") onePathRule
-            AllPath allPathRule ->
-                Lens.view (_Unwrapped . field @"attributes") allPathRule
-        )
-        (\case
-            OnePath onePathRule -> \attrs ->
-                onePathRule
-                & Lens.set (_Unwrapped . field @"attributes") attrs
-                & OnePath
-            AllPath allPathRule -> \attrs ->
-                allPathRule
-                & Lens.set (_Unwrapped . field @"attributes") attrs
-                & AllPath
-        )
-
 lensClaimPattern
     :: Functor f
     => (ClaimPattern -> f ClaimPattern)
@@ -631,3 +605,12 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
         }
   where
     ClaimPattern { left, right, existentials } = claimPattern'
+
+makeTrusted :: ReachabilityRule -> ReachabilityRule
+makeTrusted =
+    Lens.set
+        ( lensClaimPattern
+        . field @"attributes"
+        . field @"trusted"
+        )
+        (Attribute.Trusted True)

@@ -182,9 +182,8 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.ClaimPattern
-    ( ClaimPattern
-    , ReachabilityRule (..)
-    , lensAttribute
+    ( ReachabilityRule (..)
+    , makeTrusted
     )
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data
@@ -1125,12 +1124,6 @@ savePartialProof maybeNatural file = do
     maybeNode :: Maybe ReplNode
     maybeNode =
         ReplNode . naturalToInt <$> maybeNatural
-
-    makeTrusted :: ReachabilityRule -> ReachabilityRule
-    makeTrusted =
-        Lens.set
-            (lensAttribute . field @"trusted")
-            (Attribute.Trusted True)
 
     removeIfRoot
         :: ReplNode
