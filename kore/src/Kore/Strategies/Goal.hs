@@ -19,7 +19,6 @@ module Kore.Strategies.Goal
     , reachabilityNextStep
     , transitionRule
     , isTrusted
-    , removalPatterns
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
@@ -46,8 +45,7 @@ import Control.Monad.Catch
     , SomeException (..)
     )
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
@@ -69,9 +67,6 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Label as Attribute
     ( Label
     )
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
-    )
 import qualified Kore.Attribute.RuleIndex as Attribute
     ( RuleIndex
     )
@@ -84,11 +79,11 @@ import Kore.IndexedModule.IndexedModule
     , VerifiedModule
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
@@ -137,20 +132,14 @@ import Kore.Step.Rule
     )
 import Kore.Step.RulePattern
     ( FromRulePattern (..)
-    , RHS
     , RulePattern (..)
-    , ToRulePattern (..)
-    , ToRulePattern (..)
-    , topExistsToImplicitForall
     )
-import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
@@ -188,6 +177,9 @@ import Kore.Unparser
     , unparseToString
     )
 import qualified Kore.Verified as Verified
+import Logic
+    ( LogicT
+    )
 import qualified Logic
 import qualified Pretty
 
@@ -717,112 +709,112 @@ checkImplication' lensRulePattern goal =
     checkImplicationWorker
         :: ClaimPattern
         -> m (CheckImplicationResult ClaimPattern)
-    checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) = do
-        unificationResults <- OrPattern.observeAllT $ do
+    checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
+      | isFunctionPattern leftTerm =
+        do
+            unificationResults <-
+                OrPattern.observeAllT unificationProblems
+            when
+                (all isBottom unificationResults)
+                (succeed . NotImplied $ claimPattern)
+            removal <-
+                OrPattern.observeAllT (removedDestinations unificationResults)
+            when (isBottom removal) (succeed Implied)
+            simplifiedRemoval <- simplifyRemoval removal
+            when (isBottom simplifiedRemoval) (succeed Implied)
+            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+            claimPattern
+                & Lens.set (field @"left") stuckConfiguration
+                & NotImpliedStuck
+                & pure
+        & run
+      | otherwise =
+      error . show . Pretty.vsep $
+          [ "The remove destination step expects\
+          \ the configuration term to be function-like."
+          , Pretty.indent 2 "Configuration term:"
+          , Pretty.indent 4 (unparse leftTerm)
+          ]
+      where
+        ClaimPattern { right, left, existentials } = claimPattern
+        leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
+        right' =
+            ClaimPattern.topExistsToImplicitForall leftFreeVars existentials
+            <$> right
+        leftTerm = Pattern.term left
+        leftCondition = Pattern.withoutTerm left
+        leftSort = termLikeSort leftTerm
+        sideCondition =
+            SideCondition.assumeTrueCondition
+                (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+
+        unificationProblems
+            :: LogicT
+                (ExceptT (CheckImplicationResult ClaimPattern) m)
+                (OrPattern RewritingVariableName)
+        unificationProblems = do
             rightPatt <- Logic.scatter right'
             let rightTerm = Pattern.term rightPatt
             mkIn leftSort leftTerm rightTerm
                 & Pattern.fromTermLike
                 & Pattern.simplify sideCondition
-        if isBottom (OrPattern.flatten unificationResults)
-            then return (NotImplied claimPattern)
-            else do
-                removal <-
-                    OrPattern.observeAllT $ do
-                        singleUnificationCondition <-
-                            Logic.scatter
-                                ((fmap . fmap) Conditional.withoutTerm unificationResults)
-                        rightCondition <-
-                            Logic.scatter (Conditional.withoutTerm <$> right')
-                        simplifiedRightCondition <-
-                            Condition.simplifyCondition sideCondition rightCondition
-                            & OrCondition.observeAllT
-                        remainderConditions <-
-                            simplifyEvaluatedMultiPredicate
-                                sideCondition
-                                (MultiAnd.make
-                                    [ singleUnificationCondition
-                                    , simplifiedRightCondition
-                                    ]
-                                )
-                        let remainderPatterns =
-                                fmap Pattern.fromCondition_ remainderConditions
-                        existentialRemainders <-
-                            foldM
-                                (Exists.simplifyEvaluated sideCondition & flip)
-                                remainderPatterns
-                                existentials
-                        Not.simplifyEvaluated sideCondition existentialRemainders
-                if isBottom removal
-                    then return Implied
-                    else do
-                        let removalDisjunction =
-                                fmap (MultiAnd.toPattern . MultiAnd.make)
-                                . MultiOr.fullCrossProduct
-                                . MultiOr.extractPatterns
-                                $ removal
-                            definedConfig =
-                                Pattern.andCondition left
-                                $ from $ makeCeilPredicate_ (Conditional.term left)
-                            configAndRemoval = fmap (definedConfig <*) removalDisjunction
-                        simplifiedRemoval <-
-                            simplifyConditionsWithSmt
-                                sideCondition
-                                configAndRemoval
-                        if isBottom simplifiedRemoval
-                            then return Implied
-                            else do
-                                let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
-                                claimPattern
-                                    & Lens.set (field @"left") stuckConfiguration
-                                    & NotImpliedStuck
-                                    & pure
-      where
-        ClaimPattern { right, left, existentials } = claimPattern
-        leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
-        right' = fmap (ClaimPattern.topExistsToImplicitForall leftFreeVars existentials) right
-        leftTerm = Pattern.term left
-        leftCondition = Pattern.withoutTerm left
-        leftSort = termLikeSort leftTerm
-        sideCondition = SideCondition.assumeTrueCondition (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
---         do
---             removal <- removalPatterns destination configuration existentials
---             when (isTop removal) (succeed . NotImplied $ rulePattern)
---             let definedConfig =
---                     Pattern.andCondition configuration
---                     $ from $ makeCeilPredicate_ (Conditional.term configuration)
---             let configAndRemoval = fmap (definedConfig <*) removal
---                 sideCondition =
---                     Pattern.withoutTerm configuration
---                     & SideCondition.fromCondition
---             simplifiedRemoval <-
---                 simplifyConditionsWithSmt
---                     sideCondition
---                     configAndRemoval
---             when (isBottom simplifiedRemoval) (succeed Implied)
---             let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
---             rulePattern
---                 & Lens.set RulePattern.leftPattern stuckConfiguration
---                 & NotImpliedStuck
---                 & pure
---         & run
---       where
---         configuration = Lens.view RulePattern.leftPattern rulePattern
---         configFreeVars = freeVariables configuration
---         destination =
---             Lens.view (field @"rhs") rulePattern
---             & topExistsToImplicitForall configFreeVars
---         existentials =
---             Lens.view (field @"existentials")
---             . Lens.view (field @"rhs")
---             $ rulePattern
---
---         succeed :: r -> ExceptT r m a
---         succeed = throwE
---
---         run :: ExceptT r m r -> m r
---         run acts = runExceptT acts >>= either pure pure
+        removedDestinations
+            :: MultiOr (OrPattern RewritingVariableName)
+            -> LogicT
+                (ExceptT (CheckImplicationResult ClaimPattern) m)
+                (OrPattern RewritingVariableName)
+        removedDestinations unificationResults = do
+            singleUnificationCondition <-
+                Logic.scatter
+                    $ (fmap . fmap) Conditional.withoutTerm unificationResults
+            rightCondition <-
+                Logic.scatter (Conditional.withoutTerm <$> right')
+            simplifiedRightCondition <-
+                Condition.simplifyCondition sideCondition rightCondition
+                & OrCondition.observeAllT
+            remainderConditions <-
+                simplifyEvaluatedMultiPredicate
+                    sideCondition
+                    (MultiAnd.make
+                        [ singleUnificationCondition
+                        , simplifiedRightCondition
+                        ]
+                    )
+            let remainderPatterns =
+                    fmap Pattern.fromCondition_ remainderConditions
+            existentialRemainders <-
+                foldM
+                    (Exists.simplifyEvaluated sideCondition & flip)
+                    remainderPatterns
+                    existentials
+            Not.simplifyEvaluated sideCondition existentialRemainders
+
+        simplifyRemoval
+            :: MultiOr (OrPattern RewritingVariableName)
+            -> ExceptT
+                (CheckImplicationResult ClaimPattern)
+                m
+                (OrPattern RewritingVariableName)
+        simplifyRemoval removal = do
+            let removalDisjunction =
+                    fmap (MultiAnd.toPattern . MultiAnd.make)
+                    . MultiOr.fullCrossProduct
+                    . MultiOr.extractPatterns
+                    $ removal
+                definedConfig =
+                    Pattern.andCondition left
+                    $ from $ makeCeilPredicate_ (Conditional.term left)
+                configAndRemoval = fmap (definedConfig <*) removalDisjunction
+            simplifyConditionsWithSmt
+                sideCondition
+                configAndRemoval
+
+        succeed :: r -> ExceptT r m a
+        succeed = throwE
+
+        run :: ExceptT r m r -> m r
+        run acts = runExceptT acts >>= either pure pure
 
 -- TODO: simplify right hand side as well
 simplify'
@@ -982,70 +974,3 @@ deriveClaimResults mkClaim Results { results, remainders } =
         AppliedClaim
         . mkClaim
         . Step.withoutUnification
-
-{- | The predicate to remove the destination from the present configuration.
- -}
-removalPatterns
-    :: forall variable m
-    .  HasCallStack
-    => InternalVariable variable
-    => MonadSimplify m
-    => Pattern variable
-    -- ^ Destination
-    -> Pattern variable
-    -- ^ Current configuration
-    -> [ElementVariable variable]
-    -- ^ existentially quantified variables
-    -> m (OrPattern variable)
-removalPatterns
-    destination
-    configuration
-    existentials
-  | isFunctionPattern configTerm
-  , isFunctionPattern destTerm
-  = do
-    unifiedConfigs <-
-        mkIn configSort configTerm destTerm
-        & Pattern.fromTermLike
-        & Pattern.simplify sideCondition
-    if isBottom unifiedConfigs
-        then return OrPattern.top
-        else do
-            let unifiedConditions =
-                    fmap Conditional.withoutTerm unifiedConfigs
-            -- TODO (thomas.tuegel): Move this up to avoid repeated calls.
-            destinationConditions <-
-                Conditional.withoutTerm destination
-                & Condition.simplifyCondition sideCondition
-                & OrCondition.observeAllT
-            remainderConditions <-
-                simplifyEvaluatedMultiPredicate
-                    sideCondition
-                    (MultiAnd.make
-                        [ unifiedConditions
-                        , destinationConditions
-                        ]
-                    )
-            let remainderPatterns =
-                    fmap Pattern.fromCondition_ remainderConditions
-            existentialRemainders <-
-                foldM
-                    (Exists.simplifyEvaluated sideCondition & flip)
-                    remainderPatterns
-                    existentials
-            Not.simplifyEvaluated sideCondition existentialRemainders
-  | otherwise =
-      error . show . Pretty.vsep $
-          [ "The remove destination step expects\
-          \ the configuration and the destination terms\
-          \ to be function-like."
-          , Pretty.indent 2 "Configuration term:"
-          , Pretty.indent 4 (unparse configTerm)
-          , Pretty.indent 2 "Destination term:"
-          , Pretty.indent 4 (unparse destTerm)
-          ]
-  where
-    Conditional { term = destTerm } = destination
-    (configTerm, configPredicate) = Pattern.splitTerm configuration
-    sideCondition = SideCondition.assumeTrueCondition configPredicate
-    configSort = termLikeSort configTerm
