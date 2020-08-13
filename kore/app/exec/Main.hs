@@ -563,6 +563,11 @@ main = do
             Main.exeName
             (parseKoreExecOptions startTime)
             parserInfoModifiers
+    Foldable.for_ (localOptions options >>= smtPrelude) (\filePath ->
+        Monad.whenM
+            (not <$> doesFileExist filePath)
+            (error $ "SMT prelude file does not exist: " <> filePath)
+        )
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
