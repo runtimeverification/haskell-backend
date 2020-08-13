@@ -121,6 +121,7 @@ transitionRule =
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
                 [rule]
+                -- TODO: is this needed?
                 (Pattern.mapVariables resetConfigVariable config)
             & lift
         Foldable.asum

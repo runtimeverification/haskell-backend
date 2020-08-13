@@ -523,12 +523,10 @@ toSentence rule =
         AllPath rule' -> allPathRuleToTerm rule'
 
 getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
-getConfiguration (OnePath (OnePathRule ClaimPattern { left })) = left
-getConfiguration (AllPath (AllPathRule ClaimPattern { left })) = left
+getConfiguration = Lens.view (lensClaimPattern . field @"left")
 
 getDestination :: ReachabilityRule -> OrPattern RewritingVariableName
-getDestination (OnePath (OnePathRule ClaimPattern { right })) = right
-getDestination (AllPath (AllPathRule ClaimPattern { right })) = right
+getDestination = Lens.view (lensClaimPattern . field @"right")
 
 lensClaimPattern
     :: Functor f
