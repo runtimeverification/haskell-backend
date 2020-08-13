@@ -717,12 +717,13 @@ checkImplication' lensRulePattern goal =
             when
                 (all isBottom unificationResults)
                 (succeed . NotImplied $ claimPattern)
-            removal <-
+            removals <-
                 OrPattern.observeAllT (removedDestinations unificationResults)
-            when (isBottom removal) (succeed Implied)
-            simplifiedRemoval <- simplifyRemoval removal
-            when (isBottom simplifiedRemoval) (succeed Implied)
-            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
+            -- TODO: double check this
+            when (all isBottom removals) (succeed Implied)
+            simplifiedRemovals <- simplifyConjunctionOfRemovals removals
+            when (isBottom simplifiedRemovals) (succeed Implied)
+            let stuckConfiguration = OrPattern.toPattern simplifiedRemovals
             claimPattern
                 & Lens.set (field @"left") stuckConfiguration
                 & NotImpliedStuck
@@ -730,7 +731,7 @@ checkImplication' lensRulePattern goal =
         & run
       | otherwise =
       error . show . Pretty.vsep $
-          [ "The remove destination step expects\
+          [ "The check implication step expects\
           \ the configuration term to be function-like."
           , Pretty.indent 2 "Configuration term:"
           , Pretty.indent 4 (unparse leftTerm)
@@ -790,13 +791,13 @@ checkImplication' lensRulePattern goal =
                     existentials
             Not.simplifyEvaluated sideCondition existentialRemainders
 
-        simplifyRemoval
+        simplifyConjunctionOfRemovals
             :: MultiOr (OrPattern RewritingVariableName)
             -> ExceptT
                 (CheckImplicationResult ClaimPattern)
                 m
                 (OrPattern RewritingVariableName)
-        simplifyRemoval removal = do
+        simplifyConjunctionOfRemovals removal = do
             let removalDisjunction =
                     fmap (MultiAnd.toPattern . MultiAnd.make)
                     . MultiOr.fullCrossProduct
