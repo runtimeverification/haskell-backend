@@ -2,3 +2,9 @@
 <                     /* Fl Fn D Sfa Cl */ Lbla'Unds'TINY'Unds'S{}()
 ---
 >                     /* Fl Fn D Sfa Cl */ Lblb'Unds'TINY'Unds'S{}()
+19,21c19
+<             /* Created: Kore.Step.Rule.Expand.maybeNewVariable */
+<             /* Fl Fn D Sfa */
+<             VarDotVar2:SortInt{}
+---
+>             /* Fl Fn D Sfa */ VarDotVar2:SortInt{}
