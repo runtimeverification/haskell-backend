@@ -500,7 +500,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern . mkRewritingPattern
+            ( Left . OrPattern.fromPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -532,7 +532,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern . mkRewritingPattern
+            ( Left . OrPattern.fromPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -567,7 +567,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern . mkRewritingPattern
+            ( Left . OrPattern.fromPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -599,7 +599,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
+            ( Left . OrPattern.fromPatterns $
             [ Pattern.withCondition
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate
@@ -635,7 +635,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
+            ( Left . OrPattern.fromPatterns $
             [ Pattern.withCondition
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate
@@ -674,7 +674,7 @@ test_reachabilityVerification =
             ]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPatterns . fmap mkRewritingPattern $
+            ( Left . OrPattern.fromPatterns $
             [ Pattern.withCondition
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate

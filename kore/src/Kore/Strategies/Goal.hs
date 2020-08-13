@@ -864,7 +864,7 @@ isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 
 -- | Exception that contains the last configuration before the error.
 data WithConfiguration =
-    WithConfiguration (Pattern RewritingVariableName) SomeException
+    WithConfiguration (Pattern VariableName) SomeException
     deriving (Show, Typeable)
 
 instance Exception WithConfiguration

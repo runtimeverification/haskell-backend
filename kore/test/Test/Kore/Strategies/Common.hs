@@ -59,7 +59,7 @@ runVerificationToPattern
     -> [Rule ReachabilityRule]
     -> [ReachabilityRule]
     -> [ReachabilityRule]
-    -> IO (Either (OrPattern RewritingVariableName) ())
+    -> IO (Either (OrPattern VariableName) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
         stuck <- runVerification
@@ -70,6 +70,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
+    toPattern :: Either Stuck a -> Either (OrPattern VariableName) a
     toPattern =
         Bifunctor.first stuckPatterns
 

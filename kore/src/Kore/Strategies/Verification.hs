@@ -78,6 +78,7 @@ import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , getPatternAux
     )
 import Kore.Step.ClaimPattern
     ( lensClaimPattern
@@ -150,7 +151,7 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OrPattern RewritingVariableName) m
+type Verifier m = ExceptT (OrPattern VariableName) m
 
 {- | Verifies a set of claims. When it verifies a certain claim, after the
 first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
@@ -163,7 +164,7 @@ If the verification succeeds, it returns ().
 -}
 data Stuck =
     Stuck
-    { stuckPatterns :: !(OrPattern RewritingVariableName)
+    { stuckPatterns :: !(OrPattern VariableName)
     , provenClaims :: ![ReachabilityRule]
     }
     deriving (Eq, GHC.Generic, Show)
@@ -250,7 +251,7 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
             verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: OrPattern RewritingVariableName -> Stuck
+        wrapStuckPattern :: OrPattern VariableName -> Stuck
         wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
 verifyClaim
@@ -263,7 +264,7 @@ verifyClaim
     -> AllClaims ReachabilityRule
     -> Axioms ReachabilityRule
     -> (ReachabilityRule, Limit Natural)
-    -> ExceptT (OrPattern RewritingVariableName) simplifier ()
+    -> ExceptT (OrPattern VariableName) simplifier ()
 verifyClaim
     breadthLimit
     searchOrder
@@ -271,7 +272,6 @@ verifyClaim
     (Axioms axioms)
     (goal, depthLimit)
   =
-    -- TODO: make variables config variables
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startGoal = ProofState.Goal (Lens.over lensClaimPattern mkGoal goal)
@@ -296,7 +296,7 @@ verifyClaim
         :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
         -> Verifier simplifier a
     handleLimitExceeded (Strategy.LimitExceeded states) =
-        (Monad.Except.throwError . OrPattern.fromPatterns)
+        (Monad.Except.throwError . fmap getPatternAux . OrPattern.fromPatterns)
         (ProofState.proofState lhsProofStateTransformer . snd <$> states)
 
     updateQueue = \as ->
@@ -319,7 +319,7 @@ verifyClaim
             Foldable.for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
                 Monad.Except.throwError . OrPattern.fromPattern
-                    $ getConfiguration unproven
+                    $ (getPatternAux . getConfiguration) unproven
             pure proofDepth
         & Logic.observeAllT
 
@@ -518,4 +518,4 @@ withConfiguration transit prim proofState =
     config =
         ProofState.extractUnproven proofState
         & fmap getConfiguration
-    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
+    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration (getPatternAux c))) config

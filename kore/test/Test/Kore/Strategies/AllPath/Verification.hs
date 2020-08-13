@@ -176,7 +176,7 @@ test_allPathVerification =
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
             []
         assertEqual ""
-            ( Left . OrPattern.fromPattern . mkRewritingPattern
+            ( Left . OrPattern.fromPattern
             $ Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
