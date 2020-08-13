@@ -72,7 +72,8 @@ import System.Exit
     ( exitWith
     )
 import System.FilePath
-    ( (</>)
+    ( takeExtension
+    , (</>)
     )
 import System.IO
     ( IOMode (WriteMode)
@@ -480,7 +481,9 @@ koreExecSh
         , if isJust outputFileName then "--output result.kore" else ""
         , "--module " <> unpack (getModuleName mainModuleName)
         , maybeLimit "" (("--smt-timeout " <>) . show) timeout
-        , maybe "" ("--smt-prelude " <>) smtPrelude
+        , case smtPrelude of
+            Just path -> "--smt-prelude smtPrelude" <> takeExtension path
+            Nothing -> ""
         , "--smt " <> fmap Char.toLower (show smtSolver)
         , maybeLimit "" (("--breadth " <>) . show) breadthLimit
         , maybeLimit "" (("--depth " <>) . show) depthLimit
@@ -505,7 +508,7 @@ writeKoreProveFiles reportFile koreProveOptions = do
     let KoreProveOptions { specFileName } = koreProveOptions
     copyFile specFileName (reportFile </> "spec.kore")
     let KoreProveOptions { saveProofs } = koreProveOptions
-    Foldable.forM_ saveProofs $ \filePath ->
+    Foldable.for_ saveProofs $ \filePath ->
         Monad.whenM
             (doesFileExist filePath)
             (copyFile filePath (reportFile </> "save-proofs.kore"))
@@ -516,6 +519,7 @@ writeOptionsAndKoreFiles
     opts@KoreExecOptions
         { definitionFileName
         , patternFileName
+        , smtPrelude
         , koreSearchOptions
         , koreProveOptions
         , koreMergeOptions
@@ -538,15 +542,18 @@ writeOptionsAndKoreFiles
             then "vdefinition.kore"
             else "definition.kore"
         )
-    Foldable.forM_ patternFileName
+    Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    Foldable.forM_
+    Foldable.for_ smtPrelude (\path ->
+        copyFile path (reportDirectory </> "smtPrelude" <> takeExtension path)
+        )
+    Foldable.for_
         koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
-    Foldable.forM_
+    Foldable.for_
         koreMergeOptions
         (writeKoreMergeFiles reportDirectory)
-    Foldable.forM_
+    Foldable.for_
         koreProveOptions
         (writeKoreProveFiles reportDirectory)
 
@@ -563,7 +570,7 @@ main = do
             Main.exeName
             (parseKoreExecOptions startTime)
             parserInfoModifiers
-    Foldable.forM_ (localOptions options) mainWithOptions
+    Foldable.for_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -576,7 +583,7 @@ mainWithOptions execOptions = do
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
-    Foldable.forM_ rtsStatistics $ \filePath ->
+    Foldable.for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
   where
