@@ -692,7 +692,7 @@ koreProve execOptions proveOptions = do
     return exitCode
   where
     failure pat = (ExitFailure 1, pat)
-    success :: (ExitCode, TermLike RewritingVariableName)
+    success :: (ExitCode, TermLike VariableName)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
     loadProven

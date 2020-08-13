@@ -115,6 +115,7 @@ import GHC.Natural
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , getPatternAux
     )
 import Numeric.Natural
 import System.Directory
@@ -1349,10 +1350,10 @@ unparseProofStateComponent transformation omitList =
         }
   where
     unparseComponent =
-        unparseToString . fmap hide . transformation
+        unparseToString . fmap hide . getPatternAux . transformation
     hide
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
+        :: TermLike VariableName
+        -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
