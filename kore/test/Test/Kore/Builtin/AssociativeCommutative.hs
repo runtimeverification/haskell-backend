@@ -11,7 +11,8 @@ import Test.Tasty
 
 import Kore.Builtin.AssociativeCommutative
 import Kore.Domain.Builtin
-    ( NormalizedAc (..)
+    ( AcWrapper (..)
+    , NormalizedAc (..)
     , NormalizedMap (..)
     , NormalizedSet (..)
     , Value (..)
@@ -29,12 +30,7 @@ test_toNormalized_Map =
         let elements =
                 -- Need two elements to ensure that Defined wrapper is kept.
                 [(mkElemVar Mock.x, Mock.a), (mkElemVar Mock.y, Mock.b)]
-            normalizedMap =
-                NormalizedMap emptyNormalizedAc
-                { elementsWithVariables =
-                    map (\(x, y) -> wrapElement (x, MapValue y)) elements
-                }
-            expect = Normalized normalizedMap
+            expect = mkNormalizedMap elements
             actual = toNormalized $ mkDefined $ Mock.builtinMap elements
         assertEqual "" expect actual
     ]
@@ -54,12 +50,7 @@ test_toNormalized_Set =
         let elements =
                 -- Need two elements to ensure that Defined wrapper is kept.
                 [mkElemVar Mock.x, mkElemVar Mock.y]
-            normalizedMap =
-                NormalizedSet emptyNormalizedAc
-                { elementsWithVariables =
-                    map (\x -> wrapElement (x, SetValue)) elements
-                }
-            expect = Normalized normalizedMap
+            expect = mkNormalizedSet elements
             actual = toNormalized $ mkDefined $ Mock.builtinSet elements
         assertEqual "" expect actual
     ]
@@ -72,3 +63,25 @@ test_matchBuiltin_Set =
             actual = matchBuiltin @NormalizedSet input
         assertBool "expected to match Defined builtin Set" (isJust actual)
     ]
+
+mkNormalizedMap
+    :: [(TermLike VariableName, TermLike VariableName)]
+    -> NormalizedOrBottom NormalizedMap VariableName
+mkNormalizedMap =
+    Normalized . NormalizedMap . mkNormalizedAC . (fmap . fmap) MapValue
+
+mkNormalizedSet
+    :: [TermLike VariableName]
+    -> NormalizedOrBottom NormalizedSet VariableName
+mkNormalizedSet =
+    Normalized . NormalizedSet . mkNormalizedAC . fmap (\x -> (x, SetValue))
+
+mkNormalizedAC
+    :: AcWrapper collection
+    => [(child, Value collection child)]
+    -> NormalizedAc collection key child
+mkNormalizedAC elements =
+    emptyNormalizedAc
+        { elementsWithVariables =
+            fmap wrapElement elements
+        }
