@@ -82,8 +82,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , getRewritingVariable
-    , mkConfigVariable
+    , getRewritingTerm
+    , resetConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
     ( UnifyingRule (..)
@@ -216,16 +216,16 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
     ClaimPattern { left, right, existentials } = representation
     leftTerm =
         Pattern.term left
-        & TermLike.mapVariables getRewritingVariable
+        & getRewritingTerm
     sort = TermLike.termLikeSort leftTerm
     leftCondition =
         Pattern.withoutTerm left
         & Pattern.fromCondition sort
         & Pattern.toTermLike
-        & TermLike.mapVariables getRewritingVariable
+        & getRewritingTerm
     rightPattern =
         TermLike.mkExistsN existentials (OrPattern.toTermLike right)
-        & TermLike.mapVariables getRewritingVariable
+        & getRewritingTerm
 
 substituteRight
     :: Map
@@ -622,14 +622,12 @@ mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     claimPattern'
         { left =
-            Pattern.mapVariables asConfiguration left
+            Pattern.mapVariables resetConfigVariable left
         , right =
-            Pattern.mapVariables asConfiguration <$> right
+            Pattern.mapVariables resetConfigVariable <$> right
         , existentials =
-            TermLike.mapElementVariable asConfiguration
+            TermLike.mapElementVariable resetConfigVariable
             <$> existentials
         }
   where
     ClaimPattern { left, right, existentials } = claimPattern'
-    asConfiguration =
-        pure (.) <*> pure mkConfigVariable <*> getRewritingVariable

@@ -232,7 +232,7 @@ transitionRule
                     GoalLHS
                     GoalRemLHS
         StepResult.transitionResults (mapConfigs $ mapRules results)
-            & (fmap . fmap) getRemainderPattern
+            & (fmap . fmap) getRewritingPattern
 
 defaultOneStepStrategy
     :: patt

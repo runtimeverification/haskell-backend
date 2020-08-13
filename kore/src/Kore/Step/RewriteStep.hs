@@ -195,7 +195,7 @@ finalizeRule initialVariables initial unifiedRule =
         checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = mkRewritingPattern . getResultPattern initialVariables <$> final
+        let result = resetResultPattern initialVariables <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeClaim
@@ -214,7 +214,7 @@ finalizeClaim initialVariables initial unifiedRule =
         -- checkSubstitutionCoverage initial (RewriteRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedClaim renamedRule applied
-        let result = getResultPattern' initialVariables <$> final
+        let result = resetResultPattern initialVariables <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
@@ -243,7 +243,8 @@ finalizeRulesParallel initialVariables initial unifiedRules = do
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & fmap (OrPattern.fromPatterns . fmap (mkRewritingPattern . getRemainderPattern))
+        & (fmap . fmap) assertRemainderPattern
+        & fmap OrPattern.fromPatterns
     return Step.Results
         { results = Seq.fromList results
         , remainders
@@ -258,7 +259,8 @@ finalizeRulesSequence initialVariables initial unifiedRules = do
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & fmap (OrPattern.fromPatterns . fmap (mkRewritingPattern . getRemainderPattern))
+        & (fmap . fmap) assertRemainderPattern
+        & fmap OrPattern.fromPatterns
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders
@@ -288,7 +290,8 @@ finalizeClaimsSequence initialVariables initial unifiedRules = do
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & fmap (OrPattern.fromPatterns . fmap (mkRewritingPattern . getRemainderPattern))
+        & (fmap . fmap) assertRemainderPattern
+        & fmap OrPattern.fromPatterns
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders

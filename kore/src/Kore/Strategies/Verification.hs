@@ -78,7 +78,7 @@ import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , getPatternAux
+    , getRewritingPattern
     )
 import Kore.Step.ClaimPattern
     ( lensClaimPattern
@@ -296,8 +296,15 @@ verifyClaim
         :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
         -> Verifier simplifier a
     handleLimitExceeded (Strategy.LimitExceeded states) =
-        (Monad.Except.throwError . fmap getPatternAux . OrPattern.fromPatterns)
-        (ProofState.proofState lhsProofStateTransformer . snd <$> states)
+        let finalPattern =
+                ProofState.proofState lhsProofStateTransformer
+                . snd
+                <$> states
+         in
+            Monad.Except.throwError
+            . fmap getRewritingPattern
+            . OrPattern.fromPatterns
+            $ finalPattern
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -319,7 +326,7 @@ verifyClaim
             Foldable.for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
                 Monad.Except.throwError . OrPattern.fromPattern
-                    $ (getPatternAux . getConfiguration) unproven
+                    $ (getRewritingPattern . getConfiguration) unproven
             pure proofDepth
         & Logic.observeAllT
 
@@ -518,4 +525,9 @@ withConfiguration transit prim proofState =
     config =
         ProofState.extractUnproven proofState
         & fmap getConfiguration
-    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration (getPatternAux c))) config
+    handle' =
+        maybe id handleConfig config
+    handleConfig config' =
+        handleAll
+        $ throwM
+        . WithConfiguration (getRewritingPattern config')

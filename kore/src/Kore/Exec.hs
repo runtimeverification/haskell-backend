@@ -236,9 +236,10 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
+                    -- TODO: remove a certain mkRewritingPattern for exec
                     (strategy rewriteRules, (ExecDepth 0, mkRewritingPattern initialConfig))
         infoExecDepth execDepth
-        let finalConfig' = getPatternAux finalConfig
+        let finalConfig' = getRewritingPattern finalConfig
         exitCode <- getExitCode verifiedModule finalConfig'
         let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig'
         return (exitCode, finalTerm)
@@ -357,7 +358,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return
             . forceSort patternSort
-            . mapVariables getRewritingVariable
+            . getRewritingTerm
             . unwrapPredicate
             $ orPredicate
   where

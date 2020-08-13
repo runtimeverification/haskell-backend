@@ -682,7 +682,7 @@ test_applyRewriteRule_ =
         -> IO [OrPattern VariableName]
     applyRewriteRuleParallel_ patt rule =
         applyRewriteRule_ applyRewriteRulesParallel patt rule
-        & (fmap . fmap . fmap) (Pattern.mapVariables getRewritingVariable)
+        & (fmap . fmap . fmap) getRewritingPattern
 
     ruleId =
         rulePattern
@@ -820,7 +820,7 @@ checkResults
 checkResults expect actual =
     assertEqual "compare results"
         expect
-        (Pattern.mapVariables getRewritingVariable <$> Step.gatherResults actual)
+        (getRewritingPattern <$> Step.gatherResults actual)
 
 checkRemainders
     :: HasCallStack
@@ -830,7 +830,7 @@ checkRemainders
 checkRemainders expect actual =
     assertEqual "compare remainders"
         expect
-        (Pattern.mapVariables getRewritingVariable <$> Step.remainders actual)
+        (getRewritingPattern <$> Step.remainders actual)
 
 test_applyRewriteRulesParallel :: [TestTree]
 test_applyRewriteRulesParallel =

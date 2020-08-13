@@ -23,12 +23,14 @@ module Kore.Rewriting.RewritingVariable
     , mkUnifiedConfigVariable
     , mkRewritingPattern
     , getResultPattern
-    , getResultPattern'
+    , resetResultPattern
     , getRemainderPredicate
-    , getRemainderPattern
-    -- * Exported for reachability rule unparsing
+    , assertRemainderPattern
+    , resetConfigVariable
     , getRewritingVariable
-    , getPatternAux
+    -- * Exported for unparsing
+    , getRewritingPattern
+    , getRewritingTerm
     ) where
 
 import Prelude.Kore
@@ -160,17 +162,38 @@ getPattern
     => Pattern RewritingVariableName
     -> Pattern VariableName
 getPattern pattern' =
-    getPatternAux pattern'
+    getRewritingPattern pattern'
     & assert (all isSomeConfigVariable freeVars)
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
+-- | Unwrap every variable in the pattern. This is unsafe in
+-- contexts related to unification. To be used only where the
+-- rewriting information is not necessary anymore, such as
+-- unparsing.
+getRewritingPattern
+    :: Pattern RewritingVariableName
+    -> Pattern VariableName
+getRewritingPattern = Pattern.mapVariables getRewritingVariable
+
+-- | Unwrap every variable in the term. This is unsafe in
+-- contexts related to unification. To be used only where the
+-- rewriting information is not necessary anymore, such as
+-- unparsing.
+getRewritingTerm
+    :: TermLike RewritingVariableName
+    -> TermLike VariableName
+getRewritingTerm = TermLike.mapVariables getRewritingVariable
+
+resetConfigVariable
+    :: AdjSomeVariableName
+        (RewritingVariableName -> RewritingVariableName)
+resetConfigVariable =
+    pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
+
 getRewritingVariable
     :: AdjSomeVariableName (RewritingVariableName -> VariableName)
 getRewritingVariable = pure (from @RewritingVariableName @VariableName)
-
-getPatternAux :: Pattern RewritingVariableName -> Pattern VariableName
-getPatternAux = Pattern.mapVariables getRewritingVariable
 
 mkConfigVariable :: VariableName -> RewritingVariableName
 mkConfigVariable = ConfigVariableName
@@ -194,7 +217,7 @@ getResultPattern
     -> Pattern RewritingVariableName
     -> Pattern VariableName
 getResultPattern initial config@Conditional { substitution } =
-    getPatternAux renamed
+    getRewritingPattern renamed
   where
     substitution' = Substitution.filter isSomeConfigVariable substitution
     filtered = config { Pattern.substitution = substitution' }
@@ -215,13 +238,15 @@ getResultPattern initial config@Conditional { substitution } =
     renamed :: Pattern RewritingVariableName
     renamed = filtered & Pattern.substitute renaming
 
-getResultPattern'
+-- | Safely reset all the variables in the pattern to configuration
+-- variables.
+resetResultPattern
     :: HasCallStack
     => FreeVariables RewritingVariableName
     -> Pattern RewritingVariableName
     -> Pattern RewritingVariableName
-getResultPattern' initial config@Conditional { substitution } =
-    renamed
+resetResultPattern initial config@Conditional { substitution } =
+    Pattern.mapVariables resetConfigVariable renamed
   where
     substitution' = Substitution.filter isSomeConfigVariable substitution
     filtered = config { Pattern.substitution = substitution' }
@@ -255,11 +280,15 @@ getRemainderPredicate predicate =
   where
     freeVars = freeVariables predicate & FreeVariables.toList
 
-getRemainderPattern
+assertRemainderPattern
     :: HasCallStack
     => Pattern RewritingVariableName
-    -> Pattern VariableName
-getRemainderPattern = getPattern
+    -> Pattern RewritingVariableName
+assertRemainderPattern pattern' =
+    pattern'
+    & assert (all isSomeConfigVariable freeVars)
+  where
+    freeVars = freeVariables pattern' & FreeVariables.toList
 
 isSomeConfigVariable :: SomeVariable RewritingVariableName -> Bool
 isSomeConfigVariable = isSomeConfigVariableName . variableName

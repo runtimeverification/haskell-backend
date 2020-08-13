@@ -278,7 +278,7 @@ runStep
     -> SMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return . fmap getRemainderPattern $ Step.gatherResults results
+    return . fmap getRewritingPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName

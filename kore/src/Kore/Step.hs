@@ -121,12 +121,10 @@ transitionRule =
             Step.applyRewriteRulesParallel
                 Unification.unificationProcedure
                 [rule]
-                (Pattern.mapVariables asConfiguration config)
+                (Pattern.mapVariables resetConfigVariable config)
             & lift
         Foldable.asum
             (pure <$> Step.gatherResults results)
-    asConfiguration =
-        pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
 
 
 {- | A strategy that applies all the rewrites in parallel.

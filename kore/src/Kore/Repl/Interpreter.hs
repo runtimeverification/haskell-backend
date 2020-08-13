@@ -115,7 +115,7 @@ import GHC.Natural
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , getPatternAux
+    , getRewritingPattern
     )
 import Numeric.Natural
 import System.Directory
@@ -1350,7 +1350,7 @@ unparseProofStateComponent transformation omitList =
         }
   where
     unparseComponent =
-        unparseToString . fmap hide . getPatternAux . transformation
+        unparseToString . fmap hide . getRewritingPattern . transformation
     hide
         :: TermLike VariableName
         -> TermLike VariableName
