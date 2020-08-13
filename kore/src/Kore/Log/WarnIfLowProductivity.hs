@@ -25,9 +25,12 @@ newtype WarnIfLowProductivity =
 
 instance Pretty WarnIfLowProductivity where
     pretty (WarnIfLowProductivity productivityPercent) =
-        Pretty.hsep
-            [ "Warning! Poor performance: productivity dropped to aprox."
-            , Pretty.pretty productivityPercent <> "%"
+        Pretty.vsep
+            [ Pretty.hsep
+                [ "Warning! Poor performance: productivity dropped to aprox."
+                , Pretty.pretty productivityPercent <> "%."
+                ]
+            , "Please file a bug report."
             ]
 
 instance Entry WarnIfLowProductivity where
