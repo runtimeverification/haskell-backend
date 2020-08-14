@@ -65,6 +65,9 @@ import Data.Limit
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Debug
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -73,6 +76,15 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( getMultiAndPredicate
+    , unwrapPredicate
+    )
+import Kore.Internal.TermLike
+    ( pattern Ceil_
+    , pattern Not_
+    , TermLike (..)
+    )
 import Kore.Log.DebugProofState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
@@ -98,6 +110,7 @@ import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofState
     , ProofStateTransformer (..)
+    , extractGoalStuck
     )
 import qualified Kore.Strategies.ProofState as ProofState
     ( ProofState (..)
@@ -116,6 +129,7 @@ import Logic
     ( LogicT
     )
 import qualified Logic
+import qualified Pretty
 import Prof
 
 type CommonProofState = ProofState.ProofState ReachabilityRule
@@ -377,18 +391,33 @@ transitionRule'
     => [ReachabilityRule]
     -> [Rule ReachabilityRule]
     -> CommonTransitionRule simplifier
-transitionRule' claims axioms = \prim proofState ->
+transitionRule' claims axioms = \prim proofState -> do
+    Foldable.for_ (extractGoalStuck proofState) (\rule -> do
+        let resultPatternPredicate = predicate (getConfiguration rule)
+            multiAndPredicate = getMultiAndPredicate resultPatternPredicate
+        when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
+            error . show . Pretty.vsep $
+                [ "Found '\\not(\\ceil(_))' in stuck configuration:"
+                , Pretty.pretty rule
+                , "Please file a bug report."
+                ]
+        undefined
+        )
     deepseq proofState
-    (transitionRule claims axiomGroups
-        & profTransitionRule
-        & withConfiguration
-        & withDebugProofState
-        & withDebugProven
-        & logTransitionRule
-    )
-    prim proofState
+        (transitionRule claims axiomGroups
+            & profTransitionRule
+            & withConfiguration
+            & withDebugProofState
+            & withDebugProven
+            & logTransitionRule
+        )
+        prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+    isNot_Ceil_ :: TermLike variable -> Bool
+    isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
+    isNot_Ceil_ _ = False
 
 profTransitionRule
     :: forall m
