@@ -449,7 +449,7 @@ unparseKoreProveOptions
 
 koreExecSh :: KoreExecOptions -> String
 koreExecSh
-    ( KoreExecOptions
+    koreExecOptions@( KoreExecOptions
         _
         patternFileName
         outputFileName
@@ -475,25 +475,32 @@ koreExecSh
         <> (fmap (<> " \\") . filter (not . null)) options
   where
     options =
-        [ if isJust koreProveOptions then "vdefinition.kore"
-            else "definition.kore"
-        , if isJust patternFileName then "--pattern pgm.kore" else ""
-        , if isJust outputFileName then "--output result.kore" else ""
-        , "--module " <> unpack (getModuleName mainModuleName)
-        , maybeLimit "" (("--smt-timeout " <>) . show) timeout
-        , case smtPrelude of
-            Just path -> "--smt-prelude smtPrelude" <> takeExtension path
-            Nothing -> ""
-        , "--smt " <> fmap Char.toLower (show smtSolver)
-        , maybeLimit "" (("--breadth " <>) . show) breadthLimit
-        , maybeLimit "" (("--depth " <>) . show) depthLimit
-        , "--strategy " <> fst strategy
+        concat
+        [
+            [ defaultDefinitionFilePath koreExecOptions
+            , if isJust patternFileName then "--pattern pgm.kore" else ""
+            , if isJust outputFileName then "--output result.kore" else ""
+            , "--module " <> unpack (getModuleName mainModuleName)
+            , maybeLimit "" (("--smt-timeout " <>) . show) timeout
+            , case smtPrelude of
+                Just path -> "--smt-prelude smtPrelude" <> takeExtension path
+                Nothing -> ""
+            , "--smt " <> fmap Char.toLower (show smtSolver)
+            , maybeLimit "" (("--breadth " <>) . show) breadthLimit
+            , maybeLimit "" (("--depth " <>) . show) depthLimit
+            , "--strategy " <> fst strategy
+            ]
+        , unparseKoreLogOptions koreLogOptions
+        , maybe mempty unparseKoreSearchOptions koreSearchOptions
+        , maybe mempty unparseKoreProveOptions koreProveOptions
+        , maybe mempty unparseKoreMergeOptions koreMergeOptions
+        , maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
         ]
-        <> unparseKoreLogOptions koreLogOptions
-        <> maybe mempty unparseKoreSearchOptions koreSearchOptions
-        <> maybe mempty unparseKoreProveOptions koreProveOptions
-        <> maybe mempty unparseKoreMergeOptions koreMergeOptions
-        <> maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
+
+defaultDefinitionFilePath :: KoreExecOptions -> FilePath
+defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
+  | isJust koreProveOptions = "vdefinition.kore"
+  | otherwise               = "definition.kore"
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
@@ -533,13 +540,8 @@ writeOptionsAndKoreFiles
             . setOwnerExecutable True
             . setOwnerSearchable True
     setPermissions shellScript $ allPermissions emptyPermissions
-    copyFile
-        definitionFileName
-        (  reportDirectory
-        </> if isJust koreProveOptions
-            then "vdefinition.kore"
-            else "definition.kore"
-        )
+    copyFile definitionFileName
+        (reportDirectory </> defaultDefinitionFilePath opts)
     Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
     Foldable.for_ smtPrelude (\path ->
