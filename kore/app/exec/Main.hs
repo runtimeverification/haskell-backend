@@ -480,11 +480,14 @@ koreExecSh
             , patternFileName $> "--pattern pgm.kore"
             , outputFileName $> "--output result.kore"
             , pure $ "--module " <> unpack (getModuleName mainModuleName)
-            , maybeLimit Nothing (Just . ("--smt-timeout " <>) . show) timeout
+            , (\limit -> unwords ["--smt-timeout", show limit])
+                <$> maybeLimit Nothing Just timeout
             , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
             , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
-            , maybeLimit Nothing (Just . ("--breadth " <>) . show) breadthLimit
-            , maybeLimit Nothing (Just . ("--depth " <>) . show) depthLimit
+            , (\limit -> unwords ["--breadth", show limit])
+                <$> maybeLimit Nothing Just breadthLimit
+            , (\limit -> unwords ["--depth", show limit])
+                <$> maybeLimit Nothing Just depthLimit
             , pure $ "--strategy " <> fst strategy
             , rtsStatistics $>
                 unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
