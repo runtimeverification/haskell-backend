@@ -1206,7 +1206,7 @@ test_equalsTermsSimplification =
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
                 expect =
-                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
             assertEqual "" (Just [expect]) actual
@@ -1279,7 +1279,7 @@ test_Defined =
             -- TODO (thomas.tuegel): condition should use defined1 instead of
             -- function1.
             condition =
-                makeEqualsPredicate_ function1 function2
+                makeEqualsPredicate Mock.testSort function1 function2
                 & Condition.fromPredicate
         in
             [ testCase "\\and" $ do
