@@ -471,7 +471,7 @@ koreExecSh
         [ "#!/bin/sh"
         , "exec kore-exec \\"
         ]
-        <> (fmap (<> " \\") . filter (not . null)) options
+        <> fmap (\line -> "    " <> line <> " \\") options
   where
     options =
         concat
