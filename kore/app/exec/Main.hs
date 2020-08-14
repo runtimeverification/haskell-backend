@@ -72,8 +72,7 @@ import System.Exit
     ( exitWith
     )
 import System.FilePath
-    ( takeExtension
-    , (</>)
+    ( (</>)
     )
 import System.IO
     ( IOMode (WriteMode)
@@ -482,9 +481,7 @@ koreExecSh
             , outputFileName $> "--output result.kore"
             , pure $ "--module " <> unpack (getModuleName mainModuleName)
             , maybeLimit Nothing (Just . ("--smt-timeout " <>) . show) timeout
-            , case smtPrelude of
-                Just path -> Just $ "--smt-prelude smtPrelude" <> takeExtension path
-                Nothing -> Nothing
+            , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
             , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
             , maybeLimit Nothing (Just . ("--breadth " <>) . show) breadthLimit
             , maybeLimit Nothing (Just . ("--depth " <>) . show) depthLimit
@@ -501,6 +498,9 @@ defaultDefinitionFilePath :: KoreExecOptions -> FilePath
 defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
   | isJust koreProveOptions = "vdefinition.kore"
   | otherwise               = "definition.kore"
+
+defaultSmtPreludeFilePath :: FilePath
+defaultSmtPreludeFilePath = "prelude.smt2"
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
@@ -544,9 +544,8 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    Foldable.for_ smtPrelude (\path ->
-        copyFile path (reportDirectory </> "smtPrelude" <> takeExtension path)
-        )
+    Foldable.for_ smtPrelude
+        $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
     Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
     Foldable.for_ koreMergeOptions
