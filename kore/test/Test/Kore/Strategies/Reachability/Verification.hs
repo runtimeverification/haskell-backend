@@ -28,13 +28,11 @@ import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkRewritingPattern
-    , mkRuleVariable
+    ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)

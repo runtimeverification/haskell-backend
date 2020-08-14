@@ -75,17 +75,11 @@ import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
-import Kore.Internal.Predicate
-    ( unwrapPredicate
-    )
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
     )
 import Kore.Sort
-import qualified Kore.Step.AntiLeft as AntiLeft
-    ( toTermLike
-    )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern
@@ -97,10 +91,6 @@ import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)
     , fromSentenceAxiom
     )
-import Kore.Step.RulePattern
-    ( RulePattern (RulePattern)
-    )
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified

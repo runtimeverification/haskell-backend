@@ -22,7 +22,6 @@ module Kore.Step.ClaimPattern
     , lensClaimPattern
     , mkGoal
     , forgetSimplified
-    , freeVariablesLeft
     , makeTrusted
     -- * For unparsing
     , onePathRuleToTerm
@@ -35,7 +34,6 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Control.Lens as Lens
-import qualified Data.Default as Default
 import qualified Data.Default as Default
 import Data.Generics.Product
 import Data.Generics.Wrapped
@@ -96,7 +94,6 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToString
     )
 import Kore.Variables.Fresh
     ( refreshVariables

@@ -122,7 +122,6 @@ import qualified Kore.Step.AntiLeft as AntiLeft
 import Kore.Step.Step
     ( UnifyingRule (..)
     )
-import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
     , Id (..)
@@ -136,7 +135,6 @@ import Kore.Unparser
     , unparse2
     )
 import Kore.Variables.Fresh
-import qualified Kore.Verified as Verified
 import Pretty
     ( Pretty
     )

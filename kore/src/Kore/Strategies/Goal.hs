@@ -171,12 +171,10 @@ import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( isBottom
-    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToString
     )
 import qualified Kore.Verified as Verified
 import Logic
@@ -446,17 +444,6 @@ deriveParAxiomAllPath
             (ProofState AllPathRule)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
-  where
-    rewrites = unRuleAllPath <$> rules
-
-deriveSeqAllPath
-    ::  MonadSimplify simplifier
-    =>  [Rule AllPathRule]
-    ->  AllPathRule
-    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
-            (ProofState AllPathRule)
-deriveSeqAllPath rules =
-    deriveSeq' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
 

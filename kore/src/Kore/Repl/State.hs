@@ -105,10 +105,6 @@ import qualified Kore.Attribute.Trusted as Attribute
 import Kore.Internal.Condition
     ( Condition
     )
-import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Pattern
-    ( Pattern
-    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -124,13 +120,8 @@ import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
-    , allPathRuleToTerm
+    ( ReachabilityRule (..)
     , lensClaimPattern
-    , onePathRuleToTerm
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify

@@ -69,10 +69,7 @@ import Kore.Step.ClaimPattern
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
     ( RewriteRule
-    , RulePattern
-    , rulePattern
     )
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Step.Simplification.Data
     ( Env (..)
     , runSimplifier

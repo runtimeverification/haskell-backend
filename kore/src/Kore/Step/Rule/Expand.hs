@@ -49,10 +49,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -63,9 +59,6 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
-import qualified Kore.Internal.TermLike as TermLike
-    ( substitute
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -74,18 +67,12 @@ import Kore.Sort
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
-import qualified Kore.Step.AntiLeft as AntiLeft
-    ( substitute
-    )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
     , freeVariablesLeft
-    )
-import Kore.Step.RulePattern
-    ( RulePattern (RulePattern)
     )
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh

@@ -116,7 +116,6 @@ import Logic
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
-import Kore.Syntax.Variable
 import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)

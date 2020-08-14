@@ -38,9 +38,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import Data.Coerce
-    ( Coercible (..)
-    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -60,7 +57,6 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike hiding
     ( refreshVariables
     )
-import Kore.Rewriting.UnifyingRule
 import Kore.Unparser
 import Kore.Variables.Fresh
 
@@ -156,16 +152,6 @@ getUnifiedRuleVariable
     :: SomeVariable RewritingVariableName
     -> Maybe (SomeVariable VariableName)
 getUnifiedRuleVariable = (traverse . traverse) getRuleVariable
-
-getPattern
-    :: HasCallStack
-    => Pattern RewritingVariableName
-    -> Pattern VariableName
-getPattern pattern' =
-    getRewritingPattern pattern'
-    & assert (all isSomeConfigVariable freeVars)
-  where
-    freeVars = freeVariables pattern' & FreeVariables.toList
 
 -- | Unwrap every variable in the pattern. This is unsafe in
 -- contexts related to unification. To be used only where the

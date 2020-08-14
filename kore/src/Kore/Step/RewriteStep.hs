@@ -74,9 +74,6 @@ import Kore.Step.Step
     , assertFunctionLikeResults
     , unifyRules
     )
-import Log
-    ( logDebug
-    )
 import qualified Logic
 
 withoutUnification :: UnifiedRule rule -> rule

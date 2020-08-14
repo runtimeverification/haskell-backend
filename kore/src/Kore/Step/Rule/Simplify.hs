@@ -9,7 +9,6 @@ module Kore.Step.Rule.Simplify
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
@@ -57,7 +56,6 @@ import qualified Kore.Step.RulePattern as OLD
 import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
-    , leftPattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify

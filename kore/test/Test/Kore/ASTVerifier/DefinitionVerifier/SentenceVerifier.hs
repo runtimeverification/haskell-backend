@@ -36,10 +36,6 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     )
 import qualified Kore.Step.Rule as Rule
-import Kore.Step.RulePattern
-    ( RHS (..)
-    , RulePattern (..)
-    )
 import Kore.Syntax
 import Kore.Syntax.Definition as Syntax
 

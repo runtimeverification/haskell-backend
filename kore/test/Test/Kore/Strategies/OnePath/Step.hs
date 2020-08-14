@@ -12,7 +12,6 @@ import Data.Coerce
 import Data.Default
     ( def
     )
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -47,7 +46,6 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , termLikeSort
@@ -57,7 +55,6 @@ import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , claimPattern
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
@@ -141,22 +138,6 @@ makeOnePathGoalFromPatterns
 makeOnePathGoalFromPatterns
     (Pattern.mapVariables (pure mkConfigVariable) -> left)
     (Pattern.mapVariables (pure mkConfigVariable) -> right)
-  =
-    OnePathRule
-    $ ClaimPattern
-            { left
-            , right = OrPattern.fromPattern right
-            , existentials = []
-            , attributes = def
-            }
-
-makeOnePathRuleFromPatterns
-    :: Pattern'
-    -> Pattern'
-    -> OnePathRule
-makeOnePathRuleFromPatterns
-    (Pattern.mapVariables (pure mkRuleVariable) -> left)
-    (Pattern.mapVariables (pure mkRuleVariable) -> right)
   =
     OnePathRule
     $ ClaimPattern

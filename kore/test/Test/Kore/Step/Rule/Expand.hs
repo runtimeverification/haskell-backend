@@ -50,7 +50,6 @@ import Kore.Step.ClaimPattern
     ( OnePathRule
     )
 import Kore.Step.Rule.Expand
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Id
     ( Id
     )

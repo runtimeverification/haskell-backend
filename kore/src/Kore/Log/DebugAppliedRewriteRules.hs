@@ -10,13 +10,8 @@ module Kore.Log.DebugAppliedRewriteRules
 
 import Prelude.Kore
 
-import Data.Coerce
-    ( coerce
-    )
-
 import Kore.Attribute.Axiom
-    ( Axiom (..)
-    , SourceLocation
+    ( SourceLocation
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
@@ -28,14 +23,6 @@ import Kore.Internal.Variable
     , toVariableName
     )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
-    , mapRuleVariables
-    )
-import Kore.Step.Step
-    ( UnifiedRule
-    )
 import Kore.Unparser
     ( unparse
     )

@@ -15,7 +15,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -31,8 +30,7 @@ import GHC.Stack
     )
 
 import Kore.Attribute.Axiom
-    ( Axiom (..)
-    , SourceLocation
+    ( SourceLocation
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -40,7 +38,6 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     , isConstructorLike
@@ -49,11 +46,6 @@ import Kore.Internal.Variable
     ( SomeVariableName
     )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
-    , rewriteRuleToTerm
-    )
 import Kore.Step.Step
     ( UnifiedRule
     , UnifyingRule (..)
@@ -166,8 +158,6 @@ checkSubstitutionCoverage configuration unifiedRule
     substitutionCoverageError =
         SubstitutionCoverageError { solution, location, missingVariables }
 
-    Conditional { substitution } = unifiedRule
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
     location = from @_ @SourceLocation . term $ unifiedRule

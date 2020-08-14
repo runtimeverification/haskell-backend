@@ -4,9 +4,6 @@ module Test.Kore.Step.Rule
     , test_rewritePatternToRewriteRuleAndBack
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Test.Tasty
@@ -39,10 +36,7 @@ import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
-import Kore.Step.RulePattern hiding
-    ( wAF
-    , wEF
-    )
+import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     )

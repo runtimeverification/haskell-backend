@@ -130,7 +130,6 @@ import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
     ( ImplicationRule (..)
     , RewriteRule (RewriteRule)
-    , ToRulePattern (..)
     , getRewriteRule
     , lhsEqualsRhs
     , mkRewritingRule
@@ -734,7 +733,6 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- TODO: is this really needed?
     claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
-        claims = concat simplifiedSpecClaims
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where

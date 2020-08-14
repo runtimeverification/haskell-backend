@@ -46,9 +46,6 @@ import Data.Coerce
     ( coerce
     )
 import qualified Data.Foldable as Foldable
-import Data.Generics.Product
-    ( field
-    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
@@ -88,10 +85,6 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( lensClaimPattern
     , mkGoal
-    )
-import Kore.Step.RulePattern
-    ( leftPattern
-    , toRulePattern
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy

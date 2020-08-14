@@ -10,7 +10,6 @@ module Kore.Step.Simplification.Rule
 
 import Prelude.Kore
 
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )

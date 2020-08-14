@@ -93,7 +93,6 @@ import Kore.Step.RulePattern
     , rewriteRuleToTerm
     , termToRHS
     )
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
     )

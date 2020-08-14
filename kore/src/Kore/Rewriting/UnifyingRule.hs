@@ -29,9 +29,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    )
 import qualified Pretty
 
 type Renaming variable =
