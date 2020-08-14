@@ -472,6 +472,7 @@ koreExecSh
         , "exec kore-exec \\"
         ]
         <> fmap (\line -> "    " <> line <> " \\") options
+        <> ["    \"$@\""]
   where
     options =
         concat
