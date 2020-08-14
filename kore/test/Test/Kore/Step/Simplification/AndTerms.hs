@@ -837,7 +837,15 @@ test_andTermsSimplification =
                     (mkElemVar Mock.m)
                 )
             assertEqual "" expected actual
-        -- TODO: Add tests with non-trivial predicates.
+        , testCase "unifies functions in keys" $ do
+            let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
+                symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
+                expect =
+                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    & Condition.fromPredicate
+                    & Pattern.withCondition concrete
+            actual <- unify concrete symbolic
+            assertEqual "" [expect] actual
         ]
 
     , testGroup "builtin List domain"
