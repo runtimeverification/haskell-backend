@@ -761,7 +761,7 @@ test_narrowing =
         checkResults results actual
         let remainders = OrPattern.fromPatterns [remainder]
         checkRemainders remainders actual
-    , testCase "getResultPattern" $ do
+    , testCase "resetResultPattern" $ do
         let resultRewriting =
                 Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xRule))
                 $ Condition.fromSingleSubstitution
@@ -769,8 +769,8 @@ test_narrowing =
                     (inject xConfig)
                     (Mock.sigma Mock.a (mkElemVar xRule))
             initialVariables = FreeVariables.freeVariable (inject xConfig)
-            actual = getResultPattern initialVariables resultRewriting
-        assertEqual "" result actual
+            actual = resetResultPattern initialVariables resultRewriting
+        assertEqual "" (mkRewritingPattern result) actual
     ]
   where
     apply rule config = applyRewriteRulesParallel config [rule]

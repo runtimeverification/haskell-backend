@@ -22,7 +22,6 @@ module Kore.Rewriting.RewritingVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
     , mkRewritingPattern
-    , getResultPattern
     , resetResultPattern
     , getRemainderPredicate
     , assertRemainderPattern
@@ -194,35 +193,6 @@ isConfigVariable _ = False
 isRuleVariable :: RewritingVariableName -> Bool
 isRuleVariable (RuleVariableName _) = True
 isRuleVariable _ = False
-
-{- | Remove axiom variables from the substitution and unwrap all variables.
- -}
-getResultPattern
-    :: HasCallStack
-    => FreeVariables RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> Pattern VariableName
-getResultPattern initial config@Conditional { substitution } =
-    getRewritingPattern renamed
-  where
-    substitution' = Substitution.filter isSomeConfigVariable substitution
-    filtered = config { Pattern.substitution = substitution' }
-    avoiding =
-        initial
-        & FreeVariables.toNames
-        & (Set.map . fmap) toVariableName
-    introduced =
-        Set.fromAscList
-        . mapMaybe getUnifiedRuleVariable
-        . Set.toAscList
-        . FreeVariables.toSet
-        $ freeVariables filtered
-    renaming =
-        Map.mapKeys (fmap RuleVariableName)
-        . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
-        $ refreshVariables avoiding introduced
-    renamed :: Pattern RewritingVariableName
-    renamed = filtered & Pattern.substitute renaming
 
 -- | Safely reset all the variables in the pattern to configuration
 -- variables.
