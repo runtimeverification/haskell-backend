@@ -8,7 +8,6 @@ module Kore.Strategies.Goal
     , strategy
     , TransitionRule
     , Prim
-    , FromRulePattern (..)
     , ClaimExtractor (..)
     , WithConfiguration (..)
     , CheckImplicationResult (..)
@@ -133,8 +132,7 @@ import Kore.Step.Rule
     , fromSentenceAxiom
     )
 import Kore.Step.RulePattern
-    ( FromRulePattern (..)
-    , RulePattern (..)
+    ( RulePattern (..)
     )
 import Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate

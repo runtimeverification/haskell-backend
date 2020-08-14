@@ -11,8 +11,6 @@ module Kore.Step.RulePattern
     , ImplicationRule (..)
     , RHS (..)
     , HasAttributes (..)
-    , ToRulePattern (..)
-    , FromRulePattern (..)
     , UnifyingRule (..)
     , rulePattern
     , leftPattern
@@ -503,26 +501,6 @@ class HasAttributes rule where
 
 instance HasAttributes RulePattern where
     getAttributes = attributes
-
--- | The typeclasses 'ToRulePattern' and 'FromRulePattern' are intended to
--- be implemented by types which contain more (or the same amount of)
--- information as 'RulePattern Variable'.
-class ToRulePattern rule where
-    toRulePattern :: rule -> RulePattern VariableName
-    default toRulePattern
-        :: Coercible rule (RulePattern VariableName)
-        => rule -> RulePattern VariableName
-    toRulePattern = coerce
-
--- | We need to know the context when transforming a 'RulePattern Variable'
--- into a 'rule', hence the first 'rule' argument. In general it can be ignored
--- when the 'rule' and the 'RulePattern Variable' are representationally equal.
-class FromRulePattern rule where
-    fromRulePattern :: rule -> RulePattern VariableName -> rule
-    default fromRulePattern
-        :: Coercible (RulePattern VariableName) rule
-        => rule -> RulePattern VariableName -> rule
-    fromRulePattern _ = coerce
 
 {-  | Rewrite-based rule pattern.
 -}

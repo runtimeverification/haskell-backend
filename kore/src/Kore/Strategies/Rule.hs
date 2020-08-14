@@ -36,8 +36,6 @@ import Kore.Step.ClaimPattern
     )
 import Kore.Step.RulePattern
     ( RewriteRule (..)
-    , ToRulePattern (..)
-    , unRewritingRule
     )
 import Kore.Unparser
     ( Unparse
@@ -61,9 +59,6 @@ instance Debug (Rule OnePathRule)
 
 instance Diff (Rule OnePathRule)
 
-instance ToRulePattern (Rule OnePathRule) where
-    toRulePattern = getRewriteRule . unRewritingRule . unRuleOnePath
-
 instance From (Rule OnePathRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath
 
@@ -80,9 +75,6 @@ instance SOP.HasDatatypeInfo (Rule AllPathRule)
 instance Debug (Rule AllPathRule)
 
 instance Diff (Rule AllPathRule)
-
-instance ToRulePattern (Rule AllPathRule) where
-    toRulePattern = getRewriteRule . unRewritingRule . unRuleAllPath
 
 instance From (Rule AllPathRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -101,9 +93,6 @@ instance SOP.HasDatatypeInfo (Rule ReachabilityRule)
 instance Debug (Rule ReachabilityRule)
 
 instance Diff (Rule ReachabilityRule)
-
-instance ToRulePattern (Rule ReachabilityRule) where
-    toRulePattern = getRewriteRule . unRewritingRule . unReachabilityRewriteRule
 
 instance From (Rule ReachabilityRule) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
