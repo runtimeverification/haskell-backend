@@ -486,12 +486,13 @@ koreExecSh
             , maybeLimit Nothing (Just . ("--breadth " <>) . show) breadthLimit
             , maybeLimit Nothing (Just . ("--depth " <>) . show) depthLimit
             , pure $ "--strategy " <> fst strategy
+            , rtsStatistics $>
+                unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
             ]
         , unparseKoreLogOptions koreLogOptions
         , maybe mempty unparseKoreSearchOptions koreSearchOptions
         , maybe mempty unparseKoreProveOptions koreProveOptions
         , maybe mempty unparseKoreMergeOptions koreMergeOptions
-        , maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
         ]
 
 defaultDefinitionFilePath :: KoreExecOptions -> FilePath
@@ -501,6 +502,9 @@ defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
 
 defaultSmtPreludeFilePath :: FilePath
 defaultSmtPreludeFilePath = "prelude.smt2"
+
+defaultRtsStatisticsFilePath :: FilePath
+defaultRtsStatisticsFilePath = "rts-statistics.json"
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
