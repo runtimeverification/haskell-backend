@@ -74,6 +74,9 @@ import Kore.Step.Step
     , assertFunctionLikeResults
     , unifyRules
     )
+import Logic
+    ( LogicT
+    )
 import qualified Logic
 
 withoutUnification :: UnifiedRule rule -> rule
@@ -114,23 +117,32 @@ finalizeAppliedRule renamedRule appliedConditions =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
-        finalCondition <-
-            do
-                partial <-
-                    simplifyCondition
-                        (SideCondition.fromCondition appliedCondition)
-                        ensuresCondition
-                simplifyCondition SideCondition.top
-                    (appliedCondition <> partial)
-            & Logic.lowerLogicT
-        -- Apply the normalized substitution to the right-hand side of the
-        -- axiom.
-        let
-            Conditional { substitution } = finalCondition
-            substitution' = Substitution.toMap substitution
-            Conditional { term = finalTerm} = finalPattern
-            finalTerm' = TermLike.substitute substitution' finalTerm
-        return (finalTerm' `Pattern.withCondition` finalCondition)
+        constructConfiguration appliedCondition ensuresCondition finalPattern
+
+constructConfiguration
+    :: MonadSimplify simplifier
+    => Condition RewritingVariableName
+    -> Condition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> LogicT simplifier (Pattern RewritingVariableName)
+constructConfiguration appliedCondition ensuresCondition finalPattern = do
+    finalCondition <-
+        do
+           partial <-
+               simplifyCondition
+                   (SideCondition.fromCondition appliedCondition)
+                   ensuresCondition
+           simplifyCondition SideCondition.top
+               (appliedCondition <> partial)
+        & Logic.lowerLogicT
+    -- Apply the normalized substitution to the right-hand side of the
+    -- axiom.
+    let
+        Conditional { substitution } = finalCondition
+        substitution' = Substitution.toMap substitution
+        Conditional { term = finalTerm} = finalPattern
+        finalTerm' = TermLike.substitute substitution' finalTerm
+    return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim
     :: forall simplifier
@@ -161,23 +173,7 @@ finalizeAppliedClaim renamedRule appliedConditions =
                     rightPattern
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
-        finalCondition <-
-            do
-                partial <-
-                    simplifyCondition
-                        (SideCondition.fromCondition appliedCondition)
-                        ensuresCondition
-                simplifyCondition SideCondition.top
-                    (appliedCondition <> partial)
-            & Logic.lowerLogicT
-        -- Apply the normalized substitution to the right-hand side of the
-        -- axiom.
-        let
-            Conditional { substitution } = finalCondition
-            substitution' = Substitution.toMap substitution
-            Conditional { term = finalTerm} = finalPattern
-            finalTerm' = TermLike.substitute substitution' finalTerm
-        return (finalTerm' `Pattern.withCondition` finalCondition)
+        constructConfiguration appliedCondition ensuresCondition finalPattern
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
@@ -191,7 +187,7 @@ type UnifyingRuleWithRepresentation representation rule =
 type FinalizeApplied rule simplifier =
     rule
     -> OrCondition RewritingVariableName
-    -> Logic.LogicT simplifier (OrPattern RewritingVariableName)
+    -> LogicT simplifier (OrPattern RewritingVariableName)
 
 finalizeRule
     :: UnifyingRuleWithRepresentation representation rule

@@ -386,7 +386,12 @@ deriveSeqClaim lensClaimPattern mkClaim claims goal =
                     config
                     (Lens.view lensClaimPattern <$> claims)
                     & lift
-            deriveClaimResults mkClaim results
+            deriveResults fromAppliedRule results
+  where
+    fromAppliedRule =
+        AppliedClaim
+        . mkClaim
+        . Step.withoutUnification
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
@@ -853,7 +858,13 @@ deriveWith lensClaimPattern mkRule takeStep rewrites goal =
         $ Lens.forOf (field @"left") claimPattern
         $ \config -> Compose $ do
             results <- takeStep rewrites config & lift
-            deriveResults mkRule results
+            deriveResults fromAppliedRule results
+  where
+    fromAppliedRule =
+        AppliedAxiom
+        . mkRule
+        . RewriteRule
+        . Step.withoutUnification
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq'
@@ -869,12 +880,13 @@ deriveSeq' lensRulePattern mkRule =
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
-    :: (RewriteRule RewritingVariableName -> Rule goal)
-    -> Step.Results (RulePattern RewritingVariableName)
+    :: Step.UnifyingRuleVariable representation ~ RewritingVariableName
+    => (Step.UnifiedRule representation -> AppliedRule goal)
+    -> Step.Results representation
     -> Strategy.TransitionT (AppliedRule goal) simplifier
         (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
-deriveResults mkRule Results { results, remainders } =
+deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
   where
     addResults = Foldable.asum (addResult <$> results)
@@ -893,40 +905,3 @@ deriveResults mkRule Results { results, remainders } =
     addRemainder = pure . GoalRemainder
 
     addRule = Transition.addRule . fromAppliedRule
-
-    fromAppliedRule =
-        AppliedAxiom
-        . mkRule
-        . RewriteRule
-        . Step.withoutUnification
-
-deriveClaimResults
-    :: (ClaimPattern -> goal)
-    -> Step.Results ClaimPattern
-    -> Strategy.TransitionT (AppliedRule goal) simplifier
-        (ProofState.ProofState (Pattern RewritingVariableName))
--- TODO (thomas.tuegel): Remove goal argument.
-deriveClaimResults mkClaim Results { results, remainders } =
-    addResults <|> addRemainders
-  where
-    addResults = Foldable.asum (addResult <$> results)
-    addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
-
-    addResult Result { appliedRule, result } = do
-        addRule appliedRule
-        case Foldable.toList result of
-            []      ->
-                -- If the rule returns \bottom, the goal is proven on the
-                -- current branch.
-                pure Proven
-            configs -> Foldable.asum (addRewritten <$> configs)
-
-    addRewritten = pure . GoalRewritten
-    addRemainder = pure . GoalRemainder
-
-    addRule = Transition.addRule . fromAppliedRule
-
-    fromAppliedRule =
-        AppliedClaim
-        . mkClaim
-        . Step.withoutUnification

@@ -265,7 +265,7 @@ test_patternToAxiomPatternAndBack =
                         (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
                     )
             in
-                testCase "Reachability claim wAF" $ do
+                testCase "Reachability claim wAF" $
                     assertEqual ""
                         (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
