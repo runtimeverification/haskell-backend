@@ -36,6 +36,7 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import qualified Data.Default as Default
 import Data.Generics.Product
 import Data.Generics.Wrapped
 import Data.Map.Strict

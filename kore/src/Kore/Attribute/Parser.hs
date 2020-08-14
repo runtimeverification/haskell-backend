@@ -47,6 +47,7 @@ module Kore.Attribute.Parser
     , getVariable
     , parseSExpr
     , parseReadS
+    , parseStringLiteral
     , parseInteger
       -- * Re-exports
     , AttributePattern
@@ -367,7 +368,12 @@ parseReadS aReadS (Text.unpack -> syntax) =
 {- | Parse an 'Integer' from a 'StringLiteral'.
  -}
 parseInteger :: StringLiteral -> Parser Integer
-parseInteger (StringLiteral literal) = parseReadS reads literal
+parseInteger = parseStringLiteral reads
+
+{- | Parse from a 'StringLiteral'.
+ -}
+parseStringLiteral :: ReadS a -> StringLiteral -> Parser a
+parseStringLiteral reads' (StringLiteral literal) = parseReadS reads' literal
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.
 

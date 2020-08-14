@@ -1,15 +1,1 @@
-  #Not ( {
-    X:Int in_keys ( M )
-  #Equals
-    false
-  } )
-#And
-  <T>
-    <k>
-      added ~> .
-    </k>
-    <a>
-      M
-      X:Int |-> 3
-    </a>
-  </T>
+#Top

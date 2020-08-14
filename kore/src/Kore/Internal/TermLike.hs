@@ -90,6 +90,7 @@ module Kore.Internal.TermLike
     , mkEndianness
     , mkSignedness
     , mkDefined
+    , unDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -186,6 +187,7 @@ module Kore.Internal.TermLike
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Data.Align
     ( alignWith
     )
@@ -201,6 +203,9 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
@@ -1455,6 +1460,10 @@ mkDefined
     -> TermLike variable
 mkDefined = updateCallStack . worker
   where
+    mkDefined1 term
+      | isDefinedPattern term = term
+      | otherwise = mkDefinedAtTop term
+
     worker
         :: TermLike variable
         -> TermLike variable
@@ -1474,14 +1483,9 @@ mkDefined = updateCallStack . worker
                         { applicationSymbolOrAlias
                         , applicationChildren
                         } ->
-                    (if isFunctional applicationSymbolOrAlias
-                        then id
-                        else mkDefinedAtTop
-                    )
-                        (mkApplySymbol
-                                    applicationSymbolOrAlias
-                                    (fmap worker applicationChildren)
-                        )
+                    mkDefined1
+                    $ mkApplySymbol applicationSymbolOrAlias
+                    $ fmap worker applicationChildren
                 ApplyAliasF _ ->
                     mkDefinedAtTop term
                 BottomF _ ->
@@ -1493,9 +1497,16 @@ mkDefined = updateCallStack . worker
                 BuiltinF (Domain.BuiltinBool _) -> term
                 BuiltinF (Domain.BuiltinInt _) -> term
                 BuiltinF (Domain.BuiltinString _) -> term
-                BuiltinF (Domain.BuiltinList _) -> mkDefinedAtTop term
-                BuiltinF (Domain.BuiltinMap _) -> mkDefinedAtTop term
-                BuiltinF (Domain.BuiltinSet _) -> mkDefinedAtTop term
+                BuiltinF (Domain.BuiltinList internalList) ->
+                    -- mkDefinedAtTop is not needed because the list is always
+                    -- defined if its elements are all defined.
+                    mkBuiltinList $ mkDefined <$> internalList
+                BuiltinF (Domain.BuiltinMap internalMap) ->
+                    mkDefined1 . mkBuiltinMap
+                    $ mkDefinedInternalAc internalMap
+                BuiltinF (Domain.BuiltinSet internalSet) ->
+                    mkDefined1 . mkBuiltinSet
+                    $ mkDefinedInternalAc internalSet
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
@@ -1528,9 +1539,34 @@ mkDefined = updateCallStack . worker
                 InhabitantF _ -> mkDefinedAtTop term
                 InternalBytesF _ -> term
 
+    mkDefinedInternalAc internalAc =
+        Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
+      where
+        mkDefinedNormalized =
+            Domain.unwrapAc
+            >>> Lens.over (field @"concreteElements") mkDefinedConcrete
+            >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
+            >>> Lens.over (field @"opaque") mkDefinedOpaque
+            >>> Domain.wrapAc
+        mkDefinedConcrete =
+            (fmap . fmap) mkDefined
+            . Map.mapKeys mkDefined
+        mkDefinedAbstract = (fmap . fmap) mkDefined
+        mkDefinedOpaque = map mkDefined
+
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
 mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
 mkDefinedAtTop = synthesize . DefinedF . Defined
+
+{- | Remove (recursively) the 'Defined' wrappers throughout a 'TermLike'.
+ -}
+unDefined :: TermLike variable -> TermLike variable
+unDefined =
+    Recursive.unfold $ \termLike ->
+        let attrs :< termLikeF = Recursive.project termLike in
+        case termLikeF of
+            DefinedF defined -> Recursive.project (getDefined defined)
+            _ -> attrs :< termLikeF
 
 {- | Construct an 'Endianness' pattern.
  -}

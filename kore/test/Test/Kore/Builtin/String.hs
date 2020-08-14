@@ -12,6 +12,7 @@ module Test.Kore.Builtin.String
     , test_int2String
     , test_token2String
     , test_string2Token
+    , test_unifyStringEq
     --
     , asPattern
     , asInternal
@@ -29,17 +30,40 @@ import Test.Tasty
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 
+import Control.Monad.Trans.Maybe
+    ( runMaybeT
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
+import Kore.Step.Simplification.Data
+    ( runSimplifierBranch
+    , simplifyCondition
+    )
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
@@ -381,3 +405,74 @@ testString
     -> Pattern VariableName
     -> TestTree
 testString name = testSymbolWithSolver evaluate name
+
+ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+idName `ofSort` sort = mkElementVariable (testId idName) sort
+
+test_unifyStringEq :: [TestTree]
+test_unifyStringEq =
+    [ testCase "\\equals(false, X ==String Y)" $ do
+        let term1 = Test.Bool.asInternal False
+            term2 = eqString (mkElemVar x) (mkElemVar y)
+            expect =
+                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
+                & makeNotPredicate
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyStringEq term1 term2
+            assertEqual "" [Just expect] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
+    , testCase "\\equals(true, X ==String Y)" $ do
+        let term1 = Test.Bool.asInternal True
+            term2 = eqString (mkElemVar x) (mkElemVar y)
+            expect =
+                Condition.assign (inject x) (mkElemVar y)
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyStringEq term1 term2
+            let expect' = expect { predicate = makeTruePredicate stringSort }
+            assertEqual "" [Just expect'] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
+    ]
+  where
+    x, y :: ElementVariable VariableName
+    x = "x" `ofSort` stringSort
+    y = "y" `ofSort` stringSort
+
+    unifyStringEq
+        :: TermLike VariableName
+        -> TermLike VariableName
+        -> IO [Maybe (Pattern VariableName)]
+    unifyStringEq term1 term2 =
+        String.unifyStringEq
+            (termUnification Not.notSimplifier)
+            Not.notSimplifier
+            term1
+            term2
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT

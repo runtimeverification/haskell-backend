@@ -236,6 +236,170 @@ test_expandRule =
                     )
                     (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
         in assertEqual "" expected actual
+    , testCase "Nothing to expand" $
+        let expected = Mock.f x `rewritesTo` Mock.g x
+            actual =
+                expandSingleConstructors
+                    (metadataTools [])
+                    (Mock.f x `rewritesTo` Mock.g x)
+        in assertEqual "" expected actual
+    , testCase "Nothing to expand without constructors" $
+        let expected = Mock.f x `rewritesTo` Mock.g x
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [ (Mock.testSortId, noConstructor) ]
+                    )
+                    (Mock.f x `rewritesTo` Mock.g x)
+        in assertEqual "" expected actual
+    , testCase "Nothing to expand with multiple constructors" $
+        let expected = Mock.f x `rewritesTo` Mock.g x
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSortId
+                            , noConstructor
+                                `with` constructor Mock.aSymbol
+                                `with` constructor Mock.bSymbol
+                            )
+                        ]
+                    )
+                    (Mock.f x `rewritesTo` Mock.g x)
+        in assertEqual "" expected actual
+    , testCase "Expands variable once to constant" $
+        let expected =
+                Pair (Mock.f Mock.a, makeEqualsPredicate_ x Mock.a)
+                `rewritesTo`
+                Pair (Mock.g Mock.a, makeTruePredicate_)
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.f x `rewritesTo` Mock.g x)
+        in assertEqual "" expected actual
+    , testCase "Expands variable once to argument constructor" $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor1 x00TestSort)
+                    , makeEqualsPredicate_
+                        x0
+                        (expandableConstructor1 x00TestSort)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor1 x00TestSort)
+                    , makeTruePredicate_
+                    )
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor1Symbol
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
+    , testCase "Expands variable twice." $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor1 Mock.a)
+                    , makeEqualsPredicate_
+                        x0
+                        (expandableConstructor1 Mock.a)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor1 Mock.a)
+                    , makeTruePredicate_
+                    )
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor1Symbol
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ,   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
+    , testCase "Expands multiple arguments." $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor2 Mock.a Mock.a)
+                    , makeEqualsPredicate_
+                        x0
+                        (expandableConstructor2 Mock.a Mock.a)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor2 Mock.a Mock.a)
+                    , makeTruePredicate_
+                    )
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor2Symbol
+                                    `with` Mock.testSort
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ,   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
+    , testCase "Expands one of multiple arguments" $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor2a x00TestSort1 Mock.a)
+                    , makeEqualsPredicate_
+                        x0
+                        (expandableConstructor2a x00TestSort1 Mock.a)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor2a x00TestSort1 Mock.a)
+                    , makeTruePredicate_
+                    )
+            actual =
+                expandSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor2aSymbol
+                                    `with` Mock.testSort1
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ,   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
     ]
 
 rewritesTo

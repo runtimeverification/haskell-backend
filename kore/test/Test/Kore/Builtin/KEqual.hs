@@ -197,7 +197,7 @@ runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . evalEnvUnifierT Not.notSimplifier
     . runMaybeT
-    $ KEqual.termKEquals
+    $ KEqual.unifyKequalsEq
         (termUnification Not.notSimplifier)
         Not.notSimplifier
         term1

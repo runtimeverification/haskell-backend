@@ -104,6 +104,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( TermLike
     , isFunctionPattern
+    , mkDefined
     , mkIn
     , termLikeSort
     )
@@ -210,11 +211,6 @@ class Goal goal where
     -- TODO (thomas.tuegel): isTriviallyValid should be part of
     -- checkImplication.
     isTriviallyValid :: goal -> Bool
-
-    inferDefined
-        :: MonadSimplify m
-        => goal
-        -> Strategy.TransitionT (AppliedRule goal) m goal
 
     checkImplication
         :: MonadSimplify m
@@ -367,8 +363,6 @@ instance Goal OnePathRule where
 
     isTriviallyValid = isTriviallyValid' _Unwrapped
 
-    inferDefined = inferDefined' _Unwrapped
-
 deriveSeqClaim
     :: MonadSimplify m
     => Step.UnifyingRule goal
@@ -417,7 +411,6 @@ instance Goal AllPathRule where
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
     isTriviallyValid = isTriviallyValid' _Unwrapped
-    inferDefined = inferDefined' _Unwrapped
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathRule claims
 
     applyAxioms axiomss = \goal ->
@@ -482,15 +475,6 @@ instance Goal ReachabilityRule where
 
     isTriviallyValid (AllPath goal) = isTriviallyValid goal
     isTriviallyValid (OnePath goal) = isTriviallyValid goal
-
-    inferDefined (AllPath goal) =
-        inferDefined goal
-        & fmap AllPath
-        & allPathTransition
-    inferDefined (OnePath goal) =
-        inferDefined goal
-        & fmap OnePath
-        & onePathTransition
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
@@ -586,12 +570,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Simplify (GoalRemainder goal) =
         GoalRemainder <$> simplify goal
 
-    transitionRuleWorker InferDefined (GoalRemainder goal) = do
-        results <- tryTransitionT (inferDefined goal)
-        case results of
-            [] -> return Proven
-            _ -> GoalRemainder <$> Transition.scatter results
-
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
         case result of
@@ -653,7 +631,6 @@ reachabilityFirstStep =
         , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
-        , InferDefined
         , TriviallyValid
         , CheckImplication
         , ApplyAxioms
@@ -669,7 +646,6 @@ reachabilityNextStep =
         , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
-        , InferDefined
         , TriviallyValid
         , CheckImplication
         , ApplyClaims
@@ -823,7 +799,7 @@ checkImplication' lensRulePattern goal =
         run :: ExceptT r m r -> m r
         run acts = runExceptT acts >>= either pure pure
 
--- TODO: simplify right hand side as well
+-- TODO(Ana): simplify right hand side as well
 simplify'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
@@ -831,22 +807,8 @@ simplify'
     -> Strategy.TransitionT (AppliedRule goal) m goal
 simplify' lensClaimPattern =
     Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
-        configs <-
-            simplifyTopConfiguration config >>= SMT.Evaluator.filterMultiOr
-            & lift
-        if isBottom configs
-            then pure Pattern.bottom
-            else Foldable.asum (pure <$> configs)
-
-inferDefined'
-    :: MonadSimplify m
-    => Lens' goal ClaimPattern
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m goal
-inferDefined' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . field @"left") $ \config -> do
         let definedConfig =
-                Pattern.andCondition config
+                Pattern.andCondition (mkDefined <$> config)
                 $ from $ makeCeilPredicate_ (Conditional.term config)
         configs <-
             simplifyTopConfiguration definedConfig

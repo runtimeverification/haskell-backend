@@ -426,10 +426,9 @@ updateConcreteElements
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
-    TermLike.assertConstructorLikeKeys allKeys
-        $ Foldable.foldrM (uncurry insertMissing) elems newElems
-      where
-        allKeys = Map.keys elems <> fmap fst newElems
+    Foldable.foldrM (uncurry insertMissing) elems newElems
+    & TermLike.assertConstructorLikeKeys (Map.keys elems)
+    & TermLike.assertConstructorLikeKeys (fst <$> newElems)
 
 {- | Sort the abstract elements.
 
@@ -767,7 +766,7 @@ unifyEqualsNormalized
                 (unzip . Map.toList)
                     (Domain.concreteElements unwrapped)
 
-    return (unifierTerm `withCondition` unifierCondition)
+    return (unifierTerm `Pattern.withCondition` unifierCondition)
   where
     sort1 = termLikeSort first
 

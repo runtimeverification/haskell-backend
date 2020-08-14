@@ -17,8 +17,7 @@ builtin modules.
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
-    , KEqual (..)
-    , termKEquals
+    , unifyKequalsEq
     , unifyIfThenElse
       -- * keys
     , eqKey
@@ -55,9 +54,9 @@ import Kore.Builtin.Builtin
     ( acceptAnySort
     )
 import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.EqTerm
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -208,24 +207,17 @@ neqKey = "KEQUAL.neq"
 iteKey :: IsString s => s
 iteKey = "KEQUAL.ite"
 
-{- | The @KEQUAL.eq@ hooked symbol applied to @term@-type arguments.
- -}
-data KEqual term =
-    KEqual
-        { symbol :: !Symbol
-        , operand1, operand2 :: !term
-        }
-
 {- | Match the @KEQUAL.eq@ hooked symbol.
  -}
-matchKEqual :: TermLike variable -> Maybe (KEqual (TermLike variable))
-matchKEqual (App_ symbol [operand1, operand2]) = do
-    hook2 <- (getHook . symbolHook) symbol
-    Monad.guard (hook2 == eqKey)
-    return KEqual { symbol, operand1, operand2 }
-matchKEqual _ = Nothing
+matchKequalEq :: TermLike variable -> Maybe (EqTerm (TermLike variable))
+matchKequalEq =
+    matchEqTerm $ \symbol ->
+        do
+            hook2 <- (getHook . symbolHook) symbol
+            Monad.guard (hook2 == eqKey)
+        & isJust
 
-termKEquals
+unifyKequalsEq
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
@@ -234,27 +226,14 @@ termKEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termKEquals unifyChildren (NotSimplifier notSimplifier) a b =
+unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
-    eraseTerm =
-        Pattern.fromCondition_ . Pattern.withoutTerm
     worker termLike1 termLike2
-      | Just KEqual { operand1, operand2 } <- matchKEqual termLike1
+      | Just eqTerm <- matchKequalEq termLike1
       , isFunctionPattern termLike1
-      , Just value2 <- Bool.matchBool termLike2
-      = lift $ do
-        solution <-
-            fmap OrPattern.fromPatterns
-            <$> Unify.gather
-            $ unifyChildren operand1 operand2
-        let solution' = fmap eraseTerm solution
-        finalSolution <-
-            if value2
-                then return solution'
-                else notSimplifier SideCondition.top solution'
-        Unify.scatter finalSolution
-    worker _ _ = empty
+      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+      | otherwise = empty
 
 {- | The @KEQUAL.ite@ hooked symbol applied to @term@-type arguments.
  -}

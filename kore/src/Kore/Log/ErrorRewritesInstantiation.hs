@@ -15,7 +15,6 @@ import Control.Exception
     ( Exception (..)
     , throw
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -44,6 +43,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
+    , isConstructorLike
     )
 import Kore.Internal.Variable
     ( SomeVariableName
@@ -170,6 +170,6 @@ checkSubstitutionCoverage configuration unifiedRule
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
-    isSymbolic = Foldable.any isSomeConfigVariableName substitutionVariables
     location = from @_ @SourceLocation . term $ unifiedRule
     solution = from @rule @(TermLike _) <$> unifiedRule
+    isSymbolic = (not . isConstructorLike) (term configuration)

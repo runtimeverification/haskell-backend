@@ -29,6 +29,7 @@ module Kore.Builtin.Int
     , asPattern
     , asPartialPattern
     , parse
+    , unifyIntEq
       -- * keys
     , randKey
     , srandKey
@@ -101,20 +102,35 @@ import GHC.Integer.Logarithms
     )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
     )
+import Kore.Internal.Symbol
+    ( symbolHook
+    )
 import Kore.Internal.TermLike as TermLike
+import Kore.Step.Simplification.NotSimplifier
+    ( NotSimplifier (..)
+    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifier
+    , TermSimplifier
     )
+import Kore.Unification.Unify as Unify
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -385,3 +401,36 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
     conditions = foldMap mkCeilUnlessDefined arguments
 
 evalEq _ _ = Builtin.wrongArity eqKey
+
+{- | Match the @INT.eq@ hooked symbol.
+-}
+matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))
+matchIntEqual =
+    matchEqTerm $ \symbol ->
+        do
+            hook2 <- (getHook . symbolHook) symbol
+            Monad.guard (hook2 == eqKey)
+        & isJust
+
+{- | Unification of the @INT.eq@ symbol.
+
+This function is suitable only for equality simplification.
+
+ -}
+unifyIntEq
+    :: forall variable unifier
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> NotSimplifier unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyIntEq unifyChildren notSimplifier a b =
+    worker a b <|> worker b a
+  where
+    worker termLike1 termLike2
+      | Just eqTerm <- matchIntEqual termLike1
+      , isFunctionPattern termLike1
+      = unifyEqTerm unifyChildren notSimplifier eqTerm termLike2
+      | otherwise = empty

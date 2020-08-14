@@ -35,11 +35,13 @@ import Data.String
 
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
+import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
+import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -235,17 +237,20 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
-    , (EqualsT, \_ _ s -> Builtin.KEqual.termKEquals s notSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.String.unifyStringEq s notSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s)
+    , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Map.unifyEquals s))
     , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s)
+    , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
     , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent)
     , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
+    , (BothT,   \_ _ s -> unifyDefined s)
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
 
@@ -330,7 +335,8 @@ equalAndEquals
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalAndEquals first second
-  | first == second =
+  | unDefined first == unDefined second =
+    -- TODO (thomas.tuegel): Preserve defined and simplified flags.
     return (Pattern.fromTermLike first)
 equalAndEquals _ _ = empty
 
@@ -699,16 +705,14 @@ functionAnd
     -> Maybe (Pattern variable)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
-    return Conditional
-        { term = first  -- different for Equals
-        -- Ceil predicate not needed since first being
-        -- bottom will make the entire term bottom. However,
-        -- one must be careful to not just drop the term.
-        , predicate =
-            Predicate.markSimplified
-            $ makeEqualsPredicate_ first second
-        , substitution = mempty
-        }
+    makeEqualsPredicate_ first second
+    & Predicate.markSimplified
+    -- Ceil predicate not needed since first being
+    -- bottom will make the entire term bottom. However,
+    -- one must be careful to not just drop the term.
+    & Condition.fromPredicate
+    & Pattern.withCondition first  -- different for Equals
+    & pure
   | otherwise = empty
 
 bytesDifferent
@@ -723,3 +727,53 @@ bytesDifferent
   | bytesFirst /= bytesSecond
     = return Pattern.bottom
 bytesDifferent _ _ = empty
+
+{- | Unwrap a 'Defined' term if it is not handled elsewhere.
+ -}
+unifyDefined
+    :: MonadUnify unifier
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyDefined unifyChildren term1 term2
+  | Defined_ child1 <- term1 = lift $ unifyChildren child1 term2
+  | Defined_ child2 <- term2 = lift $ unifyChildren term1 child2
+  | otherwise = empty
+
+unifyDefinedModifier
+    :: InternalVariable variable
+    => Monad monad
+    => (TermLike variable -> TermLike variable -> monad (Pattern variable))
+    -> TermLike variable
+    -> TermLike variable
+    -> monad (Pattern variable)
+unifyDefinedModifier unify (Defined_ def1) (Defined_ def2) = do
+    unified <- unify def1 def2
+    let Conditional { term } = unified
+        term'
+          | term == def1 || term == def2
+          = mkDefined term
+          | otherwise = term
+        unified' = term' <$ unified
+    pure unified'
+unifyDefinedModifier unify (Defined_ def1) term2 = do
+    unified <- unify def1 term2
+    let Conditional { term } = unified
+        term'
+          | unDefined term == unDefined def1
+          = mkDefined term
+          | otherwise = term
+        unified' = term' <$ unified
+    pure unified'
+unifyDefinedModifier unify term1 (Defined_ def2) = do
+    unified <- unify term1 def2
+    let Conditional { term } = unified
+        term'
+          | unDefined term == unDefined def2
+          = mkDefined term
+          | otherwise = term
+        unified' = term' <$ unified
+    pure unified'
+unifyDefinedModifier unify term1 term2 =
+    unify term1 term2
