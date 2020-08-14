@@ -1201,6 +1201,16 @@ test_equalsTermsSimplification =
             )
             (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqual "" expected actual
+    , testGroup "builtin Map"
+        [ testCase "unifies functions in keys" $ do
+            let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
+                symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
+                expect =
+                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    & Condition.fromPredicate
+            actual <- simplifyEquals mempty concrete symbolic
+            assertEqual "" (Just [expect]) actual
+        ]
     ]
 
 test_functionAnd :: [TestTree]
