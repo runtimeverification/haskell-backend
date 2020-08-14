@@ -156,7 +156,8 @@ class
     @
     -}
     toNormalized
-        :: Ord variable
+        :: HasCallStack
+        => Ord variable
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
@@ -420,7 +421,8 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: (TermWrapper normalized, Ord variable)
+    :: HasCallStack
+    => (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
@@ -442,7 +444,8 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: Map (TermLike Concrete) value
+    :: HasCallStack
+    => Map (TermLike Concrete) value
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
@@ -470,7 +473,8 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: (TermWrapper normalized, Ord variable)
+    :: HasCallStack
+    => (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
@@ -724,6 +728,7 @@ unifyEqualsNormalized
         , TermWrapper normalized
         , MonadUnify unifier
         )
+    => HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -791,7 +796,8 @@ unifyEqualsNormalized
     sort1 = termLikeSort first
 
     normalize1
-        :: TermLike variable
+        :: HasCallStack
+        => TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized patt of
