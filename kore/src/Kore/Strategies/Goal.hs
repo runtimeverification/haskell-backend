@@ -102,7 +102,8 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( isFunctionPattern
+    ( TermLike
+    , isFunctionPattern
     , mkIn
     , termLikeSort
     )
@@ -370,6 +371,10 @@ instance Goal OnePathRule where
 
 deriveSeqClaim
     :: MonadSimplify m
+    => Step.UnifyingRule goal
+    => Step.UnifyingRuleVariable goal ~ RewritingVariableName
+    => From goal (TermLike RewritingVariableName)
+    => From goal Attribute.SourceLocation
     => Lens' goal ClaimPattern
     -> (ClaimPattern -> goal)
     -> [goal]
@@ -384,6 +389,7 @@ deriveSeqClaim lensClaimPattern mkClaim claims goal =
         $ \config -> Compose $ do
             results <-
                 Step.applyClaimsSequence
+                    mkClaim
                     Unification.unificationProcedure
                     config
                     (Lens.view lensClaimPattern <$> claims)

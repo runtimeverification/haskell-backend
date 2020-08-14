@@ -182,25 +182,37 @@ finalizeAppliedClaim renamedRule appliedConditions =
             finalTerm' = TermLike.substitute substitution' finalTerm
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
+type UnifyingRuleWithRepresentation representation rule =
+    ( Rule.UnifyingRule representation
+    , Rule.UnifyingRuleVariable representation ~ RewritingVariableName
+    , Rule.UnifyingRule rule
+    , Rule.UnifyingRuleVariable rule ~ RewritingVariableName
+    , From rule (TermLike RewritingVariableName)
+    , From rule SourceLocation
+    )
+
+type FinalizeApplied rule simplifier =
+    rule
+    -> OrCondition RewritingVariableName
+    -> Logic.LogicT simplifier (OrPattern RewritingVariableName)
+
 finalizeRule
-    :: Rule.UnifyingRule rule
-    => Rule.UnifyingRuleVariable rule ~ RewritingVariableName
-    => From rule (TermLike RewritingVariableName)
-    => From rule SourceLocation
+    :: UnifyingRuleWithRepresentation representation rule
     => MonadSimplify simplifier
-    => (rule -> OrCondition RewritingVariableName -> Logic.LogicT simplifier (OrPattern RewritingVariableName))
+    => (representation -> rule)
+    -> FinalizeApplied representation simplifier
     -> FreeVariables RewritingVariableName
     -> Pattern RewritingVariableName
     -- ^ Initial conditions
-    -> UnifiedRule rule
+    -> UnifiedRule representation
     -- ^ Rewriting axiom
-    -> simplifier [Result rule]
-finalizeRule finalizeApplied initialVariables initial unifiedRule =
+    -> simplifier [Result representation]
+finalizeRule fromRule finalizeApplied initialVariables initial unifiedRule =
     Logic.observeAllT $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
-        checkSubstitutionCoverage initial unifiedRule
+        checkSubstitutionCoverage initial (fromRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeApplied renamedRule applied
         let result = resetResultPattern initialVariables <$> final
@@ -215,16 +227,14 @@ type Finalizer rule simplifier =
     ->  simplifier (Results rule)
 
 finalizeRulesParallel
-    :: forall rule simplifier
-    .  Rule.UnifyingRule rule
-    => Rule.UnifyingRuleVariable rule ~ RewritingVariableName
-    => From rule (TermLike RewritingVariableName)
-    => From rule SourceLocation
-    => (rule -> OrCondition RewritingVariableName -> Logic.LogicT simplifier (OrPattern RewritingVariableName))
-    -> Finalizer rule simplifier
-finalizeRulesParallel finalizeApplied initialVariables initial unifiedRules = do
+    :: forall representation rule simplifier
+    .  UnifyingRuleWithRepresentation representation rule
+    => (representation -> rule)
+    -> FinalizeApplied representation simplifier
+    -> Finalizer representation simplifier
+finalizeRulesParallel fromRule finalizeApplied initialVariables initial unifiedRules = do
     results <-
-        traverse (finalizeRule finalizeApplied initialVariables initial) unifiedRules
+        traverse (finalizeRule fromRule finalizeApplied initialVariables initial) unifiedRules
         & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
@@ -239,14 +249,12 @@ finalizeRulesParallel finalizeApplied initialVariables initial unifiedRules = do
         }
 
 finalizeSequence
-    :: forall rule simplifier
-    .  Rule.UnifyingRule rule
-    => Rule.UnifyingRuleVariable rule ~ RewritingVariableName
-    => From rule (TermLike RewritingVariableName)
-    => From rule SourceLocation
-    => (rule -> OrCondition RewritingVariableName -> Logic.LogicT simplifier (OrPattern RewritingVariableName))
-    -> Finalizer rule simplifier
-finalizeSequence finalizeApplied initialVariables initial unifiedRules = do
+    :: forall representation rule simplifier
+    .  UnifyingRuleWithRepresentation representation rule
+    => (representation -> rule)
+    -> FinalizeApplied representation simplifier
+    -> Finalizer representation simplifier
+finalizeSequence fromRule finalizeApplied initialVariables initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -266,7 +274,7 @@ finalizeSequence finalizeApplied initialVariables initial unifiedRules = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
         results <-
-            finalizeRule finalizeApplied initialVariables remainderPattern unifiedRule
+            finalizeRule fromRule finalizeApplied initialVariables remainderPattern unifiedRule
             & Monad.Trans.lift
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
@@ -281,6 +289,7 @@ applyWithFinalizer
     .  MonadSimplify simplifier
     => Rule.UnifyingRule rule
     => Rule.UnifyingRuleVariable rule ~ RewritingVariableName
+    => From rule SourceLocation
     => Finalizer rule simplifier
     -> UnificationProcedure simplifier
     -> [rule]
@@ -290,9 +299,11 @@ applyWithFinalizer
     -> simplifier (Results rule)
 applyWithFinalizer finalize unificationProcedure rules initial = do
     results <- unifyRules unificationProcedure initial rules
-    -- debugAppliedRewriteRules initial results
+    debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalize initialVariables initial results
+  where
+    locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
 
 {- | Apply the given rules to the initial configuration in parallel.
@@ -309,7 +320,7 @@ applyRulesParallel
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> simplifier (Results (RulePattern RewritingVariableName))
-applyRulesParallel = applyWithFinalizer (finalizeRulesParallel finalizeAppliedRule)
+applyRulesParallel = applyWithFinalizer (finalizeRulesParallel RewriteRule finalizeAppliedRule)
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -349,7 +360,7 @@ applyRulesSequence
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> simplifier (Results (RulePattern RewritingVariableName))
-applyRulesSequence = applyWithFinalizer (finalizeSequence finalizeAppliedRule)
+applyRulesSequence = applyWithFinalizer (finalizeSequence RewriteRule finalizeAppliedRule)
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -375,18 +386,20 @@ applyRewriteRulesSequence
     return results
 
 applyClaimsSequence
-    :: forall simplifier
+    :: forall goal simplifier
     .  MonadSimplify simplifier
-    => UnificationProcedure simplifier
+    => UnifyingRuleWithRepresentation ClaimPattern goal
+    => (ClaimPattern -> goal)
+    -> UnificationProcedure simplifier
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> [ClaimPattern]
     -- ^ Rewrite rules
     -> simplifier (Results ClaimPattern)
-applyClaimsSequence unificationProcedure initialConfig claims = do
+applyClaimsSequence mkClaim unificationProcedure initialConfig claims = do
     results <-
         applyWithFinalizer
-            (finalizeSequence finalizeAppliedClaim)
+            (finalizeSequence mkClaim finalizeAppliedClaim)
             unificationProcedure
             claims
             initialConfig

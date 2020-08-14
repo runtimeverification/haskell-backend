@@ -83,6 +83,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingTerm
+    , mkRuleVariable
     , resetConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
@@ -410,6 +411,11 @@ instance From OnePathRule Attribute.Trusted where
 instance From OnePathRule (TermLike VariableName) where
     from = onePathRuleToTerm
 
+instance From OnePathRule (TermLike RewritingVariableName) where
+    from =
+        TermLike.mapVariables (pure mkRuleVariable)
+        . onePathRuleToTerm
+
 -- | All-Path-Claim claim pattern.
 newtype AllPathRule =
     AllPathRule { getAllPathRule :: ClaimPattern }
@@ -449,6 +455,11 @@ instance From AllPathRule Attribute.Trusted where
 
 instance From AllPathRule (TermLike VariableName) where
     from = allPathRuleToTerm
+
+instance From AllPathRule (TermLike RewritingVariableName) where
+    from =
+        TermLike.mapVariables (pure mkRuleVariable)
+        . allPathRuleToTerm
 
 -- | Converts an 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
@@ -589,6 +600,28 @@ instance UnifyingRule ClaimPattern where
             Map.lookup (variableName var) map'
             & fromMaybe var
         ClaimPattern { existentials } = claim
+
+instance UnifyingRule OnePathRule where
+    type UnifyingRuleVariable OnePathRule = RewritingVariableName
+
+    matchingPattern (OnePathRule claim) = matchingPattern claim
+
+    precondition (OnePathRule claim) = precondition claim
+
+    refreshRule stale (OnePathRule claim) =
+        let (renaming, refreshedClaim) = refreshRule stale claim
+         in (renaming, OnePathRule refreshedClaim)
+
+instance UnifyingRule AllPathRule where
+    type UnifyingRuleVariable AllPathRule = RewritingVariableName
+
+    matchingPattern (AllPathRule claim) = matchingPattern claim
+
+    precondition (AllPathRule claim) = precondition claim
+
+    refreshRule stale (AllPathRule claim) =
+        let (renaming, refreshedClaim) = refreshRule stale claim
+         in (renaming, AllPathRule refreshedClaim)
 
 mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
