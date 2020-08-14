@@ -476,19 +476,19 @@ koreExecSh
   where
     options =
         concat
-        [
-            [ defaultDefinitionFilePath koreExecOptions
-            , if isJust patternFileName then "--pattern pgm.kore" else ""
-            , if isJust outputFileName then "--output result.kore" else ""
-            , "--module " <> unpack (getModuleName mainModuleName)
-            , maybeLimit "" (("--smt-timeout " <>) . show) timeout
+        [ catMaybes
+            [ pure $ defaultDefinitionFilePath koreExecOptions
+            , patternFileName $> "--pattern pgm.kore"
+            , outputFileName $> "--output result.kore"
+            , pure $ "--module " <> unpack (getModuleName mainModuleName)
+            , maybeLimit Nothing (Just . ("--smt-timeout " <>) . show) timeout
             , case smtPrelude of
-                Just path -> "--smt-prelude smtPrelude" <> takeExtension path
-                Nothing -> ""
-            , "--smt " <> fmap Char.toLower (show smtSolver)
-            , maybeLimit "" (("--breadth " <>) . show) breadthLimit
-            , maybeLimit "" (("--depth " <>) . show) depthLimit
-            , "--strategy " <> fst strategy
+                Just path -> Just $ "--smt-prelude smtPrelude" <> takeExtension path
+                Nothing -> Nothing
+            , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
+            , maybeLimit Nothing (Just . ("--breadth " <>) . show) breadthLimit
+            , maybeLimit Nothing (Just . ("--depth " <>) . show) depthLimit
+            , pure $ "--strategy " <> fst strategy
             ]
         , unparseKoreLogOptions koreLogOptions
         , maybe mempty unparseKoreSearchOptions koreSearchOptions
