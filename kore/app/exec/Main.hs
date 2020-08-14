@@ -526,9 +526,7 @@ writeOptionsAndKoreFiles
         }
   = do
     let shellScript = reportDirectory </> "kore-exec.sh"
-    writeFile shellScript
-        . koreExecSh
-        $ opts
+    writeFile shellScript . koreExecSh $ opts
     let allPermissions =
             setOwnerReadable True
             . setOwnerWritable True
@@ -547,14 +545,11 @@ writeOptionsAndKoreFiles
     Foldable.for_ smtPrelude (\path ->
         copyFile path (reportDirectory </> "smtPrelude" <> takeExtension path)
         )
-    Foldable.for_
-        koreSearchOptions
+    Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
-    Foldable.for_
-        koreMergeOptions
+    Foldable.for_ koreMergeOptions
         (writeKoreMergeFiles reportDirectory)
-    Foldable.for_
-        koreProveOptions
+    Foldable.for_ koreProveOptions
         (writeKoreProveFiles reportDirectory)
 
 exeName :: ExeName
