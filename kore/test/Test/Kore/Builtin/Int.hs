@@ -1,6 +1,5 @@
 module Test.Kore.Builtin.Int
-    (
-      test_gt, test_ge, test_eq, test_le, test_lt, test_ne
+    ( test_gt, test_ge, test_eq, test_le, test_lt, test_ne
     , test_min, test_max
     , test_add, test_sub, test_mul, test_abs
     , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
@@ -20,6 +19,7 @@ module Test.Kore.Builtin.Int
     , test_unifyAnd_Fn
     , test_reflexivity_symbolic
     , test_symbolic_eq_not_conclusive
+    , test_unifyIntEq
     , hprop_unparse
     --
     , asInternal
@@ -42,6 +42,9 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
+import Control.Monad.Trans.Maybe
+    ( runMaybeT
+    )
 import Data.Bits
     ( complement
     , shift
@@ -65,10 +68,23 @@ import Kore.Builtin.Int
     )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
+import Kore.Step.Simplification.Data
+    ( runSimplifierBranch
+    , simplifyCondition
+    )
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 
 import Test.Kore
     ( elementVariableGen
@@ -79,6 +95,7 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
@@ -513,9 +530,6 @@ test_reflexivity_symbolic =
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
-  where
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    ofSort idName sort = mkElementVariable (testId idName) sort
 
 test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
@@ -525,9 +539,79 @@ test_symbolic_eq_not_conclusive =
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
-  where
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    ofSort idName sort = mkElementVariable (testId idName) sort
+
+ofSort :: Text.Text -> Sort -> ElementVariable VariableName
+idName `ofSort` sort = mkElementVariable (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
+
+test_unifyIntEq :: [TestTree]
+test_unifyIntEq =
+    [ testCase "\\equals(false, X ==Int Y)" $ do
+        let term1 = Test.Bool.asInternal False
+            term2 = eqInt (mkElemVar x) (mkElemVar y)
+            expect =
+                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
+                & makeNotPredicate
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyIntEq term1 term2
+            assertEqual "" [Just expect] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
+    , testCase "\\equals(true, X ==Int Y)" $ do
+        let term1 = Test.Bool.asInternal True
+            term2 = eqInt (mkElemVar x) (mkElemVar y)
+            expect =
+                Condition.assign (inject x) (mkElemVar y)
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyIntEq term1 term2
+            -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
+            -- inconsistency.
+            let expect' = expect { predicate = makeTruePredicate intSort }
+            assertEqual "" [Just expect'] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
+    ]
+  where
+    x, y :: ElementVariable VariableName
+    x = "x" `ofSort` intSort
+    y = "y" `ofSort` intSort
+
+    unifyIntEq
+        :: TermLike VariableName
+        -> TermLike VariableName
+        -> IO [Maybe (Pattern VariableName)]
+    unifyIntEq term1 term2 =
+        Int.unifyIntEq
+            (termUnification Not.notSimplifier)
+            Not.notSimplifier
+            term1
+            term2
+        & runMaybeT
+        & evalEnvUnifierT Not.notSimplifier
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT

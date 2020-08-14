@@ -52,6 +52,9 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.DebugProofState
     ( DebugProofState
     )
+import Kore.Log.DebugProven
+    ( DebugProven
+    )
 import Kore.Log.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
@@ -169,6 +172,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugUnification
     , mk $ Proxy @InfoProofDepth
     , mk $ Proxy @InfoExecDepth
+    , mk $ Proxy @DebugProven
     ]
   where
     mk proxy =
