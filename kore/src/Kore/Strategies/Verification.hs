@@ -401,7 +401,6 @@ transitionRule' claims axioms = \prim proofState -> do
                 , Pretty.pretty rule
                 , "Please file a bug report."
                 ]
-        undefined
         )
     deepseq proofState
         (transitionRule claims axiomGroups
