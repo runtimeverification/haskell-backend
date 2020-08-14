@@ -207,12 +207,12 @@ finalizeRule
     -> UnifiedRule representation
     -- ^ Rewriting axiom
     -> simplifier [Result representation]
-finalizeRule fromRule finalizeApplied initialVariables initial unifiedRule =
+finalizeRule toRule finalizeApplied initialVariables initial unifiedRule =
     Logic.observeAllT $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
-        checkSubstitutionCoverage initial (fromRule <$> unifiedRule)
+        checkSubstitutionCoverage initial (toRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeApplied renamedRule applied
         let result = resetResultPattern initialVariables <$> final
@@ -232,9 +232,9 @@ finalizeRulesParallel
     => (representation -> rule)
     -> FinalizeApplied representation simplifier
     -> Finalizer representation simplifier
-finalizeRulesParallel fromRule finalizeApplied initialVariables initial unifiedRules = do
+finalizeRulesParallel toRule finalizeApplied initialVariables initial unifiedRules = do
     results <-
-        traverse (finalizeRule fromRule finalizeApplied initialVariables initial) unifiedRules
+        traverse (finalizeRule toRule finalizeApplied initialVariables initial) unifiedRules
         & fmap Foldable.fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
@@ -254,7 +254,7 @@ finalizeSequence
     => (representation -> rule)
     -> FinalizeApplied representation simplifier
     -> Finalizer representation simplifier
-finalizeSequence fromRule finalizeApplied initialVariables initial unifiedRules = do
+finalizeSequence toRule finalizeApplied initialVariables initial unifiedRules = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -274,7 +274,7 @@ finalizeSequence fromRule finalizeApplied initialVariables initial unifiedRules 
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
         results <-
-            finalizeRule fromRule finalizeApplied initialVariables remainderPattern unifiedRule
+            finalizeRule toRule finalizeApplied initialVariables remainderPattern unifiedRule
             & Monad.Trans.lift
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
