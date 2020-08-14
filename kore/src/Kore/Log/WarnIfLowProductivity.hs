@@ -27,10 +27,11 @@ instance Pretty WarnIfLowProductivity where
     pretty (WarnIfLowProductivity productivityPercent) =
         Pretty.vsep
             [ Pretty.hsep
-                [ "Warning! Poor performance: productivity dropped to aprox."
-                , Pretty.pretty productivityPercent <> "%."
+                [ "Productivity dropped to:"
+                , Pretty.pretty productivityPercent <> "%"
                 ]
-            , "Please file a bug report."
+            , "Poor productivity may indicate a performance bug."
+            , "Please file a bug report: https://github.com/kframework/kore/issues"
             ]
 
 instance Entry WarnIfLowProductivity where
