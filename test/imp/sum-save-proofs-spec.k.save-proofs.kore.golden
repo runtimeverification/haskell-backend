@@ -145,64 +145,69 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
         ),
         /* Spa */
         weakAlwaysFinally{SortGeneratedTopCell{}}(
-            /* Fn Spa */
-            Lbl'-LT-'generatedTop'-GT-'{}(
+            /* Spa */
+            \and{SortGeneratedTopCell{}}(
+                /* D Sfa */ \top{SortGeneratedTopCell{}}(),
                 /* Fn Spa */
-                Lbl'-LT-'T'-GT-'{}(
-                    /* Fl Fn D Spa */
-                    Lbl'-LT-'k'-GT-'{}(
-                        /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
-                    ),
+                Lbl'-LT-'generatedTop'-GT-'{}(
                     /* Fn Spa */
-                    Lbl'-LT-'state'-GT-'{}(
+                    Lbl'-LT-'T'-GT-'{}(
+                        /* Fl Fn D Spa */
+                        Lbl'-LT-'k'-GT-'{}(
+                            /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
+                        ),
                         /* Fn Spa */
-                        Lbl'Unds'Map'Unds'{}(
-                            /* Fl Fn D Spa */
-                            Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "n")
-                                ),
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
-                                )
-                            ),
-                            /* Fl Fn D Spa */
-                            Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "sum")
+                        Lbl'-LT-'state'-GT-'{}(
+                            /* Fn Spa */
+                            Lbl'Unds'Map'Unds'{}(
+                                /* Fl Fn D Spa */
+                                Lbl'UndsPipe'-'-GT-Unds'{}(
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "n")
+                                    ),
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        /* builtin: */ \dv{SortInt{}}("0")
+                                    )
                                 ),
                                 /* Fl Fn D Spa */
-                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                Lbl'UndsPipe'-'-GT-Unds'{}(
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        \dv{SortId{}}(/* Fl Fn D Sfa Cl */
+                                        "sum")
+                                    ),
                                     /* Fl Fn D Spa */
-                                    Lbl'UndsPlus'Int'Unds'{}(
-                                        /* Fl Fn D Sfa */ VarS:SortInt{},
+                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                         /* Fl Fn D Spa */
-                                        Lbl'UndsStar'Int'Unds'{}(
+                                        Lbl'UndsPlus'Int'Unds'{}(
+                                            /* Fl Fn D Sfa */ VarS:SortInt{},
                                             /* Fl Fn D Spa */
-                                            Lbl'UndsPlus'Int'Unds'{}(
-                                                /* Fl Fn D Sfa */
-                                                VarN:SortInt{},
-                                                /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
-                                                \dv{SortInt{}}("1")
-                                            ),
-                                            /* Fl Fn D Sfa */ VarN:SortInt{}
+                                            Lbl'UndsStar'Int'Unds'{}(
+                                                /* Fl Fn D Spa */
+                                                Lbl'UndsPlus'Int'Unds'{}(
+                                                    /* Fl Fn D Sfa */
+                                                    VarN:SortInt{},
+                                                    /* Fl Fn D Sfa Cl */
+                                                    /* builtin: */
+                                                    \dv{SortInt{}}("1")
+                                                ),
+                                                /* Fl Fn D Sfa */ VarN:SortInt{}
+                                            )
                                         )
                                     )
                                 )
                             )
                         )
+                    ),
+                    /* Fl Fn D Spa */
+                    Lbl'-LT-'generatedCounter'-GT-'{}(
+                        /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortInt{}
                     )
-                ),
-                /* Fl Fn D Spa */
-                Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortInt{}
                 )
             )
         )
