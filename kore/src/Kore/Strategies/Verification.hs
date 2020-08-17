@@ -392,16 +392,6 @@ transitionRule'
     -> [Rule ReachabilityRule]
     -> CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState -> do
-    Foldable.for_ (extractGoalStuck proofState) (\rule -> do
-        let resultPatternPredicate = predicate (getConfiguration rule)
-            multiAndPredicate = getMultiAndPredicate resultPatternPredicate
-        when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
-            error . show . Pretty.vsep $
-                [ "Found '\\not(\\ceil(_))' in stuck configuration:"
-                , Pretty.pretty rule
-                , "Please file a bug report."
-                ]
-        )
     deepseq proofState
         (transitionRule claims axiomGroups
             & profTransitionRule
@@ -409,14 +399,11 @@ transitionRule' claims axioms = \prim proofState -> do
             & withDebugProofState
             & withDebugProven
             & logTransitionRule
+            & checkStuckConfiguration
         )
         prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
-
-    isNot_Ceil_ :: TermLike variable -> Bool
-    isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
-    isNot_Ceil_ _ = False
 
 profTransitionRule
     :: forall m
@@ -442,6 +429,28 @@ logTransitionRule
     -> CommonTransitionRule m
 logTransitionRule rule prim proofState =
     whileReachability prim $ rule prim proofState
+
+checkStuckConfiguration
+    :: CommonTransitionRule m
+    -> CommonTransitionRule m
+checkStuckConfiguration rule prim proofState = do
+    proofState' <- rule prim proofState
+    Foldable.for_ (extractGoalStuck proofState) (\rule' -> do
+        let resultPatternPredicate = predicate (getConfiguration rule')
+            multiAndPredicate = getMultiAndPredicate resultPatternPredicate
+        when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
+            error . show . Pretty.vsep $
+                [ "Found '\\not(\\ceil(_))' in stuck configuration:"
+                , Pretty.pretty rule'
+                , "Please file a bug report."
+                ]
+        )
+    return proofState'
+  where
+    isNot_Ceil_ :: TermLike variable -> Bool
+    isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
+    isNot_Ceil_ _ = False
+
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
