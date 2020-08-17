@@ -393,7 +393,10 @@ parseFromTermLike
     :: InternalVariable variable
     => TermLike variable
     -> Pattern variable
-parseFromTermLike original@(TermLike.And_ _ term1 term2) =
+parseFromTermLike original@(TermLike.And_ _ term1 term2)
+    | isTop term1 = fromTermLike term1
+    | isTop term2 = fromTermLike term1
+    | otherwise =
     case (tryPredicate term1, tryPredicate term2) of
         (Nothing, Nothing) -> fromTermLike original
         (Just predicate, Nothing) ->

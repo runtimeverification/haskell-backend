@@ -256,30 +256,6 @@ test_patternToAxiomPatternAndBack =
     testGroup
         "pattern to axiomPattern to pattern"
         [
-             let initialPattern = mkImplies
-                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (applyModality
-                       WEF
-                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
-                    )
-            in
-                testCase "Reachability claim wEF" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkImplies
-                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (applyModality
-                        WAF
-                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
-                    )
-            in
-                testCase "Reachability claim wAF" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
             let op = aPG $ termLikeSort leftP
                 initialPattern = mkImplies
                     leftP
@@ -403,7 +379,7 @@ test_parseClaimPattern =
                     }
             actual = termToAxiomPattern def claimTerm
         assertEqual "" (Right expected) actual
-    , testCase "Claim with constraints and existentials and branching RHS" $ do
+    , testCase "TESTING Claim with constraints and existentials and branching RHS" $ do
         let claimTerm =
                 mkImplies
                     (mkAnd
@@ -413,13 +389,10 @@ test_parseClaimPattern =
                     (applyModality
                         WAF
                         ( mkExists Mock.z $ mkExists Mock.y $
-                            mkOr
-                                (mkAnd
-                                    (mkNot (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.z)))
+                            mkAnd
+                                (mkNot (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.z)))
+                                (mkOr
                                     Mock.b
-                                )
-                                (mkAnd
-                                    mkTop_
                                     Mock.c
                                 )
                         )
@@ -445,7 +418,14 @@ test_parseClaimPattern =
                                 (mkElemVar Mock.z)
                             )
                         & Pattern.mapVariables (pure mkRuleVariable)
-                        , Mock.c & Pattern.fromTermLike
+                        , Pattern.fromTermAndPredicate
+                            Mock.c
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
                         ]
                         & OrPattern.fromPatterns
                     , existentials =

@@ -235,17 +235,21 @@ substitute
 substitute subst =
     fromPatterns . fmap (Pattern.substitute subst) . toPatterns
 
+-- | 'parseFromTermLike' is used to parse the right hand side
+-- of reachability claims.
 parseFromTermLike
     :: InternalVariable variable
     => TermLike variable
     -> OrPattern variable
+parseFromTermLike (And_ _ term1 term2) =
+    flip Pattern.andCondition
+        ( Condition.fromPredicate
+        . Predicate.wrapPredicate
+        $ term1
+        )
+    <$> parseFromTermLike term2
 parseFromTermLike (Or_ _ term1 term2) =
     parseFromTermLike term1 <> parseFromTermLike term2
-parseFromTermLike (And_ _ term1 term2)
-    | isTop term1 =
-        fromTermLike term2
-    | isTop term2 =
-        fromTermLike term1
 parseFromTermLike term =
     fromPattern
     . Pattern.parseFromTermLike

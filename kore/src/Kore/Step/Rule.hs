@@ -316,6 +316,10 @@ complexRewriteTermToRule attributes pat =
 
 @patternToAxiomPattern@ returns an error if the given 'TermLike' does
 not encode a normal rewrite or function axiom.
+
+Note that in the case of reachability claims, this function is not
+the inverse of the functions which transform claims to terms, because
+the right hand side condition is pushed into the disjunction when parsing.
 -}
 termToAxiomPattern
     :: Attribute.Axiom Internal.Symbol.Symbol VariableName
