@@ -1111,9 +1111,10 @@ applyClaimsSequence initial claims =
     & runSimplifierNoSMT Mock.env
 
 checkResults
-    :: HasCallStack
+    :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
+    => HasCallStack
     => OrTestPattern
-    -> Results'
+    -> Step.Results rule
     -> Assertion
 checkResults expect actual =
     assertEqual "compare results"
@@ -1121,9 +1122,10 @@ checkResults expect actual =
         (getRewritingPattern <$> Step.gatherResults actual)
 
 checkRemainders
-    :: HasCallStack
+    :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
+    => HasCallStack
     => OrTestPattern
-    -> Results'
+    -> Step.Results rule
     -> Assertion
 checkRemainders expect actual =
     assertEqual "compare remainders"
@@ -1497,6 +1499,20 @@ claimCaseA =
         (mkElemVar Mock.y)
         []
 
+claimCaseB :: ClaimPattern
+claimCaseB =
+    claimPatternFromTerms
+        (Mock.functionalConstr30
+                Mock.b
+                (mkElemVar Mock.y)
+                (mkElemVar Mock.z)
+        )
+        (mkElemVar Mock.z)
+        []
+
+claimsCase :: [ClaimPattern]
+claimsCase = [claimCaseA, claimCaseB]
+
 -- | Apply the 'RewriteRule's to the configuration in sequence.
 applyRewriteRulesSequence
     :: TestPattern
@@ -1584,9 +1600,12 @@ test_applyRewriteRulesSequence =
             initialTerm =
                 Mock.functionalConstr30 (mkElemVar Mock.x) Mock.cf Mock.cg
             initial = pure initialTerm
-        actual <- applyRewriteRulesSequence initial axiomsCase
-        checkResults results actual
-        checkRemainders remainders actual
+        actualAxiom <- applyRewriteRulesSequence initial axiomsCase
+        checkResults results actualAxiom
+        checkRemainders remainders actualAxiom
+        actualClaim <- applyClaimsSequence initial claimsCase
+        checkResults results actualClaim
+        checkRemainders remainders actualClaim
 
     , testCase "adding variables" $ do
         -- Term: a
@@ -1598,11 +1617,19 @@ test_applyRewriteRulesSequence =
             remainders = OrPattern.bottom
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm
-        actual <- applyRewriteRulesSequence initial
+        actualAxiom <- applyRewriteRulesSequence initial
             [ RewriteRule $ rulePattern
                 Mock.a
                 (mkElemVar Mock.x)
             ]
-        checkResults results actual
-        checkRemainders remainders actual
+        checkResults results actualAxiom
+        checkRemainders remainders actualAxiom
+        actualClaim <- applyClaimsSequence initial
+            [ claimPatternFromTerms
+                Mock.a
+                (mkElemVar Mock.x)
+                []
+            ]
+        checkResults results actualClaim
+        checkRemainders remainders actualClaim
     ]
