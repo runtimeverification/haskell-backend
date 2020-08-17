@@ -41,7 +41,6 @@ import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
