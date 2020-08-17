@@ -56,7 +56,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( pattern And_
+    , InternalVariable
     , pattern Or_
     , Sort
     , TermLike
@@ -240,4 +241,9 @@ parseFromTermLike
     -> OrPattern variable
 parseFromTermLike (Or_ _ term1 term2) =
     parseFromTermLike term1 <> parseFromTermLike term2
+parseFromTermLike (And_ _ term1 term2)
+    | isTop term1 =
+        fromTermLike term2
+    | isTop term2 =
+        fromTermLike term1
 parseFromTermLike term = fromTermLike term
