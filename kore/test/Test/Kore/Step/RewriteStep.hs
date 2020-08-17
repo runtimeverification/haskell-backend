@@ -44,7 +44,8 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
+    ( AllPathRule (..)
+    , ClaimPattern
     , claimPattern
     )
 import qualified Kore.Step.RewriteStep as Step
@@ -168,23 +169,21 @@ test_renameRuleVariables =
                     , attributes = Default.def
                     }
             claim =
-                ClaimPattern
-                    { left =
-                        Pattern.fromTermAndPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                            (Predicate.makeEqualsPredicate_
-                                (mkElemVar Mock.x)
-                                Mock.a
-                            )
-                        & Pattern.mapVariables (pure mkRuleVariable)
-                    , right =
-                        Mock.g (mkElemVar Mock.x)
-                        & Pattern.fromTermLike
-                        & Pattern.mapVariables (pure mkRuleVariable)
-                        & OrPattern.fromPattern
-                    , existentials = []
-                    , attributes = Default.def
-                    }
+                claimPattern
+                    ( Pattern.fromTermAndPredicate
+                        (Mock.f (mkElemVar Mock.x))
+                        (Predicate.makeEqualsPredicate_
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    )
+                    ( Mock.g (mkElemVar Mock.x)
+                    & Pattern.fromTermLike
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    & OrPattern.fromPattern
+                    )
+                    []
             actualAxiom = mkRewritingRule axiom
             actualClaim = claim
             initialFreeVariables :: FreeVariables RewritingVariableName
@@ -241,7 +240,7 @@ test_unifyRule =
         assertEqual "" expectAxiom actualAxiom
         assertEqual "" expectClaim actualClaim
 
-    , testCase "TESTING returns unification failures" $ do
+    , testCase "returns unification failures" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
                 RulePattern
@@ -297,14 +296,42 @@ applyRewriteRules_ applyRewriteRules initial rules = do
   where
     discardRemainders = fmap Step.result . Step.results
 
+applyClaim_
+    :: (TestPattern -> [ClaimPattern] -> IO (Step.Results ClaimPattern))
+    -- ^ 'RewriteRule's
+    -> TestPattern
+    -- ^ Configuration
+    -> ClaimPattern
+    -- ^ Rewrite rule
+    -> IO [OrPattern RewritingVariableName]
+applyClaim_ applyClaims initial claim =
+    applyClaims_ applyClaims initial [claim]
+
+-- | Apply the 'RewriteRule's to the configuration, but discard remainders.
+applyClaims_
+    :: (TestPattern -> [ClaimPattern] -> IO (Step.Results ClaimPattern))
+    -- ^ 'RewriteRule's
+    -> TestPattern
+    -- ^ Configuration
+    -> [ClaimPattern]
+    -- ^ Rewrite rule
+    -> IO [OrPattern RewritingVariableName]
+applyClaims_ applyClaims initial claims = do
+    result <- applyClaims initial claims
+    return (Foldable.toList . discardRemainders $ result)
+  where
+    discardRemainders = fmap Step.result . Step.results
+
 test_applyRewriteRule_ :: [TestTree]
 test_applyRewriteRule_ =
-    [ testCase "apply identity axiom" $ do
+    [ testCase "TESTING apply identity axiom" $ do
         let expect =
                 [ OrPattern.fromPatterns [initial] ]
             initial = Pattern.fromTermLike (mkElemVar Mock.x)
-        actual <- applyRewriteRuleParallel_ initial axiomId
-        assertEqual "" expect actual
+        actualAxiom <- applyRewriteRuleParallel_ initial axiomId
+        actualClaim <- applyClaim initial claimId
+        assertEqual "" expect actualAxiom
+        assertEqual "" expect actualClaim
 
     , testCase "apply identity without renaming" $ do
         let expect =
@@ -746,11 +773,31 @@ test_applyRewriteRule_ =
         applyRewriteRule_ applyRewriteRulesParallel patt rule
         & (fmap . fmap . fmap) getRewritingPattern
 
+    applyClaim
+        :: TestPattern
+        -> ClaimPattern
+        -> IO [OrPattern VariableName]
+    applyClaim patt rule =
+        applyClaim_ applyClaimsSequence patt rule
+        & (fmap . fmap . fmap) getRewritingPattern
+
     ruleId =
         rulePattern
             (mkElemVar Mock.x)
             (mkElemVar Mock.x)
     axiomId = RewriteRule ruleId
+    claimId =
+        claimPattern
+            ( mkElemVar Mock.x
+            & Pattern.fromTermLike
+            & Pattern.mapVariables (pure mkRuleVariable)
+            )
+            (mkElemVar Mock.x
+            & Pattern.fromTermLike
+            & Pattern.mapVariables (pure mkRuleVariable)
+            & OrPattern.fromPattern
+            )
+            []
 
     axiomBottom =
         RewriteRule RulePattern
@@ -872,6 +919,20 @@ applyRewriteRulesParallel initial rules =
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
+    & runSimplifierNoSMT Mock.env
+
+applyClaimsSequence
+    :: TestPattern
+    -- ^ Configuration
+    -> [ClaimPattern]
+    -- ^ Rewrite rule
+    -> IO (Step.Results ClaimPattern)
+applyClaimsSequence initial claims =
+    Step.applyClaimsSequence
+        AllPathRule
+        Unification.unificationProcedure
+        (mkRewritingPattern $ simplifiedPattern initial)
+        claims
     & runSimplifierNoSMT Mock.env
 
 checkResults
