@@ -67,7 +67,7 @@ data SideCondition variable =
         { representation :: !SideCondition.Representation
         , assumedTrue :: !(Condition variable)
         }
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
 
 instance SOP.Generic (SideCondition variable)
