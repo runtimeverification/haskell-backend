@@ -38,6 +38,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern (..)
@@ -309,6 +312,47 @@ test_parseClaimPattern =
                         & Pattern.fromTermLike
                     , right = Mock.b
                         & Pattern.fromTermLike & OrPattern.fromPattern
+                    , existentials = []
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
+    , testCase "Claim with constraints" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd
+                        (mkEquals_ (mkElemVar Mock.x) Mock.c)
+                        Mock.a
+                    )
+                    (applyModality
+                        WAF
+                        (mkAnd
+                            (mkNot (mkEquals_ (mkElemVar Mock.x) Mock.a))
+                            Mock.b
+                        )
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            Mock.a
+                            (Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.c
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        Pattern.fromTermAndPredicate
+                            Mock.b
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.a
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        & OrPattern.fromPattern
                     , existentials = []
                     , attributes = def
                     }

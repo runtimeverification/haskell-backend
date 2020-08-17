@@ -246,4 +246,7 @@ parseFromTermLike (And_ _ term1 term2)
         fromTermLike term2
     | isTop term2 =
         fromTermLike term1
-parseFromTermLike term = fromTermLike term
+parseFromTermLike term =
+    fromPattern
+    . Pattern.parseFromTermLike
+    $ term
