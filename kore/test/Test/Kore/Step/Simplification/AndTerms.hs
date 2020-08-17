@@ -844,8 +844,8 @@ test_andTermsSimplification =
                     makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
                     & Pattern.withCondition concrete
-            actual <- unify concrete symbolic
-            assertEqual "" [expect] actual
+            actual <- simplifyUnify concrete symbolic
+            assertEqual "" ([expect], [expect]) actual
         ]
 
     , testGroup "builtin List domain"
