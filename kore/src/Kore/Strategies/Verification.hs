@@ -442,7 +442,8 @@ checkStuckConfiguration rule prim proofState = do
             error . show . Pretty.vsep $
                 [ "Found '\\not(\\ceil(_))' in stuck configuration:"
                 , Pretty.pretty rule'
-                , "Please file a bug report."
+                , "Please file a bug report:\
+                  \ https://github.com/kframework/kore/issues"
                 ]
         )
     return proofState'
@@ -450,7 +451,6 @@ checkStuckConfiguration rule prim proofState = do
     isNot_Ceil_ :: TermLike variable -> Bool
     isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
     isNot_Ceil_ _ = False
-
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
