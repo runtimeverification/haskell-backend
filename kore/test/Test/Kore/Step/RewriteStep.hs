@@ -43,6 +43,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -148,7 +151,7 @@ unifyRule initial rule =
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
-    [ testCase "renames axiom left variables" $ do
+    [ testCase "TESTING renames axiom left variables" $ do
         let initial =
                 Step.mkRewritingPattern
                 $ Pattern.fromTermLike
@@ -162,15 +165,40 @@ test_renameRuleVariables =
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
-            actual = mkRewritingRule axiom
+            claim =
+                ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            (Mock.f (mkElemVar Mock.x))
+                            (Predicate.makeEqualsPredicate_
+                                (mkElemVar Mock.x)
+                                Mock.a
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        Mock.g (mkElemVar Mock.x)
+                        & Pattern.fromTermLike
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        & OrPattern.fromPattern
+                    , existentials = []
+                    , attributes = Default.def
+                    }
+            actualAxiom = mkRewritingRule axiom
+            actualClaim = claim
             initialFreeVariables :: FreeVariables RewritingVariableName
             initialFreeVariables = freeVariables initial
-            actualFreeVariables = freeVariables actual
-        assertEqual "Expected no common free variables"
+            actualAxiomFreeVariables = freeVariables actualAxiom
+            actualClaimFreeVariables = freeVariables actualClaim
+        assertEqual "Axiom: Expected no common free variables"
             Set.empty
             $ on Set.intersection FreeVariables.toSet
                 initialFreeVariables
-                actualFreeVariables
+                actualAxiomFreeVariables
+        assertEqual "Claim: Expected no common free variables"
+            Set.empty
+            $ on Set.intersection FreeVariables.toSet
+                initialFreeVariables
+                actualClaimFreeVariables
 
     ]
 
