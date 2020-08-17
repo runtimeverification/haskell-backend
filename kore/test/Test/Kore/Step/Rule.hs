@@ -358,6 +358,51 @@ test_parseClaimPattern =
                     }
             actual = termToAxiomPattern def claimTerm
         assertEqual "" (Right expected) actual
+    , testCase "Claim with constraints and existentials" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd
+                        (mkEquals_ (mkElemVar Mock.x) Mock.c)
+                        Mock.a
+                    )
+                    (applyModality
+                        WAF
+                        ( mkExists Mock.z $ mkExists Mock.y $
+                            mkAnd
+                                (mkNot (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.z)))
+                                Mock.b
+                        )
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            Mock.a
+                            (Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.c
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        Pattern.fromTermAndPredicate
+                            Mock.b
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        & OrPattern.fromPattern
+                    , existentials =
+                        let z = mapElementVariable (pure mkRuleVariable) Mock.z
+                            y = mapElementVariable (pure mkRuleVariable) Mock.y
+                         in [z, y]
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
     ]
 
 leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
