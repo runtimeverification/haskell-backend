@@ -238,8 +238,9 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    -- TODO: remove a certain mkRewritingPattern for exec
-                    (strategy rewriteRules, (ExecDepth 0, mkRewritingPattern initialConfig))
+                    ( strategy rewriteRules
+                    , (ExecDepth 0, mkRewritingPattern initialConfig)
+                    )
         infoExecDepth execDepth
         let finalConfig' = getRewritingPattern finalConfig
         exitCode <- getExitCode verifiedModule finalConfig'

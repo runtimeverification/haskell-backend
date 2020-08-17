@@ -379,7 +379,7 @@ test_parseClaimPattern =
                     }
             actual = termToAxiomPattern def claimTerm
         assertEqual "" (Right expected) actual
-    , testCase "TESTING Claim with constraints and existentials and branching RHS" $ do
+    , testCase "Claim with constraints and existentials and branching RHS" $ do
         let claimTerm =
                 mkImplies
                     (mkAnd

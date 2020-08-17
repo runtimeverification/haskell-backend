@@ -189,7 +189,6 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
 -- and an 'OrPattern', representing the right hand side pattern.
 -- The list of element variables are existentially quantified
 -- in the right hand side.
-
 claimPattern
     :: Pattern RewritingVariableName
     -> OrPattern RewritingVariableName
@@ -203,6 +202,21 @@ claimPattern left right existentials =
         , attributes = Default.def
         }
 
+{- | Construct a 'TermLike' from the parts of an implication-based rule.
+
+The 'TermLike' has the following form:
+
+@
+\\implies{S}(\and{S}(left, requires), alias{S}(right))
+@
+
+that is,
+
+@
+left ∧ requires → alias(right)
+@
+
+ -}
 claimPatternToTerm
     :: Modality
     -> ClaimPattern

@@ -591,22 +591,6 @@ rewriteRuleToTerm
         (lhsToTerm left antiLeft requires)
         (rhsToTerm rhs)
 
--- TODO: move this comment
-{- | Construct a 'TermLike' from the parts of an implication-based rule.
-
-The 'TermLike' has the following form:
-
-@
-\\implies{S}(\and{S}(left, requires), alias{S}(right))
-@
-
-that is,
-
-@
-left ∧ requires → alias(right)
-@
-
- -}
 -- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
     :: InternalVariable variable

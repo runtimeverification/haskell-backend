@@ -691,7 +691,6 @@ checkImplication' lensRulePattern goal =
                 (succeed . NotImplied $ claimPattern)
             removals <-
                 OrPattern.observeAllT (removedDestinations unificationResults)
-            -- TODO: double check this
             when (all isBottom removals) (succeed Implied)
             simplifiedRemovals <- simplifyConjunctionOfRemovals removals
             when (isBottom simplifiedRemovals) (succeed Implied)
@@ -789,7 +788,6 @@ checkImplication' lensRulePattern goal =
         run :: ExceptT r m r -> m r
         run acts = runExceptT acts >>= either pure pure
 
--- TODO(Ana): simplify right hand side as well
 simplify'
     :: MonadSimplify m
     => Lens' goal ClaimPattern
