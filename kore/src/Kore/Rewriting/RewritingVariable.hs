@@ -27,7 +27,7 @@ module Kore.Rewriting.RewritingVariable
     , assertRemainderPattern
     , resetConfigVariable
     , getRewritingVariable
-    -- * Exported for unparsing
+    -- * Exported for unparsing/testing
     , getRewritingPattern
     , getRewritingTerm
     ) where

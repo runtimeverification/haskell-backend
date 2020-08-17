@@ -45,6 +45,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
+    , claimPattern
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -77,8 +78,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type RulePattern' = RulePattern VariableName
-type Conditional' = Conditional VariableName
 type RewriteRule' = RewriteRule VariableName
 type Results' = Step.Results (RulePattern RewritingVariableName)
 
@@ -141,9 +140,12 @@ test_applyInitialConditions =
     ]
 
 unifyRule
-    :: TestPattern
-    -> RulePattern'
-    -> IO [Conditional' RulePattern']
+    :: InternalVariable variable
+    => Step.UnifyingRule rule
+    => Step.UnifyingRuleVariable rule ~ variable
+    => Pattern variable
+    -> rule
+    -> IO [Step.UnifiedRule rule]
 unifyRule initial rule =
     Step.unifyRule Unification.unificationProcedure initial rule
     & Logic.observeAllT
@@ -151,7 +153,7 @@ unifyRule initial rule =
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
-    [ testCase "TESTING renames axiom left variables" $ do
+    [ testCase "renames axiom left variables" $ do
         let initial =
                 Step.mkRewritingPattern
                 $ Pattern.fromTermLike
@@ -214,12 +216,30 @@ test_unifyRule =
                     , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
-            expect = [(pure axiom) { substitution }]
+            claim =
+                claimPattern
+                    ( Mock.functionalConstr10 (mkElemVar Mock.x)
+                    & Pattern.fromTermLike
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    )
+                    (Mock.g Mock.b
+                    & Pattern.fromTermLike
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    & OrPattern.fromPattern
+                    )
+                    []
+            expectAxiom = [(pure axiom) { substitution = substitutionAxiom }]
+            expectClaim = [(pure claim) { substitution = substitutionClaim }]
+            substitutionAxiom =
+                Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
+            substitutionClaim =
+                Substitution.unsafeWrap [(inject x, Mock.a)]
               where
-                substitution =
-                    Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
-        actual <- unifyRule initial axiom
-        assertEqual "" expect actual
+                x = mapElementVariable (pure mkRuleVariable) Mock.x
+        actualAxiom <- unifyRule initial axiom
+        actualClaim <- unifyRule (mkRewritingPattern initial) claim
+        assertEqual "" expectAxiom actualAxiom
+        assertEqual "" expectClaim actualClaim
 
     , testCase "returns unification failures" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
