@@ -241,7 +241,7 @@ test_unifyRule =
         assertEqual "" expectAxiom actualAxiom
         assertEqual "" expectClaim actualClaim
 
-    , testCase "returns unification failures" $ do
+    , testCase "TESTING returns unification failures" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
                 RulePattern
@@ -251,9 +251,23 @@ test_unifyRule =
                     , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
+            claim =
+                claimPattern
+                    ( Mock.functionalConstr11 (mkElemVar Mock.x)
+                    & Pattern.fromTermLike
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    )
+                    (Mock.g Mock.b
+                    & Pattern.fromTermLike
+                    & Pattern.mapVariables (pure mkRuleVariable)
+                    & OrPattern.fromPattern
+                    )
+                    []
             expect = []
-        actual <- unifyRule initial axiom
-        assertEqual "" expect actual
+        actualAxiom <- unifyRule initial axiom
+        actualClaim <- unifyRule (mkRewritingPattern initial) claim
+        assertEqual "" expect actualAxiom
+        assertEqual "" expect actualClaim
     ]
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
