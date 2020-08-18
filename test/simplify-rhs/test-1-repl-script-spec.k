@@ -3,7 +3,7 @@ module VERIFICATION
 
 endmodule
 
-module TEST-1-SPEC
+module TEST-1-REPL-SCRIPT-SPEC
     imports VERIFICATION
 
     rule a => f(c)
