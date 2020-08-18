@@ -11,14 +11,19 @@ module Kore.Log.ErrorException
 
 import Prelude.Kore
 
+import Control.Exception
+    ( AssertionFailed
+    )
 import Control.Monad.Catch
     ( SomeException
     , displayException
+    , fromException
     )
 
 import Log
 import Pretty
     ( Pretty (..)
+    , line
     )
 
 newtype ErrorException =
@@ -26,7 +31,17 @@ newtype ErrorException =
     deriving (Show)
 
 instance Pretty ErrorException where
-    pretty = pretty . displayException . getException
+    pretty err@(ErrorException someException) =
+        (pretty . displayException . getException $ err)
+        <> pleaseFileBugReport
+      where
+        pleaseFileBugReport
+          | Just _ <- fromException someException :: Maybe AssertionFailed
+          = line
+            <> "Please file a bug report:\
+               \ https://github.com/kframework/kore/issues"
+          | otherwise
+          = mempty
 
 instance Entry ErrorException where
     entrySeverity _ = Error
