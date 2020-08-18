@@ -38,6 +38,7 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
+    , zipWithM
     )
 import Control.Monad.Catch
     ( Exception (..)
@@ -90,7 +91,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -169,16 +171,13 @@ import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( isBottom
+    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( Unparse (..)
     )
 import qualified Kore.Verified as Verified
-import Logic
-    ( LogicT
-    )
-import qualified Logic
 import qualified Pretty
 
 {- | The final nodes of an execution graph which were not proven.
@@ -684,14 +683,14 @@ checkImplication' lensRulePattern goal =
     checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
       | isFunctionPattern leftTerm =
         do
-            unificationResults <-
-                OrPattern.observeAllT unificationProblems
+            unificationResults <- unificationProblems
             when
                 (all isBottom unificationResults)
                 (succeed . NotImplied $ claimPattern)
             removals <-
-                OrPattern.observeAllT (removedDestinations unificationResults)
+                removedDestinations unificationResults
             when (all isBottom removals) (succeed Implied)
+            when (all isTop removals) (succeed . NotImplied $ claimPattern)
             simplifiedRemovals <- simplifyConjunctionOfRemovals removals
             when (isBottom simplifiedRemovals) (succeed Implied)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemovals
@@ -721,46 +720,65 @@ checkImplication' lensRulePattern goal =
                 (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
         unificationProblems
-            :: LogicT
-                (ExceptT (CheckImplicationResult ClaimPattern) m)
-                (OrPattern RewritingVariableName)
-        unificationProblems = do
-            rightPatt <- Logic.scatter right'
-            let rightTerm = Pattern.term rightPatt
-            mkIn leftSort leftTerm rightTerm
-                & Pattern.fromTermLike
-                & Pattern.simplify sideCondition
+            :: ExceptT
+                (CheckImplicationResult ClaimPattern)
+                m
+                ( MultiOr
+                    (Conditional
+                        RewritingVariableName
+                        (OrPattern RewritingVariableName)
+                    )
+                )
+        unificationProblems =
+            let mkUnificationCondition rightTerm =
+                    mkIn leftSort leftTerm rightTerm
+                    & Pattern.fromTermLike
+                    & Pattern.simplify sideCondition
+             in (traverse . traverse) mkUnificationCondition right'
 
         removedDestinations
-            :: MultiOr (OrPattern RewritingVariableName)
-            -> LogicT
-                (ExceptT (CheckImplicationResult ClaimPattern) m)
-                (OrPattern RewritingVariableName)
+            :: MultiOr
+                ( Conditional
+                    RewritingVariableName
+                    (OrPattern RewritingVariableName)
+                )
+            -> ExceptT
+                (CheckImplicationResult ClaimPattern)
+                m
+                (MultiOr (OrPattern RewritingVariableName))
         removedDestinations unificationResults = do
-            singleUnificationCondition <-
-                Logic.scatter
-                    $ (fmap . fmap) Conditional.withoutTerm unificationResults
-            rightCondition <-
-                Logic.scatter (Conditional.withoutTerm <$> right')
-            simplifiedRightCondition <-
-                Condition.simplifyCondition sideCondition rightCondition
+            let unificationConditions =
+                    fmap Conditional.withoutTerm . extract <$> unificationResults
+                    & Foldable.toList
+                rhsConditions =
+                    Conditional.withoutTerm <$> right'
+                mergeEvaluatedConditions conditions1 conditions2 =
+                    simplifyEvaluatedMultiPredicate
+                        sideCondition
+                        (MultiAnd.make [conditions1, conditions2])
+                applyExistentials patts =
+                    foldM
+                        (Exists.simplifyEvaluated sideCondition & flip)
+                        patts
+                        existentials
+            simplifiedRhsConditions <-
+                traverse
+                    (Condition.simplifyCondition sideCondition)
+                    rhsConditions
                 & OrCondition.observeAllT
-            remainderConditions <-
-                simplifyEvaluatedMultiPredicate
-                    sideCondition
-                    (MultiAnd.make
-                        [ singleUnificationCondition
-                        , simplifiedRightCondition
-                        ]
-                    )
-            let remainderPatterns =
-                    fmap Pattern.fromCondition_ remainderConditions
+                & fmap Foldable.toList
+            remainderPatterns <-
+                zipWithM
+                    mergeEvaluatedConditions
+                    unificationConditions
+                    simplifiedRhsConditions
+                & (fmap . fmap . fmap) Pattern.fromCondition_
             existentialRemainders <-
-                foldM
-                    (Exists.simplifyEvaluated sideCondition & flip)
-                    remainderPatterns
-                    existentials
-            Not.simplifyEvaluated sideCondition existentialRemainders
+                traverse applyExistentials remainderPatterns
+            traverse
+                (Not.simplifyEvaluated sideCondition)
+                existentialRemainders
+                & fmap MultiOr.make
 
         simplifyConjunctionOfRemovals
             :: MultiOr (OrPattern RewritingVariableName)
