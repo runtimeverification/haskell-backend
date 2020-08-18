@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
+    , extractGoalStuck
     , ProofState (..)
     , Prim (..)
     , proofState
@@ -127,6 +128,10 @@ extractUnproven Proven      = Nothing
 extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder t) = Just t
 extractGoalRem _           = Nothing
+
+extractGoalStuck :: ProofState a -> Maybe a
+extractGoalStuck (GoalStuck a) = Just a
+extractGoalStuck _             = Nothing
 
 data ProofStateTransformer a val =
     ProofStateTransformer
