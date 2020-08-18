@@ -16,14 +16,15 @@ import Control.Exception
     )
 import Control.Monad.Catch
     ( SomeException
-    , displayException
     , fromException
     )
 
 import Log
 import Pretty
     ( Pretty (..)
-    , line
+    , hsep
+    , prettyException
+    , vsep
     )
 
 newtype ErrorException =
@@ -31,17 +32,18 @@ newtype ErrorException =
     deriving (Show)
 
 instance Pretty ErrorException where
-    pretty err@(ErrorException someException) =
-        (pretty . displayException . getException $ err)
-        <> pleaseFileBugReport
+    pretty (ErrorException someException) =
+        (vsep . catMaybes)
+        [ Just $ prettyException someException
+        , pleaseFileBugReport
+        ]
       where
-        pleaseFileBugReport
-          | Just _ <- fromException someException :: Maybe AssertionFailed
-          = line
-            <> "Please file a bug report:\
-               \ https://github.com/kframework/kore/issues"
-          | otherwise
-          = mempty
+        pleaseFileBugReport = do
+            _ <- fromException someException :: Maybe AssertionFailed
+            (pure . hsep)
+                [ "Please file a bug report:"
+                , "https://github.com/kframework/kore/issues"
+                ]
 
 instance Entry ErrorException where
     entrySeverity _ = Error
