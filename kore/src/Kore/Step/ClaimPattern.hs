@@ -23,6 +23,7 @@ module Kore.Step.ClaimPattern
     , mkGoal
     , forgetSimplified
     , makeTrusted
+    , parseRightHandSide
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -71,6 +72,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( ElementVariable
+    , InternalVariable
     , Modality
     , SomeVariable
     , SomeVariableName (..)
@@ -657,3 +659,14 @@ makeTrusted =
         . field @"trusted"
         )
         (Attribute.Trusted True)
+
+parseRightHandSide
+    :: InternalVariable variable
+    => TermLike variable
+    -> OrPattern variable
+parseRightHandSide term =
+    let (term', condition) =
+            Pattern.parseFromTermLike term
+            & Pattern.splitTerm
+     in flip Pattern.andCondition condition
+        <$> OrPattern.parseFromTermLike term'

@@ -52,7 +52,6 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias
     ( Alias (..)
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
@@ -81,6 +80,7 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     , allPathRuleToTerm
     , onePathRuleToTerm
+    , parseRightHandSide
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -341,7 +341,7 @@ termToAxiomPattern attributes pat =
                         lhs
                         (Predicate.wrapPredicate requires)
                     & Pattern.mapVariables (pure mkRuleVariable)
-                , ClaimPattern.right = OrPattern.parseFromTermLike right'
+                , ClaimPattern.right = parseRightHandSide right'
                 , ClaimPattern.existentials = existentials'
                 , ClaimPattern.attributes = attributes'
                 }
