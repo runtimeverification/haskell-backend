@@ -59,7 +59,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
@@ -350,15 +351,18 @@ topExistsToImplicitForall
     -> Pattern RewritingVariableName
     -> Pattern RewritingVariableName
 topExistsToImplicitForall avoid' existentials' rightPattern =
-    Pattern.fromTermAndPredicate
-        (TermLike.substitute subst right)
-        (Predicate.substitute subst ensures)
+    Conditional
+        { term = TermLike.substitute subst right
+        , predicate = Predicate.substitute subst ensuresPredicate
+        , substitution = Substitution.substitute subst ensuresSubstitution
+        }
   where
     (right, ensuresCondition) = Pattern.splitTerm rightPattern
-    ensures = Condition.toPredicate ensuresCondition
+    ensuresPredicate = Pattern.predicate ensuresCondition
+    ensuresSubstitution = Pattern.substitution ensuresCondition
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
-        freeVariables right <> freeVariables ensures
+        freeVariables right <> freeVariables ensuresCondition
         & FreeVariables.bindVariables
             (TermLike.mkSomeVariable <$> existentials')
         & FreeVariables.toNames
