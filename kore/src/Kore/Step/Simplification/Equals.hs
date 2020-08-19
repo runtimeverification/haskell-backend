@@ -437,10 +437,10 @@ termEqualsAnd p1 p2 =
         runUnification = runUnifierT Not.notSimplifier . runMaybeT
         scatterResults =
             maybe
-                (return equalsPredicate) -- default if no results
+                (return equalsPattern) -- default if no results
                 Logic.scatter
             . sequence
-        equalsPredicate =
+        equalsPattern =
             makeEqualsPredicate_ first second
             & Predicate.markSimplified
             & Condition.fromPredicate
