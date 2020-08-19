@@ -27,6 +27,9 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
+import Control.Arrow
+    ( (&&&)
+    )
 import Control.Error
     ( ExceptT
     , runExceptT
@@ -38,11 +41,13 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
-    , zipWithM
     )
 import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
+    )
+import Data.Bitraversable
+    ( bimapM
     )
 import Data.Coerce
     ( coerce
@@ -685,12 +690,12 @@ checkImplication' lensRulePattern goal =
         do
             unificationResults <- unificationProblems
             when
-                (all isBottom unificationResults)
+                (isBottom unificationResults)
                 (succeed . NotImplied $ claimPattern)
             removals <-
                 removedDestinations unificationResults
-            when (all isBottom removals) (succeed Implied)
-            when (all isTop removals) (succeed . NotImplied $ claimPattern)
+            when (isBottom removals) (succeed Implied)
+            when (isTop removals) (succeed . NotImplied $ claimPattern)
             simplifiedRemovals <- simplifyConjunctionOfRemovals removals
             when (isBottom simplifiedRemovals) (succeed Implied)
             let stuckConfiguration = OrPattern.toPattern simplifiedRemovals
@@ -745,13 +750,15 @@ checkImplication' lensRulePattern goal =
             -> ExceptT
                 (CheckImplicationResult ClaimPattern)
                 m
-                (MultiOr (OrPattern RewritingVariableName))
+                (MultiAnd.MultiAnd (OrPattern RewritingVariableName))
         removedDestinations unificationResults = do
-            let unificationConditions =
-                    fmap Conditional.withoutTerm . extract <$> unificationResults
-                    & Foldable.toList
-                rhsConditions =
-                    Conditional.withoutTerm <$> right'
+            let mergeEvaluatedConditions
+                    :: OrCondition.OrCondition RewritingVariableName
+                    -> OrCondition.OrCondition RewritingVariableName
+                    -> ExceptT
+                        (CheckImplicationResult ClaimPattern)
+                        m
+                        (OrCondition.OrCondition RewritingVariableName)
                 mergeEvaluatedConditions conditions1 conditions2 =
                     simplifyEvaluatedMultiPredicate
                         sideCondition
@@ -761,16 +768,27 @@ checkImplication' lensRulePattern goal =
                         (Exists.simplifyEvaluated sideCondition & flip)
                         patts
                         existentials
+                unificationResults'
+                    :: [( Pattern.Condition RewritingVariableName
+                        , OrPattern RewritingVariableName
+                        )
+                       ]
+                unificationResults' =
+                    fmap (Conditional.withoutTerm &&& extract)
+                    . Foldable.toList
+                    $ unificationResults
             simplifiedRhsConditions <-
                 traverse
-                    (Condition.simplifyCondition sideCondition)
-                    rhsConditions
-                & OrCondition.observeAllT
-                & fmap Foldable.toList
+                    (bimapM
+                        ( OrCondition.observeAllT
+                        . Condition.simplifyCondition sideCondition
+                        )
+                        (pure . fmap Pattern.withoutTerm)
+                    )
+                    unificationResults'
             remainderPatterns <-
-                zipWithM
-                    mergeEvaluatedConditions
-                    unificationConditions
+                traverse
+                    (uncurry mergeEvaluatedConditions)
                     simplifiedRhsConditions
                 & (fmap . fmap . fmap) Pattern.fromCondition_
             existentialRemainders <-
@@ -778,10 +796,10 @@ checkImplication' lensRulePattern goal =
             traverse
                 (Not.simplifyEvaluated sideCondition)
                 existentialRemainders
-                & fmap MultiOr.make
+                & fmap MultiAnd.make
 
         simplifyConjunctionOfRemovals
-            :: MultiOr (OrPattern RewritingVariableName)
+            :: MultiAnd.MultiAnd (OrPattern RewritingVariableName)
             -> ExceptT
                 (CheckImplicationResult ClaimPattern)
                 m
@@ -790,7 +808,7 @@ checkImplication' lensRulePattern goal =
             let removalDisjunction =
                     fmap (MultiAnd.toPattern . MultiAnd.make)
                     . MultiOr.fullCrossProduct
-                    . MultiOr.extractPatterns
+                    . MultiAnd.extractPatterns
                     $ removal
                 definedConfig =
                     Pattern.andCondition left
