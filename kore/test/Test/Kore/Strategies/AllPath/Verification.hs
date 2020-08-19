@@ -410,9 +410,7 @@ simpleClaim
     (AllPath . AllPathRule)
     $ ClaimPattern
             { left =
-                Pattern.fromTermAndPredicate
-                    left
-                    makeTruePredicate_
+                Pattern.fromTermLike left
             , right =
                 Pattern.fromTermAndPredicate
                     right

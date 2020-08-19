@@ -23,6 +23,7 @@ module Kore.Step.ClaimPattern
     , mkGoal
     , forgetSimplified
     , makeTrusted
+    , parseRightHandSide
     -- * For unparsing
     , onePathRuleToTerm
     , allPathRuleToTerm
@@ -58,7 +59,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
@@ -71,6 +73,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( ElementVariable
+    , InternalVariable
     , Modality
     , SomeVariable
     , SomeVariableName (..)
@@ -207,7 +210,7 @@ claimPattern left right existentials =
 The 'TermLike' has the following form:
 
 @
-\\implies{S}(\and{S}(left, requires), alias{S}(right))
+\\implies{S}(\\and{S}(left, requires), alias{S}(right))
 @
 
 that is,
@@ -348,15 +351,18 @@ topExistsToImplicitForall
     -> Pattern RewritingVariableName
     -> Pattern RewritingVariableName
 topExistsToImplicitForall avoid' existentials' rightPattern =
-    Pattern.fromTermAndPredicate
-        (TermLike.substitute subst right)
-        (Predicate.substitute subst ensures)
+    Conditional
+        { term = TermLike.substitute subst right
+        , predicate = Predicate.substitute subst ensuresPredicate
+        , substitution = Substitution.substitute subst ensuresSubstitution
+        }
   where
     (right, ensuresCondition) = Pattern.splitTerm rightPattern
-    ensures = Condition.toPredicate ensuresCondition
+    ensuresPredicate = Pattern.predicate ensuresCondition
+    ensuresSubstitution = Pattern.substitution ensuresCondition
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
-        freeVariables right <> freeVariables ensures
+        freeVariables right <> freeVariables ensuresCondition
         & FreeVariables.bindVariables
             (TermLike.mkSomeVariable <$> existentials')
         & FreeVariables.toNames
@@ -657,3 +663,14 @@ makeTrusted =
         . field @"trusted"
         )
         (Attribute.Trusted True)
+
+parseRightHandSide
+    :: InternalVariable variable
+    => TermLike variable
+    -> OrPattern variable
+parseRightHandSide term =
+    let (term', condition) =
+            Pattern.parseFromTermLike term
+            & Pattern.splitTerm
+     in flip Pattern.andCondition condition
+        <$> OrPattern.parseFromTermLike term'

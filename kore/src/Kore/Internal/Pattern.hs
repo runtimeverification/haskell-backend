@@ -394,7 +394,7 @@ parseFromTermLike
     => TermLike variable
     -> Pattern variable
 parseFromTermLike original@(TermLike.And_ _ term1 term2)
-    | isTop term1 = fromTermLike term1
+    | isTop term1 = fromTermLike term2
     | isTop term2 = fromTermLike term1
     | otherwise =
     case (tryPredicate term1, tryPredicate term2) of

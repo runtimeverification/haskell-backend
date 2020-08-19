@@ -56,8 +56,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
-    ( pattern And_
-    , InternalVariable
+    ( InternalVariable
     , pattern Or_
     , Sort
     , TermLike
@@ -241,13 +240,6 @@ parseFromTermLike
     :: InternalVariable variable
     => TermLike variable
     -> OrPattern variable
-parseFromTermLike (And_ _ term1 term2) =
-    flip Pattern.andCondition
-        ( Condition.fromPredicate
-        . Predicate.wrapPredicate
-        $ term1
-        )
-    <$> parseFromTermLike term2
 parseFromTermLike (Or_ _ term1 term2) =
     parseFromTermLike term1 <> parseFromTermLike term2
 parseFromTermLike term =
