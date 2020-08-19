@@ -5,10 +5,15 @@ module Test.Expect
     , assertNull
     , assertTop
     , expectBool
+    , expectJustT
     ) where
 
 import Prelude.Kore
 
+import Control.Error
+    ( MaybeT
+    , maybeT
+    )
 import qualified Data.Foldable as Foldable
 
 import Debug
@@ -44,3 +49,9 @@ assertTop a
 expectBool :: HasCallStack => TermLike VariableName -> IO Bool
 expectBool (BuiltinBool_ internalBool) = return (builtinBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)
+
+expectJustT :: MonadIO io => HasCallStack => MaybeT io a -> io a
+expectJustT =
+    maybeT
+        (liftIO $ assertFailure "expected Just")
+        return

@@ -576,9 +576,18 @@ main = do
             parserInfoModifiers
     Foldable.for_ (localOptions options) mainWithOptions
 
+-- | Ensure that the SMT prelude file exists, if specified.
+ensureSmtPreludeExists :: Maybe FilePath -> IO ()
+ensureSmtPreludeExists =
+    Foldable.traverse_ $ \filePath ->
+        Monad.whenM
+            (not <$> doesFileExist filePath)
+            (error $ "SMT prelude file does not exist: " <> filePath)
+
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, bugReport } = execOptions
+    let KoreExecOptions { koreLogOptions, bugReport, smtPrelude } = execOptions
+    ensureSmtPreludeExists smtPrelude
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions

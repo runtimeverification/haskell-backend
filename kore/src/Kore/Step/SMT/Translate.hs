@@ -66,6 +66,7 @@ import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
     )
+import qualified Kore.Sort as Sort
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol
@@ -107,7 +108,9 @@ translatePredicateWith
     -> Predicate variable
     -> Translator m variable SExpr
 translatePredicateWith translateTerm predicate =
-    translatePredicatePattern $ unwrapPredicate predicate
+    translatePredicatePattern
+    $ unwrapPredicate
+    $ coerceSort Sort.predicateSort predicate
   where
     translateUninterpreted t pat = translateTerm t (UninterpretedTerm pat)
     translatePredicatePattern :: p -> Translator m variable SExpr
