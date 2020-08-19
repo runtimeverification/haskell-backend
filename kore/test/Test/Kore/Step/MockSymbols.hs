@@ -585,6 +585,7 @@ opaqueMapSymbol =
 inKeysMapSymbol :: Symbol
 inKeysMapSymbol =
     symbol inKeysMapId [testSort, mapSort] boolSort
+    & hook "MAP.in_keys"
 
 lessIntSymbol :: Symbol
 lessIntSymbol =
