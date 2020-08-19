@@ -6,5 +6,5 @@ Kore (0)> ProveSteps 1
     </k>
 #Implies
   #wAF ( <k>
-    f ( c ) ~> _DotVar1 ~> .
+    evaluated ~> _DotVar1 ~> .
   </k> )
