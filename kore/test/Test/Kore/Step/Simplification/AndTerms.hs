@@ -9,6 +9,8 @@ module Test.Kore.Step.Simplification.AndTerms
 
 import Prelude.Kore
 
+import Kore.Unparser
+
 import Test.Tasty
 
 import Control.Error
@@ -17,6 +19,7 @@ import Control.Error
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
@@ -34,6 +37,7 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
+    , makeMultipleAndPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -67,6 +71,9 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Kore.Builtin.Definition
+    ( inSetSymbol
+    )
 import Test.Tasty.HUnit.Ext
 
 test_andTermsSimplification :: [TestTree]
@@ -1046,6 +1053,17 @@ test_andTermsSimplification =
                 )
                 testSet
             assertEqual "" expected actual
+        , testCase "qq" $ do
+            let expect =
+                    (\x -> (x, x)) undefined
+            actual <-
+                simplifyUnify
+                    (Mock.builtinBool False)
+                    (Mock.inSet (mkElemVar Mock.xInt) Mock.unitSet)
+            traceM $ show (length (fst actual)) <> " List:\n"
+            Foldable.traverse_ (traceM . unparseToString) (fst actual)
+            Foldable.traverse_ (traceM . unparseToString) (snd actual)
+            assertEqual "" expect actual
         ]
     , testGroup "alias expansion"
         [ testCase "alias() vs top" $ do
