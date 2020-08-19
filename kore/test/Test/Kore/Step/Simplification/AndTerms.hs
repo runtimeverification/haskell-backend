@@ -15,6 +15,8 @@ import Control.Error
     ( MaybeT (..)
     )
 import qualified Data.List as List
+import qualified Data.Foldable as Foldable
+import Kore.Unparser
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
@@ -837,6 +839,16 @@ test_andTermsSimplification =
                     (mkElemVar Mock.m)
                 )
             assertEqual "" expected actual
+        , testCase "qq" $ do
+            let expect = undefined
+            actual <-
+                simplifyUnify
+                    (Mock.builtinBool False)
+                    (Mock.inKeysMap (mkElemVar Mock.x) Mock.unitMap)
+            traceM "HERE:\n"
+            Foldable.traverse_ (traceM . unparseToString) (fst actual)
+            assertEqual "" expect actual
+
         -- TODO: Add tests with non-trivial predicates.
         ]
 
