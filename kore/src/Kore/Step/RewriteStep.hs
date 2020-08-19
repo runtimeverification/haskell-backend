@@ -140,7 +140,7 @@ constructConfiguration appliedCondition ensuresCondition finalPattern = do
     let
         Conditional { substitution } = finalCondition
         substitution' = Substitution.toMap substitution
-        Conditional { term = finalTerm} = finalPattern
+        Conditional { term = finalTerm } = finalPattern
         finalTerm' = TermLike.substitute substitution' finalTerm
     return (finalTerm' `Pattern.withCondition` finalCondition)
 
