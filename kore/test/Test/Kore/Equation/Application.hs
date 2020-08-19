@@ -206,6 +206,7 @@ test_attemptEquation =
                 WhileCheckRequires CheckRequiresError
                 { matchPredicate = makeTruePredicate_
                 , equationRequires = requires1
+                , sideCondition = SideCondition.top
                 }
         attemptEquation SideCondition.top initial equation
             >>= expectLeft >>= assertEqual "" expect1
@@ -241,6 +242,7 @@ test_attemptEquation =
                 WhileCheckRequires CheckRequiresError
                     { matchPredicate = makeTruePredicate_
                     , equationRequires = makeFalsePredicate sortR
+                    , sideCondition = SideCondition.top
                     }
             initial = Mock.a
         attemptEquation SideCondition.top initial equationRequiresBottom
