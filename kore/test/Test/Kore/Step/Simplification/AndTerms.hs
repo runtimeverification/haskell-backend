@@ -14,14 +14,14 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.List as List
 import qualified Data.Foldable as Foldable
-import Kore.Unparser
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
+import Kore.Unparser
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
