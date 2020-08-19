@@ -207,7 +207,7 @@ claimPattern left right existentials =
 The 'TermLike' has the following form:
 
 @
-\\implies{S}(\and{S}(left, requires), alias{S}(right))
+\\implies{S}(\\and{S}(left, requires), alias{S}(right))
 @
 
 that is,
