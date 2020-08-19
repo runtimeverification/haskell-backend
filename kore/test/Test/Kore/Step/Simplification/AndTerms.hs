@@ -844,7 +844,7 @@ test_andTermsSimplification =
             actual <-
                 simplifyUnify
                     (Mock.builtinBool False)
-                    (Mock.inKeysMap (mkElemVar Mock.x) Mock.unitMap)
+                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             traceM "HERE:\n"
             Foldable.traverse_ (traceM . unparseToString) (fst actual)
             assertEqual "" expect actual
