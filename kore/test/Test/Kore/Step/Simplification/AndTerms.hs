@@ -839,7 +839,6 @@ test_andTermsSimplification =
                     (mkElemVar Mock.m)
                 )
             assertEqual "" expected actual
-
         , testCase "unifies functions in keys" $ do
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
@@ -849,7 +848,6 @@ test_andTermsSimplification =
                     & Pattern.withCondition concrete
             actual <- simplifyUnify concrete symbolic
             assertEqual "" ([expect], [expect]) actual
-
         , testCase "\\equals(false, X in []) = \\top" $ do
             let expect = Condition.top
             actual <-
@@ -858,7 +856,6 @@ test_andTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             assertEqual "" (Just [expect]) actual
-
         , testCase
             "\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)"
             $ do

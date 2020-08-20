@@ -677,5 +677,4 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
                     <> [definedKey, definedMap]
             return $ collectConditions conditions
 
-    worker _ _ =
-        empty
+    worker _ _ = empty
