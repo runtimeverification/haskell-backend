@@ -906,7 +906,7 @@ test_andTermsSimplification =
                         mempty
                         (Mock.builtinBool False)
                         ( Mock.inKeysMap
-                            (mkElemVar Mock.x)
+                            ( mkElemVar Mock.x )
                             ( Mock.builtinMap
                                 [ ( mkElemVar Mock.y, Mock.a )
                                 , ( mkElemVar Mock.z, Mock.a )
@@ -914,6 +914,35 @@ test_andTermsSimplification =
                             )
                         )
                 assertEqual "" (Just [expect]) actual
+        , testCase "\\equals(false, f(X) in [Y]) = \\not \\equals(f(X), Y)" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
+                                ( makeCeilPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                )
+                                ( makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    ( Mock.f (mkElemVar Mock.x) )
+                                )
+                            )
+                        )
+                        ( makeCeilPredicate Mock.testSort
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inKeysMap
+                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.builtinMap
+                            [ (mkElemVar Mock.y, Mock.a ) ]
+                        )
+                    )
+            assertEqual "" (Just [expect]) actual
         ]
 
     , testGroup "builtin List domain"
