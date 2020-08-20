@@ -665,13 +665,13 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
         else do
             -- Concrete keys are constructor-like, therefore they are defined
             TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-            traceM $ "MAP TERM"
+            traceM "MAP TERM"
             traceM $ unparseToString mapTerm
             definedKey <- defineTerm keyTerm
             definedMap <- defineTerm mapTerm
             keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
 
-            traceM $ "DEFINED MAP TERM"
+            traceM "DEFINED MAP TERM"
             traceM $ unparseToString definedMap
 
             let keyInKeysOpaque =
