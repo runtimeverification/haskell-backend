@@ -860,6 +860,27 @@ test_andTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             assertEqual "" (Just [expect]) actual
+        
+        , testCase
+            "qq\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)"
+            $ do
+                let expect =
+                        makeEqualsPredicate_
+                            (mkElemVar Mock.x)
+                            (mkElemVar Mock.y)
+                        & makeNotPredicate
+                        & Condition.fromPredicate
+                actual <-
+                    simplifyEquals
+                        mempty
+                        ( Mock.builtinBool False )
+                        ( Mock.inKeysMap
+                            ( mkElemVar Mock.x) 
+                            ( Mock.builtinMap
+                                [ ( mkElemVar Mock.y, Mock.a ) ]
+                            )
+                        )
+                assertEqual "" (Just [expect]) actual
         ]
 
     , testGroup "builtin List domain"
