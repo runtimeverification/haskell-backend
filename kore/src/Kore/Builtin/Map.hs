@@ -28,6 +28,8 @@ module Kore.Builtin.Map
     , evalInKeys
     ) where
 
+import Prelude.Kore
+
 import Control.Error
     ( MaybeT (MaybeT)
     , hoistMaybe
@@ -48,7 +50,6 @@ import qualified Data.Text as Text
 import Kore.Unparser
     ( unparseToString
     )
-import Prelude.Kore
 
 import Kore.Attribute.Hook
     ( Hook (..)

@@ -841,7 +841,6 @@ test_andTermsSimplification =
                 )
             assertEqual "" expected actual
 
-        -- TODO: Add tests with non-trivial predicates.
         , testCase "unifies functions in keys" $ do
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
@@ -897,15 +896,12 @@ test_andTermsSimplification =
                                 ]
                             )
                         )
-                {-
-                traceM "expect"
-                traceM $ unparseToString expect
-                -}
                 traceM "actual"
                 (Foldable.traverse_ . Foldable.traverse_)
                     (traceM . unparseToString)
                     actual
-                assertEqual "" actual actual        ]
+                assertEqual "" undefined actual
+        ]
 
     , testGroup "builtin List domain"
         [ testCase "[same head, same head]" $ do
