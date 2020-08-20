@@ -35,8 +35,8 @@ import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeTruePredicate
     , makeNotPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -852,7 +852,7 @@ test_andTermsSimplification =
             actual <- simplifyUnify concrete symbolic
             assertEqual "" ([expect], [expect]) actual
 
-        , testCase "qq\\equals(false, X in []) = \\top" $ do
+        , testCase "\\equals(false, X in []) = \\top" $ do
             let expect = Condition.top
             actual <-
                 simplifyEquals
@@ -860,9 +860,9 @@ test_andTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             assertEqual "" (Just [expect]) actual
-        
+
         , testCase
-            "qq\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)"
+            "\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)"
             $ do
                 let expect =
                         makeEqualsPredicate_
@@ -875,13 +875,37 @@ test_andTermsSimplification =
                         mempty
                         ( Mock.builtinBool False )
                         ( Mock.inKeysMap
-                            ( mkElemVar Mock.x) 
+                            ( mkElemVar Mock.x)
                             ( Mock.builtinMap
                                 [ ( mkElemVar Mock.y, Mock.a ) ]
                             )
                         )
                 assertEqual "" (Just [expect]) actual
-        ]
+        , testCase
+            "qq\\equals(false, X in [Y Z])\
+            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)"
+            $ do
+                actual <-
+                    simplifyEquals
+                        mempty
+                        (Mock.builtinBool False)
+                        ( Mock.inKeysMap
+                            (mkElemVar Mock.x)
+                            ( Mock.builtinMap
+                                [ ( mkElemVar Mock.y, Mock.a )
+                                , ( mkElemVar Mock.z, Mock.a )
+                                ]
+                            )
+                        )
+                {-
+                traceM "expect"
+                traceM $ unparseToString expect
+                -}
+                traceM "actual"
+                (Foldable.traverse_ . Foldable.traverse_)
+                    (traceM . unparseToString)
+                    actual
+                assertEqual "" actual actual        ]
 
     , testGroup "builtin List domain"
         [ testCase "[same head, same head]" $ do
