@@ -23,6 +23,8 @@ module Kore.Strategies.Goal
     , module Kore.Log.InfoReachability
     , getConfiguration
     , getDestination
+    -- * For testing
+    , checkImplicationWorker
     ) where
 
 import Prelude.Kore
@@ -668,7 +670,19 @@ data CheckImplicationResult a
     | NotImpliedStuck !a
     -- ^ The implication between /terms/ is valid, but the implication between
     -- side-conditions is not valid.
-    deriving (Functor)
+    deriving (Show, Eq, Functor, GHC.Generic)
+
+instance SOP.Generic goal =>
+    SOP.Generic (CheckImplicationResult goal)
+
+instance SOP.HasDatatypeInfo goal =>
+    SOP.HasDatatypeInfo (CheckImplicationResult goal)
+
+instance (Debug goal, SOP.HasDatatypeInfo goal) =>
+    Debug (CheckImplicationResult goal)
+
+instance (Diff goal, Debug goal, SOP.HasDatatypeInfo goal) =>
+    Diff (CheckImplicationResult goal)
 
 -- | Remove the destination of the goal.
 checkImplication'
@@ -681,148 +695,150 @@ checkImplication' lensRulePattern goal =
     goal
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
+
+checkImplicationWorker
+    :: forall m
+    .  MonadSimplify m
+    => ClaimPattern
+    -> m (CheckImplicationResult ClaimPattern)
+checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
+  | isFunctionPattern leftTerm =
+    do
+        unificationResults <- unificationProblems
+        when
+            (isBottom unificationResults)
+            (succeed . NotImplied $ claimPattern)
+        removals <-
+            removedDestinations unificationResults
+        when (isBottom removals) (succeed Implied)
+        when (isTop removals) (succeed . NotImplied $ claimPattern)
+        simplifiedRemovals <- simplifyConjunctionOfRemovals removals
+        when (isBottom simplifiedRemovals) (succeed Implied)
+        let stuckConfiguration = OrPattern.toPattern simplifiedRemovals
+        claimPattern
+            & Lens.set (field @"left") stuckConfiguration
+            & NotImpliedStuck
+            & pure
+    & run
+  | otherwise =
+  error . show . Pretty.vsep $
+      [ "The check implication step expects\
+      \ the configuration term to be function-like."
+      , Pretty.indent 2 "Configuration term:"
+      , Pretty.indent 4 (unparse leftTerm)
+      ]
   where
-    checkImplicationWorker
-        :: ClaimPattern
-        -> m (CheckImplicationResult ClaimPattern)
-    checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
-      | isFunctionPattern leftTerm =
-        do
-            unificationResults <- unificationProblems
-            when
-                (isBottom unificationResults)
-                (succeed . NotImplied $ claimPattern)
-            removals <-
-                removedDestinations unificationResults
-            when (isBottom removals) (succeed Implied)
-            when (isTop removals) (succeed . NotImplied $ claimPattern)
-            simplifiedRemovals <- simplifyConjunctionOfRemovals removals
-            when (isBottom simplifiedRemovals) (succeed Implied)
-            let stuckConfiguration = OrPattern.toPattern simplifiedRemovals
-            claimPattern
-                & Lens.set (field @"left") stuckConfiguration
-                & NotImpliedStuck
-                & pure
-        & run
-      | otherwise =
-      error . show . Pretty.vsep $
-          [ "The check implication step expects\
-          \ the configuration term to be function-like."
-          , Pretty.indent 2 "Configuration term:"
-          , Pretty.indent 4 (unparse leftTerm)
-          ]
-      where
-        ClaimPattern { right, left, existentials } = claimPattern
-        leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
-        right' =
-            ClaimPattern.topExistsToImplicitForall leftFreeVars existentials
-            <$> right
-        leftTerm = Pattern.term left
-        leftCondition = Pattern.withoutTerm left
-        leftSort = termLikeSort leftTerm
-        sideCondition =
-            SideCondition.assumeTrueCondition
-                (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+    ClaimPattern { right, left, existentials } = claimPattern
+    leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
+    right' =
+        ClaimPattern.topExistsToImplicitForall leftFreeVars existentials
+        <$> right
+    leftTerm = Pattern.term left
+    leftCondition = Pattern.withoutTerm left
+    leftSort = termLikeSort leftTerm
+    sideCondition =
+        SideCondition.assumeTrueCondition
+            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-        unificationProblems
-            :: ExceptT
-                (CheckImplicationResult ClaimPattern)
-                m
-                ( MultiOr
-                    (Conditional
-                        RewritingVariableName
-                        (OrPattern RewritingVariableName)
-                    )
-                )
-        unificationProblems =
-            let mkUnificationCondition rightTerm =
-                    mkIn leftSort leftTerm rightTerm
-                    & Pattern.fromTermLike
-                    & Pattern.simplify sideCondition
-             in (traverse . traverse) mkUnificationCondition right'
-
-        removedDestinations
-            :: MultiOr
-                ( Conditional
+    unificationProblems
+        :: ExceptT
+            (CheckImplicationResult ClaimPattern)
+            m
+            ( MultiOr
+                (Conditional
                     RewritingVariableName
                     (OrPattern RewritingVariableName)
                 )
-            -> ExceptT
-                (CheckImplicationResult ClaimPattern)
-                m
-                (MultiAnd.MultiAnd (OrPattern RewritingVariableName))
-        removedDestinations unificationResults = do
-            let mergeEvaluatedConditions
-                    :: OrCondition.OrCondition RewritingVariableName
-                    -> OrCondition.OrCondition RewritingVariableName
-                    -> ExceptT
-                        (CheckImplicationResult ClaimPattern)
-                        m
-                        (OrCondition.OrCondition RewritingVariableName)
-                mergeEvaluatedConditions conditions1 conditions2 =
-                    simplifyEvaluatedMultiPredicate
-                        sideCondition
-                        (MultiAnd.make [conditions1, conditions2])
-                applyExistentials patts =
-                    foldM
-                        (Exists.simplifyEvaluated sideCondition & flip)
-                        patts
-                        existentials
-                unificationResults'
-                    :: [( Pattern.Condition RewritingVariableName
-                        , OrPattern RewritingVariableName
-                        )
-                       ]
-                unificationResults' =
-                    fmap (Conditional.withoutTerm &&& extract)
-                    . Foldable.toList
-                    $ unificationResults
-            simplifiedRhsConditions <-
-                traverse
-                    (bimapM
-                        ( OrCondition.observeAllT
-                        . Condition.simplifyCondition sideCondition
-                        )
-                        (pure . fmap Pattern.withoutTerm)
-                    )
-                    unificationResults'
-            remainderPatterns <-
-                traverse
-                    (uncurry mergeEvaluatedConditions)
-                    simplifiedRhsConditions
-                & (fmap . fmap . fmap) Pattern.fromCondition_
-            existentialRemainders <-
-                traverse applyExistentials remainderPatterns
-            traverse
-                (Not.simplifyEvaluated sideCondition)
-                existentialRemainders
-                & fmap MultiAnd.make
+            )
+    unificationProblems =
+        let mkUnificationCondition rightTerm =
+                mkIn leftSort leftTerm rightTerm
+                & Pattern.fromTermLike
+                & Pattern.simplify sideCondition
+         in (traverse . traverse) mkUnificationCondition right'
 
-        simplifyConjunctionOfRemovals
-            :: MultiAnd.MultiAnd (OrPattern RewritingVariableName)
-            -> ExceptT
-                (CheckImplicationResult ClaimPattern)
-                m
+    removedDestinations
+        :: MultiOr
+            ( Conditional
+                RewritingVariableName
                 (OrPattern RewritingVariableName)
-        simplifyConjunctionOfRemovals removal = do
-            let removalDisjunction =
-                    fmap (MultiAnd.toPattern . MultiAnd.make)
-                    . MultiOr.fullCrossProduct
-                    . MultiAnd.extractPatterns
-                    $ removal
-                definedConfig =
-                    Pattern.andCondition left
-                    $ from $ makeCeilPredicate_ (Conditional.term left)
-                configAndRemoval = fmap (definedConfig <*) removalDisjunction
-            simplifyConditionsWithSmt
-                sideCondition
-                configAndRemoval
+            )
+        -> ExceptT
+            (CheckImplicationResult ClaimPattern)
+            m
+            (MultiAnd.MultiAnd (OrPattern RewritingVariableName))
+    removedDestinations unificationResults = do
+        let mergeEvaluatedConditions
+                :: OrCondition.OrCondition RewritingVariableName
+                -> OrCondition.OrCondition RewritingVariableName
+                -> ExceptT
+                    (CheckImplicationResult ClaimPattern)
+                    m
+                    (OrCondition.OrCondition RewritingVariableName)
+            mergeEvaluatedConditions conditions1 conditions2 =
+                simplifyEvaluatedMultiPredicate
+                    sideCondition
+                    (MultiAnd.make [conditions1, conditions2])
+            applyExistentials patts =
+                foldM
+                    (Exists.simplifyEvaluated sideCondition & flip)
+                    patts
+                    existentials
+            unificationResults'
+                :: [( Pattern.Condition RewritingVariableName
+                    , OrPattern RewritingVariableName
+                    )
+                   ]
+            unificationResults' =
+                fmap (Conditional.withoutTerm &&& extract)
+                . Foldable.toList
+                $ unificationResults
+        simplifiedRhsConditions <-
+            traverse
+                (bimapM
+                    ( OrCondition.observeAllT
+                    . Condition.simplifyCondition sideCondition
+                    )
+                    (pure . fmap Pattern.withoutTerm)
+                )
+                unificationResults'
+        remainderPatterns <-
+            traverse
+                (uncurry mergeEvaluatedConditions)
+                simplifiedRhsConditions
+            & (fmap . fmap . fmap) Pattern.fromCondition_
+        existentialRemainders <-
+            traverse applyExistentials remainderPatterns
+        traverse
+            (Not.simplifyEvaluated sideCondition)
+            existentialRemainders
+            & fmap MultiAnd.make
 
-        succeed :: r -> ExceptT r m a
-        succeed = throwE
+    simplifyConjunctionOfRemovals
+        :: MultiAnd.MultiAnd (OrPattern RewritingVariableName)
+        -> ExceptT
+            (CheckImplicationResult ClaimPattern)
+            m
+            (OrPattern RewritingVariableName)
+    simplifyConjunctionOfRemovals removal = do
+        let removalDisjunction =
+                fmap (MultiAnd.toPattern . MultiAnd.make)
+                . MultiOr.fullCrossProduct
+                . MultiAnd.extractPatterns
+                $ removal
+            definedConfig =
+                Pattern.andCondition left
+                $ from $ makeCeilPredicate_ (Conditional.term left)
+            configAndRemoval = fmap (definedConfig <*) removalDisjunction
+        simplifyConditionsWithSmt
+            sideCondition
+            configAndRemoval
 
-        run :: ExceptT r m r -> m r
-        run acts = runExceptT acts >>= either pure pure
+    succeed :: r -> ExceptT r m a
+    succeed = throwE
+
+    run :: ExceptT r m r -> m r
+    run acts = runExceptT acts >>= either pure pure
 
 simplify'
     :: MonadSimplify m
