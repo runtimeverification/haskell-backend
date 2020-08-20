@@ -848,7 +848,7 @@ test_andTermsSimplification =
                     & Pattern.withCondition concrete
             actual <- simplifyUnify concrete symbolic
             assertEqual "" ([expect], [expect]) actual
-        , testCase "\\equals(false, X in []) = \\top" $ do
+        , testCase "qq\\equals(false, X in []) = \\top" $ do
             let expect = Condition.top
             actual <-
                 simplifyEquals
