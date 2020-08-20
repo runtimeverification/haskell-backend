@@ -437,14 +437,18 @@ termEqualsAnd p1 p2 =
         runUnification = runUnifierT Not.notSimplifier . runMaybeT
         scatterResults =
             maybe
-                (return equalsPredicate) -- default if no results
+                (return equalsPattern) -- default if no results
                 Logic.scatter
             . sequence
-        equalsPredicate =
-            Conditional
-                { term = mkTop_
-                , predicate =
-                    Predicate.markSimplified
-                    $ makeEqualsPredicate_ first second
-                , substitution = mempty
-                }
+        equalsPattern =
+            makeEqualsPredicate_ first second
+            & Predicate.markSimplified
+            & Condition.fromPredicate
+            -- Although the term will eventually be discarded, the sub-term
+            -- unifier should return it in case the caller needs to
+            -- reconstruct the unified term. If we returned \top here, then
+            -- the unified pattern wouldn't be a function-like term. Because the
+            -- terms are equal, it does not matter which one is returned; we
+            -- prefer the first term because this is the "configuration" side
+            -- during rule unification.
+            & Pattern.withCondition first

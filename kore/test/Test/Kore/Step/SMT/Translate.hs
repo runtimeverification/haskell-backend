@@ -13,10 +13,6 @@ import Control.Error
     )
 import qualified Data.Text as Text
 
-import qualified Test.Kore.Step.MockSymbols as Mock
-import qualified Test.SMT
-import Test.Tasty.HUnit.Ext
-
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -25,10 +21,16 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import qualified Kore.Step.SMT.Evaluator as Evaluator
 import Kore.Step.SMT.Translate
-    ( evalTranslator
+    ( Translator
+    , evalTranslator
     )
 import SMT
 import qualified SMT.SimpleSMT
+
+import Test.Expect
+import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.SMT
+import Test.Tasty.HUnit.Ext
 
 test_translatePredicateWith :: [TestTree]
 test_translatePredicateWith =
@@ -143,6 +145,19 @@ test_translatePredicateWith =
         yields
             (translating (peq n (TermLike.mkDefined $ Mock.tdivInt n m)))
             (var 0 `eq` (var 0 `sdiv` var 1))
+    , testCase "erases predicate sorts" $ do
+        -- Two inputs: the same \ceil in different outer sorts.
+        let input1 = pceil (Mock.tdivInt n m)
+            input2 = pceil' (Mock.tdivInt n m)
+        (actual1, actual2) <-
+            do
+                actual1 <- translatePredicate input1
+                actual2 <- translatePredicate input2
+                return (actual1, actual2)
+            & evalTranslator
+            & expectJustT
+            & Test.SMT.runNoSMT
+        assertEqual "" actual1 actual2
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -156,6 +171,7 @@ test_translatePredicateWith =
     peq = Predicate.makeEqualsPredicate_
     pand = Predicate.makeAndPredicate
     pceil = Predicate.makeCeilPredicate_
+    pceil' = Predicate.makeCeilPredicate Mock.intSort
     true = Predicate.makeTruePredicate_
     pexists (TermLike.ElemVar_ v) p = Predicate.makeExistsPredicate v p
     pexists _ _ = undefined
@@ -165,10 +181,15 @@ test_translatePredicateWith =
     fun i p = SMT.SimpleSMT.List (var i : p)
     sdiv i j = List [Atom "div", i, j]
 
+translatePredicate
+    :: HasCallStack
+    => Predicate VariableName
+    -> Translator NoSMT VariableName SExpr
+translatePredicate = Evaluator.translatePredicate Mock.metadataTools
+
 translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translating =
-    Test.SMT.runNoSMT . runMaybeT . evalTranslator
-    . Evaluator.translatePredicate Mock.metadataTools
+    Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
 
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
