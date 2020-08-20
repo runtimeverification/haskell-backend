@@ -14,14 +14,12 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import Kore.Unparser
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
@@ -32,7 +30,8 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
@@ -881,9 +880,27 @@ test_andTermsSimplification =
                         )
                 assertEqual "" (Just [expect]) actual
         , testCase
-            "qq\\equals(false, X in [Y Z])\
+            "\\equals(false, X in [Y Z])\
             \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)"
             $ do
+                let expect =
+                        foldr1
+                            makeAndPredicate
+                            [ makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.y)
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.z)
+                            -- Definedness condition
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    (mkElemVar Mock.z)
+                            ]
+                        & Condition.fromPredicate
                 actual <-
                     simplifyEquals
                         mempty
@@ -896,11 +913,7 @@ test_andTermsSimplification =
                                 ]
                             )
                         )
-                traceM "actual"
-                (Foldable.traverse_ . Foldable.traverse_)
-                    (traceM . unparseToString)
-                    actual
-                assertEqual "" undefined actual
+                assertEqual "" (Just [expect]) actual
         ]
 
     , testGroup "builtin List domain"
