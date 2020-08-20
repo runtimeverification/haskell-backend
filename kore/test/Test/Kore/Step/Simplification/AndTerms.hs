@@ -36,6 +36,7 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
+    , makeNotPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -839,15 +840,6 @@ test_andTermsSimplification =
                     (mkElemVar Mock.m)
                 )
             assertEqual "" expected actual
-        , testCase "qq" $ do
-            let expect = undefined
-            actual <-
-                simplifyUnify
-                    (Mock.builtinBool False)
-                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
-            traceM "HERE:\n"
-            Foldable.traverse_ (traceM . unparseToString) (fst actual)
-            assertEqual "" expect actual
 
         -- TODO: Add tests with non-trivial predicates.
         , testCase "unifies functions in keys" $ do
@@ -859,7 +851,15 @@ test_andTermsSimplification =
                     & Pattern.withCondition concrete
             actual <- simplifyUnify concrete symbolic
             assertEqual "" ([expect], [expect]) actual
-        ]
+
+        , testCase "qq\\equals(false, X in []) = \\top" $ do
+            let expect = Condition.top
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
+            assertEqual "" (Just [expect]) actual        ]
 
     , testGroup "builtin List domain"
         [ testCase "[same head, same head]" $ do
