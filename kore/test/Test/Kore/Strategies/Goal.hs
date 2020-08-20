@@ -20,6 +20,7 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeExistsPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
@@ -45,6 +46,7 @@ import Kore.Strategies.Goal
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
     ( runSimplifier
+    , runSimplifierNoSMT
     )
 
 test_checkImplication :: [TestTree]
@@ -104,7 +106,7 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" (NotImpliedStuck goal) actual
-    , testCase "TESTING Function unification, definedness condition and remainder" $ do
+    , testCase "Function unification, definedness condition and remainder" $ do
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
                 Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
@@ -119,16 +121,50 @@ test_checkImplication =
                             (Mock.f (mkElemVar Mock.x))
                         )
                         (makeNotPredicate
-                            (makeEqualsPredicate Mock.testSort
-                                (Mock.f (mkElemVar Mock.x))
-                                (Mock.f (mkElemVar Mock.y))
+                            (makeExistsPredicate Mock.y
+                                (makeEqualsPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                    (Mock.f (mkElemVar Mock.y))
+                                )
                             )
                         )
                     )
             stuckGoal =
                 mkGoal stuckConfig dest existentials
-        actual <- checkImplication goal
+        actual <- checkImplicationNoSMT goal
         assertEqual "" (NotImpliedStuck stuckGoal) actual
+    , testCase "Branching RHS" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                [ Mock.a & Pattern.fromTermLike
+                , Mock.b & Pattern.fromTermLike
+                ]
+                & OrPattern.fromPatterns
+            existentials = []
+            goal = mkGoal config dest existentials
+        actual <- checkImplication goal
+        assertEqual "" Implied actual
+    , testCase "Branching RHS with condition" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                [ Pattern.fromTermAndPredicate
+                    (mkElemVar Mock.x)
+                    (makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        Mock.a
+                    )
+                , Pattern.fromTermAndPredicate
+                    (mkElemVar Mock.x)
+                    (makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        Mock.b
+                    )
+                ]
+                & OrPattern.fromPatterns
+            existentials = [Mock.x]
+            goal = mkGoal config dest existentials
+        actual <- checkImplication goal
+        assertEqual "" Implied actual
     ]
 
 mkGoal
@@ -149,3 +185,7 @@ mkGoal
 checkImplication :: ClaimPattern -> IO (CheckImplicationResult ClaimPattern)
 checkImplication =
     runSimplifier Mock.env . checkImplicationWorker
+
+checkImplicationNoSMT :: ClaimPattern -> IO (CheckImplicationResult ClaimPattern)
+checkImplicationNoSMT =
+    runSimplifierNoSMT Mock.env . checkImplicationWorker
