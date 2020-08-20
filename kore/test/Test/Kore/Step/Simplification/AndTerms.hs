@@ -859,7 +859,8 @@ test_andTermsSimplification =
                     mempty
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
-            assertEqual "" (Just [expect]) actual        ]
+            assertEqual "" (Just [expect]) actual
+        ]
 
     , testGroup "builtin List domain"
         [ testCase "[same head, same head]" $ do

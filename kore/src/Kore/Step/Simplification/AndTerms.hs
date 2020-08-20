@@ -198,7 +198,7 @@ equalsFunctions
     => HasCallStack
     => NotSimplifier unifier
     -> [TermTransformationOld variable unifier]
-equalsFunctions notSimplifier = trace "equalsFunctions" $
+equalsFunctions notSimplifier =
     forEquals . snd
     <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
   where
