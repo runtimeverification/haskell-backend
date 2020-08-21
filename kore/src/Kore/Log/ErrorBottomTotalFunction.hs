@@ -11,9 +11,10 @@ module Kore.Log.ErrorBottomTotalFunction
 
 import Prelude.Kore
 
-import Control.Exception
+import Control.Monad.Catch
     ( Exception (..)
-    , throw
+    , MonadThrow
+    , throwM
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -61,8 +62,9 @@ instance Entry ErrorBottomTotalFunction where
 instance SQL.Table ErrorBottomTotalFunction
 
 errorBottomTotalFunction
-    :: InternalVariable variable
+    :: MonadThrow logger
+    => InternalVariable variable
     => TermLike variable
     -> logger ()
 errorBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
-    throw ErrorBottomTotalFunction { term }
+    throwM ErrorBottomTotalFunction { term }
