@@ -22,6 +22,7 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate
     , makeExistsPredicate
     , makeNotPredicate
+    , makeOrPredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -161,6 +162,26 @@ test_checkImplication =
                     )
                 ]
                 & OrPattern.fromPatterns
+            existentials = [Mock.x]
+            goal = mkGoal config dest existentials
+        actual <- checkImplication goal
+        assertEqual "" Implied actual
+    , testCase "TESTING Branching RHS with condition" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                Pattern.fromTermAndPredicate
+                    (mkElemVar Mock.x)
+                    (makeOrPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.b
+                        )
+                    )
+                & OrPattern.fromPattern
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal

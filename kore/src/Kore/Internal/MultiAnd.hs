@@ -18,9 +18,12 @@ module Kore.Internal.MultiAnd
     , toPredicate
     , singleton
     , toPattern
+    , map
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( map
+    )
 
 import Control.DeepSeq
     ( NFData
@@ -189,3 +192,11 @@ toPattern (MultiAnd patterns) =
     case patterns of
        [] -> Pattern.top
        _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
+
+map
+    :: Ord child2
+    => TopBottom child2
+    => (child1 -> child2)
+    -> MultiAnd child1
+    -> MultiAnd child2
+map f = make . fmap f . extractPatterns
