@@ -791,14 +791,33 @@ removalPatterns sideCondition config existentials' =
     >=> negateExistentialUnificationConditions sideCondition
     >=> simplifyRemovalWithDefinedness sideCondition config
 
+assertFunctionLikeConfiguration
+    :: forall m
+    .  Monad m
+    => HasCallStack
+    => ClaimPattern
+    -> m ()
+assertFunctionLikeConfiguration claimPattern
+  | (not . isFunctionPattern) leftTerm =
+    error . show . Pretty.vsep $
+        [ "The check implication step expects\
+        \ the configuration term to be function-like."
+        , Pretty.indent 2 "Configuration term:"
+        , Pretty.indent 4 (unparse leftTerm)
+        ]
+  | otherwise = pure ()
+  where
+    ClaimPattern { left } = claimPattern
+    leftTerm = Pattern.term left
+
 checkImplicationWorker
     :: forall m
     .  MonadSimplify m
     => ClaimPattern
     -> m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
-  | isFunctionPattern leftTerm =
+checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     do
+        assertFunctionLikeConfiguration claimPattern
         unificationResults <-
             unificationProblems sideCondition leftTerm right'
                 & MultiOr.observeAllT
@@ -815,13 +834,6 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
             & NotImpliedStuck
             & pure
     & run
-  | otherwise =
-  error . show . Pretty.vsep $
-      [ "The check implication step expects\
-      \ the configuration term to be function-like."
-      , Pretty.indent 2 "Configuration term:"
-      , Pretty.indent 4 (unparse leftTerm)
-      ]
   where
     ClaimPattern { right, left, existentials } = claimPattern
     leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
