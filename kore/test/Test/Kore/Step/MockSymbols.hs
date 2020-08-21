@@ -1770,9 +1770,7 @@ framedMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        do
-            Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure value
+        (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements

@@ -844,7 +844,15 @@ test_andTermsSimplification =
                     (mkElemVar Mock.m)
                 )
             assertEqual "" expected actual
-        -- TODO: Add tests with non-trivial predicates.
+        , testCase "unifies functions in keys" $ do
+            let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
+                symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
+                expect =
+                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    & Condition.fromPredicate
+                    & Pattern.withCondition concrete
+            actual <- simplifyUnify concrete symbolic
+            assertEqual "" ([expect], [expect]) actual
         ]
 
     , testGroup "builtin List domain"
@@ -1211,6 +1219,16 @@ test_equalsTermsSimplification =
             )
             (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqual "" expected actual
+    , testGroup "builtin Map"
+        [ testCase "unifies functions in keys" $ do
+            let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
+                symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
+                expect =
+                    makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
+                    & Condition.fromPredicate
+            actual <- simplifyEquals mempty concrete symbolic
+            assertEqual "" (Just [expect]) actual
+        ]
     ]
 
 test_functionAnd :: [TestTree]
@@ -1279,7 +1297,7 @@ test_Defined =
             -- TODO (thomas.tuegel): condition should use defined1 instead of
             -- function1.
             condition =
-                makeEqualsPredicate_ function1 function2
+                makeEqualsPredicate Mock.testSort function1 function2
                 & Condition.fromPredicate
         in
             [ testCase "\\and" $ do
