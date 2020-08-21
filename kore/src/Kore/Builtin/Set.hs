@@ -636,27 +636,36 @@ unifyNotIn
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyNotIn = unifyNotInKeys matchSetIn (inject . In)
+unifyNotIn =
+    unifyNotInKeys
+        (Ac.toNormalized @Domain.NormalizedSet)
+        matchSetIn
+        (inject . In)
 
 unifyNotInKeys
-    :: forall variable unifier
+    :: forall normalized variable unifier
     .  InternalVariable variable
+    => Ac.TermWrapper normalized
     => MonadUnify unifier
-    => (TermLike variable -> Maybe (InKeys (TermLike variable)))
+    => (TermLike variable -> Ac.NormalizedOrBottom normalized variable)
+    -> (TermLike variable -> Maybe (InKeys (TermLike variable)))
     -> (InKeys (TermLike variable) -> TermLike variable)
     -> TermSimplifier variable unifier
     -> NotSimplifier unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyNotInKeys matchInKeys inject' unifyChildren (NotSimplifier notSimplifier) a b =
+unifyNotInKeys
+    normalizedOrBottom
+    matchInKeys
+    inject'
+    unifyChildren
+    (NotSimplifier notSimplifier)
+    a
+    b
+  =
     worker a b <|> worker b a
   where
-    normalizedOrBottom
-       :: TermLike variable
-       -> Ac.NormalizedOrBottom Domain.NormalizedMap variable
-    normalizedOrBottom = Ac.toNormalized
-
     defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
     defineTerm termLike =
         makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike

@@ -632,7 +632,7 @@ unitSetSymbol =
 
 inSetSymbol :: Internal.Symbol
 inSetSymbol =
-    symbol "inSet" [intSort, setSort] boolSort & hook "SET.in"
+    symbol "inSet" [testSort, setSort] boolSort & hook "SET.in"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
@@ -1243,7 +1243,7 @@ inSet
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-inSet e s = Internal.mkApplySymbol inSetSymbol [e, s]
+inSet element set = Internal.mkApplySymbol inSetSymbol [element, set]
 
 opaqueSet
     :: InternalVariable variable

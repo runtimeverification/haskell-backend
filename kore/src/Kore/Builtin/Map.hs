@@ -598,4 +598,8 @@ unifyNotInKeys
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyNotInKeys = Set.unifyNotInKeys matchInKeys (inject . InKeys)
+unifyNotInKeys =
+    Set.unifyNotInKeys
+        (Ac.toNormalized @Domain.NormalizedMap)
+        matchInKeys
+        (inject . InKeys)

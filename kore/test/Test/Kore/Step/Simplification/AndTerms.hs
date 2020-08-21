@@ -9,14 +9,11 @@ module Test.Kore.Step.Simplification.AndTerms
 
 import Prelude.Kore
 
-import Kore.Unparser
-
 import Test.Tasty
 
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -37,7 +34,6 @@ import Kore.Internal.Predicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeMultipleAndPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
@@ -71,9 +67,6 @@ import Kore.Syntax.Sentence
 import qualified Kore.Unification.UnifierT as Monad.Unify
 
 import Test.Kore
-import Test.Kore.Builtin.Definition
-    ( inSetSymbol
-    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -1290,7 +1283,7 @@ test_equalsTermsSimplification =
                                     (Mock.f (mkElemVar Mock.x))
                                 )
                                 ( makeEqualsPredicate_
-                                    (mkElemVar Mock.y)
+                                    ( mkElemVar Mock.y )
                                     ( Mock.f (mkElemVar Mock.x) )
                                 )
                             )
@@ -1310,6 +1303,17 @@ test_equalsTermsSimplification =
                         )
                     )
             assertEqual "" (Just [expect]) actual
+        ]
+    , testGroup "setbuiltin Set"
+        [ testCase "\\equals(false, X in []) = \\top" $ do
+            let expect = Condition.top
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    (Mock.inSet (mkElemVar Mock.x) (Mock.builtinSet []))
+            assertEqual "" (Just [expect]) actual
+
         ]
     ]
 
