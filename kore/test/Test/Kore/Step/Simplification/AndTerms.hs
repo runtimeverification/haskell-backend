@@ -1239,7 +1239,7 @@ test_equalsTermsSimplification =
                     )
             assertEqual "" (Just [expect]) actual
         , testCase
-            "\\equals(false, X in [Y Z])\
+            "\\equals(false, X in [(Y, a),  (Z, a)])\
             \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
             \ \\and \\not \\equals(Y, Z)"
             $ do
@@ -1274,7 +1274,7 @@ test_equalsTermsSimplification =
                             )
                         )
                 assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, f(X) in [Y]) = \\not \\equals(f(X), Y)" $ do
+        , testCase "\\equals(false, f(X) in [(Y, a)]) = \\not \\equals(f(X), Y)" $ do
             let expect =
                     makeAndPredicate
                         ( makeNotPredicate
