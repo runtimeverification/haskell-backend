@@ -613,7 +613,7 @@ unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
 concatSetSymbol :: Symbol
 concatSetSymbol =
     symbol concatSetId [setSort, setSort] setSort
-    & functional & hook "SET.concat"
+    & function & hook "SET.concat"
 
 elementSetSymbol :: Symbol
 elementSetSymbol =
