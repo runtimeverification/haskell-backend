@@ -1212,7 +1212,7 @@ test_equalsTermsSimplification =
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
             assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, X in []) = \\top" $ do
+        , testCase "no keys in empty Map" $ do
             let expect = Condition.top
             actual <-
                 simplifyEquals
@@ -1220,7 +1220,7 @@ test_equalsTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)" $ do
+        , testCase "key not in singleton Map" $ do
             let expect =
                     makeEqualsPredicate_
                         (mkElemVar Mock.x)
@@ -1238,11 +1238,7 @@ test_equalsTermsSimplification =
                         )
                     )
             assertEqual "" (Just [expect]) actual
-        , testCase
-            "\\equals(false, X in [(Y, a),  (Z, a)])\
-            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
-            \ \\and \\not \\equals(Y, Z)"
-            $ do
+        , testCase "key not in two-element Map" $ do
                 let expect =
                         foldr1
                             makeAndPredicate
@@ -1274,7 +1270,7 @@ test_equalsTermsSimplification =
                             )
                         )
                 assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, f(X) in [(Y, a)]) = \\not \\equals(f(X), Y)" $ do
+        , testCase "unevaluated function key in singleton Map" $ do
             let expect =
                     makeAndPredicate
                         ( makeNotPredicate
