@@ -596,7 +596,7 @@ elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
-    binarySymbol "concatSet" setSort & hook "SET.concat" & functional
+    binarySymbol "concatSet" setSort & hook "SET.concat" & function
 
 concatSet
     :: TermLike VariableName
