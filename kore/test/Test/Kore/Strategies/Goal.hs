@@ -43,6 +43,7 @@ import Kore.Strategies.Goal
     ( CheckImplicationResult (..)
     , checkImplicationWorker
     )
+import qualified Logic
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -58,7 +59,7 @@ test_checkImplication =
             existentials = [Mock.y]
         actual <-
             checkImplication (mkGoal config dest existentials)
-        assertEqual "" Implied actual
+        assertEqual "" [Implied] actual
     , testCase "Constructors do not unify" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest = Mock.b & OrPattern.fromTermLike
@@ -66,7 +67,7 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <-
             checkImplication goal
-        assertEqual "" (NotImplied goal) actual
+        assertEqual "" [NotImplied goal] actual
     , testCase "Variable unification, conditions match" $ do
         let config =
                 Pattern.withCondition
@@ -86,7 +87,7 @@ test_checkImplication =
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" Implied actual
+        assertEqual "" [Implied] actual
     , testCase "Variable unification, conditions don't match" $ do
         let config =
                 Pattern.withCondition
@@ -106,7 +107,7 @@ test_checkImplication =
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" (NotImpliedStuck goal) actual
+        assertEqual "" [NotImpliedStuck goal] actual
     , testCase "Function unification, definedness condition and remainder" $ do
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
@@ -133,7 +134,7 @@ test_checkImplication =
             stuckGoal =
                 mkGoal stuckConfig dest existentials
         actual <- checkImplicationNoSMT goal
-        assertEqual "" (NotImpliedStuck stuckGoal) actual
+        assertEqual "" [NotImpliedStuck stuckGoal] actual
     , testCase "Branching RHS" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
@@ -144,7 +145,7 @@ test_checkImplication =
             existentials = []
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" Implied actual
+        assertEqual "" [Implied] actual
     , testCase "Branching RHS with condition 1" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
@@ -165,7 +166,7 @@ test_checkImplication =
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" Implied actual
+        assertEqual "" [Implied] actual
     , testCase "Branching RHS with condition 2" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
@@ -185,7 +186,7 @@ test_checkImplication =
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" Implied actual
+        assertEqual "" [Implied] actual
     ]
 
 mkGoal
@@ -203,10 +204,16 @@ mkGoal
     claimPattern leftPatt rightPatts existentialVars
 
 
-checkImplication :: ClaimPattern -> IO (CheckImplicationResult ClaimPattern)
-checkImplication =
-    runSimplifier Mock.env . checkImplicationWorker
+checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
+checkImplication claim =
+    checkImplicationWorker claim
+    & Logic.observeAllT
+    & runSimplifier Mock.env
 
-checkImplicationNoSMT :: ClaimPattern -> IO (CheckImplicationResult ClaimPattern)
-checkImplicationNoSMT =
-    runSimplifierNoSMT Mock.env . checkImplicationWorker
+checkImplicationNoSMT
+    :: ClaimPattern
+    -> IO [CheckImplicationResult ClaimPattern]
+checkImplicationNoSMT claim =
+    checkImplicationWorker claim
+    & Logic.observeAllT
+    & runSimplifierNoSMT Mock.env

@@ -187,6 +187,7 @@ import Kore.Unparser
 import qualified Kore.Verified as Verified
 import Logic
     ( LogicT
+    , MonadLogic
     )
 import qualified Logic
 import qualified Pretty
@@ -220,7 +221,8 @@ class Goal goal where
 
     checkImplication
         :: MonadSimplify m
-        => goal -> m (CheckImplicationResult goal)
+        => goal
+        -> LogicT m (CheckImplicationResult goal)
 
     simplify
         :: MonadSimplify m
@@ -571,7 +573,7 @@ transitionRule claims axiomGroups = transitionRuleWorker
         GoalRemainder <$> simplify goal
 
     transitionRuleWorker CheckImplication (Goal goal) = do
-        result <- checkImplication goal
+        result <- checkImplication goal & Logic.lowerLogicT
         case result of
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
@@ -579,7 +581,7 @@ transitionRule claims axiomGroups = transitionRuleWorker
             Implied -> pure Proven
             NotImplied a -> pure (Goal a)
     transitionRuleWorker CheckImplication (GoalRemainder goal) = do
-        result <- checkImplication goal
+        result <- checkImplication goal & Logic.lowerLogicT
         case result of
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
@@ -691,7 +693,7 @@ instance (Diff goal, Debug goal, SOP.HasDatatypeInfo goal) =>
 -- | Remove the destination of the goal.
 checkImplication'
     :: forall goal m
-    .  MonadSimplify m
+    .  (MonadLogic m, MonadSimplify m)
     => Lens' goal ClaimPattern
     -> goal
     -> m (CheckImplicationResult goal)
@@ -812,7 +814,7 @@ assertFunctionLikeConfiguration claimPattern
 
 checkImplicationWorker
     :: forall m
-    .  MonadSimplify m
+    .  (MonadLogic m, MonadSimplify m)
     => ClaimPattern
     -> m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
