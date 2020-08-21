@@ -437,7 +437,7 @@ elementMapSymbol =
 
 concatMapSymbol :: Internal.Symbol
 concatMapSymbol =
-    binarySymbol "concatMap" mapSort & hook "MAP.concat" & functional
+    binarySymbol "concatMap" mapSort & hook "MAP.concat" & function
 
 inKeysMapSymbol :: Internal.Symbol
 inKeysMapSymbol =
