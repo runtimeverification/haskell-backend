@@ -87,7 +87,7 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" Implied actual
-    , testCase "???is this right? Variable unification, conditions don't match" $ do
+    , testCase "Variable unification, conditions don't match" $ do
         let config =
                 Pattern.withCondition
                     (mkElemVar Mock.x)
@@ -145,7 +145,7 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" Implied actual
-    , testCase "Branching RHS with condition" $ do
+    , testCase "Branching RHS with condition 1" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
                 [ Pattern.fromTermAndPredicate
@@ -166,7 +166,7 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" Implied actual
-    , testCase "TESTING Branching RHS with condition" $ do
+    , testCase "Branching RHS with condition 2" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
                 Pattern.fromTermAndPredicate

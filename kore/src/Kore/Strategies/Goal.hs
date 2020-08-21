@@ -806,8 +806,9 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern)
         when (isBottom unificationResults) (succeed . NotImplied $ claimPattern)
         removal <-
             removalPatterns sideCondition left existentials unificationResults
+        let removalConditions = MultiOr.map Pattern.withoutTerm removal
+        when (isTop removalConditions) (succeed . NotImplied $ claimPattern)
         when (isBottom removal) (succeed Implied)
-        when (isTop removal) (succeed . NotImplied $ claimPattern)
         let stuckConfiguration = OrPattern.toPattern removal
         claimPattern
             & Lens.set (field @"left") stuckConfiguration
