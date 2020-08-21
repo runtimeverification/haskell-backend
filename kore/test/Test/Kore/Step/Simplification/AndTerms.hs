@@ -1304,7 +1304,7 @@ test_equalsTermsSimplification =
                     )
             assertEqual "" (Just [expect]) actual
         ]
-    , testGroup "setbuiltin Set"
+    , testGroup "builtin Set"
         [ testCase "\\equals(false, X in []) = \\top" $ do
             let expect = Condition.top
             actual <-
