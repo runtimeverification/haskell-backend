@@ -176,9 +176,8 @@ decidePredicate predicates =
     $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         predicates' <- traverse (translatePredicate tools) predicates
-        result <- SMT.withSolver $ do
-            Foldable.traverse_ SMT.assert predicates'
-            SMT.check
+        Foldable.traverse_ SMT.assert predicates'
+        result <- SMT.check
         debugEvaluateConditionResult result
         case result of
             Unsat -> return False
