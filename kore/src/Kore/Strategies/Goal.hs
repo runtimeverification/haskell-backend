@@ -29,18 +29,12 @@ module Kore.Strategies.Goal
 
 import Prelude.Kore
 
-import Control.Error
-    ( ExceptT
-    , runExceptT
-    , throwE
-    )
 import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
-    , (>=>)
     )
 import Control.Monad.Catch
     ( Exception (..)
@@ -82,28 +76,17 @@ import Kore.IndexedModule.IndexedModule
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional
-    , Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -143,10 +126,6 @@ import Kore.Step.Rule
 import Kore.Step.RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.AndPredicates
-    ( simplifyEvaluatedMultiPredicate
-    )
-import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -702,97 +681,6 @@ checkImplication' lensRulePattern goal =
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
 
-type UnificationWithCondition =
-    Conditional RewritingVariableName (OrPattern RewritingVariableName)
-
-unificationProblems
-    :: MonadSimplify m
-    => SideCondition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> OrPattern RewritingVariableName
-    -> LogicT m UnificationWithCondition
-unificationProblems sideCondition configTerm destinations = do
-    destination <- Logic.scatter destinations
-    let (destTerm, destCondition) = Pattern.splitTerm destination
-        configSort = termLikeSort configTerm
-    unificationCondition <-
-        mkIn configSort configTerm destTerm
-            & Pattern.fromTermLike
-            & Pattern.simplify sideCondition
-    return (Conditional.withCondition unificationCondition destCondition)
-
-applyExistentials
-    :: MonadSimplify m
-    => SideCondition RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> MultiOr UnificationWithCondition
-    -> LogicT m (OrPattern RewritingVariableName)
-applyExistentials sideCondition existentials' unificationResults = do
-    (unificationResult, destCondition) <-
-        Logic.scatter unificationResults
-        & fmap Conditional.splitTerm
-    simplifiedDestCondition <-
-        Condition.simplifyCondition sideCondition destCondition
-        & OrPattern.observeAllT
-    mergedUnificationCondition <-
-        simplifyEvaluatedMultiPredicate
-            sideCondition
-            (MultiAnd.make
-                [ MultiOr.map Pattern.withoutTerm unificationResult
-                , simplifiedDestCondition
-                ]
-            )
-        & (fmap . MultiOr.map) Pattern.fromCondition_
-    foldM
-        (Exists.simplifyEvaluated sideCondition & flip)
-        mergedUnificationCondition
-        existentials'
-
-negateExistentialUnificationConditions
-    :: MonadSimplify m
-    => SideCondition RewritingVariableName
-    -> MultiOr (OrPattern RewritingVariableName)
-    -> m (MultiAnd (OrPattern RewritingVariableName))
-negateExistentialUnificationConditions sideCondition existentialUnifConditions = do
-    let unwrappedConditions =
-            MultiOr.extractPatterns existentialUnifConditions
-    negatedConditions <-
-        Logic.observeAllT
-        $ Logic.scatter unwrappedConditions
-        >>= Not.simplifyEvaluated sideCondition
-    return (MultiAnd.make negatedConditions)
-
-simplifyRemovalWithDefinedness
-    :: MonadSimplify m
-    => SideCondition RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> MultiAnd (OrPattern RewritingVariableName)
-    -> m (OrPattern RewritingVariableName)
-simplifyRemovalWithDefinedness sideCondition config removal = do
-    mergedRemoval <-
-        simplifyEvaluatedMultiPredicate
-            sideCondition
-            ((MultiAnd.map . MultiOr.map) Pattern.withoutTerm removal)
-    let definedConfig =
-            Pattern.andCondition config
-            $ from $ makeCeilPredicate_ (Conditional.term config)
-        configAndRemoval = MultiOr.map (definedConfig <*) mergedRemoval
-    simplifyConditionsWithSmt
-        sideCondition
-        configAndRemoval
-
-removalPatterns
-    :: MonadSimplify m
-    => SideCondition RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> MultiOr UnificationWithCondition
-    -> m (OrPattern RewritingVariableName)
-removalPatterns sideCondition config existentials' =
-    OrPattern.observeAllT . applyExistentials sideCondition existentials'
-    >=> negateExistentialUnificationConditions sideCondition
-    >=> simplifyRemovalWithDefinedness sideCondition config
-
 assertFunctionLikeConfiguration
     :: forall m
     .  Monad m
@@ -819,27 +707,20 @@ checkImplicationWorker
     -> m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     do
-        assertFunctionLikeConfiguration claimPattern
-        unificationResults <-
-            unificationProblems sideCondition leftTerm right'
-                & MultiOr.observeAllT
-                & lift
-        when (isBottom unificationResults) (succeed . NotImplied $ claimPattern)
-        removal <-
-            removalPatterns sideCondition left existentials unificationResults
-        let removalConditions = MultiOr.map Pattern.withoutTerm removal
-        when (isTop removalConditions) (succeed . NotImplied $ claimPattern)
-        when (isBottom removal) (succeed Implied)
-        let stuckConfiguration = OrPattern.toPattern removal
-        claimPattern
-            & Lens.set (field @"left") stuckConfiguration
-            & NotImpliedStuck
-            & pure
-    & run
+        removal <- removals
+        let definedConfig =
+                Pattern.andCondition left
+                $ from $ makeCeilPredicate_ leftTerm
+        let configs' = MultiOr.map (definedConfig <*) removal
+        stuck <-
+            simplifyConditionsWithSmt sideCondition configs'
+            >>= Logic.scatter
+        pure (examine stuck)
+    & elseImplied
   where
     ClaimPattern { right, left, existentials } = claimPattern
     leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
-    right' =
+    rights' =
         MultiOr.map
             (ClaimPattern.topExistsToImplicitForall
                 leftFreeVars
@@ -847,16 +728,43 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
             )
             right
     leftTerm = Pattern.term left
+    sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
     sideCondition =
         SideCondition.assumeTrueCondition
             (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-    succeed :: r -> ExceptT r m a
-    succeed = throwE
+    removals :: m (OrPattern RewritingVariableName)
+    removals =
+        do
+            assertFunctionLikeConfiguration claimPattern
+            right' <- Logic.scatter rights'
+            let (rightTerm, rightCondition) = Pattern.splitTerm right'
+            unifieds <-
+                mkIn sort leftTerm rightTerm
+                & Pattern.fromTermLike
+                & Pattern.simplify sideCondition
+            unified <- Logic.scatter unifieds
+            removeds <-
+                Pattern.andCondition unified rightCondition
+                & Pattern.simplify sideCondition
+            removed <- Logic.scatter removeds
+            quantifieds <- Exists.makeEvaluate sideCondition existentials removed
+            Logic.scatter quantifieds
+        & OrPattern.observeAllT
+        & (>>= Not.simplifyEvaluated sideCondition)
 
-    run :: ExceptT r m r -> m r
-    run acts = runExceptT acts >>= either pure pure
+    elseImplied acts = Logic.ifte acts pure (pure Implied)
+
+    examine
+        :: Pattern RewritingVariableName
+        -> CheckImplicationResult ClaimPattern
+    examine stuck@(Pattern.splitTerm -> (_, condition))
+      | isBottom condition = Implied
+      | isTop condition = NotImplied claimPattern
+      | otherwise =
+        Lens.set (field @"left") stuck claimPattern
+        & NotImpliedStuck
 
 simplify'
     :: MonadSimplify m
