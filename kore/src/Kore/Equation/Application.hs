@@ -381,6 +381,7 @@ checkRequires sideCondition predicate requires =
         throwE CheckRequiresError
             { matchPredicate = predicate
             , equationRequires = requires
+            , sideCondition
             }
 
     -- Pair a configuration with sideCondition for evaluation by the solver.
@@ -470,7 +471,9 @@ instance SOP.HasDatatypeInfo (AttemptEquationError variable)
 
 instance Debug variable => Debug (AttemptEquationError variable)
 
-instance (Debug variable, Diff variable) => Diff (AttemptEquationError variable)
+instance
+    (InternalVariable variable, Diff variable)
+    => Diff (AttemptEquationError variable)
 
 instance
     InternalVariable variable
@@ -659,6 +662,7 @@ data CheckRequiresError variable =
     CheckRequiresError
     { matchPredicate :: !(Predicate variable)
     , equationRequires :: !(Predicate variable)
+    , sideCondition :: !(SideCondition variable)
     }
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
@@ -669,16 +673,23 @@ instance SOP.HasDatatypeInfo (CheckRequiresError variable)
 
 instance Debug variable => Debug (CheckRequiresError variable)
 
-instance (Debug variable, Diff variable) => Diff (CheckRequiresError variable)
+instance
+    (InternalVariable variable, Diff variable)
+    => Diff (CheckRequiresError variable)
 
 instance InternalVariable variable => Pretty (CheckRequiresError variable) where
-    pretty CheckRequiresError { matchPredicate, equationRequires } =
+    pretty checkRequiresError =
         Pretty.vsep
         [ "could not infer the equation requirement:"
         , Pretty.indent 4 (unparse equationRequires)
         , "and the matching requirement:"
         , Pretty.indent 4 (unparse matchPredicate)
+        , "from the side condition:"
+        , Pretty.indent 4 (unparse sideCondition)
         ]
+      where
+        CheckRequiresError { matchPredicate, equationRequires, sideCondition } =
+            checkRequiresError
 
 mapCheckRequiresErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -689,10 +700,12 @@ mapCheckRequiresErrorVariables adj checkRequiresError =
     CheckRequiresError
     { matchPredicate = mapPredicateVariables matchPredicate
     , equationRequires = mapPredicateVariables equationRequires
+    , sideCondition = SideCondition.mapVariables adj sideCondition
     }
   where
     mapPredicateVariables = Predicate.mapVariables adj
-    CheckRequiresError { matchPredicate, equationRequires } = checkRequiresError
+    CheckRequiresError { matchPredicate, equationRequires, sideCondition } =
+        checkRequiresError
 
 -- * Logging
 

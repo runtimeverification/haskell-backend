@@ -57,6 +57,8 @@ import Data.Reflection
     ( Given
     )
 import qualified Data.Reflection as Reflection
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
@@ -67,6 +69,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
+import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -95,6 +98,7 @@ import Kore.Internal.TermLike
     ( pattern App_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
+    , pattern Defined_
     , pattern ElemVar_
     , TermLike
     , mkApplySymbol
@@ -152,7 +156,8 @@ class
     @
     -}
     toNormalized
-        :: Ord variable
+        :: HasCallStack
+        => Ord variable
         => TermLike variable
         -> NormalizedOrBottom normalized variable
 
@@ -185,6 +190,7 @@ instance TermWrapper Domain.NormalizedMap where
 
     matchBuiltin (BuiltinMap_ internalMap) =
         Just (Domain.builtinAcChild internalMap)
+    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
@@ -226,6 +232,7 @@ instance TermWrapper Domain.NormalizedMap where
         case args of
             [map1, map2] -> toNormalized map1 <> toNormalized map2
             _ -> Builtin.wrongArity "MAP.concat"
+    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
             { elementsWithVariables = []
@@ -251,6 +258,7 @@ instance TermWrapper Domain.NormalizedSet where
 
     matchBuiltin (BuiltinSet_ internalSet) =
         Just (Domain.builtinAcChild internalSet)
+    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
@@ -291,12 +299,10 @@ instance TermWrapper Domain.NormalizedSet where
         case args of
             [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "SET.concat"
+    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
-        (Normalized . Domain.wrapAc) Domain.NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements = Map.empty
-            , opaque = [patt]
-            }
+        (Normalized . Domain.wrapAc)
+        Domain.emptyNormalizedAc { Domain.opaque = [patt] }
 
     simplifiedAttributeValue Domain.SetValue = mempty
 
@@ -333,6 +339,7 @@ also allows bottom values.
 data NormalizedOrBottom collection variable
     = Normalized (TermNormalizedAc collection variable)
     | Bottom
+    deriving (GHC.Generic)
 
 deriving instance
     Eq (TermNormalizedAc collection variable)
@@ -345,6 +352,20 @@ deriving instance
 deriving instance
     Show (TermNormalizedAc collection variable)
     => Show (NormalizedOrBottom collection variable)
+
+instance SOP.Generic (NormalizedOrBottom collection variable)
+
+instance SOP.HasDatatypeInfo (NormalizedOrBottom collection variable)
+
+instance
+    Debug (collection (TermLike Concrete) (TermLike variable))
+    => Debug (NormalizedOrBottom collection variable)
+
+instance
+    ( Debug (collection (TermLike Concrete) (TermLike variable))
+    , Diff (collection (TermLike Concrete) (TermLike variable))
+    )
+    => Diff (NormalizedOrBottom collection variable)
 
 {- | The semigroup defined by the `concat` operation.
 -}
@@ -400,7 +421,8 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: (TermWrapper normalized, Ord variable)
+    :: HasCallStack
+    => (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
@@ -422,7 +444,8 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: Map (TermLike Concrete) value
+    :: HasCallStack
+    => Map (TermLike Concrete) value
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
@@ -450,7 +473,8 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: (TermWrapper normalized, Ord variable)
+    :: HasCallStack
+    => (TermWrapper normalized, Ord variable)
     => normalized (TermLike Concrete) (TermLike variable)
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
@@ -704,6 +728,7 @@ unifyEqualsNormalized
         , TermWrapper normalized
         , MonadUnify unifier
         )
+    => HasCallStack
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -771,7 +796,8 @@ unifyEqualsNormalized
     sort1 = termLikeSort first
 
     normalize1
-        :: TermLike variable
+        :: HasCallStack
+        => TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized patt of
