@@ -1313,7 +1313,83 @@ test_equalsTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inSet (mkElemVar Mock.x) (Mock.builtinSet []))
             assertEqual "" (Just [expect]) actual
-
+        , testCase "\\equals(false, X in [Y]) = \\not \\equals(X, Y)" $ do
+            let expect =
+                    makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.y)
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x)
+                        ( Mock.builtinSet [mkElemVar Mock.y] )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase
+            "\\equals(false, X in [Y Z])\
+            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
+            \ \\and \\not \\equals(Y, Z)"
+            $ do
+                let expect =
+                        foldr1
+                            makeAndPredicate
+                            [ makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.y)
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.z)
+                            -- Definedness condition
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    (mkElemVar Mock.z)
+                            ]
+                        & Condition.fromPredicate
+                actual <-
+                    simplifyEquals
+                        mempty
+                        (Mock.builtinBool False)
+                        ( Mock.inSet
+                            ( mkElemVar Mock.x )
+                            ( Mock.builtinSet
+                                [ mkElemVar Mock.y , mkElemVar Mock.z ]
+                            )
+                        )
+                assertEqual "" (Just [expect]) actual
+        , testCase "\\equals(false, f(X) in [Y]) = \\not \\equals(f(X), Y)" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
+                                ( makeCeilPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                )
+                                ( makeEqualsPredicate_
+                                    ( mkElemVar Mock.y )
+                                    ( Mock.f (mkElemVar Mock.x) )
+                                )
+                            )
+                        )
+                        ( makeCeilPredicate Mock.testSort
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inSet
+                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.builtinSet [mkElemVar Mock.y] )
+                    )
+            assertEqual "" (Just [expect]) actual
         ]
     ]
 
