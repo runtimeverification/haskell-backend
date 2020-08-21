@@ -573,7 +573,7 @@ elementMapSymbol =
 concatMapSymbol :: Symbol
 concatMapSymbol =
     symbol concatMapId [mapSort, mapSort] mapSort
-    & functional & hook "MAP.concat"
+    & function & hook "MAP.concat"
 
 opaqueMapSymbol :: Symbol
 opaqueMapSymbol =
