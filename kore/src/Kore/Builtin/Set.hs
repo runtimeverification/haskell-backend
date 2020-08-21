@@ -697,23 +697,25 @@ unifyNotInKeys matchInKeys inject' unifyChildren (NotSimplifier notSimplifier) a
                 <$> Domain.getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
             opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+        if null mapKeys && null opaqueElements then
+            return Pattern.top
+        else do
+            Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
+            -- Concrete keys are constructor-like, therefore they are defined
+            TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+            definedKey <- defineTerm keyTerm
+            definedMap <- defineTerm mapTerm
+            keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
 
-        Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-        -- Concrete keys are constructor-like, therefore they are defined
-        TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-        definedKey <- defineTerm keyTerm
-        definedMap <- defineTerm mapTerm
-        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
+            let keyInKeysOpaque =
+                    (\term -> inject' inKeys { mapTerm = term })
+                    <$> opaqueElements
 
-        let keyInKeysOpaque =
-                (\term -> inject' inKeys { mapTerm = term })
-                <$> opaqueElements
-
-        opaqueConditions <-
-            lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-        let conditions =
-                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                <> [definedKey, definedMap]
-        return $ collectConditions conditions
+            opaqueConditions <-
+                lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
+            let conditions =
+                    fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
+                    <> [definedKey, definedMap]
+            return $ collectConditions conditions
 
     worker _ _ = empty

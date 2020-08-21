@@ -16,10 +16,10 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
@@ -33,11 +33,13 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeTruePredicate
     , makeMultipleAndPredicate
+    , makeNotPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -69,11 +71,11 @@ import Kore.Syntax.Sentence
 import qualified Kore.Unification.UnifierT as Monad.Unify
 
 import Test.Kore
-import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Kore.Builtin.Definition
     ( inSetSymbol
     )
+import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_andTermsSimplification :: [TestTree]
@@ -1061,17 +1063,6 @@ test_andTermsSimplification =
                 )
                 testSet
             assertEqual "" expected actual
-        , testCase "qq" $ do
-            let expect =
-                    (\x -> (x, x)) undefined
-            actual <-
-                simplifyUnify
-                    (Mock.builtinBool False)
-                    (Mock.inSet (mkElemVar Mock.xInt) Mock.unitSet)
-            traceM $ show (length (fst actual)) <> " List:\n"
-            Foldable.traverse_ (traceM . unparseToString) (fst actual)
-            Foldable.traverse_ (traceM . unparseToString) (snd actual)
-            assertEqual "" expect actual
         ]
     , testGroup "alias expansion"
         [ testCase "alias() vs top" $ do
@@ -1227,6 +1218,97 @@ test_equalsTermsSimplification =
                     makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
+            assertEqual "" (Just [expect]) actual
+        , testCase "\\equals(false, X in []) = \\top" $ do
+            let expect = Condition.top
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
+            assertEqual "" (Just [expect]) actual
+        , testCase "\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)" $ do
+            let expect =
+                    makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.y)
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inKeysMap
+                        ( mkElemVar Mock.x)
+                        ( Mock.builtinMap
+                            [ ( mkElemVar Mock.y, Mock.a ) ]
+                        )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase
+            "\\equals(false, X in [Y Z])\
+            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
+            \ \\and \\not \\equals(Y, Z)"
+            $ do
+                let expect =
+                        foldr1
+                            makeAndPredicate
+                            [ makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.y)
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.z)
+                            -- Definedness condition
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    (mkElemVar Mock.z)
+                            ]
+                        & Condition.fromPredicate
+                actual <-
+                    simplifyEquals
+                        mempty
+                        (Mock.builtinBool False)
+                        ( Mock.inKeysMap
+                            ( mkElemVar Mock.x )
+                            ( Mock.builtinMap
+                                [ ( mkElemVar Mock.y, Mock.a )
+                                , ( mkElemVar Mock.z, Mock.a )
+                                ]
+                            )
+                        )
+                assertEqual "" (Just [expect]) actual
+        , testCase "\\equals(false, f(X) in [Y]) = \\not \\equals(f(X), Y)" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
+                                ( makeCeilPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                )
+                                ( makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    ( Mock.f (mkElemVar Mock.x) )
+                                )
+                            )
+                        )
+                        ( makeCeilPredicate Mock.testSort
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inKeysMap
+                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.builtinMap
+                            [ (mkElemVar Mock.y, Mock.a ) ]
+                        )
+                    )
             assertEqual "" (Just [expect]) actual
         ]
     ]
