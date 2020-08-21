@@ -731,7 +731,6 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    -- TODO: is this really needed?
     claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
