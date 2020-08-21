@@ -862,12 +862,13 @@ simplify' lensClaimPattern goal = do
                 $ leftCondition
                 )
     simplifiedDestination <-
-        traverse (Pattern.simplify requiresSideCondition) destination
-        & fmap OrPattern.flatten
+        OrPattern.observeAllT
+        $ Logic.scatter destination
+        >>= Pattern.simplify requiresSideCondition
     let goal' =
             Lens.set
             (lensClaimPattern . field @"right")
-            simplifiedDestination
+            (OrPattern.flatten simplifiedDestination)
             goal
     simplifyLeftHandSide goal'
   where
