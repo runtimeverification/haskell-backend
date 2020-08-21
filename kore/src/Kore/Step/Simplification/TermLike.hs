@@ -10,11 +10,11 @@ module Kore.Step.Simplification.TermLike
 import Prelude.Kore
 
 import qualified Control.Lens.Combinators as Lens
-import Data.Functor.Const
-import qualified Data.Functor.Foldable as Recursive
 import Control.Monad.Catch
     ( MonadThrow
     )
+import Data.Functor.Const
+import qualified Data.Functor.Foldable as Recursive
 
 import Kore.Attribute.Pattern.FreeVariables
     ( freeVariables
