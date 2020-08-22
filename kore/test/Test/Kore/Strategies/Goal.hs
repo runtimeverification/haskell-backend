@@ -79,6 +79,17 @@ test_checkImplication =
         actual <-
             checkImplication goal
         assertEqual "" [NotImplied goal] actual
+    , testCase "does not unify, with right condition" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                Pattern.withCondition Mock.b
+                    (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a & from)
+                & OrPattern.fromPattern
+            existentials = [Mock.x]
+            goal = mkGoal config dest existentials
+        actual <-
+            checkImplication goal
+        assertEqual "" [NotImplied goal] actual
     , testCase "Variable unification, conditions match" $ do
         let config =
                 Pattern.withCondition
