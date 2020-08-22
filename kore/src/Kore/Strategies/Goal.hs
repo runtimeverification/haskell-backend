@@ -40,6 +40,12 @@ import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
     )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    , runStateT
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
@@ -51,6 +57,7 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
+import qualified Data.Monoid as Monoid
 import Data.Stream.Infinite
     ( Stream (..)
     )
@@ -157,7 +164,6 @@ import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( isBottom
-    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
@@ -700,6 +706,10 @@ assertFunctionLikeConfiguration claimPattern
     ClaimPattern { left } = claimPattern
     leftTerm = Pattern.term left
 
+newtype AnyUnified = AnyUnified { didAnyUnify :: Bool }
+    deriving stock (Eq, Ord, Read, Show)
+    deriving (Semigroup, Monoid) via Monoid.Any
+
 checkImplicationWorker
     :: forall m
     .  (MonadLogic m, MonadSimplify m)
@@ -707,7 +717,7 @@ checkImplicationWorker
     -> m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     do
-        removal <- removals
+        (anyUnified, removal) <- removals
         let definedConfig =
                 Pattern.andCondition left
                 $ from $ makeCeilPredicate_ leftTerm
@@ -715,7 +725,7 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
         stuck <-
             simplifyConditionsWithSmt sideCondition configs'
             >>= Logic.scatter
-        pure (examine stuck)
+        pure (examine anyUnified stuck)
     & elseImplied
   where
     ClaimPattern { right, left, existentials } = claimPattern
@@ -734,37 +744,48 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
         SideCondition.assumeTrueCondition
             (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-    removals :: m (OrPattern RewritingVariableName)
+    removals :: m (AnyUnified, OrPattern RewritingVariableName)
     removals =
         do
             assertFunctionLikeConfiguration claimPattern
             right' <- Logic.scatter rights'
             let (rightTerm, rightCondition) = Pattern.splitTerm right'
-            unifieds <-
+            unified <-
                 mkIn sort leftTerm rightTerm
                 & Pattern.fromTermLike
                 & Pattern.simplify sideCondition
-            unified <- Logic.scatter unifieds
-            removeds <-
+                & (>>= Logic.scatter)
+            didUnify
+            removed <-
                 Pattern.andCondition unified rightCondition
                 & Pattern.simplify sideCondition
-            removed <- Logic.scatter removeds
-            quantifieds <- Exists.makeEvaluate sideCondition existentials removed
-            Logic.scatter quantifieds
+                & (>>= Logic.scatter)
+            Exists.makeEvaluate sideCondition existentials removed
+                >>= Logic.scatter
         & OrPattern.observeAllT
         & (>>= Not.simplifyEvaluated sideCondition)
+        & wereAnyUnified
+
+    wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
+    wereAnyUnified act = swap <$> runStateT act mempty
+
+    didUnify :: MonadState AnyUnified state => state ()
+    didUnify = State.put (AnyUnified True)
 
     elseImplied acts = Logic.ifte acts pure (pure Implied)
 
     examine
-        :: Pattern RewritingVariableName
+        :: AnyUnified
+        -> Pattern RewritingVariableName
         -> CheckImplicationResult ClaimPattern
-    examine stuck@(Pattern.splitTerm -> (_, condition))
+    examine AnyUnified { didAnyUnify } stuck
+      | not didAnyUnify = NotImplied claimPattern
       | isBottom condition = Implied
-      | isTop condition = NotImplied claimPattern
       | otherwise =
         Lens.set (field @"left") stuck claimPattern
         & NotImpliedStuck
+      where
+        (_, condition) = Pattern.splitTerm stuck
 
 simplify'
     :: MonadSimplify m
