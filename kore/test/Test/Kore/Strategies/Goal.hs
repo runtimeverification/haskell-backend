@@ -20,6 +20,7 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeExistsPredicate
     , makeNotPredicate
     , makeOrPredicate
@@ -60,8 +61,18 @@ test_checkImplication =
         actual <-
             checkImplication (mkGoal config dest existentials)
         assertEqual "" [Implied] actual
-    , testCase "Constructors do not unify" $ do
+    , testCase "does not unify" $ do
         let config = Mock.a & Pattern.fromTermLike
+            dest = Mock.b & OrPattern.fromTermLike
+            existentials = []
+            goal = mkGoal config dest existentials
+        actual <-
+            checkImplication goal
+        assertEqual "" [NotImplied goal] actual
+    , testCase "does not unify, with left condition" $ do
+        let config =
+                Pattern.withCondition Mock.a
+                    (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a & from)
             dest = Mock.b & OrPattern.fromTermLike
             existentials = []
             goal = mkGoal config dest existentials
