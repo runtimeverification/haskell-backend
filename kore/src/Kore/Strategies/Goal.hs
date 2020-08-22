@@ -716,7 +716,7 @@ checkImplicationWorker
     -> m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     do
-        (anyUnified, removal) <- removals
+        (anyUnified, removal) <- getNegatedConjuncts
         let definedConfig =
                 Pattern.andCondition left
                 $ from $ makeCeilPredicate_ leftTerm
@@ -735,8 +735,8 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
         SideCondition.assumeTrueCondition
             (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-    removals :: m (AnyUnified, OrPattern RewritingVariableName)
-    removals =
+    getNegatedConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
+    getNegatedConjuncts =
         do
             assertFunctionLikeConfiguration claimPattern
             right' <- Logic.scatter right
