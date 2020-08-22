@@ -120,7 +120,6 @@ import Kore.Step.ClaimPattern
     , getConfiguration
     , getDestination
     )
-import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -729,14 +728,6 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     & elseImplied
   where
     ClaimPattern { right, left, existentials } = claimPattern
-    leftFreeVars = ClaimPattern.freeVariablesLeft claimPattern
-    rights' =
-        MultiOr.map
-            (ClaimPattern.topExistsToImplicitForall
-                leftFreeVars
-                existentials
-            )
-            right
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
@@ -748,7 +739,7 @@ checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
     removals =
         do
             assertFunctionLikeConfiguration claimPattern
-            right' <- Logic.scatter rights'
+            right' <- Logic.scatter right
             let (rightTerm, rightCondition) = Pattern.splitTerm right'
             unified <-
                 mkIn sort leftTerm rightTerm
