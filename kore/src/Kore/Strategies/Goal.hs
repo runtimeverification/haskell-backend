@@ -710,6 +710,59 @@ newtype AnyUnified = AnyUnified { didAnyUnify :: Bool }
     deriving stock (Eq, Ord, Read, Show)
     deriving (Semigroup, Monoid) via Monoid.Any
 
+{- | Check the claim by direct implication.
+
+The claim has the form
+
+@
+φ(X) → ∘ ∃ Y. ⋁ᵢ ψᵢ(X, Y)
+@
+
+where @∘ _@ is a modality in reachability logic. @φ@ and the @ψᵢ@ are assumed to
+be function-like patterns. @X@ and @Y@ are disjoint families of
+variables. @checkImplicationWorker@ checks the validity of the formula
+
+@
+⌊ φ(X) → ∃ Y. ⋁ᵢ ψᵢ(X, Y) ⌋
+@
+
+Let @φ(X) = t(X) ∧ P(X)@ and @ψᵢ(X, Y) = tᵢ(X, Y) ∧ Pᵢ(X, Y)@; then the
+implication formula above is valid when
+
+@
+(⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+is unsatisfiable. This predicate basically consists of two parts: a single positive
+conjunct asserting that the left-hand side of the claim is satisfiable:
+
+@
+⌈t(X)⌉ ∧ P(X)
+@
+
+and many negative conjuncts arising from the unification of the left- and
+right-hand sides:
+
+@
+⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)
+@
+
+When the implication formula is valid, @checkImplicationWorker@ returns
+'Implied'. When the implication formula is not valid, we apply the following
+heuristic:
+
+* If any of the unification problems @⌈t(X) ∧ tᵢ(X, Y)⌉@ succeeded,
+  @checkImplicationWorker@ returns 'NotImpliedStuck',
+* otherwise, it returns 'NotImplied'.
+
+Returing 'NotImpliedStuck' has the effect of terminating the proof. This
+heuristic prevents the prover from executing beyond the intended final program
+state ("inventing" programs), but at the cost that it does prevent the prover
+from visiting the final program state twice. In practice, we find that deductive
+proofs should not require the prover to visit the final program state twice,
+anyway.
+
+ -}
 checkImplicationWorker
     :: forall m
     .  (MonadLogic m, MonadSimplify m)
@@ -717,7 +770,7 @@ checkImplicationWorker
     -> m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     do
-        (anyUnified, removal) <- getNegatedConjuncts
+        (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left
                 $ from $ makeCeilPredicate_ leftTerm
@@ -736,8 +789,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         SideCondition.assumeTrueCondition
             (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-    getNegatedConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
-    getNegatedConjuncts =
+    getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
+    getNegativeConjuncts =
         do
             assertFunctionLikeConfiguration claimPattern
             right' <- Logic.scatter right
