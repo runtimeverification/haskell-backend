@@ -10,6 +10,8 @@ module Kore.Step.ClaimPattern
     , freeVariablesRight
     , claimPattern
     , substitute
+    , assertRefreshed
+    , refreshExistentials
     , OnePathRule (..)
     , AllPathRule (..)
     , ReachabilityRule (..)
@@ -18,7 +20,6 @@ module Kore.Step.ClaimPattern
     , termToExistentials
     , getConfiguration
     , getDestination
-    , topExistsToImplicitForall
     , lensClaimPattern
     , mkGoal
     , forgetSimplified
@@ -59,11 +60,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -339,39 +338,6 @@ termToExistentials (TermLike.Exists_ _ v term) =
     fmap (v :) (termToExistentials term)
 termToExistentials term = (term, [])
 
--- | Given a collection of 'FreeVariables', a collection of existentially
--- quantified variables, and a pattern, it converts the existential
--- quantifications at the top of the term to implicit universal quantification,
--- renaming them (if needed) to avoid clashing with the given free variables.
--- This is used when applying claims to the configuration, for each pattern in the
--- claim's RHS disjunction.
-topExistsToImplicitForall
-    :: FreeVariables RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
-topExistsToImplicitForall avoid' existentials' rightPattern =
-    Conditional
-        { term = TermLike.substitute subst right
-        , predicate = Predicate.substitute subst ensuresPredicate
-        , substitution = Substitution.substitute subst ensuresSubstitution
-        }
-  where
-    (right, ensuresCondition) = Pattern.splitTerm rightPattern
-    ensuresPredicate = Pattern.predicate ensuresCondition
-    ensuresSubstitution = Pattern.substitution ensuresCondition
-    avoid = FreeVariables.toNames avoid'
-    bindExistsFreeVariables =
-        freeVariables right <> freeVariables ensuresCondition
-        & FreeVariables.bindVariables
-            (TermLike.mkSomeVariable <$> existentials')
-        & FreeVariables.toNames
-    rename =
-        refreshVariables
-            (avoid <> bindExistsFreeVariables)
-            (Set.fromList $ TermLike.mkSomeVariable <$> existentials')
-    subst = TermLike.mkVar <$> rename
-
 forgetSimplified :: ClaimPattern -> ClaimPattern
 forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
     claimPattern'
@@ -380,6 +346,23 @@ forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
         }
   where
     ClaimPattern { left, right } = claimPattern'
+
+{- | Ensure that the 'ClaimPattern''s bound variables are fresh.
+
+The 'existentials' should not appear free on the left-hand side so that we can
+freely unwrap the right-hand side as needed.
+
+See also: 'refreshExistentials'
+
+ -}
+assertRefreshed :: HasCallStack => ClaimPattern -> a -> a
+assertRefreshed claim@ClaimPattern { existentials } =
+    assert (isFreeOf claim (Set.fromList $ inject <$> existentials))
+
+{- | Refresh the 'existentials' of the 'ClaimPattern'.
+ -}
+refreshExistentials :: ClaimPattern -> ClaimPattern
+refreshExistentials = snd . refreshRule mempty
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathRule =

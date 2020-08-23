@@ -49,7 +49,6 @@ import Kore.Log.ErrorRewritesInstantiation
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , freeVariablesRight
     )
 import qualified Kore.Step.ClaimPattern as Claim
 import qualified Kore.Step.Remainder as Remainder
@@ -156,24 +155,20 @@ finalizeAppliedClaim renamedRule appliedConditions =
     MultiOr.observeAllT
     $ finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
-    ClaimPattern { right, existentials } = renamedRule
-    finalizeAppliedRuleWorker appliedCondition = do
-        rightPattern <- Logic.scatter right
-        -- Combine the initial conditions, the unification conditions, and the
-        -- axiom ensures clause. The axiom requires clause is included by
-        -- unifyRule.
-        let
-            avoidVars =
-                freeVariables appliedCondition
-                <> freeVariablesRight renamedRule
-            finalPattern =
-                Claim.topExistsToImplicitForall
-                    avoidVars
-                    existentials
-                    rightPattern
-            Conditional { predicate = ensures } = finalPattern
-            ensuresCondition = Condition.fromPredicate ensures
-        constructConfiguration appliedCondition ensuresCondition finalPattern
+    ClaimPattern { right } = renamedRule
+    finalizeAppliedRuleWorker appliedCondition =
+        Claim.assertRefreshed renamedRule $ do
+            finalPattern <- Logic.scatter right
+            -- Combine the initial conditions, the unification conditions, and
+            -- the axiom ensures clause. The axiom requires clause is included
+            -- by unifyRule.
+            let
+                Conditional { predicate = ensures } = finalPattern
+                ensuresCondition = Condition.fromPredicate ensures
+            constructConfiguration
+                appliedCondition
+                ensuresCondition
+                finalPattern
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation

@@ -331,11 +331,15 @@ termToAxiomPattern attributes pat =
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
-          | Just constructor <- reachabilityModalityToConstructor op ->
+          | Just constructor <- reachabilityModalityToConstructor op -> do
             let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
-                attributes' = Attribute.mapAxiomVariables (pure mkRuleVariable) attributes
+                attributes' =
+                    Attribute.mapAxiomVariables
+                        (pure mkRuleVariable)
+                        attributes
                 (right', existentials') = ClaimPattern.termToExistentials rhs'
-             in pure $ constructor ClaimPattern
+            pure $ constructor $ ClaimPattern.refreshExistentials
+                ClaimPattern
                 { ClaimPattern.left =
                     Pattern.fromTermAndPredicate
                         lhs

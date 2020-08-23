@@ -120,6 +120,7 @@ import Kore.Step.ClaimPattern
     , getConfiguration
     , getDestination
     )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -714,7 +715,7 @@ checkImplicationWorker
     .  (MonadLogic m, MonadSimplify m)
     => ClaimPattern
     -> m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (snd . Step.refreshRule mempty -> claimPattern) =
+checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     do
         (anyUnified, removal) <- getNegatedConjuncts
         let definedConfig =
