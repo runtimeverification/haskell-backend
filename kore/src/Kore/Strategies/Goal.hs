@@ -81,7 +81,6 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -785,9 +784,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
-    sideCondition =
-        SideCondition.assumeTrueCondition
-            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+    sideCondition = SideCondition.assumeTrueCondition leftCondition
 
     getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
     getNegativeConjuncts =
