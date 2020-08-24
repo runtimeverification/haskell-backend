@@ -518,16 +518,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
                 warnStuckProofStateTermsNotUnifiable
                 pure (GoalRemainder a)
 
-    transitionRuleWorker TriviallyValid (Goal goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten goal)
-      | isTriviallyValid goal =
-          return Proven
-
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
     -- thomas.tuegel: "Here" is in ApplyClaims and ApplyAxioms.
@@ -559,12 +549,11 @@ reachabilityFirstStep =
         [ CheckProven
         , CheckGoalStuck
         , Simplify
-        , TriviallyValid
         , CheckImplication
+        , CheckGoalRemainder
         , ApplyAxioms
         , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 reachabilityNextStep :: Strategy Prim
@@ -573,14 +562,12 @@ reachabilityNextStep =
         [ CheckProven
         , CheckGoalStuck
         , Simplify
-        , TriviallyValid
         , CheckImplication
         , CheckGoalRemainder
         , ApplyClaims
         , ApplyAxioms
         , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 strategy :: Stream (Strategy Prim)

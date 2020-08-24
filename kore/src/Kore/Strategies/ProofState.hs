@@ -43,7 +43,6 @@ data Prim
     | Simplify
     | CheckImplication
     -- ^ Check if the claim's implication is valid.
-    | TriviallyValid
     | ApplyClaims
     | ApplyAxioms
     deriving (Show)
@@ -55,7 +54,6 @@ instance Pretty Prim where
     pretty ResetGoal = "Transition ResetGoal."
     pretty Simplify = "simplify the claim"
     pretty CheckImplication = "Transition CheckImplication."
-    pretty TriviallyValid = "Transition TriviallyValid."
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"
 
