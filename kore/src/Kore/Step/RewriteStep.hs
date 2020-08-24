@@ -162,9 +162,7 @@ finalizeAppliedClaim renamedRule appliedConditions =
             -- Combine the initial conditions, the unification conditions, and
             -- the axiom ensures clause. The axiom requires clause is included
             -- by unifyRule.
-            let
-                Conditional { predicate = ensures } = finalPattern
-                ensuresCondition = Condition.fromPredicate ensures
+            let ensuresCondition = Pattern.withoutTerm finalPattern
             constructConfiguration
                 appliedCondition
                 ensuresCondition
