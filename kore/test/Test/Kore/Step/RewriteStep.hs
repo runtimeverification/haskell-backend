@@ -47,6 +47,7 @@ import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern
     , claimPattern
+    , refreshExistentials
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
@@ -447,7 +448,7 @@ test_applyRewriteRule_ =
                     (mkElemVar Mock.x)
                     (mkExists Mock.x (mkElemVar Mock.x))
             claim =
-                claimPatternFromTerms
+                refreshExistentials $ claimPatternFromTerms
                     (mkElemVar Mock.x)
                     (mkElemVar Mock.x)
                     [Mock.x]
