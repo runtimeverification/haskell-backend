@@ -148,9 +148,6 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition
-    ( tryTransitionT
-    )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( proofState
@@ -473,14 +470,9 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
-    transitionRuleWorker Simplify (Goal goal) = do
-        results <- tryTransitionT (simplify goal)
-        case results of
-            [] -> return Proven
-            _  -> Goal <$> Transition.scatter results
-
-    transitionRuleWorker Simplify (GoalRemainder goal) =
-        GoalRemainder <$> simplify goal
+    transitionRuleWorker Simplify proofState
+      | Just goal <- retractSimplifiable proofState =
+        Transition.ifte (simplify goal) (pure . ($>) proofState) (pure Proven)
 
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
@@ -522,6 +514,12 @@ transitionRule claims axiomGroups = transitionRuleWorker
         applyAxioms axiomGroups goal
 
     transitionRuleWorker _ state = return state
+
+retractSimplifiable :: ProofState a -> Maybe a
+retractSimplifiable (ProofState.Goal a) = Just a
+retractSimplifiable (ProofState.GoalRewritten a) = Just a
+retractSimplifiable (ProofState.GoalRemainder a) = Just a
+retractSimplifiable _ = Nothing
 
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
