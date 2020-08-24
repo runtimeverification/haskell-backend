@@ -492,7 +492,7 @@ throwStuckClaims rule prim state = do
             infoUnprovenDepth proofDepth'
             Monad.Except.throwError $ OrPattern.fromPattern config
           where
-            config = getConfiguration unproven
+            config = getConfiguration unproven & getRewritingPattern
         _ -> return state'
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
