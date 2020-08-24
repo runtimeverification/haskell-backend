@@ -14,6 +14,39 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.28.0.0] - 2020-08-19
+
+### Added
+
+- Add symbolic rules for `STRING.eq`. (#2014)
+- Add symbolic rules for `INT.eq`. (#2019)
+
+### Changed
+
+- Throw an error when `\not(\ceil(_))` appears in a stuck configuration. (#2059,
+  #2061)
+- Produce a helpful error message when the `--smt-prelude` file is
+  missing. (#2055)
+- Solicit a bug report when catching `AssertionFailed`. (#2060)
+- Solicit a bug report when recording `WarnIfLowProductivity`. (#2037)
+- Disable the `WarnIfLowProductivity` message when total run time is
+  short. (#2036)
+- Allow an empty argument to the `simplification` attribute. (#2029)
+- Infer that the left-hand sides of claims are defined. (#1911)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Correctly re-construct the unified term when unifying `\equals(_, _)`. (#2067)
+- Erase predicate sorts before sending to the SMT solver. (#2076)
+- `--bug-report` captures the `--smt-prelude` file. (#2054)
+- `kore-repl` does not terminate after sub-process errors. (#1992)
+- Send correct command to solver to set timeout. (#2048)
+- `kore-exec` no longer leaks memory. (#2028)
+
 ## [0.27.0.0] - 2020-08-05
 
 ### Added

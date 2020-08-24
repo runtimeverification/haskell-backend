@@ -264,6 +264,7 @@ ternaryOperator extractVal asPattern ctx op =
 type Function
     = forall variable simplifier
         .  InternalVariable variable
+        => HasCallStack
         => MonadSimplify simplifier
         => Sort
         -> [TermLike variable]

@@ -448,7 +448,7 @@ unparseKoreProveOptions
 
 koreExecSh :: KoreExecOptions -> String
 koreExecSh
-    ( KoreExecOptions
+    koreExecOptions@( KoreExecOptions
         _
         patternFileName
         outputFileName
@@ -471,26 +471,44 @@ koreExecSh
         [ "#!/bin/sh"
         , "exec kore-exec \\"
         ]
-        <> (fmap (<> " \\") . filter (not . null)) options
+        <> fmap (\line -> "    " <> line <> " \\") options
+        <> ["    \"$@\""]
   where
     options =
-        [ if isJust koreProveOptions then "vdefinition.kore"
-            else "definition.kore"
-        , if isJust patternFileName then "--pattern pgm.kore" else ""
-        , if isJust outputFileName then "--output result.kore" else ""
-        , "--module " <> unpack (getModuleName mainModuleName)
-        , maybeLimit "" (("--smt-timeout " <>) . show) timeout
-        , maybe "" ("--smt-prelude " <>) smtPrelude
-        , "--smt " <> fmap Char.toLower (show smtSolver)
-        , maybeLimit "" (("--breadth " <>) . show) breadthLimit
-        , maybeLimit "" (("--depth " <>) . show) depthLimit
-        , "--strategy " <> fst strategy
+        concat
+        [ catMaybes
+            [ pure $ defaultDefinitionFilePath koreExecOptions
+            , patternFileName $> "--pattern pgm.kore"
+            , outputFileName $> "--output result.kore"
+            , pure $ "--module " <> unpack (getModuleName mainModuleName)
+            , (\limit -> unwords ["--smt-timeout", show limit])
+                <$> maybeLimit Nothing Just timeout
+            , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
+            , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
+            , (\limit -> unwords ["--breadth", show limit])
+                <$> maybeLimit Nothing Just breadthLimit
+            , (\limit -> unwords ["--depth", show limit])
+                <$> maybeLimit Nothing Just depthLimit
+            , pure $ "--strategy " <> fst strategy
+            , rtsStatistics $>
+                unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
+            ]
+        , unparseKoreLogOptions koreLogOptions
+        , maybe mempty unparseKoreSearchOptions koreSearchOptions
+        , maybe mempty unparseKoreProveOptions koreProveOptions
+        , maybe mempty unparseKoreMergeOptions koreMergeOptions
         ]
-        <> unparseKoreLogOptions koreLogOptions
-        <> maybe mempty unparseKoreSearchOptions koreSearchOptions
-        <> maybe mempty unparseKoreProveOptions koreProveOptions
-        <> maybe mempty unparseKoreMergeOptions koreMergeOptions
-        <> maybe mempty ((:[]) . ("--rts-statistics " <>)) rtsStatistics
+
+defaultDefinitionFilePath :: KoreExecOptions -> FilePath
+defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
+  | isJust koreProveOptions = "vdefinition.kore"
+  | otherwise               = "definition.kore"
+
+defaultSmtPreludeFilePath :: FilePath
+defaultSmtPreludeFilePath = "prelude.smt2"
+
+defaultRtsStatisticsFilePath :: FilePath
+defaultRtsStatisticsFilePath = "rts-statistics.json"
 
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
@@ -505,7 +523,7 @@ writeKoreProveFiles reportFile koreProveOptions = do
     let KoreProveOptions { specFileName } = koreProveOptions
     copyFile specFileName (reportFile </> "spec.kore")
     let KoreProveOptions { saveProofs } = koreProveOptions
-    Foldable.forM_ saveProofs $ \filePath ->
+    Foldable.for_ saveProofs $ \filePath ->
         Monad.whenM
             (doesFileExist filePath)
             (copyFile filePath (reportFile </> "save-proofs.kore"))
@@ -516,38 +534,31 @@ writeOptionsAndKoreFiles
     opts@KoreExecOptions
         { definitionFileName
         , patternFileName
+        , smtPrelude
         , koreSearchOptions
         , koreProveOptions
         , koreMergeOptions
         }
   = do
     let shellScript = reportDirectory </> "kore-exec.sh"
-    writeFile shellScript
-        . koreExecSh
-        $ opts
+    writeFile shellScript . koreExecSh $ opts
     let allPermissions =
             setOwnerReadable True
             . setOwnerWritable True
             . setOwnerExecutable True
             . setOwnerSearchable True
     setPermissions shellScript $ allPermissions emptyPermissions
-    copyFile
-        definitionFileName
-        (  reportDirectory
-        </> if isJust koreProveOptions
-            then "vdefinition.kore"
-            else "definition.kore"
-        )
-    Foldable.forM_ patternFileName
+    copyFile definitionFileName
+        (reportDirectory </> defaultDefinitionFilePath opts)
+    Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    Foldable.forM_
-        koreSearchOptions
+    Foldable.for_ smtPrelude
+        $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
+    Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
-    Foldable.forM_
-        koreMergeOptions
+    Foldable.for_ koreMergeOptions
         (writeKoreMergeFiles reportDirectory)
-    Foldable.forM_
-        koreProveOptions
+    Foldable.for_ koreProveOptions
         (writeKoreProveFiles reportDirectory)
 
 exeName :: ExeName
@@ -563,11 +574,20 @@ main = do
             Main.exeName
             (parseKoreExecOptions startTime)
             parserInfoModifiers
-    Foldable.forM_ (localOptions options) mainWithOptions
+    Foldable.for_ (localOptions options) mainWithOptions
+
+-- | Ensure that the SMT prelude file exists, if specified.
+ensureSmtPreludeExists :: Maybe FilePath -> IO ()
+ensureSmtPreludeExists =
+    Foldable.traverse_ $ \filePath ->
+        Monad.whenM
+            (not <$> doesFileExist filePath)
+            (error $ "SMT prelude file does not exist: " <> filePath)
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, bugReport } = execOptions
+    let KoreExecOptions { koreLogOptions, bugReport, smtPrelude } = execOptions
+    ensureSmtPreludeExists smtPrelude
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
@@ -576,7 +596,7 @@ mainWithOptions execOptions = do
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
-    Foldable.forM_ rtsStatistics $ \filePath ->
+    Foldable.for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
   where
