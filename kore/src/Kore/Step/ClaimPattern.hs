@@ -92,7 +92,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingTerm
-    , mkRuleVariable
     , resetConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
