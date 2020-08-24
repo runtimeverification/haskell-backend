@@ -1299,6 +1299,42 @@ test_equalsTermsSimplification =
                         )
                     )
             assertEqual "" (Just [expect]) actual
+        , testCase "opaque value in map" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeEqualsPredicate_
+                                ( mkElemVar Mock.x )
+                                Mock.a
+                            )
+                        )
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate_
+                                ( Mock.builtinBool False )
+                                ( mkApplySymbol
+                                    Mock.inKeysMapSymbol
+                                    [ mkElemVar Mock.x, opaque]
+                                )
+                            )
+                            ( mkForall Mock.x <$>
+                                makeCeilPredicate Mock.testSort
+                                    ( Mock.framedMap
+                                        [(Mock.a, mkElemVar Mock.x)]
+                                        [opaque]
+                                    )
+                            )
+                        )
+                    & Condition.fromPredicate
+                opaque = mkElemVar Mock.xMap
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inKeysMap
+                        ( mkElemVar Mock.x )
+                        ( Mock.framedMap [(Mock.a, Mock.a)] [opaque] )
+                    )
+            assertEqual "" (Just [expect]) actual
         ]
     , testGroup "builtin Set"
         [ testCase "no keys in empty Set" $ do
@@ -1376,10 +1412,42 @@ test_equalsTermsSimplification =
             actual <-
                 simplifyEquals
                     mempty
-                    (Mock.builtinBool False)
+                    ( Mock.builtinBool False )
                     ( Mock.inSet
                         ( Mock.f (mkElemVar Mock.x) )
                         ( Mock.builtinSet [mkElemVar Mock.y] )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "opaque value in set" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeEqualsPredicate_
+                                ( mkElemVar Mock.x )
+                                Mock.a
+                            )
+                        )
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate_
+                                ( Mock.builtinBool False )
+                                ( mkApplySymbol
+                                    Mock.inSetSymbol
+                                    [ mkElemVar Mock.x, opaque]
+                                )
+                            )
+                            ( makeCeilPredicate Mock.testSort
+                                    ( Mock.framedSet [Mock.a] [opaque] )
+                            )
+                        )
+                    & Condition.fromPredicate
+                opaque = mkElemVar Mock.xSet
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x )
+                        ( Mock.framedSet [Mock.a] [opaque] )
                     )
             assertEqual "" (Just [expect]) actual
         ]
