@@ -114,8 +114,7 @@ finalizeAppliedRule renamedRule appliedConditions =
             avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
             finalPattern =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
-            Conditional { predicate = ensures } = finalPattern
-            ensuresCondition = Condition.fromPredicate ensures
+            ensuresCondition = Pattern.withoutTerm finalPattern
         constructConfiguration appliedCondition ensuresCondition finalPattern
 
 constructConfiguration
