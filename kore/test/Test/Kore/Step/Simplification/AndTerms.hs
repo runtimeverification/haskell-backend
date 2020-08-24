@@ -1212,7 +1212,7 @@ test_equalsTermsSimplification =
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
             assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, X in []) = \\top" $ do
+        , testCase "no keys in empty Map" $ do
             let expect = Condition.top
             actual <-
                 simplifyEquals
@@ -1220,7 +1220,7 @@ test_equalsTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
             assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, X in [(Y, a)]) = \\not \\equals(X, Y)" $ do
+        , testCase "key not in singleton Map" $ do
             let expect =
                     makeEqualsPredicate_
                         (mkElemVar Mock.x)
@@ -1238,11 +1238,7 @@ test_equalsTermsSimplification =
                         )
                     )
             assertEqual "" (Just [expect]) actual
-        , testCase
-            "\\equals(false, X in [(Y, a),  (Z, a)])\
-            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
-            \ \\and \\not \\equals(Y, Z)"
-            $ do
+        , testCase "key not in two-element Map" $ do
                 let expect =
                         foldr1
                             makeAndPredicate
@@ -1274,7 +1270,7 @@ test_equalsTermsSimplification =
                             )
                         )
                 assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, f(X) in [(Y, a)]) = \\not \\equals(f(X), Y)" $ do
+        , testCase "unevaluated function key in singleton Map" $ do
             let expect =
                     makeAndPredicate
                         ( makeNotPredicate
@@ -1305,7 +1301,7 @@ test_equalsTermsSimplification =
             assertEqual "" (Just [expect]) actual
         ]
     , testGroup "builtin Set"
-        [ testCase "\\equals(false, X in []) = \\top" $ do
+        [ testCase "no keys in empty Set" $ do
             let expect = Condition.top
             actual <-
                 simplifyEquals
@@ -1313,7 +1309,7 @@ test_equalsTermsSimplification =
                     (Mock.builtinBool False)
                     (Mock.inSet (mkElemVar Mock.x) (Mock.builtinSet []))
             assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, X in [Y]) = \\not \\equals(X, Y)" $ do
+        , testCase "key not in singleton Set" $ do
             let expect =
                     makeEqualsPredicate_
                         (mkElemVar Mock.x)
@@ -1329,41 +1325,37 @@ test_equalsTermsSimplification =
                         ( Mock.builtinSet [mkElemVar Mock.y] )
                     )
             assertEqual "" (Just [expect]) actual
-        , testCase
-            "\\equals(false, X in [Y Z])\
-            \ = \\not \\equals(X, Y) \\and \\not \\equals(X, Z)\
-            \ \\and \\not \\equals(Y, Z)"
-            $ do
-                let expect =
-                        foldr1
-                            makeAndPredicate
-                            [ makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.y)
-                            , makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.z)
-                            -- Definedness condition
-                            , makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.y)
-                                    (mkElemVar Mock.z)
-                            ]
-                        & Condition.fromPredicate
-                actual <-
-                    simplifyEquals
-                        mempty
-                        (Mock.builtinBool False)
-                        ( Mock.inSet
-                            ( mkElemVar Mock.x )
-                            ( Mock.builtinSet
-                                [ mkElemVar Mock.y , mkElemVar Mock.z ]
-                            )
+        , testCase "key not in two-element Set" $ do
+            let expect =
+                    foldr1
+                        makeAndPredicate
+                        [ makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.y)
+                        , makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                        -- Definedness condition
+                        , makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.y)
+                                (mkElemVar Mock.z)
+                        ]
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x )
+                        ( Mock.builtinSet
+                            [ mkElemVar Mock.y , mkElemVar Mock.z ]
                         )
-                assertEqual "" (Just [expect]) actual
-        , testCase "\\equals(false, f(X) in [Y]) = \\not \\equals(f(X), Y)" $ do
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "unevaluated function key in singleton Set" $ do
             let expect =
                     makeAndPredicate
                         ( makeNotPredicate
