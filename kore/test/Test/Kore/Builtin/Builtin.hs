@@ -95,8 +95,9 @@ import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
-    ( RewriteRule
+    ( RewriteRule (..)
     , RulePattern
+    , mkRewritingRule
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -277,19 +278,19 @@ runStep
     -> SMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return (Step.gatherResults results)
+    return . fmap getRewritingPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Step.Results RulePattern VariableName)
+    -> SMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
         [mkRewritingRule axiom]
-        configuration
+        (mkRewritingPattern configuration)
     & runSimplifier testEnv
 
 unificationProcedure

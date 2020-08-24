@@ -26,11 +26,14 @@ module Kore.Internal.MultiOr
     , merge
     , mergeAll
     , singleton
+    , map
     -- * Re-exports
     , Alternative (..)
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( map
+    )
 
 import Control.DeepSeq
     ( NFData
@@ -355,3 +358,11 @@ gather act = make <$> Logic.gather act
 
 observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
 observeAllT act = make <$> Logic.observeAllT act
+
+map
+    :: Ord child2
+    => TopBottom child2
+    => (child1 -> child2)
+    -> MultiOr child1
+    -> MultiOr child2
+map f = make . fmap f . extractPatterns

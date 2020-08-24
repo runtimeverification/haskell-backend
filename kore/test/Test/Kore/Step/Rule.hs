@@ -1,6 +1,7 @@
 module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_patternToAxiomPatternAndBack
+    , test_parseClaimPattern
     , test_rewritePatternToRewriteRuleAndBack
     ) where
 
@@ -33,13 +34,19 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (..)
     )
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Step.Rule
-import Kore.Step.RulePattern hiding
-    ( wAF
-    , wEF
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
     )
+import Kore.Step.ClaimPattern
+    ( AllPathRule (..)
+    , ClaimPattern (..)
+    )
+import Kore.Step.Rule
+import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     )
@@ -249,30 +256,6 @@ test_patternToAxiomPatternAndBack =
     testGroup
         "pattern to axiomPattern to pattern"
         [
-             let initialPattern = mkImplies
-                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (applyModality
-                       WEF
-                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
-                    )
-            in
-                testCase "Reachability claim wEF" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
-            let initialPattern = mkImplies
-                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                    (applyModality
-                        WAF
-                        (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
-                    )
-            in
-                testCase "Reachability claim wAF" $
-                    assertEqual ""
-                        (Right initialPattern)
-                        (perhapsFinalPattern def initialPattern)
-        ,
             let op = aPG $ termLikeSort leftP
                 initialPattern = mkImplies
                     leftP
@@ -286,6 +269,174 @@ test_patternToAxiomPatternAndBack =
   where
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
+
+test_parseClaimPattern :: [TestTree]
+test_parseClaimPattern =
+    [ testCase "Simple claim without constraints" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd mkTop_ Mock.a)
+                    (applyModality
+                        WAF
+                        (mkAnd mkTop_ Mock.b)
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left = Mock.a
+                        & Pattern.fromTermLike
+                    , right = Mock.b
+                        & Pattern.fromTermLike & OrPattern.fromPattern
+                    , existentials = []
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
+    , testCase "Claim with constraints" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd
+                        (mkEquals_ (mkElemVar Mock.x) Mock.c)
+                        Mock.a
+                    )
+                    (applyModality
+                        WAF
+                        (mkAnd
+                            (mkNot (mkEquals_ (mkElemVar Mock.x) Mock.a))
+                            Mock.b
+                        )
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            Mock.a
+                            (Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.c
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        Pattern.fromTermAndPredicate
+                            Mock.b
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.a
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        & OrPattern.fromPattern
+                    , existentials = []
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
+    , testCase "Claim with constraints and existentials" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd
+                        (mkEquals_ (mkElemVar Mock.x) Mock.c)
+                        Mock.a
+                    )
+                    (applyModality
+                        WAF
+                        ( mkExists Mock.z $ mkExists Mock.y $
+                            mkAnd
+                                (mkNot (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.z)))
+                                Mock.b
+                        )
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            Mock.a
+                            (Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.c
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        Pattern.fromTermAndPredicate
+                            Mock.b
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        & OrPattern.fromPattern
+                    , existentials =
+                        let z = mapElementVariable (pure mkRuleVariable) Mock.z
+                            y = mapElementVariable (pure mkRuleVariable) Mock.y
+                         in [z, y]
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
+    , testCase "Claim with constraints and existentials and branching RHS" $ do
+        let claimTerm =
+                mkImplies
+                    (mkAnd
+                        (mkEquals_ (mkElemVar Mock.x) Mock.c)
+                        Mock.a
+                    )
+                    (applyModality
+                        WAF
+                        ( mkExists Mock.z $ mkExists Mock.y $
+                            mkAnd
+                                (mkNot (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.z)))
+                                (mkOr
+                                    Mock.b
+                                    Mock.c
+                                )
+                        )
+                    )
+            expected =
+                AllPathClaimPattern
+                . AllPathRule
+                $ ClaimPattern
+                    { left =
+                        Pattern.fromTermAndPredicate
+                            Mock.a
+                            (Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                Mock.c
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                    , right =
+                        [ Pattern.fromTermAndPredicate
+                            Mock.b
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        , Pattern.fromTermAndPredicate
+                            Mock.c
+                            (Predicate.makeNotPredicate
+                            $ Predicate.makeEqualsPredicate Mock.testSort
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                            )
+                        & Pattern.mapVariables (pure mkRuleVariable)
+                        ]
+                        & OrPattern.fromPatterns
+                    , existentials =
+                        let z = mapElementVariable (pure mkRuleVariable) Mock.z
+                            y = mapElementVariable (pure mkRuleVariable) Mock.y
+                         in [z, y]
+                    , attributes = def
+                    }
+            actual = termToAxiomPattern def claimTerm
+        assertEqual "" (Right expected) actual
+    ]
 
 leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
