@@ -475,25 +475,20 @@ transitionRule claims axiomGroups = transitionRuleWorker
       | otherwise =
         pure proofState
 
-    transitionRuleWorker CheckImplication (Goal goal) = do
+    transitionRuleWorker CheckImplication proofState
+      | Just goal <- retractRewritable proofState = do
         result <- checkImplication goal
         case result of
             Implied -> pure Proven
-            NotImplied a -> pure (Goal a)
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
                 pure (GoalStuck a)
-    transitionRuleWorker CheckImplication (GoalRemainder goal) = do
-        result <- checkImplication goal
-        case result of
-            Implied -> pure Proven
-            NotImplied a -> do
+            NotImplied a
+              | isRemainder proofState -> do
                 warnStuckProofStateTermsNotUnifiable
                 pure (GoalStuck a)
-            NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
-                pure (GoalStuck a)
-    transitionRuleWorker CheckImplication proofState = pure proofState
+              | otherwise -> pure (Goal a)
+      | otherwise = pure proofState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -510,17 +505,25 @@ transitionRule claims axiomGroups = transitionRuleWorker
         applyClaims claims goal
     transitionRuleWorker ApplyClaims proofState = pure proofState
 
-    transitionRuleWorker ApplyAxioms (Goal goal) =
+    transitionRuleWorker ApplyAxioms proofState
+      | Just goal <- retractRewritable proofState =
         applyAxioms axiomGroups goal
-    transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
-        applyAxioms axiomGroups goal
-    transitionRuleWorker ApplyAxioms proofState = pure proofState
+      | otherwise = pure proofState
 
 retractSimplifiable :: ProofState a -> Maybe a
 retractSimplifiable (ProofState.Goal a) = Just a
 retractSimplifiable (ProofState.GoalRewritten a) = Just a
 retractSimplifiable (ProofState.GoalRemainder a) = Just a
 retractSimplifiable _ = Nothing
+
+retractRewritable :: ProofState a -> Maybe a
+retractRewritable (ProofState.Goal a) = Just a
+retractRewritable (ProofState.GoalRemainder a) = Just a
+retractRewritable _ = Nothing
+
+isRemainder :: ProofState a -> Bool
+isRemainder (ProofState.GoalRemainder _) = True
+isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
