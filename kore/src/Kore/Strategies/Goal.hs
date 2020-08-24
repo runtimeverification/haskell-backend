@@ -799,11 +799,7 @@ simplify' lensClaimPattern goal = do
             Lens.view (lensClaimPattern . field @"left") goal
             & Pattern.withoutTerm
         requiresSideCondition =
-            SideCondition.assumeTrueCondition
-                ( Condition.fromPredicate
-                . Condition.toPredicate
-                $ leftCondition
-                )
+            SideCondition.assumeTrueCondition leftCondition
     simplifiedDestination <-
         OrPattern.observeAllT
         $ Logic.scatter destination
