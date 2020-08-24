@@ -347,7 +347,10 @@ verifyClaim
 
     transit instr config =
         Strategy.transitionRule
-            (transitionRule' claims axioms & trackProofDepth)
+            (transitionRule' claims axioms
+                & trackProofDepth
+                & throwStuckClaims
+            )
             instr
             config
         & runTransitionT
@@ -472,6 +475,25 @@ checkStuckConfiguration rule prim proofState = do
     isNot_Ceil_ :: TermLike variable -> Bool
     isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
     isNot_Ceil_ _ = False
+
+{- | Terminate the prover at the first stuck step.
+ -}
+throwStuckClaims
+    ::  forall m rule
+    .   MonadLog m
+    =>  TransitionRule (Verifier m) rule
+            (ProofDepth, ProofState ReachabilityRule)
+    ->  TransitionRule (Verifier m) rule
+            (ProofDepth, ProofState ReachabilityRule)
+throwStuckClaims rule prim state = do
+    state'@(proofDepth', proofState') <- rule prim state
+    case proofState' of
+        ProofState.GoalStuck unproven -> do
+            infoUnprovenDepth proofDepth'
+            Monad.Except.throwError $ OrPattern.fromPattern config
+          where
+            config = getConfiguration unproven
+        _ -> return state'
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
