@@ -34,8 +34,6 @@ import qualified Pretty
 data Prim
     = CheckProven
     -- ^ End execution on this branch if the state is 'Proven'.
-    | CheckGoalRemainder
-    -- ^ End execution on this branch if the state is 'GoalRemainder'.
     | CheckGoalStuck
     -- ^ End execution on this branch immediately if the state is 'GoalStuck'.
     | ResetGoal
@@ -49,7 +47,6 @@ data Prim
 
 instance Pretty Prim where
     pretty CheckProven = "Transition CheckProven."
-    pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
     pretty ResetGoal = "Transition ResetGoal."
     pretty Simplify = "simplify the claim"

@@ -1,7 +1,6 @@
 module Test.Kore.Strategies.AllPath.AllPath
     ( test_unprovenNodes
     , test_transitionRule_CheckProven
-    , test_transitionRule_CheckGoalRem
     , test_transitionRule_CheckImplication
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
@@ -125,23 +124,10 @@ test_transitionRule_CheckProven =
     done :: HasCallStack => ProofState -> TestTree
     done state = run state `satisfies_` Foldable.null
 
-test_transitionRule_CheckGoalRem :: [TestTree]
-test_transitionRule_CheckGoalRem =
-    [ unmodified ProofState.Proven
-    , unmodified (ProofState.Goal          (A, B))
-    , done       (ProofState.GoalRemainder (A, B))
-    ]
-  where
-    run = runTransitionRule [] [] ProofState.CheckGoalRemainder
-    unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    done :: HasCallStack => ProofState -> TestTree
-    done state = run state `satisfies_` Foldable.null
-
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
     [ unmodified ProofState.Proven
-    , unmodified (ProofState.GoalRemainder (A, B))
+    , unmodified (ProofState.GoalStuck (A, B))
     , ProofState.Goal (B, B) `becomes` (ProofState.Proven, mempty)
     ]
   where
@@ -176,7 +162,7 @@ test_transitionRule_ApplyClaims =
         -> [(ProofState, Seq (Goal.Rule Goal))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
+    derives rules = equals_ (run rules $ ProofState.Goal (A, C))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =

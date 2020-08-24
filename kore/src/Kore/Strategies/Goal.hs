@@ -467,7 +467,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
         -> ProofState goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
     transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) =
         return (Goal goal)
@@ -486,21 +485,21 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
         case result of
+            Implied -> pure Proven
+            NotImplied a -> pure (Goal a)
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
                 pure (GoalStuck a)
-            Implied -> pure Proven
-            NotImplied a -> pure (Goal a)
     transitionRuleWorker CheckImplication (GoalRemainder goal) = do
         result <- checkImplication goal
         case result of
-            NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
-                pure (GoalStuck a)
             Implied -> pure Proven
             NotImplied a -> do
                 warnStuckProofStateTermsNotUnifiable
-                pure (GoalRemainder a)
+                pure (GoalStuck a)
+            NotImpliedStuck a -> do
+                warnStuckProofStateTermsUnifiable
+                pure (GoalStuck a)
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -514,9 +513,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- results in `derivePar` as opposed to here.
 
     transitionRuleWorker ApplyClaims (Goal goal) =
-        applyClaims claims goal
-
-    transitionRuleWorker ApplyClaims (GoalRemainder goal) =
         applyClaims claims goal
 
     transitionRuleWorker ApplyAxioms (Goal goal) =
@@ -534,7 +530,6 @@ reachabilityFirstStep =
         , CheckGoalStuck
         , Simplify
         , CheckImplication
-        , CheckGoalRemainder
         , ApplyAxioms
         , ResetGoal
         , Simplify
@@ -547,7 +542,6 @@ reachabilityNextStep =
         , CheckGoalStuck
         , Simplify
         , CheckImplication
-        , CheckGoalRemainder
         , ApplyClaims
         , ApplyAxioms
         , ResetGoal

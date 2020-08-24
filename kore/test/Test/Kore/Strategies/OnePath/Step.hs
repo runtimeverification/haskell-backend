@@ -488,7 +488,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqual ""
-            [ ProofState.GoalRemainder
+            [ ProofState.GoalStuck
             $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.functionalConstr10 Mock.b
