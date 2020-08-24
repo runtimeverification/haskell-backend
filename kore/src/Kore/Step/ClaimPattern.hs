@@ -35,6 +35,9 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import Control.Error.Util
+    ( hush
+    )
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Generics.Product
@@ -63,6 +66,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -630,7 +634,9 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
         { left =
             Pattern.mapVariables resetConfigVariable left
         , right =
-            Pattern.mapVariables resetConfigVariable <$> right
+            OrPattern.map
+                (Pattern.mapVariables resetConfigVariable)
+                right
         , existentials =
             TermLike.mapElementVariable resetConfigVariable
             <$> existentials
@@ -648,12 +654,50 @@ makeTrusted =
         (Attribute.Trusted True)
 
 parseRightHandSide
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => TermLike variable
     -> OrPattern variable
 parseRightHandSide term =
     let (term', condition) =
-            Pattern.parseFromTermLike term
+            parsePatternFromTermLike term
             & Pattern.splitTerm
      in flip Pattern.andCondition condition
-        <$> OrPattern.parseFromTermLike term'
+        <$> parseOrPatternFromTermLike term'
+  where
+    parseOrPatternFromTermLike
+        :: TermLike variable
+        -> OrPattern variable
+    parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
+        parseOrPatternFromTermLike term1
+        <> parseOrPatternFromTermLike term2
+    parseOrPatternFromTermLike term' =
+        OrPattern.fromPattern
+        . parsePatternFromTermLike
+        $ term'
+
+    parsePatternFromTermLike
+        :: TermLike variable
+        -> Pattern variable
+    parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
+        | isTop term1 = Pattern.fromTermLike term2
+        | isTop term2 = Pattern.fromTermLike term1
+        | otherwise =
+        case (tryPredicate term1, tryPredicate term2) of
+            (Nothing, Nothing) ->
+                Pattern.fromTermLike original
+            (Just predicate, Nothing) ->
+                Pattern.fromTermAndPredicate
+                    term2
+                    predicate
+            (Nothing, Just predicate) ->
+                Pattern.fromTermAndPredicate
+                    term1
+                    predicate
+            (Just predicate, _) ->
+                Pattern.fromTermAndPredicate
+                    term2
+                    predicate
+      where
+        tryPredicate = hush . Predicate.makePredicate
+    parsePatternFromTermLike term' = Pattern.fromTermLike term'

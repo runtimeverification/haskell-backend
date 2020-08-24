@@ -30,7 +30,6 @@ module Kore.Internal.Pattern
     , assign
     , requireDefined
     , substitute
-    , parseFromTermLike
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -43,9 +42,6 @@ module Kore.Internal.Pattern
 
 import Prelude.Kore
 
-import Control.Error.Util
-    ( hush
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -388,29 +384,3 @@ substitute subst Conditional { term, predicate, substitution } =
     , predicate = Predicate.substitute subst predicate
     , substitution = Substitution.substitute subst substitution
     }
-
-parseFromTermLike
-    :: InternalVariable variable
-    => TermLike variable
-    -> Pattern variable
-parseFromTermLike original@(TermLike.And_ _ term1 term2)
-    | isTop term1 = fromTermLike term2
-    | isTop term2 = fromTermLike term1
-    | otherwise =
-    case (tryPredicate term1, tryPredicate term2) of
-        (Nothing, Nothing) -> fromTermLike original
-        (Just predicate, Nothing) ->
-            fromTermAndPredicate
-                term2
-                predicate
-        (Nothing, Just predicate) ->
-            fromTermAndPredicate
-                term1
-                predicate
-        (Just predicate, _) ->
-            fromTermAndPredicate
-                term2
-                predicate
-  where
-    tryPredicate = hush . Predicate.makePredicate
-parseFromTermLike term = fromTermLike term
