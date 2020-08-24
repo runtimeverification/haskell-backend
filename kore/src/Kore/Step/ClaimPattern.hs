@@ -454,14 +454,6 @@ instance From AllPathRule Attribute.RuleIndex where
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
 
-instance From AllPathRule (TermLike VariableName) where
-    from = allPathRuleToTerm
-
-instance From AllPathRule (TermLike RewritingVariableName) where
-    from =
-        TermLike.mapVariables (pure mkRuleVariable)
-        . allPathRuleToTerm
-
 -- | Converts an 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
