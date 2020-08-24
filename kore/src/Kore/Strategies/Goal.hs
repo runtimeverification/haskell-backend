@@ -100,8 +100,7 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Internal.TermLike
-    ( TermLike
-    , isFunctionPattern
+    ( isFunctionPattern
     , mkDefined
     , mkIn
     , termLikeSort
@@ -112,6 +111,9 @@ import Kore.Log.WarnStuckProofState
     , warnStuckProofStateTermsUnifiable
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.AxiomPattern
+    ( AxiomPattern (..)
+    )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern (..)
@@ -360,7 +362,7 @@ deriveSeqClaim
     :: MonadSimplify m
     => Step.UnifyingRule goal
     => Step.UnifyingRuleVariable goal ~ RewritingVariableName
-    => From goal (TermLike RewritingVariableName)
+    => From goal (AxiomPattern RewritingVariableName)
     => From goal Attribute.SourceLocation
     => Lens' goal ClaimPattern
     -> (ClaimPattern -> goal)

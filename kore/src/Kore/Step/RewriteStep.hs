@@ -47,6 +47,9 @@ import Kore.Log.ErrorRewritesInstantiation
     ( checkSubstitutionCoverage
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.AxiomPattern
+    ( AxiomPattern
+    )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     )
@@ -179,7 +182,7 @@ type UnifyingRuleWithRepresentation representation rule =
     , Rule.UnifyingRuleVariable representation ~ RewritingVariableName
     , Rule.UnifyingRule rule
     , Rule.UnifyingRuleVariable rule ~ RewritingVariableName
-    , From rule (TermLike RewritingVariableName)
+    , From rule (AxiomPattern RewritingVariableName)
     , From rule SourceLocation
     )
 

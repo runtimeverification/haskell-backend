@@ -417,14 +417,6 @@ instance From OnePathRule Attribute.RuleIndex where
 instance From OnePathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathRule
 
-instance From OnePathRule (TermLike VariableName) where
-    from = onePathRuleToTerm
-
-instance From OnePathRule (TermLike RewritingVariableName) where
-    from =
-        TermLike.mapVariables (pure mkRuleVariable)
-        . onePathRuleToTerm
-
 -- | All-Path-Claim claim pattern.
 newtype AllPathRule =
     AllPathRule { getAllPathRule :: ClaimPattern }
@@ -525,10 +517,6 @@ instance From ReachabilityRule Attribute.RuleIndex where
 instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule (TermLike VariableName) where
-    from (OnePath rule) = from rule
-    from (AllPath rule) = from rule
 
 toSentence :: ReachabilityRule -> Verified.Sentence
 toSentence rule =

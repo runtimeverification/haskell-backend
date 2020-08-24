@@ -531,11 +531,6 @@ instance From (RewriteRule variable) Attribute.Label where
 instance From (RewriteRule variable) Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getRewriteRule
 
-instance InternalVariable variable =>
-    From (RewriteRule variable) (TermLike variable)
-  where
-    from = rewriteRuleToTerm
-
 instance
     InternalVariable variable
     => Unparse (RewriteRule variable)
