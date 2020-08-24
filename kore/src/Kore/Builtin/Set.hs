@@ -606,19 +606,19 @@ data InKeys term =
         , keyTerm, mapTerm :: !term
         }
 
-newtype In term = In { getIn :: InKeys term}
+newtype InSet term = InSet { getIn :: InKeys term}
 
 instance
     InternalVariable variable
-    => Injection (TermLike variable) (In (TermLike variable))
+    => Injection (TermLike variable) (InSet (TermLike variable))
   where
-    inject ( In InKeys { symbol, keyTerm, mapTerm = setTerm } ) =
+    inject ( InSet InKeys { symbol, keyTerm, mapTerm = setTerm } ) =
         TermLike.mkApplySymbol symbol [keyTerm, setTerm]
 
     retract (App_ symbol [keyTerm, setTerm]) = do
         hook2 <- (getHook . symbolHook) symbol
         Monad.guard (hook2 == Set.inKey)
-        return $ In InKeys { symbol, keyTerm, mapTerm = setTerm }
+        return $ InSet InKeys { symbol, keyTerm, mapTerm = setTerm }
     retract _ = empty
 
 matchSetIn
@@ -640,7 +640,7 @@ unifyNotIn =
     unifyNotInKeys
         (Ac.toNormalized @Domain.NormalizedSet)
         matchSetIn
-        (inject . In)
+        (inject . InSet)
 
 unifyNotInKeys
     :: forall normalized variable unifier
