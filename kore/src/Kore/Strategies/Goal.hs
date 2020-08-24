@@ -526,10 +526,10 @@ reachabilityFirstStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalStuck
+        , ResetGoal
         , Simplify
         , CheckImplication
         , ApplyAxioms
-        , ResetGoal
         , Simplify
         ]
 
@@ -538,11 +538,11 @@ reachabilityNextStep =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalStuck
+        , ResetGoal
         , Simplify
         , CheckImplication
         , ApplyClaims
         , ApplyAxioms
-        , ResetGoal
         , Simplify
         ]
 

@@ -194,7 +194,7 @@ test_onePathStrategy =
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.Goal $ makeOnePathRule Mock.c Mock.d)
+            (ProofState.GoalRewritten $ makeOnePathRule Mock.c Mock.d)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -257,7 +257,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal $ makeOnePathRule Mock.c Mock.e
+                [ ProofState.GoalRewritten $ makeOnePathRule Mock.c Mock.e
                 ]
             )
             (sort
@@ -291,7 +291,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.Goal $ makeOnePathRule Mock.d Mock.e
+                [ ProofState.GoalRewritten $ makeOnePathRule Mock.d Mock.e
                 ]
             )
             (sort
@@ -641,7 +641,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.Goal $ makeOnePathRuleFromPatterns
+            [ ProofState.GoalRewritten $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
@@ -724,7 +724,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.Goal $ makeOnePathRuleFromPatterns
+            [ ProofState.GoalRewritten $ makeOnePathRuleFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
