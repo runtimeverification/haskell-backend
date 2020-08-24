@@ -332,10 +332,6 @@ instance Goal.Goal Goal where
       where
         src' = difference src dst
 
-    -- | The goal is trivially valid when the members are equal.
-    isTriviallyValid :: Goal -> Bool
-    isTriviallyValid (src, _) = src == Bot
-
     simplify = return
 
     applyClaims claims = derivePar (map Rule claims)

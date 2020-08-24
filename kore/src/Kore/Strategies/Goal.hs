@@ -199,10 +199,6 @@ class Goal goal where
         => goal -> Rule goal
     goalToRule = coerce
 
-    -- TODO (thomas.tuegel): isTriviallyValid should be part of
-    -- checkImplication.
-    isTriviallyValid :: goal -> Bool
-
     checkImplication
         :: MonadSimplify m
         => goal -> m (CheckImplicationResult goal)
@@ -307,8 +303,6 @@ instance Goal OnePathRule where
 
     applyAxioms axioms = deriveSeqOnePath (concat axioms)
 
-    isTriviallyValid = isTriviallyValid' _Unwrapped
-
 deriveSeqOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
@@ -335,7 +329,6 @@ instance Goal AllPathRule where
 
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
-    isTriviallyValid = isTriviallyValid' _Unwrapped
     applyClaims claims = deriveSeqAllPath (map goalToRule claims)
 
     applyAxioms axiomss = \goal ->
@@ -343,9 +336,7 @@ instance Goal AllPathRule where
       where
         applyAxioms1 proofState axioms
           | Just goal <- retractRewritableGoal proofState =
-            deriveParAllPath axioms goal
-            >>= simplifyRemainder
-            >>= checkTriviallyValid
+            deriveParAllPath axioms goal >>= simplifyRemainder
           | otherwise =
             pure proofState
 
@@ -357,10 +348,6 @@ instance Goal AllPathRule where
             case proofState of
                 GoalRemainder goal -> GoalRemainder <$> simplify goal
                 _ -> return proofState
-
-        checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure Proven
-          | otherwise = pure proofState
 
 deriveParAllPath
     ::  MonadSimplify simplifier
@@ -407,9 +394,6 @@ instance Goal ReachabilityRule where
 
     checkImplication (AllPath goal) = fmap AllPath <$> checkImplication goal
     checkImplication (OnePath goal) = fmap OnePath <$> checkImplication goal
-
-    isTriviallyValid (AllPath goal) = isTriviallyValid goal
-    isTriviallyValid (OnePath goal) = isTriviallyValid goal
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
@@ -660,10 +644,6 @@ simplify' lensRulePattern =
             >>= SMT.Evaluator.filterMultiOr
             & lift
         Foldable.asum (pure <$> configs)
-
-isTriviallyValid' :: Lens' goal (RulePattern variable) -> goal -> Bool
-isTriviallyValid' lensRulePattern =
-    isBottom . RulePattern.left . Lens.view lensRulePattern
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
