@@ -785,6 +785,13 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
+
+    -- TODO (#1278): Do not combine the predicate and the substitution.
+    -- This is held over from the old representation of claims, which did not
+    -- distinguish the predicate and substitution in the first place. We can't
+    -- use the substitution directly yet, because it isn't kept normalized. Once
+    -- the claim is fully simplified at every step, that should not be a
+    -- problem.
     sideCondition =
         SideCondition.assumeTrueCondition
             (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
