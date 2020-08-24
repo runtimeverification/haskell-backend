@@ -7,6 +7,11 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
+
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -25,6 +30,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeOrPredicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -62,20 +68,21 @@ test_checkImplication =
             checkImplication (mkGoal config dest existentials)
         assertEqual "" [Implied] actual
     , testCase "does not unify" $ do
-        let config = Mock.a & Pattern.fromTermLike
-            dest = Mock.b & OrPattern.fromTermLike
-            existentials = []
-            goal = mkGoal config dest existentials
+        let goal = aToB
         actual <-
             checkImplication goal
         assertEqual "" [NotImplied goal] actual
     , testCase "does not unify, with left condition" $ do
-        let config =
-                Pattern.withCondition Mock.a
-                    (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a & from)
-            dest = Mock.b & OrPattern.fromTermLike
-            existentials = []
-            goal = mkGoal config dest existentials
+        let goal =
+                Lens.over
+                    (field @"left")
+                    (flip Pattern.andCondition
+                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+                        & Predicate.mapVariables (pure mkConfigVariable)
+                        & from
+                        )
+                    )
+                    aToB
         actual <-
             checkImplication goal
         assertEqual "" [NotImplied goal] actual
@@ -225,6 +232,12 @@ mkGoal
   =
     claimPattern leftPatt rightPatts existentialVars
 
+aToB :: ClaimPattern
+aToB =
+    mkGoal
+        (Mock.a & Pattern.fromTermLike)
+        (Mock.b & OrPattern.fromTermLike)
+        []
 
 checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
 checkImplication claim =
