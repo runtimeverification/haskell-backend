@@ -47,6 +47,10 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import Control.Monad.State.Strict
+    ( evalState
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( Coercible
     , coerce
@@ -628,36 +632,40 @@ instance UnifyingRule (RulePattern variable) where
 
     precondition = requires
 
-    refreshRule stale0' rule0@(RulePattern _ _ _ _ _) =
-        let stale0 = FreeVariables.toNames stale0'
-            freeVariables0 = freeVariables rule0
-            renaming1 =
-                refreshVariables stale0
-                $ FreeVariables.toSet freeVariables0
-            freeVariables1 =
-                FreeVariables.toSet freeVariables0
-                & Set.map (renameVariable renaming1)
-                & foldMap FreeVariables.freeVariable
-            existentials0 = Set.fromList . map inject $ existentials $ rhs rule0
-            stale1 = FreeVariables.toNames freeVariables1 <> stale0
-            renamingExists = refreshVariables stale1 existentials0
-            subst = TermLike.mkVar <$> renaming1
-            rule1 =
-                RulePattern
-                { left = left rule0 & TermLike.substitute subst
-                , antiLeft = antiLeft rule0 & fmap (AntiLeft.substitute subst)
-                , requires = requires rule0 & Predicate.substitute subst
-                , rhs =
-                    rhs rule0
-                    & renameExistentials renamingExists
-                    & rhsSubstitute subst
-                , attributes = attributes rule0
-                }
-        in (renaming1, rule1)
+    refreshRule stale rule0@(RulePattern _ _ _ _ _) =
+        do
+            let variables = freeVariables rule0 & FreeVariables.toSet
+            renaming <- refreshVariables' variables
+            let existentials' = Set.fromList (inject <$> existentials rhs)
+            renamingExists <- refreshVariables' existentials'
+            let subst = TermLike.mkVar <$> renaming
+                rule1 =
+                    RulePattern
+                    { left = TermLike.substitute subst left
+                    , antiLeft = AntiLeft.substitute subst <$> antiLeft
+                    , requires = Predicate.substitute subst requires
+                    , rhs =
+                        rhs
+                        & renameExistentials renamingExists
+                        & rhsSubstitute subst
+                    , attributes
+                    }
+            -- Only return the renaming of free variables.
+            -- Renaming the bound variables is invisible from outside.
+            pure (renaming, rule1)
+        & flip evalState (FreeVariables.toNames stale)
       where
-        renameVariable map' var =
-            Map.lookup (variableName var) map'
-            & fromMaybe var
+        RulePattern { left, antiLeft, requires, rhs, attributes } = rule0
+        refreshVariables' variables = do
+            staleNames <- State.get
+            let renaming = refreshVariables staleNames variables
+                staleNames' = Set.map variableName variables
+                staleNames'' =
+                    Map.elems renaming
+                    & foldMap FreeVariables.freeVariable
+                    & FreeVariables.toNames
+            State.put (staleNames <> staleNames' <> staleNames'')
+            pure renaming
 
 mapRuleVariables
     :: forall rule variable1 variable2
