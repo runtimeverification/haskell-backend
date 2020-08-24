@@ -466,11 +466,14 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (GoalStuck _) = empty
-    transitionRuleWorker Begin (GoalRewritten goal) = return (Goal goal)
+    transitionRuleWorker Begin (GoalRewritten goal) = pure (Goal goal)
+    transitionRuleWorker Begin proofState = pure proofState
 
     transitionRuleWorker Simplify proofState
       | Just goal <- retractSimplifiable proofState =
         Transition.ifte (simplify goal) (pure . ($>) proofState) (pure Proven)
+      | otherwise =
+        pure proofState
 
     transitionRuleWorker CheckImplication (Goal goal) = do
         result <- checkImplication goal
@@ -490,6 +493,7 @@ transitionRule claims axiomGroups = transitionRuleWorker
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
                 pure (GoalStuck a)
+    transitionRuleWorker CheckImplication proofState = pure proofState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -504,14 +508,13 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker ApplyClaims (Goal goal) =
         applyClaims claims goal
+    transitionRuleWorker ApplyClaims proofState = pure proofState
 
     transitionRuleWorker ApplyAxioms (Goal goal) =
         applyAxioms axiomGroups goal
-
     transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
         applyAxioms axiomGroups goal
-
-    transitionRuleWorker _ state = return state
+    transitionRuleWorker ApplyAxioms proofState = pure proofState
 
 retractSimplifiable :: ProofState a -> Maybe a
 retractSimplifiable (ProofState.Goal a) = Just a
