@@ -32,12 +32,8 @@ import qualified Pretty
 {- | The primitive transitions of the reachability proof strategy.
  -}
 data Prim
-    = CheckProven
-    -- ^ End execution on this branch if the state is 'Proven'.
-    | CheckGoalStuck
-    -- ^ End execution on this branch immediately if the state is 'GoalStuck'.
-    | ResetGoal
-    -- ^ Mark all goals rewritten previously as new goals.
+    = Begin
+    -- ^ The start of each proof step
     | Simplify
     | CheckImplication
     -- ^ Check if the claim's implication is valid.
@@ -46,11 +42,9 @@ data Prim
     deriving (Show)
 
 instance Pretty Prim where
-    pretty CheckProven = "Transition CheckProven."
-    pretty CheckGoalStuck = "Transition CheckGoalStuck."
-    pretty ResetGoal = "Transition ResetGoal."
+    pretty Begin = "begin proof step"
     pretty Simplify = "simplify the claim"
-    pretty CheckImplication = "Transition CheckImplication."
+    pretty CheckImplication = "check implication"
     pretty ApplyClaims = "apply claims"
     pretty ApplyAxioms = "apply axioms"
 

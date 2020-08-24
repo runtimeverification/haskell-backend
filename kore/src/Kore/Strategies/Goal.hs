@@ -463,12 +463,10 @@ transitionRule claims axiomGroups = transitionRuleWorker
         :: Prim
         -> ProofState goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-    transitionRuleWorker CheckProven Proven = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) =
-        return (Goal goal)
-
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker Begin Proven = empty
+    transitionRuleWorker Begin (GoalStuck _) = empty
+    transitionRuleWorker Begin (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify proofState
       | Just goal <- retractSimplifiable proofState =
@@ -524,9 +522,7 @@ retractSimplifiable _ = Nothing
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , ResetGoal
+        [ Begin
         , Simplify
         , CheckImplication
         , ApplyAxioms
@@ -536,9 +532,7 @@ reachabilityFirstStep =
 reachabilityNextStep :: Strategy Prim
 reachabilityNextStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , ResetGoal
+        [ Begin
         , Simplify
         , CheckImplication
         , ApplyClaims

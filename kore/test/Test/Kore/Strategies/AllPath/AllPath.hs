@@ -1,6 +1,6 @@
 module Test.Kore.Strategies.AllPath.AllPath
     ( test_unprovenNodes
-    , test_transitionRule_CheckProven
+    , test_transitionRule_Begin
     , test_transitionRule_CheckImplication
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
@@ -111,14 +111,14 @@ test_unprovenNodes =
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
 
-test_transitionRule_CheckProven :: [TestTree]
-test_transitionRule_CheckProven =
+test_transitionRule_Begin :: [TestTree]
+test_transitionRule_Begin =
     [ done ProofState.Proven
     , unmodified (ProofState.Goal    (A, B))
     , unmodified (ProofState.GoalRemainder (A, B))
     ]
   where
-    run = runTransitionRule [] [] ProofState.CheckProven
+    run = runTransitionRule [] [] ProofState.Begin
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
