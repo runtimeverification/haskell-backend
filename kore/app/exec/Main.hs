@@ -134,12 +134,12 @@ import Kore.Parser
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( ReachabilityRule
-    , RewriteRule
+    , toSentence
     )
-import qualified Kore.Step.RulePattern as Rule
-    ( toSentence
+import Kore.Step.RulePattern
+    ( RewriteRule
     )
 import Kore.Step.Search
     ( SearchType (..)
@@ -757,7 +757,7 @@ koreProve execOptions proveOptions = do
             Module
                 { moduleName = savedProofsModuleName
                 , moduleSentences =
-                    specModuleDefinitions ++ map Rule.toSentence provenClaims
+                    specModuleDefinitions <> fmap toSentence provenClaims
                 , moduleAttributes = def
                 }
         provenDefinition = Definition

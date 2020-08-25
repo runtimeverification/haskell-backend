@@ -9,7 +9,7 @@ module Kore.Log.DebugProofState
 
 import Prelude.Kore
 
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
     )
 import Kore.Strategies.ProofState

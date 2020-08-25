@@ -29,9 +29,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import Data.Tuple
-    ( swap
-    )
 import qualified Text.Megaparsec as Parser
 import Type.Reflection
     ( SomeTypeRep (..)
