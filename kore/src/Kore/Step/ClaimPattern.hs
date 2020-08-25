@@ -39,6 +39,10 @@ import Control.Error.Util
     ( hush
     )
 import qualified Control.Lens as Lens
+import Control.Monad.State.Strict
+    ( evalState
+    )
+import qualified Control.Monad.State.Strict as State
 import qualified Data.Default as Default
 import Data.Generics.Product
 import Data.Generics.Wrapped
@@ -88,7 +92,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingTerm
-    , mkRuleVariable
     , resetConfigVariable
     )
 import Kore.Rewriting.UnifyingRule
@@ -413,14 +416,6 @@ instance From OnePathRule Attribute.RuleIndex where
 instance From OnePathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathRule
 
-instance From OnePathRule (TermLike VariableName) where
-    from = onePathRuleToTerm
-
-instance From OnePathRule (TermLike RewritingVariableName) where
-    from =
-        TermLike.mapVariables (pure mkRuleVariable)
-        . onePathRuleToTerm
-
 -- | All-Path-Claim claim pattern.
 newtype AllPathRule =
     AllPathRule { getAllPathRule :: ClaimPattern }
@@ -457,14 +452,6 @@ instance From AllPathRule Attribute.RuleIndex where
 
 instance From AllPathRule Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathRule
-
-instance From AllPathRule (TermLike VariableName) where
-    from = allPathRuleToTerm
-
-instance From AllPathRule (TermLike RewritingVariableName) where
-    from =
-        TermLike.mapVariables (pure mkRuleVariable)
-        . allPathRuleToTerm
 
 -- | Converts an 'AllPathRule' into its term representation.
 -- This is intended to be used only in unparsing situations,
@@ -522,10 +509,6 @@ instance From ReachabilityRule Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityRule (TermLike VariableName) where
-    from (OnePath rule) = from rule
-    from (AllPath rule) = from rule
-
 toSentence :: ReachabilityRule -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
@@ -582,28 +565,31 @@ instance UnifyingRule ClaimPattern where
         ClaimPattern { left } = claim
 
     refreshRule stale claim@(ClaimPattern _ _ _ _) =
-        let staleNames = FreeVariables.toNames stale
-            freeVariablesClaim = freeVariables claim & FreeVariables.toSet
-            renaming = refreshVariables staleNames freeVariablesClaim
-            freeVariablesClaim1 =
-                Set.map (renameVariable renaming) freeVariablesClaim
-                & foldMap FreeVariables.freeVariable
-            existentials' =
-                existentials
-                & fmap inject
-                & Set.fromList
-            staleNames1 = FreeVariables.toNames freeVariablesClaim1 <> staleNames
-            renamingExists = refreshVariables staleNames1 existentials'
-            subst = TermLike.mkVar <$> renaming
-            refreshedClaim =
-                claim
-                & renameExistentials renamingExists
-                & substitute subst
-         in (renaming, refreshedClaim)
+        do
+            let variables = freeVariables claim & FreeVariables.toSet
+            renaming <- refreshVariables' variables
+            let existentials' = Set.fromList (inject <$> existentials)
+            renamingExists <- refreshVariables' existentials'
+            let subst = TermLike.mkVar <$> renaming
+                refreshedClaim =
+                    claim
+                    & renameExistentials renamingExists
+                    & substitute subst
+            -- Only return the renaming of free variables.
+            -- Renaming the bound variables is invisible from outside.
+            pure (renaming, refreshedClaim)
+        & flip evalState (FreeVariables.toNames stale)
       where
-        renameVariable map' var =
-            Map.lookup (variableName var) map'
-            & fromMaybe var
+        refreshVariables' variables = do
+            staleNames <- State.get
+            let renaming = refreshVariables staleNames variables
+                staleNames' = Set.map variableName variables
+                staleNames'' =
+                    Map.elems renaming
+                    & foldMap FreeVariables.freeVariable
+                    & FreeVariables.toNames
+            State.put (staleNames <> staleNames' <> staleNames'')
+            pure renaming
         ClaimPattern { existentials } = claim
 
 instance UnifyingRule OnePathRule where
@@ -614,8 +600,7 @@ instance UnifyingRule OnePathRule where
     precondition (OnePathRule claim) = precondition claim
 
     refreshRule stale (OnePathRule claim) =
-        let (renaming, refreshedClaim) = refreshRule stale claim
-         in (renaming, OnePathRule refreshedClaim)
+        OnePathRule <$> refreshRule stale claim
 
 instance UnifyingRule AllPathRule where
     type UnifyingRuleVariable AllPathRule = RewritingVariableName
@@ -625,8 +610,7 @@ instance UnifyingRule AllPathRule where
     precondition (AllPathRule claim) = precondition claim
 
     refreshRule stale (AllPathRule claim) =
-        let (renaming, refreshedClaim) = refreshRule stale claim
-         in (renaming, AllPathRule refreshedClaim)
+        AllPathRule <$> refreshRule stale claim
 
 mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =

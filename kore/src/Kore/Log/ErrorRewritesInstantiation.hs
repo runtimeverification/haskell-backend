@@ -39,13 +39,16 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.TermLike
-    ( TermLike
-    , isConstructorLike
+    ( isConstructorLike
     )
 import Kore.Internal.Variable
     ( SomeVariableName
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.AxiomPattern
+    ( AxiomPattern
+    , getAxiomPattern
+    )
 import Kore.Step.Step
     ( UnifiedRule
     , UnifyingRule (..)
@@ -70,7 +73,11 @@ data ErrorRewritesInstantiation =
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
-        { solution :: !(Pattern RewritingVariableName)
+        { solution
+            :: !(Conditional
+                    RewritingVariableName
+                    (AxiomPattern RewritingVariableName)
+                )
         , location :: !SourceLocation
         , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
         }
@@ -107,7 +114,7 @@ instance Pretty ErrorRewritesInstantiation where
             , (Pretty.indent 4 . Pretty.sep)
                 (unparse <$> Set.toAscList missingVariables)
             , "The unification solution was:"
-            , unparse solution
+            , unparse (fmap getAxiomPattern solution)
             , "Error! Please report this."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
@@ -133,7 +140,7 @@ checkSubstitutionCoverage
     .  MonadLog monadLog
     => UnifyingRule rule
     => From rule SourceLocation
-    => From rule (TermLike RewritingVariableName)
+    => From rule (AxiomPattern RewritingVariableName)
     => UnifyingRuleVariable rule ~ RewritingVariableName
     => HasCallStack
     => Pattern RewritingVariableName
@@ -161,5 +168,5 @@ checkSubstitutionCoverage configuration unifiedRule
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
     location = from @_ @SourceLocation . term $ unifiedRule
-    solution = from @rule @(TermLike _) <$> unifiedRule
+    solution = from @rule @(AxiomPattern _) <$> unifiedRule
     isSymbolic = (not . isConstructorLike) (term configuration)

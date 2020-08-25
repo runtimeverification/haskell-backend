@@ -119,6 +119,9 @@ import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
+import Kore.Step.AxiomPattern
+    ( AxiomPattern (..)
+    )
 import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
     , lensClaimPattern
@@ -648,7 +651,7 @@ substituteAlias
         QuotedArgument str -> "\"" <> str <> "\""
 
 conjOfClaims
-    :: From claim (TermLike VariableName)
+    :: From claim (AxiomPattern VariableName)
     => [claim]
     -> Sort
     -> TermLike VariableName
@@ -656,7 +659,7 @@ conjOfClaims claims sort =
     foldr
         TermLike.mkAnd
         (TermLike.mkTop sort)
-        $ fmap from claims
+        $ fmap (getAxiomPattern . from) claims
 
 generateInProgressClaims
     :: forall m
@@ -775,7 +778,8 @@ createNewDefinition mainModuleName name claims =
         . SentenceClaim
         $ SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = from @Claim @(TermLike _) claim
+            , sentenceAxiomPattern =
+                from @Claim @(AxiomPattern _) claim & getAxiomPattern
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
 

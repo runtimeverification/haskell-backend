@@ -47,6 +47,9 @@ import Kore.Log.ErrorRewritesInstantiation
     ( checkSubstitutionCoverage
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.AxiomPattern
+    ( AxiomPattern
+    )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     )
@@ -114,24 +117,33 @@ finalizeAppliedRule renamedRule appliedConditions =
             avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
             finalPattern =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
-            ensuresCondition = Pattern.withoutTerm finalPattern
-        constructConfiguration appliedCondition ensuresCondition finalPattern
+        constructConfiguration appliedCondition finalPattern
 
+{- | Combine all the conditions to apply rule and construct the result.
+
+@constructConfiguration@ combines:
+
+* the applied condition (the initial condition, unification condition, and the
+  rule's @requires@ clause), and
+* the rule's @ensures@ clause
+
+The parts of the applied condition were already combined by 'unifyRule'. First, the @ensures@ clause is simplified under the applied condition. Then, the conditions are conjoined and simplified again.
+
+ -}
 constructConfiguration
     :: MonadSimplify simplifier
     => Condition RewritingVariableName
-    -> Condition RewritingVariableName
     -> Pattern RewritingVariableName
     -> LogicT simplifier (Pattern RewritingVariableName)
-constructConfiguration appliedCondition ensuresCondition finalPattern = do
+constructConfiguration appliedCondition finalPattern = do
+    let ensuresCondition = Pattern.withoutTerm finalPattern
     finalCondition <-
         do
-           partial <-
-               simplifyCondition
-                   (SideCondition.fromCondition appliedCondition)
-                   ensuresCondition
-           simplifyCondition SideCondition.top
-               (appliedCondition <> partial)
+            let sideCondition = SideCondition.fromCondition appliedCondition
+            partial <- simplifyCondition sideCondition ensuresCondition
+            -- TODO (thomas.tuegel): It should not be necessary to simplify
+            -- after conjoining the conditions.
+            simplifyCondition SideCondition.top (appliedCondition <> partial)
         & Logic.lowerLogicT
     -- Apply the normalized substitution to the right-hand side of the
     -- axiom.
@@ -140,6 +152,8 @@ constructConfiguration appliedCondition ensuresCondition finalPattern = do
         substitution' = Substitution.toMap substitution
         Conditional { term = finalTerm } = finalPattern
         finalTerm' = TermLike.substitute substitution' finalTerm
+    -- TODO (thomas.tuegel): Should the final term be simplified after
+    -- substitution?
     return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim
@@ -161,18 +175,14 @@ finalizeAppliedClaim renamedRule appliedConditions =
             -- Combine the initial conditions, the unification conditions, and
             -- the axiom ensures clause. The axiom requires clause is included
             -- by unifyRule.
-            let ensuresCondition = Pattern.withoutTerm finalPattern
-            constructConfiguration
-                appliedCondition
-                ensuresCondition
-                finalPattern
+            constructConfiguration appliedCondition finalPattern
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
     , Rule.UnifyingRuleVariable representation ~ RewritingVariableName
     , Rule.UnifyingRule rule
     , Rule.UnifyingRuleVariable rule ~ RewritingVariableName
-    , From rule (TermLike RewritingVariableName)
+    , From rule (AxiomPattern RewritingVariableName)
     , From rule SourceLocation
     )
 
