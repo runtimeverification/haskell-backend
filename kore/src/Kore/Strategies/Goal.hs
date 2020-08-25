@@ -854,15 +854,12 @@ simplify' lensClaimPattern goal = do
             & Pattern.withoutTerm
         requiresSideCondition =
             SideCondition.assumeTrueCondition leftCondition
-    simplifiedDestination <-
-        OrPattern.observeAllT
+    goal' <-
+        Lens.forOf (lensClaimPattern . field @"right") goal
+        $ OrPattern.observeAllT
         $ Logic.scatter destination
         >>= Pattern.simplify requiresSideCondition
-    let goal' =
-            Lens.set
-            (lensClaimPattern . field @"right")
-            (OrPattern.flatten simplifiedDestination)
-            goal
+        >>= Logic.scatter
     simplifyLeftHandSide goal'
   where
     simplifyLeftHandSide =
