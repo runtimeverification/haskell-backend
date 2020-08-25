@@ -666,25 +666,27 @@ unifyNotInKeys
   =
     worker a b <|> worker b a
   where
-    defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
+    defineTerm :: TermLike variable -> unifier (Condition variable)
     defineTerm termLike =
         makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
         >>= Unify.scatter
-        & lift
 
     eraseTerm =
         Pattern.fromCondition_ . Pattern.withoutTerm
 
+    unifyAndNegate
+        :: TermLike variable
+        -> TermLike variable
+        -> unifier (Pattern variable)
     unifyAndNegate t1 t2 = do
         -- Erasing the unified term is valid here because
         -- the terms are all wrapped in \ceil below.
         unificationSolutions <-
-            fmap eraseTerm
-            <$> Unify.gather (unifyChildren t1 t2)
+            fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
         notSimplifier
             SideCondition.top
             (OrPattern.fromPatterns unificationSolutions)
-        >>= Unify.scatter
+            >>= Unify.scatter
 
     collectConditions terms =
         Foldable.fold terms
@@ -706,25 +708,28 @@ unifyNotInKeys
                 <$> Domain.getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
             opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
-        if null mapKeys && null opaqueElements then
-            return Pattern.top
-        else do
-            Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-            -- Concrete keys are constructor-like, therefore they are defined
-            TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-            definedKey <- defineTerm keyTerm
-            definedMap <- defineTerm mapTerm
-            keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
+        if null mapKeys && null opaqueElements
+            then return Pattern.top
+            else do
+                Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
+                -- Concrete keys are constructor-like, therefore they are
+                -- defined.
+                TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+                lift $ do
+                    definedKey <- defineTerm keyTerm
+                    definedMap <- defineTerm mapTerm
+                    keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
 
-            let keyInKeysOpaque =
-                    (\term -> inject' inKeys { mapTerm = term })
-                    <$> opaqueElements
+                    let keyInKeysOpaque =
+                            (\term -> inject' inKeys { mapTerm = term })
+                            <$> opaqueElements
 
-            opaqueConditions <-
-                lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-            let conditions =
-                    fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                    <> [definedKey, definedMap]
-            return $ collectConditions conditions
+                    opaqueConditions <-
+                        traverse (unifyChildren termLike1) keyInKeysOpaque
+                    let conditions =
+                            fmap Pattern.withoutTerm
+                                (keyConditions <> opaqueConditions)
+                            <> [definedKey, definedMap]
+                    return $ collectConditions conditions
 
     worker _ _ = empty
