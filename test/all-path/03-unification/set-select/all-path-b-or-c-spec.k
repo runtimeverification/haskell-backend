@@ -7,8 +7,9 @@ module ALL-PATH-B-OR-C-SPEC
   imports VERIFICATION
   imports PATH
 
-  rule <k> select => ?X </k>
-       <state> SetItem(b) SetItem(c) </state> 
-    ensures ?X ==K b orBool ?X ==K c [all-path]
+  // TODO (#1278): ... => ?X ensures ?X ==K b orBool ?X ==K c
+  rule <k> select => b #Or c </k>
+       <state> SetItem(b) SetItem(c) </state>
+    [all-path]
 
 endmodule

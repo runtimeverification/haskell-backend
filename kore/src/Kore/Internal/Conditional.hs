@@ -20,6 +20,7 @@ module Kore.Internal.Conditional
     , isPredicate
     , Kore.Internal.Conditional.mapVariables
     , isNormalized
+    , assertNormalized
     , markPredicateSimplified
     , markPredicateSimplifiedConditional
     , setPredicateSimplified
@@ -462,6 +463,21 @@ isNormalized :: Ord variable => Conditional variable term -> Bool
 isNormalized Conditional { predicate, substitution } =
     Substitution.isNormalized substitution
     && Predicate.isFreeOf predicate (Substitution.variables substitution)
+
+{- | See also: 'isNormalized'
+ -}
+assertNormalized
+    :: HasCallStack
+    => Ord variable
+    => Conditional variable term
+    -> a
+    -> a
+assertNormalized Conditional { predicate, substitution } a =
+    a
+    & assert (Substitution.isNormalized substitution)
+    & assert (Predicate.isFreeOf predicate variables)
+  where
+    variables = Substitution.variables substitution
 
 {-| Marks the condition's predicate as being simplified.
 

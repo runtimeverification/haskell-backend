@@ -59,6 +59,8 @@ module Prelude.Kore
     , Semigroup (..)
     -- * NonEmpty
     , NonEmpty (..)
+    -- * Tuple
+    , module Data.Tuple
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -121,6 +123,7 @@ import Data.Maybe
 import Data.Semigroup
     ( Semigroup (..)
     )
+import Data.Tuple
 import Data.Typeable
     ( Typeable
     )
