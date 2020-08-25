@@ -5,9 +5,9 @@ endmodule
 
 module ALL-PATH-B-OR-C-SPEC
   import PATH
-  
+
   // This should be provable as transiting to b suffices
-  rule <k> a => ?X </k>
-    ensures ?X ==K b orBool ?X ==K c [all-path]
+  // TODO (#1278): ... => ?X ensures ?X ==K b orBool ?X ==K c
+  rule <k> a => b #Or c </k> [all-path]
 
 endmodule

@@ -43,6 +43,8 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , allPathGlobally
+    , mkRewritingRule
+    , unRewritingRule
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
@@ -53,7 +55,6 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     , TransitionT
@@ -94,7 +95,7 @@ data ProofState patt
     -- for the start patterns.
     | GoalRemLHS !patt
     -- ^ State which can't be rewritten anymore.
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Functor)
 
 -- | A 'ProofState' instantiated to 'Pattern VariableName' for convenience.
 type CommonProofState = ProofState (Pattern VariableName)
@@ -217,19 +218,20 @@ transitionRule
             Step.applyRewriteRulesParallel
                 unificationProcedure
                 (mkRewritingRule <$> rules)
-                config
+                (mkRewritingPattern config)
             & lift . lift
         let
             mapRules =
                 StepResult.mapRules
                 $ RewriteRule
-                . Step.unRewritingRule
+                . unRewritingRule
                 . Step.withoutUnification
             mapConfigs =
                 StepResult.mapConfigs
                     GoalLHS
                     GoalRemLHS
         StepResult.transitionResults (mapConfigs $ mapRules results)
+            & (fmap . fmap) getRewritingPattern
 
 defaultOneStepStrategy
     :: patt

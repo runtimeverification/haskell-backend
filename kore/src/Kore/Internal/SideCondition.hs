@@ -156,8 +156,8 @@ andCondition
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
-andCondition SideCondition {assumedTrue} newCondition =
-    assert (isNormalized result) result
+andCondition SideCondition { assumedTrue } newCondition =
+    assertNormalized result result
   where
     result = SideCondition
         { representation = toRepresentationCondition merged
@@ -214,3 +214,11 @@ toRepresentationCondition =
 
 isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
 isNormalized = Conditional.isNormalized . from @_ @(Condition variable)
+
+assertNormalized
+    :: forall variable a
+    .  HasCallStack
+    => Ord variable
+    => SideCondition variable
+    -> a -> a
+assertNormalized = Conditional.assertNormalized . from @_ @(Condition variable)
