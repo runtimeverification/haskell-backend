@@ -846,16 +846,33 @@ simplify'
     => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (AppliedRule goal) m goal
-simplify' lensClaimPattern =
-    Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
-        let definedConfig =
-                Pattern.andCondition (mkDefined <$> config)
-                $ from $ makeCeilPredicate_ (Conditional.term config)
-        configs <-
-            simplifyTopConfiguration definedConfig
-            >>= SMT.Evaluator.filterMultiOr
-            & lift
-        Foldable.asum (pure <$> configs)
+simplify' lensClaimPattern goal = do
+    goal' <- simplifyLeftHandSide goal
+    let sideCondition = extractSideCondition goal'
+    simplifyRightHandSide sideCondition goal'
+  where
+    extractSideCondition =
+        SideCondition.assumeTrueCondition
+        . Pattern.withoutTerm
+        . Lens.view (lensClaimPattern . field @"left")
+
+    simplifyLeftHandSide =
+        Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
+            let definedConfig =
+                    Pattern.andCondition (mkDefined <$> config)
+                    $ from $ makeCeilPredicate_ (Conditional.term config)
+            configs <-
+                simplifyTopConfiguration definedConfig
+                >>= SMT.Evaluator.filterMultiOr
+                & lift
+            Foldable.asum (pure <$> configs)
+
+    simplifyRightHandSide sideCondition =
+        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
+            OrPattern.observeAllT
+            $ Logic.scatter dest
+            >>= Pattern.simplify sideCondition
+            >>= Logic.scatter
 
 isTriviallyValid' :: Lens' goal ClaimPattern -> goal -> Bool
 isTriviallyValid' lensClaimPattern =
