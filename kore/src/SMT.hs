@@ -111,6 +111,7 @@ import SMT.SimpleSMT
     , push
     )
 import qualified SMT.SimpleSMT as SimpleSMT
+import qualified Data.Foldable as Foldable
 
 -- * Interface
 
@@ -398,6 +399,11 @@ defaultConfig =
         , timeOut = TimeOut (Limit 40)
         }
 
+initSolver :: Config -> SMT ()
+initSolver Config { timeOut, preludeFile } = do
+    setTimeOut timeOut
+    Foldable.traverse_ loadFile preludeFile
+
 {- | Initialize a new solverHandle with the given 'Config'.
 
 The new solverHandle is returned in an 'MVar' for thread-safety.
@@ -410,15 +416,11 @@ newSolver config =
         mvar <- Trans.liftIO $ do
             solverHandle <- SimpleSMT.newSolver exe args someLogAction
             newMVar solverHandle
-        runReaderT getSMT (SolverInitAndHandle (return ()) mvar)
+        runReaderT getSMT (SolverInitAndHandle (initSolver config) mvar)
         return mvar
   where
-    Config { timeOut } = config
     Config { executable = exe, arguments = args } = config
-    Config { preludeFile } = config
-    SMT { getSMT } = do
-        setTimeOut timeOut
-        maybe (pure ()) loadFile preludeFile
+    SMT { getSMT } = initSolver config
     handleIOException :: IOException -> LoggerT IO a
     handleIOException e =
         (error . unlines)
@@ -446,11 +448,11 @@ stopSolver mvar = do
 runSMT :: Config -> SMT a -> LoggerT IO a
 runSMT config smt =
     Exception.bracket (newSolver config) stopSolver
-        (\mvar -> runSMT' (SolverInitAndHandle (return ()) mvar) smt)
+        (\mvar -> runSMT' config mvar smt)
 
-runSMT' :: SolverInitAndHandle -> SMT a -> LoggerT IO a
-runSMT' initAndHandle SMT { getSMT } =
-    runReaderT getSMT initAndHandle
+runSMT' :: Config -> MVar SolverHandle -> SMT a -> LoggerT IO a
+runSMT' config mvar SMT { getSMT } =
+    runReaderT getSMT (SolverInitAndHandle (initSolver config) mvar)
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
