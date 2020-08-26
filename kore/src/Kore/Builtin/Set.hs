@@ -55,7 +55,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Traversable as Traversable
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -689,6 +688,10 @@ unifyNotInKeys
             (OrPattern.fromPatterns unificationSolutions)
             >>= Unify.scatter
 
+    collectConditions terms =
+        Foldable.fold terms
+        & Pattern.fromCondition_
+
     worker
         :: TermLike variable
         -> TermLike variable
@@ -715,22 +718,18 @@ unifyNotInKeys
                 lift $ do
                     definedKey <- defineTerm keyTerm
                     definedMap <- defineTerm mapTerm
-                    notInKnownKeys <-
-                        traverse (unifyAndNegate keyTerm) mapKeys
-                        & fmap (map Pattern.withoutTerm)
-                    notInOpaqueMaps <-
-                        Traversable.for opaqueElements
-                            (\term ->
-                                unifyChildren
-                                    termLike1
-                                    (inject' inKeys { mapTerm = term })
-                            )
-                        & fmap (map Pattern.withoutTerm)
-                    pure $ Pattern.fromCondition_ $ mconcat
-                        [ mconcat notInKnownKeys
-                        , mconcat notInOpaqueMaps
-                        , definedKey
-                        , definedMap
-                        ]
+                    keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
+
+                    let keyInKeysOpaque =
+                            (\term -> inject' inKeys { mapTerm = term })
+                            <$> opaqueElements
+
+                    opaqueConditions <-
+                        traverse (unifyChildren termLike1) keyInKeysOpaque
+                    let conditions =
+                            fmap Pattern.withoutTerm
+                                (keyConditions <> opaqueConditions)
+                            <> [definedKey, definedMap]
+                    return $ collectConditions conditions
 
     worker _ _ = empty
