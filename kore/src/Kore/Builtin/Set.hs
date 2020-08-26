@@ -55,6 +55,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import qualified Data.Traversable as Traversable
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -718,17 +719,18 @@ unifyNotInKeys
                 lift $ do
                     definedKey <- defineTerm keyTerm
                     definedMap <- defineTerm mapTerm
-                    keyConditions <- traverse (unifyAndNegate keyTerm) mapKeys
-
-                    let keyInKeysOpaque =
-                            (\term -> inject' inKeys { mapTerm = term })
-                            <$> opaqueElements
-
-                    opaqueConditions <-
-                        traverse (unifyChildren termLike1) keyInKeysOpaque
+                    notInKnownKeys <-
+                        traverse (unifyAndNegate keyTerm) mapKeys
+                        & fmap (map Pattern.withoutTerm)
+                    notInOpaqueKeys <-
+                        Traversable.for opaqueElements
+                            (\term ->
+                                inject' inKeys { mapTerm = term }
+                                & unifyChildren termLike1
+                            )
+                        & fmap (map Pattern.withoutTerm)
                     let conditions =
-                            fmap Pattern.withoutTerm
-                                (keyConditions <> opaqueConditions)
+                            notInKnownKeys <> notInOpaqueKeys
                             <> [definedKey, definedMap]
                     return $ collectConditions conditions
 
