@@ -246,6 +246,12 @@ instance MonadSMT NoSMT where
 
 -- * Implementation
 
+data SolverInitAndHandle =
+    SolverInitAndHandle
+        { userInit :: !(SMT ())
+        , mSolverHandle :: !(MVar SolverHandle)
+        }
+
 {- | Query an external SMT solver.
 
 The solver may be shared among multiple threads. Individual commands will
@@ -254,7 +260,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT (MVar SolverHandle) (LoggerT IO) a }
+newtype SMT a = SMT { getSMT :: ReaderT SolverInitAndHandle (LoggerT IO) a }
     deriving
         ( Applicative
         , Functor
@@ -274,7 +280,7 @@ instance MonadProf SMT where
 
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
-    mvar <- SMT Reader.ask
+    mvar <- SMT (Reader.asks mSolverHandle)
     Exception.bracket
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
@@ -296,13 +302,17 @@ instance MonadSMT SMT where
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- Trans.liftIO $ newMVar solverHandle
             logAction <- askLogAction
+            userInit <- SMT (Reader.asks userInit)
             let solver = Solver solverHandle logAction
             -- Run the SMT with the unshared mutex.
             -- The SMT will never block waiting to acquire the solver.
             Trans.liftIO $ push solver
             (SMT . Trans.lift)
                 (Exception.finally
-                    (runReaderT (getSMT smt) mvar)
+                    (runReaderT
+                        (getSMT smt)
+                        (SolverInitAndHandle userInit mvar)
+                    )
                     (Trans.liftIO $ pop solver)
                 )
 
@@ -400,7 +410,7 @@ newSolver config =
         mvar <- Trans.liftIO $ do
             solverHandle <- SimpleSMT.newSolver exe args someLogAction
             newMVar solverHandle
-        runReaderT getSMT mvar
+        runReaderT getSMT (SolverInitAndHandle (return ()) mvar)
         return mvar
   where
     Config { timeOut } = config
@@ -436,10 +446,11 @@ stopSolver mvar = do
 runSMT :: Config -> SMT a -> LoggerT IO a
 runSMT config smt =
     Exception.bracket (newSolver config) stopSolver
-        (\mvar -> runSMT' mvar smt)
+        (\mvar -> runSMT' (SolverInitAndHandle (return ()) mvar) smt)
 
-runSMT' :: MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' mvar SMT { getSMT } = runReaderT getSMT mvar
+runSMT' :: SolverInitAndHandle -> SMT a -> LoggerT IO a
+runSMT' initAndHandle SMT { getSMT } =
+    runReaderT getSMT initAndHandle
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
