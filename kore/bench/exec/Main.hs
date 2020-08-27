@@ -176,7 +176,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
     execution (verifiedModule, purePattern) =
         fmap snd
         $ flip runLoggerT emptyLogger
-        $ SMT.runSMT SMT.defaultConfig
+        $ SMT.runSMT SMT.defaultConfig (pure ())
         $ exec unlimited verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural
