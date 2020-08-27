@@ -61,9 +61,11 @@ module Kore.Internal.PredicateNew
 
 import Prelude.Kore
 
+import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Containers.ListUtils
     ( nubOrd
     )
@@ -71,6 +73,8 @@ import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
     ( Base
+    , Corecursive
+    , Recursive
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.List
@@ -83,6 +87,12 @@ import Data.Set
     ( Set
     )
 
+import Data.Functor.Compose
+    ( Compose (..)
+    )
+import Data.Functor.Identity
+    ( Identity (..)
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -102,17 +112,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike hiding
-    ( depth
-    , hasFreeVariable
-    , isSimplified
-    , mapVariables
-    , markSimplified
-    , markSimplifiedConditional
-    , markSimplifiedMaybeConditional
-    , setSimplified
-    , simplifiedAttribute
-    , substitute
-    , AndF
+    ( AndF
     , BottomF
     , CeilF
     , EqualsF
@@ -125,6 +125,16 @@ import Kore.Internal.TermLike hiding
     , NotF
     , OrF
     , TopF
+    , depth
+    , hasFreeVariable
+    , isSimplified
+    , mapVariables
+    , markSimplified
+    , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
+    , setSimplified
+    , simplifiedAttribute
+    , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
 
@@ -222,9 +232,97 @@ newtype Predicate variable =
         }
 
 
-type instance Base (Predicate variable) = PredicateF variable
+type instance Base (Predicate variable) =
+    CofreeF (PredicateF variable) (Attribute.Pattern variable)
 
 
+-- This instance implements all class functions for the TermLike newtype
+-- because the their implementations for the inner type may be specialized.
+instance Recursive (Predicate variable) where
+    project = \(Predicate embedded) ->
+        case Recursive.project embedded of
+            Compose (Identity projected) -> Predicate <$> projected
+    {-# INLINE project #-}
+
+    -- This specialization is particularly important: The default implementation
+    -- of 'cata' in terms of 'project' would involve an extra call to 'fmap' at
+    -- every level of the tree due to the implementation of 'project' above.
+    cata alg = \(Predicate fixed) ->
+        Recursive.cata
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE cata #-}
+
+    para alg = \(Predicate fixed) ->
+        Recursive.para
+            (\(Compose (Identity base)) ->
+                 alg (Bifunctor.first Predicate <$> base)
+            )
+            fixed
+    {-# INLINE para #-}
+
+    gpara dist alg = \(Predicate fixed) ->
+        Recursive.gpara
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> alg (Env.local Predicate <$> base))
+            fixed
+    {-# INLINE gpara #-}
+
+    prepro pre alg = \(Predicate fixed) ->
+        Recursive.prepro
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE prepro #-}
+
+    gprepro dist pre alg = \(Predicate fixed) ->
+        Recursive.gprepro
+            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
+            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
+            (\(Compose (Identity base)) -> alg base)
+            fixed
+    {-# INLINE gprepro #-}
+
+-- This instance implements all class functions for the Predicate newtype
+-- because the their implementations for the inner type may be specialized.
+instance Corecursive (Predicate variable) where
+    embed = \projected ->
+        (Predicate . Recursive.embed . Compose . Identity)
+            (getPredicate <$> projected)
+    {-# INLINE embed #-}
+
+    ana coalg = Predicate . ana0
+      where
+        ana0 =
+            Recursive.ana (Compose . Identity . coalg)
+    {-# INLINE ana #-}
+
+    apo coalg = Predicate . apo0
+      where
+        apo0 =
+            Recursive.apo
+                (\a ->
+                     (Compose . Identity)
+                        (Bifunctor.first getPredicate <$> coalg a)
+                )
+    {-# INLINE apo #-}
+
+    postpro post coalg = Predicate . postpro0
+      where
+        postpro0 =
+            Recursive.postpro
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE postpro #-}
+
+    gpostpro dist post coalg = Predicate . gpostpro0
+      where
+        gpostpro0 =
+            Recursive.gpostpro
+                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
+                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                (Compose . Identity . coalg)
+    {-# INLINE gpostpro #-}
 
 {- instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn tableName _ =
