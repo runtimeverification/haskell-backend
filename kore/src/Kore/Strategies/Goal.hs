@@ -153,9 +153,6 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition
-    ( tryTransitionT
-    )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( proofState
@@ -202,10 +199,6 @@ proven
 proven = Foldable.null . unprovenNodes
 
 class Goal goal where
-    -- TODO (thomas.tuegel): isTriviallyValid should be part of
-    -- checkImplication.
-    isTriviallyValid :: goal -> Bool
-
     checkImplication
         :: MonadSimplify m
         => goal
@@ -356,7 +349,6 @@ instance Goal OnePathRule where
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
-    isTriviallyValid = isTriviallyValid' _Unwrapped
 
 deriveSeqClaim
     :: MonadSimplify m
@@ -410,7 +402,6 @@ instance ClaimExtractor OnePathRule where
 instance Goal AllPathRule where
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
-    isTriviallyValid = isTriviallyValid' _Unwrapped
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathRule claims
 
     applyAxioms axiomss = \goal ->
@@ -420,7 +411,6 @@ instance Goal AllPathRule where
           | Just goal <- retractRewritableGoal proofState =
             deriveParAxiomAllPath axioms goal
             >>= simplifyRemainder
-            >>= checkTriviallyValid
           | otherwise =
             pure proofState
 
@@ -432,11 +422,6 @@ instance Goal AllPathRule where
             case proofState of
                 GoalRemainder goal -> GoalRemainder <$> simplify goal
                 _ -> return proofState
-
-        checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure Proven
-          | otherwise = pure proofState
-
 
 deriveParAxiomAllPath
     ::  MonadSimplify simplifier
@@ -461,9 +446,6 @@ instance Goal ReachabilityRule where
 
     checkImplication (AllPath goal) = fmap AllPath <$> checkImplication goal
     checkImplication (OnePath goal) = fmap OnePath <$> checkImplication goal
-
-    isTriviallyValid (AllPath goal) = isTriviallyValid goal
-    isTriviallyValid (OnePath goal) = isTriviallyValid goal
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
@@ -542,51 +524,32 @@ transitionRule claims axiomGroups = transitionRuleWorker
         :: Prim
         -> ProofState goal
         -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) =
-        return (Goal goal)
+    transitionRuleWorker Begin Proven = empty
+    transitionRuleWorker Begin (GoalStuck _) = empty
+    transitionRuleWorker Begin (GoalRewritten goal) = pure (Goal goal)
+    transitionRuleWorker Begin proofState = pure proofState
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker Simplify proofState
+      | Just goal <- retractSimplifiable proofState =
+        Transition.ifte (simplify goal) (pure . ($>) proofState) (pure Proven)
+      | otherwise =
+        pure proofState
 
-    transitionRuleWorker Simplify (Goal goal) = do
-        results <- tryTransitionT (simplify goal)
-        case results of
-            [] -> return Proven
-            _  -> Goal <$> Transition.scatter results
-
-    transitionRuleWorker Simplify (GoalRemainder goal) =
-        GoalRemainder <$> simplify goal
-
-    transitionRuleWorker CheckImplication (Goal goal) = do
+    transitionRuleWorker CheckImplication proofState
+      | Just goal <- retractRewritable proofState = do
         result <- checkImplication goal & Logic.lowerLogicT
         case result of
+            Implied -> pure Proven
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
                 pure (GoalStuck a)
-            Implied -> pure Proven
-            NotImplied a -> pure (Goal a)
-    transitionRuleWorker CheckImplication (GoalRemainder goal) = do
-        result <- checkImplication goal & Logic.lowerLogicT
-        case result of
-            NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
-                pure (GoalStuck a)
-            Implied -> pure Proven
-            NotImplied a -> do
+            NotImplied a
+              | isRemainder proofState -> do
                 warnStuckProofStateTermsNotUnifiable
-                pure (GoalRemainder a)
-
-    transitionRuleWorker TriviallyValid (Goal goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten goal)
-      | isTriviallyValid goal =
-          return Proven
+                pure (GoalStuck a)
+              | otherwise -> pure (Goal a)
+      | otherwise = pure proofState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -601,47 +564,47 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker ApplyClaims (Goal goal) =
         applyClaims claims goal
+    transitionRuleWorker ApplyClaims proofState = pure proofState
 
-    transitionRuleWorker ApplyClaims (GoalRemainder goal) =
-        applyClaims claims goal
-
-    transitionRuleWorker ApplyAxioms (Goal goal) =
+    transitionRuleWorker ApplyAxioms proofState
+      | Just goal <- retractRewritable proofState =
         applyAxioms axiomGroups goal
+      | otherwise = pure proofState
 
-    transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
-        applyAxioms axiomGroups goal
+retractSimplifiable :: ProofState a -> Maybe a
+retractSimplifiable (ProofState.Goal a) = Just a
+retractSimplifiable (ProofState.GoalRewritten a) = Just a
+retractSimplifiable (ProofState.GoalRemainder a) = Just a
+retractSimplifiable _ = Nothing
 
-    transitionRuleWorker _ state = return state
+retractRewritable :: ProofState a -> Maybe a
+retractRewritable (ProofState.Goal a) = Just a
+retractRewritable (ProofState.GoalRemainder a) = Just a
+retractRewritable _ = Nothing
+
+isRemainder :: ProofState a -> Bool
+isRemainder (ProofState.GoalRemainder _) = True
+isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
+        [ Begin
         , Simplify
-        , TriviallyValid
         , CheckImplication
         , ApplyAxioms
-        , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 reachabilityNextStep :: Strategy Prim
 reachabilityNextStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
+        [ Begin
         , Simplify
-        , TriviallyValid
         , CheckImplication
         , ApplyClaims
         , ApplyAxioms
-        , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 strategy :: Stream (Strategy Prim)
@@ -873,10 +836,6 @@ simplify' lensClaimPattern goal = do
             $ Logic.scatter dest
             >>= Pattern.simplify sideCondition
             >>= Logic.scatter
-
-isTriviallyValid' :: Lens' goal ClaimPattern -> goal -> Bool
-isTriviallyValid' lensClaimPattern =
-    isBottom . Lens.view (lensClaimPattern . field @"left")
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted

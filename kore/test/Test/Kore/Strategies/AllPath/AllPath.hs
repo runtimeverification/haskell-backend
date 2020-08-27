@@ -1,9 +1,7 @@
 module Test.Kore.Strategies.AllPath.AllPath
     ( test_unprovenNodes
-    , test_transitionRule_CheckProven
-    , test_transitionRule_CheckGoalRem
+    , test_transitionRule_Begin
     , test_transitionRule_CheckImplication
-    , test_transitionRule_TriviallyValid
     , test_transitionRule_ApplyClaims
     , test_transitionRule_ApplyAxioms
     , test_runStrategy
@@ -113,27 +111,14 @@ test_unprovenNodes =
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
 
-test_transitionRule_CheckProven :: [TestTree]
-test_transitionRule_CheckProven =
+test_transitionRule_Begin :: [TestTree]
+test_transitionRule_Begin =
     [ done ProofState.Proven
     , unmodified (ProofState.Goal    (A, B))
     , unmodified (ProofState.GoalRemainder (A, B))
     ]
   where
-    run = runTransitionRule [] [] ProofState.CheckProven
-    unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    done :: HasCallStack => ProofState -> TestTree
-    done state = run state `satisfies_` Foldable.null
-
-test_transitionRule_CheckGoalRem :: [TestTree]
-test_transitionRule_CheckGoalRem =
-    [ unmodified ProofState.Proven
-    , unmodified (ProofState.Goal          (A, B))
-    , done       (ProofState.GoalRemainder (A, B))
-    ]
-  where
-    run = runTransitionRule [] [] ProofState.CheckGoalRemainder
+    run = runTransitionRule [] [] ProofState.Begin
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
@@ -142,7 +127,7 @@ test_transitionRule_CheckGoalRem =
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
     [ unmodified ProofState.Proven
-    , unmodified (ProofState.GoalRemainder (A, B))
+    , unmodified (ProofState.GoalStuck (A, B))
     , ProofState.Goal (B, B) `becomes` (ProofState.Proven, mempty)
     ]
   where
@@ -150,20 +135,6 @@ test_transitionRule_CheckImplication =
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomes initial final = run initial `equals_` [final]
-
-test_transitionRule_TriviallyValid :: [TestTree]
-test_transitionRule_TriviallyValid =
-    [ unmodified    ProofState.Proven
-    , unmodified    (ProofState.Goal    (A, B))
-    , unmodified    (ProofState.GoalRemainder (A, B))
-    , becomesProven (ProofState.GoalRemainder (Bot, B))
-    ]
-  where
-    run = runTransitionRule [] [] ProofState.TriviallyValid
-    unmodified :: HasCallStack => ProofState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    becomesProven :: HasCallStack => ProofState -> TestTree
-    becomesProven state = run state `equals_` [(ProofState.Proven, mempty)]
 
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
@@ -191,7 +162,7 @@ test_transitionRule_ApplyClaims =
         -> [(ProofState, Seq (Goal.AppliedRule Goal))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
+    derives rules = equals_ (run rules $ ProofState.Goal (A, C))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =
@@ -347,10 +318,6 @@ instance Goal.Goal Goal where
       | otherwise = return $ Goal.NotImplied (src', dst)
       where
         src' = difference src dst
-
-    -- | The goal is trivially valid when the members are equal.
-    isTriviallyValid :: Goal -> Bool
-    isTriviallyValid (src, _) = src == Bot
 
     simplify = return
 
