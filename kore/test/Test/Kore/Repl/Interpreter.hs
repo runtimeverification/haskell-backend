@@ -738,7 +738,8 @@ runWithState command axioms claims claim stateTransformer = do
     output' <- readIORef output
     return $ Result output' c s
   where
-    liftSimplifier = SMT.runSMT SMT.defaultConfig . Kore.runSimplifier testEnv
+    liftSimplifier =
+        SMT.runSMT SMT.defaultConfig (pure ()) . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
