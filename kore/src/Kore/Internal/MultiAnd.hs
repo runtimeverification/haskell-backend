@@ -17,9 +17,13 @@ module Kore.Internal.MultiAnd
     , make
     , toPredicate
     , singleton
+    , toPattern
+    , map
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( map
+    )
 
 import Control.DeepSeq
     ( NFData
@@ -30,10 +34,17 @@ import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeTruePredicate_
+    )
+import Kore.Internal.TermLike
+    ( mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -172,3 +183,20 @@ toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates
+
+toPattern
+    :: InternalVariable variable
+    => MultiAnd (Pattern variable)
+    -> Pattern variable
+toPattern (MultiAnd patterns) =
+    case patterns of
+       [] -> Pattern.top
+       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
+
+map
+    :: Ord child2
+    => TopBottom child2
+    => (child1 -> child2)
+    -> MultiAnd child1
+    -> MultiAnd child2
+map f = make . fmap f . extractPatterns
