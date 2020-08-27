@@ -23,7 +23,8 @@ import Kore.Internal.OrPattern
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
-    ( rulePattern
+    ( mkRewritingRule
+    , rulePattern
     )
 import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy
@@ -69,6 +70,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
+    toPattern :: Either Stuck a -> Either (OrPattern VariableName) a
     toPattern =
         Bifunctor.first stuckPatterns
 

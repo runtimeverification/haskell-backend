@@ -6,30 +6,40 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Control.Lens as Lens
 import Data.Default
     ( def
+    )
+import Data.Generics.Product
+    ( field
     )
 import Data.Limit
     ( Limit (..)
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
-import Kore.Step.RulePattern
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
+import Kore.Step.ClaimPattern
     ( AllPathRule (..)
+    , ClaimPattern (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RulePattern (..)
-    , injectTermIntoRHS
+    , lensClaimPattern
     )
 import Kore.Strategies.Goal
 
@@ -588,24 +598,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -629,24 +634,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -673,24 +673,19 @@ test_reachabilityVerification =
             []
         assertEqual ""
             ( Left . OrPattern.fromPatterns $
-            [ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
+            [ Pattern.withCondition
+                (Mock.functionalConstr11 (mkElemVar Mock.x))
+                (Condition.fromPredicate
+                    (makeNotPredicate
                         (makeEqualsPredicate Mock.testSort
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                , substitution = mempty
-                }
-            , Conditional
-                { term = Mock.b
-                , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (mkElemVar Mock.x)
-                        Mock.a
-                , substitution = mempty
-                }
+                    )
+                )
+            , Pattern.withCondition
+                Mock.b
+                (Condition.assign (inject Mock.x) Mock.a)
             ]
             )
             actual
@@ -1283,62 +1278,62 @@ simpleAxiom
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
+simpleClaim
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> ClaimPattern
+simpleClaim
+    (TermLike.mapVariables (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables (pure mkRuleVariable) -> right)
+  =
+    ClaimPattern
+            { left =
+                Pattern.fromTermAndPredicate
+                    left
+                    (makeTruePredicate (termLikeSort left))
+            , right =
+                Pattern.fromTermAndPredicate
+                    right
+                    (makeTruePredicate (termLikeSort right))
+                & OrPattern.fromPattern
+            , existentials = []
+            , attributes = def
+            }
+
 simpleOnePathClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathClaim left right =
-    OnePath . OnePathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-            }
+    OnePath . OnePathRule $ simpleClaim left right
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathClaim left right =
-    AllPath . AllPathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-            }
+    AllPath . AllPathRule $ simpleClaim left right
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleOnePathTrustedClaim left right =
-    OnePath
+    Lens.set
+        (lensClaimPattern . field @"attributes" . field @"trusted")
+        (Attribute.Trusted True)
+    . OnePath
     . OnePathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    $ simpleClaim left right
 
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
     -> ReachabilityRule
 simpleAllPathTrustedClaim left right =
-    AllPath
+    Lens.set
+        (lensClaimPattern . field @"attributes" . field @"trusted")
+        (Attribute.Trusted True)
+    . AllPath
     . AllPathRule
-    $ RulePattern
-            { left
-            , antiLeft = Nothing
-            , requires = makeTruePredicate_
-            , rhs = injectTermIntoRHS right
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    $ simpleClaim left right

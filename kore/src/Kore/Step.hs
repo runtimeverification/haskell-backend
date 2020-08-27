@@ -63,7 +63,6 @@ import Kore.Step.Strategy hiding
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
-import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
@@ -104,7 +103,7 @@ transitionRule
     .   MonadSimplify simplifier
     =>  TransitionRule simplifier
             (RewriteRule RewritingVariableName)
-            (Pattern VariableName)
+            (Pattern RewritingVariableName)
 transitionRule =
     \case
         Simplify -> transitionSimplify

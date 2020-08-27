@@ -22,7 +22,6 @@ module Kore.Step.Step
     , wouldNarrowWith
     -- * Re-exports
     , UnificationProcedure (..)
-    , unRewritingRule
     , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
@@ -91,28 +90,29 @@ import Logic
 import qualified Logic
 import qualified Pretty
 
-type UnifiedRule rule variable = Conditional variable (rule variable)
+type UnifiedRule rule = Conditional (UnifyingRuleVariable rule) rule
 
-type Result rule variable =
+type Result rule =
     Step.Result
-        (UnifiedRule rule RewritingVariableName)
-        (Pattern variable)
+        (UnifiedRule rule)
+        (Pattern (UnifyingRuleVariable rule))
 
-type Results rule variable =
+type Results rule =
     Step.Results
-        (UnifiedRule rule RewritingVariableName)
-        (Pattern variable)
+        (UnifiedRule rule)
+        (Pattern (UnifyingRuleVariable rule))
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
+    => UnifyingRuleVariable rule ~ RewritingVariableName
     => UnificationProcedure simplifier
     -> Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> [rule RewritingVariableName]
+    -> [rule]
     -- ^ Rule
-    -> simplifier [UnifiedRule rule RewritingVariableName]
+    -> simplifier [UnifiedRule rule]
 unifyRules unificationProcedure initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
@@ -132,15 +132,16 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: InternalVariable variable
+    :: variable ~ UnifyingRuleVariable rule
+    => InternalVariable variable
     => MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
     -> Pattern variable
     -- ^ Initial configuration
-    -> rule variable
+    -> rule
     -- ^ Rule
-    -> LogicT simplifier (UnifiedRule rule variable)
+    -> LogicT simplifier (UnifiedRule rule)
 unifyRule unificationProcedure initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
@@ -164,9 +165,10 @@ unifyRule unificationProcedure initial rule = do
 -- TODO (thomas.tuegel): Unit tests
 wouldNarrowWith
     :: forall rule variable
-    .  Ord variable
+    .  variable ~ UnifyingRuleVariable rule
+    => Ord variable
     => UnifyingRule rule
-    => UnifiedRule rule variable
+    => UnifiedRule rule
     -> Set (SomeVariableName variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
@@ -182,12 +184,13 @@ wouldNarrowWith unified =
 
 -- |Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults
-    :: InternalVariable variable
+    :: variable ~ UnifyingRuleVariable rule
+    => InternalVariable variable
     => Monad m
     => UnifyingRule rule
-    => Eq (rule RewritingVariableName)
+    => Eq rule
     => TermLike variable
-    -> Results rule variable'
+    -> Results rule
     -> m ()
 assertFunctionLikeResults termLike results =
     let appliedRules = Result.appliedRule <$> Results.results results
@@ -198,12 +201,12 @@ assertFunctionLikeResults termLike results =
 -- |Checks whether configuration and matching pattern are function-like
 checkFunctionLike
     :: InternalVariable variable
-    => InternalVariable variable'
+    => InternalVariable (UnifyingRuleVariable rule)
     => Foldable f
     => UnifyingRule rule
-    => Eq (f (UnifiedRule rule variable'))
-    => Monoid (f (UnifiedRule rule variable'))
-    => f (UnifiedRule rule variable')
+    => Eq (f (UnifiedRule rule))
+    => Monoid (f (UnifiedRule rule))
+    => f (UnifiedRule rule)
     -> TermLike variable
     -> Either String ()
 checkFunctionLike unifiedRules pat

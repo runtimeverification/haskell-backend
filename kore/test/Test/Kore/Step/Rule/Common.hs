@@ -87,27 +87,3 @@ instance RuleBase TermLike (RewriteRule VariableName) where
     t1 `rewritesToWithSort` t2 =
         Pair (t1, makeTruePredicate (TermLike.termLikeSort t1))
         `rewritesToWithSort` Pair (t2, makeTruePredicate (TermLike.termLikeSort t2))
-
-instance RuleBase Pair OLD.OnePathRule where
-    Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
-        OLD.OnePathRule RulePattern
-            { OLD.left = t1
-            , OLD.requires = p1
-            , OLD.rhs = RHS
-                { OLD.existentials = []
-                , OLD.right = t2
-                , OLD.ensures = p2
-                }
-            , OLD.antiLeft = Nothing
-            , OLD.attributes = Default.def
-            }
-    rewritesToWithSort = rewritesTo
-
-instance RuleBase TermLike OLD.OnePathRule where
-    t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate_)
-        `rewritesTo` Pair (t2, makeTruePredicate_)
-
-    t1 `rewritesToWithSort` t2 =
-        Pair (t1, makeTruePredicate (TermLike.termLikeSort t1))
-        `rewritesToWithSort` Pair (t2, makeTruePredicate (TermLike.termLikeSort t2))

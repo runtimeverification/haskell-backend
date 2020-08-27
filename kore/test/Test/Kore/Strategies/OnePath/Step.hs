@@ -12,7 +12,6 @@ import Data.Coerce
 import Data.Default
     ( def
     )
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -37,28 +36,30 @@ import Kore.IndexedModule.IndexedModule
     ( indexedModuleWithDefaultImports
     )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.RulePattern
-    ( OnePathRule (..)
-    , RHS (..)
+import Kore.Step.ClaimPattern
+    ( ClaimPattern (..)
+    , OnePathRule (..)
     , ReachabilityRule (..)
-    , injectTermIntoRHS
-    , rulePattern
     )
-import Kore.Step.RulePattern as RulePattern
+import Kore.Step.RulePattern
     ( RulePattern (..)
+    , injectTermIntoRHS
+    , mkRewritingRule
     )
 import Kore.Step.SMT.Lemma
     ( declareSMTLemmas
@@ -84,37 +85,74 @@ type TermLike' = TermLike VariableName
 type Pattern' = Pattern VariableName
 type Predicate' = Predicate VariableName
 
+makeOnePathGoal
+    :: TermLike'
+    -> TermLike'
+    -> OnePathRule
+makeOnePathGoal
+    (TermLike.mapVariables (pure mkConfigVariable) -> left)
+    (TermLike.mapVariables (pure mkConfigVariable) -> right)
+  =
+    OnePathRule
+    $ ClaimPattern
+            { left =
+                Pattern.fromTermAndPredicate
+                    left
+                    (makeTruePredicate (termLikeSort left))
+            , right =
+                Pattern.fromTermAndPredicate
+                    right
+                    (makeTruePredicate (termLikeSort right))
+                & OrPattern.fromPattern
+            , existentials = []
+            , attributes = def
+            }
+
 makeOnePathRule
     :: TermLike'
     -> TermLike'
     -> OnePathRule
-makeOnePathRule term dest =
-    OnePathRule $ rulePattern term dest
+makeOnePathRule
+    (TermLike.mapVariables (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables (pure mkRuleVariable) -> right)
+  =
+    OnePathRule
+    $ ClaimPattern
+            { left =
+                Pattern.fromTermAndPredicate
+                    left
+                    (makeTruePredicate (termLikeSort left))
+            , right =
+                Pattern.fromTermAndPredicate
+                    right
+                    (makeTruePredicate (termLikeSort right))
+                & OrPattern.fromPattern
+            , existentials = []
+            , attributes = def
+            }
 
-makeOnePathRuleFromPatterns
+makeOnePathGoalFromPatterns
     :: Pattern'
     -> Pattern'
     -> OnePathRule
-makeOnePathRuleFromPatterns
-    configuration
-    destination
+makeOnePathGoalFromPatterns
+    (Pattern.mapVariables (pure mkConfigVariable) -> left)
+    (Pattern.mapVariables (pure mkConfigVariable) -> right)
   =
-    let (left, Condition.toPredicate -> requires') =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures') =
-            Pattern.splitTerm destination
-    in coerce RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires = Predicate.coerceSort (TermLike.termLikeSort left) requires'
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures =
-                Predicate.coerceSort (TermLike.termLikeSort right) ensures'
+    OnePathRule
+    $ ClaimPattern
+            { left
+            , right = OrPattern.fromPattern right
+            , existentials = []
+            , attributes = def
             }
-        , attributes = Default.def
-        }
+
+makeReachabilityOnePathGoal
+    :: TermLike'
+    -> TermLike'
+    -> ReachabilityRule
+makeReachabilityOnePathGoal term dest =
+    OnePath (makeOnePathGoal term dest)
 
 makeReachabilityOnePathRule
     :: TermLike'
@@ -133,7 +171,7 @@ test_onePathStrategy =
         [ actual ] <- runOnePathSteps
             Unlimited
             (Limit 0)
-            (makeOnePathRule
+            (makeOnePathGoal
                 Mock.a
                 Mock.a
             )
@@ -142,7 +180,7 @@ test_onePathStrategy =
         [ actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 0)
-            (makeReachabilityOnePathRule
+            (makeReachabilityOnePathGoal
                 Mock.a
                 Mock.a
             )
@@ -162,13 +200,13 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeOnePathRule Mock.a Mock.a)
+            (makeOnePathGoal Mock.a Mock.a)
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeReachabilityOnePathRule Mock.a Mock.a)
+            (makeReachabilityOnePathGoal Mock.a Mock.a)
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual "" ProofState.Proven _actual
@@ -184,13 +222,13 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeOnePathRule Mock.a Mock.d)
+            (makeOnePathGoal Mock.a Mock.d)
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeReachabilityOnePathRule Mock.a Mock.d)
+            (makeReachabilityOnePathGoal Mock.a Mock.d)
             [makeReachabilityOnePathRule Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
@@ -208,7 +246,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeOnePathRule
+            (makeOnePathGoal
                 Mock.a
                 Mock.b
             )
@@ -219,7 +257,7 @@ test_onePathStrategy =
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeReachabilityOnePathRule
+            (makeReachabilityOnePathGoal
                 Mock.a
                 Mock.b
             )
@@ -242,7 +280,7 @@ test_onePathStrategy =
         [ _actual1 ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeOnePathRule Mock.a Mock.e)
+            (makeOnePathGoal Mock.a Mock.e)
             [makeOnePathRule Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
@@ -250,7 +288,7 @@ test_onePathStrategy =
         [ _actual1Reach ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeReachabilityOnePathRule Mock.a Mock.e)
+            (makeReachabilityOnePathGoal Mock.a Mock.e)
             [makeReachabilityOnePathRule Mock.b Mock.c]
             [ simpleReachabilityRewrite Mock.b Mock.d
             , simpleReachabilityRewrite Mock.a Mock.b
@@ -276,7 +314,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeOnePathRule Mock.a Mock.e)
+            (makeOnePathGoal Mock.a Mock.e)
             [makeOnePathRule Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
@@ -284,7 +322,7 @@ test_onePathStrategy =
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeReachabilityOnePathRule Mock.a Mock.e)
+            (makeReachabilityOnePathGoal Mock.a Mock.e)
             [makeReachabilityOnePathRule Mock.e Mock.c]
             [ simpleReachabilityRewrite Mock.b Mock.d
             , simpleReachabilityRewrite Mock.a Mock.b
@@ -324,7 +362,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                (makeOnePathRule
+                (makeOnePathGoal
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
@@ -345,7 +383,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                (makeReachabilityOnePathRule
+                (makeReachabilityOnePathGoal
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
@@ -373,7 +411,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expectedGoal =
-                makeOnePathRuleFromPatterns
+                makeOnePathGoalFromPatterns
                     Conditional
                         { term =
                             Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
@@ -407,7 +445,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                (makeOnePathRule
+                (makeOnePathGoal
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
@@ -422,7 +460,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                (makeReachabilityOnePathRule
+                (makeReachabilityOnePathGoal
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
@@ -438,7 +476,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expectedGoal =
-                makeOnePathRuleFromPatterns
+                makeOnePathGoalFromPatterns
                     Conditional
                         { term =
                             Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
@@ -460,7 +498,7 @@ test_onePathStrategy =
         actual@[ _actual1, _actual2 ] <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeOnePathRule
+            (makeOnePathGoal
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
             )
@@ -475,7 +513,7 @@ test_onePathStrategy =
         actualReach <- runOnePathSteps
             Unlimited
             (Limit 2)
-            (makeReachabilityOnePathRule
+            (makeReachabilityOnePathGoal
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
             )
@@ -489,7 +527,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             [ ProofState.GoalStuck
-            $ makeOnePathRuleFromPatterns
+            $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
@@ -516,7 +554,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                ( makeOnePathRule
+                ( makeOnePathGoal
                     (Mock.builtinInt 0)
                     (Mock.builtinInt 1)
                 )
@@ -535,7 +573,7 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 2)
-                ( makeReachabilityOnePathRule
+                ( makeReachabilityOnePathGoal
                     (Mock.builtinInt 0)
                     (Mock.builtinInt 1)
                 )
@@ -565,7 +603,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeOnePathRuleFromPatterns
+            (makeOnePathGoalFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
@@ -604,7 +642,7 @@ test_onePathStrategy =
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (OnePath $ makeOnePathRuleFromPatterns
+            (OnePath $ makeOnePathGoalFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
@@ -641,7 +679,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.GoalRewritten $ makeOnePathRuleFromPatterns
+            [ ProofState.GoalRewritten $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
@@ -668,7 +706,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (makeOnePathRuleFromPatterns
+            (makeOnePathGoalFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
@@ -697,7 +735,7 @@ test_onePathStrategy =
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
-            (OnePath $ makeOnePathRuleFromPatterns
+            (OnePath $ makeOnePathGoalFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
@@ -724,7 +762,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.GoalRewritten $ makeOnePathRuleFromPatterns
+            [ ProofState.GoalRewritten $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
@@ -769,8 +807,8 @@ test_onePathStrategy =
                             Mock.a
                         )
                     )
-            original = makeOnePathRuleFromPatterns left right
-            expect = makeOnePathRuleFromPatterns left' right
+            original = makeOnePathGoalFromPatterns left right
+            expect = makeOnePathGoalFromPatterns left' right
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
@@ -827,7 +865,7 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Goal goal
     => Limit Natural
-    -> ( ExecutionGraph (ProofState.ProofState goal) (Rule goal)
+    -> ( ExecutionGraph (ProofState.ProofState goal) (AppliedRule goal)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)

@@ -245,6 +245,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Map.unifyEquals s))
     , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
+    , (EqualsT, \_ _ s -> Builtin.Set.unifyNotIn s notSimplifier)
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)

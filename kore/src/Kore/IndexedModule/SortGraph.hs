@@ -72,8 +72,6 @@ fromSubsorts relations =
 
         nodeMap :: Map Sort Int
         nodeMap = Map.fromList (map swap lnodes)
-          where
-            swap (x, y) = (y, x)
 
         edges :: [Graph.LEdge ()]
         edges =

@@ -21,6 +21,9 @@ import Control.Error
     , maybeT
     , throwE
     )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
@@ -71,6 +74,7 @@ evaluateApplication
     :: forall variable simplifier
     .  ( InternalVariable variable
        , MonadSimplify simplifier
+       , MonadThrow simplifier
        )
     => SideCondition variable
     -- ^ The predicate from the configuration

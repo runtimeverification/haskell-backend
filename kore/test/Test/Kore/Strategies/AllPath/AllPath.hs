@@ -142,12 +142,12 @@ test_transitionRule_ApplyClaims =
     , unmodified (ProofState.GoalRewritten    (A, B))
     , [Rule (A, C)]
         `derives`
-        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Goal.AppliedClaim (A, C))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Goal.AppliedClaim (A, B))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     ]
@@ -159,7 +159,7 @@ test_transitionRule_ApplyClaims =
         :: HasCallStack
         => [Goal.Rule Goal]
         -- ^ rules to apply in parallel
-        -> [(ProofState, Seq (Goal.Rule Goal))]
+        -> [(ProofState, Seq (Goal.AppliedRule Goal))]
         -- ^ transitions
         -> TestTree
     derives rules = equals_ (run rules $ ProofState.Goal (A, C))
@@ -170,24 +170,25 @@ test_transitionRule_ApplyAxioms =
     , unmodified (ProofState.GoalRewritten    (A, B))
     , [Rule (A, C)]
         `derives`
-        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ Rule (A, C))
+        [ (ProofState.GoalRewritten (C,   C), Seq.singleton $ axiom (A, C))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ Rule (A, B))
+        [ (ProofState.GoalRewritten (B  , C), Seq.singleton $ axiom (A, B))
         , (ProofState.GoalRemainder (Bot, C), mempty)
         ]
     ]
   where
     run rules = runTransitionRule [] [rules] ProofState.ApplyAxioms
+    axiom = Goal.AppliedAxiom . Rule
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
         :: HasCallStack
         => [Goal.Rule Goal]
         -- ^ rules to apply in parallel
-        -> [(ProofState, Seq (Goal.Rule Goal))]
+        -> [(ProofState, Seq (Goal.AppliedRule Goal))]
         -- ^ transitions
         -> TestTree
     derives rules = equals_ (run rules $ ProofState.GoalRemainder (A, C))
@@ -218,7 +219,7 @@ test_runStrategy =
     run
         :: [Goal.Rule Goal]
         -> Goal.Rule Goal
-        -> Strategy.ExecutionGraph ProofState (Goal.Rule Goal)
+        -> Strategy.ExecutionGraph ProofState (Goal.AppliedRule Goal)
     run axioms goal =
         runIdentity
         . unAllPathIdentity
@@ -256,7 +257,7 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.Rule Goal)
+type ExecutionGraph = Strategy.ExecutionGraph (ProofState.ProofState Integer) (Goal.AppliedRule Goal)
 
 emptyExecutionGraph :: ProofState.ProofState Integer -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
@@ -320,19 +321,22 @@ instance Goal.Goal Goal where
 
     simplify = return
 
-    applyClaims claims = derivePar (map Rule claims)
+    applyClaims claims =
+        derivePar Goal.AppliedClaim (map Rule claims)
 
-    applyAxioms axiomGroups = derivePar (concat axiomGroups)
+    applyAxioms axiomGroups =
+        derivePar (Goal.AppliedAxiom . Rule) (concat axiomGroups)
 
 derivePar
-    :: [Goal.Rule Goal]
+    :: (Goal -> Goal.AppliedRule Goal)
+    -> [Goal.Rule Goal]
     -> (K, K)
-    -> Transition.TransitionT (Goal.Rule Goal) m (ProofState.ProofState (K, K))
-derivePar rules (src, dst) =
+    -> Transition.TransitionT (Goal.AppliedRule Goal) m (ProofState.ProofState (K, K))
+derivePar mkAppliedRule rules (src, dst) =
     goals <|> goalRemainder
   where
-    goal rule@(Rule (_, to)) = do
-        Transition.addRule rule
+    goal (Rule rule@(_, to)) = do
+        Transition.addRule (mkAppliedRule rule)
         (pure . ProofState.GoalRewritten) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
@@ -356,7 +360,7 @@ runTransitionRule
     -> [[Goal.Rule Goal]]
     -> Prim
     -> ProofState
-    -> [(ProofState, Seq (Goal.Rule Goal))]
+    -> [(ProofState, Seq (Goal.AppliedRule Goal))]
 runTransitionRule claims axiomGroups prim state =
     (runIdentity . unAllPathIdentity . runTransitionT)
         (Goal.transitionRule claims axiomGroups prim state)
