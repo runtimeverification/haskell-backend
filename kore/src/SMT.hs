@@ -82,6 +82,10 @@ import Data.Text
     ( Text
     )
 
+import Control.Monad
+    ( join
+    )
+import qualified Data.Foldable as Foldable
 import Log
     ( LogAction
     , LoggerT
@@ -111,7 +115,6 @@ import SMT.SimpleSMT
     , push
     )
 import qualified SMT.SimpleSMT as SimpleSMT
-import qualified Data.Foldable as Foldable
 
 -- * Interface
 
@@ -401,6 +404,7 @@ defaultConfig =
 
 initSolver :: Config -> SMT ()
 initSolver Config { timeOut, preludeFile } = do
+    join $ SMT (Reader.asks userInit)
     setTimeOut timeOut
     Foldable.traverse_ loadFile preludeFile
 
