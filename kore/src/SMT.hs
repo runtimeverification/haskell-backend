@@ -216,6 +216,14 @@ class Monad m => MonadSMT m where
     loadFile = Trans.lift . loadFile
     {-# INLINE loadFile #-}
 
+    -- | Reinitialize the SMT
+    reinit :: m ()
+    default reinit
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
+        => m ()
+    reinit = Trans.lift reinit
+    {-# INLINE reinit #-}
+
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: LoggerT IO a }
@@ -247,6 +255,7 @@ instance MonadSMT NoSMT where
     ackCommand _ = return ()
     assert _ = return ()
     check = return Unknown
+    reinit = return ()
 
 -- * Implementation
 
@@ -346,6 +355,10 @@ instance MonadSMT SMT where
 
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
+
+    reinit = do
+        withSolver' $ \solver -> SimpleSMT.send solver (List [Atom "reset"])
+        initSolver defaultConfig
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
