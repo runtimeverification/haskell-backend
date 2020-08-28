@@ -29,18 +29,18 @@ import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.HashMap.Strict
     ( HashMap
     )
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
-    ( foldl'
-    , foldl1'
+    ( foldl1'
     , sortBy
     )
-import qualified Data.List as List
-    ( sort
+import Data.Ord
+    ( comparing
     )
 import Data.Set
     ( Set
@@ -49,6 +49,10 @@ import qualified Data.Set as Set
 import Data.Traversable
     ( for
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 
 import Changed
 import Kore.Attribute.Synthetic
@@ -63,16 +67,9 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
-    , makeAndPredicate
     , makePredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
-    ( depth
-    , setSimplified
-    , simplifiedAttribute
-    , unwrapPredicate
-    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -95,10 +92,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-    ( hasFreeVariable
-    , setSimplified
-    , simplifiedAttribute
-    )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
@@ -250,58 +243,59 @@ makeEvaluateNonBool
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
     normalized <- Substitution.normalize sideCondition merged
-    let normalizedPredicates =
+    let normalizedTerms =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term normalized)
         normalizedPredicate =
-            promoteSubTermsToTop (Conditional.predicate normalized)
+            (promoteSubTermsToTop . MultiAnd.make . getMultiAndPredicate)
+            (Conditional.predicate normalized)
     case normalizedPredicate of
         Unchanged unchanged ->
-            return normalized
-                { term = normalizedPredicates
-                , predicate = unchanged
+            normalized
+                { term = normalizedTerms
+                , predicate =
+                    MultiAnd.toPredicate unchanged
+                    & Predicate.setSimplified
+                        (foldMap Predicate.simplifiedAttribute unchanged)
                 }
+            & Pattern.syncSort
+            & return
         Changed changed ->
-            simplifyCondition
-                sideCondition
-                normalized
-                    { term = normalizedPredicates
-                    , predicate = changed
-                    }
+            normalized
+                { term = normalizedTerms
+                , predicate = MultiAnd.toPredicate changed
+                }
+            & Pattern.syncSort
+            & simplifyCondition sideCondition
 
 promoteSubTermsToTop
     :: forall variable
     .  InternalVariable variable
-    => Predicate variable
-    -> Changed (Predicate variable)
-promoteSubTermsToTop predicate =
-    case normalizedPredicates of
-        Unchanged unchanged -> Unchanged $
-            foldl'
-                makeSimplifiedAndPredicate
-                makeTruePredicate_
-                (List.sort unchanged)
-        Changed changed -> Changed $
-            foldl' makeAndPredicate makeTruePredicate_ changed
+    => MultiAnd (Predicate variable)
+    -> Changed (MultiAnd (Predicate variable))
+promoteSubTermsToTop (Foldable.toList -> andPredicates) =
+    fmap MultiAnd.make
+    $ flip evalStateT HashMap.empty
+    $ for (sortBySize andPredicates)
+    $ \predicate' -> do
+        let original = Predicate.unwrapPredicate predicate'
+        result <- replaceWithTopNormalized original
+        insertAssumption result
+        return result
   where
-    andPredicates :: [Predicate variable]
-    andPredicates = getMultiAndPredicate predicate
+    -- Sorting by size ensures that every clause is considered before any clause
+    -- which could contain it, because the containing clause is necessarily
+    -- larger.
+    sortBySize :: [Predicate variable] -> [Predicate variable]
+    sortBySize = sortBy (comparing (size . from))
 
-    sortedAndPredicates :: [Predicate variable]
-    sortedAndPredicates = sortByDepth andPredicates
-
-    sortByDepth :: [Predicate variable] -> [Predicate variable]
-    sortByDepth = sortBy (compare `on` Predicate.depth)
-
-    normalizedPredicates :: Changed [Predicate variable]
-    normalizedPredicates =
-        flip evalStateT HashMap.empty
-        $ for sortedAndPredicates
-        $ \predicate' -> do
-            let original = Predicate.unwrapPredicate predicate'
-            result <- replaceWithTopNormalized original
-            insertAssumption result
-            return result
+    size :: TermLike variable -> Int
+    size =
+        Recursive.fold $ \(_ :< termLikeF) ->
+            case termLikeF of
+                TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
+                TermLike.DefinedF defined -> TermLike.getDefined defined
+                _ -> 1 + Foldable.sum termLikeF
 
     insertAssumption
         :: Predicate variable
@@ -374,11 +368,6 @@ promoteSubTermsToTop predicate =
                 replacements
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
-
-    makeSimplifiedAndPredicate a b =
-        Predicate.setSimplified
-            (on (<>) Predicate.simplifiedAttribute a b)
-            (makeAndPredicate a b)
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable

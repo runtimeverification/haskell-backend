@@ -7,6 +7,7 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
     )
@@ -414,12 +415,11 @@ test_andSimplification =
                 Conditional
                     { term = Mock.constr10 fOfX
                     , predicate =
-                        makeAndPredicate
-                            (makeAndPredicate
-                                (makeCeilPredicate Mock.testSort fOfX)
-                                (makeCeilPredicate Mock.testSort gOfX)
-                            )
-                            (makeEqualsPredicate_ fOfX gOfX)
+                        (MultiAnd.toPredicate . MultiAnd.make)
+                        [ makeCeilPredicate Mock.testSort fOfX
+                        , makeCeilPredicate Mock.testSort gOfX
+                        , makeEqualsPredicate_ fOfX gOfX
+                        ]
                     , substitution = mempty
                     }
         actual <-
@@ -468,15 +468,12 @@ test_andSimplification =
                 Conditional
                     { term = Mock.constr10 fOfX
                     , predicate =
-                        makeAndPredicate
-                            (makeAndPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate Mock.testSort fOfX)
-                                    (makeCeilPredicate Mock.testSort fOfY)
-                                )
-                                (makeCeilPredicate Mock.testSort gOfX)
-                            )
-                            (makeEqualsPredicate_ fOfX gOfX)
+                        (MultiAnd.toPredicate . MultiAnd.make)
+                        [ makeCeilPredicate Mock.testSort fOfX
+                        , makeCeilPredicate Mock.testSort fOfY
+                        , makeCeilPredicate Mock.testSort gOfX
+                        , makeEqualsPredicate_ fOfX gOfX
+                        ]
                     , substitution = mempty
                     }
         actual <-
