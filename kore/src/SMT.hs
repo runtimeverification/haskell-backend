@@ -358,7 +358,7 @@ instance MonadSMT SMT where
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
     reinit = do
-        withSolver' $ \solver -> SimpleSMT.send solver (List [Atom "reset"])
+        withSolver' $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
         config <- SMT (Reader.asks config)
         initSolver config
 
