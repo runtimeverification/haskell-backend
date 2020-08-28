@@ -62,6 +62,9 @@ module Kore.Internal.PredicateNew
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Env as Env
+import qualified Control.Comonad.Trans.Cofree as Cofree
+    (tailF
+    )
 import Control.DeepSeq
     ( NFData
     )
@@ -380,7 +383,7 @@ fromPredicate
     -> Predicate variable
     -> TermLike variable
 fromPredicate sort =
-    Recursive.fold $ synthesize . \case
+    Recursive.fold $ synthesize . (\case
         AndF      x -> TermLike.AndF x {andSort = sort}
         BottomF   x -> TermLike.BottomF x {bottomSort = sort}
         CeilF     x -> TermLike.CeilF x {ceilOperandSort = sort, ceilResultSort = sort}
@@ -393,6 +396,7 @@ fromPredicate sort =
         InF       x -> TermLike.InF x {inOperandSort = sort, inResultSort = sort}
         NotF      x -> TermLike.NotF x {notSort = sort}
         OrF       x -> TermLike.OrF x {orSort = sort}
+    ) . Cofree.tailF
 
 {- | Change a 'Predicate' from one 'Sort' to another.
 
