@@ -404,6 +404,8 @@ This is a safe operation because predicates are flexibly sorted.
 
  -}
 
+ -- This no longer makes sense ^
+
  {-
 coerceSort
     :: (HasCallStack, InternalVariable variable)
@@ -414,6 +416,7 @@ coerceSort sort = fmap (TermLike.fullyOverrideSort sort)
 
 predicateSort :: Predicate variable -> Sort
 predicateSort = termLikeSort . unwrapPredicate
+-}
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
@@ -423,18 +426,18 @@ pattern PredicateFalse :: Predicate variable
 -}
 pattern PredicateTrue :: Predicate variable
 
-pattern PredicateFalse <- GenericPredicate (Recursive.project -> _ :< BottomF _)
-pattern PredicateTrue  <- GenericPredicate (Recursive.project -> _ :< TopF _)
+pattern PredicateFalse <- (Recursive.project -> _ :< BottomF _)
+pattern PredicateTrue  <- (Recursive.project -> _ :< TopF _)
 
 pattern PredicateAnd
     :: Predicate variable -> Predicate variable -> Predicate variable
-pattern PredicateAnd p1 p2 <-
-    GenericPredicate (And_ _ (GenericPredicate -> p1) (GenericPredicate -> p2))
+pattern PredicateAnd p1 p2 <- (Recursive.project -> _ :< AndF And {andSort = (), andFirst = p1, andSecond = p2})
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
-isFalse :: TopBottom patt => GenericPredicate patt -> Bool
+isFalse :: TopBottom patt => patt -> Bool
 isFalse = isBottom
 
+{-
 binaryOperator
     :: (HasCallStack, InternalVariable variable)
     => (TermLike variable -> TermLike  variable -> TermLike  variable)
@@ -443,19 +446,35 @@ binaryOperator operator (GenericPredicate first) (GenericPredicate second) =
     GenericPredicate (operator first sortedSecond)
   where
     sortedSecond = TermLike.fullyOverrideSort (termLikeSort first) second
-
+-}
 {-| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
 -}
+
+makeTruePredicate :: InternalVariable variable => Predicate variable
+makeTruePredicate = synthesize (TopF Top {topSort = ()})
+makeFalsePredicate :: InternalVariable variable => Predicate variable
+makeFalsePredicate = synthesize $ BottomF Bottom {bottomSort = ()}
 
 makeMultipleAndPredicate
     :: (HasCallStack, InternalVariable variable)
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
-    foldl' makeAndPredicate makeTruePredicate_ . nubOrd
+    foldl' makeAndPredicate makeTruePredicate . nubOrd
     -- 'and' is idempotent so we eliminate duplicates
 
+{-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
+simplification.
+-}
+makeAndPredicate
+    :: (HasCallStack, InternalVariable variable)
+    => Predicate variable
+    -> Predicate variable
+    -> Predicate variable
+makeAndPredicate p1 p2 = synthesize $ AndF And {andSort = (), andFirst = p1, andSecond = p2}
+
+{-
 {- | Flatten a 'Predicate' with 'And' at the top.
 'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
 associativity.
