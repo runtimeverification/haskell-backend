@@ -263,6 +263,7 @@ data SolverInitAndHandle =
     SolverInitAndHandle
         { userInit :: !(SMT ())
         , mSolverHandle :: !(MVar SolverHandle)
+        , config :: !Config
         }
 
 {- | Query an external SMT solver.
@@ -315,7 +316,7 @@ instance MonadSMT SMT where
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- Trans.liftIO $ newMVar solverHandle
             logAction <- askLogAction
-            userInit <- SMT (Reader.asks userInit)
+            SolverInitAndHandle userInit _ config <- SMT Reader.ask
             let solver = Solver solverHandle logAction
             -- Run the SMT with the unshared mutex.
             -- The SMT will never block waiting to acquire the solver.
@@ -324,7 +325,7 @@ instance MonadSMT SMT where
                 (Exception.finally
                     (runReaderT
                         (getSMT smt)
-                        (SolverInitAndHandle userInit mvar)
+                        (SolverInitAndHandle userInit mvar config)
                     )
                     (Trans.liftIO $ pop solver)
                 )
@@ -358,7 +359,8 @@ instance MonadSMT SMT where
 
     reinit = do
         withSolver' $ \solver -> SimpleSMT.send solver (List [Atom "reset"])
-        initSolver defaultConfig
+        config <- SMT (Reader.asks config)
+        initSolver config
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -417,9 +419,9 @@ defaultConfig =
 
 initSolver :: Config -> SMT ()
 initSolver Config { timeOut, preludeFile } = do
-    join $ SMT (Reader.asks userInit)
     setTimeOut timeOut
     Foldable.traverse_ loadFile preludeFile
+    join $ SMT (Reader.asks userInit)
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
@@ -433,7 +435,7 @@ newSolver config userInit =
         mvar <- Trans.liftIO $ do
             solverHandle <- SimpleSMT.newSolver exe args someLogAction
             newMVar solverHandle
-        runReaderT getSMT (SolverInitAndHandle userInit mvar)
+        runReaderT getSMT (SolverInitAndHandle userInit mvar config)
         return mvar
   where
     Config { executable = exe, arguments = args } = config
@@ -465,11 +467,13 @@ stopSolver mvar = do
 runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
 runSMT config userInit smt =
     Exception.bracket (newSolver config userInit) stopSolver
-        (\mvar -> runSMT' config mvar smt)
+        (\mvar -> runSMT' config userInit mvar smt)
 
-runSMT' :: Config -> MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' config mvar SMT { getSMT } =
-    runReaderT getSMT (SolverInitAndHandle (initSolver config) mvar)
+runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
+runSMT' config userInit mvar SMT { getSMT = smt } =
+    runReaderT
+        (getSMT (initSolver config) >> smt)
+        (SolverInitAndHandle userInit mvar config)
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
