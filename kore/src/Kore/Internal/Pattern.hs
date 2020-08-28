@@ -7,6 +7,7 @@ Representation of program configurations as conditional patterns.
 module Kore.Internal.Pattern
     ( Pattern
     , coerceSort
+    , syncSort
     , patternSort
     , fromCondition
     , fromCondition_

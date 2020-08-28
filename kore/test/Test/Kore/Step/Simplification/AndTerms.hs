@@ -1464,7 +1464,7 @@ test_functionAnd =
                 $ Condition.fromPredicate
                 $ makeEqualsPredicate_ (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
-        assertEqual "" expect (syncSort actual)
+        assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
     ]
 
@@ -1673,7 +1673,7 @@ simplifyUnifySorts
 simplifyUnifySorts first second = do
     (simplified, unified) <-
         simplifyUnify (simplifiedTerm first) (simplifiedTerm second)
-    return (map syncSort simplified, syncSort <$> unified)
+    return (map Pattern.syncSort simplified, Pattern.syncSort <$> unified)
 
 simplifyUnify
     :: TermLike VariableName
@@ -1720,12 +1720,6 @@ simplifyEquals simplifierAxioms first second =
     $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env { simplifierAxioms }
-
-syncSort :: Pattern VariableName -> Pattern VariableName
-syncSort patt =
-    term `Pattern.withCondition` condition
-  where
-    (term, condition) = Pattern.splitTerm patt
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
