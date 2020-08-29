@@ -32,6 +32,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
+    , makeCeilPredicate_
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
@@ -1275,7 +1276,7 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate Mock.testSort
+                                ( makeCeilPredicate_
                                     (Mock.f (mkElemVar Mock.x))
                                 )
                                 ( makeEqualsPredicate_
@@ -1284,7 +1285,7 @@ test_equalsTermsSimplification =
                                 )
                             )
                         )
-                        ( makeCeilPredicate Mock.testSort
+                        ( makeCeilPredicate_
                             (Mock.f (mkElemVar Mock.x))
                         )
                     & Condition.fromPredicate
@@ -1396,7 +1397,7 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate Mock.testSort
+                                ( makeCeilPredicate_
                                     (Mock.f (mkElemVar Mock.x))
                                 )
                                 ( makeEqualsPredicate_
@@ -1405,7 +1406,7 @@ test_equalsTermsSimplification =
                                 )
                             )
                         )
-                        ( makeCeilPredicate Mock.testSort
+                        ( makeCeilPredicate_
                             (Mock.f (mkElemVar Mock.x))
                         )
                     & Condition.fromPredicate

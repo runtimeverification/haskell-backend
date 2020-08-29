@@ -200,28 +200,42 @@ simplifyEvaluatedMultiple _ _ [] = return OrPattern.top
 simplifyEvaluatedMultiple notSimplifier sideCondition (pat : patterns) =
     foldM (simplifyEvaluated notSimplifier sideCondition) pat patterns
 
-{-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
+{- | 'makeEvaluateMulti' simplifies a 'MultiAnd' of 'Pattern's.
 
 See the comment for 'simplify' to find more details.
+
+-}
+makeEvaluateMulti
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier (UnifierT simplifier)
+    -> SideCondition variable
+    -> MultiAnd (Pattern variable)
+    -> LogicT simplifier (Pattern variable)
+makeEvaluateMulti notSimplifier sideCondition patterns
+  | isBottom patterns = empty
+  | Pattern.isTop patterns = return Pattern.top
+  | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
+
+{- | 'makeEvaluate' simplifies an 'And' of 'Pattern's.
+
+See the comment for 'simplify' to find more details.
+
 -}
 makeEvaluate
-    ::  ( InternalVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> LogicT simplifier (Pattern variable)
-makeEvaluate notSimplifier sideCondition first second
-  | Pattern.isBottom first || Pattern.isBottom second = empty
-  | Pattern.isTop first = return second
-  | Pattern.isTop second = return first
-  | otherwise =
-    makeEvaluateNonBool
-        notSimplifier
-        sideCondition
+makeEvaluate notSimplifier sideCondition first second =
+    makeEvaluateMulti notSimplifier sideCondition
         (MultiAnd.make [first, second])
 
 makeEvaluateNonBool
