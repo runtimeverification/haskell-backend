@@ -66,7 +66,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , getMultiAndPredicate
     , makePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -219,54 +218,59 @@ makeEvaluate notSimplifier sideCondition first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
   | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool notSimplifier sideCondition first second
+  | otherwise =
+    makeEvaluateNonBool
+        notSimplifier
+        sideCondition
+        (MultiAnd.make [first, second])
 
 makeEvaluateNonBool
-    ::  ( InternalVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
+    -> MultiAnd (Pattern variable)
     -> LogicT simplifier (Pattern variable)
-makeEvaluateNonBool
-    notSimplifier
-    sideCondition
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
-  = do
-    terms <- termAnd notSimplifier firstTerm secondTerm
-    let firstCondition = Conditional.withoutTerm first
-        secondCondition = Conditional.withoutTerm second
-        initialConditions = firstCondition <> secondCondition
-        merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize sideCondition merged
-    let normalizedTerms =
+makeEvaluateNonBool notSimplifier sideCondition patterns = do
+    let unify pattern1 term2 = do
+            let (term1, condition1) = Pattern.splitTerm pattern1
+            unified <- termAnd notSimplifier term1 term2
+            pure (Pattern.andCondition unified condition1)
+    unified <- Foldable.foldlM unify Pattern.top (term <$> patterns)
+    let substitutions =
+            Pattern.substitution unified
+            <> foldMap Pattern.substitution patterns
+    normalized <-
+        from @_ @(Condition _) substitutions
+        & Substitution.normalize sideCondition
+    let substitution = Pattern.substitution normalized
+        predicates :: Changed (MultiAnd (Predicate variable))
+        predicates =
+            mconcat
+                [ MultiAnd.fromPredicate (predicate unified)
+                , MultiAnd.fromPredicate (predicate normalized)
+                , foldMap (from @(Predicate _) . predicate) patterns
+                ]
+            & promoteSubTermsToTop
+        term =
             applyAndIdempotenceAndFindContradictions
-                (Conditional.term normalized)
-        normalizedPredicate =
-            (promoteSubTermsToTop . MultiAnd.make . getMultiAndPredicate)
-            (Conditional.predicate normalized)
-    case normalizedPredicate of
+                (Conditional.term unified)
+    case predicates of
         Unchanged unchanged ->
-            normalized
-                { term = normalizedTerms
-                , predicate =
-                    MultiAnd.toPredicate unchanged
-                    & Predicate.setSimplified
-                        (foldMap Predicate.simplifiedAttribute unchanged)
-                }
-            & Pattern.syncSort
+            Pattern.withCondition term (from substitution <> from predicate)
             & return
+          where
+            predicate =
+                MultiAnd.toPredicate unchanged
+                & Predicate.setSimplified simplified
+            simplified = foldMap Predicate.simplifiedAttribute unchanged
         Changed changed ->
-            normalized
-                { term = normalizedTerms
-                , predicate = MultiAnd.toPredicate changed
-                }
-            & Pattern.syncSort
+            Pattern.withCondition term (from substitution <> from predicate)
             & simplifyCondition sideCondition
+          where
+            predicate = MultiAnd.toPredicate changed
 
 promoteSubTermsToTop
     :: forall variable

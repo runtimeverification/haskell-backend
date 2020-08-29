@@ -540,7 +540,7 @@ test_andSimplification =
             evaluatePatterns
                 Conditional
                     { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
+                    , predicate = makeCeilPredicate Mock.testSort fOfX
                     , substitution = mempty
                     }
                 Conditional
