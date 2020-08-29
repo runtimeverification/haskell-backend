@@ -16,6 +16,7 @@ module Kore.Internal.MultiAnd
     , extractPatterns
     , make
     , toPredicate
+    , fromPredicate
     , singleton
     , toPattern
     , map
@@ -40,6 +41,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , getMultiAndPredicate
     , makeAndPredicate
     , makeTruePredicate_
     )
@@ -183,6 +185,12 @@ toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates
+
+fromPredicate
+    :: InternalVariable variable
+    => Predicate variable
+    -> MultiAnd (Predicate variable)
+fromPredicate = make . getMultiAndPredicate
 
 toPattern
     :: InternalVariable variable
