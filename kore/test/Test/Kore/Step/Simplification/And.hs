@@ -562,11 +562,7 @@ test_andSimplification =
         , substitution = mempty
         }
     fOfX = Mock.f (mkElemVar Mock.x)
-    fOfXExpanded = Conditional
-        { term = fOfX
-        , predicate = makeTruePredicate_
-        , substitution = mempty
-        }
+    fOfXExpanded = Pattern.fromTermLike fOfX
     fOfY = Mock.f (mkElemVar Mock.y)
     gOfX = Mock.g (mkElemVar Mock.x)
     gOfXExpanded = Conditional

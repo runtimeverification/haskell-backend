@@ -178,16 +178,9 @@ simplifyEvaluated
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated notSimplifier sideCondition first second
-  | OrPattern.isFalse first  = return OrPattern.bottom
-  | OrPattern.isFalse second = return OrPattern.bottom
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isTrue second  = return first
-  | otherwise                =
-    OrPattern.observeAllT $ do
-        first1 <- scatter first
-        second1 <- scatter second
-        makeEvaluate notSimplifier sideCondition first1 second1
+simplifyEvaluated notSimplifier sideCondition first second =
+    simplifyEvaluatedMultiple notSimplifier sideCondition
+        (MultiAnd.make [first, second])
 
 simplifyEvaluatedMultiple
     :: InternalVariable variable
