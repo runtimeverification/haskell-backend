@@ -194,11 +194,12 @@ simplifyEvaluatedMultiple
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
-    -> [OrPattern variable]
+    -> MultiAnd (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple _ _ [] = return OrPattern.top
-simplifyEvaluatedMultiple notSimplifier sideCondition (pat : patterns) =
-    foldM (simplifyEvaluated notSimplifier sideCondition) pat patterns
+simplifyEvaluatedMultiple notSimplifier sideCondition orPatterns =
+    OrPattern.observeAllT $ do
+        patterns <- traverse scatter orPatterns
+        makeEvaluateMulti notSimplifier sideCondition patterns
 
 {- | 'makeEvaluateMulti' simplifies a 'MultiAnd' of 'Pattern's.
 

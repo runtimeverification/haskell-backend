@@ -14,6 +14,7 @@ module Kore.Step.Simplification.Implies
 
 import Prelude.Kore
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -123,7 +124,7 @@ distributeEvaluateImplies sideCondition firsts second =
     And.simplifyEvaluatedMultiple
         Not.notSimplifier
         sideCondition
-        (map (\first -> makeEvaluateImplies first second) firsts)
+        (MultiAnd.make $ map (\first -> makeEvaluateImplies first second) firsts)
 
 makeEvaluateImplies
     :: InternalVariable variable
