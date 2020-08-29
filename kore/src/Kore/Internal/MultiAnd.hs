@@ -90,6 +90,20 @@ instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
 
+instance
+    InternalVariable variable
+    => From (MultiAnd (Predicate variable)) (Predicate variable)
+  where
+    from = toPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (Predicate variable) (MultiAnd (Predicate variable))
+  where
+    from = fromPredicate
+    {-# INLINE from #-}
+
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
 -}
