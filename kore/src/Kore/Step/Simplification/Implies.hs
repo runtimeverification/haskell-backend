@@ -28,7 +28,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
-    ( simplifyEvaluatedMultiple
+    ( simplifyEvaluatedMulti
     )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
@@ -121,10 +121,12 @@ distributeEvaluateImplies
     -> Pattern variable
     -> simplifier (OrPattern variable)
 distributeEvaluateImplies sideCondition firsts second =
-    And.simplifyEvaluatedMultiple
+    And.simplifyEvaluatedMulti
         Not.notSimplifier
         sideCondition
-        (MultiAnd.make $ map (\first -> makeEvaluateImplies first second) firsts)
+        (MultiAnd.make implications)
+  where
+    implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies
     :: InternalVariable variable

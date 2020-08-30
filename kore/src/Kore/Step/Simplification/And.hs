@@ -11,7 +11,7 @@ module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplify
     , simplifyEvaluated
-    , simplifyEvaluatedMultiple
+    , simplifyEvaluatedMulti
     , And (..)
     , termAnd
     ) where
@@ -179,17 +179,17 @@ simplifyEvaluated
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated notSimplifier sideCondition first second =
-    simplifyEvaluatedMultiple notSimplifier sideCondition
+    simplifyEvaluatedMulti notSimplifier sideCondition
         (MultiAnd.make [first, second])
 
-simplifyEvaluatedMultiple
+simplifyEvaluatedMulti
     :: InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> MultiAnd (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple notSimplifier sideCondition orPatterns =
+simplifyEvaluatedMulti notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- traverse scatter orPatterns
         makeEvaluateMulti notSimplifier sideCondition patterns
