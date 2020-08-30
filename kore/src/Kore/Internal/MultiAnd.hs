@@ -17,6 +17,7 @@ module Kore.Internal.MultiAnd
     , make
     , toPredicate
     , fromPredicate
+    , fromTermLike
     , singleton
     , toPattern
     , map
@@ -29,6 +30,7 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
@@ -46,7 +48,9 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( mkAnd
+    ( TermLike
+    , TermLikeF (..)
+    , mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -102,6 +106,13 @@ instance
     => From (Predicate variable) (MultiAnd (Predicate variable))
   where
     from = fromPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (TermLike variable) (MultiAnd (TermLike variable))
+  where
+    from = fromTermLike
     {-# INLINE from #-}
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
@@ -205,6 +216,15 @@ fromPredicate
     => Predicate variable
     -> MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
+
+fromTermLike
+    :: InternalVariable variable
+    => TermLike variable
+    -> MultiAnd (TermLike variable)
+fromTermLike termLike =
+    case Recursive.project termLike of
+        _ :< AndF andF -> foldMap fromTermLike andF
+        _              -> make [termLike]
 
 toPattern
     :: InternalVariable variable
