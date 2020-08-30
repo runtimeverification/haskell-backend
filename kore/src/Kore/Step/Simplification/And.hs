@@ -150,7 +150,9 @@ simplify
     -> SideCondition variable
     -> And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify notSimplifier sideCondition And { andFirst = first, andSecond = second } =
+simplify notSimplifier sideCondition
+    And { andFirst = first, andSecond = second }
+  =
     simplifyEvaluated notSimplifier sideCondition first second
 
 {-| simplifies an And given its two 'OrPattern' children.
