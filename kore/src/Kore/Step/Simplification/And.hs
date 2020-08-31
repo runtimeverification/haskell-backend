@@ -338,12 +338,12 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
             Left err ->
-                (error . show . Pretty.vsep)
-                [ "Replacing"
-                , (Pretty.indent 4 . Pretty.vsep) (unparse <$> HashMap.keys replacements)
-                , "in"
-                , Pretty.indent 4 (unparse original)
-                , Pretty.indent 4 (Pretty.pretty err)
+                (error . show . Pretty.vsep . map (either id (Pretty.indent 4)))
+                [ Left "Replacing"
+                , Right (Pretty.vsep (unparse <$> HashMap.keys replacements))
+                , Left "in"
+                , Right (unparse original)
+                , Right (Pretty.pretty err)
                 ]
             Right p -> p
 
