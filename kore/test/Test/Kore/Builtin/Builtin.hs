@@ -154,7 +154,7 @@ testSymbolWithSolver
     -> TestTree
 testSymbolWithSolver eval title symbol args expected =
     testCase title $ do
-        actual <- runSMT eval'
+        actual <- runSMT (pure ()) eval'
         assertEqual "" expected actual
   where
     eval' = eval $ mkApplySymbol symbol args

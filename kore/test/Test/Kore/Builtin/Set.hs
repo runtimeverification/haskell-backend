@@ -203,7 +203,7 @@ test_unit =
         -> TestTree
     becomes original expect name =
         testCase name $ do
-            actual <- runSMT $ evaluate original
+            actual <- runSMT (pure ()) $ evaluate original
             assertEqual "" (Pattern.fromTermLike expect) actual
 
     internalOpaque set =
