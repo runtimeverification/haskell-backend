@@ -1,12 +1,9 @@
 {-|
-Module      : Kore.Step.Simplification.And
-Description : Tools for And pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
+
 module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplifyEvaluatedMulti
