@@ -9,7 +9,6 @@ Portability : portable
 -}
 module Kore.Step.Simplification.And
     ( makeEvaluate
-    , simplifyEvaluated
     , simplifyEvaluatedMulti
     , And (..)
     , termAnd
@@ -102,36 +101,7 @@ import Kore.Unparser
 import Logic
 import qualified Pretty
 
-{-| simplifies an And given its two 'OrPattern' children.
-
-See 'simplify' for details.
--}
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (And Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually
-cache information besides the pattern sort, which will make it even more useful
-to carry around.
-
--}
-simplifyEvaluated
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
-simplifyEvaluated notSimplifier sideCondition first second =
-    simplifyEvaluatedMulti notSimplifier sideCondition
-        (MultiAnd.make [first, second])
-
-{-|'simplify' simplifies an 'And' of 'OrPattern'.
+{- | Simplify a conjunction of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
