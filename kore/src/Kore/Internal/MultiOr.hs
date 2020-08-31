@@ -355,9 +355,11 @@ crossProductGeneric joiner (MultiOr first) (MultiOr second) =
 
 gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act
+{-# INLINE gather #-}
 
 observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
 observeAllT act = make <$> Logic.observeAllT act
+{-# INLINE observeAllT #-}
 
 map
     :: Ord child2
