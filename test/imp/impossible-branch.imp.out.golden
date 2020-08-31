@@ -10,7 +10,7 @@
   </T>
 #And
   {
-    ?I <=Int ?I0
-  #Equals
     false
+  #Equals
+    ?I <=Int ?I0
   }
