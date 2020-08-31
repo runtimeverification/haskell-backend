@@ -1,3 +1,9 @@
-<k>
-  I:Int ~> .
-</k>
+  <k>
+    I:Int ~> .
+  </k>
+#And
+  {
+    Some I
+  #Equals
+    f ( )
+  }
