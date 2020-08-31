@@ -7,7 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEnv
     , testConditionSimplifier
     , testEvaluators
-    , testSymbolWithSolver
+    , testSymbolWithoutSolver
     , simplify
     , evaluate
     , evaluateT
@@ -119,7 +119,6 @@ import Kore.Unparser
 import qualified Logic
 import SMT
     ( NoSMT
-    , SMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -137,12 +136,12 @@ mkPair
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
-testSymbolWithSolver
+testSymbolWithoutSolver
     ::  ( HasCallStack
         , p ~ TermLike VariableName
         , expanded ~ Pattern VariableName
         )
-    => (p -> SMT expanded)
+    => (p -> NoSMT expanded)
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
@@ -153,9 +152,9 @@ testSymbolWithSolver
     -> expanded
     -- ^ expected result
     -> TestTree
-testSymbolWithSolver eval title symbol args expected =
+testSymbolWithoutSolver eval title symbol args expected =
     testCase title $ do
-        actual <- runSMT (pure ()) eval'
+        actual <- runNoSMT eval'
         assertEqual "" expected actual
   where
     eval' = eval $ mkApplySymbol symbol args

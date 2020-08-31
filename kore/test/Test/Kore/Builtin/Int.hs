@@ -463,7 +463,7 @@ testInt
     -> [TermLike VariableName]
     -> Pattern VariableName
     -> TestTree
-testInt name = testSymbolWithSolver evaluate name
+testInt name = testSymbolWithoutSolver evaluate name
 
 -- | "\equal"ed internal Integers that are not equal
 test_unifyEqual_NotEqual :: TestTree
