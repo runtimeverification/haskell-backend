@@ -9,7 +9,6 @@ Portability : portable
 -}
 module Kore.Step.Simplification.And
     ( makeEvaluate
-    , simplify
     , simplifyEvaluated
     , simplifyEvaluatedMulti
     , And (..)
@@ -77,7 +76,6 @@ import Kore.Internal.TermLike
     , pattern Mu_
     , pattern Not_
     , pattern Nu_
-    , Sort
     , TermLike
     , Variable (..)
     , mkAnd
@@ -103,6 +101,35 @@ import Kore.Unparser
     )
 import Logic
 import qualified Pretty
+
+{-| simplifies an And given its two 'OrPattern' children.
+
+See 'simplify' for details.
+-}
+{- TODO (virgil): Preserve pattern sorts under simplification.
+
+One way to preserve the required sort annotations is to make 'simplifyEvaluated'
+take an argument of type
+
+> CofreeF (And Sort) (Attribute.Pattern variable) (OrPattern variable)
+
+instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
+be changed analogously. The 'Attribute.Pattern' annotation will eventually
+cache information besides the pattern sort, which will make it even more useful
+to carry around.
+
+-}
+simplifyEvaluated
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => NotSimplifier (UnifierT simplifier)
+    -> SideCondition variable
+    -> OrPattern variable
+    -> OrPattern variable
+    -> simplifier (OrPattern variable)
+simplifyEvaluated notSimplifier sideCondition first second =
+    simplifyEvaluatedMulti notSimplifier sideCondition
+        (MultiAnd.make [first, second])
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
 
@@ -140,47 +167,6 @@ Also, we have
         bottom otherwise
     the same for two string literals and two chars
 -}
-simplify
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> And Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify notSimplifier sideCondition
-    And { andFirst = first, andSecond = second }
-  =
-    simplifyEvaluated notSimplifier sideCondition first second
-
-{-| simplifies an And given its two 'OrPattern' children.
-
-See 'simplify' for details.
--}
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (And Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually
-cache information besides the pattern sort, which will make it even more useful
-to carry around.
-
--}
-simplifyEvaluated
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
-simplifyEvaluated notSimplifier sideCondition first second =
-    simplifyEvaluatedMulti notSimplifier sideCondition
-        (MultiAnd.make [first, second])
-
 simplifyEvaluatedMulti
     :: InternalVariable variable
     => MonadSimplify simplifier

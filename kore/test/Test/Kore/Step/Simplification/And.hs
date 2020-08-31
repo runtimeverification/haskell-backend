@@ -609,8 +609,10 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern VariableName) -> IO (OrPattern VariableName)
-evaluate =
-    runSimplifier Mock.env . simplify Not.notSimplifier SideCondition.top
+evaluate And { andFirst, andSecond } =
+    MultiAnd.make [andFirst, andSecond]
+    & simplifyEvaluatedMulti Not.notSimplifier SideCondition.top
+    & runSimplifier Mock.env
 
 evaluatePatterns
     :: Pattern VariableName
