@@ -47,7 +47,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Sort as Sort
 import qualified Kore.Step.Simplification.And as And
-    ( simplifyEvaluatedMulti
+    ( simplify
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
@@ -225,14 +225,14 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        And.simplifyEvaluatedMulti  Not.notSimplifier sideCondition
+        And.simplify  Not.notSimplifier sideCondition
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        And.simplifyEvaluatedMulti Not.notSimplifier sideCondition
+        And.simplify Not.notSimplifier sideCondition
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
@@ -292,10 +292,10 @@ makeEvaluate
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <-
-        And.simplifyEvaluatedMulti Not.notSimplifier sideCondition
+        And.simplify Not.notSimplifier sideCondition
             (MultiAnd.make [firstCeilNegation, secondCeilNegation])
     equalityAnd <-
-        And.simplifyEvaluatedMulti Not.notSimplifier sideCondition
+        And.simplify Not.notSimplifier sideCondition
             (MultiAnd.make [termEquality, firstCeil, secondCeil])
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where

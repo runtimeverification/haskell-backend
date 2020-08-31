@@ -60,7 +60,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.And as And
-    ( simplifyEvaluatedMulti
+    ( simplify
     )
 import qualified Kore.Step.Simplification.Application as Application
     ( simplify
@@ -339,7 +339,7 @@ simplify sideCondition = \termLike ->
             --
             AndF andF -> do
                 let conjuncts = foldMap MultiAnd.fromTermLike andF
-                And.simplifyEvaluatedMulti Not.notSimplifier sideCondition
+                And.simplify Not.notSimplifier sideCondition
                     =<< simplifyChildren conjuncts
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition

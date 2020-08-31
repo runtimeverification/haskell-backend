@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Step.Simplification.And
     ( makeEvaluate
-    , simplifyEvaluatedMulti
+    , simplify
     , And (..)
     , termAnd
     ) where
@@ -134,14 +134,14 @@ Also, we have
         bottom otherwise
     the same for two string literals and two chars
 -}
-simplifyEvaluatedMulti
+simplify
     :: InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
     -> MultiAnd (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplifyEvaluatedMulti notSimplifier sideCondition orPatterns =
+simplify notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- traverse scatter orPatterns
         makeEvaluate notSimplifier sideCondition patterns
