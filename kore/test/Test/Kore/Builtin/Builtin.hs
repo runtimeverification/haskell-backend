@@ -118,7 +118,8 @@ import Kore.Unparser
     )
 import qualified Logic
 import SMT
-    ( SMT
+    ( NoSMT
+    , SMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -264,7 +265,7 @@ evaluateT
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
 
-evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
+evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
@@ -275,7 +276,7 @@ runStep
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (OrPattern VariableName)
+    -> NoSMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return . fmap getRewritingPattern $ Step.gatherResults results
@@ -285,7 +286,7 @@ runStepResult
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Step.Results (RulePattern RewritingVariableName))
+    -> NoSMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure

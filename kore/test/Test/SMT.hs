@@ -1,7 +1,7 @@
 module Test.SMT
     ( testPropertyWithSolver
     , testPropertyWithoutSolver
-    , testCaseWithSMT
+    , testCaseWithoutSMT
     , assertEqual'
     , runSMT
     , runNoSMT
@@ -41,8 +41,8 @@ testPropertyWithoutSolver
 testPropertyWithoutSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runNoSMT
 
-testCaseWithSMT :: String -> SMT () -> TestTree
-testCaseWithSMT str = testCase str . runSMT (pure ())
+testCaseWithoutSMT :: String -> NoSMT () -> TestTree
+testCaseWithoutSMT str = testCase str . runNoSMT
 
 assertEqual'
     :: MonadIO m
