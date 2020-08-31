@@ -19,16 +19,10 @@ module Test.Kore.Step.Simplification
 import Prelude.Kore
 
 import qualified Data.Functor.Foldable as Recursive
-import Data.Reflection
-    ( give
-    )
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( fullySimplified
     , setSimplified
-    )
-import Kore.IndexedModule.IndexedModule
-    ( indexedModuleWithDefaultImports
     )
 import Kore.Internal.Condition
     ( Condition
@@ -69,29 +63,20 @@ import Kore.Step.Simplification.Data
     , SimplifierT
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Step.SMT.Lemma
-    ( declareSMTLemmas
-    )
-import Kore.Syntax.Module
-    ( ModuleName (ModuleName)
-    )
+import Kore.Step.SMT.Declaration.All as SMT.AST
 import Logic
     ( LogicT
     )
 import SMT
     ( NoSMT
     )
+import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT as Test
 
 runSimplifier :: Env Simplifier -> Simplifier a -> IO a
 runSimplifier env = Test.runSMT userInit . Kore.runSimplifier env
   where
-    userInit =
-        give metadataTools
-            $ declareSMTLemmas
-            $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-    Env {metadataTools} = env
-
+    userInit = SMT.AST.declare Mock.smtDeclarations
 
 runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
 runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
