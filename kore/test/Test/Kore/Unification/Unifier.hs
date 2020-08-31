@@ -435,9 +435,9 @@ test_unification =
             (UnificationTerm a2)
             (UnificationTerm dv1)
             [ UnificationResult
-                { term = a2
+                { term = dv1
                 , substitution = []
-                , predicate = Predicate.makeEqualsPredicate Mock.testSort a2 dv1
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort dv1 a2
                 }
             ]
     , testCase "non-functional pattern" $
@@ -487,9 +487,9 @@ test_unification =
             (UnificationTerm a2)
             (UnificationTerm a)
             [ UnificationResult
-                { term = a2
+                { term = a
                 , substitution = []
-                , predicate = Predicate.makeEqualsPredicate Mock.testSort a2 a
+                , predicate = Predicate.makeEqualsPredicate Mock.testSort a a2
                 }
             ]
     , testCase "nested a=a1 is bottom" $
@@ -591,8 +591,8 @@ test_unification =
                         constr20
                             Mock.a
                             (Mock.concatMap
-                                (Mock.builtinMap [(y, x)])
-                                (mkElemVar Mock.m)
+                                (Mock.builtinMap [(a, constr a)])
+                                (mkElemVar Mock.xMap)
                             )
                     , predicate = Predicate.makeTruePredicate Mock.testSort
                     , substitution =
