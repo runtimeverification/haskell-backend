@@ -260,7 +260,7 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
                 , MultiAnd.fromPredicate (predicate normalized)
                 , foldMap (from @(Predicate _) . predicate) patterns
                 ]
-            & promoteSubTermsToTop
+            & simplifyConjunctionByAssumption
         term =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term unified)
@@ -279,19 +279,28 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
           where
             predicate = MultiAnd.toPredicate changed
 
-promoteSubTermsToTop
+{- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
+
+The conjunction is simplified by the identity:
+
+@
+A ∧ P(A) = A ∧ P(⊤)
+@
+
+ -}
+simplifyConjunctionByAssumption
     :: forall variable
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Changed (MultiAnd (Predicate variable))
-promoteSubTermsToTop (Foldable.toList -> andPredicates) =
+simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
     fmap MultiAnd.make
     $ flip evalStateT HashMap.empty
     $ for (sortBySize andPredicates)
     $ \predicate' -> do
         let original = Predicate.unwrapPredicate predicate'
-        result <- replaceWithTopNormalized original
-        insertAssumption result
+        result <- applyAssumptions original
+        assume result
         return result
   where
     -- Sorting by size ensures that every clause is considered before any clause
@@ -308,10 +317,10 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + Foldable.sum termLikeF
 
-    insertAssumption
+    assume
         :: Predicate variable
         -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
-    insertAssumption predicate1 =
+    assume predicate1 =
         State.modify' insert
       where
         insert =
@@ -323,15 +332,15 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
-    replaceWithTopNormalized
+    applyAssumptions
         ::  TermLike variable
         ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
                 (Predicate variable)
-    replaceWithTopNormalized replaceIn = do
-        replacements <- State.get
+    applyAssumptions replaceIn = do
+        assumptions <- State.get
         lift $ fmap
-            (unsafeMakePredicate replacements replaceIn)
-            (replaceWithTop replacements replaceIn)
+            (unsafeMakePredicate assumptions replaceIn)
+            (applyAssumptionsWorker assumptions replaceIn)
 
     unsafeMakePredicate replacements original result =
         case makePredicate result of
@@ -347,17 +356,17 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
                 ]
             Right p -> p
 
-    replaceWithTop
+    applyAssumptionsWorker
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    replaceWithTop replacements original
-      | Just result <- HashMap.lookup original replacements = Changed result
+    applyAssumptionsWorker assumptions original
+      | Just result <- HashMap.lookup original assumptions = Changed result
 
-      | HashMap.null replacements' = Unchanged original
+      | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        traverse (replaceWithTop replacements') replaceIn
+        traverse (applyAssumptionsWorker assumptions') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.
@@ -366,17 +375,17 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
       where
         _ :< replaceIn = Recursive.project original
 
-        replacements'
-          | Exists_ _ var _ <- original = restrictReplacements (inject var)
-          | Forall_ _ var _ <- original = restrictReplacements (inject var)
-          | Mu_       var _ <- original = restrictReplacements (inject var)
-          | Nu_       var _ <- original = restrictReplacements (inject var)
-          | otherwise = replacements
+        assumptions'
+          | Exists_ _ var _ <- original = restrictAssumptions (inject var)
+          | Forall_ _ var _ <- original = restrictAssumptions (inject var)
+          | Mu_       var _ <- original = restrictAssumptions (inject var)
+          | Nu_       var _ <- original = restrictAssumptions (inject var)
+          | otherwise = assumptions
 
-        restrictReplacements Variable { variableName } =
+        restrictAssumptions Variable { variableName } =
             HashMap.filterWithKey
                 (\termLike _ -> wouldNotCapture termLike)
-                replacements
+                assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
 
