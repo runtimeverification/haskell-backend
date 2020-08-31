@@ -13,6 +13,7 @@ module Kore.Step.Simplification.In
 
 import Prelude.Kore
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -95,6 +96,7 @@ makeEvaluateIn sideCondition first second
   | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise =
-    And.makeEvaluate Not.notSimplifier sideCondition first second
+    And.makeEvaluateMulti Not.notSimplifier sideCondition
+        (MultiAnd.make [first, second])
         & OrPattern.observeAllT
     >>= Ceil.simplifyEvaluated sideCondition

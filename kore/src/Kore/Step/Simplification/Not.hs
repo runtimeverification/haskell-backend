@@ -234,11 +234,7 @@ mkMultiAndPattern
     => SideCondition variable
     -> MultiAnd (Pattern variable)
     -> LogicT simplifier (Pattern variable)
-mkMultiAndPattern sideCondition patterns =
-    Foldable.foldrM
-        (And.makeEvaluate notSimplifier sideCondition)
-        Pattern.top
-        patterns
+mkMultiAndPattern = And.makeEvaluateMulti notSimplifier
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}

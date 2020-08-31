@@ -5,7 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Step.Simplification.And
-    ( makeEvaluate
+    ( makeEvaluateMulti
     , simplifyEvaluatedMulti
     , And (..)
     , termAnd
@@ -164,25 +164,6 @@ makeEvaluateMulti notSimplifier sideCondition patterns
   | isBottom patterns = empty
   | Pattern.isTop patterns = return Pattern.top
   | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
-
-{- | 'makeEvaluate' simplifies an 'And' of 'Pattern's.
-
-See the comment for 'simplify' to find more details.
-
--}
-makeEvaluate
-    :: forall variable simplifier
-    .  HasCallStack
-    => InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
-    -> LogicT simplifier (Pattern variable)
-makeEvaluate notSimplifier sideCondition first second =
-    makeEvaluateMulti notSimplifier sideCondition
-        (MultiAnd.make [first, second])
 
 makeEvaluateNonBool
     :: forall variable simplifier

@@ -619,6 +619,7 @@ evaluatePatterns
     -> Pattern VariableName
     -> IO (OrPattern VariableName)
 evaluatePatterns first second =
-    fmap OrPattern.fromPatterns
-    $ runSimplifierBranch Mock.env
-    $ makeEvaluate Not.notSimplifier SideCondition.top first second
+    MultiAnd.make [first, second]
+    & makeEvaluateMulti Not.notSimplifier SideCondition.top
+    & runSimplifierBranch Mock.env
+    & fmap OrPattern.fromPatterns
