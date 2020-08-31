@@ -37,10 +37,7 @@ import Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( foldl1'
-    , sortBy
-    )
-import Data.Ord
-    ( comparing
+    , sortOn
     )
 import Data.Set
     ( Set
@@ -301,7 +298,7 @@ promoteSubTermsToTop (Foldable.toList -> andPredicates) =
     -- which could contain it, because the containing clause is necessarily
     -- larger.
     sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortBy (comparing (size . from))
+    sortBySize = sortOn (size . from)
 
     size :: TermLike variable -> Int
     size =
