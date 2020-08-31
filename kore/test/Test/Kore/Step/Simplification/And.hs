@@ -620,6 +620,6 @@ evaluatePatterns
     -> IO (OrPattern VariableName)
 evaluatePatterns first second =
     MultiAnd.make [first, second]
-    & makeEvaluateMulti Not.notSimplifier SideCondition.top
+    & makeEvaluate Not.notSimplifier SideCondition.top
     & runSimplifierBranch Mock.env
     & fmap OrPattern.fromPatterns

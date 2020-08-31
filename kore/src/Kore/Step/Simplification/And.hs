@@ -5,7 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Step.Simplification.And
-    ( makeEvaluateMulti
+    ( makeEvaluate
     , simplifyEvaluatedMulti
     , And (..)
     , termAnd
@@ -144,14 +144,14 @@ simplifyEvaluatedMulti
 simplifyEvaluatedMulti notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- traverse scatter orPatterns
-        makeEvaluateMulti notSimplifier sideCondition patterns
+        makeEvaluate notSimplifier sideCondition patterns
 
-{- | 'makeEvaluateMulti' simplifies a 'MultiAnd' of 'Pattern's.
+{- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
 
 See the comment for 'simplify' to find more details.
 
 -}
-makeEvaluateMulti
+makeEvaluate
     :: forall variable simplifier
     .  HasCallStack
     => InternalVariable variable
@@ -160,7 +160,7 @@ makeEvaluateMulti
     -> SideCondition variable
     -> MultiAnd (Pattern variable)
     -> LogicT simplifier (Pattern variable)
-makeEvaluateMulti notSimplifier sideCondition patterns
+makeEvaluate notSimplifier sideCondition patterns
   | isBottom patterns = empty
   | Pattern.isTop patterns = return Pattern.top
   | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
