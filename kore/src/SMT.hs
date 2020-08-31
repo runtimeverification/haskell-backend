@@ -428,18 +428,15 @@ initSolver Config { timeOut, preludeFile } = do
 The new solverHandle is returned in an 'MVar' for thread-safety.
 
  -}
-newSolver :: Config -> SMT () -> LoggerT IO (MVar SolverHandle)
-newSolver config userInit =
+newSolver :: Config -> LoggerT IO (MVar SolverHandle)
+newSolver config =
     Exception.handle handleIOException $ do
         someLogAction <- Log.askLogAction
-        mvar <- Trans.liftIO $ do
+        Trans.liftIO $ do
             solverHandle <- SimpleSMT.newSolver exe args someLogAction
             newMVar solverHandle
-        runReaderT getSMT (SolverInitAndHandle userInit mvar config)
-        return mvar
   where
     Config { executable = exe, arguments = args } = config
-    SMT { getSMT } = initSolver config
     handleIOException :: IOException -> LoggerT IO a
     handleIOException e =
         (error . unlines)
@@ -466,7 +463,7 @@ stopSolver mvar = do
 -- | Run an external SMT solver.
 runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
 runSMT config userInit smt =
-    Exception.bracket (newSolver config userInit) stopSolver
+    Exception.bracket (newSolver config) stopSolver
         (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
