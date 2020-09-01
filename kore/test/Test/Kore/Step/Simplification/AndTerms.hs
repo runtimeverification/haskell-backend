@@ -32,6 +32,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
+    , makeCeilPredicate_
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
@@ -1275,7 +1276,7 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate Mock.testSort
+                                ( makeCeilPredicate_
                                     (Mock.f (mkElemVar Mock.x))
                                 )
                                 ( makeEqualsPredicate_
@@ -1284,7 +1285,7 @@ test_equalsTermsSimplification =
                                 )
                             )
                         )
-                        ( makeCeilPredicate Mock.testSort
+                        ( makeCeilPredicate_
                             (Mock.f (mkElemVar Mock.x))
                         )
                     & Condition.fromPredicate
@@ -1396,7 +1397,7 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate Mock.testSort
+                                ( makeCeilPredicate_
                                     (Mock.f (mkElemVar Mock.x))
                                 )
                                 ( makeEqualsPredicate_
@@ -1405,7 +1406,7 @@ test_equalsTermsSimplification =
                                 )
                             )
                         )
-                        ( makeCeilPredicate Mock.testSort
+                        ( makeCeilPredicate_
                             (Mock.f (mkElemVar Mock.x))
                         )
                     & Condition.fromPredicate
@@ -1464,7 +1465,7 @@ test_functionAnd =
                 $ Condition.fromPredicate
                 $ makeEqualsPredicate_ (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
-        assertEqual "" expect (syncSort actual)
+        assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
     ]
 
@@ -1673,7 +1674,7 @@ simplifyUnifySorts
 simplifyUnifySorts first second = do
     (simplified, unified) <-
         simplifyUnify (simplifiedTerm first) (simplifiedTerm second)
-    return (map syncSort simplified, syncSort <$> unified)
+    return (map Pattern.syncSort simplified, Pattern.syncSort <$> unified)
 
 simplifyUnify
     :: TermLike VariableName
@@ -1720,12 +1721,6 @@ simplifyEquals simplifierAxioms first second =
     $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env { simplifierAxioms }
-
-syncSort :: Pattern VariableName -> Pattern VariableName
-syncSort patt =
-    term `Pattern.withCondition` condition
-  where
-    (term, condition) = Pattern.splitTerm patt
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
