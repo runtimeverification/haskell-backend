@@ -12,9 +12,9 @@
     </T>
   #And
     {
-      A <=Int B
-    #Equals
       false
+    #Equals
+      A <=Int B
     }
 #Or
     <T>
@@ -31,7 +31,7 @@
     </T>
   #And
     {
-      A <=Int B
-    #Equals
       true
+    #Equals
+      A <=Int B
     }

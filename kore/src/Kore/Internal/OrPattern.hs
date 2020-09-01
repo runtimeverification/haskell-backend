@@ -21,11 +21,11 @@ module Kore.Internal.OrPattern
     , toTermLike
     , targetBinder
     , substitute
-    , parseFromTermLike
     , MultiOr.flatten
     , MultiOr.filterOr
     , MultiOr.gather
     , MultiOr.observeAllT
+    , MultiOr.map
     ) where
 
 import Prelude.Kore
@@ -57,7 +57,6 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( InternalVariable
-    , pattern Or_
     , Sort
     , TermLike
     , mkBottom_
@@ -233,11 +232,3 @@ substitute
     -> OrPattern variable
 substitute subst =
     fromPatterns . fmap (Pattern.substitute subst) . toPatterns
-
-parseFromTermLike
-    :: InternalVariable variable
-    => TermLike variable
-    -> OrPattern variable
-parseFromTermLike (Or_ _ term1 term2) =
-    parseFromTermLike term1 <> parseFromTermLike term2
-parseFromTermLike term = fromTermLike term

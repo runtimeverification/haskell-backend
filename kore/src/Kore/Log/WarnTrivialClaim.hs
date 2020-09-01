@@ -14,7 +14,7 @@ import Prelude.Kore
 
 import Kore.Attribute.SourceLocation
 import Kore.Log.InfoProofDepth
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
 import Log
 import Pretty
     ( Pretty

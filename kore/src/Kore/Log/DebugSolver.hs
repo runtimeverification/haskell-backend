@@ -23,16 +23,14 @@ import Data.Default
 import Data.Text
     ( Text
     )
+import qualified Data.Text.Lazy as Text.Lazy
+import qualified Data.Text.Lazy.Builder as Text.Lazy.Builder
 import Options.Applicative
     ( Parser
     , help
     , long
     , strOption
     )
-import Pretty
-    ( Pretty (..)
-    )
-import qualified Pretty
 
 import Log
     ( ActualEntry (..)
@@ -41,6 +39,9 @@ import Log
     , Severity (Debug)
     , SomeEntry
     , logWith
+    )
+import Pretty
+    ( Pretty (..)
     )
 import SMT.AST
     ( SExpr (..)
@@ -94,21 +95,28 @@ solverTranscriptLogger
     => LogAction m Text
     -> LogAction m ActualEntry
 solverTranscriptLogger textLogger =
-    LogAction
-    $ \ActualEntry { actualEntry } ->
-        case matchDebugSolverSend actualEntry of
-            Just sendEntry ->
-                unLogAction textLogger (messageToText sendEntry)
-            Nothing -> unLogAction mempty actualEntry
+    LogAction action
   where
-    messageToText :: DebugSolverSend -> Text
-    messageToText =
-        Pretty.renderText
-        . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        . pretty
+    action ActualEntry { actualEntry }
+      | Just sendEntry <- matchDebugSolverSend actualEntry =
+        unLogAction textLogger (sentText sendEntry)
+      | Just recvEntry <- matchDebugSolverRecv actualEntry =
+        unLogAction textLogger (receivedText recvEntry)
+      | otherwise =
+        pure ()
+      where
+        sentText :: DebugSolverSend -> Text
+        sentText (DebugSolverSend sexpr) =
+            let builder = SMT.buildSExpr sexpr
+            in (Text.Lazy.toStrict . Text.Lazy.Builder.toLazyText) builder
+        receivedText :: DebugSolverRecv -> Text
+        receivedText (DebugSolverRecv text) = "; " <> text
 
 matchDebugSolverSend :: SomeEntry -> Maybe DebugSolverSend
 matchDebugSolverSend = fromEntry
+
+matchDebugSolverRecv :: SomeEntry -> Maybe DebugSolverRecv
+matchDebugSolverRecv = fromEntry
 
 {- | Options (from the command-line) specifying where to create a solver
 transcript.

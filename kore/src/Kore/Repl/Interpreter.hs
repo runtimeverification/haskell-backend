@@ -66,6 +66,9 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import Control.Monad.Trans.Except
     ( runExceptT
     )
+import Data.Coerce
+    ( coerce
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
@@ -109,6 +112,10 @@ import GHC.IO.Handle
     )
 import GHC.Natural
     ( naturalToInt
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , getRewritingPattern
     )
 import Numeric.Natural
 import System.Directory
@@ -155,6 +162,7 @@ import Kore.Attribute.RuleIndex
 import Kore.Internal.Condition
     ( Condition
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -173,12 +181,11 @@ import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.RulePattern
+import Kore.Step.ClaimPattern
     ( ReachabilityRule (..)
-    , RulePattern (..)
-    , ToRulePattern (..)
-    , rhsToPattern
+    , makeTrusted
     )
+import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
@@ -573,13 +580,15 @@ showDest
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showDest =
-    showProofStateComponent "Destination" (rhsToPattern . getDestination)
+    showProofStateComponent
+        "Destination"
+        (OrPattern.toPattern . getDestination)
 
 showProofStateComponent
     :: Monad m
     => String
     -- ^ component name
-    -> (ReachabilityRule -> Pattern VariableName)
+    -> (ReachabilityRule -> Pattern RewritingVariableName)
     -> Maybe ReplNode
     -> ReplM m ()
 showProofStateComponent name transformer maybeNode = do
@@ -654,7 +663,7 @@ allProofs = do
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
     inProgressProofs
-        :: ExecutionGraph Axiom
+        :: ExecutionGraph
         -> GraphProofStatus
     inProgressProofs =
         findProofStatus
@@ -662,7 +671,7 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Map.Map ClaimIndex (ExecutionGraph Axiom)
+        :: Map.Map ClaimIndex ExecutionGraph
         -> Map.Map ClaimIndex ReachabilityRule
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -968,7 +977,7 @@ tryAxiomClaimWorker mode ref = do
                         }
                     (getConfiguration <$> second)
               where
-                patternUnifier :: Pattern VariableName -> ReplM m ()
+                patternUnifier :: Pattern RewritingVariableName -> ReplM m ()
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
@@ -997,9 +1006,9 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: SideCondition VariableName
-        -> TermLike VariableName
-        -> TermLike VariableName
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> ReplM m ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
@@ -1007,8 +1016,11 @@ tryAxiomClaimWorker mode ref = do
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern :: Either Axiom ReachabilityRule -> TermLike VariableName
-    extractLeftPattern = left . either toRulePattern toRulePattern
+    extractLeftPattern :: Either Axiom Claim -> TermLike RewritingVariableName
+    extractLeftPattern =
+        either
+            (RulePattern.left . coerce)
+            (Pattern.toTermLike . getConfiguration)
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -1029,7 +1041,7 @@ clear maybeNode = do
               putStrLn' "Cannot clear a direct descendant of a branching node."
           | otherwise -> clear0 node graph
   where
-    clear0 :: ReplNode -> InnerGraph Axiom -> m ()
+    clear0 :: ReplNode -> InnerGraph -> m ()
     clear0 rnode graph = do
         let node = unReplNode rnode
         let
@@ -1039,16 +1051,16 @@ clear maybeNode = do
         field @"node" .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
-    next :: InnerGraph axiom -> Graph.Node -> [Graph.Node]
+    next :: InnerGraph -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
-    prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
+    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
 
-    isDirectDescendentOfBranching :: ReplNode -> InnerGraph axiom -> Bool
+    isDirectDescendentOfBranching :: ReplNode -> InnerGraph -> Bool
     isDirectDescendentOfBranching (ReplNode node) graph =
         let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
          in length childrenOfParent /= 1
@@ -1112,16 +1124,6 @@ savePartialProof maybeNatural file = do
     maybeNode :: Maybe ReplNode
     maybeNode =
         ReplNode . naturalToInt <$> maybeNatural
-
-    makeTrusted :: ReachabilityRule -> ReachabilityRule
-    makeTrusted goal@(toRulePattern -> rule) =
-        fromRulePattern goal
-        $ rule
-            { attributes =
-                (attributes rule)
-                    { Attribute.trusted = Attribute.Trusted True
-                    }
-            }
 
     removeIfRoot
         :: ReplNode
@@ -1319,7 +1321,7 @@ showRewriteRule rule =
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseProofStateComponent
-    :: (ReachabilityRule -> Pattern VariableName)
+    :: (ReachabilityRule -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonProofState
@@ -1341,8 +1343,10 @@ unparseProofStateComponent transformation omitList =
         }
   where
     unparseComponent =
-        unparseToString . fmap hide . transformation
-    hide :: TermLike VariableName -> TermLike VariableName
+        unparseToString . fmap hide . getRewritingPattern . transformation
+    hide
+        :: TermLike VariableName
+        -> TermLike VariableName
     hide =
         Recursive.unfold $ \termLike ->
             case Recursive.project termLike of
@@ -1549,7 +1553,7 @@ parseEvalScript file scriptModeOutput = do
                     command
 
 formatUnificationMessage
-    :: Either ReplOutput (NonEmpty (Condition VariableName))
+    :: Either ReplOutput (NonEmpty (Condition RewritingVariableName))
     -> ReplOutput
 formatUnificationMessage docOrCondition =
     either id prettyUnifiers docOrCondition

@@ -30,7 +30,7 @@ import GHC.Stack
     )
 
 import Kore.Attribute.Axiom
-    ( Axiom (..)
+    ( SourceLocation
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -45,13 +45,13 @@ import Kore.Internal.Variable
     ( SomeVariableName
     )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , RulePattern (..)
-    , rewriteRuleToTerm
+import Kore.Step.AxiomPattern
+    ( AxiomPattern
+    , getAxiomPattern
     )
 import Kore.Step.Step
     ( UnifiedRule
+    , UnifyingRule (..)
     , wouldNarrowWith
     )
 import Kore.Unparser
@@ -73,7 +73,12 @@ data ErrorRewritesInstantiation =
 
 data SubstitutionCoverageError =
     SubstitutionCoverageError
-        { solution :: !(UnifiedRule RewriteRule RewritingVariableName)
+        { solution
+            :: !(Conditional
+                    RewritingVariableName
+                    (AxiomPattern RewritingVariableName)
+                )
+        , location :: !SourceLocation
         , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
         }
     deriving (Show)
@@ -95,7 +100,7 @@ instance Pretty ErrorRewritesInstantiation where
     pretty
         ErrorRewritesInstantiation
             { problem =
-                SubstitutionCoverageError { solution, missingVariables }
+                SubstitutionCoverageError { solution, location, missingVariables }
             , configuration
             , errorCallStack
             }
@@ -109,12 +114,10 @@ instance Pretty ErrorRewritesInstantiation where
             , (Pretty.indent 4 . Pretty.sep)
                 (unparse <$> Set.toAscList missingVariables)
             , "The unification solution was:"
-            , unparse $ fmap rewriteRuleToTerm solution
+            , unparse (fmap getAxiomPattern solution)
             , "Error! Please report this."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
-      where
-        location = sourceLocation . attributes . getRewriteRule . term $ solution
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -133,15 +136,19 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    :: forall monadLog
+    :: forall rule monadLog
     .  MonadLog monadLog
+    => UnifyingRule rule
+    => From rule SourceLocation
+    => From rule (AxiomPattern RewritingVariableName)
+    => UnifyingRuleVariable rule ~ RewritingVariableName
     => HasCallStack
     => Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> UnifiedRule RewriteRule RewritingVariableName
+    -> UnifiedRule rule
     -- ^ Unified rule
     -> monadLog ()
-checkSubstitutionCoverage configuration solution
+checkSubstitutionCoverage configuration unifiedRule
   | isCoveringSubstitution || isSymbolic = return ()
   | otherwise =
     -- The substitution does not cover all the variables on the left-hand side
@@ -156,8 +163,10 @@ checkSubstitutionCoverage configuration solution
         }
   where
     substitutionCoverageError =
-        SubstitutionCoverageError { solution, missingVariables }
+        SubstitutionCoverageError { solution, location, missingVariables }
 
-    missingVariables = wouldNarrowWith solution
+    missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables
+    location = from @_ @SourceLocation . term $ unifiedRule
+    solution = from @rule @(AxiomPattern _) <$> unifiedRule
     isSymbolic = (not . isConstructorLike) (term configuration)

@@ -30,9 +30,11 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
+    , makeNotPredicate
     , makeTruePredicate
     )
 import Kore.Internal.SideCondition
@@ -1209,6 +1211,244 @@ test_equalsTermsSimplification =
                     makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
+            assertEqual "" (Just [expect]) actual
+        , testCase "no keys in empty Map" $ do
+            let expect = Condition.top
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
+            assertEqual "" (Just [expect]) actual
+        , testCase "key not in singleton Map" $ do
+            let expect =
+                    makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.y)
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inKeysMap
+                        ( mkElemVar Mock.x)
+                        ( Mock.builtinMap
+                            [ ( mkElemVar Mock.y, Mock.a ) ]
+                        )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "key not in two-element Map" $ do
+                let expect =
+                        foldr1
+                            makeAndPredicate
+                            [ makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.y)
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.x)
+                                    (mkElemVar Mock.z)
+                            -- Definedness condition
+                            , makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (mkElemVar Mock.y)
+                                    (mkElemVar Mock.z)
+                            ]
+                        & Condition.fromPredicate
+                actual <-
+                    simplifyEquals
+                        mempty
+                        (Mock.builtinBool False)
+                        ( Mock.inKeysMap
+                            ( mkElemVar Mock.x )
+                            ( Mock.builtinMap
+                                [ ( mkElemVar Mock.y, Mock.a )
+                                , ( mkElemVar Mock.z, Mock.a )
+                                ]
+                            )
+                        )
+                assertEqual "" (Just [expect]) actual
+        , testCase "unevaluated function key in singleton Map" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
+                                ( makeCeilPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                )
+                                ( makeEqualsPredicate_
+                                    ( mkElemVar Mock.y )
+                                    ( Mock.f (mkElemVar Mock.x) )
+                                )
+                            )
+                        )
+                        ( makeCeilPredicate Mock.testSort
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inKeysMap
+                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.builtinMap
+                            [ (mkElemVar Mock.y, Mock.a ) ]
+                        )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "opaque value in map" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeEqualsPredicate_
+                                ( mkElemVar Mock.x )
+                                Mock.a
+                            )
+                        )
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate_
+                                ( Mock.builtinBool False )
+                                ( mkApplySymbol
+                                    Mock.inKeysMapSymbol
+                                    [ mkElemVar Mock.x, opaque]
+                                )
+                            )
+                            ( mkForall Mock.x <$>
+                                makeCeilPredicate Mock.testSort
+                                    ( Mock.framedMap
+                                        [(Mock.a, mkElemVar Mock.x)]
+                                        [opaque]
+                                    )
+                            )
+                        )
+                    & Condition.fromPredicate
+                opaque = mkElemVar Mock.xMap
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inKeysMap
+                        ( mkElemVar Mock.x )
+                        ( Mock.framedMap [(Mock.a, Mock.a)] [opaque] )
+                    )
+            assertEqual "" (Just [expect]) actual
+        ]
+    , testGroup "builtin Set"
+        [ testCase "no keys in empty Set" $ do
+            let expect = Condition.top
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    (Mock.inSet (mkElemVar Mock.x) (Mock.builtinSet []))
+            assertEqual "" (Just [expect]) actual
+        , testCase "key not in singleton Set" $ do
+            let expect =
+                    makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.y)
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x)
+                        ( Mock.builtinSet [mkElemVar Mock.y] )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "key not in two-element Set" $ do
+            let expect =
+                    foldr1
+                        makeAndPredicate
+                        [ makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.y)
+                        , makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.x)
+                                (mkElemVar Mock.z)
+                        -- Definedness condition
+                        , makeNotPredicate
+                            $ makeEqualsPredicate_
+                                (mkElemVar Mock.y)
+                                (mkElemVar Mock.z)
+                        ]
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    (Mock.builtinBool False)
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x )
+                        ( Mock.builtinSet
+                            [ mkElemVar Mock.y , mkElemVar Mock.z ]
+                        )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "unevaluated function key in singleton Set" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
+                                ( makeCeilPredicate Mock.testSort
+                                    (Mock.f (mkElemVar Mock.x))
+                                )
+                                ( makeEqualsPredicate_
+                                    ( mkElemVar Mock.y )
+                                    ( Mock.f (mkElemVar Mock.x) )
+                                )
+                            )
+                        )
+                        ( makeCeilPredicate Mock.testSort
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                    & Condition.fromPredicate
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inSet
+                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.builtinSet [mkElemVar Mock.y] )
+                    )
+            assertEqual "" (Just [expect]) actual
+        , testCase "opaque value in set" $ do
+            let expect =
+                    makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeEqualsPredicate_
+                                ( mkElemVar Mock.x )
+                                Mock.a
+                            )
+                        )
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate_
+                                ( Mock.builtinBool False )
+                                ( mkApplySymbol
+                                    Mock.inSetSymbol
+                                    [ mkElemVar Mock.x, opaque]
+                                )
+                            )
+                            ( makeCeilPredicate Mock.testSort
+                                    ( Mock.framedSet [Mock.a] [opaque] )
+                            )
+                        )
+                    & Condition.fromPredicate
+                opaque = mkElemVar Mock.xSet
+            actual <-
+                simplifyEquals
+                    mempty
+                    ( Mock.builtinBool False )
+                    ( Mock.inSet
+                        ( mkElemVar Mock.x )
+                        ( Mock.framedSet [Mock.a] [opaque] )
+                    )
             assertEqual "" (Just [expect]) actual
         ]
     ]

@@ -25,20 +25,16 @@ module Kore.Internal.TermLike.TermLike
 import Prelude.Kore
 
 import Control.Comonad.Trans.Cofree
-    ( CofreeT (..)
-    , tailF
+    ( tailF
     )
-import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Control.Lens as Lens
-import qualified Control.Lens.Combinators as Lens.Combinators
-import qualified Control.Monad.Reader as Reader
-import qualified Data.Bifunctor as Bifunctor
-import Data.Functor.Compose
-    ( Compose (..)
+import Control.Lens
+    ( Lens'
     )
+import qualified Control.Lens as Lens
+import qualified Control.Monad.Reader as Reader
 import Data.Functor.Const
     ( Const (..)
     )
@@ -492,10 +488,24 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             InjF inj -> synthetic inj
             DefinedF defined -> synthetic defined
 
+{- | @TermLike@ is a term-like Kore pattern.
+
+@TermLike@ is the common internal representation of patterns, especially terms.
+
+@TermLike@ is essentially 'Control.Comonad.Cofree.Cofree', but rather than
+define a @newtype@ over @Cofree@, it is defined inline for performance. The
+performance advantage owes to the fact that the instances of 'Recursive.project'
+and 'Recursive.embed' correspond to unwrapping and wrapping the @newtype@,
+respectively, which is free at runtime.
+
+ -}
 newtype TermLike variable =
     TermLike
         { getTermLike
-            :: Cofree (TermLikeF variable) (Attribute.Pattern variable)
+            ::  CofreeF
+                    (TermLikeF variable)
+                    (Attribute.Pattern variable)
+                    (TermLike variable)
         }
     deriving (GHC.Generic, Show)
 
@@ -608,90 +618,14 @@ type instance Base (TermLike variable) =
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
 instance Recursive (TermLike variable) where
-    project = \(TermLike embedded) ->
-        case Recursive.project embedded of
-            Compose (Identity projected) -> TermLike <$> projected
+    project = getTermLike
     {-# INLINE project #-}
-
-    -- This specialization is particularly important: The default implementation
-    -- of 'cata' in terms of 'project' would involve an extra call to 'fmap' at
-    -- every level of the tree due to the implementation of 'project' above.
-    cata alg = \(TermLike fixed) ->
-        Recursive.cata
-            (\(Compose (Identity base)) -> alg base)
-            fixed
-    {-# INLINE cata #-}
-
-    para alg = \(TermLike fixed) ->
-        Recursive.para
-            (\(Compose (Identity base)) ->
-                 alg (Bifunctor.first TermLike <$> base)
-            )
-            fixed
-    {-# INLINE para #-}
-
-    gpara dist alg = \(TermLike fixed) ->
-        Recursive.gpara
-            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
-            (\(Compose (Identity base)) -> alg (Env.local TermLike <$> base))
-            fixed
-    {-# INLINE gpara #-}
-
-    prepro pre alg = \(TermLike fixed) ->
-        Recursive.prepro
-            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
-            (\(Compose (Identity base)) -> alg base)
-            fixed
-    {-# INLINE prepro #-}
-
-    gprepro dist pre alg = \(TermLike fixed) ->
-        Recursive.gprepro
-            (\(Compose (Identity base)) -> Compose . Identity <$> dist base)
-            (\(Compose (Identity base)) -> (Compose . Identity) (pre base))
-            (\(Compose (Identity base)) -> alg base)
-            fixed
-    {-# INLINE gprepro #-}
 
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
 instance Corecursive (TermLike variable) where
-    embed = \projected ->
-        (TermLike . Recursive.embed . Compose . Identity)
-            (getTermLike <$> projected)
+    embed = TermLike
     {-# INLINE embed #-}
-
-    ana coalg = TermLike . ana0
-      where
-        ana0 =
-            Recursive.ana (Compose . Identity . coalg)
-    {-# INLINE ana #-}
-
-    apo coalg = TermLike . apo0
-      where
-        apo0 =
-            Recursive.apo
-                (\a ->
-                     (Compose . Identity)
-                        (Bifunctor.first getTermLike <$> coalg a)
-                )
-    {-# INLINE apo #-}
-
-    postpro post coalg = TermLike . postpro0
-      where
-        postpro0 =
-            Recursive.postpro
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
-    {-# INLINE postpro #-}
-
-    gpostpro dist post coalg = TermLike . gpostpro0
-      where
-        gpostpro0 =
-            Recursive.gpostpro
-                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
-    {-# INLINE gpostpro #-}
 
 instance TopBottom (TermLike variable) where
     isTop (Recursive.project -> _ :< TopF Top {}) = True
@@ -862,7 +796,7 @@ traverseVariablesF adj =
         Nu <$> trSetVar nuVariable <*> pure nuChild
 
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
-extractAttributes = extract . getTermLike
+extractAttributes (TermLike (attrs :< _)) = attrs
 
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
@@ -951,17 +885,17 @@ updateCallStack
     -> TermLike variable
 updateCallStack = Lens.set created callstack
   where
-    created = Lens.Combinators.coerced . _extract . Lens.Product.field @"created"
+    created = _attributes . Lens.Product.field @"created"
     callstack =
         Created . Just . GHC.popCallStack . GHC.popCallStack $ GHC.callStack
 
-    _extract
-        :: Functor f
-        => (a -> f a)
-        -> Cofree g a
-        -> f (Cofree g a)
-    _extract f (CofreeT (Identity (a :< as)))
-        = CofreeT . Identity . (:< as) <$> f a
+    _attributes :: Lens' (TermLike variable) (Attribute.Pattern variable)
+    _attributes =
+        Lens.lens
+            (\(TermLike (attrs :< _)) -> attrs)
+            (\(TermLike (_ :< termLikeF)) attrs ->
+                TermLike (attrs :< termLikeF)
+            )
 
 {- | Construct a variable pattern.
  -}

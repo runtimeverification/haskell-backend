@@ -26,9 +26,6 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( fullCrossProduct
-    , mergeAll
-    )
 import Kore.Internal.OrCondition
     ( OrCondition
     )
@@ -60,8 +57,9 @@ simplifyEvaluatedMultiPredicate sideCondition predicates = do
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    orResults <- LogicT.observeAllT (traverse andConditions crossProduct)
-    return (MultiOr.mergeAll orResults)
+    MultiOr.observeAllT $ do
+        element <- LogicT.scatter crossProduct
+        andConditions element
   where
     andConditions
         :: [Condition variable]

@@ -247,6 +247,8 @@ concatMapId :: Id
 concatMapId = testId "concatMap"
 opaqueMapId :: Id
 opaqueMapId = testId "opaqueMap"
+inKeysMapId :: Id
+inKeysMapId = testId "inKeys"
 lessIntId :: Id
 lessIntId = testId "lessIntId"
 greaterEqIntId :: Id
@@ -580,6 +582,11 @@ opaqueMapSymbol =
     symbol opaqueMapId [testSort] mapSort
     & function
 
+inKeysMapSymbol :: Symbol
+inKeysMapSymbol =
+    symbol inKeysMapId [testSort, mapSort] boolSort
+    & hook "MAP.in_keys"
+
 lessIntSymbol :: Symbol
 lessIntSymbol =
     symbol lessIntId [intSort, intSort] boolSort
@@ -622,6 +629,10 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
+
+inSetSymbol :: Internal.Symbol
+inSetSymbol =
+    symbol "inSet" [testSort, setSort] boolSort & hook "SET.in"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
@@ -1200,6 +1211,14 @@ opaqueMap
     -> TermLike variable
 opaqueMap term = Internal.mkApplySymbol opaqueMapSymbol [term]
 
+inKeysMap
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+inKeysMap element m1 = Internal.mkApplySymbol inKeysMapSymbol [element, m1]
+
 unitSet :: InternalVariable variable => TermLike variable
 unitSet = Internal.mkApplySymbol unitSetSymbol []
 
@@ -1217,6 +1236,14 @@ concatSet
     -> TermLike variable
     -> TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
+
+inSet
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+inSet element set = Internal.mkApplySymbol inSetSymbol [element, set]
 
 opaqueSet
     :: InternalVariable variable

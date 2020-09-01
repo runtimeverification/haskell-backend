@@ -15,6 +15,7 @@ module Kore.Repl.Data
     , ReplNode (..)
     , Claim
     , Axiom
+    , AppliedRule
     , ReplState (..)
     , ReplOutput (..)
     , ReplOut (..)
@@ -95,12 +96,18 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal
+import Kore.Strategies.Goal hiding
+    ( AppliedRule
+    )
+import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )
@@ -109,7 +116,6 @@ import Logic
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
-import Kore.Syntax.Variable
 import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)
@@ -531,16 +537,17 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph rule =
+type ExecutionGraph =
     Strategy.ExecutionGraph
         CommonProofState
-        rule
+        AppliedRule
 
-type InnerGraph rule =
-    Gr CommonProofState (Seq rule)
+type InnerGraph =
+    Gr CommonProofState (Seq AppliedRule)
 
 type Claim = ReachabilityRule
 type Axiom = Rule Claim
+type AppliedRule = Goal.AppliedRule Claim
 
 -- | State for the repl.
 data ReplState = ReplState
@@ -552,7 +559,7 @@ data ReplState = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph Axiom)
+    , graphs     :: Map ClaimIndex ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -575,15 +582,15 @@ data Config m = Config
     { stepper
         :: [Claim]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph Axiom)
+        -> m ExecutionGraph
     -- ^ Stepper function
     , unifier
-        :: SideCondition VariableName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> UnifierWithExplanation m (Condition VariableName)
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> UnifierWithExplanation m (Condition RewritingVariableName)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
