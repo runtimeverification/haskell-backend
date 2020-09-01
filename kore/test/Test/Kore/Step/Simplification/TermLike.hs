@@ -10,9 +10,6 @@ import Test.Tasty.HUnit
 import Control.Monad
     ( void
     )
-import Control.Monad.Catch
-    ( MonadThrow
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -48,7 +45,7 @@ simplifyEvaluated original =
 
 newtype TestSimplifier a = TestSimplifier { getTestSimplifier :: Simplifier a }
     deriving (Functor, Applicative, Monad)
-    deriving (MonadLog, MonadSMT, MonadThrow)
+    deriving (MonadLog, MonadSMT)
 
 instance MonadSimplify TestSimplifier where
     askMetadataTools = TestSimplifier askMetadataTools

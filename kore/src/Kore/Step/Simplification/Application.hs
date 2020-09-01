@@ -14,10 +14,6 @@ module Kore.Step.Simplification.Application
 
 import Prelude.Kore
 
-import Control.Monad.Catch
-    ( MonadThrow
-    )
-
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
@@ -62,10 +58,7 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
-        , MonadThrow simplifier
-        )
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -87,10 +80,7 @@ simplify sideCondition application = do
     childrenCrossProduct = MultiOr.fullCrossProduct children
 
 makeAndEvaluateApplications
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
-        , MonadThrow simplifier
-        )
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]
@@ -99,10 +89,7 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
-        , MonadThrow simplifier
-        )
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]
@@ -118,10 +105,7 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
-        , MonadThrow simplifier
-        )
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
