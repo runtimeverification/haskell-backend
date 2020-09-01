@@ -14,6 +14,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
@@ -62,10 +63,15 @@ test_simplifyEvaluated =
     becomes_ originals expecteds =
         testCase "becomes" $ do
             actual <- simplifyEvaluated original
-            assertBool (message actual) (expected == actual)
+            let actual' = MultiOr.map (Pattern.coerceSort Mock.testSort) actual
+            assertBool (message actual) (expected == actual')
       where
-        original = OrPattern.fromPatterns originals
-        expected = OrPattern.fromPatterns expecteds
+        original =
+            OrPattern.fromPatterns
+            (Pattern.coerceSort Mock.testSort <$> originals)
+        expected =
+            OrPattern.fromPatterns
+            (Pattern.coerceSort Mock.testSort <$> expecteds)
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"

@@ -14,7 +14,6 @@ module Kore.Step.Substitution
 
 import Prelude.Kore
 
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Condition
@@ -47,8 +46,7 @@ normalize
     -> Conditional variable term
     -> LogicT simplifier (Conditional variable term)
 normalize sideCondition conditional@Conditional { substitution } = do
-    results <- Monad.Trans.lift $
-        simplifySubstitution sideCondition substitution
+    results <- simplifySubstitution sideCondition substitution & lift
     scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =

@@ -7,6 +7,7 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
     )
@@ -414,12 +415,11 @@ test_andSimplification =
                 Conditional
                     { term = Mock.constr10 fOfX
                     , predicate =
-                        makeAndPredicate
-                            (makeAndPredicate
-                                (makeCeilPredicate Mock.testSort fOfX)
-                                (makeCeilPredicate Mock.testSort gOfX)
-                            )
-                            (makeEqualsPredicate_ fOfX gOfX)
+                        (MultiAnd.toPredicate . MultiAnd.make)
+                        [ makeCeilPredicate Mock.testSort fOfX
+                        , makeCeilPredicate Mock.testSort gOfX
+                        , makeEqualsPredicate_ fOfX gOfX
+                        ]
                     , substitution = mempty
                     }
         actual <-
@@ -468,15 +468,12 @@ test_andSimplification =
                 Conditional
                     { term = Mock.constr10 fOfX
                     , predicate =
-                        makeAndPredicate
-                            (makeAndPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate Mock.testSort fOfX)
-                                    (makeCeilPredicate Mock.testSort fOfY)
-                                )
-                                (makeCeilPredicate Mock.testSort gOfX)
-                            )
-                            (makeEqualsPredicate_ fOfX gOfX)
+                        (MultiAnd.toPredicate . MultiAnd.make)
+                        [ makeCeilPredicate Mock.testSort fOfX
+                        , makeCeilPredicate Mock.testSort fOfY
+                        , makeCeilPredicate Mock.testSort gOfX
+                        , makeEqualsPredicate_ fOfX gOfX
+                        ]
                     , substitution = mempty
                     }
         actual <-
@@ -543,7 +540,7 @@ test_andSimplification =
             evaluatePatterns
                 Conditional
                     { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
+                    , predicate = makeCeilPredicate Mock.testSort fOfX
                     , substitution = mempty
                     }
                 Conditional
@@ -565,11 +562,7 @@ test_andSimplification =
         , substitution = mempty
         }
     fOfX = Mock.f (mkElemVar Mock.x)
-    fOfXExpanded = Conditional
-        { term = fOfX
-        , predicate = makeTruePredicate_
-        , substitution = mempty
-        }
+    fOfXExpanded = Pattern.fromTermLike fOfX
     fOfY = Mock.f (mkElemVar Mock.y)
     gOfX = Mock.g (mkElemVar Mock.x)
     gOfXExpanded = Conditional
@@ -616,14 +609,17 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern VariableName) -> IO (OrPattern VariableName)
-evaluate =
-    runSimplifier Mock.env . simplify Not.notSimplifier SideCondition.top
+evaluate And { andFirst, andSecond } =
+    MultiAnd.make [andFirst, andSecond]
+    & simplify Not.notSimplifier SideCondition.top
+    & runSimplifier Mock.env
 
 evaluatePatterns
     :: Pattern VariableName
     -> Pattern VariableName
     -> IO (OrPattern VariableName)
 evaluatePatterns first second =
-    fmap OrPattern.fromPatterns
-    $ runSimplifierBranch Mock.env
-    $ makeEvaluate Not.notSimplifier SideCondition.top first second
+    MultiAnd.make [first, second]
+    & makeEvaluate Not.notSimplifier SideCondition.top
+    & runSimplifierBranch Mock.env
+    & fmap OrPattern.fromPatterns
