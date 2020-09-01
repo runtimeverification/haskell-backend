@@ -10,9 +10,6 @@ module Kore.Step.Simplification.TermLike
 import Prelude.Kore
 
 import qualified Control.Lens.Combinators as Lens
-import Control.Monad.Catch
-    ( MonadThrow
-    )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
@@ -170,7 +167,6 @@ simplify
     .  HasCallStack
     => InternalVariable variable
     => MonadSimplify simplifier
-    => MonadThrow simplifier
     => SideCondition variable
     -> TermLike variable
     -> simplifier (OrPattern variable)

@@ -11,11 +11,6 @@ module Kore.Log.ErrorBottomTotalFunction
 
 import Prelude.Kore
 
-import Control.Monad.Catch
-    ( Exception (..)
-    , MonadThrow
-    , throwM
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -50,11 +45,6 @@ instance Pretty ErrorBottomTotalFunction where
             , "has resulted in \\bottom."
             ]
 
-instance Exception ErrorBottomTotalFunction where
-    toException = toException . SomeEntry
-    fromException exn =
-        fromException exn >>= \entry -> fromEntry entry
-
 instance Entry ErrorBottomTotalFunction where
     entrySeverity _ = Error
     helpDoc _ = "errors raised when a total function is undefined"
@@ -62,9 +52,9 @@ instance Entry ErrorBottomTotalFunction where
 instance SQL.Table ErrorBottomTotalFunction
 
 errorBottomTotalFunction
-    :: MonadThrow logger
+    :: MonadLog logger
     => InternalVariable variable
     => TermLike variable
     -> logger ()
 errorBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
-    throwM ErrorBottomTotalFunction { term }
+    logEntry ErrorBottomTotalFunction { term }
