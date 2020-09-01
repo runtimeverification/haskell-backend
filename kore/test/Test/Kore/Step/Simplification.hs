@@ -81,8 +81,11 @@ runSimplifier env = Test.runSMT userInit . Kore.runSimplifier env
 runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
 runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
 
-runSimplifierBranch :: Env Simplifier -> LogicT Simplifier a -> IO [a]
-runSimplifierBranch env = Test.runSMT (pure ()) . Kore.runSimplifierBranch env
+runSimplifierBranch
+    :: Env (SimplifierT NoSMT)
+    -> LogicT (SimplifierT NoSMT) a
+    -> IO [a]
+runSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 
 simplifiedTerm :: TermLike variable -> TermLike variable
 simplifiedTerm =
