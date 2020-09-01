@@ -529,11 +529,9 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (GoalStuck _) = empty
     transitionRuleWorker Begin (GoalRewritten goal) =
-        SMT.reinit >>
-        pure (Goal goal)
+        SMT.reinit >> pure (Goal goal)
     transitionRuleWorker Begin proofState =
-        SMT.reinit >>
-        pure proofState
+        SMT.reinit >> pure proofState
 
     transitionRuleWorker Simplify proofState
       | Just goal <- retractSimplifiable proofState =
