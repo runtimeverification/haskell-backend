@@ -1,17 +1,12 @@
 {-|
-Module      : Kore.Step.Simplification.And
-Description : Tools for And pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
+
 module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplify
-    , simplifyEvaluated
-    , simplifyEvaluatedMultiple
     , And (..)
     , termAnd
     ) where
@@ -29,18 +24,15 @@ import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.HashMap.Strict
     ( HashMap
     )
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
-    ( foldl'
-    , foldl1'
-    , sortBy
-    )
-import qualified Data.List as List
-    ( sort
+    ( foldl1'
+    , sortOn
     )
 import Data.Set
     ( Set
@@ -49,6 +41,10 @@ import qualified Data.Set as Set
 import Data.Traversable
     ( for
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 
 import Changed
 import Kore.Attribute.Synthetic
@@ -62,17 +58,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , getMultiAndPredicate
-    , makeAndPredicate
     , makePredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
-    ( depth
-    , setSimplified
-    , simplifiedAttribute
-    , unwrapPredicate
-    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -84,7 +72,6 @@ import Kore.Internal.TermLike
     , pattern Mu_
     , pattern Not_
     , pattern Nu_
-    , Sort
     , TermLike
     , Variable (..)
     , mkAnd
@@ -95,10 +82,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-    ( hasFreeVariable
-    , setSimplified
-    , simplifiedAttribute
-    )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
@@ -115,7 +98,7 @@ import Kore.Unparser
 import Logic
 import qualified Pretty
 
-{-|'simplify' simplifies an 'And' of 'OrPattern'.
+{- | Simplify a conjunction of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
@@ -156,157 +139,122 @@ simplify
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
-    -> And Sort (OrPattern variable)
+    -> MultiAnd (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify notSimplifier sideCondition And { andFirst = first, andSecond = second } =
-    simplifyEvaluated notSimplifier sideCondition first second
-
-{-| simplifies an And given its two 'OrPattern' children.
-
-See 'simplify' for details.
--}
-{- TODO (virgil): Preserve pattern sorts under simplification.
-
-One way to preserve the required sort annotations is to make 'simplifyEvaluated'
-take an argument of type
-
-> CofreeF (And Sort) (Attribute.Pattern variable) (OrPattern variable)
-
-instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may
-be changed analogously. The 'Attribute.Pattern' annotation will eventually
-cache information besides the pattern sort, which will make it even more useful
-to carry around.
-
--}
-simplifyEvaluated
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
-simplifyEvaluated notSimplifier sideCondition first second
-  | OrPattern.isFalse first  = return OrPattern.bottom
-  | OrPattern.isFalse second = return OrPattern.bottom
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isTrue second  = return first
-  | otherwise                =
+simplify notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
-        first1 <- scatter first
-        second1 <- scatter second
-        makeEvaluate notSimplifier sideCondition first1 second1
+        patterns <- traverse scatter orPatterns
+        makeEvaluate notSimplifier sideCondition patterns
 
-simplifyEvaluatedMultiple
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> [OrPattern variable]
-    -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple _ _ [] = return OrPattern.top
-simplifyEvaluatedMultiple notSimplifier sideCondition (pat : patterns) =
-    foldM (simplifyEvaluated notSimplifier sideCondition) pat patterns
-
-{-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
+{- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
 
 See the comment for 'simplify' to find more details.
+
 -}
 makeEvaluate
-    ::  ( InternalVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
+    -> MultiAnd (Pattern variable)
     -> LogicT simplifier (Pattern variable)
-makeEvaluate notSimplifier sideCondition first second
-  | Pattern.isBottom first || Pattern.isBottom second = empty
-  | Pattern.isTop first = return second
-  | Pattern.isTop second = return first
-  | otherwise = makeEvaluateNonBool notSimplifier sideCondition first second
+makeEvaluate notSimplifier sideCondition patterns
+  | isBottom patterns = empty
+  | Pattern.isTop patterns = return Pattern.top
+  | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
 
 makeEvaluateNonBool
-    ::  ( InternalVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
     -> SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
+    -> MultiAnd (Pattern variable)
     -> LogicT simplifier (Pattern variable)
-makeEvaluateNonBool
-    notSimplifier
-    sideCondition
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
-  = do
-    terms <- termAnd notSimplifier firstTerm secondTerm
-    let firstCondition = Conditional.withoutTerm first
-        secondCondition = Conditional.withoutTerm second
-        initialConditions = firstCondition <> secondCondition
-        merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize sideCondition merged
-    let normalizedPredicates =
+makeEvaluateNonBool notSimplifier sideCondition patterns = do
+    let unify pattern1 term2 = do
+            let (term1, condition1) = Pattern.splitTerm pattern1
+            unified <- termAnd notSimplifier term1 term2
+            pure (Pattern.andCondition unified condition1)
+    unified <- Foldable.foldlM unify Pattern.top (term <$> patterns)
+    let substitutions =
+            Pattern.substitution unified
+            <> foldMap Pattern.substitution patterns
+    normalized <-
+        from @_ @(Condition _) substitutions
+        & Substitution.normalize sideCondition
+    let substitution = Pattern.substitution normalized
+        predicates :: Changed (MultiAnd (Predicate variable))
+        predicates =
+            mconcat
+                [ MultiAnd.fromPredicate (predicate unified)
+                , MultiAnd.fromPredicate (predicate normalized)
+                , foldMap (from @(Predicate _) . predicate) patterns
+                ]
+            & simplifyConjunctionByAssumption
+        term =
             applyAndIdempotenceAndFindContradictions
-                (Conditional.term normalized)
-        normalizedPredicate =
-            promoteSubTermsToTop (Conditional.predicate normalized)
-    case normalizedPredicate of
+                (Conditional.term unified)
+    case predicates of
         Unchanged unchanged ->
-            return normalized
-                { term = normalizedPredicates
-                , predicate = unchanged
-                }
+            Pattern.withCondition term (from substitution <> from predicate)
+            & return
+          where
+            predicate =
+                MultiAnd.toPredicate unchanged
+                & Predicate.setSimplified simplified
+            simplified = foldMap Predicate.simplifiedAttribute unchanged
         Changed changed ->
-            simplifyCondition
-                sideCondition
-                normalized
-                    { term = normalizedPredicates
-                    , predicate = changed
-                    }
+            Pattern.withCondition term (from substitution <> from predicate)
+            & simplifyCondition sideCondition
+          where
+            predicate = MultiAnd.toPredicate changed
 
-promoteSubTermsToTop
+{- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
+
+The conjunction is simplified by the identity:
+
+@
+A ∧ P(A) = A ∧ P(⊤)
+@
+
+ -}
+simplifyConjunctionByAssumption
     :: forall variable
     .  InternalVariable variable
-    => Predicate variable
-    -> Changed (Predicate variable)
-promoteSubTermsToTop predicate =
-    case normalizedPredicates of
-        Unchanged unchanged -> Unchanged $
-            foldl'
-                makeSimplifiedAndPredicate
-                makeTruePredicate_
-                (List.sort unchanged)
-        Changed changed -> Changed $
-            foldl' makeAndPredicate makeTruePredicate_ changed
+    => MultiAnd (Predicate variable)
+    -> Changed (MultiAnd (Predicate variable))
+simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
+    fmap MultiAnd.make
+    $ flip evalStateT HashMap.empty
+    $ for (sortBySize andPredicates)
+    $ \predicate' -> do
+        let original = Predicate.unwrapPredicate predicate'
+        result <- applyAssumptions original
+        assume result
+        return result
   where
-    andPredicates :: [Predicate variable]
-    andPredicates = getMultiAndPredicate predicate
+    -- Sorting by size ensures that every clause is considered before any clause
+    -- which could contain it, because the containing clause is necessarily
+    -- larger.
+    sortBySize :: [Predicate variable] -> [Predicate variable]
+    sortBySize = sortOn (size . from)
 
-    sortedAndPredicates :: [Predicate variable]
-    sortedAndPredicates = sortByDepth andPredicates
+    size :: TermLike variable -> Int
+    size =
+        Recursive.fold $ \(_ :< termLikeF) ->
+            case termLikeF of
+                TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
+                TermLike.DefinedF defined -> TermLike.getDefined defined
+                _ -> 1 + Foldable.sum termLikeF
 
-    sortByDepth :: [Predicate variable] -> [Predicate variable]
-    sortByDepth = sortBy (compare `on` Predicate.depth)
-
-    normalizedPredicates :: Changed [Predicate variable]
-    normalizedPredicates =
-        flip evalStateT HashMap.empty
-        $ for sortedAndPredicates
-        $ \predicate' -> do
-            let original = Predicate.unwrapPredicate predicate'
-            result <- replaceWithTopNormalized original
-            insertAssumption result
-            return result
-
-    insertAssumption
+    assume
         :: Predicate variable
         -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
-    insertAssumption predicate1 =
+    assume predicate1 =
         State.modify' insert
       where
         insert =
@@ -318,41 +266,41 @@ promoteSubTermsToTop predicate =
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
-    replaceWithTopNormalized
+    applyAssumptions
         ::  TermLike variable
         ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
                 (Predicate variable)
-    replaceWithTopNormalized replaceIn = do
-        replacements <- State.get
+    applyAssumptions replaceIn = do
+        assumptions <- State.get
         lift $ fmap
-            (unsafeMakePredicate replacements replaceIn)
-            (replaceWithTop replacements replaceIn)
+            (unsafeMakePredicate assumptions replaceIn)
+            (applyAssumptionsWorker assumptions replaceIn)
 
     unsafeMakePredicate replacements original result =
         case makePredicate result of
             -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
             -- should make it impossible to have an error here.
             Left err ->
-                (error . show . Pretty.vsep)
-                [ "Replacing"
-                , (Pretty.indent 4 . Pretty.vsep) (unparse <$> HashMap.keys replacements)
-                , "in"
-                , Pretty.indent 4 (unparse original)
-                , Pretty.indent 4 (Pretty.pretty err)
+                (error . show . Pretty.vsep . map (either id (Pretty.indent 4)))
+                [ Left "Replacing"
+                , Right (Pretty.vsep (unparse <$> HashMap.keys replacements))
+                , Left "in"
+                , Right (unparse original)
+                , Right (Pretty.pretty err)
                 ]
             Right p -> p
 
-    replaceWithTop
+    applyAssumptionsWorker
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    replaceWithTop replacements original
-      | Just result <- HashMap.lookup original replacements = Changed result
+    applyAssumptionsWorker assumptions original
+      | Just result <- HashMap.lookup original assumptions = Changed result
 
-      | HashMap.null replacements' = Unchanged original
+      | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        traverse (replaceWithTop replacements') replaceIn
+        traverse (applyAssumptionsWorker assumptions') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.
@@ -361,24 +309,19 @@ promoteSubTermsToTop predicate =
       where
         _ :< replaceIn = Recursive.project original
 
-        replacements'
-          | Exists_ _ var _ <- original = restrictReplacements (inject var)
-          | Forall_ _ var _ <- original = restrictReplacements (inject var)
-          | Mu_       var _ <- original = restrictReplacements (inject var)
-          | Nu_       var _ <- original = restrictReplacements (inject var)
-          | otherwise = replacements
+        assumptions'
+          | Exists_ _ var _ <- original = restrictAssumptions (inject var)
+          | Forall_ _ var _ <- original = restrictAssumptions (inject var)
+          | Mu_       var _ <- original = restrictAssumptions (inject var)
+          | Nu_       var _ <- original = restrictAssumptions (inject var)
+          | otherwise = assumptions
 
-        restrictReplacements Variable { variableName } =
+        restrictAssumptions Variable { variableName } =
             HashMap.filterWithKey
                 (\termLike _ -> wouldNotCapture termLike)
-                replacements
+                assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
-
-    makeSimplifiedAndPredicate a b =
-        Predicate.setSimplified
-            (on (<>) Predicate.simplifiedAttribute a b)
-            (makeAndPredicate a b)
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
