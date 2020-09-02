@@ -184,7 +184,7 @@ getSmtResult
             preludeAction
             sequence_ actions
             SMT.check
-    runSMT smtResult
+    runSMT (pure ()) smtResult
 
 assertSmtResult
     :: HasCallStack

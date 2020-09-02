@@ -623,4 +623,4 @@ testBytes
     -> [TermLike VariableName]
     -> Pattern VariableName
     -> TestTree
-testBytes name = testSymbolWithSolver evaluate name
+testBytes name = testSymbolWithoutSolver evaluate name

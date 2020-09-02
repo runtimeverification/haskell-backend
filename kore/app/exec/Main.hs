@@ -851,8 +851,12 @@ execute options mainModule worker =
             None -> withoutSMT
   where
     withZ3 =
-        SMT.runSMT config $ do
-            give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
+        SMT.runSMT
+            config
+            ( give
+                (MetadataTools.build mainModule)
+                (declareSMTLemmas mainModule)
+            )
             worker
     withoutSMT = SMT.runNoSMT worker
     KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options

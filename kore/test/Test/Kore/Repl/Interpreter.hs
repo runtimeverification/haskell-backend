@@ -738,7 +738,7 @@ runWithState command axioms claims claim stateTransformer = do
     output' <- readIORef output
     return $ Result output' c s
   where
-    liftSimplifier = SMT.runSMT SMT.defaultConfig . Kore.runSimplifier testEnv
+    liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
@@ -817,7 +817,7 @@ mkState startTime axioms claims claim =
 
 mkConfig
     :: MVar (Log.LogAction IO Log.ActualEntry)
-    -> Config Simplifier
+    -> Config (SimplifierT NoSMT)
 mkConfig logger =
     Config
         { stepper     = stepper0
@@ -832,7 +832,7 @@ mkConfig logger =
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
-        -> Simplifier ExecutionGraph
+        -> SimplifierT NoSMT ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         verifyClaimStep claims' axioms' graph node
 

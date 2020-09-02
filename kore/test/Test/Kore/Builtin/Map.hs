@@ -108,7 +108,7 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.RulePattern
 import SMT
-    ( SMT
+    ( NoSMT
     )
 
 import Test.Expect
@@ -420,7 +420,7 @@ test_inKeysUnit =
 
 test_keysUnit :: TestTree
 test_keysUnit =
-    testCaseWithSMT
+    testCaseWithoutSMT
         "keys{}(unit{}() : Map{}) === unit{}() : Set{}"
         $ do
             let
@@ -466,7 +466,7 @@ test_keys =
 
 test_keysListUnit :: TestTree
 test_keysListUnit =
-    testCaseWithSMT
+    testCaseWithoutSMT
         "keys_list{}(unit{}() : Map{}) === unit{}() : List{}"
         $ do
             let
@@ -637,7 +637,7 @@ test_inclusion =
 -- | Check that simplification is carried out on map elements.
 test_simplify :: TestTree
 test_simplify =
-    testCaseWithSMT "simplify builtin Map elements" $ do
+    testCaseWithoutSMT "simplify builtin Map elements" $ do
         let
             x = mkIntVar (testId "x")
             key = Test.Int.asInternal 1
@@ -768,7 +768,7 @@ addLookupElement key valueVar mapPattern  =
 
 test_unifyEmptyWithEmpty :: TestTree
 test_unifyEmptyWithEmpty =
-    testPropertyWithSolver "Unify empty map pattern with empty map DV" $ do
+    testPropertyWithoutSolver "Unify empty map pattern with empty map DV" $ do
         -- Map.empty /\ mapUnit
         (emptyMapDV `unifiesWithMulti` emptyMapPattern) [expect]
         -- mapUnit /\ Map.empty
@@ -815,7 +815,7 @@ test_unifySelectFromEmpty =
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton map with a variable selection pattern"
         (do
             key      <- forAll genIntegerPattern
@@ -849,7 +849,7 @@ test_unifySelectFromSingleton =
 
 test_unifySelectSingletonFromSingleton :: TestTree
 test_unifySelectSingletonFromSingleton =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton map with a singleton variable selection pattern"
         (do
             key <- forAll genIntegerPattern
@@ -879,7 +879,7 @@ test_unifySelectSingletonFromSingleton =
 
 test_unifySelectFromSingletonWithoutLeftovers :: TestTree
 test_unifySelectFromSingletonWithoutLeftovers =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton map with an element selection pattern"
         (do
             key <- forAll genIntegerPattern
@@ -907,7 +907,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
 
 test_unifySelectFromTwoElementMap :: TestTree
 test_unifySelectFromTwoElementMap =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a two element map with a variable selection pattern"
         (do
             key1 <- forAll genIntegerPattern
@@ -957,7 +957,7 @@ test_unifySelectFromTwoElementMap =
 
 test_unifySelectTwoFromTwoElementMap :: TestTree
 test_unifySelectTwoFromTwoElementMap =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a two element map with a binary variable selection pattern"
         (do
             key1 <- forAll genIntegerPattern
@@ -1013,7 +1013,7 @@ test_unifySelectTwoFromTwoElementMap =
 
 test_unifySameSymbolicKey :: TestTree
 test_unifySameSymbolicKey =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a single element symbolic map with a symbolic selection pattern"
         (do
 
@@ -1048,7 +1048,7 @@ test_unifySameSymbolicKey =
 
 test_unifySameSymbolicKeySymbolicOpaque :: TestTree
 test_unifySameSymbolicKeySymbolicOpaque =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify two symbolic maps with identical keys and one variable opaque"
         (do
             key1 <- forAll genIntegerPattern
@@ -1107,7 +1107,7 @@ unifiesWith
     => TermLike VariableName
     -> TermLike VariableName
     -> Pattern VariableName
-    -> PropertyT SMT ()
+    -> PropertyT NoSMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -1117,7 +1117,7 @@ unifiesWithMulti
     => TermLike VariableName
     -> TermLike VariableName
     -> [Pattern VariableName]
-    -> PropertyT SMT ()
+    -> PropertyT NoSMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
@@ -1157,7 +1157,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeys :: TestTree
 test_concretizeKeys =
-    testCaseWithSMT
+    testCaseWithoutSMT
         "unify a concrete Map with a symbolic Map"
         $ do
             actual <- evaluate original
@@ -1201,7 +1201,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
-    testCaseWithSMT
+    testCaseWithoutSMT
         "unify a concrete Map with a symbolic Map in an axiom"
         $ do
             let concreteMap = asTermLike $ Map.fromList [(key, val)]
