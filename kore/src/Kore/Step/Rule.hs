@@ -52,7 +52,6 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias
     ( Alias (..)
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
@@ -81,6 +80,7 @@ import Kore.Step.ClaimPattern
     , OnePathRule (..)
     , allPathRuleToTerm
     , onePathRuleToTerm
+    , parseRightHandSide
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -93,7 +93,6 @@ import Kore.Step.RulePattern
     , rewriteRuleToTerm
     , termToRHS
     )
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
     )
@@ -118,18 +117,8 @@ reachabilityModalityToConstructor
     :: Alias (TermLike.TermLike VariableName)
     -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
 reachabilityModalityToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPatternNEW . OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPatternNEW . AllPathRule
-    | otherwise = Nothing
-  where
-    headName = getId (aliasConstructor patternHead)
-
-qualifiedAxiomOpToConstructor
-    :: Alias (TermLike.TermLike VariableName)
-    -> Maybe (RulePattern VariableName -> QualifiedAxiomPattern VariableName)
-qualifiedAxiomOpToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OLD.OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . OLD.AllPathRule
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
     | otherwise = Nothing
   where
     headName = getId (aliasConstructor patternHead)
@@ -139,10 +128,8 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern OLD.OnePathRule
-    | AllPathClaimPattern OLD.AllPathRule
-    | OnePathClaimPatternNEW OnePathRule
-    | AllPathClaimPatternNEW AllPathRule
+    | OnePathClaimPattern OnePathRule
+    | AllPathClaimPattern AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
@@ -329,6 +316,10 @@ complexRewriteTermToRule attributes pat =
 
 @patternToAxiomPattern@ returns an error if the given 'TermLike' does
 not encode a normal rewrite or function axiom.
+
+Note that in the case of reachability claims, this function is not
+the inverse of the functions which transform claims to terms, because
+the right hand side condition is pushed into the disjunction when parsing.
 -}
 termToAxiomPattern
     :: Attribute.Axiom Internal.Symbol.Symbol VariableName
@@ -336,33 +327,26 @@ termToAxiomPattern
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern VariableName)
 termToAxiomPattern attributes pat =
     case pat of
-        -- OLD: Reachability claims
+        -- Reachability claims
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
-          | Just constructor <- qualifiedAxiomOpToConstructor op ->
-            pure $ constructor RulePattern
-                { left = lhs
-                , antiLeft = Nothing
-                , requires = Predicate.wrapPredicate requires
-                , rhs = termToRHS rhs
-                , attributes
-                }
-        -- NEW: Reachability claims
-        TermLike.Implies_ _
-            (TermLike.And_ _ requires lhs)
-            (TermLike.ApplyAlias_ op [rhs])
-          | Just constructor <- reachabilityModalityToConstructor op ->
+          | Just constructor <- reachabilityModalityToConstructor op -> do
             let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
-                attributes' = Attribute.mapAxiomVariables (pure mkRuleVariable) attributes
-             in pure $ constructor ClaimPattern
+                attributes' =
+                    Attribute.mapAxiomVariables
+                        (pure mkRuleVariable)
+                        attributes
+                (right', existentials') = ClaimPattern.termToExistentials rhs'
+            pure $ constructor $ ClaimPattern.refreshExistentials
+                ClaimPattern
                 { ClaimPattern.left =
                     Pattern.fromTermAndPredicate
                         lhs
                         (Predicate.wrapPredicate requires)
                     & Pattern.mapVariables (pure mkRuleVariable)
-                , ClaimPattern.right = OrPattern.parseFromTermLike rhs'
-                , ClaimPattern.existentials = ClaimPattern.termToExistentials rhs'
+                , ClaimPattern.right = parseRightHandSide right'
+                , ClaimPattern.existentials = existentials'
                 , ClaimPattern.attributes = attributes'
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
@@ -404,10 +388,8 @@ axiomPatternToTerm
     -> TermLike.TermLike VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
-    OnePathClaimPattern rule -> OLD.onePathRuleToTerm rule
-    AllPathClaimPattern rule -> OLD.allPathRuleToTerm rule
-    OnePathClaimPatternNEW rule -> onePathRuleToTerm rule
-    AllPathClaimPatternNEW rule -> allPathRuleToTerm rule
+    OnePathClaimPattern rule -> onePathRuleToTerm rule
+    AllPathClaimPattern rule -> allPathRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
 
 -- TODO(Ana): are these three functions used anywhere anymore?

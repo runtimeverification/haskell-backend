@@ -49,10 +49,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
@@ -63,9 +59,6 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
-import qualified Kore.Internal.TermLike as TermLike
-    ( substitute
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -74,9 +67,6 @@ import Kore.Sort
     , SortActual (SortActual)
     )
 import qualified Kore.Sort as Sort.DoNotUse
-import qualified Kore.Step.AntiLeft as AntiLeft
-    ( substitute
-    )
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
     , ClaimPattern (..)
@@ -84,10 +74,6 @@ import Kore.Step.ClaimPattern
     , ReachabilityRule (..)
     , freeVariablesLeft
     )
-import Kore.Step.RulePattern
-    ( RulePattern (RulePattern)
-    )
-import qualified Kore.Step.RulePattern as OLD
 import Kore.Syntax.Variable
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -104,82 +90,6 @@ class ExpandSingleConstructors rule where
         :: SmtMetadataTools attributes
         -> rule
         -> rule
-
-instance ExpandSingleConstructors (RulePattern VariableName) where
-    expandSingleConstructors
-        metadataTools
-        rule@(RulePattern _ _ _ _ _)
-      = case rule of
-        RulePattern
-            { left, antiLeft, requires
-            , rhs = OLD.RHS {existentials, right, ensures}
-            } ->
-            let leftVariables :: [ElementVariable VariableName]
-                leftVariables =
-                    mapMaybe retractElementVariable
-                    $ FreeVariables.toList
-                    $ freeVariables left
-                allSomeVariables :: Set (SomeVariable VariableName)
-                allSomeVariables =
-                    FreeVariables.toSet (freeVariables rule)
-                allElementVariables :: Set (ElementVariableName VariableName)
-                allElementVariables =
-                    Set.fromList
-                    $ map variableName
-                    $ mapMaybe retract (Set.toList allSomeVariables)
-                        ++ existentials
-                expansion
-                    ::  Map.Map
-                            (SomeVariable VariableName)
-                            (TermLike VariableName)
-                expansion =
-                    expandVariables
-                        metadataTools
-                        leftVariables
-                        allElementVariables
-                substitutionPredicate =
-                    ( Substitution.toPredicate
-                    . Substitution.wrap
-                    . Substitution.mkUnwrappedSubstitution
-                    )
-                        (Map.toList expansion)
-                subst = Map.mapKeys variableName expansion
-            in rule
-                { OLD.left = TermLike.substitute subst left
-                , OLD.antiLeft =
-                    AntiLeft.substitute subst <$> antiLeft
-                , OLD.requires =
-                    makeAndPredicate
-                        (Predicate.substitute subst requires)
-                        substitutionPredicate
-                , OLD.rhs = OLD.RHS
-                    { existentials
-                    , right = TermLike.substitute subst right
-                    , ensures = Predicate.substitute subst ensures
-                    }
-                }
-
-instance ExpandSingleConstructors OLD.OnePathRule where
-    expandSingleConstructors tools =
-        OLD.OnePathRule . expandSingleConstructors tools . OLD.getOnePathRule
-
-instance ExpandSingleConstructors OLD.AllPathRule where
-    expandSingleConstructors tools =
-        OLD.AllPathRule . expandSingleConstructors tools . OLD.getAllPathRule
-
-instance ExpandSingleConstructors OLD.ReachabilityRule where
-    expandSingleConstructors tools (OLD.OnePath rule) =
-        OLD.OnePath
-        . OLD.OnePathRule
-        . expandSingleConstructors tools
-        . OLD.getOnePathRule
-        $ rule
-    expandSingleConstructors tools (OLD.AllPath rule) =
-        OLD.AllPath
-        . OLD.AllPathRule
-        . expandSingleConstructors tools
-        . OLD.getAllPathRule
-        $ rule
 
 instance ExpandSingleConstructors ClaimPattern where
     expandSingleConstructors

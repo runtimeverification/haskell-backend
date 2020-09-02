@@ -7,7 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEnv
     , testConditionSimplifier
     , testEvaluators
-    , testSymbolWithSolver
+    , testSymbolWithoutSolver
     , simplify
     , evaluate
     , evaluateT
@@ -95,8 +95,9 @@ import Kore.Rewriting.RewritingVariable
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
-    ( RewriteRule
+    ( RewriteRule (..)
     , RulePattern
+    , mkRewritingRule
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -117,7 +118,7 @@ import Kore.Unparser
     )
 import qualified Logic
 import SMT
-    ( SMT
+    ( NoSMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -135,12 +136,12 @@ mkPair
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
-testSymbolWithSolver
+testSymbolWithoutSolver
     ::  ( HasCallStack
         , p ~ TermLike VariableName
         , expanded ~ Pattern VariableName
         )
-    => (p -> SMT expanded)
+    => (p -> NoSMT expanded)
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
@@ -151,9 +152,9 @@ testSymbolWithSolver
     -> expanded
     -- ^ expected result
     -> TestTree
-testSymbolWithSolver eval title symbol args expected =
+testSymbolWithoutSolver eval title symbol args expected =
     testCase title $ do
-        actual <- runSMT eval'
+        actual <- runNoSMT eval'
         assertEqual "" expected actual
   where
     eval' = eval $ mkApplySymbol symbol args
@@ -263,7 +264,7 @@ evaluateT
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
 
-evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
+evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
@@ -274,22 +275,22 @@ runStep
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (OrPattern VariableName)
+    -> NoSMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return (Step.gatherResults results)
+    return . fmap getRewritingPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Step.Results RulePattern VariableName)
+    -> NoSMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
         [mkRewritingRule axiom]
-        configuration
+        (mkRewritingPattern configuration)
     & runSimplifier testEnv
 
 unificationProcedure

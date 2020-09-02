@@ -1,7 +1,7 @@
   #Not ( {
-    bool2Int ( I ==Int 0 )
-  #Equals
     1
+  #Equals
+    bool2Int ( I ==Int 0 )
   } )
 #And
   <T>

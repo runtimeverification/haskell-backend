@@ -14,6 +14,7 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
 import Data.Sup
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -207,15 +208,11 @@ test_applicationSimplification =
                         [ Conditional
                             { term = fOfA
                             , predicate =
-                                makeAndPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate Mock.testSort
-                                            fOfA
-                                            fOfB
-                                        )
-                                        (makeEqualsPredicate_ fOfA gOfA)
-                                    )
-                                    (makeEqualsPredicate_ gOfA gOfB)
+                                (MultiAnd.toPredicate . MultiAnd.make)
+                                [ makeEqualsPredicate Mock.testSort fOfA fOfB
+                                , makeEqualsPredicate Mock.testSort fOfA gOfA
+                                , makeEqualsPredicate Mock.testSort gOfA gOfB
+                                ]
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (inject z', gOfB)

@@ -23,9 +23,9 @@ import Kore.Internal.OrPattern
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
-    ( rulePattern
+    ( mkRewritingRule
+    , rulePattern
     )
-import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
@@ -69,6 +69,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
+    toPattern :: Either Stuck a -> Either (OrPattern VariableName) a
     toPattern =
         Bifunctor.first stuckPatterns
 
@@ -80,9 +81,8 @@ runVerification
     -> [ReachabilityRule]
     -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
-    runSimplifier mockEnv $ do
-        SMT.AST.declare Mock.smtDeclarations
-        runExceptT
+    runSimplifier mockEnv
+        $ runExceptT
             $ Verification.verify
                 breadthLimit
                 BreadthFirst

@@ -119,9 +119,6 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import SMT
-    ( SMT
-    )
 
 import Test.Expect
 import Test.Kore
@@ -203,7 +200,7 @@ test_unit =
         -> TestTree
     becomes original expect name =
         testCase name $ do
-            actual <- runSMT $ evaluate original
+            actual <- runNoSMT $ evaluate original
             assertEqual "" (Pattern.fromTermLike expect) actual
 
     internalOpaque set =
@@ -694,7 +691,7 @@ test_unifyConcreteDistinct =
 
 test_unifyFramingVariable :: TestTree
 test_unifyFramingVariable =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a concrete set and a framed set"
         (do
             framedElem <- forAll genConcreteIntegerPattern
@@ -800,7 +797,7 @@ test_unifySelectFromEmpty =
 
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton set with a variable selection pattern"
         (do
             concreteElem <- forAll genConcreteIntegerPattern
@@ -835,7 +832,7 @@ test_unifySelectFromSingleton =
 
 test_unifySelectFromSingletonWithoutLeftovers :: TestTree
 test_unifySelectFromSingletonWithoutLeftovers =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton set with an element variable"
         (do
             concreteElem <- forAll genConcreteIntegerPattern
@@ -858,7 +855,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
 
 test_unifySelectFromTwoElementSet :: TestTree
 test_unifySelectFromTwoElementSet =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a two element set with a variable selection pattern"
         (do
             concreteElem1 <- forAll genConcreteIntegerPattern
@@ -916,7 +913,7 @@ test_unifySelectFromTwoElementSet =
 
 test_unifySelectTwoFromTwoElementSet :: TestTree
 test_unifySelectTwoFromTwoElementSet =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a two element set with a variable selection pattern"
         (do
             concreteElem1 <- forAll genConcreteIntegerPattern
@@ -959,7 +956,7 @@ test_unifySelectTwoFromTwoElementSet =
 
 test_unifyConcatElemVarVsElemSet :: TestTree
 test_unifyConcatElemVarVsElemSet =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify two set concatenations"
         (do
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
@@ -1005,7 +1002,7 @@ test_unifyConcatElemVarVsElemSet =
 
 test_unifyConcatElemVarVsElemElem :: TestTree
 test_unifyConcatElemVarVsElemElem =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), S) and concat(elem(Y), elem(Z))"
         (do
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
@@ -1052,7 +1049,7 @@ test_unifyConcatElemVarVsElemElem =
 
 test_unifyConcatElemElemVsElemConcrete :: TestTree
 test_unifyConcatElemElemVsElemConcrete =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), 1)"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1095,7 +1092,7 @@ test_unifyConcatElemElemVsElemConcrete =
 
 test_unifyConcatElemElemVsElemElem :: TestTree
 test_unifyConcatElemElemVsElemElem =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), elem(T))"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1137,7 +1134,7 @@ test_unifyConcatElemElemVsElemElem =
 
 test_unifyConcatElemConcatVsElemConcrete :: TestTree
 test_unifyConcatElemConcatVsElemConcrete =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), concat(elem(Y), S)) and concat(elem(Z), {6})"
         (do
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
@@ -1193,7 +1190,7 @@ test_unifyConcatElemConcatVsElemConcrete =
 
 test_unifyConcatElemConcreteVsElemConcrete1 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete1 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), {6}) and concat(elem(Y), {6})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1228,7 +1225,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
 
 test_unifyConcatElemConcreteVsElemConcrete2 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete2 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), {5}) and concat(elem(Y), {6})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1268,7 +1265,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
 
 test_unifyConcatElemConcreteVsElemConcrete3 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete3 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 7})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1314,7 +1311,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
 
 test_unifyConcatElemConcreteVsElemConcrete4 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete4 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {7, 8})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1345,7 +1342,7 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
 
 test_unifyConcatElemConcreteVsElemConcrete5 :: TestTree
 test_unifyConcatElemConcreteVsElemConcrete5 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 6})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1387,7 +1384,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
 
 test_unifyConcatElemVsElem :: TestTree
 test_unifyConcatElemVsElem =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and elem(Y)"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1417,7 +1414,7 @@ test_unifyConcatElemVsElem =
 
 test_unifyConcatElemVsElemConcrete1 :: TestTree
 test_unifyConcatElemVsElemConcrete1 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), {})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1448,7 +1445,7 @@ test_unifyConcatElemVsElemConcrete1 =
 
 test_unifyConcatElemVsElemConcrete2 :: TestTree
 test_unifyConcatElemVsElemConcrete2 =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), {5})"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1471,7 +1468,7 @@ test_unifyConcatElemVsElemConcrete2 =
 
 test_unifyConcatElemVsElemElem :: TestTree
 test_unifyConcatElemVsElemElem =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), elem(Z))"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1495,7 +1492,7 @@ test_unifyConcatElemVsElemElem =
 
 test_unifyConcatElemVsElemConcat :: TestTree
 test_unifyConcatElemVsElemConcat =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), concat(elem(Z), {5}))"
         (do
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
@@ -1522,7 +1519,7 @@ test_unifyConcatElemVsElemConcat =
 
 test_unifyConcatElemVsElemVar :: TestTree
 test_unifyConcatElemVsElemVar =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify elem(X) and concat(elem(Y), Z)"
         (do
             setVar <- forAll (standaloneGen $ elementVariableGen setSort)
@@ -1557,7 +1554,7 @@ test_unifyConcatElemVsElemVar =
 
 test_unifyConcatElemElemVsElemConcat :: TestTree
 test_unifyConcatElemElemVsElemConcat =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) \
             \ and concat(elem(Z), concat(elem(T), {5}))"
         (do
@@ -1590,7 +1587,7 @@ test_unifyConcatElemElemVsElemConcat =
 
 test_unifyConcatElemElemVsElemConcatSet :: TestTree
 test_unifyConcatElemElemVsElemConcatSet =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), elem(Y)) \
             \ and concat(elem(Z), concat(elem(T), U))"
         (do
@@ -1637,7 +1634,7 @@ test_unifyConcatElemElemVsElemConcatSet =
 
 test_unifyFnSelectFromSingleton :: TestTree
 test_unifyFnSelectFromSingleton =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify a singleton set with a function selection pattern"
         (do
             concreteElem <- forAll genConcreteIntegerPattern
@@ -1685,7 +1682,7 @@ test_unify_concat_xSet_unit_unit_vs_unit =
 
 test_unifyMultipleIdenticalOpaqueSets :: TestTree
 test_unifyMultipleIdenticalOpaqueSets =
-    testPropertyWithSolver
+    testPropertyWithoutSolver
         "unify concat(elem(X), concat(U, concat(V, V))) \
             \ and concat(elem(y), concat(U, concat(V, concat(T, U))))"
         (do
@@ -1764,7 +1761,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeys :: TestTree
 test_concretizeKeys =
-    testCaseWithSMT "unify Set with symbolic keys" $ do
+    testCaseWithoutSMT "unify Set with symbolic keys" $ do
         actual <- evaluate original
         assertEqual "" expected actual
   where
@@ -1808,7 +1805,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
-    testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
+    testCaseWithoutSMT "unify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
         assertEqual "" expected actual
@@ -1860,7 +1857,7 @@ unifiesWith
     => TermLike VariableName
     -> TermLike VariableName
     -> Pattern VariableName
-    -> PropertyT SMT ()
+    -> PropertyT NoSMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -1870,7 +1867,7 @@ unifiesWithMulti
     => TermLike VariableName
     -> TermLike VariableName
     -> [Pattern VariableName]
-    -> PropertyT SMT ()
+    -> PropertyT NoSMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults

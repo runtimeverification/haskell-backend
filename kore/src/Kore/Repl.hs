@@ -67,8 +67,8 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
+import Kore.Step.ClaimPattern
+    ( lensClaimPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -231,24 +231,7 @@ runRepl
     addIndexesToClaims =
         initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
-        lensAttribute =
-            Lens.lens
-                (\case
-                    OnePath onePathRule ->
-                        Lens.view (_Unwrapped . field @"attributes") onePathRule
-                    AllPath allPathRule ->
-                        Lens.view (_Unwrapped . field @"attributes") allPathRule
-                )
-                (\case
-                    OnePath onePathRule -> \attrs ->
-                        onePathRule
-                        & Lens.set (_Unwrapped . field @"attributes") attrs
-                        & OnePath
-                    AllPath allPathRule -> \attrs ->
-                        allPathRule
-                        & Lens.set (_Unwrapped . field @"attributes") attrs
-                        & AllPath
-                )
+        lensAttribute = lensClaimPattern . field @"attributes"
 
     initializeRuleIndexes ctor lens rules =
         zipWith addIndex rules [0..]
@@ -262,15 +245,15 @@ runRepl
     firstClaim :: ReachabilityRule
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph Axiom
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
         :: [ReachabilityRule]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph Axiom)
+        -> m ExecutionGraph
     stepper0 claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0

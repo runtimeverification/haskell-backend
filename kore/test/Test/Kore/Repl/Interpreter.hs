@@ -46,6 +46,8 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -59,12 +61,23 @@ import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.ClaimPattern
+    ( ClaimPattern
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    , claimPattern
+    )
 import Kore.Step.RulePattern
+    ( mkRewritingRule
+    , rulePattern
+    )
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Strategies.Goal
+import Kore.Strategies.Goal hiding
+    ( AppliedRule
+    )
 import Kore.Strategies.Verification
     ( verifyClaimStep
     )
@@ -644,7 +657,7 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    OnePath . coerce
+    OnePath . OnePathRule
     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
@@ -652,7 +665,7 @@ zeroToTen =
 
 emptyClaim :: Claim
 emptyClaim =
-    OnePath . coerce
+    OnePath . OnePathRule
     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom
@@ -670,14 +683,18 @@ mkNamedAxiom left right name =
     label = Attribute.Label . pure $ pack name
 
 claimWithName
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
-    -> RewriteRule VariableName
-claimWithName left right name =
-    rulePattern left right
-    & Lens.set (field @"attributes" . typed @Attribute.Label) label
-    & RewriteRule
+    -> ClaimPattern
+claimWithName leftTerm rightTerm name =
+    let left =
+            Pattern.fromTermLike leftTerm
+        right =
+            Pattern.fromTermLike rightTerm
+            & OrPattern.fromPattern
+     in claimPattern left right []
+        & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
 
@@ -721,7 +738,7 @@ runWithState command axioms claims claim stateTransformer = do
     output' <- readIORef output
     return $ Result output' c s
   where
-    liftSimplifier = SMT.runSMT SMT.defaultConfig . Kore.runSimplifier testEnv
+    liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
@@ -800,7 +817,7 @@ mkState startTime axioms claims claim =
 
 mkConfig
     :: MVar (Log.LogAction IO Log.ActualEntry)
-    -> Config Simplifier
+    -> Config (SimplifierT NoSMT)
 mkConfig logger =
     Config
         { stepper     = stepper0
@@ -813,9 +830,9 @@ mkConfig logger =
     stepper0
         :: [Claim]
         -> [Axiom]
-        -> ExecutionGraph Axiom
+        -> ExecutionGraph
         -> ReplNode
-        -> Simplifier (ExecutionGraph Axiom)
+        -> SimplifierT NoSMT ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
         verifyClaimStep claims' axioms' graph node
 
@@ -830,5 +847,7 @@ formatUnificationError info first second = do
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Condition VariableName) -> ReplOutput
+formatUnifiers
+    :: NonEmpty (Condition RewritingVariableName)
+    -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

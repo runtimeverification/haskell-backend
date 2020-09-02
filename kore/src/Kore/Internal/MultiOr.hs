@@ -26,11 +26,14 @@ module Kore.Internal.MultiOr
     , merge
     , mergeAll
     , singleton
+    , map
     -- * Re-exports
     , Alternative (..)
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( map
+    )
 
 import Control.DeepSeq
     ( NFData
@@ -352,6 +355,16 @@ crossProductGeneric joiner (MultiOr first) (MultiOr second) =
 
 gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act
+{-# INLINE gather #-}
 
 observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
 observeAllT act = make <$> Logic.observeAllT act
+{-# INLINE observeAllT #-}
+
+map
+    :: Ord child2
+    => TopBottom child2
+    => (child1 -> child2)
+    -> MultiOr child1
+    -> MultiOr child2
+map f = make . fmap f . extractPatterns

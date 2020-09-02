@@ -4,10 +4,10 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , AppliedRule (..)
     , strategy
     , TransitionRule
     , Prim
-    , FromRulePattern (..)
     , ClaimExtractor (..)
     , WithConfiguration (..)
     , CheckImplicationResult (..)
@@ -16,23 +16,19 @@ module Kore.Strategies.Goal
     , proven
     , reachabilityFirstStep
     , reachabilityNextStep
-    , getConfiguration
-    , getDestination
     , transitionRule
     , isTrusted
-    , removalPatterns
     -- * Re-exports
     , module Kore.Strategies.Rule
     , module Kore.Log.InfoReachability
+    , getConfiguration
+    , getDestination
+    -- * For testing
+    , checkImplicationWorker
     ) where
 
 import Prelude.Kore
 
-import Control.Error
-    ( ExceptT
-    , runExceptT
-    , throwE
-    )
 import Control.Lens
     ( Lens'
     )
@@ -44,9 +40,14 @@ import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
     )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    , runStateT
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
@@ -56,27 +57,33 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
+import qualified Data.Monoid as Monoid
 import Data.Stream.Infinite
     ( Stream (..)
     )
 import qualified Data.Stream.Infinite as Stream
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Debug
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
+import qualified Kore.Attribute.Label as Attribute
+    ( Label
+    )
+import qualified Kore.Attribute.RuleIndex as Attribute
+    ( RuleIndex
+    )
+import qualified Kore.Attribute.SourceLocation as Attribute
+    ( SourceLocation
     )
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -104,6 +111,18 @@ import Kore.Log.WarnStuckProofState
     , warnStuckProofStateTermsUnifiable
     )
 import Kore.Rewriting.RewritingVariable
+import Kore.Step.AxiomPattern
+    ( AxiomPattern (..)
+    )
+import Kore.Step.ClaimPattern
+    ( AllPathRule (..)
+    , ClaimPattern (..)
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    , getConfiguration
+    , getDestination
+    )
+import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
     ( Result (..)
     , Results (..)
@@ -114,24 +133,10 @@ import Kore.Step.Rule
     , fromSentenceAxiom
     )
 import Kore.Step.RulePattern
-    ( AllPathRule (..)
-    , FromRulePattern (..)
-    , OnePathRule (..)
-    , RHS
-    , ReachabilityRule (..)
-    , RulePattern (..)
-    , ToRulePattern (..)
-    , ToRulePattern (..)
-    , topExistsToImplicitForall
+    ( RulePattern (..)
     )
-import qualified Kore.Step.RulePattern as RulePattern
-import Kore.Step.Simplification.AndPredicates
-    ( simplifyEvaluatedMultiPredicate
-    )
-import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
@@ -148,9 +153,6 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition
-    ( tryTransitionT
-    )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( proofState
@@ -161,14 +163,19 @@ import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( isBottom
-    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
-    ( unparse
+    ( Unparse (..)
     )
 import qualified Kore.Verified as Verified
+import Logic
+    ( LogicT
+    , MonadLogic
+    )
+import qualified Logic
 import qualified Pretty
+import qualified SMT
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -177,7 +184,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
     MultiOr.MultiOr
@@ -188,29 +195,20 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (Rule goal)
+    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
 
 class Goal goal where
-    goalToRule :: goal -> Rule goal
-    default goalToRule
-        :: Coercible goal (Rule goal)
-        => goal -> Rule goal
-    goalToRule = coerce
-
-    -- TODO (thomas.tuegel): isTriviallyValid should be part of
-    -- checkImplication.
-    isTriviallyValid :: goal -> Bool
-
     checkImplication
         :: MonadSimplify m
-        => goal -> m (CheckImplicationResult goal)
+        => goal
+        -> LogicT m (CheckImplicationResult goal)
 
     simplify
         :: MonadSimplify m
         => goal
-        -> Strategy.TransitionT (Rule goal) m goal
+        -> Strategy.TransitionT (AppliedRule goal) m goal
 
     {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
 
@@ -228,13 +226,64 @@ class Goal goal where
         :: MonadSimplify m
         => [goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule goal]]
         -> goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+
+data AppliedRule goal
+    = AppliedAxiom (Rule goal)
+    | AppliedClaim goal
+    deriving (GHC.Generic)
+
+instance SOP.Generic goal => SOP.Generic (AppliedRule goal)
+
+instance SOP.HasDatatypeInfo goal => SOP.HasDatatypeInfo (AppliedRule goal)
+
+instance
+    ( Debug goal
+    , SOP.HasDatatypeInfo goal
+    , Debug (Rule goal)
+    , SOP.HasDatatypeInfo (Rule goal)
+    ) => Debug (AppliedRule goal)
+
+instance
+    ( Diff goal
+    , Debug goal
+    , SOP.HasDatatypeInfo goal
+    , Diff (Rule goal)
+    , Debug (Rule goal)
+    , SOP.HasDatatypeInfo (Rule goal)
+    ) => Diff (AppliedRule goal)
+
+instance (From goal Attribute.Label, From (Rule goal) Attribute.Label)
+  => From (AppliedRule goal) Attribute.Label
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (From goal Attribute.RuleIndex, From (Rule goal) Attribute.RuleIndex)
+  => From (AppliedRule goal) Attribute.RuleIndex
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (From goal Attribute.SourceLocation, From (Rule goal) Attribute.SourceLocation)
+  => From (AppliedRule goal) Attribute.SourceLocation
+  where
+    from (AppliedAxiom rule) = from rule
+    from (AppliedClaim goal) = from goal
+
+instance (Unparse goal, Unparse (Rule goal)) => Unparse (AppliedRule goal)
+  where
+    unparse (AppliedAxiom rule) = unparse rule
+    unparse (AppliedClaim goal) = unparse goal
+
+    unparse2 (AppliedAxiom rule) = unparse2 rule
+    unparse2 (AppliedClaim goal) = unparse2 goal
 
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
@@ -293,29 +342,54 @@ Things to note when implementing your own:
 -}
 
 instance Goal OnePathRule where
-    goalToRule =
-        OnePathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getOnePathRule
-
     simplify = simplify' _Unwrapped
 
     checkImplication = checkImplication' _Unwrapped
 
-    applyClaims claims = deriveSeqOnePath (map goalToRule claims)
+    applyClaims claims = deriveSeqClaim _Unwrapped OnePathRule claims
 
-    applyAxioms axioms = deriveSeqOnePath (concat axioms)
+    applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
-    isTriviallyValid = isTriviallyValid' _Unwrapped
 
-deriveSeqOnePath
+deriveSeqClaim
+    :: MonadSimplify m
+    => Step.UnifyingRule goal
+    => Step.UnifyingRuleVariable goal ~ RewritingVariableName
+    => From goal (AxiomPattern RewritingVariableName)
+    => From goal Attribute.SourceLocation
+    => Lens' goal ClaimPattern
+    -> (ClaimPattern -> goal)
+    -> [goal]
+    -> goal
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+deriveSeqClaim lensClaimPattern mkClaim claims goal =
+    getCompose
+    $ Lens.forOf lensClaimPattern goal
+    $ \claimPattern ->
+        fmap (snd . Step.refreshRule mempty)
+        $ Lens.forOf (field @"left") claimPattern
+        $ \config -> Compose $ do
+            results <-
+                Step.applyClaimsSequence
+                    mkClaim
+                    Unification.unificationProcedure
+                    config
+                    (Lens.view lensClaimPattern <$> claims)
+                    & lift
+            deriveResults fromAppliedRule results
+  where
+    fromAppliedRule =
+        AppliedClaim
+        . mkClaim
+        . Step.withoutUnification
+
+deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
-    ->  Strategy.TransitionT (Rule OnePathRule) simplifier
+    ->  Strategy.TransitionT (AppliedRule OnePathRule) simplifier
             (ProofState OnePathRule)
-deriveSeqOnePath rules =
+deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
@@ -327,25 +401,17 @@ instance ClaimExtractor OnePathRule where
             _ -> Nothing
 
 instance Goal AllPathRule where
-    goalToRule =
-        AllPathRewriteRule
-        . mkRewritingRule
-        . RewriteRule
-        . getAllPathRule
-
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
-    isTriviallyValid = isTriviallyValid' _Unwrapped
-    applyClaims claims = deriveSeqAllPath (map goalToRule claims)
+    applyClaims claims = deriveSeqClaim _Unwrapped AllPathRule claims
 
     applyAxioms axiomss = \goal ->
         foldM applyAxioms1 (GoalRemainder goal) axiomss
       where
         applyAxioms1 proofState axioms
           | Just goal <- retractRewritableGoal proofState =
-            deriveParAllPath axioms goal
+            deriveParAxiomAllPath axioms goal
             >>= simplifyRemainder
-            >>= checkTriviallyValid
           | otherwise =
             pure proofState
 
@@ -358,29 +424,14 @@ instance Goal AllPathRule where
                 GoalRemainder goal -> GoalRemainder <$> simplify goal
                 _ -> return proofState
 
-        checkTriviallyValid proofState
-          | all isTriviallyValid proofState = pure Proven
-          | otherwise = pure proofState
-
-deriveParAllPath
+deriveParAxiomAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
-    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
+    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
             (ProofState AllPathRule)
-deriveParAllPath rules =
+deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
-  where
-    rewrites = unRuleAllPath <$> rules
-
-deriveSeqAllPath
-    ::  MonadSimplify simplifier
-    =>  [Rule AllPathRule]
-    ->  AllPathRule
-    ->  Strategy.TransitionT (Rule AllPathRule) simplifier
-            (ProofState AllPathRule)
-deriveSeqAllPath rules =
-    deriveSeq' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
 
@@ -391,25 +442,11 @@ instance ClaimExtractor AllPathRule where
             _ -> Nothing
 
 instance Goal ReachabilityRule where
-    goalToRule (OnePath rule) =
-        ReachabilityRewriteRule
-        $ mkRewritingRule
-        $ RewriteRule
-        $ getOnePathRule rule
-    goalToRule (AllPath rule) =
-        ReachabilityRewriteRule
-        $ mkRewritingRule
-        $ RewriteRule
-        $ getAllPathRule rule
-
     simplify (AllPath goal) = allPathTransition $ AllPath <$> simplify goal
     simplify (OnePath goal) = onePathTransition $ OnePath <$> simplify goal
 
     checkImplication (AllPath goal) = fmap AllPath <$> checkImplication goal
     checkImplication (OnePath goal) = fmap OnePath <$> checkImplication goal
-
-    isTriviallyValid (AllPath goal) = isTriviallyValid goal
-    isTriviallyValid (OnePath goal) = isTriviallyValid goal
 
     applyClaims claims (AllPath goal) =
         applyClaims (mapMaybe maybeAllPath claims) goal
@@ -438,14 +475,14 @@ instance ClaimExtractor ReachabilityRule where
 
 allPathTransition
     :: Monad m
-    => Strategy.TransitionT (Rule AllPathRule) m a
-    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule AllPathRule) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
 allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
 
 onePathTransition
     :: Monad m
-    => Strategy.TransitionT (Rule OnePathRule) m a
-    -> Strategy.TransitionT (Rule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule OnePathRule) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
 onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
 
 maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
@@ -457,14 +494,20 @@ maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 ruleAllPathToRuleReachability
-    :: Rule AllPathRule
-    -> Rule ReachabilityRule
-ruleAllPathToRuleReachability = coerce
+    :: AppliedRule AllPathRule
+    -> AppliedRule ReachabilityRule
+ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
+    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
+ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
+    AppliedClaim (AllPath allPathRule)
 
 ruleOnePathToRuleReachability
-    :: Rule OnePathRule
-    -> Rule ReachabilityRule
-ruleOnePathToRuleReachability = coerce
+    :: AppliedRule OnePathRule
+    -> AppliedRule ReachabilityRule
+ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
+    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
+ruleOnePathToRuleReachability (AppliedClaim onePathRule) =
+    AppliedClaim (OnePath onePathRule)
 
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
@@ -475,58 +518,41 @@ transitionRule
     => Goal goal
     => [goal]
     -> [[Rule goal]]
-    -> TransitionRule m (Rule goal) (ProofState goal)
+    -> TransitionRule m (AppliedRule goal) (ProofState goal)
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
         -> ProofState goal
-        -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
+        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) =
-        return (Goal goal)
+    transitionRuleWorker Begin Proven = empty
+    transitionRuleWorker Begin (GoalStuck _) = empty
+    transitionRuleWorker Begin (GoalRewritten goal) =
+        SMT.reinit >> pure (Goal goal)
+    transitionRuleWorker Begin proofState =
+        SMT.reinit >> pure proofState
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker Simplify proofState
+      | Just goal <- retractSimplifiable proofState =
+        Transition.ifte (simplify goal) (pure . ($>) proofState) (pure Proven)
+      | otherwise =
+        pure proofState
 
-    transitionRuleWorker Simplify (Goal goal) = do
-        results <- tryTransitionT (simplify goal)
-        case results of
-            [] -> return Proven
-            _  -> Goal <$> Transition.scatter results
-
-    transitionRuleWorker Simplify (GoalRemainder goal) =
-        GoalRemainder <$> simplify goal
-
-    transitionRuleWorker CheckImplication (Goal goal) = do
-        result <- checkImplication goal
+    transitionRuleWorker CheckImplication proofState
+      | Just goal <- retractRewritable proofState = do
+        result <- checkImplication goal & Logic.lowerLogicT
         case result of
+            Implied -> pure Proven
             NotImpliedStuck a -> do
                 warnStuckProofStateTermsUnifiable
                 pure (GoalStuck a)
-            Implied -> pure Proven
-            NotImplied a -> pure (Goal a)
-    transitionRuleWorker CheckImplication (GoalRemainder goal) = do
-        result <- checkImplication goal
-        case result of
-            NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
-                pure (GoalStuck a)
-            Implied -> pure Proven
-            NotImplied a -> do
+            NotImplied a
+              | isRemainder proofState -> do
                 warnStuckProofStateTermsNotUnifiable
-                pure (GoalRemainder a)
-
-    transitionRuleWorker TriviallyValid (Goal goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder goal)
-      | isTriviallyValid goal =
-          return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten goal)
-      | isTriviallyValid goal =
-          return Proven
+                pure (GoalStuck a)
+              | otherwise -> pure (Goal a)
+      | otherwise = pure proofState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -541,47 +567,47 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker ApplyClaims (Goal goal) =
         applyClaims claims goal
+    transitionRuleWorker ApplyClaims proofState = pure proofState
 
-    transitionRuleWorker ApplyClaims (GoalRemainder goal) =
-        applyClaims claims goal
-
-    transitionRuleWorker ApplyAxioms (Goal goal) =
+    transitionRuleWorker ApplyAxioms proofState
+      | Just goal <- retractRewritable proofState =
         applyAxioms axiomGroups goal
+      | otherwise = pure proofState
 
-    transitionRuleWorker ApplyAxioms (GoalRemainder goal) =
-        applyAxioms axiomGroups goal
+retractSimplifiable :: ProofState a -> Maybe a
+retractSimplifiable (ProofState.Goal a) = Just a
+retractSimplifiable (ProofState.GoalRewritten a) = Just a
+retractSimplifiable (ProofState.GoalRemainder a) = Just a
+retractSimplifiable _ = Nothing
 
-    transitionRuleWorker _ state = return state
+retractRewritable :: ProofState a -> Maybe a
+retractRewritable (ProofState.Goal a) = Just a
+retractRewritable (ProofState.GoalRemainder a) = Just a
+retractRewritable _ = Nothing
+
+isRemainder :: ProofState a -> Bool
+isRemainder (ProofState.GoalRemainder _) = True
+isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
 reachabilityFirstStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
+        [ Begin
         , Simplify
-        , TriviallyValid
         , CheckImplication
         , ApplyAxioms
-        , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 reachabilityNextStep :: Strategy Prim
 reachabilityNextStep =
     (Strategy.sequence . map Strategy.apply)
-        [ CheckProven
-        , CheckGoalStuck
-        , CheckGoalRemainder
+        [ Begin
         , Simplify
-        , TriviallyValid
         , CheckImplication
         , ApplyClaims
         , ApplyAxioms
-        , ResetGoal
         , Simplify
-        , TriviallyValid
         ]
 
 strategy :: Stream (Strategy Prim)
@@ -603,87 +629,223 @@ data CheckImplicationResult a
     | NotImpliedStuck !a
     -- ^ The implication between /terms/ is valid, but the implication between
     -- side-conditions is not valid.
-    deriving (Functor)
+    deriving (Show, Eq, Functor, GHC.Generic)
+
+instance SOP.Generic goal =>
+    SOP.Generic (CheckImplicationResult goal)
+
+instance SOP.HasDatatypeInfo goal =>
+    SOP.HasDatatypeInfo (CheckImplicationResult goal)
+
+instance (Debug goal, SOP.HasDatatypeInfo goal) =>
+    Debug (CheckImplicationResult goal)
+
+instance (Diff goal, Debug goal, SOP.HasDatatypeInfo goal) =>
+    Diff (CheckImplicationResult goal)
 
 -- | Remove the destination of the goal.
 checkImplication'
     :: forall goal m
-    .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    .  (MonadLogic m, MonadSimplify m)
+    => Lens' goal ClaimPattern
     -> goal
     -> m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
     goal
     & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
+
+assertFunctionLikeConfiguration
+    :: forall m
+    .  Monad m
+    => HasCallStack
+    => ClaimPattern
+    -> m ()
+assertFunctionLikeConfiguration claimPattern
+  | (not . isFunctionPattern) leftTerm =
+    error . show . Pretty.vsep $
+        [ "The check implication step expects\
+        \ the configuration term to be function-like."
+        , Pretty.indent 2 "Configuration term:"
+        , Pretty.indent 4 (unparse leftTerm)
+        ]
+  | otherwise = pure ()
   where
-    checkImplicationWorker
-        :: RulePattern VariableName
-        -> m (CheckImplicationResult (RulePattern VariableName))
-    checkImplicationWorker (snd . Step.refreshRule mempty -> rulePattern) =
+    ClaimPattern { left } = claimPattern
+    leftTerm = Pattern.term left
+
+newtype AnyUnified = AnyUnified { didAnyUnify :: Bool }
+    deriving stock (Eq, Ord, Read, Show)
+    deriving (Semigroup, Monoid) via Monoid.Any
+
+{- | Check the claim by direct implication.
+
+The claim has the form
+
+@
+φ(X) → ∘ ∃ Y. ⋁ᵢ ψᵢ(X, Y)
+@
+
+where @∘ _@ is a modality in reachability logic. @φ@ and the @ψᵢ@ are assumed to
+be function-like patterns. @X@ and @Y@ are disjoint families of
+variables. @checkImplicationWorker@ checks the validity of the formula
+
+@
+⌊ φ(X) → ∃ Y. ⋁ᵢ ψᵢ(X, Y) ⌋
+@
+
+Let @φ(X) = t(X) ∧ P(X)@ and @ψᵢ(X, Y) = tᵢ(X, Y) ∧ Pᵢ(X, Y)@; then the
+implication formula above is valid when
+
+@
+(⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+is unsatisfiable. This predicate basically consists of two parts: a single positive
+conjunct asserting that the left-hand side of the claim is satisfiable:
+
+@
+⌈t(X)⌉ ∧ P(X)
+@
+
+and many negative conjuncts arising from the unification of the left- and
+right-hand sides:
+
+@
+⋀ᵢ ¬ ∃ Y. ⌈t(X) ∧ tᵢ(X, Y)⌉ ∧ Pᵢ(X, Y)
+@
+
+When the implication formula is valid, @checkImplicationWorker@ returns
+'Implied'. When the implication formula is not valid, we apply the following
+heuristic:
+
+* If any of the unification problems @⌈t(X) ∧ tᵢ(X, Y)⌉@ succeeded,
+  @checkImplicationWorker@ returns 'NotImpliedStuck',
+* otherwise, it returns 'NotImplied'.
+
+Returing 'NotImpliedStuck' has the effect of terminating the proof. This
+heuristic prevents the prover from executing beyond the intended final program
+state ("inventing" programs), but at the cost that it does prevent the prover
+from visiting the final program state twice. In practice, we find that deductive
+proofs should not require the prover to visit the final program state twice,
+anyway.
+
+ -}
+checkImplicationWorker
+    :: forall m
+    .  (MonadLogic m, MonadSimplify m)
+    => ClaimPattern
+    -> m (CheckImplicationResult ClaimPattern)
+checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
+    do
+        (anyUnified, removal) <- getNegativeConjuncts
+        let definedConfig =
+                Pattern.andCondition left
+                $ from $ makeCeilPredicate_ leftTerm
+        let configs' = MultiOr.map (definedConfig <*) removal
+        stuck <-
+            simplifyConditionsWithSmt sideCondition configs'
+            >>= Logic.scatter
+        pure (examine anyUnified stuck)
+    & elseImplied
+  where
+    ClaimPattern { right, left, existentials } = claimPattern
+    leftTerm = Pattern.term left
+    sort = termLikeSort leftTerm
+    leftCondition = Pattern.withoutTerm left
+
+    -- TODO (#1278): Do not combine the predicate and the substitution.
+    -- This is held over from the old representation of claims, which did not
+    -- distinguish the predicate and substitution in the first place. We can't
+    -- use the substitution directly yet, because it isn't kept normalized. Once
+    -- the claim is fully simplified at every step, that should not be a
+    -- problem.
+    sideCondition =
+        SideCondition.assumeTrueCondition
+            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+
+    getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
+    getNegativeConjuncts =
         do
-            removal <- removalPatterns destination configuration existentials
-            when (isTop removal) (succeed . NotImplied $ rulePattern)
-            let definedConfig =
-                    Pattern.andCondition configuration
-                    $ from $ makeCeilPredicate_ (Conditional.term configuration)
-            let configAndRemoval = fmap (definedConfig <*) removal
-                sideCondition =
-                    Pattern.withoutTerm configuration
-                    & SideCondition.fromCondition
-            simplifiedRemoval <-
-                simplifyConditionsWithSmt
-                    sideCondition
-                    configAndRemoval
-            when (isBottom simplifiedRemoval) (succeed Implied)
-            let stuckConfiguration = OrPattern.toPattern simplifiedRemoval
-            rulePattern
-                & Lens.set RulePattern.leftPattern stuckConfiguration
-                & NotImpliedStuck
-                & pure
-        & run
+            assertFunctionLikeConfiguration claimPattern
+            right' <- Logic.scatter right
+            let (rightTerm, rightCondition) = Pattern.splitTerm right'
+            unified <-
+                mkIn sort leftTerm rightTerm
+                & Pattern.fromTermLike
+                & Pattern.simplify sideCondition
+                & (>>= Logic.scatter)
+            didUnify
+            removed <-
+                Pattern.andCondition unified rightCondition
+                & Pattern.simplify sideCondition
+                & (>>= Logic.scatter)
+            Exists.makeEvaluate sideCondition existentials removed
+                >>= Logic.scatter
+        & OrPattern.observeAllT
+        & (>>= Not.simplifyEvaluated sideCondition)
+        & wereAnyUnified
+
+    wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
+    wereAnyUnified act = swap <$> runStateT act mempty
+
+    didUnify :: MonadState AnyUnified state => state ()
+    didUnify = State.put (AnyUnified True)
+
+    elseImplied acts = Logic.ifte acts pure (pure Implied)
+
+    examine
+        :: AnyUnified
+        -> Pattern RewritingVariableName
+        -> CheckImplicationResult ClaimPattern
+    examine AnyUnified { didAnyUnify } stuck
+      | not didAnyUnify = NotImplied claimPattern
+      | isBottom condition = Implied
+      | otherwise =
+        Lens.set (field @"left") stuck claimPattern
+        & NotImpliedStuck
       where
-        configuration = Lens.view RulePattern.leftPattern rulePattern
-        configFreeVars = freeVariables configuration
-        destination =
-            Lens.view (field @"rhs") rulePattern
-            & topExistsToImplicitForall configFreeVars
-        existentials =
-            Lens.view (field @"existentials")
-            . Lens.view (field @"rhs")
-            $ rulePattern
-
-        succeed :: r -> ExceptT r m a
-        succeed = throwE
-
-        run :: ExceptT r m r -> m r
-        run acts = runExceptT acts >>= either pure pure
+        (_, condition) = Pattern.splitTerm stuck
 
 simplify'
     :: MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> goal
-    -> Strategy.TransitionT (Rule goal) m goal
-simplify' lensRulePattern =
-    Lens.traverseOf (lensRulePattern . RulePattern.leftPattern) $ \config -> do
-        let definedConfig =
-                Pattern.andCondition (mkDefined <$> config)
-                $ from $ makeCeilPredicate_ (Conditional.term config)
-        configs <-
-            simplifyTopConfiguration definedConfig
-            >>= SMT.Evaluator.filterMultiOr
-            & lift
-        Foldable.asum (pure <$> configs)
+    -> Strategy.TransitionT (AppliedRule goal) m goal
+simplify' lensClaimPattern goal = do
+    goal' <- simplifyLeftHandSide goal
+    let sideCondition = extractSideCondition goal'
+    simplifyRightHandSide sideCondition goal'
+  where
+    extractSideCondition =
+        SideCondition.assumeTrueCondition
+        . Pattern.withoutTerm
+        . Lens.view (lensClaimPattern . field @"left")
 
-isTriviallyValid' :: Lens' goal (RulePattern variable) -> goal -> Bool
-isTriviallyValid' lensRulePattern =
-    isBottom . RulePattern.left . Lens.view lensRulePattern
+    simplifyLeftHandSide =
+        Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
+            let definedConfig =
+                    Pattern.andCondition (mkDefined <$> config)
+                    $ from $ makeCeilPredicate_ (Conditional.term config)
+            configs <-
+                simplifyTopConfiguration definedConfig
+                >>= SMT.Evaluator.filterMultiOr
+                & lift
+            Foldable.asum (pure <$> configs)
+
+    simplifyRightHandSide sideCondition =
+        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
+            OrPattern.observeAllT
+            $ Logic.scatter dest
+            >>= Pattern.simplify sideCondition
+            >>= Logic.scatter
 
 isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 
 -- | Exception that contains the last configuration before the error.
-data WithConfiguration = WithConfiguration (Pattern VariableName) SomeException
+data WithConfiguration =
+    WithConfiguration (Pattern VariableName) SomeException
     deriving (Show, Typeable)
 
 instance Exception WithConfiguration
@@ -692,60 +854,67 @@ instance Exception WithConfiguration
 derivePar'
     :: forall m goal
     .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
 
 type Deriver monad =
         [RewriteRule RewritingVariableName]
-    ->  Pattern VariableName
-    ->  monad (Step.Results RulePattern VariableName)
+    ->  Pattern RewritingVariableName
+    ->  monad (Step.Results (RulePattern RewritingVariableName))
 
 -- | Apply 'Rule's to the goal in parallel.
 deriveWith
     :: forall m goal
     .  Monad m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
-deriveWith lensRulePattern mkRule takeStep rewrites goal =
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+deriveWith lensClaimPattern mkRule takeStep rewrites goal =
     getCompose
-    $ Lens.forOf lensRulePattern goal
-    $ \rulePattern ->
+    $ Lens.forOf lensClaimPattern goal
+    $ \claimPattern ->
         fmap (snd . Step.refreshRule mempty)
-        $ Lens.forOf RulePattern.leftPattern rulePattern
+        $ Lens.forOf (field @"left") claimPattern
         $ \config -> Compose $ do
             results <- takeStep rewrites config & lift
-            deriveResults mkRule results
+            deriveResults fromAppliedRule results
+  where
+    fromAppliedRule =
+        AppliedAxiom
+        . mkRule
+        . RewriteRule
+        . Step.withoutUnification
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq'
     :: forall m goal
     .  MonadSimplify m
-    => Lens' goal (RulePattern VariableName)
+    => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
     -> goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal)
+    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
-    :: (RewriteRule RewritingVariableName -> Rule goal)
-    -> Step.Results RulePattern VariableName
-    -> Strategy.TransitionT (Rule goal) simplifier
-        (ProofState.ProofState (Pattern VariableName))
+    :: Step.UnifyingRuleVariable representation ~ RewritingVariableName
+    => (Step.UnifiedRule representation -> AppliedRule goal)
+    -> Step.Results representation
+    -> Strategy.TransitionT (AppliedRule goal) simplifier
+        (ProofState.ProofState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove goal argument.
-deriveResults mkRule Results { results, remainders } =
+deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
   where
     addResults = Foldable.asum (addResult <$> results)
@@ -764,79 +933,3 @@ deriveResults mkRule Results { results, remainders } =
     addRemainder = pure . GoalRemainder
 
     addRule = Transition.addRule . fromAppliedRule
-
-    fromAppliedRule = mkRule . RewriteRule . Step.withoutUnification
-
-{- | The predicate to remove the destination from the present configuration.
- -}
-removalPatterns
-    :: forall variable m
-    .  HasCallStack
-    => InternalVariable variable
-    => MonadSimplify m
-    => Pattern variable
-    -- ^ Destination
-    -> Pattern variable
-    -- ^ Current configuration
-    -> [ElementVariable variable]
-    -- ^ existentially quantified variables
-    -> m (OrPattern variable)
-removalPatterns
-    destination
-    configuration
-    existentials
-  | isFunctionPattern configTerm
-  , isFunctionPattern destTerm
-  = do
-    unifiedConfigs <-
-        mkIn configSort configTerm destTerm
-        & Pattern.fromTermLike
-        & Pattern.simplify sideCondition
-    if isBottom unifiedConfigs
-        then return OrPattern.top
-        else do
-            let unifiedConditions =
-                    fmap Conditional.withoutTerm unifiedConfigs
-            -- TODO (thomas.tuegel): Move this up to avoid repeated calls.
-            destinationConditions <-
-                Conditional.withoutTerm destination
-                & Condition.simplifyCondition sideCondition
-                & OrCondition.observeAllT
-            remainderConditions <-
-                simplifyEvaluatedMultiPredicate
-                    sideCondition
-                    (MultiAnd.make
-                        [ unifiedConditions
-                        , destinationConditions
-                        ]
-                    )
-            let remainderPatterns =
-                    fmap Pattern.fromCondition_ remainderConditions
-            existentialRemainders <-
-                foldM
-                    (Exists.simplifyEvaluated sideCondition & flip)
-                    remainderPatterns
-                    existentials
-            Not.simplifyEvaluated sideCondition existentialRemainders
-  | otherwise =
-      error . show . Pretty.vsep $
-          [ "The remove destination step expects\
-          \ the configuration and the destination terms\
-          \ to be function-like."
-          , Pretty.indent 2 "Configuration term:"
-          , Pretty.indent 4 (unparse configTerm)
-          , Pretty.indent 2 "Destination term:"
-          , Pretty.indent 4 (unparse destTerm)
-          ]
-  where
-    Conditional { term = destTerm } = destination
-    (configTerm, configPredicate) = Pattern.splitTerm configuration
-    sideCondition = SideCondition.assumeTrueCondition configPredicate
-    configSort = termLikeSort configTerm
-
-getConfiguration :: ReachabilityRule -> Pattern VariableName
-getConfiguration (toRulePattern -> RulePattern { left, requires }) =
-    Pattern.withCondition left (Conditional.fromPredicate requires)
-
-getDestination :: ReachabilityRule -> RHS VariableName
-getDestination (toRulePattern -> RulePattern { rhs }) = rhs

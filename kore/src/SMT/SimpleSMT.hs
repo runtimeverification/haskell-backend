@@ -14,8 +14,6 @@ module SMT.SimpleSMT
     -- * Basic Solver Interface
       Solver (..)
     , SolverHandle (..)
-    , send
-    , recv
     , debug
     , command
     , stop
@@ -686,6 +684,7 @@ check solver = do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
+            _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
             return Unknown
         Atom "sat"     -> return Sat
         _ -> fail $ unlines

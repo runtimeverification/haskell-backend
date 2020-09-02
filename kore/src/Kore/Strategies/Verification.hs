@@ -90,9 +90,13 @@ import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnTrivialClaim
-import Kore.Step.RulePattern
-    ( leftPattern
-    , toRulePattern
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , getRewritingPattern
+    )
+import Kore.Step.ClaimPattern
+    ( lensClaimPattern
+    , mkGoal
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -135,7 +139,7 @@ import Prof
 type CommonProofState = ProofState.ProofState ReachabilityRule
 
 type CommonTransitionRule m =
-    TransitionRule m (Rule ReachabilityRule) CommonProofState
+    TransitionRule m (AppliedRule ReachabilityRule) CommonProofState
 
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonProofState'. If the 'ProofState' is 'Proven', then
@@ -143,7 +147,7 @@ type CommonTransitionRule m =
 lhsProofStateTransformer
     :: ProofStateTransformer
         ReachabilityRule
-        (Pattern VariableName)
+        (Pattern RewritingVariableName)
 lhsProofStateTransformer =
     ProofStateTransformer
         { goalTransformer = getConfiguration
@@ -282,7 +286,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startGoal = ProofState.Goal goal
+        startGoal = ProofState.Goal (Lens.over lensClaimPattern mkGoal goal)
         limitedStrategy =
             strategy
             & Foldable.toList
@@ -305,8 +309,15 @@ verifyClaim
         :: Strategy.LimitExceeded (ProofDepth, CommonProofState)
         -> Verifier simplifier a
     handleLimitExceeded (Strategy.LimitExceeded states) =
-        (Monad.Except.throwError . OrPattern.fromPatterns)
-        (ProofState.proofState lhsProofStateTransformer . snd <$> states)
+        let finalPattern =
+                ProofState.proofState lhsProofStateTransformer
+                . snd
+                <$> states
+         in
+            Monad.Except.throwError
+            . fmap getRewritingPattern
+            . OrPattern.fromPatterns
+            $ finalPattern
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -328,7 +339,7 @@ verifyClaim
             Foldable.for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
                 Monad.Except.throwError . OrPattern.fromPattern
-                    $ getConfiguration unproven
+                    $ (getRewritingPattern . getConfiguration) unproven
             pure proofDepth
         & Logic.observeAllT
 
@@ -336,7 +347,10 @@ verifyClaim
 
     transit instr config =
         Strategy.transitionRule
-            (transitionRule' claims axioms & trackProofDepth)
+            (transitionRule' claims axioms
+                & trackProofDepth
+                & throwStuckClaims
+            )
             instr
             config
         & runTransitionT
@@ -356,14 +370,14 @@ verifyClaimStep
     -- ^ list of claims in the spec module
     -> [Rule ReachabilityRule]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule ReachabilityRule)
+    -> ExecutionGraph CommonProofState (AppliedRule ReachabilityRule)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> simplifier (ExecutionGraph CommonProofState (Rule ReachabilityRule))
+    -> simplifier (ExecutionGraph CommonProofState (AppliedRule ReachabilityRule))
 verifyClaimStep claims axioms executionGraph node =
     executionHistoryStep
-        (transitionRule' claims axioms)
+        transitionRule''
         strategy'
         executionGraph
         node
@@ -383,6 +397,16 @@ verifyClaimStep claims axioms executionGraph node =
 
     isRoot :: Bool
     isRoot = node == root
+
+    transitionRule'' prim state
+        | isRoot =
+            transitionRule'
+                claims
+                axioms
+                prim
+                (Lens.over lensClaimPattern mkGoal <$> state)
+        | otherwise =
+            transitionRule' claims axioms prim state
 
 transitionRule'
     :: MonadSimplify simplifier
@@ -451,6 +475,25 @@ checkStuckConfiguration rule prim proofState = do
     isNot_Ceil_ :: TermLike variable -> Bool
     isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
     isNot_Ceil_ _ = False
+
+{- | Terminate the prover at the first stuck step.
+ -}
+throwStuckClaims
+    ::  forall m rule
+    .   MonadLog m
+    =>  TransitionRule (Verifier m) rule
+            (ProofDepth, ProofState ReachabilityRule)
+    ->  TransitionRule (Verifier m) rule
+            (ProofDepth, ProofState ReachabilityRule)
+throwStuckClaims rule prim state = do
+    state'@(proofDepth', proofState') <- rule prim state
+    case proofState' of
+        ProofState.GoalStuck unproven -> do
+            infoUnprovenDepth proofDepth'
+            Monad.Except.throwError $ OrPattern.fromPattern config
+          where
+            config = getConfiguration unproven & getRewritingPattern
+        _ -> return state'
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.
  -}
@@ -561,5 +604,10 @@ withConfiguration transit prim proofState =
   where
     config =
         ProofState.extractUnproven proofState
-        & fmap (Lens.view leftPattern . toRulePattern)
-    handle' = maybe id (\c -> handleAll (throwM . WithConfiguration c)) config
+        & fmap getConfiguration
+    handle' =
+        maybe id handleConfig config
+    handleConfig config' =
+        handleAll
+        $ throwM
+        . WithConfiguration (getRewritingPattern config')

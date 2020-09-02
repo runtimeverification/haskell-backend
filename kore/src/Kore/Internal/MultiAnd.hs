@@ -16,24 +16,41 @@ module Kore.Internal.MultiAnd
     , extractPatterns
     , make
     , toPredicate
+    , fromPredicate
+    , fromTermLike
     , singleton
+    , toPattern
+    , map
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( map
+    )
 
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , getMultiAndPredicate
     , makeAndPredicate
     , makeTruePredicate_
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    , mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -76,6 +93,27 @@ instance TopBottom child => TopBottom (MultiAnd child) where
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance
+    InternalVariable variable
+    => From (MultiAnd (Predicate variable)) (Predicate variable)
+  where
+    from = toPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (Predicate variable) (MultiAnd (Predicate variable))
+  where
+    from = fromPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (TermLike variable) (MultiAnd (TermLike variable))
+  where
+    from = fromTermLike
+    {-# INLINE from #-}
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
@@ -172,3 +210,35 @@ toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates
+
+fromPredicate
+    :: InternalVariable variable
+    => Predicate variable
+    -> MultiAnd (Predicate variable)
+fromPredicate = make . getMultiAndPredicate
+
+fromTermLike
+    :: InternalVariable variable
+    => TermLike variable
+    -> MultiAnd (TermLike variable)
+fromTermLike termLike =
+    case Recursive.project termLike of
+        _ :< AndF andF -> foldMap fromTermLike andF
+        _              -> make [termLike]
+
+toPattern
+    :: InternalVariable variable
+    => MultiAnd (Pattern variable)
+    -> Pattern variable
+toPattern (MultiAnd patterns) =
+    case patterns of
+       [] -> Pattern.top
+       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
+
+map
+    :: Ord child2
+    => TopBottom child2
+    => (child1 -> child2)
+    -> MultiAnd child1
+    -> MultiAnd child2
+map f = make . fmap f . extractPatterns

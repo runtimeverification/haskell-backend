@@ -26,6 +26,7 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( andCondition
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -332,9 +333,10 @@ simplify sideCondition = \termLike ->
             EndiannessF _ -> doNotSimplify
             SignednessF _ -> doNotSimplify
             --
-            AndF andF ->
+            AndF andF -> do
+                let conjuncts = foldMap MultiAnd.fromTermLike andF
                 And.simplify Not.notSimplifier sideCondition
-                    =<< simplifyChildren andF
+                    =<< simplifyChildren conjuncts
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
