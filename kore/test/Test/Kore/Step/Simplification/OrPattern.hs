@@ -127,6 +127,6 @@ runSimplifyPredicates
     -> IO (OrPattern VariableName)
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifier Mock.env
-    $ simplifyConditionsWithSmt
+    $ simplifyConditionsWithSmt True
         (SideCondition.assumeTruePredicate predicate)
         orPattern

@@ -590,7 +590,7 @@ test_applyRewriteRule_ =
     -- sigma(x, x) -> x
     -- vs
     -- sigma(a, h(b)) with substitution b=a
-    , testCase "circular dependency error" $ do
+    , testCase "qqcircular dependency error" $ do
         let expect =
                 Conditional
                     { term = fy

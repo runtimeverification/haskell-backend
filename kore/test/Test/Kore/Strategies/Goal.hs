@@ -241,7 +241,7 @@ aToB =
 
 checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
 checkImplication claim =
-    checkImplicationWorker claim
+    checkImplicationWorker True claim
     & Logic.observeAllT
     & runSimplifier Mock.env
 
@@ -249,6 +249,6 @@ checkImplicationNoSMT
     :: ClaimPattern
     -> IO [CheckImplicationResult ClaimPattern]
 checkImplicationNoSMT claim =
-    checkImplicationWorker claim
+    checkImplicationWorker False claim
     & Logic.observeAllT
     & runSimplifierNoSMT Mock.env

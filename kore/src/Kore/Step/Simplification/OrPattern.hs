@@ -66,10 +66,11 @@ import qualified Logic
 simplifyConditionsWithSmt
     ::  forall variable simplifier
     .   (MonadSimplify simplifier, InternalVariable variable)
-    => SideCondition variable
+    => Bool
+    -> SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyConditionsWithSmt sideCondition unsimplified =
+simplifyConditionsWithSmt useSMT sideCondition unsimplified =
     OrPattern.observeAllT $ do
         unsimplified1 <- Logic.scatter unsimplified
         simplifyAndPrune unsimplified1
@@ -130,7 +131,9 @@ simplifyConditionsWithSmt sideCondition unsimplified =
             & Condition.fromPredicate
             & simplifyCondition SideCondition.top
             & OrCondition.observeAllT
-        filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
+        filteredConditions <-
+            implicationNegation
+            & if useSMT then SMT.Evaluator.filterMultiOr else pure
         if isTop filteredConditions
             then return (Just False)
             else if isBottom filteredConditions
@@ -142,7 +145,9 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
             & OrCondition.observeAllT
-        filteredConditions <- SMT.Evaluator.filterMultiOr simplifiedConditions
+        filteredConditions <-
+            simplifiedConditions
+            & if useSMT then SMT.Evaluator.filterMultiOr else pure
         if isBottom filteredConditions
             then return (Just False)
             else if isTop filteredConditions

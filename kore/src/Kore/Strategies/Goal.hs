@@ -652,7 +652,9 @@ checkImplication'
     -> m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
     goal
-    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
+    & Lens.traverseOf
+        lensRulePattern
+        (Compose . checkImplicationWorker True)
     & getCompose
 
 assertFunctionLikeConfiguration
@@ -734,9 +736,10 @@ anyway.
 checkImplicationWorker
     :: forall m
     .  (MonadLogic m, MonadSimplify m)
-    => ClaimPattern
+    => Bool
+    -> ClaimPattern
     -> m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
+checkImplicationWorker useSMT (ClaimPattern.refreshExistentials -> claimPattern) =
     do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
@@ -744,7 +747,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 $ from $ makeCeilPredicate_ leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
-            simplifyConditionsWithSmt sideCondition configs'
+            simplifyConditionsWithSmt useSMT sideCondition configs'
             >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied
