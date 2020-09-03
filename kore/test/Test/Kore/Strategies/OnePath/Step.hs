@@ -18,9 +18,6 @@ import Data.List.Extra
     , nub
     , sort
     )
-import Data.Reflection
-    ( give
-    )
 import Numeric.Natural
     ( Natural
     )
@@ -32,9 +29,6 @@ import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Rewriting.RewritingVariable
 
-import Kore.IndexedModule.IndexedModule
-    ( indexedModuleWithDefaultImports
-    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
@@ -61,9 +55,6 @@ import Kore.Step.RulePattern
     , injectTermIntoRHS
     , mkRewritingRule
     )
-import Kore.Step.SMT.Lemma
-    ( declareSMTLemmas
-    )
 import Kore.Step.Strategy
     ( ExecutionGraph (..)
     , Strategy
@@ -72,9 +63,6 @@ import Kore.Step.Strategy
     )
 import Kore.Strategies.Goal
 import qualified Kore.Strategies.ProofState as ProofState
-import Kore.Syntax.Module
-    ( ModuleName (ModuleName)
-    )
 import Kore.Syntax.Variable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -887,18 +875,13 @@ runSteps
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> do
-        give metadataTools
-            $ declareSMTLemmas
-            $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy
+    <$> runStrategy
             breadthLimit
             (transitionRule claims axiomGroups)
             strategy'
             (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
-    Env {metadataTools} = mockEnv
 
 runOnePathSteps
     :: Goal goal

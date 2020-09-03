@@ -14,8 +14,6 @@ module SMT.SimpleSMT
     -- * Basic Solver Interface
       Solver (..)
     , SolverHandle (..)
-    , send
-    , recv
     , debug
     , command
     , stop

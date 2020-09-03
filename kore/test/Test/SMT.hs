@@ -1,7 +1,7 @@
 module Test.SMT
     ( testPropertyWithSolver
     , testPropertyWithoutSolver
-    , testCaseWithSMT
+    , testCaseWithoutSMT
     , assertEqual'
     , runSMT
     , runNoSMT
@@ -31,7 +31,7 @@ testPropertyWithSolver
     -> PropertyT SMT ()
     -> TestTree
 testPropertyWithSolver str =
-    testProperty str . Hedgehog.property . Morph.hoist runSMT
+    testProperty str . Hedgehog.property . Morph.hoist (runSMT (pure ()))
 
 testPropertyWithoutSolver
     :: HasCallStack
@@ -41,8 +41,8 @@ testPropertyWithoutSolver
 testPropertyWithoutSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runNoSMT
 
-testCaseWithSMT :: String -> SMT () -> TestTree
-testCaseWithSMT str = testCase str . runSMT
+testCaseWithoutSMT :: String -> NoSMT () -> TestTree
+testCaseWithoutSMT str = testCase str . runNoSMT
 
 assertEqual'
     :: MonadIO m
@@ -54,8 +54,8 @@ assertEqual'
     -> m ()
 assertEqual' str expect = liftIO . assertEqual str expect
 
-runSMT :: SMT a -> IO a
-runSMT = flip runLoggerT mempty . SMT.runSMT SMT.defaultConfig
+runSMT :: SMT () -> SMT a -> IO a
+runSMT userInit = flip runLoggerT mempty . SMT.runSMT SMT.defaultConfig userInit
 
 runNoSMT :: NoSMT a -> IO a
 runNoSMT = flip runLoggerT mempty . SMT.runNoSMT
