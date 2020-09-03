@@ -93,7 +93,7 @@ import Test.Kore.Step.Rule.Common
     )
 import qualified Test.Kore.Step.Rule.Common as Common
 import Test.SMT
-    ( runNoSMT
+    (runSMT,  runNoSMT
     )
 import Test.Tasty.HUnit.Ext
 
@@ -412,7 +412,7 @@ test_simplifyClaimRule =
             assertEqual "" expect (MultiAnd.extractPatterns actual)
       where
         run =
-            runNoSMT
+            runSMT (pure ())
             . runSimplifier env
             . flip runReaderT TestEnv
                 { replacements, input, requires = aEqualsb }
