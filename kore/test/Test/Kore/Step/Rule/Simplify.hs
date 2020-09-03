@@ -93,7 +93,8 @@ import Test.Kore.Step.Rule.Common
     )
 import qualified Test.Kore.Step.Rule.Common as Common
 import Test.SMT
-    (runSMT,  runNoSMT
+    ( runNoSMT
+    , runSMT
     )
 import Test.Tasty.HUnit.Ext
 

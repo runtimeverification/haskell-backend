@@ -66,7 +66,8 @@ import Test.Kore
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
-    (runSMT,  runNoSMT
+    ( runNoSMT
+    , runSMT
     )
 import Test.Tasty.HUnit.Ext
 
