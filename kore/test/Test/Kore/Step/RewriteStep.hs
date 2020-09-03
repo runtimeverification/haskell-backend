@@ -1090,12 +1090,12 @@ applyRewriteRulesParallel
     -> [RewriteRule']
     -- ^ Rewrite rule
     -> IO Results'
-applyRewriteRulesParallel initial rules =
+applyRewriteRulesParallel initial rules = trace "applyRewriteRulesParallel" $
     Step.applyRewriteRulesParallel
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 applyClaimsSequence
     :: TestPattern
@@ -1109,7 +1109,7 @@ applyClaimsSequence initial claims =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 checkResults
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
