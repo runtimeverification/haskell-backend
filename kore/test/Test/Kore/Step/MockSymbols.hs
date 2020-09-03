@@ -630,10 +630,6 @@ unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
 
-inSetSymbol :: Internal.Symbol
-inSetSymbol =
-    symbol "inSet" [testSort, setSort] boolSort & hook "SET.in"
-
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
     symbol opaqueSetId [testSort] setSort
@@ -1236,14 +1232,6 @@ concatSet
     -> TermLike variable
     -> TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
-
-inSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
-inSet element set = Internal.mkApplySymbol inSetSymbol [element, set]
 
 opaqueSet
     :: InternalVariable variable
