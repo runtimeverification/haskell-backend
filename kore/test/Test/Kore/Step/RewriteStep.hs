@@ -1090,7 +1090,7 @@ applyRewriteRulesParallel
     -> [RewriteRule']
     -- ^ Rewrite rule
     -> IO Results'
-applyRewriteRulesParallel initial rules = trace "applyRewriteRulesParallel" $
+applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
