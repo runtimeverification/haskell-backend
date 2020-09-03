@@ -26,7 +26,6 @@ import Kore.Step.RulePattern
     ( mkRewritingRule
     , rulePattern
     )
-import Kore.Step.SMT.Declaration.All as SMT.AST
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
@@ -82,9 +81,8 @@ runVerification
     -> [ReachabilityRule]
     -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
-    runSimplifier mockEnv $ do
-        SMT.AST.declare Mock.smtDeclarations
-        runExceptT
+    runSimplifier mockEnv
+        $ runExceptT
             $ Verification.verify
                 breadthLimit
                 BreadthFirst

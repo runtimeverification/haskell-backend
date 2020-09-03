@@ -383,6 +383,7 @@ instance MonadSMT AllPathIdentity where
     check = undefined
     ackCommand = undefined
     loadFile = undefined
+    reinit = undefined
 
 instance MonadThrow AllPathIdentity where
     throwM _ = error "Unimplemented"

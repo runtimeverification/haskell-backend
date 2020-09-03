@@ -60,12 +60,12 @@ import Test.ConsistentKore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.SMT
-    ( testPropertyWithSolver
+    ( testPropertyWithoutSolver
     )
 
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
-    testPropertyWithSolver "simplify returns simplified pattern" $ do
+    testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString term, " ***** "]
@@ -91,16 +91,16 @@ test_simplifiesToSimplified =
 evaluateT
     :: MonadTrans t
     => Pattern VariableName
-    -> t SMT.SMT (OrPattern VariableName)
+    -> t SMT.NoSMT (OrPattern VariableName)
 evaluateT = lift . evaluate
 
-evaluate :: Pattern VariableName -> SMT.SMT (OrPattern VariableName)
+evaluate :: Pattern VariableName -> SMT.NoSMT (OrPattern VariableName)
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern VariableName
-    -> SMT.SMT (OrPattern VariableName)
+    -> SMT.NoSMT (OrPattern VariableName)
 evaluateWithAxioms axioms =
     Simplification.runSimplifier env . Pattern.simplify SideCondition.top
   where

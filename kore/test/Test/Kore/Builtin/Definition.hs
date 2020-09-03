@@ -437,7 +437,7 @@ elementMapSymbol =
 
 concatMapSymbol :: Internal.Symbol
 concatMapSymbol =
-    binarySymbol "concatMap" mapSort & hook "MAP.concat" & function
+    binarySymbol "concatMap" mapSort & hook "MAP.concat" & functional
 
 inKeysMapSymbol :: Internal.Symbol
 inKeysMapSymbol =
@@ -596,7 +596,7 @@ elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
-    binarySymbol "concatSet" setSort & hook "SET.concat" & function
+    binarySymbol "concatSet" setSort & hook "SET.concat" & functional
 
 concatSet
     :: TermLike VariableName

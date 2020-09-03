@@ -10,9 +10,6 @@ module Kore.Step.Simplification.TermLike
 import Prelude.Kore
 
 import qualified Control.Lens.Combinators as Lens
-import Control.Monad.Catch
-    ( MonadThrow
-    )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
@@ -29,6 +26,7 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( andCondition
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -169,7 +167,6 @@ simplify
     .  HasCallStack
     => InternalVariable variable
     => MonadSimplify simplifier
-    => MonadThrow simplifier
     => SideCondition variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
@@ -336,9 +333,10 @@ simplify sideCondition = \termLike ->
             EndiannessF _ -> doNotSimplify
             SignednessF _ -> doNotSimplify
             --
-            AndF andF ->
+            AndF andF -> do
+                let conjuncts = foldMap MultiAnd.fromTermLike andF
                 And.simplify Not.notSimplifier sideCondition
-                    =<< simplifyChildren andF
+                    =<< simplifyChildren conjuncts
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
