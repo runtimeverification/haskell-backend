@@ -712,7 +712,7 @@ test_equalsSimplification_TermLike =
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
             )
-        , testCase "qqconcrete Map with framed Map"
+        , testCase "concrete Map with framed Map"
             (assertTermEqualsMulti
                 [ Conditional
                     { term = ()
@@ -720,12 +720,12 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeNotPredicate
                                 (makeAndPredicate
-                                    (makeCeilPredicate Mock.mapSort fOfA)
-                                    (makeCeilPredicate Mock.mapSort fOfB)
+                                    (makeCeilPredicate_ fOfA)
+                                    (makeCeilPredicate_ fOfB)
                                 )
                             )
                             (makeNotPredicate
-                                (makeCeilPredicate Mock.mapSort
+                                (makeCeilPredicate_
                                     (Mock.concatMap
                                         (Mock.builtinMap
                                             [(Mock.a, mkElemVar Mock.x)]
@@ -756,8 +756,30 @@ test_equalsSimplification_TermLike =
                 )
             )
         , testCase "concrete Map with framed Map"
-            (assertTermEquals
-                Conditional
+            (assertTermEqualsMulti
+                [ Conditional
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate_ fOfA)
+                                    (makeCeilPredicate_ fOfB)
+                                )
+                            )
+                            (makeNotPredicate
+                                (makeCeilPredicate_
+                                    (Mock.concatMap
+                                        (mkElemVar Mock.m)
+                                        (Mock.builtinMap
+                                            [(Mock.a, mkElemVar Mock.x)]
+                                        )
+                                    )
+                                )
+                            )
+                    , substitution = mempty
+                    }
+                , Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -769,6 +791,7 @@ test_equalsSimplification_TermLike =
                         , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
+                ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
                     (mkElemVar Mock.m)
@@ -776,8 +799,30 @@ test_equalsSimplification_TermLike =
                 )
             )
         , testCase "framed Map with concrete Map"
-            (assertTermEquals
-                Conditional
+            (assertTermEqualsMulti
+                [ Conditional
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate_ fOfA)
+                                    (makeCeilPredicate_ fOfB)
+                                )
+                            )
+                            (makeNotPredicate
+                                (makeCeilPredicate_
+                                    (Mock.concatMap
+                                        (Mock.builtinMap
+                                            [(Mock.a, mkElemVar Mock.x)]
+                                        )
+                                        (mkElemVar Mock.m)
+                                    )
+                                )
+                            )
+                    , substitution = mempty
+                    }
+                , Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -789,6 +834,7 @@ test_equalsSimplification_TermLike =
                         , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
+                ]
                 (Mock.concatMap
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
                     (mkElemVar Mock.m)
@@ -796,8 +842,30 @@ test_equalsSimplification_TermLike =
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
         , testCase "framed Map with concrete Map"
-            (assertTermEquals
-                Conditional
+            (assertTermEqualsMulti
+                [ Conditional
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate_ fOfA)
+                                    (makeCeilPredicate_ fOfB)
+                                )
+                            )
+                            (makeNotPredicate
+                                (makeCeilPredicate_
+                                    (Mock.concatMap
+                                        (mkElemVar Mock.m)
+                                        (Mock.builtinMap
+                                            [(Mock.a, mkElemVar Mock.x)]
+                                        )
+                                    )
+                                )
+                            )
+                    , substitution = mempty
+                    }
+                , Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -809,6 +877,7 @@ test_equalsSimplification_TermLike =
                         , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
+                ]
                 (Mock.concatMap
                     (mkElemVar Mock.m)
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
@@ -955,10 +1024,6 @@ assertTermEqualsMultiGeneric expectPure first second = do
         expectExpanded
         actualExpanded
     actualPure <- evaluateTermsGeneric first second
-    traceM "actualPure"
-    Foldable.traverse_ (traceM . unparseToString) actualPure
-    traceM "MultiOr.make expectPure"
-    Foldable.traverse_ (traceM . unparseToString) $ MultiOr.make expectPure
     assertEqual
         "PureMLPattern"
         (MultiOr.make expectPure)
