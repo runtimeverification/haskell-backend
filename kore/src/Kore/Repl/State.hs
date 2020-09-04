@@ -115,6 +115,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import qualified Kore.Reachability.Claim as Goal
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -130,7 +131,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)

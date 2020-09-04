@@ -31,6 +31,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
@@ -43,7 +44,6 @@ import Kore.Step.RulePattern
     , injectTermIntoRHS
     , mkRewritingRule
     )
-import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( Stuck (..)
     )

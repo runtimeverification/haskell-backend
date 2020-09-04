@@ -105,6 +105,7 @@ import Kore.Log.KoreLogOptions
     )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
+import qualified Kore.Reachability.Claim as Goal
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -156,7 +157,6 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( runTransitionT
     )
-import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)

@@ -21,6 +21,7 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
+import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -29,7 +30,6 @@ import Kore.Step.RulePattern
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
-import Kore.Strategies.Goal
 import Kore.Strategies.Verification
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)

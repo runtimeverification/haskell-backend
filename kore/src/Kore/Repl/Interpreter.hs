@@ -178,6 +178,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import Kore.Reachability.Claim
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -190,7 +191,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
     , extractUnproven

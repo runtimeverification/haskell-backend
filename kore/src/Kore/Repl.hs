@@ -63,6 +63,7 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Log as Log
+import Kore.Reachability.Claim
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -74,7 +75,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal
 import Kore.Strategies.Verification
 import Kore.Syntax.Module
     ( ModuleName (..)

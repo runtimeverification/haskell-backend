@@ -30,6 +30,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( AllPathRule (..)
@@ -42,7 +43,6 @@ import Kore.Step.RulePattern
     , injectTermIntoRHS
     , mkRewritingRule
     )
-import Kore.Strategies.Goal
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common

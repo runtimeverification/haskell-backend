@@ -96,6 +96,10 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Reachability.Claim hiding
+    ( AppliedRule
+    )
+import qualified Kore.Reachability.Claim as Goal
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -104,10 +108,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal hiding
-    ( AppliedRule
-    )
-import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( CommonProofState
     )

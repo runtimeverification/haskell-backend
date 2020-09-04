@@ -45,6 +45,7 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability.Claim
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     , OnePathRule (..)
@@ -61,7 +62,6 @@ import Kore.Step.Strategy
     , pickFinal
     , runStrategy
     )
-import Kore.Strategies.Goal
 import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 

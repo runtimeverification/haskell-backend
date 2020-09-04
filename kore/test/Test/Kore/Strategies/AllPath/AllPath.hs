@@ -30,6 +30,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Reachability.Claim as Goal
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -38,7 +39,6 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
-import qualified Kore.Strategies.Goal as Goal
 import qualified Kore.Strategies.ProofState as ProofState
 import Log
     ( MonadLog (..)

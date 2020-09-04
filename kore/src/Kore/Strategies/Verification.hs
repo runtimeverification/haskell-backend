@@ -90,6 +90,7 @@ import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnTrivialClaim
+import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingPattern
@@ -110,7 +111,6 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
-import Kore.Strategies.Goal
 import Kore.Strategies.ProofState
     ( ProofState
     , ProofStateTransformer (..)

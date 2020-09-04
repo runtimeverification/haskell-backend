@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Strategies.Goal
+module Kore.Reachability.Claim
     ( Goal (..)
     , AppliedRule (..)
     , strategy

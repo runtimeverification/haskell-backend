@@ -31,6 +31,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
@@ -41,7 +42,6 @@ import Kore.Step.ClaimPattern
     , ReachabilityRule (..)
     , lensClaimPattern
     )
-import Kore.Strategies.Goal
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common

@@ -57,6 +57,9 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Reachability.Claim hiding
+    ( AppliedRule
+    )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
@@ -75,9 +78,6 @@ import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Strategies.Goal hiding
-    ( AppliedRule
-    )
 import Kore.Strategies.Verification
     ( verifyClaimStep
     )

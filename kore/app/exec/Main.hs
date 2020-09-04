@@ -132,6 +132,7 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
+import qualified Kore.Reachability.Claim as Goal
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
@@ -149,7 +150,6 @@ import Kore.Step.SMT.Lemma
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
-import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Stuck (..)
     )
