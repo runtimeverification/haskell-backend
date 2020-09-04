@@ -712,9 +712,31 @@ test_equalsSimplification_TermLike =
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
             )
-        , testCase "concrete Map with framed Map"
-            (assertTermEquals
-                Conditional
+        , testCase "qqconcrete Map with framed Map"
+            (assertTermEqualsMulti
+                [ Conditional
+                    { term = ()
+                    , predicate =
+                        makeAndPredicate
+                            (makeNotPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.mapSort fOfA)
+                                    (makeCeilPredicate Mock.mapSort fOfB)
+                                )
+                            )
+                            (makeNotPredicate
+                                (makeCeilPredicate Mock.mapSort
+                                    (Mock.concatMap
+                                        (Mock.builtinMap
+                                            [(Mock.a, mkElemVar Mock.x)]
+                                        )
+                                        (mkElemVar Mock.m)
+                                    )
+                                )
+                            )
+                    , substitution = mempty
+                    }
+                , Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
@@ -726,6 +748,7 @@ test_equalsSimplification_TermLike =
                         , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
+                ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
@@ -932,6 +955,10 @@ assertTermEqualsMultiGeneric expectPure first second = do
         expectExpanded
         actualExpanded
     actualPure <- evaluateTermsGeneric first second
+    traceM "actualPure"
+    Foldable.traverse_ (traceM . unparseToString) actualPure
+    traceM "MultiOr.make expectPure"
+    Foldable.traverse_ (traceM . unparseToString) $ MultiOr.make expectPure
     assertEqual
         "PureMLPattern"
         (MultiOr.make expectPure)
