@@ -594,6 +594,34 @@ test_unification =
                                 (Mock.builtinMap [(a, constr a)])
                                 (mkElemVar Mock.xMap)
                             )
+                    , predicate =
+                        Predicate.makeAndPredicate
+                            (Predicate.makeNotPredicate
+                                (Predicate.makeCeilPredicate_
+                                    (Mock.concatMap
+                                        (Mock.builtinMap [(a, constr a)])
+                                        (mkElemVar Mock.xMap)
+                                    )
+                                )
+                            )
+                            ( Predicate.makeNotPredicate
+                                ( Predicate.makeCeilPredicate_
+                                    (Mock.concatMap
+                                        (Mock.builtinMap [(a, x)])
+                                        (mkElemVar Mock.m)
+                                    )
+                                )
+                            )
+                    , substitution = [ ("y", a) ]
+                    }
+                , UnificationResult
+                    { term =
+                        constr20
+                            Mock.a
+                            (Mock.concatMap
+                                (Mock.builtinMap [(a, constr a)])
+                                (mkElemVar Mock.xMap)
+                            )
                     , predicate = Predicate.makeTruePredicate Mock.testSort
                     , substitution =
                         [ ("x", constr a)
