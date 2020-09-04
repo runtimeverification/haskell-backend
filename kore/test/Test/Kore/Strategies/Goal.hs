@@ -55,7 +55,6 @@ import qualified Logic
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
     ( runSimplifier
-    , runSimplifierNoSMT
     )
 
 test_checkImplication :: [TestTree]
@@ -162,7 +161,7 @@ test_checkImplication =
                     )
             stuckGoal =
                 mkGoal stuckConfig dest existentials
-        actual <- checkImplicationNoSMT goal
+        actual <- checkImplication goal
         assertEqual "" [NotImpliedStuck stuckGoal] actual
     , testCase "Branching RHS" $ do
         let config = Mock.a & Pattern.fromTermLike
@@ -241,14 +240,6 @@ aToB =
 
 checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
 checkImplication claim =
-    checkImplicationWorker True claim
+    checkImplicationWorker claim
     & Logic.observeAllT
     & runSimplifier Mock.env
-
-checkImplicationNoSMT
-    :: ClaimPattern
-    -> IO [CheckImplicationResult ClaimPattern]
-checkImplicationNoSMT claim =
-    checkImplicationWorker False claim
-    & Logic.observeAllT
-    & runSimplifierNoSMT Mock.env
