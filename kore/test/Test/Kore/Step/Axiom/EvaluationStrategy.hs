@@ -3,11 +3,14 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_firstFullEvaluation
     , test_simplifierWithFallback
     , test_builtinEvaluation
+    , test_attemptEquations
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
+
+import qualified Data.Bifunctor as Bifunctor
 
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
@@ -42,6 +45,37 @@ import Test.Kore.Equation.Application
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+test_attemptEquations :: [TestTree]
+test_attemptEquations =
+    [ testCase "Stop at first applied equation" $ do
+        let isC =
+                axiom
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    Mock.c
+                    ( makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        Mock.c
+                    )
+            isD =
+                axiom
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    Mock.d
+                    ( makeEqualsPredicate_
+                        (mkElemVar Mock.x)
+                        Mock.d
+                    )
+            term :: TermLike VariableName
+            term = Mock.functionalConstr10 Mock.c
+        results <-
+            attemptEquations
+                [isC, isD]
+                term
+                (SideCondition.assumeTruePredicate makeTruePredicate_)
+            & runSimplifier Mock.env
+            & (fmap . fmap) (Bifunctor.bimap (const ()) (const ()))
+        assertEqual "" [Right ()] results
+    ]
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
