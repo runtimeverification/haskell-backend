@@ -123,19 +123,20 @@ attemptEquations equations term condition = do
 
 iterateUntil
     :: Monad m
-    => (input -> m (Either error (monad result)))
+    => (input -> m (Either error result))
     -> [input]
-    -> m [Either error (monad result)]
-iterateUntil attemptEquation equations =
-    case equations of
+    -> m [Either error result]
+iterateUntil action =
+    \case
         [] -> return []
-        (x : xs) -> do
-            result <- attemptEquation x
+        (current : rest) -> do
+            result <- action current
             case result of
-                Right applied -> return . return . return $ applied
+                Right applied ->
+                    return . return . return $ applied
                 Left notApplied -> do
-                    rest <- iterateUntil attemptEquation xs
-                    return (Left notApplied : rest)
+                    restResult <- iterateUntil action rest
+                    return (Left notApplied : restResult)
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
