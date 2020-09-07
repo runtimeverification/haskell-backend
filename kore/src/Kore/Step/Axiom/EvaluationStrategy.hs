@@ -13,6 +13,8 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplificationEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
+    -- * For testing
+    , attemptEquations
     ) where
 
 import Prelude.Kore
@@ -27,11 +29,15 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
-    ( Equation
+    ( AttemptEquationError
+    , Equation
     )
 import qualified Kore.Equation as Equation
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
@@ -68,36 +74,52 @@ definitionEvaluation
     :: [Equation VariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
-    BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equations' =
-                Equation.mapVariables (pure fromVariableName)
-                <$> equations
-            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        let -- Attempt an equation, pairing it with its result, if applicable.
-            attemptEquation equation =
-                Equation.attemptEquation condition term' equation
-                >>= return . Bifunctor.second apply
+    BuiltinAndAxiomSimplifier $ \term condition ->
+        attemptEquations equations term condition
+        >>= processResults condition
+  where
+    processResults condition =
+        partitionEithers >>> \case
+            (_, applied : _) -> do
+                results <- applied
+                (return . Applied) AttemptedAxiomResults
+                    { results
+                    , remainders = OrPattern.bottom
+                    }
+            (errors, []) ->
+                case minError of
+                    Just (Equation.WhileCheckRequires _) ->
+                        (return . NotApplicableUntilConditionChanges)
+                            (SideCondition.toRepresentation condition)
+                    _ -> return NotApplicable
               where
-                apply = Equation.applyEquation condition equation
-        traverse attemptEquation equations' >>=
-            (partitionEithers >>> \case
-                (_, applied : _) -> do
-                    results <- applied
-                    (return . Applied) AttemptedAxiomResults
-                        { results
-                        , remainders = OrPattern.bottom
-                        }
-                (errors, []) ->
-                    case minError of
-                        Just (Equation.WhileCheckRequires _) ->
-                            (return . NotApplicableUntilConditionChanges)
-                                (SideCondition.toRepresentation condition)
-                        _ -> return NotApplicable
-                  where
-                    minError =
-                        (fmap getMin . getOption)
-                        (foldMap (Option . Just . Min) errors)
-            )
+                minError =
+                    (fmap getMin . getOption)
+                    (foldMap (Option . Just . Min) errors)
+
+attemptEquations
+    :: InternalVariable variable
+    => MonadSimplify simplifier
+    => [Equation VariableName]
+    -> TermLike variable
+    -> SideCondition variable
+    -> simplifier
+        [ Either
+            (AttemptEquationError variable)
+            (simplifier (OrPattern variable))
+        ]
+attemptEquations equations term condition = do
+    let equations' =
+            Equation.mapVariables (pure fromVariableName)
+            <$> equations
+        term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
+    let -- Attempt an equation, pairing it with its result, if applicable.
+        attemptEquation equation =
+            Equation.attemptEquation condition term' equation
+            >>= return . Bifunctor.second apply
+          where
+            apply = Equation.applyEquation condition equation
+    traverse attemptEquation equations'
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
