@@ -3,9 +3,6 @@ Syntax of the KORE language
 
 This documents describes the syntax of KORE, as admitted by the Haskell Backend.
 
-It is meant to be an easier to access source than the
-[Semantics of K](docs/semantics-of-k.pdf)
-
 Any change in the KORE Parser infrastructure should be reflected here.
 
 Context-Free Syntax

@@ -34,7 +34,7 @@ import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
 import SMT
-    ( SMT
+    ( NoSMT
     )
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
@@ -70,13 +70,13 @@ testBinary symb impl =
 
 test_KEqual :: [TestTree]
 test_KEqual =
-    [ testCaseWithSMT "dotk equals dotk" $ do
+    [ testCaseWithoutSMT "dotk equals dotk" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original = keqBool dotk dotk
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
+    , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
         let expect = Pattern.top
             original =
                 mkEquals_
@@ -88,7 +88,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
+    , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
         let expect = Pattern.top
             original =
                 mkEquals_
@@ -100,7 +100,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "distinct constructor-like terms" $ do
+    , testCaseWithoutSMT "distinct constructor-like terms" $ do
         let expect = Pattern.top
             original =
                 mkEquals_
@@ -112,13 +112,13 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "distinct domain values" $ do
+    , testCaseWithoutSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
             original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "distinct domain value K lists" $ do
+    , testCaseWithoutSMT "distinct domain value K lists" $ do
         let expect =
                 Pattern.fromTermLike
                 $ Test.Bool.asInternal False
@@ -129,7 +129,7 @@ test_KEqual =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "Bottom ==K Top" $ do
+    , testCaseWithoutSMT "Bottom ==K Top" $ do
         let expect = Pattern.bottom
             original = keqBool (mkBottom kSort) (mkTop kSort)
         actual <- evaluate original
@@ -138,7 +138,7 @@ test_KEqual =
 
 test_KIte :: [TestTree]
 test_KIte =
-    [ testCaseWithSMT "ite true" $ do
+    [ testCaseWithoutSMT "ite true" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal False
@@ -150,7 +150,7 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithSMT "ite false" $ do
+    , testCaseWithoutSMT "ite false" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal True
@@ -165,7 +165,7 @@ test_KIte =
 
 test_KEqualSimplification :: [TestTree]
 test_KEqualSimplification =
-    [ testCaseWithSMT "constructor1 =/=K constructor2" $ do
+    [ testCaseWithoutSMT "constructor1 =/=K constructor2" $ do
         let term1 = Test.Bool.asInternal False
             term2 =
                 keqBool
@@ -192,7 +192,7 @@ dvX =
 runKEqualSimplification
     :: TermLike VariableName
     -> TermLike VariableName
-    -> SMT [Maybe (Pattern VariableName)]
+    -> NoSMT [Maybe (Pattern VariableName)]
 runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . evalEnvUnifierT Not.notSimplifier

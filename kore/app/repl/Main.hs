@@ -253,10 +253,13 @@ mainWithOptions
                             \ when running the repl in run-script mode."
                         exitFailure
 
-                SMT.runSMT smtConfig $ do
-                    give (MetadataTools.build indexedModule)
-                        $ declareSMTLemmas indexedModule
-                    proveWithRepl
+                SMT.runSMT
+                    smtConfig
+                    ( give
+                        (MetadataTools.build indexedModule)
+                        (declareSMTLemmas indexedModule)
+                    )
+                    $ proveWithRepl
                         indexedModule
                         specDefIndexedModule
                         Nothing

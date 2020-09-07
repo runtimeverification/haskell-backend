@@ -19,7 +19,6 @@ module Kore.Builtin.Set
     , verifiers
     , builtinFunctions
     , Domain.Builtin
-    , InKeys (..)
     , returnConcreteSet
     , Set.asTermLike
     , internalize
@@ -31,8 +30,6 @@ module Kore.Builtin.Set
     , evalDifference
       -- * Unification
     , unifyEquals
-    , unifyNotInKeys
-    , unifyNotIn
     ) where
 
 import Prelude.Kore
@@ -44,6 +41,8 @@ import Control.Error
     )
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+    ( toList
+    )
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -55,7 +54,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Traversable as Traversable
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -71,10 +69,6 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Set.Set as Set
-
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -83,20 +77,13 @@ import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Condition
-    , Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    , symbolHook
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -110,8 +97,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
-import qualified Kore.Sort as Sort
-import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
     ( SentenceSort (SentenceSort)
@@ -122,7 +107,6 @@ import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
 import Kore.Unification.Unify
     ( MonadUnify
     )
-import qualified Kore.Unification.Unify as Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 
 {- | Builtin name of the @Set@ sort.
@@ -600,138 +584,3 @@ unifyEquals
             normalizedOrBottom
                 :: Ac.NormalizedOrBottom Domain.NormalizedSet variable
             normalizedOrBottom = Ac.toNormalized patt
-
-data InKeys term =
-    InKeys
-        { symbol :: !Symbol
-        , keyTerm, mapTerm :: !term
-        }
-
-newtype InSet term = InSet { getIn :: InKeys term}
-
-instance
-    InternalVariable variable
-    => Injection (TermLike variable) (InSet (TermLike variable))
-  where
-    inject ( InSet InKeys { symbol, keyTerm, mapTerm = setTerm } ) =
-        TermLike.mkApplySymbol symbol [keyTerm, setTerm]
-
-    retract (App_ symbol [keyTerm, setTerm]) = do
-        hook2 <- (getHook . symbolHook) symbol
-        Monad.guard (hook2 == Set.inKey)
-        return $ InSet InKeys { symbol, keyTerm, mapTerm = setTerm }
-    retract _ = empty
-
-matchSetIn
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe (InKeys (TermLike variable))
-matchSetIn = fmap getIn . retract
-
-unifyNotIn
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-unifyNotIn =
-    unifyNotInKeys
-        (Ac.toNormalized @Domain.NormalizedSet)
-        matchSetIn
-        (inject . InSet)
-
-unifyNotInKeys
-    :: forall normalized variable unifier
-    .  InternalVariable variable
-    => Ac.TermWrapper normalized
-    => MonadUnify unifier
-    => (TermLike variable -> Ac.NormalizedOrBottom normalized variable)
-    -> (TermLike variable -> Maybe (InKeys (TermLike variable)))
-    -> (InKeys (TermLike variable) -> TermLike variable)
-    -> TermSimplifier variable unifier
-    -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-unifyNotInKeys
-    normalizedOrBottom
-    matchInKeys
-    inject'
-    unifyChildren
-    (NotSimplifier notSimplifier)
-    a
-    b
-  =
-    worker a b <|> worker b a
-  where
-    defineTerm :: TermLike variable -> unifier (Condition variable)
-    defineTerm termLike =
-        makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
-        >>= Unify.scatter
-
-    eraseTerm =
-        Pattern.fromCondition_ . Pattern.withoutTerm
-
-    unifyAndNegate
-        :: TermLike variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
-    unifyAndNegate t1 t2 = do
-        -- Erasing the unified term is valid here because
-        -- the terms are all wrapped in \ceil below.
-        unificationSolutions <-
-            fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
-        notSimplifier
-            SideCondition.top
-            (OrPattern.fromPatterns unificationSolutions)
-            >>= Unify.scatter
-
-    collectConditions terms =
-        Foldable.fold terms
-        & Pattern.fromCondition_
-
-    worker
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
-    worker termLike1 termLike2
-      | Just boolValue <- Bool.matchBool termLike1
-      , not boolValue
-      , Just inKeys@InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
-      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
-      = do
-        let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
-            concreteKeys =
-                TermLike.fromConcrete
-                <$> Domain.getConcreteKeysOfAc normalizedMap
-            mapKeys = symbolicKeys <> concreteKeys
-            opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
-        if null mapKeys && null opaqueElements
-            then return Pattern.top
-            else do
-                Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-                -- Concrete keys are constructor-like, therefore they are
-                -- defined.
-                TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-                lift $ do
-                    definedKey <- defineTerm keyTerm
-                    definedMap <- defineTerm mapTerm
-                    notInKnownKeys <-
-                        traverse (unifyAndNegate keyTerm) mapKeys
-                        & fmap (map Pattern.withoutTerm)
-                    notInOpaqueKeys <-
-                        Traversable.for opaqueElements
-                            (\term ->
-                                inject' inKeys { mapTerm = term }
-                                & unifyChildren termLike1
-                            )
-                        & fmap (map Pattern.withoutTerm)
-                    let conditions =
-                            notInKnownKeys <> notInOpaqueKeys
-                            <> [definedKey, definedMap]
-                    return $ collectConditions conditions
-
-    worker _ _ = empty

@@ -404,7 +404,7 @@ testString
     -> [TermLike VariableName]
     -> Pattern VariableName
     -> TestTree
-testString name = testSymbolWithSolver evaluate name
+testString name = testSymbolWithoutSolver evaluate name
 
 ofSort :: Text.Text -> Sort -> ElementVariable VariableName
 idName `ofSort` sort = mkElementVariable (testId idName) sort

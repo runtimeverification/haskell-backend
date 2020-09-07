@@ -63,23 +63,29 @@ import Kore.Step.Simplification.Data
     , SimplifierT
     )
 import qualified Kore.Step.Simplification.Data as Kore
+import Kore.Step.SMT.Declaration.All as SMT.AST
 import Logic
     ( LogicT
     )
 import SMT
     ( NoSMT
     )
-
+import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT as Test
 
 runSimplifier :: Env Simplifier -> Simplifier a -> IO a
-runSimplifier env = Test.runSMT . Kore.runSimplifier env
+runSimplifier env = Test.runSMT userInit . Kore.runSimplifier env
+  where
+    userInit = SMT.AST.declare Mock.smtDeclarations
 
 runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
 runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
 
-runSimplifierBranch :: Env Simplifier -> LogicT Simplifier a -> IO [a]
-runSimplifierBranch env = Test.runSMT . Kore.runSimplifierBranch env
+runSimplifierBranch
+    :: Env (SimplifierT NoSMT)
+    -> LogicT (SimplifierT NoSMT) a
+    -> IO [a]
+runSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 
 simplifiedTerm :: TermLike variable -> TermLike variable
 simplifiedTerm =
