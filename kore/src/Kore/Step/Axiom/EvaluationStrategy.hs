@@ -119,7 +119,23 @@ attemptEquations equations term condition = do
             >>= return . Bifunctor.second apply
           where
             apply = Equation.applyEquation condition equation
-    traverse attemptEquation equations'
+    iterateUntil attemptEquation equations'
+
+iterateUntil
+    :: Monad m
+    => (input -> m (Either error (monad result)))
+    -> [input]
+    -> m [Either error (monad result)]
+iterateUntil attemptEquation equations =
+    case equations of
+        [] -> return []
+        (x : xs) -> do
+            result <- attemptEquation x
+            case result of
+                Right applied -> return . return . return $ applied
+                Left notApplied -> do
+                    rest <- iterateUntil attemptEquation xs
+                    return (Left notApplied : rest)
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
