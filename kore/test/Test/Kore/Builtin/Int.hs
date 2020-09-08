@@ -33,8 +33,6 @@ module Test.Kore.Builtin.Int
     , testInt
     ) where
 
-import qualified Data.Foldable as Foldable
-import Kore.Unparser
 import Prelude.Kore
 
 import Hedgehog hiding
