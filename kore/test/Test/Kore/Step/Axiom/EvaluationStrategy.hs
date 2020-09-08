@@ -60,6 +60,10 @@ test_iterateUntil =
         let actual = iterateUntil g [False] & runIdentity
             expected = Left [()]
         assertEqual "" expected actual
+    , testCase "TESTING Two error results" $ do
+        let actual = iterateUntil g [False, False] & runIdentity
+            expected = Left [(), ()]
+        assertEqual "" expected actual
     ]
   where
     f :: Bool -> Identity (Either (Maybe ()) ())
