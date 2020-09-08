@@ -52,15 +52,23 @@ import Test.Tasty.HUnit.Ext
 
 test_iterateUntil :: [TestTree]
 test_iterateUntil =
-    [ testCase "Empty list" $ do
+    [ testCase "TESTING Empty list" $ do
         let actual = iterateUntil f [] & runIdentity
             expected = Left Nothing
+        assertEqual "" expected actual
+    , testCase "TESTING One error result" $ do
+        let actual = iterateUntil g [False] & runIdentity
+            expected = Left [()]
         assertEqual "" expected actual
     ]
   where
     f :: Bool -> Identity (Either (Maybe ()) ())
     f True = return . Right $ ()
-    f False = return . Left $ Nothing
+    f False = return . Left $ Just ()
+
+    g :: Bool -> Identity (Either [()] ())
+    g True = return . Right $ ()
+    g False = return . Left $ [()]
 
 test_attemptEquations :: [TestTree]
 test_attemptEquations =
