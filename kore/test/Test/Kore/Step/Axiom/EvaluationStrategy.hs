@@ -11,6 +11,11 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Control.Monad.Trans.State.Strict
+    ( State
+    , modify
+    , runState
+    )
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Identity
     ( Identity (..)
@@ -64,6 +69,16 @@ test_iterateUntil =
         let actual = iterateUntil g [False, False] & runIdentity
             expected = Left [(), ()]
         assertEqual "" expected actual
+    , testCase "TESTING One good result" $ do
+        let actual = iterateUntil g [True] & runIdentity
+            expected = Right ()
+        assertEqual "" expected actual
+    , testCase "TESTING Stops at first good result" $ do
+        let actual =
+                iterateUntil h [False, True, False, False, True]
+                & flip runState 0
+            expected = (Right (), 2)
+        assertEqual "" expected actual
     ]
   where
     f :: Bool -> Identity (Either (Maybe ()) ())
@@ -73,6 +88,14 @@ test_iterateUntil =
     g :: Bool -> Identity (Either [()] ())
     g True = return . Right $ ()
     g False = return . Left $ [()]
+
+    h :: Bool -> State Int (Either [()] ())
+    h True = do
+        modify (+ 1)
+        return . Right $ ()
+    h False = do
+        modify (+ 1)
+        return . Left $ [()]
 
 test_attemptEquations :: [TestTree]
 test_attemptEquations =
