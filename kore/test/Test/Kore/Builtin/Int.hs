@@ -610,11 +610,6 @@ test_unifyIntEq =
                 makeEqualsPredicate_ term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
-            -- traceM "expect"
-            -- traceM . unparseToString $ expect
-            -- traceM "actual"
-            -- Foldable.traverse_
-            --     (traceM . unparseToString) actual
             assertEqual "" [expect { term = () }] actual
     ]
   where
