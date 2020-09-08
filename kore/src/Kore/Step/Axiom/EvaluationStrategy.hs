@@ -15,6 +15,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     -- * For testing
     , attemptEquations
+    , iterateUntil
     ) where
 
 import Prelude.Kore
@@ -119,24 +120,15 @@ attemptEquations equations term condition = do
             >>= return . Bifunctor.second apply
           where
             apply = Equation.applyEquation condition equation
-    iterateUntil attemptEquation equations'
+    traverse attemptEquation equations'
 
 iterateUntil
     :: Monad m
+    => Monoid error
     => (input -> m (Either error result))
     -> [input]
-    -> m [Either error result]
-iterateUntil action =
-    \case
-        [] -> return []
-        (current : rest) -> do
-            result <- action current
-            case result of
-                Right applied ->
-                    return . return . return $ applied
-                Left notApplied -> do
-                    restResult <- iterateUntil action rest
-                    return (Left notApplied : restResult)
+    -> m (Either error result)
+iterateUntil action [] = return . Left $ mempty
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
