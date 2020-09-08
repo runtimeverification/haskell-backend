@@ -88,12 +88,11 @@ test_iterateUntil =
     g False = return . Left $ [()]
 
     h :: Bool -> State Int (Either [()] ())
-    h True = do
+    h input = do
         modify (+ 1)
-        return . Right $ ()
-    h False = do
-        modify (+ 1)
-        return . Left $ [()]
+        if input
+            then return . Right $ ()
+            else return . Left $ [()]
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =

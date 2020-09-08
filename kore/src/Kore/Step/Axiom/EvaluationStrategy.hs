@@ -90,7 +90,7 @@ definitionEvaluation equations =
                     , remainders = OrPattern.bottom
                     }
             Left minError ->
-                case fmap getMin (getOption minError) of
+                case getMin <$> getOption minError of
                     Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
