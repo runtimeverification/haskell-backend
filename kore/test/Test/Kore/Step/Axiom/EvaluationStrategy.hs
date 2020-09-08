@@ -4,6 +4,7 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_simplifierWithFallback
     , test_builtinEvaluation
     , test_attemptEquations
+    , test_iterateUntil
     ) where
 
 import Prelude.Kore
@@ -11,6 +12,9 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Bifunctor as Bifunctor
+import Data.Functor.Identity
+    ( Identity (..)
+    )
 
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
@@ -45,6 +49,18 @@ import Test.Kore.Equation.Application
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+test_iterateUntil :: [TestTree]
+test_iterateUntil =
+    [ testCase "Empty list" $ do
+        let actual = iterateUntil f [] & runIdentity
+            expected = Left Nothing
+        assertEqual "" expected actual
+    ]
+  where
+    f :: Bool -> Identity (Either (Maybe ()) ())
+    f True = return . Right $ ()
+    f False = return . Left $ Nothing
 
 test_attemptEquations :: [TestTree]
 test_attemptEquations =
