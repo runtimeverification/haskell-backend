@@ -129,6 +129,8 @@ iterateUntil
     -> [input]
     -> m (Either error result)
 iterateUntil action [] = return . Left $ mempty
+iterateUntil action (current : rest) =
+    action current
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
