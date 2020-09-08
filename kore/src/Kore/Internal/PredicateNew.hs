@@ -61,6 +61,9 @@ module Kore.Internal.PredicateNew
 
 import Prelude.Kore
 
+import Control.Monad.Reader
+    ( ReaderT
+    )
 import qualified Control.Comonad.Trans.Env as Env
 import qualified Control.Comonad.Trans.Cofree as Cofree
     (tailF
@@ -68,12 +71,16 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import Data.Containers.ListUtils
     ( nubOrd
     )
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import Data.Functor.Const
+    ( Const(Const)
+    )
 import Data.Functor.Foldable
     ( Base
     , Corecursive
@@ -83,6 +90,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl'
     )
+import qualified Data.Map.Strict as Map
 import Data.Map.Strict
     ( Map
     )
@@ -100,11 +108,15 @@ import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Attribute.PredicatePattern as Attribute
+import Kore.Attribute.PredicatePattern
     ( PredicatePattern (PredicatePattern)
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
+import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.Simplified
+    ( Simplified(Simplified, NotSimplified)
+    )
 import Kore.Attribute.Synthetic
 
 import Kore.Debug
@@ -137,6 +149,7 @@ import Kore.Internal.TermLike hiding
     , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike.Renaming
 
 import Kore.Syntax.And
 import Kore.Syntax.Bottom
@@ -156,6 +169,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
+import Kore.Variables.Binding
 import Pretty
     ( Pretty (..)
     )
@@ -228,12 +242,12 @@ instance
 newtype Predicate variable =
     Predicate
         { getPredicate
-            :: Cofree (PredicateF variable) (Attribute.PredicatePattern variable)
+            :: Cofree (PredicateF variable) (PredicatePattern variable)
         }
 
 
 type instance Base (Predicate variable) =
-    CofreeF (PredicateF variable) (Attribute.PredicatePattern variable)
+    CofreeF (PredicateF variable) (PredicatePattern variable)
 
 
 -- This instance implements all class functions for the TermLike newtype
@@ -505,6 +519,10 @@ makeForallPredicate v p = synthesize $ ForallF Forall
     , forallChild = p
     }
 
+-- Note that we simplify the results of the following 2 functions
+-- using nubOrd since we can't get an accurate tree shape anyway
+-- because we include 'makeTruePredicate' in the resulting tree
+-- (mircea.sebe)
 makeMultipleAndPredicate
     :: (InternalVariable variable, Ord (Predicate variable))
     => [Predicate variable]
@@ -551,50 +569,6 @@ getMultiOrPredicate = \case
     PredicateOr p1 p2 -> concatMap getMultiOrPredicate [p1, p2]
     p -> [p]
 
-{-
-{-| Mu quantification for the given variable in the given predicate.
--}
-makeMuPredicate
-    :: InternalVariable variable
-    => SetVariable variable
-    -> Predicate variable
-    -> Predicate variable
-makeMuPredicate _ p@PredicateFalse = p
-makeMuPredicate _ t@PredicateTrue = t
-makeMuPredicate v (GenericPredicate p) =
-    GenericPredicate $ TermLike.mkMu v p
-
-{-| Nu quantification for the given variable in the given predicate.
--}
-makeNuPredicate
-    :: InternalVariable variable
-    => SetVariable variable
-    -> Predicate variable
-    -> Predicate variable
-makeNuPredicate _ p@PredicateFalse = p
-makeNuPredicate _ t@PredicateTrue = t
-makeNuPredicate v (GenericPredicate p) =
-    GenericPredicate $ TermLike.mkNu v p
--}
-
-{-| When transforming a term into a predicate, this tells
-whether the predicate is different in a significant way from the term used
-to build it, i.e. whether it changed when being transformed.
-
-A significant change is a change that does not involve sorts. When building
-predicates from terms we replace existing sorts with a placeholder,
-assuming that later we will put the right sorts back, so we don't count
-that as a significant change.
--}
-data HasChanged = Changed | NotChanged
-    deriving (Show, Eq)
-
-instance Semigroup HasChanged where
-    NotChanged <> x = x
-    Changed <> _ = Changed
-
-instance Monoid HasChanged where
-    mempty = NotChanged
 
 newtype NotPredicate variable
     = NotPredicate (TermLikeF variable (Predicate variable))
@@ -604,11 +578,200 @@ instance SOP.Generic (NotPredicate variable)
 
 instance SOP.HasDatatypeInfo (NotPredicate variable)
 
-instance Debug variable => Debug (NotPredicate variable)
+instance (Debug (Predicate variable), Debug variable) => Debug (NotPredicate variable)
 
-instance InternalVariable variable => Pretty (NotPredicate variable) where
+instance (Unparse (Predicate variable), InternalVariable variable) => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
         [ "Expected a predicate, but found:"
         , Pretty.indent 4 (unparse termLikeF)
         ]
+
+
+makePredicate
+    :: forall variable
+    .  InternalVariable variable
+    => TermLike variable
+    -> Either (NotPredicate variable) (Predicate variable)
+makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
+  where
+    makePredicateBottomUp
+        :: Base
+            (TermLike variable)
+            (Either (NotPredicate variable) (Predicate variable))
+        -> Either (NotPredicate variable) (Predicate variable)
+    makePredicateBottomUp termE = do
+        term <- sequence termE
+        predicate <- case (Cofree.tailF term) of
+            TermLike.TopF _ -> return makeTruePredicate
+            TermLike.BottomF _ -> return makeFalsePredicate
+            TermLike.AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
+            TermLike.OrF p -> return $ makeOrPredicate (orFirst p) (orSecond p)
+            TermLike.IffF p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
+            TermLike.ImpliesF p -> return $
+                makeImpliesPredicate (impliesFirst p) (impliesSecond p)
+            TermLike.NotF p -> return $ makeNotPredicate (notChild p)
+            TermLike.ExistsF p -> return $
+                makeExistsPredicate (existsVariable p) (existsChild p)
+            TermLike.ForallF p -> return $
+                makeForallPredicate (forallVariable p) (forallChild p)
+            p -> Left (NotPredicate p)
+        return predicate
+
+    makePredicateTopDown
+        :: TermLike variable
+        -> Either
+            (Either (NotPredicate variable) (Predicate variable))
+            (Base (TermLike variable) (TermLike variable))
+    makePredicateTopDown (Recursive.project -> projected@(_ :< pat)) =
+        case pat of
+            TermLike.CeilF Ceil { ceilChild } ->
+                (Left . pure) (makeCeilPredicate ceilChild)
+            TermLike.FloorF Floor { floorChild } ->
+                (Left . pure) (makeFloorPredicate floorChild)
+            TermLike.EqualsF Equals { equalsFirst, equalsSecond } ->
+                (Left . pure) (makeEqualsPredicate equalsFirst equalsSecond)
+            TermLike.InF In { inContainedChild, inContainingChild } ->
+                (Left . pure) (makeInPredicate inContainedChild inContainingChild)
+            _ -> Right projected
+
+isPredicate :: InternalVariable variable => TermLike variable -> Bool
+isPredicate = Either.isRight . makePredicate
+
+instance HasFreeVariables (Predicate variable) variable where
+    freeVariables (Recursive.project -> attr :< _) = freeVariables attr
+
+
+isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
+isSimplified _ _ = False
+
+simplifiedAttribute :: Predicate variable -> Simplified
+simplifiedAttribute _ = NotSimplified
+
+
+{-
+mapVariables
+    :: Ord variable1
+    => FreshPartialOrd variable2
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> Predicate variable1
+    -> Predicate variable2
+mapVariables adj pred = runIdentity (traverseVariables ((.) pure <$> adj) pred)
+  where
+    traverseVariables
+        :: forall variable1 variable2 m
+        .  Ord variable1
+        => FreshPartialOrd variable2
+        => Monad m
+        => AdjSomeVariableName (variable1 -> m variable2)
+        -> Predicate variable1
+        -> m (Predicate variable2)
+    traverseVariables adj pred =
+        renameFreeVariables adj (freeVariables @_ @variable1 pred)
+        >>= Reader.runReaderT (Recursive.fold worker pred)
+      where
+        adjReader = (.) lift <$> adj
+        trElemVar = traverse $ traverseElementVariableName adjReader
+        trSetVar = traverse $ traverseSetVariableName adjReader
+        traverseExists avoiding =
+            existsBinder (renameElementBinder trElemVar avoiding)
+        traverseForall avoiding =
+            forallBinder (renameElementBinder trElemVar avoiding)
+        traverseMu avoiding =
+            muBinder (renameSetBinder trSetVar avoiding)
+        traverseNu avoiding =
+            nuBinder (renameSetBinder trSetVar avoiding)
+
+        worker
+            ::  Base
+                    (Predicate variable1)
+                    (RenamingT variable1 variable2 m (Predicate variable2))
+            ->  RenamingT variable1 variable2 m (Predicate variable2)
+        worker (attrs :< predF) = do
+            attrs' <- Attribute.traverseVariables askSomeVariableName attrs
+            let avoiding = freeVariables attrs'
+            predF' <- case predF of
+                VariableF (Const unifiedVariable) -> do
+                    unifiedVariable' <- askSomeVariable unifiedVariable
+                    (pure . VariableF) (Const unifiedVariable')
+                ExistsF exists -> ExistsF <$> traverseExists avoiding exists
+                ForallF forall -> ForallF <$> traverseForall avoiding forall
+                MuF mu -> MuF <$> traverseMu avoiding mu
+                NuF nu -> NuF <$> traverseNu avoiding nu
+                _ ->
+                    sequence termLikeF >>=
+                    -- traverseVariablesF will not actually call the traversals
+                    -- because all the cases with variables are handled above.
+                    traverseVariablesF askSomeVariableName
+            (pure . Recursive.embed) (attrs' :< termLikeF')
+-}
+
+
+-- |Is the predicate free of the given variables?
+isFreeOf
+    :: Ord variable
+    => Predicate variable
+    -> Set (SomeVariable variable)
+    -> Bool
+isFreeOf predicate =
+    Set.disjoint (FreeVariables.toSet $ freeVariables predicate)
+
+freeElementVariables :: Predicate variable -> [ElementVariable variable]
+freeElementVariables = getFreeElementVariables . freeVariables
+
+hasFreeVariable
+    :: Ord variable
+    => SomeVariableName variable
+    -> Predicate variable
+    -> Bool
+hasFreeVariable variableName = isFreeVariable variableName . freeVariables
+
+{- | Traverse the predicate from the top down and apply substitutions.
+
+The 'freeVariables' annotation is used to avoid traversing subterms that
+contain none of the targeted variables.
+
+ -}
+
+ {-
+substitute
+    :: InternalVariable variable
+    => Map (SomeVariableName variable) (TermLike variable)
+    -> Predicate variable
+    -> Predicate variable
+substitute subst pred =
+        substituteNone <|> substituteBinder
+        & fromMaybe substituteDefault
+  where
+    freeVars = FreeVariables.toNames (freeVariables pred)
+    subst' = Map.intersection subst (Map.fromSet id freeVars)
+    substituteNone :: Maybe (Predicate variable)
+    substituteNone
+        | Map.null subst' = pure termLike
+        | otherwise       = empty
+    substituteBinder :: Maybe (Predicate variable)
+    substituteBinder =
+        runIdentity <$> matchWith traverseBinder worker termLike
+      where
+        worker
+            :: Binder (SomeVariable variable) patternType
+            -> Identity (Binder (SomeVariable variable) patternType)
+        worker Binder { binderVariable, binderChild } = do
+            let
+                binderVariable' = avoidCapture binderVariable
+                -- Rename the freshened bound variable in the subterms.
+                subst'' = renaming binderVariable binderVariable' subst'
+                return Binder
+                { binderVariable = fromMaybe binderVariable binderVariable'
+                , binderChild = substituteWorker subst'' binderChild
+                }
+    substituteDefault =
+        synthesize (substituteWorker subst' <$> termLikeHead)
+      where
+        _ :< termLikeHead = Recursive.project termLike
+-}
+
+depth :: Predicate variable -> Int
+depth = Recursive.fold levelDepth
+  where
+    levelDepth (_ :< predF) = 1 + foldl' max 0 predF

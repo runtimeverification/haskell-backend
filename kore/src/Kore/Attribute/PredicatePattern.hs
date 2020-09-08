@@ -48,9 +48,6 @@ data PredicatePattern variable =
         }
     deriving (Eq, GHC.Generic, Show)
 
--- TODO (thomas.tuegel): Lift 'simplified' to the 'Conditional' level once we
--- treat the latter as an aggregate root.
-
 instance NFData variable => NFData (PredicatePattern variable)
 
 instance Hashable variable => Hashable (PredicatePattern variable)
