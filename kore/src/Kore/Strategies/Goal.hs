@@ -748,7 +748,7 @@ checkImplicationWorker
     => ClaimPattern
     -> LogicT m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
-    lift (do
+    do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left
@@ -758,7 +758,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             simplifyConditionsWithSmt sideCondition configs'
             >>= Logic.scatter
         pure (examine anyUnified stuck)
-    )
+    & lift
     & elseImplied
   where
     ClaimPattern { right, left, existentials } = claimPattern

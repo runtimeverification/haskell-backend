@@ -202,7 +202,6 @@ exec
         , MonadSMT smt
         , MonadMask smt
         , MonadProf smt
-        , Alternative smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -321,7 +320,6 @@ search
         , MonadSMT smt
         , MonadMask smt
         , MonadProf smt
-        , Alternative smt
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes
@@ -379,7 +377,6 @@ prove
         , MonadIO smt
         , MonadSMT smt
         , MonadProf smt
-        , Alternative smt
         )
     => Strategy.GraphSearchOrder
     -> Limit Natural
@@ -480,7 +477,6 @@ boundedModelCheck
         , MonadIO smt
         , MonadMask smt
         , MonadProf smt
-        , Alternative smt
         )
     => Limit Natural
     -> Limit Natural
@@ -513,7 +509,6 @@ mergeAllRules
         , MonadIO smt
         , MonadProf smt
         , MonadMask smt
-        , Alternative smt
         )
     => VerifiedModule StepperAttributes
     -- ^ The main module
@@ -529,7 +524,6 @@ mergeRulesConsecutiveBatches
         , MonadIO smt
         , MonadProf smt
         , MonadMask smt
-        , Alternative smt
         )
     => Int
     -- ^ Batch size
@@ -548,7 +542,6 @@ mergeRules
         , MonadIO smt
         , MonadProf smt
         , MonadMask smt
-        , Alternative smt
         )
     =>  (  NonEmpty (RewriteRule VariableName)
         -> Simplifier.SimplifierT smt [RewriteRule VariableName]
@@ -672,7 +665,6 @@ initialize
     :: forall simplifier
     .  MonadSimplify simplifier
     => MonadThrow simplifier
-    => Alternative simplifier
     => VerifiedModule StepperAttributes
     -> simplifier Initialized
 initialize verifiedModule = do
@@ -686,7 +678,7 @@ initialize verifiedModule = do
         :: RewriteRule VariableName
         -> LogicT simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
-        simplRule <- lift $ simplifyRuleLhs rule >>= Logic.scatter
+        simplRule <- lift (simplifyRuleLhs rule) >>= Logic.scatter
         when (lhsEqualsRhs $ getRewriteRule simplRule)
             (errorRewriteLoop simplRule)
         let renamedRule = mkRewritingRule simplRule
@@ -710,7 +702,6 @@ initializeProver
     :: forall simplifier
     .  MonadSimplify simplifier
     => MonadThrow simplifier
-    => Alternative simplifier
     => VerifiedModule StepperAttributes
     -> VerifiedModule StepperAttributes
     -> Maybe (VerifiedModule StepperAttributes)
