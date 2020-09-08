@@ -21,6 +21,9 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.Reader
     ( MonadReader
     )
@@ -87,7 +90,10 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    ::  ( InternalVariable variable
+        , MonadSimplify simplifier
+        , MonadThrow simplifier
+        )
     => SideCondition variable
     -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -116,6 +122,7 @@ carry around.
 simplifyEvaluated
     :: InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -128,6 +135,7 @@ for details.
 makeEvaluate
     :: InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -139,6 +147,7 @@ makeEvaluate sideCondition child
 makeEvaluateNonBoolCeil
     :: InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -166,6 +175,7 @@ makeEvaluateTerm
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => SideCondition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
@@ -250,6 +260,7 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
 newBuiltinCeilSimplifier
     :: MonadReader (SideCondition variable) simplifier
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => InternalVariable variable
     => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
@@ -274,6 +285,7 @@ newConcatMapCeilSimplifier = CeilSimplifier $ \input ->
 newAxiomCeilSimplifier
     :: MonadReader (SideCondition variable) simplifier
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => InternalVariable variable
     => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
@@ -322,6 +334,7 @@ makeEvaluateBuiltin
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => SideCondition variable
     -> Builtin (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
@@ -362,7 +375,10 @@ know how to simplify @ceil(g(x))@, the return value will be
 
 -}
 makeSimplifiedCeil
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    ::  ( InternalVariable variable
+        , MonadSimplify simplifier
+        , MonadThrow simplifier
+        )
     => SideCondition variable
     -> Maybe SideCondition.Representation
     -> TermLike variable

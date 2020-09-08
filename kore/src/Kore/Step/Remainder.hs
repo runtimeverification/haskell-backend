@@ -14,6 +14,9 @@ import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -134,7 +137,10 @@ substitutionConditions subst =
 
 ceilChildOfApplicationOrTop
     :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
+    .   ( InternalVariable variable
+        , MonadSimplify m
+        , MonadThrow m
+        )
     => SideCondition variable
     -> TermLike variable
     -> m (Condition variable)

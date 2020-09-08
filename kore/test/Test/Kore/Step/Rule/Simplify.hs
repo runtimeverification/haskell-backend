@@ -9,6 +9,9 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.Morph
     ( MFunctor (..)
     )
@@ -447,7 +450,7 @@ newtype TestSimplifierT m a =
     TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadReader TestEnv)
-    deriving (MonadLog, MonadSMT)
+    deriving (MonadLog, MonadSMT, MonadThrow)
 
 instance MonadTrans TestSimplifierT where
     lift = TestSimplifierT . lift

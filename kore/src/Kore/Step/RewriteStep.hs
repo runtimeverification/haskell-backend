@@ -15,6 +15,9 @@ module Kore.Step.RewriteStep
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
@@ -194,6 +197,7 @@ type FinalizeApplied rule simplifier =
 finalizeRule
     :: UnifyingRuleWithRepresentation representation rule
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => (representation -> rule)
     -> FinalizeApplied representation simplifier
     -> FreeVariables RewritingVariableName
@@ -224,6 +228,7 @@ type Finalizer rule simplifier =
 finalizeRulesParallel
     :: forall representation rule simplifier
     .  UnifyingRuleWithRepresentation representation rule
+    => MonadThrow simplifier
     => (representation -> rule)
     -> FinalizeApplied representation simplifier
     -> Finalizer representation simplifier
@@ -246,6 +251,7 @@ finalizeRulesParallel toRule finalizeApplied initialVariables initial unifiedRul
 finalizeSequence
     :: forall representation rule simplifier
     .  UnifyingRuleWithRepresentation representation rule
+    => MonadThrow simplifier
     => (representation -> rule)
     -> FinalizeApplied representation simplifier
     -> Finalizer representation simplifier
@@ -309,6 +315,7 @@ See also: 'applyRewriteRule'
 applyRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => UnificationProcedure simplifier
     -> [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
@@ -325,6 +332,7 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => UnificationProcedure simplifier
     -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
@@ -349,6 +357,7 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => UnificationProcedure simplifier
     -> [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
@@ -365,6 +374,7 @@ See also: 'applyRewriteRulesParallel'
 applyRewriteRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => UnificationProcedure simplifier
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
@@ -383,6 +393,7 @@ applyRewriteRulesSequence
 applyClaimsSequence
     :: forall goal simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => UnifyingRuleWithRepresentation ClaimPattern goal
     => (ClaimPattern -> goal)
     -> UnificationProcedure simplifier

@@ -842,7 +842,7 @@ execute
     :: forall r
     .  KoreExecOptions
     -> LoadedModule  -- ^ Main module
-    -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
+    -> (forall exe. MonadExecute exe => Alternative exe => exe r)  -- ^ Worker
     -> Main r
 execute options mainModule worker =
     clockSomethingIO "Executing"

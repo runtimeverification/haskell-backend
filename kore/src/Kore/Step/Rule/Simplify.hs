@@ -12,6 +12,9 @@ import Prelude.Kore
 import Control.Monad
     ( (>=>)
     )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -76,6 +79,7 @@ class SimplifyRuleLHS rule where
     simplifyRuleLhs
         :: forall simplifier
         .  MonadSimplify simplifier
+        => MonadThrow simplifier
         => rule
         -> simplifier (MultiAnd rule)
 
@@ -161,6 +165,7 @@ instance SimplifyRuleLHS ReachabilityRule where
 simplifyClaimRule
     :: forall simplifier
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => ClaimPattern
     -> simplifier (MultiAnd ClaimPattern)
 simplifyClaimRule =

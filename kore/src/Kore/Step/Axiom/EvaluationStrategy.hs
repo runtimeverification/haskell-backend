@@ -17,6 +17,9 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Semigroup
@@ -160,6 +163,7 @@ evaluateBuiltin
     :: forall variable simplifier
     .  ( InternalVariable variable
        , MonadSimplify simplifier
+       , MonadThrow simplifier
        )
     => BuiltinAndAxiomSimplifier
     -- ^ Map from axiom IDs to axiom evaluators
@@ -218,6 +222,7 @@ applyFirstSimplifierThatWorks
     :: forall variable simplifier
     .  ( InternalVariable variable
        , MonadSimplify simplifier
+        , MonadThrow simplifier
        )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
@@ -231,6 +236,7 @@ applyFirstSimplifierThatWorksWorker
     :: forall variable simplifier
     .  ( InternalVariable variable
        , MonadSimplify simplifier
+       , MonadThrow simplifier
        )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults

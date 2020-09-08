@@ -17,6 +17,9 @@ module Kore.ModelChecker.Step
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.State.Strict
     ( StateT
     )
@@ -120,6 +123,7 @@ type Transition m =
 transitionRule
     :: forall m
     .  MonadSimplify m
+    => MonadThrow m
     => Prim CommonModalPattern (RewriteRule VariableName)
     -> CommonProofState
     -> Transition m CommonProofState

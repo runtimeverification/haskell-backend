@@ -12,6 +12,9 @@ module Kore.Step.Rule.Combine
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.State.Strict
     ( State
     , evalState
@@ -149,7 +152,10 @@ renameRulesVariables rules =
         (rewriteRule', used <> freeVariables rewriteRule')
 
 mergeRules
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    ::  ( MonadSimplify simplifier
+        , MonadThrow simplifier
+        , InternalVariable variable
+        )
     => NonEmpty (RewriteRule variable)
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
@@ -158,7 +164,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         Conditional {term = (), predicate, substitution} <-
             simplifyCondition SideCondition.topTODO . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
-        evaluation <- SMT.evaluate predicate
+        evaluation <- lift $ SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
             Nothing -> return predicate
             Just True -> return makeTruePredicate_
@@ -193,7 +199,10 @@ first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
 into rule 7', then returns the result of merging 7', 8 and 9.
 -}
 mergeRulesConsecutiveBatches
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    ::  ( MonadSimplify simplifier
+        , InternalVariable variable
+        , MonadThrow simplifier
+        )
     => Int
     -- ^ Batch size
     -> NonEmpty (RewriteRule variable)
@@ -209,6 +218,6 @@ mergeRulesConsecutiveBatches
     mergedRulesList <- mergeRules (rule :| rulesBatch)
     Logic.observeAllT $ do
         mergedRule <- Logic.scatter mergedRulesList
-        allMerged <-
+        allMerged <- lift $
             mergeRulesConsecutiveBatches batchSize (mergedRule :| remainder)
         Logic.scatter allMerged

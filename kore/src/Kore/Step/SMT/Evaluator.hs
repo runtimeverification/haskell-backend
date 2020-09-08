@@ -22,6 +22,9 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Lens as Lens
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
@@ -89,7 +92,7 @@ or which contain things that can be evaluated with an SMT solver.
 class Evaluable thing where
     {- | Attempt to evaluate the argument with an external SMT solver.
     -}
-    evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
+    evaluate :: MonadSimplify m => MonadThrow m => thing -> m (Maybe Bool)
 
 instance InternalVariable variable => Evaluable (Predicate variable) where
     evaluate predicate =
@@ -129,11 +132,12 @@ instance
 filterBranch
     :: forall simplifier thing
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => Evaluable thing
     => thing
     -> LogicT simplifier thing
 filterBranch thing =
-    evaluate thing >>= \case
+    lift (evaluate thing) >>= \case
         Just False -> empty
         _          -> return thing
 
@@ -141,6 +145,7 @@ filterBranch thing =
 filterMultiOr
     :: forall simplifier term variable
     .   ( MonadSimplify simplifier
+        , MonadThrow simplifier
         , Ord term
         , TopBottom term
         , InternalVariable variable
@@ -169,6 +174,7 @@ decidePredicate
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
 decidePredicate predicates =

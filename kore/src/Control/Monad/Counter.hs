@@ -28,6 +28,9 @@ module Control.Monad.Counter
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
 import qualified Control.Monad.Morph as Morph
@@ -58,7 +61,8 @@ type Counter = CounterT Monad.Identity.Identity
  -}
 newtype CounterT m a =
     CounterT { getCounterT :: Monad.State.Strict.StateT Natural m a }
-    deriving (Alternative, Applicative, Functor, Monad, MonadPlus, MonadTrans)
+    deriving (Alternative, Applicative, Functor, Monad)
+    deriving (MonadPlus, MonadTrans, MonadThrow)
 
 instance Monad m => MonadCounter (CounterT m) where
     increment = CounterT incrementState

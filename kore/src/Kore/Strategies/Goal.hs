@@ -38,6 +38,7 @@ import Control.Monad
     )
 import Control.Monad.Catch
     ( Exception (..)
+    , MonadThrow
     , SomeException (..)
     )
 import Control.Monad.State.Strict
@@ -171,7 +172,6 @@ import Kore.Unparser
 import qualified Kore.Verified as Verified
 import Logic
     ( LogicT
-    , MonadLogic
     )
 import qualified Logic
 import qualified Pretty
@@ -202,11 +202,14 @@ proven = Foldable.null . unprovenNodes
 class Goal goal where
     checkImplication
         :: MonadSimplify m
+        => MonadThrow m
+        => Alternative m
         => goal
         -> LogicT m (CheckImplicationResult goal)
 
     simplify
         :: MonadSimplify m
+        => MonadThrow m
         => goal
         -> Strategy.TransitionT (AppliedRule goal) m goal
 
@@ -224,12 +227,14 @@ class Goal goal where
     -}
     applyClaims
         :: MonadSimplify m
+        => MonadThrow m
         => [goal]
         -> goal
         -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
 
     applyAxioms
         :: MonadSimplify m
+        => MonadThrow m
         => [[Rule goal]]
         -> goal
         -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
@@ -353,6 +358,7 @@ instance Goal OnePathRule where
 
 deriveSeqClaim
     :: MonadSimplify m
+    => MonadThrow m
     => Step.UnifyingRule goal
     => Step.UnifyingRuleVariable goal ~ RewritingVariableName
     => From goal (AxiomPattern RewritingVariableName)
@@ -385,6 +391,7 @@ deriveSeqClaim lensClaimPattern mkClaim claims goal =
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
+    =>  MonadThrow simplifier
     =>  [Rule OnePathRule]
     ->  OnePathRule
     ->  Strategy.TransitionT (AppliedRule OnePathRule) simplifier
@@ -426,6 +433,7 @@ instance Goal AllPathRule where
 
 deriveParAxiomAllPath
     ::  MonadSimplify simplifier
+    =>  MonadThrow simplifier
     =>  [Rule AllPathRule]
     ->  AllPathRule
     ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
@@ -515,6 +523,7 @@ type TransitionRule m rule state =
 transitionRule
     :: forall m goal
     .  MonadSimplify m
+    => MonadThrow m
     => Goal goal
     => [goal]
     -> [[Rule goal]]
@@ -646,10 +655,10 @@ instance (Diff goal, Debug goal, SOP.HasDatatypeInfo goal) =>
 -- | Remove the destination of the goal.
 checkImplication'
     :: forall goal m
-    .  (MonadLogic m, MonadSimplify m)
+    .  (MonadSimplify m, MonadThrow m, Alternative m)
     => Lens' goal ClaimPattern
     -> goal
-    -> m (CheckImplicationResult goal)
+    -> LogicT m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
     goal
     & Lens.traverseOf
@@ -735,11 +744,11 @@ anyway.
  -}
 checkImplicationWorker
     :: forall m
-    .  (MonadLogic m, MonadSimplify m)
+    .  (MonadSimplify m, MonadThrow m, Alternative m)
     => ClaimPattern
-    -> m (CheckImplicationResult ClaimPattern)
+    -> LogicT m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
-    do
+    lift (do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left
@@ -749,6 +758,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             simplifyConditionsWithSmt sideCondition configs'
             >>= Logic.scatter
         pure (examine anyUnified stuck)
+    )
     & elseImplied
   where
     ClaimPattern { right, left, existentials } = claimPattern
@@ -811,6 +821,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
 
 simplify'
     :: MonadSimplify m
+    => MonadThrow m
     => Lens' goal ClaimPattern
     -> goal
     -> Strategy.TransitionT (AppliedRule goal) m goal
@@ -856,6 +867,7 @@ instance Exception WithConfiguration
 derivePar'
     :: forall m goal
     .  MonadSimplify m
+    => MonadThrow m
     => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]
@@ -900,6 +912,7 @@ deriveWith lensClaimPattern mkRule takeStep rewrites goal =
 deriveSeq'
     :: forall m goal
     .  MonadSimplify m
+    => MonadThrow m
     => Lens' goal ClaimPattern
     -> (RewriteRule RewritingVariableName -> Rule goal)
     -> [RewriteRule RewritingVariableName]

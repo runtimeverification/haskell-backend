@@ -28,6 +28,9 @@ module Kore.Step
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
@@ -101,6 +104,7 @@ type TransitionRule monad rule state =
 transitionRule
     ::  forall simplifier
     .   MonadSimplify simplifier
+    =>  MonadThrow simplifier
     =>  TransitionRule simplifier
             (RewriteRule RewritingVariableName)
             (Pattern RewritingVariableName)

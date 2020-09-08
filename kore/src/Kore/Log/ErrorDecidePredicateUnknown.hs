@@ -13,7 +13,10 @@ import Prelude.Kore
 
 import Control.Exception
     ( Exception (..)
-    , throw
+    )
+import Control.Monad.Catch
+    ( MonadThrow
+    , throwM
     )
 
 import Kore.Internal.Predicate
@@ -57,9 +60,10 @@ instance Entry ErrorDecidePredicateUnknown where
 
 errorDecidePredicateUnknown
     :: InternalVariable variable
+    => MonadThrow log
     => NonEmpty (Predicate variable)
     -> log ()
 errorDecidePredicateUnknown predicates' =
-    throw ErrorDecidePredicateUnknown { predicates }
+    throwM ErrorDecidePredicateUnknown { predicates }
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'

@@ -33,6 +33,9 @@ import Control.Error
 import Control.Monad
     ( (>=>)
     )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.Except
     ( catchError
     )
@@ -153,6 +156,7 @@ attemptEquation
     :: forall simplifier variable
     .  HasCallStack
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => InternalVariable variable
     => SideCondition variable
     -> TermLike (Target variable)
@@ -346,6 +350,7 @@ Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
 checkRequires
     :: forall simplifier variable
     .  MonadSimplify simplifier
+    => MonadThrow simplifier
     => InternalVariable variable
     => SideCondition variable
     -> Predicate variable  -- ^ requires from matching

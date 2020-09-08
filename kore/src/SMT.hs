@@ -227,7 +227,7 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: LoggerT IO a }
-    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (Functor, Applicative, Alternative, Monad, MonadIO)
     deriving (MonadCatch, MonadThrow, MonadMask)
 
 runNoSMT :: NoSMT a -> LoggerT IO a
@@ -277,6 +277,7 @@ access to the solver for a sequence of commands.
 newtype SMT a = SMT { getSMT :: ReaderT SolverInitAndHandle (LoggerT IO) a }
     deriving
         ( Applicative
+        , Alternative
         , Functor
         , Monad
         , MonadIO

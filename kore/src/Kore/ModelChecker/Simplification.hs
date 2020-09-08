@@ -9,6 +9,9 @@ module Kore.ModelChecker.Simplification
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -48,6 +51,7 @@ import qualified Pretty
 
 checkImplicationIsTop
     :: MonadSimplify m
+    => MonadThrow m
     => Pattern VariableName
     -> TermLike VariableName
     -> m Bool

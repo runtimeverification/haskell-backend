@@ -229,7 +229,7 @@ instance MonadLog log => MonadLog (Strict.StateT state log)
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LoggerEnv m) m a }
-    deriving (Functor, Applicative, Monad)
+    deriving (Functor, Applicative, Alternative, Monad)
     deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 data LoggerEnv monad =

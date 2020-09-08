@@ -9,6 +9,10 @@ module Kore.Step.Simplification.OrPattern
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
+
 import Kore.Internal.Condition
     ( Condition
     )
@@ -65,7 +69,10 @@ import qualified Logic
 
 simplifyConditionsWithSmt
     ::  forall variable simplifier
-    .   (MonadSimplify simplifier, InternalVariable variable)
+    .   ( MonadSimplify simplifier
+        , MonadThrow simplifier
+        , InternalVariable variable
+        )
     => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)

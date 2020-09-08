@@ -17,6 +17,9 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT (..)
     )
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Numeric.Natural
     ( Natural
     )
@@ -125,7 +128,7 @@ searchGraph Config { searchType, bound } match executionGraph = do
 
 matchWith
     :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
+    .  (InternalVariable variable, MonadSimplify m, MonadThrow m)
     => SideCondition variable
     -> Pattern variable
     -> Pattern variable

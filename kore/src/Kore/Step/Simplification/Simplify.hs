@@ -40,6 +40,9 @@ import Prelude.Kore
 
 import Control.DeepSeq
 import qualified Control.Monad as Monad
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import Control.Monad.Morph
     ( MFunctor
     )
@@ -313,7 +316,10 @@ newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         { runBuiltinAndAxiomSimplifier
             :: forall variable simplifier
-            .  (InternalVariable variable, MonadSimplify simplifier)
+            .   ( InternalVariable variable
+                , MonadSimplify simplifier
+                , MonadThrow simplifier
+                )
             => TermLike variable
             -> SideCondition variable
             -> simplifier (AttemptedAxiom variable)

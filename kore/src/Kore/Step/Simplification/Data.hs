@@ -96,7 +96,7 @@ A @Simplifier@ can write to the log through 'HasLog'.
 newtype SimplifierT smt a = SimplifierT
     { runSimplifierT :: ReaderT (Env (SimplifierT smt)) smt a
     }
-    deriving (Functor, Applicative, Monad, MonadSMT)
+    deriving (Functor, Applicative, Alternative, Monad, MonadSMT)
     deriving (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving (MonadReader (Env (SimplifierT smt)))
 

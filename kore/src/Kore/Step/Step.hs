@@ -32,6 +32,9 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( MonadThrow
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -240,6 +243,7 @@ applyInitialConditions
     :: forall simplifier variable
     .  InternalVariable variable
     => MonadSimplify simplifier
+    => MonadThrow simplifier
     => Condition variable
     -- ^ Initial conditions
     -> Condition variable
@@ -258,7 +262,7 @@ applyInitialConditions initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition SideCondition.top (initial <> unification)
         & MultiOr.gather
-    evaluated <- SMT.Evaluator.filterMultiOr applied
+    evaluated <- lift $ SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
