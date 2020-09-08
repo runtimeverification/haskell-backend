@@ -3,7 +3,6 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_firstFullEvaluation
     , test_simplifierWithFallback
     , test_builtinEvaluation
-    , test_attemptEquations
     , test_iterateUntil
     ) where
 
@@ -16,7 +15,6 @@ import Control.Monad.Trans.State.Strict
     , modify
     , runState
     )
-import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Identity
     ( Identity (..)
     )
@@ -57,23 +55,23 @@ import Test.Tasty.HUnit.Ext
 
 test_iterateUntil :: [TestTree]
 test_iterateUntil =
-    [ testCase "TESTING Empty list" $ do
+    [ testCase "Empty list" $ do
         let actual = iterateUntil f [] & runIdentity
             expected = Left Nothing
         assertEqual "" expected actual
-    , testCase "TESTING One error result" $ do
+    , testCase "One error result" $ do
         let actual = iterateUntil g [False] & runIdentity
             expected = Left [()]
         assertEqual "" expected actual
-    , testCase "TESTING Two error results" $ do
+    , testCase "Two error results" $ do
         let actual = iterateUntil g [False, False] & runIdentity
             expected = Left [(), ()]
         assertEqual "" expected actual
-    , testCase "TESTING One good result" $ do
+    , testCase "One good result" $ do
         let actual = iterateUntil g [True] & runIdentity
             expected = Right ()
         assertEqual "" expected actual
-    , testCase "TESTING Stops at first good result" $ do
+    , testCase "Stops at first good result" $ do
         let actual =
                 iterateUntil h [False, True, False, False, True]
                 & flip runState 0
@@ -96,37 +94,6 @@ test_iterateUntil =
     h False = do
         modify (+ 1)
         return . Left $ [()]
-
-test_attemptEquations :: [TestTree]
-test_attemptEquations =
-    [ testCase "Stop at first applied equation" $ do
-        let isC =
-                axiom
-                    (Mock.functionalConstr10 (mkElemVar Mock.x))
-                    Mock.c
-                    ( makeEqualsPredicate_
-                        (mkElemVar Mock.x)
-                        Mock.c
-                    )
-            isD =
-                axiom
-                    (Mock.functionalConstr10 (mkElemVar Mock.x))
-                    Mock.d
-                    ( makeEqualsPredicate_
-                        (mkElemVar Mock.x)
-                        Mock.d
-                    )
-            term :: TermLike VariableName
-            term = Mock.functionalConstr10 Mock.c
-        results <-
-            attemptEquations
-                [isC, isD]
-                term
-                (SideCondition.assumeTruePredicate makeTruePredicate_)
-            & runSimplifier Mock.env
-            & (fmap . fmap) (Bifunctor.bimap (const ()) (const ()))
-        assertEqual "" [Right ()] results
-    ]
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =

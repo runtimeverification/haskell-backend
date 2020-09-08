@@ -14,7 +14,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , firstFullEvaluation
     , simplifierWithFallback
     -- * For testing
-    , attemptEquations
     , iterateUntil
     ) where
 
@@ -30,15 +29,11 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
-    ( AttemptEquationError
-    , Equation
+    ( Equation
     )
 import qualified Kore.Equation as Equation
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
@@ -75,66 +70,45 @@ definitionEvaluation
     :: [Equation VariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
-    BuiltinAndAxiomSimplifier $ \term condition ->
-        attemptEquations equations term condition
-        >>= processResults condition
-  where
-    processResults condition =
-        partitionEithers >>> \case
-            (_, applied : _) -> do
-                results <- applied
+    BuiltinAndAxiomSimplifier $ \term condition -> do
+        let equations' =
+                Equation.mapVariables (pure fromVariableName)
+                <$> equations
+            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
+        let -- Attempt an equation, pairing it with its result, if applicable.
+            attemptEquation equation =
+                Equation.attemptEquation condition term' equation
+                >>= return . Bifunctor.bimap (Option . Just . Min) apply
+              where
+                apply = Equation.applyEquation condition equation
+        result <- iterateUntil attemptEquation equations'
+        case result of
+            Right applicable -> do
+                results <- applicable
                 (return . Applied) AttemptedAxiomResults
                     { results
                     , remainders = OrPattern.bottom
                     }
-            (errors, []) ->
-                case minError of
+            Left minError ->
+                case fmap getMin (getOption minError) of
                     Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
                     _ -> return NotApplicable
-              where
-                minError =
-                    (fmap getMin . getOption)
-                    (foldMap (Option . Just . Min) errors)
-
-attemptEquations
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => [Equation VariableName]
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier
-        [ Either
-            (AttemptEquationError variable)
-            (simplifier (OrPattern variable))
-        ]
-attemptEquations equations term condition = do
-    let equations' =
-            Equation.mapVariables (pure fromVariableName)
-            <$> equations
-        term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-    let -- Attempt an equation, pairing it with its result, if applicable.
-        attemptEquation equation =
-            Equation.attemptEquation condition term' equation
-            >>= return . Bifunctor.second apply
-          where
-            apply = Equation.applyEquation condition equation
-    traverse attemptEquation equations'
 
 iterateUntil
-    :: forall input error result m
-    .  Monad m
+    :: forall input error result monad
+    .  Monad monad
     => Monoid error
-    => (input -> m (Either error result))
+    => (input -> monad (Either error result))
     -> [input]
-    -> m (Either error result)
+    -> monad (Either error result)
 iterateUntil _ [] = return . Left $ mempty
-iterateUntil action (current : rest) = do
-    result <- action current
-    either appendErrorAndContinue (return . Right) result
+iterateUntil action (current : rest) =
+    action current
+    >>= either appendErrorAndContinue (return . Right)
   where
-    appendErrorAndContinue :: error -> m (Either error result)
+    appendErrorAndContinue :: error -> monad (Either error result)
     appendErrorAndContinue err =
         Bifunctor.first (mappend err)
         <$> iterateUntil action rest
