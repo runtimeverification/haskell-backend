@@ -123,14 +123,21 @@ attemptEquations equations term condition = do
     traverse attemptEquation equations'
 
 iterateUntil
-    :: Monad m
+    :: forall input error result m
+    .  Monad m
     => Monoid error
     => (input -> m (Either error result))
     -> [input]
     -> m (Either error result)
-iterateUntil action [] = return . Left $ mempty
-iterateUntil action (current : rest) =
-    action current
+iterateUntil _ [] = return . Left $ mempty
+iterateUntil action (current : rest) = do
+    result <- action current
+    either appendErrorAndContinue (return . Right) result
+  where
+    appendErrorAndContinue :: error -> m (Either error result)
+    appendErrorAndContinue err =
+        Bifunctor.first (mappend err)
+        <$> iterateUntil action rest
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
