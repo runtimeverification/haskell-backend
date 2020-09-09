@@ -102,40 +102,41 @@ test_iterateUntil =
 
 test_attemptEquations :: [TestTree]
 test_attemptEquations =
-    [ testCase "TESTING" $ do
+    [ testCase "Stops attempting equations at first successful result" $ do
         counter <- newIORef (0 :: Int)
-        let attemptEquationAndAccumulateErrors' cond t err equation = do
-                liftIO $ modifyIORef' counter (+ 1)
-                attemptEquationAndAccumulateErrors cond t err equation
-            condition =
+        let condition =
                 SideCondition.assumeTruePredicate makeTruePredicate_
             term = Mock.functionalConstr10 Mock.a
             equations =
-                    [ axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        Mock.c
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c)
-                    , axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        Mock.a
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
-                    , axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        Mock.b
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b)
-                    , axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        Mock.a
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
-                    ]
+                [ notApplicable1, applicable, notApplicable2, applicable
+                ]
         _ <-
             attemptEquations
-                (attemptEquationAndAccumulateErrors' condition term)
+                (attemptEquationAndAccumulateErrors' counter condition term)
                 equations
             & runSimplifier Mock.env
         updatedCounter <- readIORef counter
         assertEqual "" updatedCounter 2
     ]
+  where
+    attemptEquationAndAccumulateErrors' counter condition term err equation = do
+        liftIO $ modifyIORef' counter (+ 1)
+        attemptEquationAndAccumulateErrors condition term err equation
+    applicable =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.a
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+    notApplicable1 =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.c
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c)
+    notApplicable2 =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.b
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
