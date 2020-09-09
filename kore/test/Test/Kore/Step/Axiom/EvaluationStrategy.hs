@@ -4,6 +4,7 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_simplifierWithFallback
     , test_builtinEvaluation
     , test_iterateUntil
+    , test_attemptEquations
     ) where
 
 import Prelude.Kore
@@ -17,6 +18,11 @@ import Control.Monad.Trans.State.Strict
     )
 import Data.Functor.Identity
     ( Identity (..)
+    )
+import Data.IORef
+    ( modifyIORef'
+    , newIORef
+    , readIORef
     )
 
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -93,6 +99,43 @@ test_iterateUntil =
         if input
             then return . Right $ ()
             else return . Left $ [()]
+
+test_attemptEquations :: [TestTree]
+test_attemptEquations =
+    [ testCase "TESTING" $ do
+        counter <- newIORef (0 :: Int)
+        let attemptEquationAndAccumulateErrors' cond t err equation = do
+                liftIO $ modifyIORef' counter (+ 1)
+                attemptEquationAndAccumulateErrors cond t err equation
+            condition =
+                SideCondition.assumeTruePredicate makeTruePredicate_
+            term = Mock.functionalConstr10 Mock.a
+            equations =
+                    [ axiom
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        Mock.c
+                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c)
+                    , axiom
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        Mock.a
+                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+                    , axiom
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        Mock.b
+                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b)
+                    , axiom
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        Mock.a
+                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+                    ]
+        _ <-
+            attemptEquations
+                (attemptEquationAndAccumulateErrors' condition term)
+                equations
+            & runSimplifier Mock.env
+        updatedCounter <- readIORef counter
+        assertEqual "" updatedCounter 2
+    ]
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
