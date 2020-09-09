@@ -66,7 +66,7 @@ test_attemptEquations =
                 equations
             & runSimplifier Mock.env
         updatedCounter <- readIORef counter
-        assertEqual "" updatedCounter 2
+        assertEqual "" 2 updatedCounter
     ]
   where
     attemptEquationAndAccumulateErrors' counter condition term err equation = do
