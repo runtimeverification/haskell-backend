@@ -15,11 +15,20 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     -- * For testing
     , iterateUntil
+    , attemptEquationAndAccumulateErrors
+    , attemptEquations
     ) where
 
 import Prelude.Kore
 
+import Control.Monad.Except
+    ( ExceptT (..)
+    , runExceptT
+    )
 import qualified Data.Bifunctor as Bifunctor
+import Data.EitherR
+    ( ExceptRT (..)
+    )
 import qualified Data.Foldable as Foldable
 import Data.Semigroup
     ( Min (..)
@@ -29,11 +38,15 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
-    ( Equation
+    ( AttemptEquationError
+    , Equation
     )
 import qualified Kore.Equation as Equation
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
@@ -48,6 +61,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     )
 import Kore.Unparser
     ( unparse
+    )
+import Kore.Variables.Target
+    ( Target
     )
 import qualified Kore.Variables.Target as Target
 import qualified Pretty
@@ -75,13 +91,10 @@ definitionEvaluation equations =
                 Equation.mapVariables (pure fromVariableName)
                 <$> equations
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        let -- Attempt an equation, pairing it with its result, if applicable.
-            attemptEquation equation =
-                Equation.attemptEquation condition term' equation
-                >>= return . Bifunctor.bimap (Option . Just . Min) apply
-              where
-                apply = Equation.applyEquation condition equation
-        result <- iterateUntil attemptEquation equations'
+        result <-
+            attemptEquations
+                (attemptEquationAndAccumulateErrors condition term')
+                equations'
         case result of
             Right applicable -> do
                 results <- applicable
@@ -95,6 +108,47 @@ definitionEvaluation equations =
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
                     _ -> return NotApplicable
+
+attemptEquationAndAccumulateErrors
+    :: (InternalVariable variable, MonadSimplify simplifier)
+    => SideCondition variable
+    -> TermLike (Target variable)
+    -> Option (Min (AttemptEquationError variable))
+    -> Equation variable
+    -> ExceptRT
+        (simplifier (OrPattern variable))
+        simplifier
+        (Option (Min (AttemptEquationError variable)))
+attemptEquationAndAccumulateErrors condition term err equation =
+    mappend err <$> attemptEquation
+  where
+    attemptEquation =
+        ExceptRT . ExceptT
+        $ Equation.attemptEquation condition term equation
+        >>= return . Bifunctor.bimap (Option . Just . Min) apply
+    apply = Equation.applyEquation condition equation
+
+attemptEquations
+    :: MonadSimplify simplifier
+    => ( Option (Min (AttemptEquationError variable))
+        -> Equation variable
+        -> ExceptRT
+            (simplifier (OrPattern variable))
+            simplifier
+            (Option (Min (AttemptEquationError variable)))
+       )
+    -> [Equation variable]
+    -> simplifier
+        (Either
+            (Option (Min (AttemptEquationError variable)))
+            (simplifier (OrPattern variable))
+        )
+attemptEquations accumulator equations =
+    Foldable.foldlM
+        accumulator
+        (Option Nothing)
+        equations
+    & runExceptRT & runExceptT
 
 iterateUntil
     :: forall input error result monad
