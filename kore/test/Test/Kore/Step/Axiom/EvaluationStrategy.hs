@@ -3,7 +3,6 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_firstFullEvaluation
     , test_simplifierWithFallback
     , test_builtinEvaluation
-    , test_iterateUntil
     , test_attemptEquations
     ) where
 
@@ -11,14 +10,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Monad.Trans.State.Strict
-    ( State
-    , modify
-    , runState
-    )
-import Data.Functor.Identity
-    ( Identity (..)
-    )
 import Data.IORef
     ( modifyIORef'
     , newIORef
@@ -58,47 +49,6 @@ import Test.Kore.Equation.Application
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-
-test_iterateUntil :: [TestTree]
-test_iterateUntil =
-    [ testCase "Empty list" $ do
-        let actual = iterateUntil f [] & runIdentity
-            expected = Left Nothing
-        assertEqual "" expected actual
-    , testCase "One error result" $ do
-        let actual = iterateUntil g [False] & runIdentity
-            expected = Left [()]
-        assertEqual "" expected actual
-    , testCase "Two error results" $ do
-        let actual = iterateUntil g [False, False] & runIdentity
-            expected = Left [(), ()]
-        assertEqual "" expected actual
-    , testCase "One good result" $ do
-        let actual = iterateUntil g [True] & runIdentity
-            expected = Right ()
-        assertEqual "" expected actual
-    , testCase "Stops at first good result" $ do
-        let actual =
-                iterateUntil h [False, True, False, False, True]
-                & flip runState 0
-            expected = (Right (), 2)
-        assertEqual "" expected actual
-    ]
-  where
-    f :: Bool -> Identity (Either (Maybe ()) ())
-    f True = return . Right $ ()
-    f False = return . Left $ Just ()
-
-    g :: Bool -> Identity (Either [()] ())
-    g True = return . Right $ ()
-    g False = return . Left $ [()]
-
-    h :: Bool -> State Int (Either [()] ())
-    h input = do
-        modify (+ 1)
-        if input
-            then return . Right $ ()
-            else return . Left $ [()]
 
 test_attemptEquations :: [TestTree]
 test_attemptEquations =

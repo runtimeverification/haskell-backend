@@ -14,7 +14,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , firstFullEvaluation
     , simplifierWithFallback
     -- * For testing
-    , iterateUntil
     , attemptEquationAndAccumulateErrors
     , attemptEquations
     ) where
@@ -149,23 +148,6 @@ attemptEquations accumulator equations =
         (Option Nothing)
         equations
     & runExceptRT & runExceptT
-
-iterateUntil
-    :: forall input error result monad
-    .  Monad monad
-    => Monoid error
-    => (input -> monad (Either error result))
-    -> [input]
-    -> monad (Either error result)
-iterateUntil _ [] = return . Left $ mempty
-iterateUntil action (current : rest) =
-    action current
-    >>= either appendErrorAndContinue (return . Right)
-  where
-    appendErrorAndContinue :: error -> monad (Either error result)
-    appendErrorAndContinue err =
-        Bifunctor.first (mappend err)
-        <$> iterateUntil action rest
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
