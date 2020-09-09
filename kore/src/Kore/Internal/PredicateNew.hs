@@ -118,6 +118,7 @@ import Kore.Attribute.Pattern.Simplified
     ( Simplified(Simplified, NotSimplified)
     )
 import Kore.Attribute.Synthetic
+import Kore.Variables.Fresh
 
 import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -733,43 +734,84 @@ contain none of the targeted variables.
 
  -}
 
- {-
 substitute
     :: InternalVariable variable
     => Map (SomeVariableName variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable
 substitute subst pred =
-        substituteNone <|> substituteBinder
+        substituteNone <|> substituteBinder <|> substituteTermLike
         & fromMaybe substituteDefault
   where
     freeVars = FreeVariables.toNames (freeVariables pred)
     subst' = Map.intersection subst (Map.fromSet id freeVars)
-    substituteNone :: Maybe (Predicate variable)
+    originalVariables = Set.difference freeVars (Map.keysSet subst')
+    targetFreeVariables = Foldable.foldl' Set.union Set.empty
+        (FreeVariables.toNames <$> freeVariables <$> subst')
+    freeVariables' = Set.union originalVariables targetFreeVariables
+    avoidCapture = \x -> fromMaybe x (refreshElementVariable freeVariables' x)
+
     substituteNone
-        | Map.null subst' = pure termLike
+        | Map.null subst' = pure pred
         | otherwise       = empty
-    substituteBinder :: Maybe (Predicate variable)
-    substituteBinder =
-        runIdentity <$> matchWith traverseBinder worker termLike
-      where
-        worker
-            :: Binder (SomeVariable variable) patternType
-            -> Identity (Binder (SomeVariable variable) patternType)
-        worker Binder { binderVariable, binderChild } = do
-            let
-                binderVariable' = avoidCapture binderVariable
-                -- Rename the freshened bound variable in the subterms.
-                subst'' = renaming binderVariable binderVariable' subst'
-                return Binder
-                { binderVariable = fromMaybe binderVariable binderVariable'
-                , binderChild = substituteWorker subst'' binderChild
+
+    substituteBinder = case predF of
+        ExistsF (exists'@(Exists {existsVariable = var, existsChild = child}))
+            | Set.notMember (inject (variableName var)) targetFreeVariables -> empty
+            | otherwise -> let newVar = avoidCapture var in
+                           pure $ synthesize $ ExistsF $ exists'
+                { existsVariable = newVar
+                , existsChild = substitute
+                    (Map.insert
+                        (inject (variableName var))
+                        (synthesize $ TermLike.VariableF $ Const $ mkSomeVariable newVar)
+                        subst'
+                    )
+                    child
                 }
-    substituteDefault =
-        synthesize (substituteWorker subst' <$> termLikeHead)
+        ForallF (forall'@(Forall {forallVariable = var, forallChild = child}))
+            | Set.notMember (inject (variableName var)) targetFreeVariables -> empty
+            | otherwise -> let newVar = avoidCapture var in
+                           pure $ synthesize $ ForallF $ forall'
+                { forallVariable = newVar
+                , forallChild = substitute
+                    (Map.insert
+                        (inject (variableName var))
+                        (synthesize $ TermLike.VariableF $ Const $ mkSomeVariable newVar)
+                        subst'
+                    )
+                    child
+                }
+        _ -> empty
       where
-        _ :< termLikeHead = Recursive.project termLike
--}
+        _ :< predF = Recursive.project pred
+
+    substituteTermLike = case predF of
+        CeilF (ceil'@(Ceil {ceilChild})) ->
+            pure $ synthesize $ CeilF $ ceil'
+            { ceilChild = TermLike.substitute subst' ceilChild
+            }
+        EqualsF (equals'@(Equals {equalsFirst, equalsSecond})) ->
+            pure $ synthesize $ EqualsF $ equals'
+            { equalsFirst  = TermLike.substitute subst' equalsFirst
+            , equalsSecond = TermLike.substitute subst' equalsSecond
+            }
+        FloorF (floor'@(Floor {floorChild})) ->
+            pure $ synthesize $ FloorF $ floor'
+            { floorChild = TermLike.substitute subst' floorChild
+            }
+        InF (in'@(In {inContainedChild, inContainingChild})) ->
+            pure $ synthesize $ InF $ in'
+            { inContainedChild  = TermLike.substitute subst' inContainedChild
+            , inContainingChild = TermLike.substitute subst' inContainingChild
+            }
+        _ -> empty
+      where
+        _ :< predF = Recursive.project pred
+
+    substituteDefault = synthesize (substitute subst' <$> predF)
+      where
+        _ :< predF = Recursive.project pred
 
 depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth
