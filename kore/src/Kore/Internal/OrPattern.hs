@@ -213,13 +213,15 @@ targetBinder Binder { binderVariable, binderChild } =
             targetIfEqual
             $ unElementVariableName . variableName $ binderVariable
         newChild =
-            Pattern.mapVariables
-                AdjSomeVariableName
-                { adjSomeVariableNameElement =
-                    ElementVariableName targetBoundVariables
-                , adjSomeVariableNameSet = SetVariableName NonTarget
-                }
-            <$> binderChild
+            MultiOr.map
+                (Pattern.mapVariables
+                    AdjSomeVariableName
+                    { adjSomeVariableNameElement =
+                        ElementVariableName targetBoundVariables
+                    , adjSomeVariableNameSet = SetVariableName NonTarget
+                    }
+                )
+                binderChild
      in Binder
          { binderVariable = newVar
          , binderChild = newChild

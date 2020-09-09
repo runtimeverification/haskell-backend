@@ -70,10 +70,9 @@ simplify
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition application = do
-    evaluated <-
-        traverse
-            (makeAndEvaluateApplications sideCondition symbol)
-            childrenCrossProduct
+    evaluated <- OrPattern.observeAllT $ do
+        result <- Logic.scatter childrenCrossProduct
+        lift $ makeAndEvaluateApplications sideCondition symbol result
     return (OrPattern.flatten evaluated)
   where
     Application

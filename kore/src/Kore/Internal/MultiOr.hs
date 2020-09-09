@@ -73,17 +73,14 @@ patterns.
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
     deriving
-        ( Alternative
-        , Applicative
-        , Eq
+        ( Eq
         , Foldable
-        , Functor
         , GHC.Generic
         , IsList
-        , Monad
         , Ord
         , Show
-        , Traversable
+        -- TODO: these instances are unsafe
+        , Functor, Applicative, Traversable, Monad
         )
 
 instance SOP.Generic (MultiOr child)
@@ -219,7 +216,9 @@ fullCrossProduct [] = MultiOr [[]]
 fullCrossProduct ors =
     foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
   where
-    lastOrsWithLists = fmap (: []) (last ors)
+    -- TODO: this isn't safe
+    lastOrsWithLists =
+        MultiOr $ fmap (: []) (getMultiOr (last ors))
 
 {-| 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
