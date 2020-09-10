@@ -72,7 +72,7 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
   | Just value2 <- Bool.matchBool termLike2
   = lift $ do
     solution <- unifyChildren operand1 operand2 & OrPattern.gather
-    let solution' = fmap eraseTerm solution
+    let solution' = OrPattern.map eraseTerm solution
     (if value2 then pure else notSimplifier SideCondition.top) solution'
         >>= Unify.scatter
   | otherwise = empty

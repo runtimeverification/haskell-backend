@@ -277,7 +277,7 @@ makeEvaluate
     sideCondition
   = do
     result <- makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
-    return (Pattern.fromCondition_ <$> result)
+    return (MultiOr.map Pattern.fromCondition_ result)
 
 makeEvaluate
     first@Conditional { term = firstTerm }
@@ -334,7 +334,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
-    return (Pattern.fromCondition_ <$> result)
+    return (MultiOr.map Pattern.fromCondition_ result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 

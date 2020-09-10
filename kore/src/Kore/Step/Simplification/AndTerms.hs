@@ -369,7 +369,7 @@ bottomTermEquals
                 , predicate =
                     makeNotPredicate
                     $ OrCondition.toPredicate
-                    $ Condition.toPredicate <$> secondCeil
+                    $ OrPattern.map Condition.toPredicate secondCeil
                 , substitution = mempty
                 }
 bottomTermEquals _ _ _ = empty

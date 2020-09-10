@@ -53,7 +53,7 @@ simplifyTopConfiguration
     -> simplifier (OrPattern variable)
 simplifyTopConfiguration patt = do
     simplified <- simplify SideCondition.topTODO patt
-    return (removeTopExists <$> simplified)
+    return (OrPattern.map removeTopExists simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =

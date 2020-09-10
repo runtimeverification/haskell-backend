@@ -142,7 +142,7 @@ makeEvaluateNot
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
-        (Pattern.fromTermLike <$> makeTermNot term)
+        (MultiOr.map Pattern.fromTermLike $ makeTermNot term)
         (makeEvaluatePredicate condition
             & Pattern.fromCondition (termLikeSort term)
             & MultiOr.singleton
@@ -216,14 +216,21 @@ distributeNot notOr@Not { notChild } =
 {- | Distribute 'MultiAnd' over 'MultiOr'.
  -}
 distributeAnd
-    :: MultiAnd (MultiOr child)
+    :: Ord child
+    => TopBottom child
+    => MultiAnd (MultiOr child)
     -> MultiOr (MultiAnd child)
-distributeAnd = sequenceA
+distributeAnd =
+    MultiOr.map MultiAnd.make
+    . MultiOr.fullCrossProduct
+    . MultiAnd.extractPatterns
 
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}
 scatterAnd
-    :: MultiAnd (MultiOr child)
+    :: Ord child
+    => TopBottom child
+    => MultiAnd (MultiOr child)
     -> LogicT m (MultiAnd child)
 scatterAnd = scatter . distributeAnd
 
