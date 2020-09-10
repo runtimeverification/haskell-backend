@@ -13,6 +13,11 @@ module Kore.Step.Simplification.DomainValue
 
 import Prelude.Kore
 
+import Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
+
 import Kore.Internal.Conditional
     ( Conditional
     )
@@ -24,24 +29,31 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
 -}
 simplify
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => DomainValue Sort (OrPattern variable)
     -> OrPattern variable
-simplify builtin@DomainValue {domainValueSort} =
-    OrPattern.coerceSort domainValueSort $ MultiOr.filterOr $ do
-        child <- simplifyDomainValue builtin
-        return (markSimplified . mkDomainValue <$> child)
+simplify builtin@DomainValue { domainValueSort } =
+    OrPattern.coerceSort domainValueSort
+    . MultiOr.map (fmap (markSimplified . mkDomainValue))
+    $ simplifyDomainValue builtin
 
 simplifyDomainValue
     :: InternalVariable variable
     => DomainValue Sort (OrPattern variable)
     -> MultiOr (Conditional variable (DomainValue Sort (TermLike variable)))
-simplifyDomainValue _ext = do
-    _ext <- sequence _ext
-    return (sequenceA _ext)
+simplifyDomainValue _ext@DomainValue { domainValueChild } =
+    MultiOr.map
+        ( sequenceA
+        . flip (Lens.set (field @"domainValueChild")) _ext
+        )
+        domainValueChild

@@ -80,7 +80,7 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
         , Ord
         , Show
         -- TODO: these instances are unsafe
-        , Functor, Applicative, Traversable, Monad
+        -- , Functor, Applicative, Traversable, Monad
         )
 
 instance SOP.Generic (MultiOr child)
