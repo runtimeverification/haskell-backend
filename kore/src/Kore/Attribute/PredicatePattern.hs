@@ -27,14 +27,23 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern
-    ( Pattern
+    ( Pattern(Pattern)
     )
 import Kore.Attribute.Pattern.FreeVariables hiding
     ( freeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
     ( freeVariables
+    )
+import Kore.Attribute.Pattern.Simplified hiding
+    ( isFullySimplified
+    , isSimplified
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
+    ( isFullySimplified
+    , isSimplified
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -45,6 +54,7 @@ import Kore.Syntax.Variable
 data PredicatePattern variable =
     PredicatePattern
         { freeVariables :: !(FreeVariables variable)
+        , simplified :: !Simplified
         }
     deriving (Eq, GHC.Generic, Show)
 
@@ -64,10 +74,12 @@ instance (Debug variable, Diff variable) => Diff (PredicatePattern variable)
 instance
     ( Functor base
     , Synthetic (FreeVariables variable) base
+    , Synthetic Simplified base
     ) => Synthetic (PredicatePattern variable) base
   where
     synthetic base = PredicatePattern
         { freeVariables = synthetic (freeVariables <$> base)
+        , simplified = synthetic (simplified <$> base)
         }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
@@ -112,4 +124,4 @@ instance HasFreeVariables (PredicatePattern variable) variable where
 
 
 fromPattern :: Pattern variable -> PredicatePattern variable
-fromPattern p = PredicatePattern {freeVariables = FreeVariables.freeVariables p}
+fromPattern Pattern {freeVariables, simplified} = PredicatePattern freeVariables simplified

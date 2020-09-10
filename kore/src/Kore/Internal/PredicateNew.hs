@@ -749,17 +749,16 @@ substitute subst pred =
     targetFreeVariables = Foldable.foldl' Set.union Set.empty
         (FreeVariables.toNames <$> freeVariables <$> subst')
     freeVariables' = Set.union originalVariables targetFreeVariables
-    avoidCapture = \x -> fromMaybe x (refreshElementVariable freeVariables' x)
+    avoidCapture = refreshElementVariable . freeVariables'
 
     substituteNone
         | Map.null subst' = pure pred
         | otherwise       = empty
 
     substituteBinder = case predF of
-        ExistsF (exists'@(Exists {existsVariable = var, existsChild = child}))
-            | Set.notMember (inject (variableName var)) targetFreeVariables -> empty
-            | otherwise -> let newVar = avoidCapture var in
-                           pure $ synthesize $ ExistsF $ exists'
+        ExistsF (exists'@(Exists {existsVariable = var, existsChild = child})) -> do
+            newVar <- avoidCapture var
+            return $ synthesize $ ExistsF $ exists'
                 { existsVariable = newVar
                 , existsChild = substitute
                     (Map.insert
@@ -769,10 +768,9 @@ substitute subst pred =
                     )
                     child
                 }
-        ForallF (forall'@(Forall {forallVariable = var, forallChild = child}))
-            | Set.notMember (inject (variableName var)) targetFreeVariables -> empty
-            | otherwise -> let newVar = avoidCapture var in
-                           pure $ synthesize $ ForallF $ forall'
+        ForallF (forall'@(Forall {forallVariable = var, forallChild = child})) -> do
+            newVar <- avoidCapture var
+            return $ synthesize $ ForallF $ forall'
                 { forallVariable = newVar
                 , forallChild = substitute
                     (Map.insert
