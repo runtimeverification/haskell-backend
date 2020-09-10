@@ -29,9 +29,6 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
