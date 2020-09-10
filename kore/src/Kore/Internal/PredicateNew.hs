@@ -520,25 +520,19 @@ makeForallPredicate v p = synthesize $ ForallF Forall
     , forallChild = p
     }
 
--- Note that we simplify the results of the following 2 functions
--- using nubOrd since we can't get an accurate tree shape anyway
--- because we include 'makeTruePredicate' in the resulting tree
--- (mircea.sebe)
 makeMultipleAndPredicate
     :: (InternalVariable variable, Ord (Predicate variable))
     => [Predicate variable]
     -> Predicate variable
-makeMultipleAndPredicate =
-    foldl' makeAndPredicate makeTruePredicate . nubOrd
-    -- 'and' is idempotent so we eliminate duplicates
+makeMultipleAndPredicate [] = makeTruePredicate
+makeMultipleAndPredicate (p : ps) = foldl' makeAndPredicate p ps
 
 makeMultipleOrPredicate
     :: (InternalVariable variable, Ord (Predicate variable))
     => [Predicate variable]
     -> Predicate variable
-makeMultipleOrPredicate =
-    foldl' makeOrPredicate makeFalsePredicate . nubOrd
-    -- 'or' is idempotent so we eliminate duplicates
+makeMultipleOrPredicate [] = makeFalsePredicate
+makeMultipleOrPredicate (p : ps) = foldl' makeOrPredicate p ps
 
 makeMultipleExists
     :: (Foldable f, InternalVariable variable)
