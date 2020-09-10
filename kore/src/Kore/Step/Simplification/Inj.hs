@@ -9,8 +9,9 @@ module Kore.Step.Simplification.Inj
 
 import Prelude.Kore
 
-import Data.Functor.Identity
-    ( runIdentity
+import Control.Lens as Lens
+import Data.Generics.Product
+    ( field
     )
 
 import Kore.Internal.Condition as Condition
@@ -29,7 +30,6 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
     ( TopBottom
     )
-import qualified Logic
 
 {- |'simplify' simplifies an 'Inj' of 'OrPattern'.
 
@@ -50,9 +50,7 @@ distributeOr
     => Inj (MultiOr a)
     -> MultiOr (Inj a)
 distributeOr inj@Inj { injChild } =
-    runIdentity . MultiOr.observeAllT $ do
-        child <- Logic.scatter injChild
-        return inj { injChild = child }
+    MultiOr.map (flip (Lens.set (field @"injChild")) inj) injChild
 
 liftConditional
     :: InternalVariable variable
