@@ -315,7 +315,7 @@ verifyClaim
                 <$> states
          in
             Monad.Except.throwError
-            . fmap getRewritingPattern
+            . OrPattern.map getRewritingPattern
             . OrPattern.fromPatterns
             $ finalPattern
 

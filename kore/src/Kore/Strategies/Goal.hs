@@ -831,7 +831,7 @@ simplify' lensClaimPattern goal = do
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
-            Foldable.asum (pure <$> configs)
+            Foldable.asum (pure <$> MultiOr.extractPatterns configs)
 
     simplifyRightHandSide sideCondition =
         Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
