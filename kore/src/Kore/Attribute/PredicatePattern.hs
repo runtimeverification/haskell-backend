@@ -12,7 +12,7 @@ module Kore.Attribute.PredicatePattern
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
-    , fromPattern
+    -- , fromPattern
     -- * Re-exports
     , module Kore.Attribute.Pattern.FreeVariables
     ) where
@@ -123,5 +123,5 @@ instance HasFreeVariables (PredicatePattern variable) variable where
     freeVariables = freeVariables
 
 
-fromPattern :: Pattern variable -> PredicatePattern variable
-fromPattern Pattern {freeVariables, simplified} = PredicatePattern freeVariables simplified
+-- fromPattern :: Pattern variable -> PredicatePattern variable
+-- fromPattern Pattern {freeVariables, simplified} = PredicatePattern freeVariables simplified

@@ -749,7 +749,7 @@ substitute subst pred =
     targetFreeVariables = Foldable.foldl' Set.union Set.empty
         (FreeVariables.toNames <$> freeVariables <$> subst')
     freeVariables' = Set.union originalVariables targetFreeVariables
-    avoidCapture = refreshElementVariable . freeVariables'
+    avoidCapture = refreshElementVariable freeVariables'
 
     substituteNone
         | Map.null subst' = pure pred
