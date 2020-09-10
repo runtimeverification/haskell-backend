@@ -58,10 +58,7 @@ data Result rule config =
         { appliedRule :: !rule
         , result      :: !(MultiOr config)
         }
-    deriving
-        ( Eq, Foldable, GHC.Generic, Ord, Show
-        , Functor, Traversable
-        )
+    deriving (Eq, Foldable, GHC.Generic, Ord, Show)
 
 {- | Apply a function to the 'appliedRule' of a 'Result'.
 
@@ -79,6 +76,15 @@ mapResult
     -> Result rule config1
     -> Result rule config2
 mapResult f = Lens.over (field @"result") (MultiOr.map f)
+
+traverseResult
+    :: Ord config2
+    => TopBottom config2
+    => Applicative f
+    => (config1 -> f config2)
+    -> Result rule config1
+    -> f (Result rule config2)
+traverseResult f = Lens.traverseOf (field @"result") (MultiOr.traverse f)
 
 {- | The results of applying many rules.
 
@@ -180,15 +186,17 @@ mapConfigs mapResults mapRemainders Results { results, remainders } =
 and 'remainders'.
  -}
 traverseConfigs
-   :: Applicative f
-   => (config1 -> f config2)  -- ^ traverse 'results'
-   -> (config1 -> f config2)  -- ^ traverse 'remainders'
-   -> Results rule config1
-   -> f (Results rule config2)
+    :: Ord config2
+    => TopBottom config2
+    => Applicative f
+    => (config1 -> f config2)  -- ^ traverse 'results'
+    -> (config1 -> f config2)  -- ^ traverse 'remainders'
+    -> Results rule config1
+    -> f (Results rule config2)
 traverseConfigs traverseResults traverseRemainders rs =
     Results
-        <$> (traverse . traverse) traverseResults (results rs)
-        <*> traverse traverseRemainders (remainders rs)
+        <$> (traverse . traverseResult) traverseResults (results rs)
+        <*> MultiOr.traverse traverseRemainders (remainders rs)
 
 toAttemptedAxiom
     :: InternalVariable variable

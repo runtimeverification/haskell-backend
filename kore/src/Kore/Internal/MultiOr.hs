@@ -28,12 +28,14 @@ module Kore.Internal.MultiOr
     , mergeAll
     , singleton
     , map
+    , traverse
     -- * Re-exports
     , Alternative (..)
     ) where
 
 import Prelude.Kore hiding
     ( map
+    , traverse
     )
 
 import Control.DeepSeq
@@ -43,6 +45,7 @@ import Data.List
     ( foldl'
     )
 import qualified Data.Set as Set
+import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import GHC.Exts
     ( IsList
@@ -81,8 +84,6 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
         , IsList
         , Ord
         , Show
-        -- TODO: these instances are unsafe
-        , Functor, Applicative, Traversable, Monad
         )
 
 instance SOP.Generic (MultiOr child)
@@ -373,3 +374,14 @@ map
     -> MultiOr child1
     -> MultiOr child2
 map f = make . fmap f . extractPatterns
+{-# INLINE map #-}
+
+traverse
+    :: Ord child2
+    => TopBottom child2
+    => Applicative f
+    => (child1 -> f child2)
+    -> MultiOr child1
+    -> f (MultiOr child2)
+traverse f = fmap make . Traversable.traverse f . extractPatterns
+{-# INLINE traverse #-}
