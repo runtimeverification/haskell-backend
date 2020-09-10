@@ -22,6 +22,7 @@ module Kore.Internal.MultiOr
     , fullCrossProduct
     , gather
     , observeAllT
+    , observeAll
     , make
     , merge
     , mergeAll
@@ -53,7 +54,8 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Logic
-    ( LogicT
+    ( Logic
+    , LogicT
     , MonadLogic
     )
 import qualified Logic
@@ -359,6 +361,10 @@ gather act = make <$> Logic.gather act
 observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
 observeAllT act = make <$> Logic.observeAllT act
 {-# INLINE observeAllT #-}
+
+observeAll :: (Ord a, TopBottom a) => Logic a -> MultiOr a
+observeAll = make . Logic.observeAll
+{-# INLINE observeAll #-}
 
 map
     :: Ord child2
