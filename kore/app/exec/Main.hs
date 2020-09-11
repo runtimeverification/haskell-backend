@@ -132,7 +132,7 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import qualified Kore.Reachability.Claim as Goal
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
@@ -611,9 +611,9 @@ mainWithOptions execOptions = do
             Nothing -> errorException someException
         throwM someException
 
-    handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
+    handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
     handleWithConfiguration
-        (Goal.WithConfiguration lastConfiguration someException)
+        (Claim.WithConfiguration lastConfiguration someException)
       = do
         liftIO $ renderResult
             execOptions

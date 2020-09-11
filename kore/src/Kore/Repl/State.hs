@@ -115,7 +115,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import qualified Kore.Reachability.Claim as Goal
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -677,7 +677,7 @@ generateInProgressClaims = do
         -> [ReachabilityRule]
         -> [ReachabilityRule]
     notStartedClaims graphs claims =
-        filter (not . Goal.isTrusted)
+        filter (not . Claim.isTrusted)
                 ( (claims !!)
                 . unClaimIndex
                 <$> Set.toList
@@ -710,7 +710,7 @@ currentClaimSort = do
     claim <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
         . Pattern.toTermLike
-        . Goal.getConfiguration
+        . Claim.getConfiguration
         $ claim
 
 sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]

@@ -105,7 +105,7 @@ import Kore.Log.KoreLogOptions
     )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
-import qualified Kore.Reachability.Claim as Goal
+import qualified Kore.Reachability.Claim as Claim
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -416,7 +416,7 @@ prove
             & runExceptT
   where
     extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
-    extractUntrustedClaims' = filter (not . Goal.isTrusted)
+    extractUntrustedClaims' = filter (not . Claim.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -684,7 +684,7 @@ initialize verifiedModule = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Goal.Rule ReachabilityRule]
+        { axioms :: ![Claim.Rule ReachabilityRule]
         , claims :: ![ReachabilityRule]
         , alreadyProven :: ![ReachabilityRule]
         }
@@ -709,7 +709,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     let Initialized { rewriteRules } = initialized
         changedSpecClaims :: [MaybeChanged ReachabilityRule]
         changedSpecClaims =
-            expandClaim tools <$> Goal.extractClaims specModule
+            expandClaim tools <$> Claim.extractClaims specModule
         simplifyToList
             :: ReachabilityRule
             -> simplifier [ReachabilityRule]
@@ -721,7 +721,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
 
         trustedClaims :: [ReachabilityRule]
         trustedClaims =
-            fmap Goal.extractClaims maybeTrustedModule & fromMaybe []
+            fmap Claim.extractClaims maybeTrustedModule & fromMaybe []
 
     mapM_ logChangedClaim changedSpecClaims
 

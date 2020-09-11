@@ -99,7 +99,7 @@ import qualified Kore.Log.Registry as Log
 import Kore.Reachability.Claim hiding
     ( AppliedRule
     )
-import qualified Kore.Reachability.Claim as Goal
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -547,7 +547,7 @@ type InnerGraph =
 
 type Claim = ReachabilityRule
 type Axiom = Rule Claim
-type AppliedRule = Goal.AppliedRule Claim
+type AppliedRule = Claim.AppliedRule Claim
 
 -- | State for the repl.
 data ReplState = ReplState
