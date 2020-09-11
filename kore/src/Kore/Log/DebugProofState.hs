@@ -10,7 +10,7 @@ module Kore.Log.DebugProofState
 import Prelude.Kore
 
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( ReachabilityClaim (..)
     )
 import Kore.Strategies.ProofState
     ( Prim (..)
@@ -24,9 +24,9 @@ import qualified Pretty
 
 data DebugProofState =
     DebugProofState
-        { proofState :: ProofState ReachabilityRule
+        { proofState :: ProofState ReachabilityClaim
         , transition :: Prim
-        , result :: Maybe (ProofState ReachabilityRule)
+        , result :: Maybe (ProofState ReachabilityClaim)
         }
     deriving (Show)
 

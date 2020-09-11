@@ -24,7 +24,7 @@ import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( OnePathRule (..)
+    ( OnePathClaim (..)
     , claimPattern
     )
 import Kore.Step.RulePattern
@@ -40,9 +40,9 @@ class RuleBase base rule where
     rewritesTo :: base VariableName -> base VariableName -> rule
     rewritesToWithSort :: base VariableName -> base VariableName -> rule
 
-instance RuleBase Pair OnePathRule where
+instance RuleBase Pair OnePathClaim where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
-        OnePathRule
+        OnePathClaim
         $ claimPattern
             (Pattern.fromTermAndPredicate t1' p1')
             (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
@@ -55,7 +55,7 @@ instance RuleBase Pair OnePathRule where
 
     rewritesToWithSort = rewritesTo
 
-instance RuleBase TermLike OnePathRule where
+instance RuleBase TermLike OnePathClaim where
     t1 `rewritesTo` t2 =
         Pair (t1, makeTruePredicate_)
         `rewritesTo` Pair (t2, makeTruePredicate_)

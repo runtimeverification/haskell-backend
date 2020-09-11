@@ -55,9 +55,9 @@ simpleRewrite left right =
 runVerificationToPattern
     :: Limit Natural
     -> Limit Natural
-    -> [Rule ReachabilityRule]
-    -> [ReachabilityRule]
-    -> [ReachabilityRule]
+    -> [Rule ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> [ReachabilityClaim]
     -> IO (Either (OrPattern VariableName) ())
 runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
     do
@@ -76,9 +76,9 @@ runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
 runVerification
     :: Limit Natural
     -> Limit Natural
-    -> [Rule ReachabilityRule]
-    -> [ReachabilityRule]
-    -> [ReachabilityRule]
+    -> [Rule ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> [ReachabilityClaim]
     -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
     runSimplifier mockEnv

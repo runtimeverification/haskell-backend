@@ -66,8 +66,8 @@ import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     , claimPattern
     )
 import Kore.Step.RulePattern
@@ -657,7 +657,7 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    OnePath . OnePathRule
+    OnePath . OnePathClaim
     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
@@ -665,7 +665,7 @@ zeroToTen =
 
 emptyClaim :: Claim
 emptyClaim =
-    OnePath . OnePathRule
+    OnePath . OnePathClaim
     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom

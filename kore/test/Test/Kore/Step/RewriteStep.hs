@@ -44,7 +44,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern
     , claimPattern
     , refreshExistentials
@@ -1105,7 +1105,7 @@ applyClaimsSequence
     -> IO (Step.Results ClaimPattern)
 applyClaimsSequence initial claims =
     Step.applyClaimsSequence
-        AllPathRule
+        AllPathClaim
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims

@@ -42,10 +42,10 @@ import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (ClaimPattern)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -144,15 +144,15 @@ instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
         fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
 
-instance SimplifyRuleLHS OnePathRule where
+instance SimplifyRuleLHS OnePathClaim where
     simplifyRuleLhs =
-        fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
+        fmap (fmap OnePathClaim) . simplifyClaimRule . getOnePathClaim
 
-instance SimplifyRuleLHS AllPathRule where
+instance SimplifyRuleLHS AllPathClaim where
     simplifyRuleLhs =
-        fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
+        fmap (fmap AllPathClaim) . simplifyClaimRule . getAllPathClaim
 
-instance SimplifyRuleLHS ReachabilityRule where
+instance SimplifyRuleLHS ReachabilityClaim where
     simplifyRuleLhs (OnePath rule) =
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =

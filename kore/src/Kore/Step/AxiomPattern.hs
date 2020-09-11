@@ -21,9 +21,9 @@ import Kore.Rewriting.RewritingVariable
     , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule
-    , OnePathRule
-    , ReachabilityRule (..)
+    ( AllPathClaim
+    , OnePathClaim
+    , ReachabilityClaim (..)
     , allPathRuleToTerm
     , onePathRuleToTerm
     )
@@ -45,25 +45,25 @@ instance Unparse (AxiomPattern VariableName) where
     unparse = unparse . getAxiomPattern
     unparse2 = unparse2 . getAxiomPattern
 
-instance From OnePathRule (AxiomPattern VariableName) where
+instance From OnePathClaim (AxiomPattern VariableName) where
     from = AxiomPattern . onePathRuleToTerm
 
-instance From OnePathRule (AxiomPattern RewritingVariableName) where
+instance From OnePathClaim (AxiomPattern RewritingVariableName) where
     from =
         AxiomPattern
         . TermLike.mapVariables (pure mkRuleVariable)
         . onePathRuleToTerm
 
-instance From AllPathRule (AxiomPattern VariableName) where
+instance From AllPathClaim (AxiomPattern VariableName) where
     from = AxiomPattern . allPathRuleToTerm
 
-instance From AllPathRule (AxiomPattern RewritingVariableName) where
+instance From AllPathClaim (AxiomPattern RewritingVariableName) where
     from =
         AxiomPattern
         . TermLike.mapVariables (pure mkRuleVariable)
         . allPathRuleToTerm
 
-instance From ReachabilityRule (AxiomPattern VariableName) where
+instance From ReachabilityClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 

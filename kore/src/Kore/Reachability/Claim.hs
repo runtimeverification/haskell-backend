@@ -113,10 +113,10 @@ import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     , getConfiguration
     , getDestination
     )
@@ -317,12 +317,12 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-instance Goal OnePathRule where
+instance Goal OnePathClaim where
     simplify = simplify' _Unwrapped
 
     checkImplication = checkImplication' _Unwrapped
 
-    applyClaims claims = deriveSeqClaim _Unwrapped OnePathRule claims
+    applyClaims claims = deriveSeqClaim _Unwrapped OnePathClaim claims
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
@@ -361,25 +361,25 @@ deriveSeqClaim lensClaimPattern mkClaim claims goal =
 
 deriveSeqAxiomOnePath
     ::  MonadSimplify simplifier
-    =>  [Rule OnePathRule]
-    ->  OnePathRule
-    ->  Strategy.TransitionT (AppliedRule OnePathRule) simplifier
-            (ProofState OnePathRule)
+    =>  [Rule OnePathClaim]
+    ->  OnePathClaim
+    ->  Strategy.TransitionT (AppliedRule OnePathClaim) simplifier
+            (ProofState OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
 
-instance ClaimExtractor OnePathRule where
+instance ClaimExtractor OnePathClaim where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just claim
             _ -> Nothing
 
-instance Goal AllPathRule where
+instance Goal AllPathClaim where
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
-    applyClaims claims = deriveSeqClaim _Unwrapped AllPathRule claims
+    applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
 
     applyAxioms axiomss = \goal ->
         foldM applyAxioms1 (GoalRemainder goal) axiomss
@@ -402,22 +402,22 @@ instance Goal AllPathRule where
 
 deriveParAxiomAllPath
     ::  MonadSimplify simplifier
-    =>  [Rule AllPathRule]
-    ->  AllPathRule
-    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
-            (ProofState AllPathRule)
+    =>  [Rule AllPathClaim]
+    ->  AllPathClaim
+    ->  Strategy.TransitionT (AppliedRule AllPathClaim) simplifier
+            (ProofState AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
 
-instance ClaimExtractor AllPathRule where
+instance ClaimExtractor AllPathClaim where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (AllPathClaimPattern claim) -> Just claim
             _ -> Nothing
 
-instance Goal ReachabilityRule where
+instance Goal ReachabilityClaim where
     simplify (AllPath goal) = allPathTransition $ AllPath <$> simplify goal
     simplify (OnePath goal) = onePathTransition $ OnePath <$> simplify goal
 
@@ -442,7 +442,7 @@ instance Goal ReachabilityRule where
         & fmap (fmap OnePath)
         & onePathTransition
 
-instance ClaimExtractor ReachabilityRule where
+instance ClaimExtractor ReachabilityClaim where
     extractClaim (attrs, sentence) =
         case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
             Right (OnePathClaimPattern claim) -> Just (OnePath claim)
@@ -451,35 +451,35 @@ instance ClaimExtractor ReachabilityRule where
 
 allPathTransition
     :: Monad m
-    => Strategy.TransitionT (AppliedRule AllPathRule) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule AllPathClaim) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityClaim) m a
 allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
 
 onePathTransition
     :: Monad m
-    => Strategy.TransitionT (AppliedRule OnePathRule) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
+    => Strategy.TransitionT (AppliedRule OnePathClaim) m a
+    -> Strategy.TransitionT (AppliedRule ReachabilityClaim) m a
 onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
 
-maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
+maybeOnePath :: ReachabilityClaim -> Maybe OnePathClaim
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
 
-maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
+maybeAllPath :: ReachabilityClaim -> Maybe AllPathClaim
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 ruleAllPathToRuleReachability
-    :: AppliedRule AllPathRule
-    -> AppliedRule ReachabilityRule
+    :: AppliedRule AllPathClaim
+    -> AppliedRule ReachabilityClaim
 ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
     AppliedAxiom (ReachabilityRewriteRule rewriteRule)
 ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
     AppliedClaim (AllPath allPathRule)
 
 ruleOnePathToRuleReachability
-    :: AppliedRule OnePathRule
-    -> AppliedRule ReachabilityRule
+    :: AppliedRule OnePathClaim
+    -> AppliedRule ReachabilityClaim
 ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
     AppliedAxiom (ReachabilityRewriteRule rewriteRule)
 ruleOnePathToRuleReachability (AppliedClaim onePathRule) =

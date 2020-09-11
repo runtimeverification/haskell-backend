@@ -107,7 +107,7 @@ runRepl
     => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [ReachabilityRule]
+    -> [ReachabilityClaim]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
@@ -226,8 +226,8 @@ runRepl
         lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: [ReachabilityRule]
-        -> [ReachabilityRule]
+        :: [ReachabilityClaim]
+        -> [ReachabilityClaim]
     addIndexesToClaims =
         initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
@@ -242,14 +242,14 @@ runRepl
                 (index & ctor & Just & RuleIndex)
                 rule
 
-    firstClaim :: ReachabilityRule
+    firstClaim :: ReachabilityClaim
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: [ReachabilityRule]
+        :: [ReachabilityClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode

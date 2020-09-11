@@ -35,8 +35,8 @@ import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     , lensClaimPattern
     )
 import Kore.Step.RulePattern
@@ -476,7 +476,7 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike VariableName
     -> TermLike VariableName
-    -> Rule ReachabilityRule
+    -> Rule ReachabilityClaim
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
@@ -484,7 +484,7 @@ simplePriorityAxiom
     :: TermLike VariableName
     -> TermLike VariableName
     -> Integer
-    -> Rule ReachabilityRule
+    -> Rule ReachabilityClaim
 simplePriorityAxiom left right priority =
     ReachabilityRewriteRule . mkRewritingRule . RewriteRule
     $ RulePattern
@@ -500,12 +500,12 @@ simplePriorityAxiom left right priority =
 simpleClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleClaim
     (TermLike.mapVariables (pure mkRuleVariable) -> left)
     (TermLike.mapVariables (pure mkRuleVariable) -> right)
   =
-    (OnePath . OnePathRule)
+    (OnePath . OnePathClaim)
     $ ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
@@ -523,7 +523,7 @@ simpleClaim
 simpleTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")

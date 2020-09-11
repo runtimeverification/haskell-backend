@@ -48,8 +48,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
@@ -76,12 +76,12 @@ type Predicate' = Predicate VariableName
 makeOnePathGoal
     :: TermLike'
     -> TermLike'
-    -> OnePathRule
+    -> OnePathClaim
 makeOnePathGoal
     (TermLike.mapVariables (pure mkConfigVariable) -> left)
     (TermLike.mapVariables (pure mkConfigVariable) -> right)
   =
-    OnePathRule
+    OnePathClaim
     $ ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
@@ -96,15 +96,15 @@ makeOnePathGoal
             , attributes = def
             }
 
-makeOnePathRule
+makeOnePathClaim
     :: TermLike'
     -> TermLike'
-    -> OnePathRule
-makeOnePathRule
+    -> OnePathClaim
+makeOnePathClaim
     (TermLike.mapVariables (pure mkRuleVariable) -> left)
     (TermLike.mapVariables (pure mkRuleVariable) -> right)
   =
-    OnePathRule
+    OnePathClaim
     $ ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
@@ -122,12 +122,12 @@ makeOnePathRule
 makeOnePathGoalFromPatterns
     :: Pattern'
     -> Pattern'
-    -> OnePathRule
+    -> OnePathClaim
 makeOnePathGoalFromPatterns
     (Pattern.mapVariables (pure mkConfigVariable) -> left)
     (Pattern.mapVariables (pure mkConfigVariable) -> right)
   =
-    OnePathRule
+    OnePathClaim
     $ ClaimPattern
             { left
             , right = OrPattern.fromPattern right
@@ -138,16 +138,16 @@ makeOnePathGoalFromPatterns
 makeReachabilityOnePathGoal
     :: TermLike'
     -> TermLike'
-    -> ReachabilityRule
+    -> ReachabilityClaim
 makeReachabilityOnePathGoal term dest =
     OnePath (makeOnePathGoal term dest)
 
-makeReachabilityOnePathRule
+makeReachabilityOnePathClaim
     :: TermLike'
     -> TermLike'
-    -> ReachabilityRule
-makeReachabilityOnePathRule term dest =
-    OnePath (makeOnePathRule term dest)
+    -> ReachabilityClaim
+makeReachabilityOnePathClaim term dest =
+    OnePath (makeOnePathClaim term dest)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -163,7 +163,7 @@ test_onePathStrategy =
                 Mock.a
                 Mock.a
             )
-            [makeOnePathRule Mock.a Mock.b]
+            [makeOnePathClaim Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ actualReach ] <- runOnePathSteps
             Unlimited
@@ -172,10 +172,10 @@ test_onePathStrategy =
                 Mock.a
                 Mock.a
             )
-            [makeReachabilityOnePathRule Mock.a Mock.b]
+            [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.Goal $ makeOnePathRule Mock.a Mock.a)
+            (ProofState.Goal $ makeOnePathClaim Mock.a Mock.a)
             actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath actual)
@@ -189,13 +189,13 @@ test_onePathStrategy =
             Unlimited
             (Limit 1)
             (makeOnePathGoal Mock.a Mock.a)
-            [makeOnePathRule Mock.a Mock.b]
+            [makeOnePathClaim Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
             (makeReachabilityOnePathGoal Mock.a Mock.a)
-            [makeReachabilityOnePathRule Mock.a Mock.b]
+            [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual "" ProofState.Proven _actual
         assertEqual "onepath == reachability onepath"
@@ -211,16 +211,16 @@ test_onePathStrategy =
             Unlimited
             (Limit 1)
             (makeOnePathGoal Mock.a Mock.d)
-            [makeOnePathRule Mock.a Mock.b]
+            [makeOnePathClaim Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
             Unlimited
             (Limit 1)
             (makeReachabilityOnePathGoal Mock.a Mock.d)
-            [makeReachabilityOnePathRule Mock.a Mock.b]
+            [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.GoalRewritten $ makeOnePathRule Mock.c Mock.d)
+            (ProofState.GoalRewritten $ makeOnePathClaim Mock.c Mock.d)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -238,7 +238,7 @@ test_onePathStrategy =
                 Mock.a
                 Mock.b
             )
-            [makeOnePathRule Mock.b Mock.c]
+            [makeOnePathClaim Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -249,7 +249,7 @@ test_onePathStrategy =
                 Mock.a
                 Mock.b
             )
-            [makeReachabilityOnePathRule Mock.b Mock.c]
+            [makeReachabilityOnePathClaim Mock.b Mock.c]
             [ simpleReachabilityRewrite Mock.b Mock.d
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
@@ -269,7 +269,7 @@ test_onePathStrategy =
             Unlimited
             (Limit 2)
             (makeOnePathGoal Mock.a Mock.e)
-            [makeOnePathRule Mock.b Mock.c]
+            [makeOnePathClaim Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -277,13 +277,13 @@ test_onePathStrategy =
             Unlimited
             (Limit 2)
             (makeReachabilityOnePathGoal Mock.a Mock.e)
-            [makeReachabilityOnePathRule Mock.b Mock.c]
+            [makeReachabilityOnePathClaim Mock.b Mock.c]
             [ simpleReachabilityRewrite Mock.b Mock.d
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
         assertEqual ""
             (sort
-                [ ProofState.GoalRewritten $ makeOnePathRule Mock.c Mock.e
+                [ ProofState.GoalRewritten $ makeOnePathClaim Mock.c Mock.e
                 ]
             )
             (sort
@@ -303,7 +303,7 @@ test_onePathStrategy =
             Unlimited
             (Limit 2)
             (makeOnePathGoal Mock.a Mock.e)
-            [makeOnePathRule Mock.e Mock.c]
+            [makeOnePathClaim Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -311,13 +311,13 @@ test_onePathStrategy =
             Unlimited
             (Limit 2)
             (makeReachabilityOnePathGoal Mock.a Mock.e)
-            [makeReachabilityOnePathRule Mock.e Mock.c]
+            [makeReachabilityOnePathClaim Mock.e Mock.c]
             [ simpleReachabilityRewrite Mock.b Mock.d
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
         assertEqual ""
             (sort
-                [ ProofState.GoalRewritten $ makeOnePathRule Mock.d Mock.e
+                [ ProofState.GoalRewritten $ makeOnePathClaim Mock.d Mock.e
                 ]
             )
             (sort
@@ -354,8 +354,8 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeOnePathRule (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeOnePathClaim (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , makeOnePathClaim (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
                 , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
@@ -375,10 +375,10 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeReachabilityOnePathRule
+                [ makeReachabilityOnePathClaim
                     (Mock.functionalConstr11 Mock.a)
                     (Mock.g Mock.a)
-                , makeReachabilityOnePathRule
+                , makeReachabilityOnePathClaim
                     (Mock.functionalConstr11 Mock.b)
                     (Mock.f Mock.b)
                 ]
@@ -437,7 +437,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeOnePathClaim (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
@@ -452,7 +452,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeReachabilityOnePathRule
+                [ makeReachabilityOnePathClaim
                     (Mock.functionalConstr11 Mock.b)
                     (Mock.f Mock.b)
                 ]
@@ -809,7 +809,7 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike'
     -> TermLike'
-    -> Rule OnePathRule
+    -> Rule OnePathClaim
 simpleRewrite left right =
     OnePathRewriteRule . mkRewritingRule
     $ RewriteRule RulePattern
@@ -823,7 +823,7 @@ simpleRewrite left right =
 simpleReachabilityRewrite
     :: TermLike'
     -> TermLike'
-    -> Rule ReachabilityRule
+    -> Rule ReachabilityClaim
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
@@ -831,7 +831,7 @@ rewriteWithPredicate
     :: TermLike'
     -> TermLike'
     -> Predicate'
-    -> Rule OnePathRule
+    -> Rule OnePathClaim
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule . mkRewritingRule
     $ RewriteRule RulePattern
@@ -846,7 +846,7 @@ rewriteReachabilityWithPredicate
     :: TermLike'
     -> TermLike'
     -> Predicate'
-    -> Rule ReachabilityRule
+    -> Rule ReachabilityClaim
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
@@ -912,9 +912,9 @@ runOnePathSteps
     return (sort $ nub result)
 
 assertStuck
-    :: OnePathRule
-    -> [ProofState.ProofState OnePathRule]
-    -> [ProofState.ProofState ReachabilityRule]
+    :: OnePathClaim
+    -> [ProofState.ProofState OnePathClaim]
+    -> [ProofState.ProofState ReachabilityClaim]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual

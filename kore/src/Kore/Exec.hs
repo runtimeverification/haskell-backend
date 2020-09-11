@@ -111,7 +111,7 @@ import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( ReachabilityClaim (..)
     , lensClaimPattern
     )
 import Kore.Step.Rule
@@ -415,7 +415,7 @@ prove
             )
             & runExceptT
   where
-    extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
+    extractUntrustedClaims' :: [ReachabilityClaim] -> [ReachabilityClaim]
     extractUntrustedClaims' = filter (not . Claim.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
@@ -650,11 +650,11 @@ makeImplicationRule
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
-simplifyReachabilityRule
+simplifyReachabilityClaim
     :: MonadSimplify simplifier
-    => ReachabilityRule
-    -> simplifier ReachabilityRule
-simplifyReachabilityRule rule = do
+    => ReachabilityClaim
+    -> simplifier ReachabilityClaim
+simplifyReachabilityClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
@@ -684,9 +684,9 @@ initialize verifiedModule = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Claim.Rule ReachabilityRule]
-        , claims :: ![ReachabilityRule]
-        , alreadyProven :: ![ReachabilityRule]
+        { axioms :: ![Claim.Rule ReachabilityClaim]
+        , claims :: ![ReachabilityClaim]
+        , alreadyProven :: ![ReachabilityClaim]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -707,39 +707,39 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initialize definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
-        changedSpecClaims :: [MaybeChanged ReachabilityRule]
+        changedSpecClaims :: [MaybeChanged ReachabilityClaim]
         changedSpecClaims =
             expandClaim tools <$> Claim.extractClaims specModule
         simplifyToList
-            :: ReachabilityRule
-            -> simplifier [ReachabilityRule]
+            :: ReachabilityClaim
+            -> simplifier [ReachabilityClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = MultiAnd.extractPatterns simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 
-        trustedClaims :: [ReachabilityRule]
+        trustedClaims :: [ReachabilityClaim]
         trustedClaims =
             fmap Claim.extractClaims maybeTrustedModule & fromMaybe []
 
     mapM_ logChangedClaim changedSpecClaims
 
-    let specClaims :: [ReachabilityRule]
+    let specClaims :: [ReachabilityClaim]
         specClaims = map fromMaybeChanged changedSpecClaims
     -- This assertion should come before simplifying the claims,
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifyReachabilityClaim (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> ReachabilityRule
-        -> MaybeChanged ReachabilityRule
+        -> ReachabilityClaim
+        -> MaybeChanged ReachabilityClaim
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -748,7 +748,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: MaybeChanged ReachabilityRule
+        :: MaybeChanged ReachabilityClaim
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)

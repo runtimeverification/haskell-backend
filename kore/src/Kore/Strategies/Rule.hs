@@ -7,9 +7,9 @@ module Kore.Strategies.Rule
     ( Rule (..)
     -- * Re-exports
     , RewriteRule (..)
-    , AllPathRule
-    , OnePathRule
-    , ReachabilityRule
+    , AllPathClaim
+    , OnePathClaim
+    , ReachabilityClaim
     ) where
 
 import Prelude.Kore
@@ -30,9 +30,9 @@ import Kore.Attribute.SourceLocation as Attribute
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( AllPathRule
-    , OnePathRule
-    , ReachabilityRule
+    ( AllPathClaim
+    , OnePathClaim
+    , ReachabilityClaim
     )
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -47,61 +47,61 @@ data family Rule goal
 
 -- * One-path reachability
 
-newtype instance Rule OnePathRule =
+newtype instance Rule OnePathClaim =
     OnePathRewriteRule { unRuleOnePath :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule OnePathRule)
+instance SOP.Generic (Rule OnePathClaim)
 
-instance SOP.HasDatatypeInfo (Rule OnePathRule)
+instance SOP.HasDatatypeInfo (Rule OnePathClaim)
 
-instance Debug (Rule OnePathRule)
+instance Debug (Rule OnePathClaim)
 
-instance Diff (Rule OnePathRule)
+instance Diff (Rule OnePathClaim)
 
-instance From (Rule OnePathRule) Attribute.PriorityAttributes where
+instance From (Rule OnePathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath
 
 -- * All-path reachability
 
-newtype instance Rule AllPathRule =
+newtype instance Rule AllPathClaim =
     AllPathRewriteRule { unRuleAllPath :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule AllPathRule)
+instance SOP.Generic (Rule AllPathClaim)
 
-instance SOP.HasDatatypeInfo (Rule AllPathRule)
+instance SOP.HasDatatypeInfo (Rule AllPathClaim)
 
-instance Debug (Rule AllPathRule)
+instance Debug (Rule AllPathClaim)
 
-instance Diff (Rule AllPathRule)
+instance Diff (Rule AllPathClaim)
 
-instance From (Rule AllPathRule) Attribute.PriorityAttributes where
+instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
 
 -- * Reachability
 
-newtype instance Rule ReachabilityRule =
+newtype instance Rule ReachabilityClaim =
     ReachabilityRewriteRule
         { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
     deriving (GHC.Generic, Show, Unparse)
 
-instance SOP.Generic (Rule ReachabilityRule)
+instance SOP.Generic (Rule ReachabilityClaim)
 
-instance SOP.HasDatatypeInfo (Rule ReachabilityRule)
+instance SOP.HasDatatypeInfo (Rule ReachabilityClaim)
 
-instance Debug (Rule ReachabilityRule)
+instance Debug (Rule ReachabilityClaim)
 
-instance Diff (Rule ReachabilityRule)
+instance Diff (Rule ReachabilityClaim)
 
-instance From (Rule ReachabilityRule) Attribute.PriorityAttributes where
+instance From (Rule ReachabilityClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityRule) Attribute.SourceLocation where
+instance From (Rule ReachabilityClaim) Attribute.SourceLocation where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityRule) Attribute.Label where
+instance From (Rule ReachabilityClaim) Attribute.Label where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityRule) Attribute.RuleIndex where
+instance From (Rule ReachabilityClaim) Attribute.RuleIndex where
     from = from @(RewriteRule _) . unReachabilityRewriteRule

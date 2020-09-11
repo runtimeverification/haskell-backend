@@ -183,7 +183,7 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( ReachabilityClaim (..)
     , makeTrusted
     )
 import qualified Kore.Step.RulePattern as RulePattern
@@ -407,7 +407,7 @@ prove indexOrName = do
         startProving
         claim'
   where
-    startProving :: ReachabilityRule -> m ()
+    startProving :: ReachabilityClaim -> m ()
     startProving claim
       | isTrusted claim =
         putStrLn'
@@ -588,7 +588,7 @@ showProofStateComponent
     :: Monad m
     => String
     -- ^ component name
-    -> (ReachabilityRule -> Pattern RewritingVariableName)
+    -> (ReachabilityClaim -> Pattern RewritingVariableName)
     -> Maybe ReplNode
     -> ReplM m ()
 showProofStateComponent name transformer maybeNode = do
@@ -672,12 +672,12 @@ allProofs = do
 
     notStartedProofs
         :: Map.Map ClaimIndex ExecutionGraph
-        -> Map.Map ClaimIndex ReachabilityRule
+        -> Map.Map ClaimIndex ReachabilityClaim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
         notStartedOrTrusted <$> cls `Map.difference` gphs
 
-    notStartedOrTrusted :: ReachabilityRule -> GraphProofStatus
+    notStartedOrTrusted :: ReachabilityClaim -> GraphProofStatus
     notStartedOrTrusted cl =
         if isTrusted cl
            then TrustedClaim
@@ -924,7 +924,7 @@ tryAxiomClaimWorker mode ref = do
             putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             claim <- Lens.use (field @"claim")
-            if isReachabilityRule claim && notEqualClaimTypes axiomOrClaim claim
+            if isReachabilityClaim claim && notEqualClaimTypes axiomOrClaim claim
                 then putStrLn' "Only claims of the same type as the current\
                                \ claim can be applied as rewrite rules."
                 else do
@@ -935,30 +935,30 @@ tryAxiomClaimWorker mode ref = do
                         IfPossible ->
                             tryForceAxiomOrClaim axiomOrClaim node
   where
-    notEqualClaimTypes :: Either Axiom ReachabilityRule -> ReachabilityRule -> Bool
+    notEqualClaimTypes :: Either Axiom ReachabilityClaim -> ReachabilityClaim -> Bool
     notEqualClaimTypes axiomOrClaim' claim' =
         not (either (const True) (equalClaimTypes claim') axiomOrClaim')
 
-    equalClaimTypes :: ReachabilityRule -> ReachabilityRule -> Bool
+    equalClaimTypes :: ReachabilityClaim -> ReachabilityClaim -> Bool
     equalClaimTypes =
         isSameType `on` castToReachability
 
-    castToReachability :: ReachabilityRule -> Maybe ReachabilityRule
+    castToReachability :: ReachabilityClaim -> Maybe ReachabilityClaim
     castToReachability = Typeable.cast
 
-    isReachabilityRule :: ReachabilityRule -> Bool
-    isReachabilityRule = isJust . castToReachability
+    isReachabilityClaim :: ReachabilityClaim -> Bool
+    isReachabilityClaim = isJust . castToReachability
 
     isSameType
-        :: Maybe ReachabilityRule
-        -> Maybe ReachabilityRule
+        :: Maybe ReachabilityClaim
+        -> Maybe ReachabilityClaim
         -> Bool
     isSameType (Just (OnePath _)) (Just (OnePath _)) = True
     isSameType (Just (AllPath _)) (Just (AllPath _)) = True
     isSameType _ _ = False
 
     showUnificationFailure
-        :: Either Axiom ReachabilityRule
+        :: Either Axiom ReachabilityClaim
         -> ReplNode
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
@@ -987,7 +987,7 @@ tryAxiomClaimWorker mode ref = do
                         SideCondition.assumeTrueCondition secondCondition
 
     tryForceAxiomOrClaim
-        :: Either Axiom ReachabilityRule
+        :: Either Axiom ReachabilityClaim
         -> ReplNode
         -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
@@ -1128,8 +1128,8 @@ savePartialProof maybeNatural file = do
     removeIfRoot
         :: ReplNode
         -> ClaimIndex
-        -> [ReachabilityRule]
-        -> [ReachabilityRule]
+        -> [ReachabilityClaim]
+        -> [ReachabilityClaim]
     removeIfRoot (ReplNode node) (ClaimIndex index) claims
         | index >= 0 && index < length claims
         , node == 0 =
@@ -1321,7 +1321,7 @@ showRewriteRule rule =
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseProofStateComponent
-    :: (ReachabilityRule -> Pattern RewritingVariableName)
+    :: (ReachabilityClaim -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonProofState

@@ -545,7 +545,7 @@ type ExecutionGraph =
 type InnerGraph =
     Gr CommonProofState (Seq AppliedRule)
 
-type Claim = ReachabilityRule
+type Claim = ReachabilityClaim
 type Axiom = Rule Claim
 type AppliedRule = Claim.AppliedRule Claim
 

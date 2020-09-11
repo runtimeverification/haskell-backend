@@ -42,7 +42,7 @@ import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (..)
     )
 import Kore.Step.Rule
@@ -282,7 +282,7 @@ test_parseClaimPattern =
                     )
             expected =
                 AllPathClaimPattern
-                . AllPathRule
+                . AllPathClaim
                 $ ClaimPattern
                     { left = Mock.a
                         & Pattern.fromTermLike
@@ -309,7 +309,7 @@ test_parseClaimPattern =
                     )
             expected =
                 AllPathClaimPattern
-                . AllPathRule
+                . AllPathClaim
                 $ ClaimPattern
                     { left =
                         Pattern.fromTermAndPredicate
@@ -351,7 +351,7 @@ test_parseClaimPattern =
                     )
             expected =
                 AllPathClaimPattern
-                . AllPathRule
+                . AllPathClaim
                 $ ClaimPattern
                     { left =
                         Pattern.fromTermAndPredicate
@@ -399,7 +399,7 @@ test_parseClaimPattern =
                     )
             expected =
                 AllPathClaimPattern
-                . AllPathRule
+                . AllPathClaim
                 $ ClaimPattern
                     { left =
                         Pattern.fromTermAndPredicate

@@ -33,7 +33,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathRule (..)
+    , OnePathClaim (..)
     )
 import qualified Kore.Step.Rule as Rule
 import Kore.Syntax
@@ -91,7 +91,7 @@ patternFreeVarInRHS :: Pattern VariableName Null
 patternFreeVarInRHS =
     externalize
     $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
-    $ OnePathRule rulePatternFreeVarInRHS
+    $ OnePathClaim rulePatternFreeVarInRHS
   where
     rulePatternFreeVarInRHS :: ClaimPattern
     rulePatternFreeVarInRHS = ClaimPattern
@@ -116,7 +116,7 @@ patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
     externalize
     $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
-    $ OnePathRule rulePatternNoFreeVarInRHS
+    $ OnePathClaim rulePatternNoFreeVarInRHS
   where
     rulePatternNoFreeVarInRHS :: ClaimPattern
     rulePatternNoFreeVarInRHS = ClaimPattern

@@ -68,10 +68,10 @@ import Kore.Sort
     )
 import qualified Kore.Sort as Sort.DoNotUse
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     , freeVariablesLeft
     )
 import Kore.Syntax.Variable
@@ -145,26 +145,26 @@ instance ExpandSingleConstructors ClaimPattern where
             mapMaybe retractElementVariable
             . FreeVariables.toList
 
-instance ExpandSingleConstructors OnePathRule where
+instance ExpandSingleConstructors OnePathClaim where
     expandSingleConstructors tools =
-        OnePathRule . expandSingleConstructors tools . getOnePathRule
+        OnePathClaim . expandSingleConstructors tools . getOnePathClaim
 
-instance ExpandSingleConstructors AllPathRule where
+instance ExpandSingleConstructors AllPathClaim where
     expandSingleConstructors tools =
-        AllPathRule . expandSingleConstructors tools . getAllPathRule
+        AllPathClaim . expandSingleConstructors tools . getAllPathClaim
 
-instance ExpandSingleConstructors ReachabilityRule where
+instance ExpandSingleConstructors ReachabilityClaim where
     expandSingleConstructors tools (OnePath rule) =
         OnePath
-        . OnePathRule
+        . OnePathClaim
         . expandSingleConstructors tools
-        . getOnePathRule
+        . getOnePathClaim
         $ rule
     expandSingleConstructors tools (AllPath rule) =
         AllPath
-        . AllPathRule
+        . AllPathClaim
         . expandSingleConstructors tools
-        . getAllPathRule
+        . getAllPathClaim
         $ rule
 
 newtype Expansion variable =

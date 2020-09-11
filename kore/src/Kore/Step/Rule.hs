@@ -75,9 +75,9 @@ import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (ClaimPattern)
-    , OnePathRule (..)
+    , OnePathClaim (..)
     , allPathRuleToTerm
     , onePathRuleToTerm
     , parseRightHandSide
@@ -117,8 +117,8 @@ reachabilityModalityToConstructor
     :: Alias (TermLike.TermLike VariableName)
     -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
 reachabilityModalityToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
+    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathClaim
+    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathClaim
     | otherwise = Nothing
   where
     headName = getId (aliasConstructor patternHead)
@@ -128,8 +128,8 @@ from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern OnePathRule
-    | AllPathClaimPattern AllPathRule
+    | OnePathClaimPattern OnePathClaim
+    | AllPathClaimPattern AllPathClaim
     | ImplicationAxiomPattern (ImplicationRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,

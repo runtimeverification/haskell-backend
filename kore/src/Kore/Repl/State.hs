@@ -124,7 +124,7 @@ import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
     )
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
+    ( ReachabilityClaim (..)
     , lensClaimPattern
     )
 import Kore.Step.Simplification.Data
@@ -151,7 +151,7 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph
+emptyExecutionGraph :: ReachabilityClaim -> ExecutionGraph
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . Goal
 
@@ -172,7 +172,7 @@ getClaimByIndex
     :: MonadState ReplState m
     => Int
     -- ^ index in the claims list
-    -> m (Maybe ReachabilityRule)
+    -> m (Maybe ReachabilityClaim)
 getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
@@ -198,7 +198,7 @@ getClaimByName
     :: MonadState ReplState m
     => String
     -- ^ label attribute
-    -> m (Maybe ReachabilityRule)
+    -> m (Maybe ReachabilityClaim)
 getClaimByName name = do
     claims <- Lens.use (field @"claims")
     return $ find (isNameEqual name) claims
@@ -215,7 +215,7 @@ getClaimIndexByName name= do
 getAxiomOrClaimByName
     :: MonadState ReplState m
     => RuleName
-    -> m (Maybe (Either Axiom ReachabilityRule))
+    -> m (Maybe (Either Axiom ReachabilityClaim))
 getAxiomOrClaimByName (RuleName name) = do
     mAxiom <- getAxiomByName name
     case mAxiom of
@@ -250,7 +250,7 @@ getNameText = from
 getAxiomOrClaimByIndex
     :: MonadState ReplState m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either Axiom ReachabilityRule))
+    -> m (Maybe (Either Axiom ReachabilityClaim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -265,7 +265,7 @@ getInternalIdentifier = from
 -- | Update the currently selected claim to prove.
 switchToProof
     :: MonadState ReplState m
-    => ReachabilityRule -> ClaimIndex -> m ()
+    => ReachabilityClaim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -517,7 +517,7 @@ runStepper'
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => [ReachabilityRule]
+    => [ReachabilityClaim]
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph, StepResult)
@@ -571,7 +571,7 @@ getNodeState graph node =
 nodeToGoal
     :: InnerGraph
     -> Graph.Node
-    -> Maybe ReachabilityRule
+    -> Maybe ReachabilityClaim
 nodeToGoal graph node =
     extractUnproven
     . Graph.lab'
@@ -664,7 +664,7 @@ conjOfClaims claims sort =
 generateInProgressClaims
     :: forall m
     .  MonadState ReplState m
-    => m [ReachabilityRule]
+    => m [ReachabilityClaim]
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -674,8 +674,8 @@ generateInProgressClaims = do
   where
     notStartedClaims
         :: Map.Map ClaimIndex ExecutionGraph
-        -> [ReachabilityRule]
-        -> [ReachabilityRule]
+        -> [ReachabilityClaim]
+        -> [ReachabilityClaim]
     notStartedClaims graphs claims =
         filter (not . Claim.isTrusted)
                 ( (claims !!)
@@ -693,13 +693,13 @@ generateInProgressClaims = do
 
 unprovenGoals
     :: Map ClaimIndex ExecutionGraph
-    -> [ReachabilityRule]
+    -> [ReachabilityClaim]
 unprovenGoals graphs =
     findUnprovenGoals =<< Map.elems graphs
 
 findUnprovenGoals
     :: ExecutionGraph
-    -> [ReachabilityRule]
+    -> [ReachabilityClaim]
 findUnprovenGoals (Strategy.graph -> graph) =
     mapMaybe (nodeToGoal graph)
     . findLeafNodes

@@ -12,9 +12,9 @@ module Kore.Step.ClaimPattern
     , substitute
     , assertRefreshed
     , refreshExistentials
-    , OnePathRule (..)
-    , AllPathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , AllPathClaim (..)
+    , ReachabilityClaim (..)
     , toSentence
     , applySubstitution
     , termToExistentials
@@ -372,144 +372,144 @@ refreshExistentials :: ClaimPattern -> ClaimPattern
 refreshExistentials = snd . refreshRule mempty
 
 -- | One-Path-Claim claim pattern.
-newtype OnePathRule =
-    OnePathRule { getOnePathRule :: ClaimPattern }
+newtype OnePathClaim =
+    OnePathClaim { getOnePathClaim :: ClaimPattern }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData OnePathRule
+instance NFData OnePathClaim
 
-instance SOP.Generic OnePathRule
+instance SOP.Generic OnePathClaim
 
-instance SOP.HasDatatypeInfo OnePathRule
+instance SOP.HasDatatypeInfo OnePathClaim
 
-instance Debug OnePathRule
+instance Debug OnePathClaim
 
-instance Diff OnePathRule
+instance Diff OnePathClaim
 
--- | Converts a 'OnePathRule' into its term representation.
+-- | Converts a 'OnePathClaim' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
-onePathRuleToTerm :: OnePathRule -> TermLike VariableName
-onePathRuleToTerm (OnePathRule claimPattern') =
+onePathRuleToTerm :: OnePathClaim -> TermLike VariableName
+onePathRuleToTerm (OnePathClaim claimPattern') =
     claimPatternToTerm TermLike.WEF claimPattern'
 
-instance Unparse OnePathRule where
+instance Unparse OnePathClaim where
     unparse claimPattern' =
         unparse $ onePathRuleToTerm claimPattern'
     unparse2 claimPattern' =
         unparse2 $ onePathRuleToTerm claimPattern'
 
-instance TopBottom OnePathRule where
+instance TopBottom OnePathClaim where
     isTop _ = False
     isBottom _ = False
 
-instance From OnePathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getOnePathRule
+instance From OnePathClaim Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getOnePathClaim
 
-instance From OnePathRule Attribute.Label where
-    from = Attribute.label . attributes . getOnePathRule
+instance From OnePathClaim Attribute.Label where
+    from = Attribute.label . attributes . getOnePathClaim
 
-instance From OnePathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getOnePathRule
+instance From OnePathClaim Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getOnePathClaim
 
-instance From OnePathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getOnePathRule
+instance From OnePathClaim Attribute.Trusted where
+    from = Attribute.trusted . attributes . getOnePathClaim
 
 -- | All-Path-Claim claim pattern.
-newtype AllPathRule =
-    AllPathRule { getAllPathRule :: ClaimPattern }
+newtype AllPathClaim =
+    AllPathClaim { getAllPathClaim :: ClaimPattern }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData AllPathRule
+instance NFData AllPathClaim
 
-instance SOP.Generic AllPathRule
+instance SOP.Generic AllPathClaim
 
-instance SOP.HasDatatypeInfo AllPathRule
+instance SOP.HasDatatypeInfo AllPathClaim
 
-instance Debug AllPathRule
+instance Debug AllPathClaim
 
-instance Diff AllPathRule
+instance Diff AllPathClaim
 
-instance Unparse AllPathRule where
+instance Unparse AllPathClaim where
     unparse claimPattern' =
         unparse $ allPathRuleToTerm claimPattern'
     unparse2 claimPattern' =
         unparse2 $ allPathRuleToTerm claimPattern'
 
-instance TopBottom AllPathRule where
+instance TopBottom AllPathClaim where
     isTop _ = False
     isBottom _ = False
 
-instance From AllPathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getAllPathRule
+instance From AllPathClaim Attribute.SourceLocation where
+    from = Attribute.sourceLocation . attributes . getAllPathClaim
 
-instance From AllPathRule Attribute.Label where
-    from = Attribute.label . attributes . getAllPathRule
+instance From AllPathClaim Attribute.Label where
+    from = Attribute.label . attributes . getAllPathClaim
 
-instance From AllPathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getAllPathRule
+instance From AllPathClaim Attribute.RuleIndex where
+    from = Attribute.identifier . attributes . getAllPathClaim
 
-instance From AllPathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getAllPathRule
+instance From AllPathClaim Attribute.Trusted where
+    from = Attribute.trusted . attributes . getAllPathClaim
 
--- | Converts an 'AllPathRule' into its term representation.
+-- | Converts an 'AllPathClaim' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
 -- rewriting algorithm is lost.
-allPathRuleToTerm :: AllPathRule -> TermLike VariableName
-allPathRuleToTerm (AllPathRule claimPattern') =
+allPathRuleToTerm :: AllPathClaim -> TermLike VariableName
+allPathRuleToTerm (AllPathClaim claimPattern') =
     claimPatternToTerm TermLike.WAF claimPattern'
 
 -- | Unified One-Path and All-Path claim pattern.
-data ReachabilityRule
-    = OnePath !OnePathRule
-    | AllPath !AllPathRule
+data ReachabilityClaim
+    = OnePath !OnePathClaim
+    | AllPath !AllPathClaim
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData ReachabilityRule
+instance NFData ReachabilityClaim
 
-instance SOP.Generic ReachabilityRule
+instance SOP.Generic ReachabilityClaim
 
-instance SOP.HasDatatypeInfo ReachabilityRule
+instance SOP.HasDatatypeInfo ReachabilityClaim
 
-instance Debug ReachabilityRule
+instance Debug ReachabilityClaim
 
-instance Diff ReachabilityRule
+instance Diff ReachabilityClaim
 
-instance Unparse ReachabilityRule where
+instance Unparse ReachabilityClaim where
     unparse (OnePath rule) = unparse rule
     unparse (AllPath rule) = unparse rule
     unparse2 (AllPath rule) = unparse2 rule
     unparse2 (OnePath rule) = unparse2 rule
 
-instance TopBottom ReachabilityRule where
+instance TopBottom ReachabilityClaim where
     isTop _ = False
     isBottom _ = False
 
-instance Pretty ReachabilityRule where
-    pretty (OnePath (OnePathRule rule)) =
+instance Pretty ReachabilityClaim where
+    pretty (OnePath (OnePathClaim rule)) =
         Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
-    pretty (AllPath (AllPathRule rule)) =
+    pretty (AllPath (AllPathClaim rule)) =
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
 
-instance From ReachabilityRule Attribute.SourceLocation where
+instance From ReachabilityClaim Attribute.SourceLocation where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityRule Attribute.Label where
+instance From ReachabilityClaim Attribute.Label where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityRule Attribute.RuleIndex where
+instance From ReachabilityClaim Attribute.RuleIndex where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityRule Attribute.Trusted where
+instance From ReachabilityClaim Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-toSentence :: ReachabilityRule -> Verified.Sentence
+toSentence :: ReachabilityClaim -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
         { sentenceAxiomParameters = []
@@ -521,17 +521,17 @@ toSentence rule =
         OnePath rule' -> onePathRuleToTerm rule'
         AllPath rule' -> allPathRuleToTerm rule'
 
-getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
+getConfiguration :: ReachabilityClaim -> Pattern RewritingVariableName
 getConfiguration = Lens.view (lensClaimPattern . field @"left")
 
-getDestination :: ReachabilityRule -> OrPattern RewritingVariableName
+getDestination :: ReachabilityClaim -> OrPattern RewritingVariableName
 getDestination = Lens.view (lensClaimPattern . field @"right")
 
 lensClaimPattern
     :: Functor f
     => (ClaimPattern -> f ClaimPattern)
-    -> ReachabilityRule
-    -> f ReachabilityRule
+    -> ReachabilityClaim
+    -> f ReachabilityClaim
 lensClaimPattern =
     Lens.lens
         (\case
@@ -592,25 +592,25 @@ instance UnifyingRule ClaimPattern where
             pure renaming
         ClaimPattern { existentials } = claim
 
-instance UnifyingRule OnePathRule where
-    type UnifyingRuleVariable OnePathRule = RewritingVariableName
+instance UnifyingRule OnePathClaim where
+    type UnifyingRuleVariable OnePathClaim = RewritingVariableName
 
-    matchingPattern (OnePathRule claim) = matchingPattern claim
+    matchingPattern (OnePathClaim claim) = matchingPattern claim
 
-    precondition (OnePathRule claim) = precondition claim
+    precondition (OnePathClaim claim) = precondition claim
 
-    refreshRule stale (OnePathRule claim) =
-        OnePathRule <$> refreshRule stale claim
+    refreshRule stale (OnePathClaim claim) =
+        OnePathClaim <$> refreshRule stale claim
 
-instance UnifyingRule AllPathRule where
-    type UnifyingRuleVariable AllPathRule = RewritingVariableName
+instance UnifyingRule AllPathClaim where
+    type UnifyingRuleVariable AllPathClaim = RewritingVariableName
 
-    matchingPattern (AllPathRule claim) = matchingPattern claim
+    matchingPattern (AllPathClaim claim) = matchingPattern claim
 
-    precondition (AllPathRule claim) = precondition claim
+    precondition (AllPathClaim claim) = precondition claim
 
-    refreshRule stale (AllPathRule claim) =
-        AllPathRule <$> refreshRule stale claim
+    refreshRule stale (AllPathClaim claim) =
+        AllPathClaim <$> refreshRule stale claim
 
 mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
@@ -628,7 +628,7 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
   where
     ClaimPattern { left, right, existentials } = claimPattern'
 
-makeTrusted :: ReachabilityRule -> ReachabilityRule
+makeTrusted :: ReachabilityClaim -> ReachabilityClaim
 makeTrusted =
     Lens.set
         ( lensClaimPattern

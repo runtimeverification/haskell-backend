@@ -81,9 +81,9 @@ import Kore.Internal.TermLike.TermLike
     )
 import Kore.Sort
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern
-    , OnePathRule (..)
+    , OnePathClaim (..)
     , freeVariablesLeft
     , freeVariablesRight
     )
@@ -407,9 +407,9 @@ verifyClaimSentence sentence =
             ((attrs, verified) :)
     rejectClaim attrs verified =
         case fromSentenceAxiom (attrs, verified) of
-            Right (OnePathClaimPattern (OnePathRule claimPattern))
+            Right (OnePathClaimPattern (OnePathClaim claimPattern))
               | rejectClaimPattern claimPattern -> True
-            Right (AllPathClaimPattern (AllPathRule claimPattern))
+            Right (AllPathClaimPattern (AllPathClaim claimPattern))
               | rejectClaimPattern claimPattern -> True
             _ -> False
     rejectClaimPattern :: ClaimPattern -> Bool

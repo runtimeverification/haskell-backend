@@ -22,9 +22,9 @@ import Pretty
 import qualified Pretty
 
 data WarnTrivialClaim
-    = WarnProvenClaimZeroDepth ReachabilityRule
+    = WarnProvenClaimZeroDepth ReachabilityClaim
     -- ^ Warning when a claim is proved without rewriting.
-    | WarnTrivialClaimRemoved ReachabilityRule
+    | WarnTrivialClaimRemoved ReachabilityClaim
     -- ^ Warning when a claim is proved during initialization.
     deriving Show
 
@@ -51,14 +51,14 @@ instance Entry WarnTrivialClaim where
 warnProvenClaimZeroDepth
     :: MonadLog log
     => ProofDepth
-    -> ReachabilityRule
+    -> ReachabilityClaim
     -> log ()
 warnProvenClaimZeroDepth (ProofDepth depth) rule =
     when (depth == 0) $ logEntry (WarnProvenClaimZeroDepth rule)
 
 warnTrivialClaimRemoved
     :: MonadLog log
-    => ReachabilityRule
+    => ReachabilityClaim
     -> log ()
 warnTrivialClaimRemoved rule =
     logEntry (WarnTrivialClaimRemoved rule)

@@ -136,7 +136,7 @@ import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
-    ( ReachabilityRule
+    ( ReachabilityClaim
     , toSentence
     )
 import Kore.Step.RulePattern
@@ -733,7 +733,7 @@ koreProve execOptions proveOptions = do
 
     saveProven
         :: VerifiedModule StepperAttributes
-        -> [ReachabilityRule]
+        -> [ReachabilityClaim]
         -> FilePath
         -> IO ()
     saveProven specModule provenClaims outputFile =

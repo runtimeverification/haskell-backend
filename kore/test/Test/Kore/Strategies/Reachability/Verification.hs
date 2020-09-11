@@ -36,10 +36,10 @@ import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
+    ( AllPathClaim (..)
     , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
     , lensClaimPattern
     )
 
@@ -1274,7 +1274,7 @@ test_reachabilityVerification =
 simpleAxiom
     :: TermLike VariableName
     -> TermLike VariableName
-    -> Rule ReachabilityRule
+    -> Rule ReachabilityClaim
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
@@ -1303,37 +1303,37 @@ simpleClaim
 simpleOnePathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleOnePathClaim left right =
-    OnePath . OnePathRule $ simpleClaim left right
+    OnePath . OnePathClaim $ simpleClaim left right
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleAllPathClaim left right =
-    AllPath . AllPathRule $ simpleClaim left right
+    AllPath . AllPathClaim $ simpleClaim left right
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleOnePathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . OnePath
-    . OnePathRule
+    . OnePathClaim
     $ simpleClaim left right
 
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> ReachabilityClaim
 simpleAllPathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . AllPath
-    . AllPathRule
+    . AllPathClaim
     $ simpleClaim left right
