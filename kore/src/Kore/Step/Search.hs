@@ -29,6 +29,7 @@ import qualified Kore.Internal.Condition as Condition
     ( bottom
     , fromSubstitution
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
     ( make
     , mergeAll
@@ -148,11 +149,15 @@ matchWith sideCondition e1 e2 = do
             merged <-
                 mergePredicatesAndSubstitutions
                     sideCondition
-                    [ Conditional.predicate predSubst
-                    , Conditional.predicate e1
-                    , Conditional.predicate e2
-                    ]
-                    [ Conditional.substitution predSubst ]
+                    ( MultiAnd.make
+                        [ Conditional.predicate predSubst
+                        , Conditional.predicate e1
+                        , Conditional.predicate e2
+                        ]
+                    )
+                    ( MultiAnd.make
+                        [ Conditional.substitution predSubst ]
+                    )
             let simplified = merged
             smtEvaluation <-
                 lift $ SMT.Evaluator.evaluate simplified
@@ -160,10 +165,14 @@ matchWith sideCondition e1 e2 = do
                     Nothing ->
                         mergePredicatesAndSubstitutions
                             sideCondition
-                            [ Conditional.predicate simplified ]
-                            [ Conditional.substitution merged
-                            , Conditional.substitution simplified
-                            ]
+                            ( MultiAnd.make
+                                [ Conditional.predicate simplified ]
+                            )
+                            ( MultiAnd.make
+                                [ Conditional.substitution merged
+                                , Conditional.substitution simplified
+                                ]
+                            )
                     Just False -> return Condition.bottom
                     Just True -> return
                         (Condition.fromSubstitution

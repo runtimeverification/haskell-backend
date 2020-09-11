@@ -220,10 +220,7 @@ distributeAnd
     => TopBottom child
     => MultiAnd (MultiOr child)
     -> MultiOr (MultiAnd child)
-distributeAnd =
-    MultiOr.map MultiAnd.make
-    . MultiOr.fullCrossProduct
-    . MultiAnd.extractPatterns
+distributeAnd = MultiOr.fullCrossProduct
 
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}

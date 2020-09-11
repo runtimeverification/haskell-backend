@@ -20,12 +20,15 @@ import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -73,14 +76,14 @@ mergePredicatesAndSubstitutions
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> [Predicate variable]
-    -> [Substitution variable]
+    -> MultiAnd (Predicate variable)
+    -> MultiAnd (Substitution variable)
     -> LogicT simplifier (Condition variable)
 mergePredicatesAndSubstitutions topCondition predicates substitutions =
     simplifyCondition
         topCondition
         Conditional
             { term = ()
-            , predicate = Predicate.makeMultipleAndPredicate predicates
+            , predicate = MultiAnd.toPredicate predicates
             , substitution = Foldable.fold substitutions
             }

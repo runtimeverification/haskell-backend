@@ -19,10 +19,11 @@ import Control.Monad.Catch
     )
 
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( fullCrossProduct
-    , mergeAll
+import Kore.Internal.MultiAnd
+    ( MultiAnd
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -83,7 +84,8 @@ simplify sideCondition application = do
 
     -- The "Propagation Or" inference rule together with
     -- "Propagation Bottom" for the case when a child or is empty.
-    childrenCrossProduct = MultiOr.fullCrossProduct children
+    childrenCrossProduct =
+        MultiOr.fullCrossProduct (MultiAnd.make children)
 
 makeAndEvaluateApplications
     ::  ( InternalVariable variable
@@ -92,7 +94,7 @@ makeAndEvaluateApplications
         )
     => SideCondition variable
     -> Symbol
-    -> [Pattern variable]
+    -> MultiAnd (Pattern variable)
     -> simplifier (OrPattern variable)
 makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
@@ -104,7 +106,7 @@ makeAndEvaluateSymbolApplications
         )
     => SideCondition variable
     -> Symbol
-    -> [Pattern variable]
+    -> MultiAnd (Pattern variable)
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
@@ -139,14 +141,19 @@ makeExpandedApplication
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
-    -> [Pattern variable]
+    -> MultiAnd (Pattern variable)
     -> LogicT simplifier (ExpandedApplication variable)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
             sideCondition
-            (map Pattern.predicate children)
-            (map Pattern.substitution children)
-    let term = symbolApplication symbol (Pattern.term <$> children)
+            (MultiAnd.map Pattern.predicate children)
+            (MultiAnd.map Pattern.substitution children)
+    let term =
+            symbolApplication
+                symbol
+                ( MultiAnd.extractPatterns
+                    (MultiAnd.map Pattern.term children)
+                )
 
     return $ Conditional.withCondition term merged

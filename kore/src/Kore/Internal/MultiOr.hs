@@ -13,12 +13,9 @@ Portability : portable
 
 module Kore.Internal.MultiOr
     ( MultiOr (..)
-    , crossProductGeneric
-    , crossProductGenericF
     , extractPatterns
     , filterOr
     , flatten
-    , flattenGeneric
     , fullCrossProduct
     , gather
     , observeAllT
@@ -54,6 +51,10 @@ import GHC.Exts
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -214,15 +215,15 @@ makeGeneric
 
 -}
 fullCrossProduct
-    :: [MultiOr term]
-    -> MultiOr [term]
-fullCrossProduct [] = MultiOr [[]]
-fullCrossProduct ors =
-    foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
+    :: Ord term
+    => TopBottom term
+    => MultiAnd (MultiOr term)
+    -> MultiOr (MultiAnd term)
+fullCrossProduct =
+    foldr (crossProductGeneric and') (singleton MultiAnd.top)
   where
-    -- TODO: this isn't safe
-    lastOrsWithLists =
-        MultiOr $ fmap (: []) (getMultiOr (last ors))
+    and' term ma =
+        term : MultiAnd.extractPatterns ma & MultiAnd.make
 
 {-| 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
@@ -310,18 +311,6 @@ flattenGeneric
     -> MultiOr child
 flattenGeneric (MultiOr []) = MultiOr []
 flattenGeneric (MultiOr ors) = foldr1 mergeGeneric ors
-
-{-| The same as 'crossProductGeneric' except that it works under an
-applicative thing.
--}
-crossProductGenericF
-    :: Applicative f
-    => (child1 -> child2 -> f child3)
-    -> MultiOr child1
-    -> MultiOr child2
-    -> f (MultiOr child3)
-crossProductGenericF joiner (MultiOr first) (MultiOr second) =
-    MultiOr <$> sequenceA (joiner <$> first <*> second)
 
 {-| 'crossProductGeneric' makes all pairs between the elements of two ors,
 then applies the given function to the result.
