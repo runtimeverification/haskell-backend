@@ -14,13 +14,7 @@
   }
 #And
   {
-    true
-  #Equals
-    0 <Int X
-  }
-#And
-  {
-    true
-  #Equals
     X <=Int 5
+  #Equals
+    true
   }
