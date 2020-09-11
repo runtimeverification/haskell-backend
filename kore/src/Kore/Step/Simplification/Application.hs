@@ -19,10 +19,6 @@ import Control.Monad.Catch
     )
 
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -85,7 +81,7 @@ simplify sideCondition application = do
     -- The "Propagation Or" inference rule together with
     -- "Propagation Bottom" for the case when a child or is empty.
     childrenCrossProduct =
-        MultiOr.fullCrossProduct (MultiAnd.make children)
+        MultiOr.fullCrossProduct' children
 
 makeAndEvaluateApplications
     ::  ( InternalVariable variable
@@ -94,7 +90,7 @@ makeAndEvaluateApplications
         )
     => SideCondition variable
     -> Symbol
-    -> MultiAnd (Pattern variable)
+    -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
@@ -106,7 +102,7 @@ makeAndEvaluateSymbolApplications
         )
     => SideCondition variable
     -> Symbol
-    -> MultiAnd (Pattern variable)
+    -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
@@ -141,19 +137,17 @@ makeExpandedApplication
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Symbol
-    -> MultiAnd (Pattern variable)
+    -> [Pattern variable]
     -> LogicT simplifier (ExpandedApplication variable)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
             sideCondition
-            (MultiAnd.map Pattern.predicate children)
-            (MultiAnd.map Pattern.substitution children)
+            (fmap Pattern.predicate children)
+            (fmap Pattern.substitution children)
     let term =
             symbolApplication
                 symbol
-                ( MultiAnd.extractPatterns
-                    (MultiAnd.map Pattern.term children)
-                )
+                (fmap Pattern.term children)
 
     return $ Conditional.withCondition term merged

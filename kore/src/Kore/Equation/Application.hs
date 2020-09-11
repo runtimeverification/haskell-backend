@@ -65,7 +65,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -244,10 +243,8 @@ attemptEquation sideCondition termLike equation =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
                 SideCondition.top
-                (MultiAnd.make (argument : maybeToList antiLeft))
-                ( MultiAnd.make
-                    [from @_ @(Substitution _) matchSubstitution]
-                )
+                (argument : maybeToList antiLeft)
+                [from @_ @(Substitution _) matchSubstitution]
                 & Logic.observeAllT
                 & (fmap . fmap) toMatchResult
 

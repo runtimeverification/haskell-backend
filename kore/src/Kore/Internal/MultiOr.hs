@@ -17,6 +17,7 @@ module Kore.Internal.MultiOr
     , filterOr
     , flatten
     , fullCrossProduct
+    , fullCrossProduct'
     , gather
     , observeAllT
     , observeAll
@@ -224,6 +225,17 @@ fullCrossProduct =
   where
     and' term ma =
         term : MultiAnd.extractPatterns ma & MultiAnd.make
+
+fullCrossProduct'
+    :: [MultiOr term]
+    -> MultiOr [term]
+fullCrossProduct' [] = MultiOr [[]]
+fullCrossProduct' ors =
+    foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
+  where
+    -- TODO: this isn't safe
+    lastOrsWithLists =
+        MultiOr $ fmap (: []) (getMultiOr (last ors))
 
 {-| 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
