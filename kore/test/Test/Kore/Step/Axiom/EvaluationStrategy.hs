@@ -69,9 +69,9 @@ test_attemptEquations =
         assertEqual "" 2 updatedCounter
     ]
   where
-    attemptEquationAndAccumulateErrors' counter condition term err equation = do
+    attemptEquationAndAccumulateErrors' counter condition term equation = do
         liftIO $ modifyIORef' counter (+ 1)
-        attemptEquationAndAccumulateErrors condition term err equation
+        attemptEquationAndAccumulateErrors condition term equation
     applicable =
         axiom
           (Mock.functionalConstr10 (mkElemVar Mock.x))

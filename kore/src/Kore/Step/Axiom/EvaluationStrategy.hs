@@ -110,14 +110,13 @@ attemptEquationAndAccumulateErrors
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> TermLike (Target variable)
-    -> Option (Min (AttemptEquationError variable))
     -> Equation variable
     -> ExceptRT
         (OrPattern variable)
         simplifier
         (Option (Min (AttemptEquationError variable)))
-attemptEquationAndAccumulateErrors condition term err equation =
-    mappend err <$> attemptEquation
+attemptEquationAndAccumulateErrors condition term equation =
+    attemptEquation
   where
     attemptEquation =
         ExceptRT . ExceptT
@@ -127,23 +126,14 @@ attemptEquationAndAccumulateErrors condition term err equation =
 
 attemptEquations
     :: MonadSimplify simplifier
-    => ( Option (Min (AttemptEquationError variable))
-        -> Equation variable
-        -> ExceptRT
-            (OrPattern variable)
-            simplifier
-            (Option (Min (AttemptEquationError variable)))
-       )
+    => Monoid error
+    => (Equation variable -> ExceptRT result simplifier error)
     -> [Equation variable]
-    -> simplifier
-        (Either
-            (Option (Min (AttemptEquationError variable)))
-            (OrPattern variable)
-        )
+    -> simplifier (Either error result)
 attemptEquations accumulator equations =
     Foldable.foldlM
-        accumulator
-        (Option Nothing)
+        (\err equation -> mappend err <$> accumulator equation)
+        mempty
         equations
     & runExceptRT & runExceptT
 
