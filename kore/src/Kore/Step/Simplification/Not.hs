@@ -213,15 +213,6 @@ distributeNot notOr@Not { notChild } =
   where
     worker child = notOr { notChild = child }
 
-{- | Distribute 'MultiAnd' over 'MultiOr'.
- -}
-distributeAnd
-    :: Ord child
-    => TopBottom child
-    => MultiAnd (MultiOr child)
-    -> MultiOr (MultiAnd child)
-distributeAnd = MultiOr.fullCrossProduct
-
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}
 scatterAnd
@@ -229,7 +220,7 @@ scatterAnd
     => TopBottom child
     => MultiAnd (MultiOr child)
     -> LogicT m (MultiAnd child)
-scatterAnd = scatter . distributeAnd
+scatterAnd = scatter . MultiOr.distributeAnd
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}

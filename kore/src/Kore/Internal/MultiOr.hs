@@ -13,11 +13,12 @@ Portability : portable
 
 module Kore.Internal.MultiOr
     ( MultiOr (..)
+    , bottom
     , extractPatterns
     , filterOr
     , flatten
-    , fullCrossProduct
-    , fullCrossProduct'
+    , distributeAnd
+    , distributeApplication
     , gather
     , observeAllT
     , observeAll
@@ -40,6 +41,10 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import Data.List
     ( foldl'
     )
@@ -56,6 +61,9 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Syntax.Application
+    ( Application (..)
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -122,6 +130,9 @@ instance (Ord child, TopBottom child) => From [child] (MultiOr child) where
 instance From (MultiOr child) [child] where
     from = getMultiOr
 
+bottom :: MultiOr term
+bottom = MultiOr []
+
 {-| 'OrBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiOr'.
 -}
@@ -184,58 +195,37 @@ extractPatterns
     -> [term]
 extractPatterns = getMultiOr
 
-{-| 'fullCrossProduct' distributes all the elements in a list of or, making
-all possible tuples. Each of these tuples will be an element of the resulting
-or. This is useful when, say, distributing 'And' or 'Application' patterns
-over 'Or'.
-
-As an example,
-
-@
-fullCrossProduct
-    [ make [a1, a2]
-    , make [b1, b2]
-    , make [c1, c2]
-    ]
-@
-
-will produce something equivalent to
-
-@
-makeGeneric
-    [ [a1, b1, c1]
-    , [a1, b1, c2]
-    , [a1, b2, c1]
-    , [a1, b2, c2]
-    , [a2, b1, c1]
-    , [a2, b1, c2]
-    , [a2, b2, c1]
-    , [a2, b2, c2]
-    ]
-@
-
--}
-fullCrossProduct
+distributeAnd
     :: Ord term
     => TopBottom term
     => MultiAnd (MultiOr term)
     -> MultiOr (MultiAnd term)
-fullCrossProduct =
+distributeAnd =
     foldr (crossProductGeneric and') (singleton MultiAnd.top)
   where
     and' term ma =
         term : MultiAnd.extractPatterns ma & MultiAnd.make
 
-fullCrossProduct'
-    :: [MultiOr term]
-    -> MultiOr [term]
-fullCrossProduct' [] = MultiOr [[]]
-fullCrossProduct' ors =
-    foldr (crossProductGeneric (:)) lastOrsWithLists (init ors)
+distributeApplication
+    :: Ord head
+    => Ord term
+    => TopBottom term
+    => Application head (MultiOr term)
+    -> MultiOr (Application head term)
+distributeApplication
+    Application
+        { applicationSymbolOrAlias
+        , applicationChildren
+        }
+  =
+    foldr
+        (crossProductGeneric applyTo)
+        (singleton application)
+        applicationChildren
   where
-    -- TODO: this isn't safe
-    lastOrsWithLists =
-        MultiOr $ fmap (: []) (getMultiOr (last ors))
+      applyTo term = Lens.over (field @"applicationChildren") (term :)
+      application =
+          Application { applicationSymbolOrAlias, applicationChildren = [] }
 
 {-| 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
@@ -350,12 +340,14 @@ makeGeneric
 
 -}
 crossProductGeneric
-    :: (child1 -> child2 -> child3)
+    :: Ord child3
+    => TopBottom child3
+    => (child1 -> child2 -> child3)
     -> MultiOr child1
     -> MultiOr child2
     -> MultiOr child3
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
-    MultiOr $ joiner <$> first <*> second
+    make $ joiner <$> first <*> second
 
 gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act

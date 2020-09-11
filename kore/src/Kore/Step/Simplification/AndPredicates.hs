@@ -40,7 +40,7 @@ simplifyEvaluatedMultiPredicate
     -> MultiAnd (OrCondition variable)
     -> simplifier (OrCondition variable)
 simplifyEvaluatedMultiPredicate sideCondition predicates = do
-    let crossProduct = MultiOr.fullCrossProduct predicates
+    let crossProduct = MultiOr.distributeAnd predicates
     MultiOr.observeAllT $ do
         element <- LogicT.scatter crossProduct
         andConditions element

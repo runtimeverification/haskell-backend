@@ -68,20 +68,20 @@ simplify
     -> simplifier (OrPattern variable)
 simplify sideCondition application = do
     evaluated <- OrPattern.observeAllT $ do
-        result <- Logic.scatter childrenCrossProduct
+        Application { applicationChildren = result } <-
+            Logic.scatter childrenCrossProduct
         lift $ makeAndEvaluateApplications sideCondition symbol result
     return (OrPattern.flatten evaluated)
   where
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = children
         }
       = application
 
     -- The "Propagation Or" inference rule together with
     -- "Propagation Bottom" for the case when a child or is empty.
     childrenCrossProduct =
-        MultiOr.fullCrossProduct' children
+        MultiOr.distributeApplication application
 
 makeAndEvaluateApplications
     ::  ( InternalVariable variable
