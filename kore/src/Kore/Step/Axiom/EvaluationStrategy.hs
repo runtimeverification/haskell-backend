@@ -24,7 +24,6 @@ import Control.Monad.Except
     ( ExceptT (..)
     , runExceptT
     )
-import qualified Data.Bifunctor as Bifunctor
 import Data.EitherR
     ( ExceptRT (..)
     )
@@ -95,8 +94,7 @@ definitionEvaluation equations =
                 (attemptEquationAndAccumulateErrors condition term')
                 equations'
         case result of
-            Right applicable -> do
-                results <- applicable
+            Right results ->
                 (return . Applied) AttemptedAxiomResults
                     { results
                     , remainders = OrPattern.bottom
@@ -115,7 +113,7 @@ attemptEquationAndAccumulateErrors
     -> Option (Min (AttemptEquationError variable))
     -> Equation variable
     -> ExceptRT
-        (simplifier (OrPattern variable))
+        (OrPattern variable)
         simplifier
         (Option (Min (AttemptEquationError variable)))
 attemptEquationAndAccumulateErrors condition term err equation =
@@ -124,7 +122,7 @@ attemptEquationAndAccumulateErrors condition term err equation =
     attemptEquation =
         ExceptRT . ExceptT
         $ Equation.attemptEquation condition term equation
-        >>= return . Bifunctor.bimap (Option . Just . Min) apply
+        >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
 attemptEquations
@@ -132,7 +130,7 @@ attemptEquations
     => ( Option (Min (AttemptEquationError variable))
         -> Equation variable
         -> ExceptRT
-            (simplifier (OrPattern variable))
+            (OrPattern variable)
             simplifier
             (Option (Min (AttemptEquationError variable)))
        )
@@ -140,7 +138,7 @@ attemptEquations
     -> simplifier
         (Either
             (Option (Min (AttemptEquationError variable)))
-            (simplifier (OrPattern variable))
+            (OrPattern variable)
         )
 attemptEquations accumulator equations =
     Foldable.foldlM
