@@ -43,11 +43,11 @@ import Kore.Equation.Application
 import Kore.Log.DebugAppliedRewriteRules
     ( DebugAppliedRewriteRules
     )
+import Kore.Log.DebugClaimState
+    ( DebugClaimState
+    )
 import Kore.Log.DebugEvaluateCondition
     ( DebugEvaluateCondition
-    )
-import Kore.Log.DebugProofState
-    ( DebugProofState
     )
 import Kore.Log.DebugProven
     ( DebugProven
@@ -98,8 +98,8 @@ import Kore.Log.WarnFunctionWithoutEvaluators
 import Kore.Log.WarnIfLowProductivity
     ( WarnIfLowProductivity
     )
-import Kore.Log.WarnStuckProofState
-    ( WarnStuckProofState
+import Kore.Log.WarnStuckClaimState
+    ( WarnStuckClaimState
     )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
@@ -146,14 +146,14 @@ entryHelpDocs :: [Pretty.Doc ()]
     unzip
     [ mk $ Proxy @DebugSolverSend
     , mk $ Proxy @DebugSolverRecv
-    , mk $ Proxy @DebugProofState
+    , mk $ Proxy @DebugClaimState
     , mk $ Proxy @DebugAppliedRewriteRules
     , mk $ Proxy @DebugSubstitutionSimplifier
     , mk $ Proxy @ErrorBottomTotalFunction
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
-    , mk $ Proxy @WarnStuckProofState
+    , mk $ Proxy @WarnStuckClaimState
     , mk $ Proxy @WarnIfLowProductivity
     , mk $ Proxy @WarnTrivialClaim
     , mk $ Proxy @DebugEvaluateCondition

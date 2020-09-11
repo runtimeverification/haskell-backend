@@ -2,14 +2,14 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Strategies.ProofState
+module Kore.Reachability.ClaimState
     ( extractGoalRem
     , extractUnproven
     , extractGoalStuck
-    , ProofState (..)
+    , ClaimState (..)
     , Prim (..)
     , proofState
-    , ProofStateTransformer (..)
+    , ClaimStateTransformer (..)
     ) where
 
 import Prelude.Kore
@@ -50,7 +50,7 @@ instance Pretty Prim where
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
-data ProofState goal
+data ClaimState goal
     = Goal !goal
     -- ^ The indicated goal is being proven.
     | GoalRemainder !goal
@@ -67,19 +67,19 @@ data ProofState goal
     deriving (Foldable, Functor)
     deriving (GHC.Generic)
 
-instance NFData goal => NFData (ProofState goal)
+instance NFData goal => NFData (ClaimState goal)
 
-instance Hashable goal => Hashable (ProofState goal)
+instance Hashable goal => Hashable (ClaimState goal)
 
-instance SOP.Generic (ProofState a)
+instance SOP.Generic (ClaimState a)
 
-instance SOP.HasDatatypeInfo (ProofState a)
+instance SOP.HasDatatypeInfo (ClaimState a)
 
-instance Debug a => Debug (ProofState a)
+instance Debug a => Debug (ClaimState a)
 
-instance (Debug a, Diff a) => Diff (ProofState a)
+instance (Debug a, Diff a) => Diff (ClaimState a)
 
-instance Unparse goal => Pretty (ProofState goal) where
+instance Unparse goal => Pretty (ClaimState goal) where
     pretty (Goal goal) =
         Pretty.vsep
             ["Proof state Goal:"
@@ -102,28 +102,28 @@ instance Unparse goal => Pretty (ProofState goal) where
             ]
     pretty Proven = "Proof state Proven."
 
-{- | Extract the unproven goals of a 'ProofState'.
+{- | Extract the unproven goals of a 'ClaimState'.
 
 Returns 'Nothing' if there is no remaining unproven goal.
 
  -}
-extractUnproven :: ProofState a -> Maybe a
+extractUnproven :: ClaimState a -> Maybe a
 extractUnproven (Goal t)    = Just t
 extractUnproven (GoalRewritten t) = Just t
 extractUnproven (GoalRemainder t) = Just t
 extractUnproven (GoalStuck t) = Just t
 extractUnproven Proven      = Nothing
 
-extractGoalRem :: ProofState a -> Maybe a
+extractGoalRem :: ClaimState a -> Maybe a
 extractGoalRem (GoalRemainder t) = Just t
 extractGoalRem _           = Nothing
 
-extractGoalStuck :: ProofState a -> Maybe a
+extractGoalStuck :: ClaimState a -> Maybe a
 extractGoalStuck (GoalStuck a) = Just a
 extractGoalStuck _             = Nothing
 
-data ProofStateTransformer a val =
-    ProofStateTransformer
+data ClaimStateTransformer a val =
+    ClaimStateTransformer
         { goalTransformer :: a -> val
         , goalRemainderTransformer :: a -> val
         , goalRewrittenTransformer :: a -> val
@@ -131,14 +131,14 @@ data ProofStateTransformer a val =
         , provenValue :: val
         }
 
-{- | Catamorphism for 'ProofState'
+{- | Catamorphism for 'ClaimState'
 -}
 proofState
-    :: ProofStateTransformer a val
-    -> ProofState a
+    :: ClaimStateTransformer a val
+    -> ClaimState a
     -> val
 proofState
-    ProofStateTransformer
+    ClaimStateTransformer
         { goalTransformer
         , goalRemainderTransformer
         , goalRewrittenTransformer

@@ -108,7 +108,7 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Verification
-    ( CommonProofState
+    ( CommonClaimState
     )
 import Logic
 
@@ -538,11 +538,11 @@ shouldStore =
 -- Type synonym for the actual type of the execution graph.
 type ExecutionGraph =
     Strategy.ExecutionGraph
-        CommonProofState
+        CommonClaimState
         AppliedRule
 
 type InnerGraph =
-    Gr CommonProofState (Seq AppliedRule)
+    Gr CommonClaimState (Seq AppliedRule)
 
 type Axiom = Rule ReachabilityClaim
 type AppliedRule = Claim.AppliedRule ReachabilityClaim

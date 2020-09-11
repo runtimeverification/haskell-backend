@@ -10,7 +10,7 @@ module Kore.Log.InfoReachability
 
 import Prelude.Kore
 
-import Kore.Strategies.ProofState
+import Kore.Reachability.ClaimState
     ( Prim (..)
     )
 import Log

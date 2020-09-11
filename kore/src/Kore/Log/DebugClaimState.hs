@@ -3,18 +3,18 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
-module Kore.Log.DebugProofState
-    ( DebugProofState (..)
+module Kore.Log.DebugClaimState
+    ( DebugClaimState (..)
     ) where
 
 import Prelude.Kore
 
+import Kore.Reachability.ClaimState
+    ( ClaimState (..)
+    , Prim (..)
+    )
 import Kore.Step.ClaimPattern
     ( ReachabilityClaim (..)
-    )
-import Kore.Strategies.ProofState
-    ( Prim (..)
-    , ProofState (..)
     )
 import Log
 import Pretty
@@ -22,17 +22,17 @@ import Pretty
     )
 import qualified Pretty
 
-data DebugProofState =
-    DebugProofState
-        { proofState :: ProofState ReachabilityClaim
+data DebugClaimState =
+    DebugClaimState
+        { proofState :: ClaimState ReachabilityClaim
         , transition :: Prim
-        , result :: Maybe (ProofState ReachabilityClaim)
+        , result :: Maybe (ClaimState ReachabilityClaim)
         }
     deriving (Show)
 
-instance Pretty DebugProofState where
+instance Pretty DebugClaimState where
     pretty
-        DebugProofState
+        DebugClaimState
             { proofState
             , transition
             , result
@@ -47,6 +47,6 @@ instance Pretty DebugProofState where
             , Pretty.indent 4 (maybe "Terminal state." pretty result)
             ]
 
-instance Entry DebugProofState where
+instance Entry DebugClaimState where
     entrySeverity _ = Debug
     helpDoc _ = "log proof state"

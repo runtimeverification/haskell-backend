@@ -179,6 +179,12 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import Kore.Reachability.Claim
+import Kore.Reachability.ClaimState
+    ( ClaimStateTransformer (ClaimStateTransformer)
+    , extractUnproven
+    , proofState
+    )
+import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -190,14 +196,8 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.ProofState
-    ( ProofStateTransformer (ProofStateTransformer)
-    , extractUnproven
-    , proofState
-    )
-import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
-    ( CommonProofState
+    ( CommonClaimState
     )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
@@ -570,7 +570,7 @@ showConfig
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showConfig =
-    showProofStateComponent "Config" getConfiguration
+    showClaimStateComponent "Config" getConfiguration
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest
@@ -579,25 +579,25 @@ showDest
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
     -> ReplM m ()
 showDest =
-    showProofStateComponent
+    showClaimStateComponent
         "Destination"
         (OrPattern.toPattern . getDestination)
 
-showProofStateComponent
+showClaimStateComponent
     :: Monad m
     => String
     -- ^ component name
     -> (ReachabilityClaim -> Pattern RewritingVariableName)
     -> Maybe ReplNode
     -> ReplM m ()
-showProofStateComponent name transformer maybeNode = do
-    maybeProofState <- getProofStateAt maybeNode
-    case maybeProofState of
+showClaimStateComponent name transformer maybeNode = do
+    maybeClaimState <- getClaimStateAt maybeNode
+    case maybeClaimState of
         Nothing -> putStrLn' "Invalid node!"
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
             putStrLn' $ name <> " at node " <> show node <> " is:"
-            unparseProofStateComponent
+            unparseClaimStateComponent
                 transformer
                 omit
                 config
@@ -962,12 +962,12 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getProofStateAt (Just node)
+        maybeSecond <- getClaimStateAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
                 proofState
-                    ProofStateTransformer
+                    ClaimStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
                         , goalTransformer = patternUnifier
                         , goalRemainderTransformer = patternUnifier
@@ -1096,7 +1096,7 @@ savePartialProof maybeNatural file = do
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
     Config { mainModuleName } <- ask
-    maybeConfig <- getProofStateAt maybeNode
+    maybeConfig <- getClaimStateAt maybeNode
     case (fmap . fmap) extractUnproven maybeConfig of
         Nothing -> putStrLn' "Invalid node!"
         Just (_, Nothing) -> putStrLn' "Goal is proven."
@@ -1321,15 +1321,15 @@ showRewriteRule rule =
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
-unparseProofStateComponent
+unparseClaimStateComponent
     :: (ReachabilityClaim -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
-    -> CommonProofState
+    -> CommonClaimState
     -- ^ pattern
     -> ReplOutput
-unparseProofStateComponent transformation omitList =
-    proofState ProofStateTransformer
+unparseClaimStateComponent transformation omitList =
+    proofState ClaimStateTransformer
         { goalTransformer =
             makeKoreReplOutput . unparseComponent
         , goalRemainderTransformer = \goal ->
@@ -1383,7 +1383,7 @@ printNotFound = putStrLn' "Variable or index not found"
 showDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Gr CommonProofState (Maybe (Seq axiom))
+    => Gr CommonClaimState (Maybe (Seq axiom))
     -> IO ()
 showDotGraph =
     flip Graph.runGraphvizCanvas' Graph.Xlib
@@ -1392,7 +1392,7 @@ showDotGraph =
 saveDotGraph
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Gr CommonProofState (Maybe (Seq axiom))
+    => Gr CommonClaimState (Maybe (Seq axiom))
     -> Graph.GraphvizOutput
     -> FilePath
     -> IO ()
@@ -1414,10 +1414,10 @@ graphParams
     => From axiom RuleIndex
     => Graph.GraphvizParams
          Graph.Node
-         CommonProofState
+         CommonClaimState
          (Maybe (Seq axiom))
          ()
-         CommonProofState
+         CommonClaimState
 graphParams = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
         [ Graph.textLabel (maybe "" ruleIndex l)
@@ -1426,9 +1426,9 @@ graphParams = Graph.nonClusteredParams
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
-                ProofState.DoNotUse.Proven          -> toColorList green
-                ProofState.DoNotUse.GoalStuck _     -> toColorList red
-                ProofState.DoNotUse.GoalRemainder _ -> toColorList red
+                ClaimState.DoNotUse.Proven          -> toColorList green
+                ClaimState.DoNotUse.GoalStuck _     -> toColorList red
+                ClaimState.DoNotUse.GoalRemainder _ -> toColorList red
                 _                                   -> []
         ]
     }

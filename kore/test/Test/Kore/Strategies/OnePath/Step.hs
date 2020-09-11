@@ -46,6 +46,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
+import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     )
@@ -60,7 +61,6 @@ import Kore.Step.Strategy
     , pickFinal
     , runStrategy
     )
-import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -173,7 +173,7 @@ test_onePathStrategy =
             [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.Goal $ makeOnePathClaim Mock.a Mock.a)
+            (ClaimState.Goal $ makeOnePathClaim Mock.a Mock.a)
             actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath actual)
@@ -195,7 +195,7 @@ test_onePathStrategy =
             (makeReachabilityOnePathGoal Mock.a Mock.a)
             [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
-        assertEqual "" ProofState.Proven _actual
+        assertEqual "" ClaimState.Proven _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
@@ -218,7 +218,7 @@ test_onePathStrategy =
             [makeReachabilityOnePathClaim Mock.a Mock.b]
             [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
-            (ProofState.GoalRewritten $ makeOnePathClaim Mock.c Mock.d)
+            (ClaimState.GoalRewritten $ makeOnePathClaim Mock.c Mock.d)
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -252,7 +252,7 @@ test_onePathStrategy =
             , simpleReachabilityRewrite Mock.a Mock.b
             ]
         assertEqual ""
-            ProofState.Proven
+            ClaimState.Proven
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -281,7 +281,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.GoalRewritten $ makeOnePathClaim Mock.c Mock.e
+                [ ClaimState.GoalRewritten $ makeOnePathClaim Mock.c Mock.e
                 ]
             )
             (sort
@@ -315,7 +315,7 @@ test_onePathStrategy =
             ]
         assertEqual ""
             (sort
-                [ ProofState.GoalRewritten $ makeOnePathClaim Mock.d Mock.e
+                [ ClaimState.GoalRewritten $ makeOnePathClaim Mock.d Mock.e
                 ]
             )
             (sort
@@ -512,7 +512,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqual ""
-            [ ProofState.GoalStuck
+            [ ClaimState.GoalStuck
             $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.functionalConstr10 Mock.b
@@ -524,7 +524,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
-            , ProofState.Proven
+            , ClaimState.Proven
             ]
             [ _actual1
             , _actual2
@@ -575,7 +575,7 @@ test_onePathStrategy =
                     )
                 ]
         assertEqual ""
-            ProofState.Proven
+            ClaimState.Proven
             _actual
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
@@ -665,7 +665,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.GoalRewritten $ makeOnePathGoalFromPatterns
+            [ ClaimState.GoalRewritten $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
@@ -748,7 +748,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.GoalRewritten $ makeOnePathGoalFromPatterns
+            [ ClaimState.GoalRewritten $ makeOnePathGoalFromPatterns
                 Conditional
                     { term = Mock.a
                     , predicate =
@@ -801,7 +801,7 @@ test_onePathStrategy =
             original
             []
             []
-        assertEqual "" (ProofState.GoalStuck expect) _actual
+        assertEqual "" (ClaimState.GoalStuck expect) _actual
     ]
 
 simpleRewrite
@@ -851,7 +851,7 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Claim claim
     => Limit Natural
-    -> ( ExecutionGraph (ProofState.ProofState claim) (AppliedRule claim)
+    -> ( ExecutionGraph (ClaimState.ClaimState claim) (AppliedRule claim)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
@@ -877,7 +877,7 @@ runSteps
             breadthLimit
             (transitionRule claims axiomGroups)
             strategy'
-            (ProofState.Goal configuration)
+            (ClaimState.Goal configuration)
   where
     mockEnv = Mock.env
 
@@ -891,7 +891,7 @@ runOnePathSteps
     -- ^left-hand-side of unification
     -> [claim]
     -> [Rule claim]
-    -> IO [ProofState.ProofState claim]
+    -> IO [ClaimState.ClaimState claim]
 runOnePathSteps
     breadthLimit
     depthLimit
@@ -911,11 +911,11 @@ runOnePathSteps
 
 assertStuck
     :: OnePathClaim
-    -> [ProofState.ProofState OnePathClaim]
-    -> [ProofState.ProofState ReachabilityClaim]
+    -> [ClaimState.ClaimState OnePathClaim]
+    -> [ClaimState.ClaimState ReachabilityClaim]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
-    assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual
+    assertEqual "as one-path claim" [ ClaimState.GoalStuck expectedGoal ] actual
     assertEqual "as reachability claim" (asOnePath actual) actualReach
   where
     asOnePath = (fmap . fmap) OnePath

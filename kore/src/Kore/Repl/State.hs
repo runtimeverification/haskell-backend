@@ -17,7 +17,7 @@ module Kore.Repl.State
     , getTargetNode, getInnerGraph, getExecutionGraph
     , smoothOutGraph
     , getInterestingBranchingNode
-    , getProofStateAt, getRuleFor, getLabels, setLabels
+    , getClaimStateAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
@@ -116,6 +116,13 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.ClaimState
+    ( ClaimState (Goal)
+    , ClaimStateTransformer (ClaimStateTransformer)
+    , extractUnproven
+    , proofState
+    )
+import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -131,13 +138,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.ProofState
-    ( ProofState (Goal)
-    , ProofStateTransformer (ProofStateTransformer)
-    , extractUnproven
-    , proofState
-    )
-import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (..)
@@ -418,11 +418,11 @@ getTargetNode maybeNode = do
        else pure Nothing
 
 -- | Get the proof state at selected node (or current node for 'Nothing').
-getProofStateAt
+getClaimStateAt
     :: MonadState ReplState m
     => Maybe ReplNode
-    -> m (Maybe (ReplNode, CommonProofState))
-getProofStateAt maybeNode = do
+    -> m (Maybe (ReplNode, CommonClaimState))
+getClaimStateAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure Nothing
@@ -557,7 +557,7 @@ runUnifier sideCondition first second = do
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
-        . proofState ProofStateTransformer
+        . proofState ClaimStateTransformer
             { goalTransformer = const . Just $ UnevaluatedNode
             , goalRemainderTransformer = const . Just $ StuckNode
             , goalRewrittenTransformer = const . Just $ UnevaluatedNode

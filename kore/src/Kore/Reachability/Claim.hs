@@ -108,9 +108,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-import Kore.Log.WarnStuckProofState
-    ( warnStuckProofStateTermsNotUnifiable
-    , warnStuckProofStateTermsUnifiable
+import Kore.Log.WarnStuckClaimState
+    ( warnStuckClaimStateTermsNotUnifiable
+    , warnStuckClaimStateTermsUnifiable
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
@@ -157,10 +157,10 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
-import Kore.Strategies.ProofState hiding
+import Kore.Reachability.ClaimState hiding
     ( proofState
     )
-import qualified Kore.Strategies.ProofState as ProofState
+import qualified Kore.Reachability.ClaimState as ClaimState
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
@@ -200,7 +200,7 @@ class Claim claim where
     >     = ApplyRewritten !claim
     >     | ApplyRemainder !claim
 
-    Rationale: ProofState is part of the implementation of transitionRule, that
+    Rationale: ClaimState is part of the implementation of transitionRule, that
     is: these functions have hidden knowledge of how transitionRule works
     because they tell it what to do next. Instead, they should report their
     result and leave the decision up to transitionRule.
@@ -210,13 +210,13 @@ class Claim claim where
         :: MonadSimplify m
         => [claim]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule claim]]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
@@ -364,7 +364,7 @@ deriveSeqClaim
     -> (ClaimPattern -> claim)
     -> [claim]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -391,7 +391,7 @@ deriveSeqAxiomOnePath
     =>  [Rule OnePathClaim]
     ->  OnePathClaim
     ->  Strategy.TransitionT (AppliedRule OnePathClaim) simplifier
-            (ProofState OnePathClaim)
+            (ClaimState OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
@@ -449,7 +449,7 @@ deriveParAxiomAllPath
     =>  [Rule AllPathClaim]
     ->  AllPathClaim
     ->  Strategy.TransitionT (AppliedRule AllPathClaim) simplifier
-            (ProofState AllPathClaim)
+            (ClaimState AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
@@ -564,13 +564,13 @@ transitionRule
     => Claim claim
     => [claim]
     -> [[Rule claim]]
-    -> TransitionRule m (AppliedRule claim) (ProofState claim)
+    -> TransitionRule m (AppliedRule claim) (ClaimState claim)
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
-        -> ProofState claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+        -> ClaimState claim
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (GoalStuck _) = empty
@@ -591,11 +591,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
+                warnStuckClaimStateTermsUnifiable
                 pure (GoalStuck a)
             NotImplied a
               | isRemainder proofState -> do
-                warnStuckProofStateTermsNotUnifiable
+                warnStuckClaimStateTermsNotUnifiable
                 pure (GoalStuck a)
               | otherwise -> pure (Goal a)
       | otherwise = pure proofState
@@ -620,19 +620,19 @@ transitionRule claims axiomGroups = transitionRuleWorker
         applyAxioms axiomGroups claim
       | otherwise = pure proofState
 
-retractSimplifiable :: ProofState a -> Maybe a
-retractSimplifiable (ProofState.Goal a) = Just a
-retractSimplifiable (ProofState.GoalRewritten a) = Just a
-retractSimplifiable (ProofState.GoalRemainder a) = Just a
+retractSimplifiable :: ClaimState a -> Maybe a
+retractSimplifiable (ClaimState.Goal a) = Just a
+retractSimplifiable (ClaimState.GoalRewritten a) = Just a
+retractSimplifiable (ClaimState.GoalRemainder a) = Just a
 retractSimplifiable _ = Nothing
 
-retractRewritable :: ProofState a -> Maybe a
-retractRewritable (ProofState.Goal a) = Just a
-retractRewritable (ProofState.GoalRemainder a) = Just a
+retractRewritable :: ClaimState a -> Maybe a
+retractRewritable (ClaimState.Goal a) = Just a
+retractRewritable (ClaimState.GoalRemainder a) = Just a
 retractRewritable _ = Nothing
 
-isRemainder :: ProofState a -> Bool
-isRemainder (ProofState.GoalRemainder _) = True
+isRemainder :: ClaimState a -> Bool
+isRemainder (ClaimState.GoalRemainder _) = True
 isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
@@ -904,7 +904,7 @@ derivePar'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -923,7 +923,7 @@ deriveWith
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -948,7 +948,7 @@ deriveSeq'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ProofState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
@@ -958,7 +958,7 @@ deriveResults
     => (Step.UnifiedRule representation -> AppliedRule claim)
     -> Step.Results representation
     -> Strategy.TransitionT (AppliedRule claim) simplifier
-        (ProofState.ProofState (Pattern RewritingVariableName))
+        (ClaimState.ClaimState (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
 deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
