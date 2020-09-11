@@ -90,7 +90,7 @@ instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
 instance Exception ErrorRewritesInstantiation where
     toException = toException . SomeEntry
     fromException exn =
-        fromException exn >>= \entry -> fromEntry entry
+        fromException exn >>= fromEntry
 
 instance Entry ErrorRewritesInstantiation where
     entrySeverity _ = Error

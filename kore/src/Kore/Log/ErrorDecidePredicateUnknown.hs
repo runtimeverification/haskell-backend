@@ -11,6 +11,11 @@ module Kore.Log.ErrorDecidePredicateUnknown
 
 import Prelude.Kore
 
+import Control.Exception
+    ( Exception (..)
+    , throw
+    )
+
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -29,6 +34,11 @@ newtype ErrorDecidePredicateUnknown =
         }
     deriving (Show)
 
+instance Exception ErrorDecidePredicateUnknown where
+    toException = toException . SomeEntry
+    fromException exn =
+        fromException exn >>= fromEntry
+
 instance Pretty ErrorDecidePredicateUnknown where
     pretty ErrorDecidePredicateUnknown { predicates } =
         Pretty.vsep
@@ -46,11 +56,10 @@ instance Entry ErrorDecidePredicateUnknown where
         "errors raised when the solver cannot decide satisfiability of a formula"
 
 errorDecidePredicateUnknown
-    :: MonadLog log
-    => InternalVariable variable
+    :: InternalVariable variable
     => NonEmpty (Predicate variable)
     -> log ()
 errorDecidePredicateUnknown predicates' =
-    logEntry ErrorDecidePredicateUnknown { predicates }
+    throw ErrorDecidePredicateUnknown { predicates }
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'
