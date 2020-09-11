@@ -36,10 +36,7 @@ import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (..)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
+    ( ClaimPattern (..)
     , lensClaimPattern
     )
 

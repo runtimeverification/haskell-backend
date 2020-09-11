@@ -35,8 +35,6 @@ import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
     , lensClaimPattern
     )
 import Kore.Step.RulePattern

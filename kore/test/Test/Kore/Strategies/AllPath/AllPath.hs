@@ -311,11 +311,11 @@ type ProofState = ProofState.ProofState Goal
 
 type Prim = Claim.Prim
 
-newtype instance Claim.Rule Goal =
-    Rule { unRule :: (K, K) }
-    deriving (Eq, GHC.Generic, Show)
-
 instance Claim Goal where
+
+    newtype instance Rule Goal = Rule { unRule :: (K, K) }
+        deriving (Eq, GHC.Generic, Show)
+
     checkImplication (src, dst)
       | src' == Bot = return Claim.Implied
       | src == NotDef = return Claim.Implied

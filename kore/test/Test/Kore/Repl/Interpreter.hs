@@ -66,8 +66,6 @@ import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
     , claimPattern
     )
 import Kore.Step.RulePattern

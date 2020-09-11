@@ -17,7 +17,11 @@ module Kore.Reachability.Claim
     , transitionRule
     , isTrusted
     -- * Re-exports
-    , module Kore.Strategies.Rule
+    , ReachabilityClaim (..)
+    , AllPathClaim (..)
+    , OnePathClaim (..)
+    , Rule (..)
+    , RewriteRule (..)
     , module Kore.Log.InfoReachability
     , getConfiguration
     , getDestination
@@ -132,6 +136,7 @@ import Kore.Step.Rule
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
+    , RewriteRule (..)
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -156,7 +161,6 @@ import Kore.Strategies.ProofState hiding
     ( proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
-import Kore.Strategies.Rule
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
@@ -176,6 +180,10 @@ import qualified Pretty
 import qualified SMT
 
 class Claim claim where
+    {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
+    -}
+    data family Rule claim
+
     checkImplication
         :: MonadSimplify m
         => claim
@@ -247,8 +255,11 @@ instance (From claim Attribute.RuleIndex, From (Rule claim) Attribute.RuleIndex)
     from (AppliedAxiom rule) = from rule
     from (AppliedClaim claim) = from claim
 
-instance (From claim Attribute.SourceLocation, From (Rule claim) Attribute.SourceLocation)
-  => From (AppliedRule claim) Attribute.SourceLocation
+instance
+    ( From claim Attribute.SourceLocation
+    , From (Rule claim) Attribute.SourceLocation
+    )
+    => From (AppliedRule claim) Attribute.SourceLocation
   where
     from (AppliedAxiom rule) = from rule
     from (AppliedClaim claim) = from claim
@@ -318,6 +329,12 @@ Things to note when implementing your own:
 -}
 
 instance Claim OnePathClaim where
+
+    newtype instance Rule OnePathClaim =
+        OnePathRewriteRule
+        { unRuleOnePath :: RewriteRule RewritingVariableName }
+        deriving (GHC.Generic, Show, Unparse)
+
     simplify = simplify' _Unwrapped
 
     checkImplication = checkImplication' _Unwrapped
@@ -326,6 +343,16 @@ instance Claim OnePathClaim where
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
 
+instance SOP.Generic (Rule OnePathClaim)
+
+instance SOP.HasDatatypeInfo (Rule OnePathClaim)
+
+instance Debug (Rule OnePathClaim)
+
+instance Diff (Rule OnePathClaim)
+
+instance From (Rule OnePathClaim) Attribute.Axiom.PriorityAttributes where
+    from = from @(RewriteRule _) . unRuleOnePath
 
 deriveSeqClaim
     :: MonadSimplify m
@@ -377,6 +404,12 @@ instance ClaimExtractor OnePathClaim where
             _ -> Nothing
 
 instance Claim AllPathClaim where
+
+    newtype instance Rule AllPathClaim =
+        AllPathRewriteRule
+        { unRuleAllPath :: RewriteRule RewritingVariableName }
+        deriving (GHC.Generic, Show, Unparse)
+
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
@@ -400,6 +433,17 @@ instance Claim AllPathClaim where
                 GoalRemainder claim -> GoalRemainder <$> simplify claim
                 _ -> return proofState
 
+instance SOP.Generic (Rule AllPathClaim)
+
+instance SOP.HasDatatypeInfo (Rule AllPathClaim)
+
+instance Debug (Rule AllPathClaim)
+
+instance Diff (Rule AllPathClaim)
+
+instance From (Rule AllPathClaim) Attribute.Axiom.PriorityAttributes where
+    from = from @(RewriteRule _) . unRuleAllPath
+
 deriveParAxiomAllPath
     ::  MonadSimplify simplifier
     =>  [Rule AllPathClaim]
@@ -418,6 +462,12 @@ instance ClaimExtractor AllPathClaim where
             _ -> Nothing
 
 instance Claim ReachabilityClaim where
+
+    newtype instance Rule ReachabilityClaim =
+        ReachabilityRewriteRule
+            { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
+        deriving (GHC.Generic, Show, Unparse)
+
     simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
     simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim
 
@@ -441,6 +491,26 @@ instance Claim ReachabilityClaim where
         applyAxioms (coerce axiomGroups) claim
         & fmap (fmap OnePath)
         & onePathTransition
+
+instance SOP.Generic (Rule ReachabilityClaim)
+
+instance SOP.HasDatatypeInfo (Rule ReachabilityClaim)
+
+instance Debug (Rule ReachabilityClaim)
+
+instance Diff (Rule ReachabilityClaim)
+
+instance From (Rule ReachabilityClaim) Attribute.Axiom.PriorityAttributes where
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
+
+instance From (Rule ReachabilityClaim) Attribute.SourceLocation where
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
+
+instance From (Rule ReachabilityClaim) Attribute.Label where
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
+
+instance From (Rule ReachabilityClaim) Attribute.RuleIndex where
+    from = from @(RewriteRule _) . unReachabilityRewriteRule
 
 instance ClaimExtractor ReachabilityClaim where
     extractClaim (attrs, sentence) =

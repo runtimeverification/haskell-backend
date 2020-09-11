@@ -33,9 +33,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (..)
-    , ReachabilityClaim (..)
+    ( ClaimPattern (..)
     , lensClaimPattern
     )
 import Kore.Step.RulePattern

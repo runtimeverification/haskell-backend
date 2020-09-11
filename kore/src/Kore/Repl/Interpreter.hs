@@ -183,8 +183,7 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.ClaimPattern
-    ( ReachabilityClaim (..)
-    , makeTrusted
+    ( makeTrusted
     )
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data

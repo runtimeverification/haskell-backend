@@ -48,8 +48,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
