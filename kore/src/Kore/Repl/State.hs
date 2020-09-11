@@ -746,7 +746,7 @@ replOutputToString (ReplOutput out) =
 createNewDefinition
     :: ModuleName
     -> String
-    -> [Claim]
+    -> [ReachabilityClaim]
     -> Definition (Sentence (TermLike VariableName))
 createNewDefinition mainModuleName name claims =
     Definition
@@ -772,18 +772,19 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: Claim -> Sentence (TermLike VariableName)
+    claimToSentence :: ReachabilityClaim -> Sentence (TermLike VariableName)
     claimToSentence claim =
         SentenceClaimSentence
         . SentenceClaim
         $ SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                from @Claim @(AxiomPattern _) claim & getAxiomPattern
+                from @ReachabilityClaim @(AxiomPattern _) claim
+                & getAxiomPattern
             , sentenceAxiomAttributes = trustedToAttribute claim
             }
 
-    trustedToAttribute :: Claim -> Syntax.Attributes
+    trustedToAttribute :: ReachabilityClaim -> Syntax.Attributes
     trustedToAttribute claim
         | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]
         | otherwise = mempty

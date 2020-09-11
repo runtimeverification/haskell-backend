@@ -1016,7 +1016,9 @@ tryAxiomClaimWorker mode ref = do
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern :: Either Axiom Claim -> TermLike RewritingVariableName
+    extractLeftPattern
+        :: Either Axiom ReachabilityClaim
+        -> TermLike RewritingVariableName
     extractLeftPattern =
         either
             (RulePattern.left . coerce)
