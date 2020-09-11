@@ -57,34 +57,34 @@ import Test.Terse
 --
 test_unprovenNodes :: [TestTree]
 test_unprovenNodes =
-    [ Goal.unprovenNodes
+    [ unprovenNodes
         (emptyExecutionGraph ProofState.Proven)
         `satisfies_`
         Foldable.null
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0)
         `satisfies_`
         (not . Foldable.null)
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0)
         `equals`
         MultiOr.MultiOr [0]
         $  "returns single unproven node"
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0
             & insNode (1, ProofState.Goal 1)
             & insNode (2, ProofState.Proven)
         )
         `equals_`
         MultiOr.MultiOr [0, 1]
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0
             & subgoal 0 (1, ProofState.Goal 1)
             & subgoal 0 (2, ProofState.Proven)
         )
         `equals_`
         MultiOr.MultiOr [1]
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0
             & subgoal 0 (1, ProofState.Goal 1)
             & subgoal 1 (2, ProofState.Goal 2)
@@ -92,7 +92,7 @@ test_unprovenNodes =
         )
         `equals_`
         MultiOr.MultiOr []
-    , Goal.unprovenNodes
+    , unprovenNodes
         (goal 0
             & subgoal 0 (1, ProofState.GoalRemainder 1)
             & subgoal 0 (2, ProofState.Proven)
@@ -239,7 +239,7 @@ test_runStrategy =
         -> TestTree
     disproves axioms goal unproven =
         equals
-            (Foldable.toList $ Goal.unprovenNodes $ run axioms (Rule goal))
+            (Foldable.toList $ unprovenNodes $ run axioms (Rule goal))
             unproven
             (show axioms ++ " disproves " ++ show goal)
     proves
@@ -252,7 +252,7 @@ test_runStrategy =
     proves axioms goal =
         satisfies
             (run axioms (Rule goal))
-            Goal.proven
+            proven
             (show axioms ++ " proves " ++ show goal)
 
 -- * Definitions
@@ -415,3 +415,25 @@ differentLengthPaths =
       -- Length 1 path
     , (A, F)
     ]
+
+{- | The final nodes of an execution graph which were not proven.
+
+See also: 'Strategy.pickFinal', 'extractUnproven'
+
+ -}
+unprovenNodes
+    :: forall a
+    .  Strategy.ExecutionGraph (ProofState.ProofState a) (Goal.AppliedRule Goal)
+    -> MultiOr.MultiOr a
+unprovenNodes executionGraph =
+    MultiOr.MultiOr
+    $ mapMaybe ProofState.extractUnproven
+    $ Strategy.pickFinal executionGraph
+
+{- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
+ -}
+proven
+    :: forall a
+    .  Strategy.ExecutionGraph (ProofState.ProofState a) (Goal.AppliedRule Goal)
+    -> Bool
+proven = Foldable.null . unprovenNodes

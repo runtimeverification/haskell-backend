@@ -12,8 +12,6 @@ module Kore.Reachability.Claim
     , WithConfiguration (..)
     , CheckImplicationResult (..)
     , extractClaims
-    , unprovenNodes
-    , proven
     , reachabilityFirstStep
     , reachabilityNextStep
     , transitionRule
@@ -176,28 +174,6 @@ import Logic
 import qualified Logic
 import qualified Pretty
 import qualified SMT
-
-{- | The final nodes of an execution graph which were not proven.
-
-See also: 'Strategy.pickFinal', 'extractUnproven'
-
- -}
-unprovenNodes
-    :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
-    -> MultiOr.MultiOr a
-unprovenNodes executionGraph =
-    MultiOr.MultiOr
-    $ mapMaybe extractUnproven
-    $ Strategy.pickFinal executionGraph
-
-{- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
- -}
-proven
-    :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
-    -> Bool
-proven = Foldable.null . unprovenNodes
 
 class Goal goal where
     checkImplication
