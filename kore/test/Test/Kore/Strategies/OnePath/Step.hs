@@ -851,15 +851,15 @@ rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
 runSteps
-    :: Goal goal
+    :: Claim claim
     => Limit Natural
-    -> ( ExecutionGraph (ProofState.ProofState goal) (AppliedRule goal)
+    -> ( ExecutionGraph (ProofState.ProofState claim) (AppliedRule claim)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
-    -> [goal]
-    -> [[Rule goal]]
-    -> goal
+    -> [claim]
+    -> [[Rule claim]]
+    -> claim
     -- ^left-hand-side of unification
     -> [Strategy Prim]
     -> IO a
@@ -884,20 +884,20 @@ runSteps
     mockEnv = Mock.env
 
 runOnePathSteps
-    :: Goal goal
-    => Ord goal
-    => From (Rule goal) Attribute.Axiom.PriorityAttributes
+    :: Claim claim
+    => Ord claim
+    => From (Rule claim) Attribute.Axiom.PriorityAttributes
     => Limit Natural
     -> Limit Natural
-    -> goal
+    -> claim
     -- ^left-hand-side of unification
-    -> [goal]
-    -> [Rule goal]
-    -> IO [ProofState.ProofState goal]
+    -> [claim]
+    -> [Rule claim]
+    -> IO [ProofState.ProofState claim]
 runOnePathSteps
     breadthLimit
     depthLimit
-    goal
+    claim
     coinductiveRewrites
     rewrites
   = do
@@ -907,7 +907,7 @@ runOnePathSteps
         pickFinal
         coinductiveRewrites
         (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
-        goal
+        claim
         (Limit.takeWithin depthLimit (Foldable.toList strategy))
     return (sort $ nub result)
 

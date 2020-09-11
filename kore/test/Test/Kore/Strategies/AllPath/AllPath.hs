@@ -32,6 +32,7 @@ import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim
     ( AppliedRule (..)
+    , Claim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Step.Simplification.Data
@@ -314,7 +315,7 @@ newtype instance Claim.Rule Goal =
     Rule { unRule :: (K, K) }
     deriving (Eq, GHC.Generic, Show)
 
-instance Claim.Goal Goal where
+instance Claim Goal where
     checkImplication (src, dst)
       | src' == Bot = return Claim.Implied
       | src == NotDef = return Claim.Implied
