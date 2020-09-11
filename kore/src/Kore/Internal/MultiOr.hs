@@ -29,6 +29,7 @@ module Kore.Internal.MultiOr
     , singleton
     , map
     , traverse
+    , traverseLogic
     -- * Re-exports
     , Alternative (..)
     ) where
@@ -385,3 +386,13 @@ traverse
     -> f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . extractPatterns
 {-# INLINE traverse #-}
+
+traverseLogic
+    :: Ord child2
+    => TopBottom child2
+    => Monad m
+    => (child1 -> m child2)
+    -> MultiOr child1
+    -> m (MultiOr child2)
+traverseLogic f multiOr = observeAllT $ Logic.scatter multiOr >>= lift . f
+{-# INLINE traverseLogic #-}
