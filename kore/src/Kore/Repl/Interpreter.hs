@@ -181,8 +181,8 @@ import qualified Kore.Log as Log
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState
     ( ClaimStateTransformer (ClaimStateTransformer)
+    , claimState
     , extractUnproven
-    , proofState
     )
 import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
 import Kore.Repl.Data
@@ -966,13 +966,13 @@ tryAxiomClaimWorker mode ref = do
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
-                proofState
+                claimState
                     ClaimStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
-                        , goalTransformer = patternUnifier
-                        , goalRemainderTransformer = patternUnifier
-                        , goalRewrittenTransformer = patternUnifier
-                        , goalStuckTransformer = patternUnifier
+                        , claimedTransformer = patternUnifier
+                        , remainingTransformer = patternUnifier
+                        , rewrittenTransformer = patternUnifier
+                        , stuckTransformer = patternUnifier
                         }
                     (getConfiguration <$> second)
               where
@@ -1329,15 +1329,15 @@ unparseClaimStateComponent
     -- ^ pattern
     -> ReplOutput
 unparseClaimStateComponent transformation omitList =
-    proofState ClaimStateTransformer
-        { goalTransformer =
+    claimState ClaimStateTransformer
+        { claimedTransformer =
             makeKoreReplOutput . unparseComponent
-        , goalRemainderTransformer = \goal ->
+        , remainingTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseComponent goal)
-        , goalRewrittenTransformer =
+        , rewrittenTransformer =
             makeKoreReplOutput . unparseComponent
-        , goalStuckTransformer = \goal ->
+        , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseComponent goal)
         , provenValue = makeAuxReplOutput "Reached bottom"
@@ -1426,10 +1426,10 @@ graphParams = Graph.nonClusteredParams
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
-                ClaimState.DoNotUse.Proven          -> toColorList green
-                ClaimState.DoNotUse.GoalStuck _     -> toColorList red
-                ClaimState.DoNotUse.GoalRemainder _ -> toColorList red
-                _                                   -> []
+                ClaimState.DoNotUse.Proven      -> toColorList green
+                ClaimState.DoNotUse.Stuck _     -> toColorList red
+                ClaimState.DoNotUse.Remaining _ -> toColorList red
+                _                               -> []
         ]
     }
   where

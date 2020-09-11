@@ -158,7 +158,7 @@ import Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Reachability.ClaimState hiding
-    ( proofState
+    ( claimState
     )
 import qualified Kore.Reachability.ClaimState as ClaimState
 import qualified Kore.Syntax.Sentence as Syntax
@@ -415,23 +415,19 @@ instance Claim AllPathClaim where
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
 
     applyAxioms axiomss = \claim ->
-        foldM applyAxioms1 (GoalRemainder claim) axiomss
+        foldM applyAxioms1 (Remaining claim) axiomss
       where
-        applyAxioms1 proofState axioms
-          | Just claim <- retractRewritableClaim proofState =
+        applyAxioms1 claimState axioms
+          | Just claim <- retractRewritable claimState =
             deriveParAxiomAllPath axioms claim
             >>= simplifyRemainder
           | otherwise =
-            pure proofState
+            pure claimState
 
-        retractRewritableClaim (Goal claim) = Just claim
-        retractRewritableClaim (GoalRemainder claim) = Just claim
-        retractRewritableClaim _ = Nothing
-
-        simplifyRemainder proofState =
-            case proofState of
-                GoalRemainder claim -> GoalRemainder <$> simplify claim
-                _ -> return proofState
+        simplifyRemainder claimState =
+            case claimState of
+                Remaining claim -> Remaining <$> simplify claim
+                _ -> return claimState
 
 instance SOP.Generic (Rule AllPathClaim)
 
@@ -573,32 +569,32 @@ transitionRule claims axiomGroups = transitionRuleWorker
         -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
-    transitionRuleWorker Begin (GoalStuck _) = empty
-    transitionRuleWorker Begin (GoalRewritten claim) =
-        SMT.reinit >> pure (Goal claim)
-    transitionRuleWorker Begin proofState =
-        SMT.reinit >> pure proofState
+    transitionRuleWorker Begin (Stuck _) = empty
+    transitionRuleWorker Begin (Rewritten claim) =
+        SMT.reinit >> pure (Claimed claim)
+    transitionRuleWorker Begin claimState =
+        SMT.reinit >> pure claimState
 
-    transitionRuleWorker Simplify proofState
-      | Just claim <- retractSimplifiable proofState =
-        Transition.ifte (simplify claim) (pure . ($>) proofState) (pure Proven)
+    transitionRuleWorker Simplify claimState
+      | Just claim <- retractSimplifiable claimState =
+        Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
       | otherwise =
-        pure proofState
+        pure claimState
 
-    transitionRuleWorker CheckImplication proofState
-      | Just claim <- retractRewritable proofState = do
+    transitionRuleWorker CheckImplication claimState
+      | Just claim <- retractRewritable claimState = do
         result <- checkImplication claim & Logic.lowerLogicT
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
                 warnStuckClaimStateTermsUnifiable
-                pure (GoalStuck a)
+                pure (Stuck a)
             NotImplied a
-              | isRemainder proofState -> do
+              | isRemainder claimState -> do
                 warnStuckClaimStateTermsNotUnifiable
-                pure (GoalStuck a)
-              | otherwise -> pure (Goal a)
-      | otherwise = pure proofState
+                pure (Stuck a)
+              | otherwise -> pure (Claimed a)
+      | otherwise = pure claimState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -611,28 +607,23 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- opaque way. I think that there's no good reason for wrapping the
     -- results in `derivePar` as opposed to here.
 
-    transitionRuleWorker ApplyClaims (Goal claim) =
+    transitionRuleWorker ApplyClaims (Claimed claim) =
         applyClaims claims claim
-    transitionRuleWorker ApplyClaims proofState = pure proofState
+    transitionRuleWorker ApplyClaims claimState = pure claimState
 
-    transitionRuleWorker ApplyAxioms proofState
-      | Just claim <- retractRewritable proofState =
+    transitionRuleWorker ApplyAxioms claimState
+      | Just claim <- retractRewritable claimState =
         applyAxioms axiomGroups claim
-      | otherwise = pure proofState
+      | otherwise = pure claimState
 
 retractSimplifiable :: ClaimState a -> Maybe a
-retractSimplifiable (ClaimState.Goal a) = Just a
-retractSimplifiable (ClaimState.GoalRewritten a) = Just a
-retractSimplifiable (ClaimState.GoalRemainder a) = Just a
+retractSimplifiable (Claimed a) = Just a
+retractSimplifiable (Rewritten a) = Just a
+retractSimplifiable (Remaining a) = Just a
 retractSimplifiable _ = Nothing
 
-retractRewritable :: ClaimState a -> Maybe a
-retractRewritable (ClaimState.Goal a) = Just a
-retractRewritable (ClaimState.GoalRemainder a) = Just a
-retractRewritable _ = Nothing
-
 isRemainder :: ClaimState a -> Bool
-isRemainder (ClaimState.GoalRemainder _) = True
+isRemainder (Remaining _) = True
 isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
@@ -975,7 +966,7 @@ deriveResults fromAppliedRule Results { results, remainders } =
                 pure Proven
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten
-    addRemainder = pure . GoalRemainder
+    addRewritten = pure . Rewritten
+    addRemainder = pure . Remaining
 
     addRule = Transition.addRule . fromAppliedRule

@@ -94,13 +94,10 @@ import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState
     ( ClaimState
     , ClaimStateTransformer (..)
-    , extractGoalStuck
+    , extractStuck
+    , extractUnproven
     )
 import qualified Kore.Reachability.ClaimState as ClaimState
-    ( ClaimState (..)
-    , extractUnproven
-    , proofState
-    )
 import qualified Kore.Reachability.ClaimState as Prim
     ( Prim (..)
     )
@@ -150,10 +147,10 @@ lhsClaimStateTransformer
         (Pattern RewritingVariableName)
 lhsClaimStateTransformer =
     ClaimStateTransformer
-        { goalTransformer = getConfiguration
-        , goalRemainderTransformer = getConfiguration
-        , goalRewrittenTransformer = getConfiguration
-        , goalStuckTransformer = getConfiguration
+        { claimedTransformer = getConfiguration
+        , remainingTransformer = getConfiguration
+        , rewrittenTransformer = getConfiguration
+        , stuckTransformer = getConfiguration
         , provenValue = Pattern.bottom
         }
 
@@ -286,7 +283,7 @@ verifyClaim
   =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startGoal = ClaimState.Goal (Lens.over lensClaimPattern mkGoal goal)
+        startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
         limitedStrategy =
             strategy
             & Foldable.toList
@@ -310,8 +307,7 @@ verifyClaim
         -> Verifier simplifier a
     handleLimitExceeded (Strategy.LimitExceeded states) =
         let finalPattern =
-                ClaimState.proofState lhsClaimStateTransformer
-                . snd
+                ClaimState.claimState lhsClaimStateTransformer . snd
                 <$> states
          in
             Monad.Except.throwError
@@ -335,7 +331,7 @@ verifyClaim
     throwUnproven acts =
         do
             (proofDepth, proofState) <- acts
-            let maybeUnproven = ClaimState.extractUnproven proofState
+            let maybeUnproven = extractUnproven proofState
             Foldable.for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
                 Monad.Except.throwError . OrPattern.fromPattern
@@ -459,7 +455,7 @@ checkStuckConfiguration
     -> CommonTransitionRule m
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
-    Foldable.for_ (extractGoalStuck proofState) (\rule' -> do
+    Foldable.for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
         when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
@@ -469,7 +465,6 @@ checkStuckConfiguration rule prim proofState = do
                 , "Please file a bug report:\
                   \ https://github.com/kframework/kore/issues"
                 ]
-        )
     return proofState'
   where
     isNot_Ceil_ :: TermLike variable -> Bool
@@ -488,7 +483,7 @@ throwStuckClaims
 throwStuckClaims rule prim state = do
     state'@(proofDepth', proofState') <- rule prim state
     case proofState' of
-        ClaimState.GoalStuck unproven -> do
+        ClaimState.Stuck unproven -> do
             infoUnprovenDepth proofDepth'
             Monad.Except.throwError $ OrPattern.fromPattern config
           where
@@ -507,19 +502,17 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
     pure (proofDepth', proofState')
   where
     didRewrite proofState' =
-        isApply prim && isRewritable proofState && isRewritten proofState'
+        isApply prim
+        && ClaimState.isRewritable proofState
+        && isRewritten proofState'
 
     isApply Prim.ApplyClaims = True
     isApply Prim.ApplyAxioms = True
     isApply _                = False
 
-    isRewritable (ClaimState.Goal _)          = True
-    isRewritable (ClaimState.GoalRemainder _) = True
-    isRewritable _                            = False
-
-    isRewritten (ClaimState.GoalRewritten _) = True
-    isRewritten  ClaimState.Proven           = True
-    isRewritten _                            = False
+    isRewritten (ClaimState.Rewritten _) = True
+    isRewritten  ClaimState.Proven       = True
+    isRewritten _                        = False
 
 debugClaimStateBracket
     :: forall monad
@@ -589,7 +582,7 @@ withDebugProven rule prim state =
   where
     debugProven state'
       | ClaimState.Proven <- state'
-      , Just claim <- ClaimState.extractUnproven state
+      , Just claim <- extractUnproven state
       = do
         Log.logEntry DebugProven { claim }
         pure state'
@@ -602,11 +595,8 @@ withConfiguration
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where
-    config =
-        ClaimState.extractUnproven proofState
-        & fmap getConfiguration
-    handle' =
-        maybe id handleConfig config
+    config = extractUnproven proofState & fmap getConfiguration
+    handle' = maybe id handleConfig config
     handleConfig config' =
         handleAll
         $ throwM

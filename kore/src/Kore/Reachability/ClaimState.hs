@@ -3,12 +3,13 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 module Kore.Reachability.ClaimState
-    ( extractGoalRem
+    ( extractRemaining
     , extractUnproven
-    , extractGoalStuck
+    , extractStuck
+    , retractRewritable, isRewritable
     , ClaimState (..)
     , Prim (..)
-    , proofState
+    , claimState
     , ClaimStateTransformer (..)
     ) where
 
@@ -50,26 +51,25 @@ instance Pretty Prim where
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
-data ClaimState goal
-    = Goal !goal
-    -- ^ The indicated goal is being proven.
-    | GoalRemainder !goal
-    -- ^ The indicated goal remains after rewriting.
-    | GoalRewritten !goal
-    -- ^ We already rewrote the goal this step.
-    | GoalStuck !goal
-    -- ^ If the terms unify and the condition does not imply
-    -- the goal, the proof is stuck. This state should be reachable
-    -- only by applying CheckImplication.
+data ClaimState claim
+    = Claimed !claim
+    -- ^ The claim is being proven.
+    | Remaining !claim
+    -- ^ The claim is being rewritten, but no rule has applied.
+    | Rewritten !claim
+    -- ^ The claim was rewritten.
+    | Stuck !claim
+    -- ^ The proof of this claim cannot be completed because the implication
+    -- does not hold.
     | Proven
-    -- ^ The parent goal was proven.
+    -- ^ The claim was proven.
     deriving (Eq, Show, Ord)
     deriving (Foldable, Functor)
     deriving (GHC.Generic)
 
-instance NFData goal => NFData (ClaimState goal)
+instance NFData claim => NFData (ClaimState claim)
 
-instance Hashable goal => Hashable (ClaimState goal)
+instance Hashable claim => Hashable (ClaimState claim)
 
 instance SOP.Generic (ClaimState a)
 
@@ -79,76 +79,84 @@ instance Debug a => Debug (ClaimState a)
 
 instance (Debug a, Diff a) => Diff (ClaimState a)
 
-instance Unparse goal => Pretty (ClaimState goal) where
-    pretty (Goal goal) =
+instance Unparse claim => Pretty (ClaimState claim) where
+    pretty (Claimed claim) =
         Pretty.vsep
-            ["Proof state Goal:"
-            , Pretty.indent 4 $ unparse goal
+            [ "claimed:"
+            , Pretty.indent 4 $ unparse claim
             ]
-    pretty (GoalRemainder goal) =
+    pretty (Remaining claim) =
         Pretty.vsep
-            ["Proof state GoalRemainder:"
-            , Pretty.indent 4 $ unparse goal
+            [ "remaining:"
+            , Pretty.indent 4 $ unparse claim
             ]
-    pretty (GoalRewritten goal) =
+    pretty (Rewritten claim) =
         Pretty.vsep
-            ["Proof state GoalRewritten:"
-            , Pretty.indent 4 $ unparse goal
+            [ "rewritten:"
+            , Pretty.indent 4 $ unparse claim
             ]
-    pretty (GoalStuck goal) =
+    pretty (Stuck claim) =
         Pretty.vsep
-            ["Proof state GoalStuck:"
-            , Pretty.indent 4 $ unparse goal
+            [ "stuck:"
+            , Pretty.indent 4 $ unparse claim
             ]
-    pretty Proven = "Proof state Proven."
+    pretty Proven = "proven"
 
-{- | Extract the unproven goals of a 'ClaimState'.
+{- | Extract the unproven claims of a 'ClaimState'.
 
-Returns 'Nothing' if there is no remaining unproven goal.
+Returns 'Nothing' if there is no remaining unproven claim.
 
  -}
 extractUnproven :: ClaimState a -> Maybe a
-extractUnproven (Goal t)    = Just t
-extractUnproven (GoalRewritten t) = Just t
-extractUnproven (GoalRemainder t) = Just t
-extractUnproven (GoalStuck t) = Just t
+extractUnproven (Claimed t)    = Just t
+extractUnproven (Rewritten t) = Just t
+extractUnproven (Remaining t) = Just t
+extractUnproven (Stuck t) = Just t
 extractUnproven Proven      = Nothing
 
-extractGoalRem :: ClaimState a -> Maybe a
-extractGoalRem (GoalRemainder t) = Just t
-extractGoalRem _           = Nothing
+extractRemaining :: ClaimState a -> Maybe a
+extractRemaining (Remaining t) = Just t
+extractRemaining _           = Nothing
 
-extractGoalStuck :: ClaimState a -> Maybe a
-extractGoalStuck (GoalStuck a) = Just a
-extractGoalStuck _             = Nothing
+extractStuck :: ClaimState a -> Maybe a
+extractStuck (Stuck a) = Just a
+extractStuck _             = Nothing
+
+retractRewritable :: ClaimState a -> Maybe a
+retractRewritable (Claimed a) = Just a
+retractRewritable (Remaining a) = Just a
+retractRewritable _ = Nothing
+
+isRewritable :: ClaimState a -> Bool
+isRewritable = isJust . retractRewritable
 
 data ClaimStateTransformer a val =
     ClaimStateTransformer
-        { goalTransformer :: a -> val
-        , goalRemainderTransformer :: a -> val
-        , goalRewrittenTransformer :: a -> val
-        , goalStuckTransformer :: a -> val
+        { claimedTransformer :: a -> val
+        , remainingTransformer :: a -> val
+        , rewrittenTransformer :: a -> val
+        , stuckTransformer :: a -> val
         , provenValue :: val
         }
 
 {- | Catamorphism for 'ClaimState'
 -}
-proofState
+claimState
     :: ClaimStateTransformer a val
     -> ClaimState a
     -> val
-proofState
+claimState
     ClaimStateTransformer
-        { goalTransformer
-        , goalRemainderTransformer
-        , goalRewrittenTransformer
-        , goalStuckTransformer
+        { claimedTransformer
+        , remainingTransformer
+        , rewrittenTransformer
+        , stuckTransformer
         , provenValue
         }
   =
     \case
-        Goal goal -> goalTransformer goal
-        GoalRemainder goal -> goalRemainderTransformer goal
-        GoalRewritten goal -> goalRewrittenTransformer goal
-        GoalStuck goal -> goalStuckTransformer goal
+        Claimed claim -> claimedTransformer claim
+        Remaining claim -> remainingTransformer claim
+        Rewritten claim -> rewrittenTransformer claim
+        Stuck claim -> stuckTransformer claim
         Proven -> provenValue

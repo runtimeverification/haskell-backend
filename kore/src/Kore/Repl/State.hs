@@ -117,10 +117,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Reachability.ClaimState
-    ( ClaimState (Goal)
+    ( ClaimState (Claimed)
     , ClaimStateTransformer (ClaimStateTransformer)
+    , claimState
     , extractUnproven
-    , proofState
     )
 import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
 import Kore.Repl.Data
@@ -152,8 +152,7 @@ import Kore.Syntax.Variable
 
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: ReachabilityClaim -> ExecutionGraph
-emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . Goal
+emptyExecutionGraph = Strategy.emptyExecutionGraph . Claimed
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
@@ -557,11 +556,11 @@ runUnifier sideCondition first second = do
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
-        . proofState ClaimStateTransformer
-            { goalTransformer = const . Just $ UnevaluatedNode
-            , goalRemainderTransformer = const . Just $ StuckNode
-            , goalRewrittenTransformer = const . Just $ UnevaluatedNode
-            , goalStuckTransformer = const . Just $ StuckNode
+        . claimState ClaimStateTransformer
+            { claimedTransformer = const . Just $ UnevaluatedNode
+            , remainingTransformer = const . Just $ StuckNode
+            , rewrittenTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
             , provenValue = Nothing
             }
         . Graph.lab'
