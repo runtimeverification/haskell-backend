@@ -224,9 +224,7 @@ maybeEvaluatePattern
                     { results = orResults
                     , remainders = orRemainders
                     } -> do
-                        simplified <- OrPattern.observeAllT $ do
-                            result' <- Logic.scatter orResults
-                            lift $ simplifyIfNeeded result'
+                        simplified <- OrPattern.traverse simplifyIfNeeded orResults
                         let simplifiedResult = MultiOr.flatten simplified
                         return
                             (AttemptedAxiom.Applied AttemptedAxiomResults

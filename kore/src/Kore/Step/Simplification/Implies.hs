@@ -34,7 +34,6 @@ import qualified Kore.Step.Simplification.Not as Not
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
-import qualified Logic
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -89,11 +88,11 @@ simplifyEvaluated sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
-  | otherwise = do
-    results <- OrPattern.observeAllT $
-        Logic.scatter second
-        >>= simplifyEvaluateHalfImplies sideCondition first
-    return (MultiOr.flatten results)
+  | otherwise =
+      OrPattern.flatten
+      <$> OrPattern.traverse
+          (simplifyEvaluateHalfImplies sideCondition first)
+          second
 
 simplifyEvaluateHalfImplies
     :: (InternalVariable variable, MonadSimplify simplifier)

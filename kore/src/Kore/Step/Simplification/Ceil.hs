@@ -77,7 +77,6 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparseToString
     )
-import qualified Logic
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -120,12 +119,9 @@ simplifyEvaluated
     => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated sideCondition child = do
-    result <-
-        OrPattern.observeAllT
-        $ Logic.scatter child
-        >>= makeEvaluate sideCondition
-    return (OrPattern.flatten result)
+simplifyEvaluated sideCondition child =
+    OrPattern.flatten
+    <$> OrPattern.traverse (makeEvaluate sideCondition) child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
