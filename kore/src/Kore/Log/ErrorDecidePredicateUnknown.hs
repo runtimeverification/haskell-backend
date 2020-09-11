@@ -37,7 +37,7 @@ newtype ErrorDecidePredicateUnknown =
 instance Exception ErrorDecidePredicateUnknown where
     toException = toException . SomeEntry
     fromException exn =
-        fromException exn >>= \entry -> fromEntry entry
+        fromException exn >>= fromEntry
 
 instance Pretty ErrorDecidePredicateUnknown where
     pretty ErrorDecidePredicateUnknown { predicates } =

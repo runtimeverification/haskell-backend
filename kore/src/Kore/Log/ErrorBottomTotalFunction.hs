@@ -53,7 +53,7 @@ instance Pretty ErrorBottomTotalFunction where
 instance Exception ErrorBottomTotalFunction where
     toException = toException . SomeEntry
     fromException exn =
-        fromException exn >>= \entry -> fromEntry entry
+        fromException exn >>= fromEntry
 
 instance Entry ErrorBottomTotalFunction where
     entrySeverity _ = Error
