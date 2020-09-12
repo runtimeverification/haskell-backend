@@ -133,6 +133,9 @@ import Kore.Parser
     , parseKorePattern
     )
 import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Prove
+    ( Stuck (..)
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
 import Kore.Step.ClaimPattern
@@ -149,9 +152,6 @@ import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
-    )
-import Kore.Strategies.Verification
-    ( Stuck (..)
     )
 import Kore.Syntax.Definition
     ( Definition (Definition)

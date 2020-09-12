@@ -6,7 +6,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 This should be imported qualified.
 -}
 
-module Kore.Strategies.Verification
+module Kore.Reachability.Prove
     ( CommonClaimState
     , Stuck (..)
     , AllClaims (..)

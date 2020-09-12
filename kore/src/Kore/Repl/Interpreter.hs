@@ -185,6 +185,9 @@ import Kore.Reachability.ClaimState
     , extractUnproven
     )
 import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
+import Kore.Reachability.Prove
+    ( CommonClaimState
+    )
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -196,9 +199,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Verification
-    ( CommonClaimState
-    )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
     ( Id (..)

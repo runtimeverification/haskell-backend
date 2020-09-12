@@ -32,6 +32,9 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
+import Kore.Reachability.Prove
+    ( Stuck (..)
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
@@ -41,9 +44,6 @@ import Kore.Step.RulePattern
     ( RulePattern (..)
     , injectTermIntoRHS
     , mkRewritingRule
-    )
-import Kore.Strategies.Verification
-    ( Stuck (..)
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock

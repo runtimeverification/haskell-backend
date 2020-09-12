@@ -99,6 +99,9 @@ import Kore.Reachability.Claim hiding
     ( AppliedRule
     )
 import qualified Kore.Reachability.Claim as Claim
+import Kore.Reachability.Prove
+    ( CommonClaimState
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -107,9 +110,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Verification
-    ( CommonClaimState
-    )
 import Logic
 
 import Kore.Syntax.Module

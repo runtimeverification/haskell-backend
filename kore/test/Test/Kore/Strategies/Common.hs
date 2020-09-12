@@ -22,6 +22,14 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.TermLike
 import Kore.Reachability.Claim
+import Kore.Reachability.Prove
+    ( AllClaims (AllClaims)
+    , AlreadyProven (AlreadyProven)
+    , Axioms (Axioms)
+    , Stuck (..)
+    , ToProve (ToProve)
+    )
+import qualified Kore.Reachability.Prove as Verification
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -30,14 +38,6 @@ import Kore.Step.RulePattern
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
-import Kore.Strategies.Verification
-    ( AllClaims (AllClaims)
-    , AlreadyProven (AlreadyProven)
-    , Axioms (Axioms)
-    , Stuck (..)
-    , ToProve (ToProve)
-    )
-import qualified Kore.Strategies.Verification as Verification
 import Kore.Unparser
     ( unparseToText2
     )

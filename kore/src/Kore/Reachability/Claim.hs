@@ -320,7 +320,7 @@ decision is subject to change without notice.
 
 This instance contains the default implementation for a one-path strategy. You
 can apply it to the first two arguments and pass the resulting function to
-'Kore.Strategies.Verification.verify'.
+'Kore.Reachability.Prove.verify'.
 
 Things to note when implementing your own:
 

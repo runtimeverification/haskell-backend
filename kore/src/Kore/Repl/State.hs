@@ -123,6 +123,7 @@ import Kore.Reachability.ClaimState
     , extractUnproven
     )
 import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
+import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -138,7 +139,6 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (..)
     , Module (..)

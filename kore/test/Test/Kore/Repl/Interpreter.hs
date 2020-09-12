@@ -60,6 +60,9 @@ import qualified Kore.Log.Registry as Log
 import Kore.Reachability.Claim hiding
     ( AppliedRule
     )
+import Kore.Reachability.Prove
+    ( verifyClaimStep
+    )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
@@ -76,9 +79,6 @@ import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Strategies.Verification
-    ( verifyClaimStep
-    )
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
