@@ -98,7 +98,7 @@ import Kore.Reachability.ClaimState
     , extractUnproven
     )
 import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.ClaimState as Prim
+import qualified Kore.Reachability.Prim as Prim
     ( Prim (..)
     )
 import Kore.Rewriting.RewritingVariable

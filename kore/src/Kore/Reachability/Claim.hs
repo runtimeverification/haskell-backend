@@ -75,6 +75,7 @@ import qualified Kore.Attribute.Label as Attribute
 import qualified Kore.Attribute.RuleIndex as Attribute
     ( RuleIndex
     )
+import Kore.Reachability.Prim
 import qualified Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
     )

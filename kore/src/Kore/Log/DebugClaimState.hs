@@ -11,7 +11,9 @@ import Prelude.Kore
 
 import Kore.Reachability.ClaimState
     ( ClaimState (..)
-    , Prim (..)
+    )
+import Kore.Reachability.Prim
+    ( Prim (..)
     )
 import Kore.Step.ClaimPattern
     ( ReachabilityClaim (..)

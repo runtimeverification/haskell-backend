@@ -44,6 +44,7 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Reachability.ClaimState as ClaimState
+import qualified Kore.Reachability.Prim as Prim
 import Log
     ( MonadLog (..)
     )
@@ -122,7 +123,7 @@ test_transitionRule_Begin =
     , unmodified (ClaimState.Remaining (A, B))
     ]
   where
-    run = runTransitionRule [] [] ClaimState.Begin
+    run = runTransitionRule [] [] Prim.Begin
     unmodified :: HasCallStack => ClaimState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ClaimState -> TestTree
@@ -135,7 +136,7 @@ test_transitionRule_CheckImplication =
     , ClaimState.Claimed (B, B) `becomes` (ClaimState.Proven, mempty)
     ]
   where
-    run = runTransitionRule [] [] ClaimState.CheckImplication
+    run = runTransitionRule [] [] Prim.CheckImplication
     unmodified :: HasCallStack => ClaimState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomes initial final = run initial `equals_` [final]
@@ -156,7 +157,7 @@ test_transitionRule_ApplyClaims =
         ]
     ]
   where
-    run rules = runTransitionRule (map unRule rules) [] ClaimState.ApplyClaims
+    run rules = runTransitionRule (map unRule rules) [] Prim.ApplyClaims
     unmodified :: HasCallStack => ClaimState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
@@ -184,7 +185,7 @@ test_transitionRule_ApplyAxioms =
         ]
     ]
   where
-    run rules = runTransitionRule [] [rules] ClaimState.ApplyAxioms
+    run rules = runTransitionRule [] [rules] Prim.ApplyAxioms
     axiom = AppliedAxiom . Rule
     unmodified :: HasCallStack => ClaimState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
