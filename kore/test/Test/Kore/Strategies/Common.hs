@@ -28,8 +28,8 @@ import Kore.Reachability.Prove
     , Axioms (Axioms)
     , Stuck (..)
     , ToProve (ToProve)
+    , proveClaims
     )
-import qualified Kore.Reachability.Prove as Verification
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -81,15 +81,15 @@ runVerification
     -> [ReachabilityClaim]
     -> IO (Either Stuck ())
 runVerification breadthLimit depthLimit axioms claims alreadyProven =
-    runSimplifier mockEnv
-        $ runExceptT
-            $ Verification.verify
-                breadthLimit
-                BreadthFirst
-                (AllClaims claims)
-                (Axioms axioms)
-                (AlreadyProven (map unparseToText2 alreadyProven))
-                (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+    proveClaims
+        breadthLimit
+        BreadthFirst
+        (AllClaims claims)
+        (Axioms axioms)
+        (AlreadyProven (map unparseToText2 alreadyProven))
+        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+    & runExceptT
+    & runSimplifier mockEnv
   where
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)

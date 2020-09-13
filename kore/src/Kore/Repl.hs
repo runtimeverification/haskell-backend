@@ -258,9 +258,9 @@ runRepl
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
-                catchEverything graph
-                $ catchInterruptWithDefault graph
-                $ verifyClaimStep claims axioms graph node
+                proveClaimStep claims axioms graph node
+                & catchInterruptWithDefault graph
+                & catchEverything graph
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a

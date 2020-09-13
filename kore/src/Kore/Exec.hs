@@ -112,7 +112,7 @@ import Kore.Reachability.Prove
     , Axioms (Axioms)
     , Stuck (..)
     , ToProve (ToProve)
-    , verify
+    , proveClaims
     )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
@@ -402,7 +402,7 @@ prove
                 specModule
                 trustedModule
         let InitializedProver { axioms, claims, alreadyProven } = initialized
-        verify
+        proveClaims
             breadthLimit
             searchOrder
             (AllClaims claims)

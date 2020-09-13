@@ -13,8 +13,8 @@ module Kore.Reachability.Prove
     , Axioms (..)
     , ToProve (..)
     , AlreadyProven (..)
-    , verify
-    , verifyClaimStep
+    , proveClaims
+    , proveClaimStep
     , lhsClaimStateTransformer
     ) where
 
@@ -191,7 +191,7 @@ newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
 newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
-verify
+proveClaims
     :: forall simplifier
     .  MonadMask simplifier
     => MonadSimplify simplifier
@@ -205,7 +205,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT Stuck simplifier ()
-verify
+proveClaims
     breadthLimit
     searchOrder
     claims
@@ -213,8 +213,8 @@ verify
     (AlreadyProven alreadyProven)
     (ToProve toProve)
   =
-    withExceptT addStillProven
-    $ verifyHelper breadthLimit searchOrder claims axioms unproven
+    proveClaimsWorker breadthLimit searchOrder claims axioms unproven
+    & withExceptT addStillProven
   where
     unproven :: ToProve ReachabilityClaim
     stillProven :: [ReachabilityClaim]
@@ -235,7 +235,7 @@ verify
     addStillProven stuck@Stuck { provenClaims } =
         stuck { provenClaims = stillProven ++ provenClaims }
 
-verifyHelper
+proveClaimsWorker
     :: forall simplifier
     .  MonadSimplify simplifier
     => MonadMask simplifier
@@ -248,7 +248,7 @@ verifyHelper
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT Stuck simplifier ()
-verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
+proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
     Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
@@ -257,13 +257,13 @@ verifyHelper breadthLimit searchOrder claims axioms (ToProve toProve) =
         -> ExceptT Stuck simplifier [ReachabilityClaim]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
-            verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
+            proveClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
         wrapStuckPattern :: OrPattern VariableName -> Stuck
         wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
 
-verifyClaim
+proveClaim
     :: forall simplifier
     .  MonadSimplify simplifier
     => MonadMask simplifier
@@ -274,7 +274,7 @@ verifyClaim
     -> Axioms ReachabilityClaim
     -> (ReachabilityClaim, Limit Natural)
     -> ExceptT (OrPattern VariableName) simplifier ()
-verifyClaim
+proveClaim
     breadthLimit
     searchOrder
     (AllClaims claims)
@@ -357,7 +357,7 @@ verifyClaim
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
-verifyClaimStep
+proveClaimStep
     :: forall simplifier
     .  MonadSimplify simplifier
     => MonadMask simplifier
@@ -371,7 +371,7 @@ verifyClaimStep
     -> Graph.Node
     -- ^ selected node in the graph
     -> simplifier (ExecutionGraph CommonClaimState (AppliedRule ReachabilityClaim))
-verifyClaimStep claims axioms executionGraph node =
+proveClaimStep claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
         strategy'

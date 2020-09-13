@@ -61,7 +61,7 @@ import Kore.Reachability.Claim hiding
     ( AppliedRule
     )
 import Kore.Reachability.Prove
-    ( verifyClaimStep
+    ( proveClaimStep
     )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -837,7 +837,7 @@ mkConfig logger =
         -> ReplNode
         -> SimplifierT NoSMT ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
-        verifyClaimStep claims' axioms' graph node
+        proveClaimStep claims' axioms' graph node
 
 formatUnificationError
     :: Pretty.Doc ()
