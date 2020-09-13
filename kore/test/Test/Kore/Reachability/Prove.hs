@@ -1,5 +1,8 @@
-module Test.Kore.Strategies.Reachability.Verification
+module Test.Kore.Reachability.Prove
     ( test_reachabilityVerification
+    , simpleRewrite
+    , Test.Kore.Reachability.Prove.proveClaims
+    , proveClaims_
     ) where
 
 import Prelude.Kore
@@ -7,6 +10,10 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
@@ -16,9 +23,15 @@ import Data.Generics.Product
 import Data.Limit
     ( Limit (..)
     )
+import Numeric.Natural
+    ( Natural
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
@@ -32,16 +45,28 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
+import Kore.Reachability.Prove
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     , lensClaimPattern
     )
+import Kore.Step.RulePattern
+    ( mkRewritingRule
+    , rulePattern
+    )
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
+import Kore.Unparser
+    ( unparseToText2
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Strategies.Common
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_reachabilityVerification :: [TestTree]
@@ -50,7 +75,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -63,7 +88,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -76,7 +101,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -91,7 +116,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -104,7 +129,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -117,7 +142,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -137,7 +162,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -155,7 +180,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -173,7 +198,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -188,7 +213,7 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -201,7 +226,7 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -214,7 +239,7 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -229,7 +254,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -242,7 +267,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -255,7 +280,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -269,7 +294,7 @@ test_reachabilityVerification =
     , testCase "OnePath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -283,7 +308,7 @@ test_reachabilityVerification =
     , testCase "AllPath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -297,7 +322,7 @@ test_reachabilityVerification =
     , testCase "Mixed: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -315,7 +340,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -331,7 +356,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -347,7 +372,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -365,7 +390,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -381,7 +406,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -397,7 +422,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -416,7 +441,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -437,7 +462,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -458,7 +483,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -481,7 +506,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -513,7 +538,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -545,7 +570,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -580,7 +605,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -616,7 +641,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -652,7 +677,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -693,7 +718,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -714,7 +739,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -735,7 +760,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -756,7 +781,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -777,7 +802,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -798,7 +823,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -819,7 +844,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -840,7 +865,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -861,7 +886,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -881,7 +906,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -900,7 +925,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -919,7 +944,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -941,7 +966,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -960,7 +985,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -979,7 +1004,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -998,7 +1023,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1020,7 +1045,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1039,7 +1064,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1058,7 +1083,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1077,7 +1102,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1099,7 +1124,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1122,7 +1147,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1146,7 +1171,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1170,7 +1195,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1196,7 +1221,7 @@ test_reachabilityVerification =
         -- Expected: error d
         --    first verification: a=>b=>c=>d
         --    second verification: b=>c=>d is now visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1217,7 +1242,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1235,7 +1260,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1253,7 +1278,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1334,3 +1359,52 @@ simpleAllPathTrustedClaim left right =
     . AllPath
     . AllPathClaim
     $ simpleClaim left right
+
+simpleRewrite
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> RewriteRule RewritingVariableName
+simpleRewrite left right =
+    mkRewritingRule $ RewriteRule $ rulePattern left right
+
+proveClaims
+    :: Limit Natural
+    -> Limit Natural
+    -> [Rule ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> IO (Either Stuck ())
+proveClaims breadthLimit depthLimit axioms claims alreadyProven =
+    Kore.Reachability.Prove.proveClaims
+        breadthLimit
+        BreadthFirst
+        (AllClaims claims)
+        (Axioms axioms)
+        (AlreadyProven (map unparseToText2 alreadyProven))
+        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+    & runExceptT
+    & runSimplifier mockEnv
+  where
+    mockEnv = Mock.env
+    applyDepthLimit claim = (claim, depthLimit)
+    selectUntrusted = filter (not . isTrusted)
+
+proveClaims_
+    :: Limit Natural
+    -> Limit Natural
+    -> [Rule ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> [ReachabilityClaim]
+    -> IO (Either (OrPattern VariableName) ())
+proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
+    do
+        stuck <- Test.Kore.Reachability.Prove.proveClaims
+            breadthLimit
+            depthLimit
+            axioms
+            claims
+            alreadyProven
+        return (toPattern stuck)
+  where
+    toPattern :: Either Stuck a -> Either (OrPattern VariableName) a
+    toPattern = Bifunctor.first stuckPatterns

@@ -1,4 +1,4 @@
-module Test.Kore.Strategies.AllPath.AllPath
+module Test.Kore.Reachability.MockAllPath
     ( test_unprovenNodes
     , test_transitionRule_Begin
     , test_transitionRule_CheckImplication
