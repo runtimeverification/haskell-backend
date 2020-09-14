@@ -21,8 +21,6 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( make
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -142,21 +140,27 @@ instance SimplifyRuleLHS ClaimPattern
 
 instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
-        fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
+        fmap (MultiAnd.map RewriteRule)
+        . simplifyRuleLhs
+        . getRewriteRule
 
 instance SimplifyRuleLHS OnePathRule where
     simplifyRuleLhs =
-        fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
+        fmap (MultiAnd.map OnePathRule)
+        . simplifyClaimRule
+        . getOnePathRule
 
 instance SimplifyRuleLHS AllPathRule where
     simplifyRuleLhs =
-        fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
+        fmap (MultiAnd.map AllPathRule)
+        . simplifyClaimRule
+        . getAllPathRule
 
 instance SimplifyRuleLHS ReachabilityRule where
     simplifyRuleLhs (OnePath rule) =
-        (fmap . fmap) OnePath $ simplifyRuleLhs rule
+        (fmap . MultiAnd.map) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =
-        (fmap . fmap) AllPath $ simplifyRuleLhs rule
+        (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
     :: forall simplifier

@@ -197,7 +197,7 @@ matchIncremental termLike1 termLike2 =
         MatcherState
             { queued = Set.singleton (Constraint (Pair termLike1 termLike2))
             , deferred = empty
-            , predicate = empty
+            , predicate = mempty
             , substitution = mempty
             , bound = mempty
             , targets = free1

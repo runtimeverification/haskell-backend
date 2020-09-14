@@ -73,8 +73,8 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
     deriving (Semigroup, Monoid)
-    deriving (Functor, Applicative, Monad, Alternative)
-    deriving (Foldable, Traversable)
+    deriving (Functor, Applicative, Monad, Traversable, Alternative)
+    deriving (Foldable)
     deriving (GHC.Generic, GHC.IsList)
 
 instance SOP.Generic (MultiAnd child)

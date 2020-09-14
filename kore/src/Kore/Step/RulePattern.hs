@@ -551,6 +551,10 @@ instance From (RewriteRule variable) Attribute.PriorityAttributes where
 instance From (RewriteRule variable) Attribute.HeatCool where
     from = from @(RulePattern _) . getRewriteRule
 
+instance TopBottom (RewriteRule variable) where
+    isTop _ = False
+    isBottom _ = False
+
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule variable =
