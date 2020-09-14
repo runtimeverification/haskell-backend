@@ -180,7 +180,10 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             unified <- termAnd notSimplifier term1 term2
             pure (Pattern.andCondition unified condition1)
     unified <-
-        Foldable.foldlM unify Pattern.top (MultiAnd.map term patterns)
+        Foldable.foldlM
+            unify
+            Pattern.top
+            (term <$> MultiAnd.extractPatterns patterns)
     let substitutions =
             Pattern.substitution unified
             <> foldMap Pattern.substitution patterns
