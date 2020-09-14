@@ -521,7 +521,7 @@ substitute eVariable termLike = do
         -- Apply the substitution to the accumulated matching solution.
         >>= (field @"substitution" . traverse) substitute1
         >>= Monad.State.put
-    field @"predicate" . Lens.mapped %= Predicate.substitute subst
+    field @"predicate" %= MultiAnd.map (Predicate.substitute subst)
 
     return ()
   where
@@ -581,7 +581,7 @@ setSubstitute sVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Predicate.substitute subst
+    field @"predicate" %= MultiAnd.map (Predicate.substitute subst)
 
     return ()
   where

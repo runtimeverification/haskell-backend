@@ -22,10 +22,12 @@ module Kore.Internal.MultiAnd
     , singleton
     , toPattern
     , map
+    , traverse
     ) where
 
 import Prelude.Kore hiding
     ( map
+    , traverse
     )
 
 import Control.DeepSeq
@@ -33,6 +35,7 @@ import Control.DeepSeq
     )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
+import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
@@ -73,7 +76,6 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
     deriving (Semigroup, Monoid)
-    deriving (Functor, Applicative, Monad, Traversable, Alternative)
     deriving (Foldable)
     deriving (GHC.Generic, GHC.IsList)
 
@@ -246,3 +248,14 @@ map
     -> MultiAnd child1
     -> MultiAnd child2
 map f = make . fmap f . extractPatterns
+{-# INLINE map #-}
+
+traverse
+    :: Ord child2
+    => TopBottom child2
+    => Applicative f
+    => (child1 -> f child2)
+    -> MultiAnd child1
+    -> f (MultiAnd child2)
+traverse f = fmap make . Traversable.traverse f . extractPatterns
+{-# INLINE traverse #-}

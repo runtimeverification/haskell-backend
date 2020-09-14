@@ -143,7 +143,7 @@ simplify
     -> simplifier (OrPattern variable)
 simplify notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
-        patterns <- traverse scatter orPatterns
+        patterns <- MultiAnd.traverse scatter orPatterns
         makeEvaluate notSimplifier sideCondition patterns
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
@@ -179,7 +179,8 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             let (term1, condition1) = Pattern.splitTerm pattern1
             unified <- termAnd notSimplifier term1 term2
             pure (Pattern.andCondition unified condition1)
-    unified <- Foldable.foldlM unify Pattern.top (term <$> patterns)
+    unified <-
+        Foldable.foldlM unify Pattern.top (MultiAnd.map term patterns)
     let substitutions =
             Pattern.substitution unified
             <> foldMap Pattern.substitution patterns
