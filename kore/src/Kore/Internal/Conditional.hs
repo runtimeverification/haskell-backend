@@ -44,10 +44,10 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
     )
 import Kore.Debug
-import Kore.Internal.PredicateNew
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.PredicateNew as Predicate
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )

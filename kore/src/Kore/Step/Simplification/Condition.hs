@@ -19,10 +19,10 @@ import Kore.Internal.Pattern
     , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.PredicateNew
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Internal.PredicateNew as Predicate
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
