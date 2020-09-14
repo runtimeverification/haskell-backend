@@ -72,8 +72,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -278,7 +276,7 @@ runStep
     -> NoSMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return . fmap getRewritingPattern $ Step.gatherResults results
+    return . MultiOr.map getRewritingPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName

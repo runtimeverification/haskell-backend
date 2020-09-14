@@ -36,6 +36,9 @@ import Kore.Sort
 import Kore.Syntax.Application
     ( Application (..)
     )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
 import qualified Pretty
 
@@ -98,6 +101,10 @@ instance Synthetic Sort Inj where
 instance Synthetic (FreeVariables variable) Inj where
     synthetic = injChild
     {-# INLINE synthetic #-}
+
+instance TopBottom a => TopBottom (Inj a) where
+    isTop Inj { injChild } = isTop injChild
+    isBottom Inj { injChild } = isBottom injChild
 
 toSymbol :: Inj a -> Symbol
 toSymbol inj@(Inj _ _ _ _ _) =

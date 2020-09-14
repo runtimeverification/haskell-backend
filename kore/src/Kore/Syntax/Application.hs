@@ -30,6 +30,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Sort
+import Kore.TopBottom
 import Kore.Unparser
 import qualified Pretty
 
@@ -107,6 +108,10 @@ instance (Unparse head, Unparse child) => Unparse (Application head child) where
                     [ unparse2 applicationSymbolOrAlias
                     , arguments2 children
                     ])
+
+instance TopBottom child => TopBottom (Application head child) where
+    isTop _ = False
+    isBottom = any isBottom
 
 mapHead
     :: (head1 -> head2)

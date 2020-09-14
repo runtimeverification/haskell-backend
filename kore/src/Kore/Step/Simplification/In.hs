@@ -30,6 +30,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
+import qualified Logic
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
@@ -81,9 +82,13 @@ simplifyEvaluatedIn sideCondition first second
   | OrPattern.isTrue first = Ceil.simplifyEvaluated sideCondition second
   | OrPattern.isTrue second = Ceil.simplifyEvaluated sideCondition first
 
-  | otherwise =
-    OrPattern.flatten <$> sequence
-                            (makeEvaluateIn sideCondition <$> first <*> second)
+  | otherwise = do
+    result <-
+        OrPattern.observeAllT $ do
+            pattFirst <- Logic.scatter first
+            pattSecond <- Logic.scatter second
+            makeEvaluateIn sideCondition pattFirst pattSecond
+    return (OrPattern.flatten result)
 
 makeEvaluateIn
     :: (InternalVariable variable, MonadSimplify simplifier)

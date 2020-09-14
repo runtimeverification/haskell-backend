@@ -20,6 +20,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
+import Kore.TopBottom
 import Kore.Unparser
 import qualified Pretty
 
@@ -73,3 +74,7 @@ instance Synthetic Sort (DomainValue Sort) where
         domainValueSort
         & seq (matchSort stringMetaSort domainValueChild)
     {-# INLINE synthetic #-}
+
+instance TopBottom a => TopBottom (DomainValue Sort a) where
+    isTop DomainValue { domainValueChild } = isTop domainValueChild
+    isBottom DomainValue { domainValueChild } = isBottom domainValueChild

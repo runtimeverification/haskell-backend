@@ -88,9 +88,11 @@ simplifyEvaluated sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
-  | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies sideCondition first) second
-    return (MultiOr.flatten results)
+  | otherwise =
+      OrPattern.flatten
+      <$> OrPattern.traverse
+          (simplifyEvaluateHalfImplies sideCondition first)
+          second
 
 simplifyEvaluateHalfImplies
     :: (InternalVariable variable, MonadSimplify simplifier)

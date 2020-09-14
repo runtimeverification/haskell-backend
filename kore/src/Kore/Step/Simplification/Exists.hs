@@ -158,9 +158,11 @@ simplifyEvaluated
 simplifyEvaluated sideCondition variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
-  | otherwise = do
-    evaluated <- traverse (makeEvaluate sideCondition [variable]) simplified
-    return (OrPattern.flatten evaluated)
+  | otherwise =
+      OrPattern.flatten
+      <$> OrPattern.traverse
+          (makeEvaluate sideCondition [variable])
+          simplified
 
 {-| Evaluates a multiple 'Exists' given a pattern and a list of
 variables which are existentially quantified in the pattern. This

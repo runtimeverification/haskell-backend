@@ -38,6 +38,7 @@ import Numeric.Natural
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -112,7 +113,7 @@ transitionRule =
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        Foldable.asum (pure <$> filteredConfigs)
+        Foldable.asum (pure <$> MultiOr.extractPatterns filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         results <-
@@ -122,7 +123,7 @@ transitionRule =
                 config
             & lift
         Foldable.asum
-            (pure <$> Step.gatherResults results)
+            (pure <$> MultiOr.extractPatterns (Step.gatherResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.
