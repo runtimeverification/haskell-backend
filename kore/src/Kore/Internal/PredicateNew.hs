@@ -6,57 +6,53 @@ License     : NCSA
 
 module Kore.Internal.PredicateNew
     ( Predicate -- Constructor not exported on purpose
-    {- , pattern PredicateAnd
-    , pattern PredicateFalse
-    , pattern PredicateTrue
-    , compactPredicatePredicate
+    , PredicateF
+        ( AndF
+        , BottomF
+        , CeilF
+        , EqualsF
+        , ExistsF
+        , FloorF
+        , ForallF
+        , IffF
+        , ImpliesF
+        , InF
+        , NotF
+        , OrF
+        , TopF
+        )
+    , fromPredicate
     , isFalse
-    , depth
-    , makePredicate, NotPredicate (..)
-    , isPredicate
-    , makeAndPredicate
-    , makeMultipleAndPredicate
-    , getMultiAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeExistsPredicate
-    , makeMultipleExists
-    , makeForallPredicate
-    , makeFalsePredicate
-    , makeFalsePredicate_
-    , makeFloorPredicate
-    , makeFloorPredicate_
-    , makeIffPredicate
-    , makeImpliesPredicate
-    , makeInPredicate
-    , makeInPredicate_
-    , makeMuPredicate
-    , makeNotPredicate
-    , makeNuPredicate
-    , makeOrPredicate
-    , makeMultipleOrPredicate
+    , isTrue
     , makeTruePredicate
-    , makeTruePredicate_
-    , isSimplified
-    , markSimplified
-    , markSimplifiedConditional
-    , markSimplifiedMaybeConditional
-    , setSimplified
-    , Kore.Internal.PredicateNew.forgetSimplified
+    , makeFalsePredicate
+    , makeNotPredicate
+    , makeAndPredicate
+    , makeOrPredicate
+    , makeImpliesPredicate
+    , makeIffPredicate
+    , makeCeilPredicate
+    , makeFloorPredicate
+    , makeInPredicate
+    , makeEqualsPredicate
+    , makeExistsPredicate
+    , makeForallPredicate
+    , makeMultipleAndPredicate
+    , makeMultipleOrPredicate
+    , makeMultipleExists
+    , makeMultipleForalls
+    , getMultiAndPredicate
+    , getMultiOrPredicate
+    , NotPredicate
+    , makePredicate
+    , isPredicate
     , simplifiedAttribute
+    , isSimplified
     , isFreeOf
     , freeElementVariables
     , hasFreeVariable
-    , mapVariables
-    , stringFromPredicate
-    , coerceSort
-    , predicateSort
-    , fromPredicate
-    , unwrapPredicate
-    , wrapPredicate
-    , substitute -}
+    , substitute
+    , depth
     ) where
 
 import Prelude.Kore
@@ -111,9 +107,10 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.PredicatePattern
     ( PredicatePattern (PredicatePattern)
     )
-import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
+import qualified Kore.Attribute.PredicatePattern as PAttribute
 import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
 import Kore.Attribute.Pattern.Simplified
     ( Simplified(Simplified, NotSimplified)
     )
@@ -223,21 +220,38 @@ data PredicateF variable child
 instance
     Ord variable => Synthetic (FreeVariables variable) (PredicateF variable)
   where
-    synthetic =
-        \case
-            AndF and' -> synthetic and'
-            BottomF bottom -> synthetic bottom
-            CeilF ceil -> synthetic (freeVariables <$> ceil)
-            EqualsF equals -> synthetic (freeVariables <$> equals)
-            ExistsF exists -> synthetic exists
-            FloorF floor' -> synthetic (freeVariables <$> floor')
-            ForallF forall' -> synthetic forall'
-            IffF iff -> synthetic iff
-            ImpliesF implies -> synthetic implies
-            InF in' -> synthetic (freeVariables <$> in')
-            NotF not' -> synthetic not'
-            OrF or' -> synthetic or'
-            TopF top -> synthetic top
+    synthetic = \case
+        AndF and' -> synthetic and'
+        BottomF bottom -> synthetic bottom
+        CeilF ceil -> synthetic (freeVariables <$> ceil)
+        EqualsF equals -> synthetic (freeVariables <$> equals)
+        ExistsF exists -> synthetic exists
+        FloorF floor' -> synthetic (freeVariables <$> floor')
+        ForallF forall' -> synthetic forall'
+        IffF iff -> synthetic iff
+        ImpliesF implies -> synthetic implies
+        InF in' -> synthetic (freeVariables <$> in')
+        NotF not' -> synthetic not'
+        OrF or' -> synthetic or'
+        TopF top -> synthetic top
+            
+instance
+    Ord variable => Synthetic Simplified (PredicateF variable)
+  where
+    synthetic = \case
+        AndF and' -> synthetic and'
+        BottomF bottom -> synthetic bottom
+        CeilF ceil -> synthetic (TermLike.simplifiedAttribute <$> ceil)
+        EqualsF equals -> synthetic (TermLike.simplifiedAttribute <$> equals)
+        ExistsF exists -> synthetic exists
+        FloorF floor' -> synthetic (TermLike.simplifiedAttribute <$> floor')
+        ForallF forall' -> synthetic forall'
+        IffF iff -> synthetic iff
+        ImpliesF implies -> synthetic implies
+        InF in' -> synthetic (TermLike.simplifiedAttribute <$> in')
+        NotF not' -> synthetic not'
+        OrF or' -> synthetic or'
+        TopF top -> synthetic top
 
 
 newtype Predicate variable =
@@ -637,12 +651,22 @@ instance HasFreeVariables (Predicate variable) variable where
     freeVariables (Recursive.project -> attr :< _) = freeVariables attr
 
 
-isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
-isSimplified _ _ = False
-
 simplifiedAttribute :: Predicate variable -> Simplified
-simplifiedAttribute _ = NotSimplified
+simplifiedAttribute (Recursive.project -> attr :< _) = PAttribute.simplifiedAttribute attr
 
+isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
+isSimplified condition (Recursive.project -> attr :< _) = PAttribute.isSimplified condition attr
+
+{-
+setSimplified
+    :: InternalVariable variable
+    => Attribute.Simplified -> Predicate variable -> Predicate variable
+
+markSimplified
+    :: (HasCallStack, InternalVariable variable)
+    => Predicate variable -> Predicate variable
+markSimplified
+-}
 
 {-
 mapVariables

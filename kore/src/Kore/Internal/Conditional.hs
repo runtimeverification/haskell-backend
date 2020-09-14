@@ -44,10 +44,10 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
     )
 import Kore.Debug
-import Kore.Internal.Predicate
+import Kore.Internal.PredicateNew
     ( Predicate
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.PredicateNew as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -141,7 +141,7 @@ instance
     mempty =
         Conditional
             { term = mempty
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
     {-# INLINE mempty #-}
@@ -153,7 +153,7 @@ instance InternalVariable variable => Applicative (Conditional variable) where
     pure term =
         Conditional
             { term
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
 

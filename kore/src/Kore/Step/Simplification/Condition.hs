@@ -19,11 +19,10 @@ import Kore.Internal.Pattern
     , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
+import Kore.Internal.PredicateNew
     ( Predicate
-    , unwrapPredicate
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.PredicateNew as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -117,7 +116,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ unwrapPredicate predicate
+        $ Predicate.fromPredicate () predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)

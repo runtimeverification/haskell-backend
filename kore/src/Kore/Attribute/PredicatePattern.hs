@@ -8,7 +8,9 @@ License     : NCSA
 
 module Kore.Attribute.PredicatePattern
     ( PredicatePattern (PredicatePattern, freeVariables)
-    -- 'simplified' and 'constructorLike' were intentionally left out above.
+    -- simplified is excluded on purpose
+    , simplifiedAttribute
+    , isSimplified
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
@@ -47,6 +49,9 @@ import qualified Kore.Attribute.Pattern.Simplified as Simplified
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Syntax.Variable
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
@@ -81,6 +86,26 @@ instance
         { freeVariables = synthetic (freeVariables <$> base)
         , simplified = synthetic (simplified <$> base)
         }
+
+
+simplifiedAttribute :: HasCallStack => PredicatePattern variable -> Simplified
+simplifiedAttribute PredicatePattern {simplified} = simplified
+
+{- Checks whether the pattern is simplified relative to the given side
+condition.
+-}
+isSimplified
+    :: HasCallStack
+    => SideCondition.Representation -> PredicatePattern variable -> Bool
+isSimplified sideCondition = Simplified.isSimplified sideCondition . simplifiedAttribute
+
+{- Checks whether the pattern is simplified relative to any side condition.
+-}
+isFullySimplified :: HasCallStack => PredicatePattern variable -> Bool
+isFullySimplified PredicatePattern {simplified} = Simplified.isFullySimplified simplified
+
+setSimplified :: Simplified -> PredicatePattern variable -> PredicatePattern variable
+setSimplified simplified patt = patt { simplified }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
@@ -122,6 +147,6 @@ deleteFreeVariable variable =
 instance HasFreeVariables (PredicatePattern variable) variable where
     freeVariables = freeVariables
 
-
--- fromPattern :: Pattern variable -> PredicatePattern variable
--- fromPattern Pattern {freeVariables, simplified} = PredicatePattern freeVariables simplified
+fromPattern :: Pattern variable -> PredicatePattern variable
+fromPattern p =
+    PredicatePattern (Pattern.freeVariables p) (Pattern.simplifiedAttribute p)
