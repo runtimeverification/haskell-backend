@@ -71,6 +71,7 @@ dependencies:
   - megaparsec >= 7.0.4
   - memory >=0.14
   - mmorph >=1.1
+  - mono-traversable
   - mtl >=2.2
   - optparse-applicative >=0.14
   - parser-combinators >=1.1

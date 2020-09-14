@@ -36,6 +36,12 @@ import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
+import Data.MonoTraversable
+    ( Element
+    , MonoFoldable (..)
+    , MonoFunctor (..)
+    )
+import qualified GHC.Generics as GHC
 
 import Kore.Internal.Condition
     ( Condition
@@ -77,12 +83,33 @@ import Kore.Variables.Target
     , targetIfEqual
     )
 
-{-| The disjunction of 'Pattern'.
+{-| The disjunction of 'Pattern's.
 -}
-type OrPattern variable = MultiOr (Pattern variable)
+newtype OrPattern variable =
+    OrPattern { unOrPattern :: MultiOr (Pattern variable) }
+    deriving
+        ( Eq
+        , Ord
+        , Show
+        , GHC.Generic
+        , Semigroup
+        , Monoid
+        )
+
+type instance Element (OrPattern variable) = Pattern variable
+
+instance MonoFoldable (OrPattern variable) where
+    ofoldMap f (OrPattern multiOr) = foldMap f multiOr
+    ofoldr f def (OrPattern multiOr) = foldr f def multiOr
+    ofoldl' f def (OrPattern multiOr) = foldl f def multiOr
+    ofoldr1Ex f (OrPattern multiOr) = foldr1 f multiOr
+    ofoldl1Ex' f (OrPattern multiOr) = foldl1 f multiOr
+
+instance MonoFunctor (OrPattern variable) where
+    omap f (OrPattern multiOr) = OrPattern (MultiOr.map f multiOr)
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
-isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
+isSimplified sideCondition = oall (Pattern.isSimplified sideCondition)
 
 forgetSimplified
     :: InternalVariable variable => OrPattern variable -> OrPattern variable
@@ -154,7 +181,7 @@ toPattern
     .  InternalVariable variable
     => OrPattern variable
     -> Pattern variable
-toPattern multiOr =
+toPattern (OrPattern multiOr) =
     case MultiOr.extractPatterns multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
@@ -183,14 +210,14 @@ toPattern multiOr =
 
 {- Check if an OrPattern can be reduced to a Predicate. -}
 isPredicate :: OrPattern variable -> Bool
-isPredicate = all Pattern.isPredicate
+isPredicate = oall Pattern.isPredicate
 
 {-| Transforms a 'Pattern' into a 'TermLike'.
 -}
 toTermLike
     :: InternalVariable variable
     => OrPattern variable -> TermLike variable
-toTermLike multiOr =
+toTermLike (OrPattern multiOr) =
     case MultiOr.extractPatterns multiOr of
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
@@ -214,8 +241,9 @@ targetBinder Binder { binderVariable, binderChild } =
         targetBoundVariables =
             targetIfEqual
             $ unElementVariableName . variableName $ binderVariable
+        newChild :: OrPattern (Target variable)
         newChild =
-            MultiOr.map
+            omap
                 (Pattern.mapVariables
                     AdjSomeVariableName
                     { adjSomeVariableNameElement =
@@ -226,7 +254,7 @@ targetBinder Binder { binderVariable, binderChild } =
                 binderChild
      in Binder
          { binderVariable = newVar
-         , binderChild = newChild
+         , binderChild = undefined
          }
 
 substitute
