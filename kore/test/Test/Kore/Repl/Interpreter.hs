@@ -650,7 +650,7 @@ add1 =
     n       = mkElemVar $ mkElementVariable "x" intSort
     plusOne = n `addInt` one
 
-zeroToTen :: ReachabilityClaim
+zeroToTen :: SomeClaim
 zeroToTen =
     OnePath . OnePathClaim
     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
@@ -658,7 +658,7 @@ zeroToTen =
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
 
-emptyClaim :: ReachabilityClaim
+emptyClaim :: SomeClaim
 emptyClaim =
     OnePath . OnePathClaim
     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
@@ -706,8 +706,8 @@ mkAxiom left right =
 run
     :: ReplCommand
     -> [Axiom]
-    -> [ReachabilityClaim]
-    -> ReachabilityClaim
+    -> [SomeClaim]
+    -> SomeClaim
     -> IO Result
 run command axioms claims claim =
     runWithState command axioms claims claim id
@@ -715,8 +715,8 @@ run command axioms claims claim =
 runWithState
     :: ReplCommand
     -> [Axiom]
-    -> [ReachabilityClaim]
-    -> ReachabilityClaim
+    -> [SomeClaim]
+    -> SomeClaim
     -> (ReplState -> ReplState)
     -> IO Result
 runWithState command axioms claims claim stateTransformer = do
@@ -794,8 +794,8 @@ tests = flip testCase
 mkState
     :: TimeSpec
     -> [Axiom]
-    -> [ReachabilityClaim]
-    -> ReachabilityClaim
+    -> [SomeClaim]
+    -> SomeClaim
     -> ReplState
 mkState startTime axioms claims claim =
     ReplState
@@ -828,7 +828,7 @@ mkConfig logger =
         }
   where
     stepper0
-        :: [ReachabilityClaim]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode

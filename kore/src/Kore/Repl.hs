@@ -64,7 +64,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Log as Log
 import Kore.Reachability
-    ( ReachabilityClaim
+    ( SomeClaim
     , lensClaimPattern
     )
 import Kore.Reachability.Claim
@@ -108,7 +108,7 @@ runRepl
     => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [ReachabilityClaim]
+    -> [SomeClaim]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
@@ -227,8 +227,8 @@ runRepl
         lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: [ReachabilityClaim]
-        -> [ReachabilityClaim]
+        :: [SomeClaim]
+        -> [SomeClaim]
     addIndexesToClaims =
         initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
@@ -243,14 +243,14 @@ runRepl
                 (index & ctor & Just & RuleIndex)
                 rule
 
-    firstClaim :: ReachabilityClaim
+    firstClaim :: SomeClaim
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: [ReachabilityClaim]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode

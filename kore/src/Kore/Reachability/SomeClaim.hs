@@ -5,7 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Reachability.SomeClaim
-    ( ReachabilityClaim (..)
+    ( SomeClaim (..)
     , Rule (..)
     , makeTrusted
     , getConfiguration
@@ -67,59 +67,63 @@ import Pretty
     )
 import qualified Pretty
 
--- | Unified One-Path and All-Path claim pattern.
-data ReachabilityClaim
+{- | Some claim in reachability logic.
+
+@SomeClaim@ may be a 'OnePathClaim' or an 'AllPathClaim'.
+
+ -}
+data SomeClaim
     = OnePath !OnePathClaim
     | AllPath !AllPathClaim
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance NFData ReachabilityClaim
+instance NFData SomeClaim
 
-instance SOP.Generic ReachabilityClaim
+instance SOP.Generic SomeClaim
 
-instance SOP.HasDatatypeInfo ReachabilityClaim
+instance SOP.HasDatatypeInfo SomeClaim
 
-instance Debug ReachabilityClaim
+instance Debug SomeClaim
 
-instance Diff ReachabilityClaim
+instance Diff SomeClaim
 
-instance Unparse ReachabilityClaim where
+instance Unparse SomeClaim where
     unparse (OnePath rule) = unparse rule
     unparse (AllPath rule) = unparse rule
     unparse2 (AllPath rule) = unparse2 rule
     unparse2 (OnePath rule) = unparse2 rule
 
-instance TopBottom ReachabilityClaim where
+instance TopBottom SomeClaim where
     isTop _ = False
     isBottom _ = False
 
-instance Pretty ReachabilityClaim where
+instance Pretty SomeClaim where
     pretty (OnePath (OnePathClaim rule)) =
         Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
     pretty (AllPath (AllPathClaim rule)) =
         Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
 
-instance From ReachabilityClaim Attribute.SourceLocation where
+instance From SomeClaim Attribute.SourceLocation where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityClaim Attribute.Label where
+instance From SomeClaim Attribute.Label where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityClaim Attribute.RuleIndex where
+instance From SomeClaim Attribute.RuleIndex where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityClaim Attribute.Trusted where
+instance From SomeClaim Attribute.Trusted where
     from (OnePath onePathRule) = from onePathRule
     from (AllPath allPathRule) = from allPathRule
 
-instance From ReachabilityClaim (AxiomPattern VariableName) where
+instance From SomeClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 
-toSentence :: ReachabilityClaim -> Verified.Sentence
+toSentence :: SomeClaim -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
         { sentenceAxiomParameters = []
@@ -131,17 +135,17 @@ toSentence rule =
         OnePath rule' -> onePathRuleToTerm rule'
         AllPath rule' -> allPathRuleToTerm rule'
 
-getConfiguration :: ReachabilityClaim -> Pattern RewritingVariableName
+getConfiguration :: SomeClaim -> Pattern RewritingVariableName
 getConfiguration = Lens.view (lensClaimPattern . field @"left")
 
-getDestination :: ReachabilityClaim -> OrPattern RewritingVariableName
+getDestination :: SomeClaim -> OrPattern RewritingVariableName
 getDestination = Lens.view (lensClaimPattern . field @"right")
 
 lensClaimPattern
     :: Functor f
     => (ClaimPattern -> f ClaimPattern)
-    -> ReachabilityClaim
-    -> f ReachabilityClaim
+    -> SomeClaim
+    -> f SomeClaim
 lensClaimPattern =
     Lens.lens
         (\case
@@ -161,7 +165,7 @@ lensClaimPattern =
                 & AllPath
         )
 
-makeTrusted :: ReachabilityClaim -> ReachabilityClaim
+makeTrusted :: SomeClaim -> SomeClaim
 makeTrusted =
     Lens.set
         ( lensClaimPattern
@@ -170,9 +174,9 @@ makeTrusted =
         )
         (Attribute.Trusted True)
 
-instance Claim ReachabilityClaim where
+instance Claim SomeClaim where
 
-    newtype Rule ReachabilityClaim =
+    newtype Rule SomeClaim =
         ReachabilityRewriteRule
             { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
         deriving (GHC.Generic, Show, Unparse)
@@ -201,53 +205,53 @@ instance Claim ReachabilityClaim where
         & fmap (fmap OnePath)
         & onePathTransition
 
-instance SOP.Generic (Rule ReachabilityClaim)
+instance SOP.Generic (Rule SomeClaim)
 
-instance SOP.HasDatatypeInfo (Rule ReachabilityClaim)
+instance SOP.HasDatatypeInfo (Rule SomeClaim)
 
-instance Debug (Rule ReachabilityClaim)
+instance Debug (Rule SomeClaim)
 
-instance Diff (Rule ReachabilityClaim)
+instance Diff (Rule SomeClaim)
 
-instance From (Rule ReachabilityClaim) Attribute.PriorityAttributes where
+instance From (Rule SomeClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityClaim) Attribute.SourceLocation where
+instance From (Rule SomeClaim) Attribute.SourceLocation where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityClaim) Attribute.Label where
+instance From (Rule SomeClaim) Attribute.Label where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance From (Rule ReachabilityClaim) Attribute.RuleIndex where
+instance From (Rule SomeClaim) Attribute.RuleIndex where
     from = from @(RewriteRule _) . unReachabilityRewriteRule
 
-instance ClaimExtractor ReachabilityClaim where
+instance ClaimExtractor SomeClaim where
     extractClaim input =
         (OnePath <$> extractClaim input) <|> (AllPath <$> extractClaim input)
 
 allPathTransition
     :: Monad m
     => TransitionT (AppliedRule AllPathClaim) m a
-    -> TransitionT (AppliedRule ReachabilityClaim) m a
+    -> TransitionT (AppliedRule SomeClaim) m a
 allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
 
 onePathTransition
     :: Monad m
     => TransitionT (AppliedRule OnePathClaim) m a
-    -> TransitionT (AppliedRule ReachabilityClaim) m a
+    -> TransitionT (AppliedRule SomeClaim) m a
 onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
 
-maybeOnePath :: ReachabilityClaim -> Maybe OnePathClaim
+maybeOnePath :: SomeClaim -> Maybe OnePathClaim
 maybeOnePath (OnePath rule) = Just rule
 maybeOnePath _ = Nothing
 
-maybeAllPath :: ReachabilityClaim -> Maybe AllPathClaim
+maybeAllPath :: SomeClaim -> Maybe AllPathClaim
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 ruleAllPathToRuleReachability
     :: AppliedRule AllPathClaim
-    -> AppliedRule ReachabilityClaim
+    -> AppliedRule SomeClaim
 ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
     AppliedAxiom (ReachabilityRewriteRule rewriteRule)
 ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
@@ -255,7 +259,7 @@ ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
 
 ruleOnePathToRuleReachability
     :: AppliedRule OnePathClaim
-    -> AppliedRule ReachabilityClaim
+    -> AppliedRule SomeClaim
 ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
     AppliedAxiom (ReachabilityRewriteRule rewriteRule)
 ruleOnePathToRuleReachability (AppliedClaim onePathRule) =

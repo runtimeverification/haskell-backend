@@ -32,8 +32,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
     ( AllPathClaim (..)
-    , ReachabilityClaim (..)
     , Rule (..)
+    , SomeClaim (..)
     , lensClaimPattern
     )
 import Kore.Reachability.Claim
@@ -381,7 +381,7 @@ test_allPathVerification =
 simpleAxiom
     :: TermLike VariableName
     -> TermLike VariableName
-    -> Rule ReachabilityClaim
+    -> Rule SomeClaim
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
@@ -389,7 +389,7 @@ simplePriorityAxiom
     :: TermLike VariableName
     -> TermLike VariableName
     -> Integer
-    -> Rule ReachabilityClaim
+    -> Rule SomeClaim
 simplePriorityAxiom left right priority =
     ReachabilityRewriteRule . mkRewritingRule . RewriteRule
     $ RulePattern
@@ -405,7 +405,7 @@ simplePriorityAxiom left right priority =
 simpleClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleClaim
     (TermLike.mapVariables (pure mkRuleVariable) -> left)
     (TermLike.mapVariables (pure mkRuleVariable) -> right)
@@ -426,7 +426,7 @@ simpleClaim
 simpleTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")

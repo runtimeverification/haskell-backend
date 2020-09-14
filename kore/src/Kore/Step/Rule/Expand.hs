@@ -62,7 +62,7 @@ import Kore.Internal.TermLike
 import Kore.Reachability
     ( AllPathClaim (..)
     , OnePathClaim (..)
-    , ReachabilityClaim (..)
+    , SomeClaim (..)
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -155,7 +155,7 @@ instance ExpandSingleConstructors AllPathClaim where
     expandSingleConstructors tools =
         AllPathClaim . expandSingleConstructors tools . getAllPathClaim
 
-instance ExpandSingleConstructors ReachabilityClaim where
+instance ExpandSingleConstructors SomeClaim where
     expandSingleConstructors tools (OnePath rule) =
         OnePath
         . OnePathClaim

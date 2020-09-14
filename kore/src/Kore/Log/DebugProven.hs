@@ -10,7 +10,7 @@ module Kore.Log.DebugProven
 import Prelude.Kore
 
 import Kore.Reachability.SomeClaim
-    ( ReachabilityClaim (..)
+    ( SomeClaim (..)
     )
 import Log
 import Pretty
@@ -18,7 +18,7 @@ import Pretty
     )
 import qualified Pretty
 
-newtype DebugProven = DebugProven { claim :: ReachabilityClaim }
+newtype DebugProven = DebugProven { claim :: SomeClaim }
     deriving (Show)
 
 instance Pretty DebugProven where

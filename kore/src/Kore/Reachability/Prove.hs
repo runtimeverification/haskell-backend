@@ -133,17 +133,17 @@ import qualified Logic
 import qualified Pretty
 import Prof
 
-type CommonClaimState = ClaimState.ClaimState ReachabilityClaim
+type CommonClaimState = ClaimState.ClaimState SomeClaim
 
 type CommonTransitionRule m =
-    TransitionRule m (AppliedRule ReachabilityClaim) CommonClaimState
+    TransitionRule m (AppliedRule SomeClaim) CommonClaimState
 
 -- | Extracts the left hand side (configuration) from the
 -- 'CommonClaimState'. If the 'ClaimState' is 'Proven', then
 -- the configuration will be '\\bottom'.
 lhsClaimStateTransformer
     :: ClaimStateTransformer
-        ReachabilityClaim
+        SomeClaim
         (Pattern RewritingVariableName)
 lhsClaimStateTransformer =
     ClaimStateTransformer
@@ -174,7 +174,7 @@ If the verification succeeds, it returns ().
 data ProofStuck =
     ProofStuck
     { stuckPatterns :: !(OrPattern VariableName)
-    , provenClaims :: ![ReachabilityClaim]
+    , provenClaims :: ![SomeClaim]
     }
     deriving (Eq, GHC.Generic, Show)
 
@@ -198,10 +198,10 @@ proveClaims
     => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims ReachabilityClaim
-    -> Axioms ReachabilityClaim
+    -> AllClaims SomeClaim
+    -> Axioms SomeClaim
     -> AlreadyProven
-    -> ToProve ReachabilityClaim
+    -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT ProofStuck simplifier ()
@@ -216,16 +216,16 @@ proveClaims
     proveClaimsWorker breadthLimit searchOrder claims axioms unproven
     & withExceptT addStillProven
   where
-    unproven :: ToProve ReachabilityClaim
-    stillProven :: [ReachabilityClaim]
+    unproven :: ToProve SomeClaim
+    stillProven :: [SomeClaim]
     (unproven, stillProven) =
         (ToProve newToProve, newAlreadyProven)
       where
         (newToProve, newAlreadyProven) =
             partitionEithers (map lookupEither toProve)
         lookupEither
-            :: (ReachabilityClaim, Limit Natural)
-            -> Either (ReachabilityClaim, Limit Natural) ReachabilityClaim
+            :: (SomeClaim, Limit Natural)
+            -> Either (SomeClaim, Limit Natural) SomeClaim
         lookupEither claim@(rule, _) =
             if unparseToText2 rule `elem` alreadyProven
                 then Right rule
@@ -242,9 +242,9 @@ proveClaimsWorker
     => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims ReachabilityClaim
-    -> Axioms ReachabilityClaim
-    -> ToProve ReachabilityClaim
+    -> AllClaims SomeClaim
+    -> Axioms SomeClaim
+    -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT ProofStuck simplifier ()
@@ -252,9 +252,9 @@ proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
     Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
-        :: [ReachabilityClaim]
-        -> (ReachabilityClaim, Limit Natural)
-        -> ExceptT ProofStuck simplifier [ReachabilityClaim]
+        :: [SomeClaim]
+        -> (SomeClaim, Limit Natural)
+        -> ExceptT ProofStuck simplifier [SomeClaim]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
             proveClaim breadthLimit searchOrder claims axioms unprovenClaim
@@ -271,9 +271,9 @@ proveClaim
     => MonadProf simplifier
     => Limit Natural
     -> GraphSearchOrder
-    -> AllClaims ReachabilityClaim
-    -> Axioms ReachabilityClaim
-    -> (ReachabilityClaim, Limit Natural)
+    -> AllClaims SomeClaim
+    -> Axioms SomeClaim
+    -> (SomeClaim, Limit Natural)
     -> ExceptT (OrPattern VariableName) simplifier ()
 proveClaim
     breadthLimit
@@ -363,15 +363,15 @@ proveClaimStep
     .  MonadSimplify simplifier
     => MonadMask simplifier
     => MonadProf simplifier
-    => [ReachabilityClaim]
+    => [SomeClaim]
     -- ^ list of claims in the spec module
-    -> [Rule ReachabilityClaim]
+    -> [Rule SomeClaim]
     -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonClaimState (AppliedRule ReachabilityClaim)
+    -> ExecutionGraph CommonClaimState (AppliedRule SomeClaim)
     -- ^ current execution graph
     -> Graph.Node
     -- ^ selected node in the graph
-    -> simplifier (ExecutionGraph CommonClaimState (AppliedRule ReachabilityClaim))
+    -> simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
 proveClaimStep claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
@@ -409,8 +409,8 @@ transitionRule'
     :: MonadSimplify simplifier
     => MonadProf simplifier
     => MonadMask simplifier
-    => [ReachabilityClaim]
-    -> [Rule ReachabilityClaim]
+    => [SomeClaim]
+    -> [Rule SomeClaim]
     -> CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState ->
     deepseq proofState
@@ -478,9 +478,9 @@ throwStuckClaims
     ::  forall m rule
     .   MonadLog m
     =>  TransitionRule (Verifier m) rule
-            (ProofDepth, ClaimState ReachabilityClaim)
+            (ProofDepth, ClaimState SomeClaim)
     ->  TransitionRule (Verifier m) rule
-            (ProofDepth, ClaimState ReachabilityClaim)
+            (ProofDepth, ClaimState SomeClaim)
 throwStuckClaims rule prim state = do
     state'@(proofDepth', proofState') <- rule prim state
     case proofState' of
@@ -518,13 +518,13 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
 debugClaimStateBracket
     :: forall monad
     .  MonadLog monad
-    => ClaimState ReachabilityClaim
+    => ClaimState SomeClaim
     -- ^ current proof state
     -> Prim
     -- ^ transition
-    -> monad (ClaimState ReachabilityClaim)
+    -> monad (ClaimState SomeClaim)
     -- ^ action to be computed
-    -> monad (ClaimState ReachabilityClaim)
+    -> monad (ClaimState SomeClaim)
 debugClaimStateBracket
     proofState
     (coerce -> transition)
@@ -542,11 +542,11 @@ debugClaimStateFinal
     :: forall monad
     .  Alternative monad
     => MonadLog monad
-    => ClaimState ReachabilityClaim
+    => ClaimState SomeClaim
     -- ^ current proof state
     -> Prim
     -- ^ transition
-    -> monad (ClaimState ReachabilityClaim)
+    -> monad (ClaimState SomeClaim)
 debugClaimStateFinal proofState (coerce -> transition) = do
     logEntry DebugClaimState
         { proofState

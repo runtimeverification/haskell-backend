@@ -16,7 +16,7 @@ import Kore.Reachability.Prim
     ( Prim (..)
     )
 import Kore.Reachability.SomeClaim
-    ( ReachabilityClaim (..)
+    ( SomeClaim (..)
     )
 import Log
 import Pretty
@@ -26,9 +26,9 @@ import qualified Pretty
 
 data DebugClaimState =
     DebugClaimState
-        { proofState :: ClaimState ReachabilityClaim
+        { proofState :: ClaimState SomeClaim
         , transition :: Prim
-        , result :: Maybe (ClaimState ReachabilityClaim)
+        , result :: Maybe (ClaimState SomeClaim)
         }
     deriving (Show)
 

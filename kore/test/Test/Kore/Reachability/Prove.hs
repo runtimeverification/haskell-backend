@@ -1294,7 +1294,7 @@ test_reachabilityVerification =
 simpleAxiom
     :: TermLike VariableName
     -> TermLike VariableName
-    -> Rule ReachabilityClaim
+    -> Rule SomeClaim
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
@@ -1323,21 +1323,21 @@ simpleClaim
 simpleOnePathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleOnePathClaim left right =
     OnePath . OnePathClaim $ simpleClaim left right
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleAllPathClaim left right =
     AllPath . AllPathClaim $ simpleClaim left right
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleOnePathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
@@ -1349,7 +1349,7 @@ simpleOnePathTrustedClaim left right =
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityClaim
+    -> SomeClaim
 simpleAllPathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
@@ -1368,9 +1368,9 @@ simpleRewrite left right =
 proveClaims
     :: Limit Natural
     -> Limit Natural
-    -> [Rule ReachabilityClaim]
-    -> [ReachabilityClaim]
-    -> [ReachabilityClaim]
+    -> [Rule SomeClaim]
+    -> [SomeClaim]
+    -> [SomeClaim]
     -> IO (Either ProofStuck ())
 proveClaims breadthLimit depthLimit axioms claims alreadyProven =
     Kore.Reachability.proveClaims
@@ -1390,9 +1390,9 @@ proveClaims breadthLimit depthLimit axioms claims alreadyProven =
 proveClaims_
     :: Limit Natural
     -> Limit Natural
-    -> [Rule ReachabilityClaim]
-    -> [ReachabilityClaim]
-    -> [ReachabilityClaim]
+    -> [Rule SomeClaim]
+    -> [SomeClaim]
+    -> [SomeClaim]
     -> IO (Either (OrPattern VariableName) ())
 proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
     do

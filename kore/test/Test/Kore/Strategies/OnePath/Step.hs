@@ -136,14 +136,14 @@ makeOnePathGoalFromPatterns
 makeReachabilityOnePathGoal
     :: TermLike'
     -> TermLike'
-    -> ReachabilityClaim
+    -> SomeClaim
 makeReachabilityOnePathGoal term dest =
     OnePath (makeOnePathGoal term dest)
 
 makeReachabilityOnePathClaim
     :: TermLike'
     -> TermLike'
-    -> ReachabilityClaim
+    -> SomeClaim
 makeReachabilityOnePathClaim term dest =
     OnePath (makeOnePathClaim term dest)
 
@@ -818,7 +818,7 @@ simpleRewrite left right =
 simpleReachabilityRewrite
     :: TermLike'
     -> TermLike'
-    -> Rule ReachabilityClaim
+    -> Rule SomeClaim
 simpleReachabilityRewrite left right =
     coerce (simpleRewrite left right)
 
@@ -841,7 +841,7 @@ rewriteReachabilityWithPredicate
     :: TermLike'
     -> TermLike'
     -> Predicate'
-    -> Rule ReachabilityClaim
+    -> Rule SomeClaim
 rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
@@ -909,7 +909,7 @@ runOnePathSteps
 assertStuck
     :: OnePathClaim
     -> [ClaimState.ClaimState OnePathClaim]
-    -> [ClaimState.ClaimState ReachabilityClaim]
+    -> [ClaimState.ClaimState SomeClaim]
     -> IO ()
 assertStuck expectedGoal actual actualReach = do
     assertEqual "as one-path claim" [Stuck expectedGoal] actual

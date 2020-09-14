@@ -116,7 +116,7 @@ import qualified Kore.Log as Log
 import Kore.Reachability
     ( ClaimState (..)
     , ClaimStateTransformer (..)
-    , ReachabilityClaim (..)
+    , SomeClaim (..)
     , claimState
     , extractUnproven
     , getConfiguration
@@ -146,7 +146,7 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: ReachabilityClaim -> ExecutionGraph
+emptyExecutionGraph :: SomeClaim -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph . Claimed
 
 ruleReference
@@ -166,7 +166,7 @@ getClaimByIndex
     :: MonadState ReplState m
     => Int
     -- ^ index in the claims list
-    -> m (Maybe ReachabilityClaim)
+    -> m (Maybe SomeClaim)
 getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
@@ -192,7 +192,7 @@ getClaimByName
     :: MonadState ReplState m
     => String
     -- ^ label attribute
-    -> m (Maybe ReachabilityClaim)
+    -> m (Maybe SomeClaim)
 getClaimByName name = do
     claims <- Lens.use (field @"claims")
     return $ find (isNameEqual name) claims
@@ -209,7 +209,7 @@ getClaimIndexByName name= do
 getAxiomOrClaimByName
     :: MonadState ReplState m
     => RuleName
-    -> m (Maybe (Either Axiom ReachabilityClaim))
+    -> m (Maybe (Either Axiom SomeClaim))
 getAxiomOrClaimByName (RuleName name) = do
     mAxiom <- getAxiomByName name
     case mAxiom of
@@ -244,7 +244,7 @@ getNameText = from
 getAxiomOrClaimByIndex
     :: MonadState ReplState m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either Axiom ReachabilityClaim))
+    -> m (Maybe (Either Axiom SomeClaim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -259,7 +259,7 @@ getInternalIdentifier = from
 -- | Update the currently selected claim to prove.
 switchToProof
     :: MonadState ReplState m
-    => ReachabilityClaim -> ClaimIndex -> m ()
+    => SomeClaim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -511,7 +511,7 @@ runStepper'
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => [ReachabilityClaim]
+    => [SomeClaim]
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph, StepResult)
@@ -565,7 +565,7 @@ getNodeState graph node =
 nodeToGoal
     :: InnerGraph
     -> Graph.Node
-    -> Maybe ReachabilityClaim
+    -> Maybe SomeClaim
 nodeToGoal graph node =
     extractUnproven
     . Graph.lab'
@@ -658,7 +658,7 @@ conjOfClaims claims sort =
 generateInProgressClaims
     :: forall m
     .  MonadState ReplState m
-    => m [ReachabilityClaim]
+    => m [SomeClaim]
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -668,8 +668,8 @@ generateInProgressClaims = do
   where
     notStartedClaims
         :: Map.Map ClaimIndex ExecutionGraph
-        -> [ReachabilityClaim]
-        -> [ReachabilityClaim]
+        -> [SomeClaim]
+        -> [SomeClaim]
     notStartedClaims graphs claims =
         Set.difference claimIndices startedClaims
         & Set.toList
@@ -682,13 +682,13 @@ generateInProgressClaims = do
 
 unprovenGoals
     :: Map ClaimIndex ExecutionGraph
-    -> [ReachabilityClaim]
+    -> [SomeClaim]
 unprovenGoals graphs =
     findUnprovenGoals =<< Map.elems graphs
 
 findUnprovenGoals
     :: ExecutionGraph
-    -> [ReachabilityClaim]
+    -> [SomeClaim]
 findUnprovenGoals (Strategy.graph -> graph) =
     mapMaybe (nodeToGoal graph)
     . findLeafNodes
@@ -735,7 +735,7 @@ replOutputToString (ReplOutput out) =
 createNewDefinition
     :: ModuleName
     -> String
-    -> [ReachabilityClaim]
+    -> [SomeClaim]
     -> Definition (Sentence (TermLike VariableName))
 createNewDefinition mainModuleName name claims =
     Definition
@@ -761,15 +761,15 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: ReachabilityClaim -> Sentence (TermLike VariableName)
+    claimToSentence :: SomeClaim -> Sentence (TermLike VariableName)
     claimToSentence claim =
         SentenceClaimSentence
         . SentenceClaim
         $ SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                from @ReachabilityClaim @(AxiomPattern _) claim
+                from @SomeClaim @(AxiomPattern _) claim
                 & getAxiomPattern
             , sentenceAxiomAttributes =
-                from @Attribute.Trusted $ from @ReachabilityClaim claim
+                from @Attribute.Trusted $ from @SomeClaim claim
             }

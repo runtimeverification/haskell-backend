@@ -9,7 +9,7 @@ module Kore.Reachability
     , allPathRuleToTerm
     , OnePathClaim (..)
     , onePathRuleToTerm
-    , ReachabilityClaim (..)
+    , SomeClaim (..)
     , makeTrusted
     , lensClaimPattern
     , getConfiguration

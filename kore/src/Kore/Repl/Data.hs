@@ -537,16 +537,16 @@ type ExecutionGraph = Strategy.ExecutionGraph CommonClaimState AppliedRule
 
 type InnerGraph = Gr CommonClaimState (Seq AppliedRule)
 
-type Axiom = Rule ReachabilityClaim
-type AppliedRule = Reachability.AppliedRule ReachabilityClaim
+type Axiom = Rule SomeClaim
+type AppliedRule = Reachability.AppliedRule SomeClaim
 
 -- | State for the repl.
 data ReplState = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [ReachabilityClaim]
+    , claims     :: [SomeClaim]
     -- ^ List of claims to be proven
-    , claim      :: ReachabilityClaim
+    , claim      :: SomeClaim
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
@@ -571,7 +571,7 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: [ReachabilityClaim]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode

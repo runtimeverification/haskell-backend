@@ -41,7 +41,7 @@ import Kore.Internal.TermLike
 import Kore.Reachability
     ( AllPathClaim (..)
     , OnePathClaim (..)
-    , ReachabilityClaim (..)
+    , SomeClaim (..)
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -154,7 +154,7 @@ instance SimplifyRuleLHS AllPathClaim where
     simplifyRuleLhs =
         fmap (fmap AllPathClaim) . simplifyClaimRule . getAllPathClaim
 
-instance SimplifyRuleLHS ReachabilityClaim where
+instance SimplifyRuleLHS SomeClaim where
     simplifyRuleLhs (OnePath rule) =
         (fmap . fmap) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =

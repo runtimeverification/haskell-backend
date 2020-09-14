@@ -110,8 +110,8 @@ import Kore.Reachability
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
     , ProofStuck (..)
-    , ReachabilityClaim (..)
     , Rule (ReachabilityRewriteRule)
+    , SomeClaim (..)
     , ToProve (ToProve)
     , extractClaims
     , isTrusted
@@ -415,7 +415,7 @@ prove
             )
             & runExceptT
   where
-    extractUntrustedClaims' :: [ReachabilityClaim] -> [ReachabilityClaim]
+    extractUntrustedClaims' :: [SomeClaim] -> [SomeClaim]
     extractUntrustedClaims' = filter (not . isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
@@ -650,11 +650,11 @@ makeImplicationRule
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
-simplifyReachabilityClaim
+simplifySomeClaim
     :: MonadSimplify simplifier
-    => ReachabilityClaim
-    -> simplifier ReachabilityClaim
-simplifyReachabilityClaim rule = do
+    => SomeClaim
+    -> simplifier SomeClaim
+simplifySomeClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
@@ -684,9 +684,9 @@ initialize verifiedModule = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Rule ReachabilityClaim]
-        , claims :: ![ReachabilityClaim]
-        , alreadyProven :: ![ReachabilityClaim]
+        { axioms :: ![Rule SomeClaim]
+        , claims :: ![SomeClaim]
+        , alreadyProven :: ![SomeClaim]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -707,35 +707,35 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initialize definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
-        changedSpecClaims :: [MaybeChanged ReachabilityClaim]
+        changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
-        simplifyToList :: ReachabilityClaim -> simplifier [ReachabilityClaim]
+        simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = MultiAnd.extractPatterns simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 
-        trustedClaims :: [ReachabilityClaim]
+        trustedClaims :: [SomeClaim]
         trustedClaims = fmap extractClaims maybeTrustedModule & fromMaybe []
 
     mapM_ logChangedClaim changedSpecClaims
 
-    let specClaims :: [ReachabilityClaim]
+    let specClaims :: [SomeClaim]
         specClaims = map fromMaybeChanged changedSpecClaims
     -- This assertion should come before simplifying the claims,
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- traverse simplifyReachabilityClaim (concat simplifiedSpecClaims)
+    claims <- traverse simplifySomeClaim (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> ReachabilityClaim
-        -> MaybeChanged ReachabilityClaim
+        -> SomeClaim
+        -> MaybeChanged SomeClaim
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -744,7 +744,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: MaybeChanged ReachabilityClaim
+        :: MaybeChanged SomeClaim
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
