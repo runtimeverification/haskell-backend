@@ -41,9 +41,7 @@ import Kore.Reachability.ClaimState
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    )
-import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    , mkRuleVariable
     )
 import Kore.Rewriting.UnifyingRule
     ( UnifyingRule (..)

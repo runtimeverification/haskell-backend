@@ -35,6 +35,8 @@ import Kore.Reachability.Claim
     , Claim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
+import qualified Kore.Reachability.ClaimState as ClaimState
+import qualified Kore.Reachability.Prim as Prim
 import Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     )
@@ -43,8 +45,6 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
-import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.Prim as Prim
 import Log
     ( MonadLog (..)
     )
@@ -314,7 +314,7 @@ type Prim = Claim.Prim
 
 instance Claim Goal where
 
-    newtype instance Rule Goal = Rule { unRule :: (K, K) }
+    newtype Rule Goal = Rule { unRule :: (K, K) }
         deriving (Eq, GHC.Generic, Show)
 
     checkImplication (src, dst)
