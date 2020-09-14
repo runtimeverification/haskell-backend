@@ -105,23 +105,23 @@ import Kore.Log.KoreLogOptions
     )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
-import qualified Kore.Reachability.Claim as Claim
-import Kore.Reachability.Prove
+import Kore.Reachability
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , Stuck (..)
+    , ProofStuck (..)
+    , ReachabilityClaim (..)
+    , Rule (ReachabilityRewriteRule)
     , ToProve (ToProve)
+    , extractClaims
+    , isTrusted
+    , lensClaimPattern
     , proveClaims
     )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.ClaimPattern
-    ( ReachabilityClaim (..)
-    , lensClaimPattern
-    )
 import Kore.Step.Rule
     ( extractImplicationClaims
     , extractRewriteAxioms
@@ -386,7 +386,7 @@ prove
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> smt (Either Stuck ())
+    -> smt (Either ProofStuck ())
 prove
     searchOrder
     breadthLimit
@@ -416,7 +416,7 @@ prove
             & runExceptT
   where
     extractUntrustedClaims' :: [ReachabilityClaim] -> [ReachabilityClaim]
-    extractUntrustedClaims' = filter (not . Claim.isTrusted)
+    extractUntrustedClaims' = filter (not . isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -684,7 +684,7 @@ initialize verifiedModule = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Claim.Rule ReachabilityClaim]
+        { axioms :: ![Rule ReachabilityClaim]
         , claims :: ![ReachabilityClaim]
         , alreadyProven :: ![ReachabilityClaim]
         }
@@ -708,11 +708,8 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
         changedSpecClaims :: [MaybeChanged ReachabilityClaim]
-        changedSpecClaims =
-            expandClaim tools <$> Claim.extractClaims specModule
-        simplifyToList
-            :: ReachabilityClaim
-            -> simplifier [ReachabilityClaim]
+        changedSpecClaims = expandClaim tools <$> extractClaims specModule
+        simplifyToList :: ReachabilityClaim -> simplifier [ReachabilityClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = MultiAnd.extractPatterns simplified
@@ -720,8 +717,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
             return result
 
         trustedClaims :: [ReachabilityClaim]
-        trustedClaims =
-            fmap Claim.extractClaims maybeTrustedModule & fromMaybe []
+        trustedClaims = fmap extractClaims maybeTrustedModule & fromMaybe []
 
     mapM_ logChangedClaim changedSpecClaims
 

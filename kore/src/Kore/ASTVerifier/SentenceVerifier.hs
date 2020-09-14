@@ -79,11 +79,13 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    )
 import Kore.Sort
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern
-    , OnePathClaim (..)
+    ( ClaimPattern
     , freeVariablesLeft
     , freeVariablesRight
     )

@@ -28,12 +28,14 @@ import Kore.Internal.TermLike
     , mkTop
     , weakExistsFinally
     )
+import Kore.Reachability
+    ( OnePathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkElementRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathClaim (..)
     )
 import qualified Kore.Step.Rule as Rule
 import Kore.Syntax

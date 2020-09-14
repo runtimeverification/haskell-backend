@@ -57,11 +57,8 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
-import Kore.Reachability.Claim hiding
+import Kore.Reachability hiding
     ( AppliedRule
-    )
-import Kore.Reachability.Prove
-    ( proveClaimStep
     )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter

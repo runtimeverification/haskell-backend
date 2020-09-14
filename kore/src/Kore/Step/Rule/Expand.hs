@@ -59,6 +59,11 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -68,10 +73,7 @@ import Kore.Sort
     )
 import qualified Kore.Sort as Sort.DoNotUse
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (..)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
+    ( ClaimPattern (..)
     , freeVariablesLeft
     )
 import Kore.Syntax.Variable

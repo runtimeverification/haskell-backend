@@ -95,13 +95,10 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
-import Kore.Reachability.Claim hiding
+import Kore.Reachability hiding
     ( AppliedRule
     )
-import qualified Kore.Reachability.Claim as Claim
-import Kore.Reachability.Prove
-    ( CommonClaimState
-    )
+import qualified Kore.Reachability as Reachability
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -536,16 +533,12 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph =
-    Strategy.ExecutionGraph
-        CommonClaimState
-        AppliedRule
+type ExecutionGraph = Strategy.ExecutionGraph CommonClaimState AppliedRule
 
-type InnerGraph =
-    Gr CommonClaimState (Seq AppliedRule)
+type InnerGraph = Gr CommonClaimState (Seq AppliedRule)
 
 type Axiom = Rule ReachabilityClaim
-type AppliedRule = Claim.AppliedRule ReachabilityClaim
+type AppliedRule = Reachability.AppliedRule ReachabilityClaim
 
 -- | State for the repl.
 data ReplState = ReplState

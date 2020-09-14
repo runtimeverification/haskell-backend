@@ -38,12 +38,14 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import Kore.Reachability
+    ( AllPathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (..)
+    ( ClaimPattern (..)
     )
 import Kore.Step.Rule
 import Kore.Step.RulePattern

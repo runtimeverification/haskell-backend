@@ -9,7 +9,7 @@ module Kore.Log.DebugProven
 
 import Prelude.Kore
 
-import Kore.Step.ClaimPattern
+import Kore.Reachability.SomeClaim
     ( ReachabilityClaim (..)
     )
 import Log

@@ -44,15 +44,13 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability.Claim
-import Kore.Reachability.Prove
+import Kore.Reachability
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , lensClaimPattern
     )
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -1373,9 +1371,9 @@ proveClaims
     -> [Rule ReachabilityClaim]
     -> [ReachabilityClaim]
     -> [ReachabilityClaim]
-    -> IO (Either Stuck ())
+    -> IO (Either ProofStuck ())
 proveClaims breadthLimit depthLimit axioms claims alreadyProven =
-    Kore.Reachability.Prove.proveClaims
+    Kore.Reachability.proveClaims
         breadthLimit
         BreadthFirst
         (AllClaims claims)
@@ -1406,5 +1404,5 @@ proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
             alreadyProven
         return (toPattern stuck)
   where
-    toPattern :: Either Stuck a -> Either (OrPattern VariableName) a
+    toPattern :: Either ProofStuck a -> Either (OrPattern VariableName) a
     toPattern = Bifunctor.first stuckPatterns

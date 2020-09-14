@@ -63,15 +63,16 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Log as Log
+import Kore.Reachability
+    ( ReachabilityClaim
+    , lensClaimPattern
+    )
 import Kore.Reachability.Claim
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.ClaimPattern
-    ( lensClaimPattern
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )

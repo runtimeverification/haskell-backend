@@ -38,14 +38,16 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( termLikeSort
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    , ReachabilityClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (ClaimPattern)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
+    ( ClaimPattern (ClaimPattern)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern

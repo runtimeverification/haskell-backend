@@ -30,11 +30,16 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , ReachabilityClaim (..)
+    , Rule (..)
+    , lensClaimPattern
+    )
 import Kore.Reachability.Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , lensClaimPattern
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)

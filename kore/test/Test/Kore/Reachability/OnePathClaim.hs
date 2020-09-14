@@ -31,14 +31,17 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability.Claim
-import Kore.Reachability.Prove
-    ( Stuck (..)
+import Kore.Reachability
+    ( OnePathClaim (..)
+    , ProofStuck (..)
+    , ReachabilityClaim (..)
+    , RewriteRule (..)
+    , Rule (..)
+    , lensClaimPattern
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , lensClaimPattern
     )
 import Kore.Step.RulePattern
     ( RulePattern (..)
@@ -242,7 +245,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left Stuck
+            (Left ProofStuck
                 { stuckPatterns = OrPattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
@@ -267,7 +270,7 @@ test_onePathVerification =
             ]
             []
         assertEqual ""
-            (Left Stuck
+            (Left ProofStuck
                 { stuckPatterns = OrPattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }

@@ -64,6 +64,12 @@ import Kore.Internal.Variable
     ( InternalVariable
     , VariableName
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    , allPathRuleToTerm
+    , onePathRuleToTerm
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
@@ -75,11 +81,7 @@ import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
     )
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (ClaimPattern)
-    , OnePathClaim (..)
-    , allPathRuleToTerm
-    , onePathRuleToTerm
+    ( ClaimPattern (ClaimPattern)
     , parseRightHandSide
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern

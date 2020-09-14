@@ -54,6 +54,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
+    ( OnePathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingVariable
@@ -63,7 +66,6 @@ import Kore.Sort
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathClaim (..)
     , claimPattern
     )
 import Kore.Step.Rule.Simplify

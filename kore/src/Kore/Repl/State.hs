@@ -98,10 +98,8 @@ import Control.Monad.Reader
     ( MonadReader
     , asks
     )
-import qualified Kore.Attribute.Attributes as Syntax
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
-import qualified Kore.Attribute.Trusted as Attribute
 import Kore.Internal.Condition
     ( Condition
     )
@@ -115,14 +113,15 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import qualified Kore.Reachability.Claim as Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState (Claimed)
-    , ClaimStateTransformer (ClaimStateTransformer)
+import Kore.Reachability
+    ( ClaimState (..)
+    , ClaimStateTransformer (..)
+    , ReachabilityClaim (..)
     , claimState
     , extractUnproven
+    , getConfiguration
+    , isTrusted
     )
-import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
 import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
@@ -130,10 +129,6 @@ import Kore.Rewriting.RewritingVariable
     )
 import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
-    )
-import Kore.Step.ClaimPattern
-    ( ReachabilityClaim (..)
-    , lensClaimPattern
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -676,19 +671,14 @@ generateInProgressClaims = do
         -> [ReachabilityClaim]
         -> [ReachabilityClaim]
     notStartedClaims graphs claims =
-        filter (not . Claim.isTrusted)
-                ( (claims !!)
-                . unClaimIndex
-                <$> Set.toList
-                    (Set.difference
-                        ( Set.fromList
-                        $ fmap ClaimIndex [0..length claims - 1]
-                        )
-                        ( Set.fromList
-                        $ Map.keys graphs
-                        )
-                    )
-                )
+        Set.difference claimIndices startedClaims
+        & Set.toList
+        & map lookupClaim
+        & filter (not . isTrusted)
+      where
+        claimIndices = Set.fromList (ClaimIndex <$> take (length claims) [0..])
+        startedClaims = Map.keysSet graphs
+        lookupClaim = (!!) claims . unClaimIndex
 
 unprovenGoals
     :: Map ClaimIndex ExecutionGraph
@@ -709,7 +699,7 @@ currentClaimSort = do
     claim <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
         . Pattern.toTermLike
-        . Claim.getConfiguration
+        . getConfiguration
         $ claim
 
 sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
@@ -780,18 +770,6 @@ createNewDefinition mainModuleName name claims =
             , sentenceAxiomPattern =
                 from @ReachabilityClaim @(AxiomPattern _) claim
                 & getAxiomPattern
-            , sentenceAxiomAttributes = trustedToAttribute claim
+            , sentenceAxiomAttributes =
+                from @Attribute.Trusted $ from @ReachabilityClaim claim
             }
-
-    trustedToAttribute :: ReachabilityClaim -> Syntax.Attributes
-    trustedToAttribute claim
-        | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]
-        | otherwise = mempty
-      where
-        Attribute.Trusted { isTrusted } =
-            Lens.view
-                ( lensClaimPattern
-                . field @"attributes"
-                . field @"trusted"
-                )
-                claim

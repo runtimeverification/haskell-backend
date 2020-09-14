@@ -8,7 +8,7 @@ This should be imported qualified.
 
 module Kore.Reachability.Prove
     ( CommonClaimState
-    , Stuck (..)
+    , ProofStuck (..)
     , AllClaims (..)
     , Axioms (..)
     , ToProve (..)
@@ -101,13 +101,13 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import qualified Kore.Reachability.Prim as Prim
     ( Prim (..)
     )
+import Kore.Reachability.SomeClaim
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingPattern
     )
 import Kore.Step.ClaimPattern
-    ( lensClaimPattern
-    , mkGoal
+    ( mkGoal
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -171,20 +171,20 @@ didn't manage to verify a claim within the its maximum number of steps).
 
 If the verification succeeds, it returns ().
 -}
-data Stuck =
-    Stuck
+data ProofStuck =
+    ProofStuck
     { stuckPatterns :: !(OrPattern VariableName)
     , provenClaims :: ![ReachabilityClaim]
     }
     deriving (Eq, GHC.Generic, Show)
 
-instance SOP.Generic Stuck
+instance SOP.Generic ProofStuck
 
-instance SOP.HasDatatypeInfo Stuck
+instance SOP.HasDatatypeInfo ProofStuck
 
-instance Debug Stuck
+instance Debug ProofStuck
 
-instance Diff Stuck
+instance Diff ProofStuck
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
@@ -204,7 +204,7 @@ proveClaims
     -> ToProve ReachabilityClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT Stuck simplifier ()
+    -> ExceptT ProofStuck simplifier ()
 proveClaims
     breadthLimit
     searchOrder
@@ -231,8 +231,8 @@ proveClaims
                 then Right rule
                 else Left claim
 
-    addStillProven :: Stuck -> Stuck
-    addStillProven stuck@Stuck { provenClaims } =
+    addStillProven :: ProofStuck -> ProofStuck
+    addStillProven stuck@ProofStuck { provenClaims } =
         stuck { provenClaims = stillProven ++ provenClaims }
 
 proveClaimsWorker
@@ -247,21 +247,22 @@ proveClaimsWorker
     -> ToProve ReachabilityClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT Stuck simplifier ()
+    -> ExceptT ProofStuck simplifier ()
 proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
     Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
         :: [ReachabilityClaim]
         -> (ReachabilityClaim, Limit Natural)
-        -> ExceptT Stuck simplifier [ReachabilityClaim]
+        -> ExceptT ProofStuck simplifier [ReachabilityClaim]
     verifyWorker provenClaims unprovenClaim@(claim, _) =
         withExceptT wrapStuckPattern $ do
             proveClaim breadthLimit searchOrder claims axioms unprovenClaim
             return (claim : provenClaims)
       where
-        wrapStuckPattern :: OrPattern VariableName -> Stuck
-        wrapStuckPattern stuckPatterns = Stuck { stuckPatterns, provenClaims }
+        wrapStuckPattern :: OrPattern VariableName -> ProofStuck
+        wrapStuckPattern stuckPatterns =
+            ProofStuck { stuckPatterns, provenClaims }
 
 proveClaim
     :: forall simplifier

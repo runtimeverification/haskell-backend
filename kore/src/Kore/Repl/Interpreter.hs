@@ -178,22 +178,22 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
-import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimStateTransformer (ClaimStateTransformer)
+import Kore.Reachability
+    ( ClaimState (..)
+    , ClaimStateTransformer (..)
+    , CommonClaimState
+    , ReachabilityClaim (..)
+    , Rule (ReachabilityRewriteRule)
     , claimState
     , extractUnproven
-    )
-import qualified Kore.Reachability.ClaimState as ClaimState.DoNotUse
-import Kore.Reachability.Prove
-    ( CommonClaimState
+    , getConfiguration
+    , getDestination
+    , isTrusted
+    , makeTrusted
     )
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.ClaimPattern
-    ( makeTrusted
-    )
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -1426,9 +1426,9 @@ graphParams = Graph.nonClusteredParams
     , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
             $ case ps of
-                ClaimState.DoNotUse.Proven      -> toColorList green
-                ClaimState.DoNotUse.Stuck _     -> toColorList red
-                ClaimState.DoNotUse.Remaining _ -> toColorList red
+                Proven      -> toColorList green
+                Stuck _     -> toColorList red
+                Remaining _ -> toColorList red
                 _                               -> []
         ]
     }

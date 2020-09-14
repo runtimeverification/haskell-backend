@@ -15,7 +15,7 @@ import Kore.Reachability.ClaimState
 import Kore.Reachability.Prim
     ( Prim (..)
     )
-import Kore.Step.ClaimPattern
+import Kore.Reachability.SomeClaim
     ( ReachabilityClaim (..)
     )
 import Log

@@ -45,10 +45,7 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState (..)
-    )
+import Kore.Reachability
 import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)

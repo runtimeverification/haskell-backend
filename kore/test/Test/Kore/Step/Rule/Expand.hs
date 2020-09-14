@@ -46,7 +46,7 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
-import Kore.Step.ClaimPattern
+import Kore.Reachability
     ( OnePathClaim
     )
 import Kore.Step.Rule.Expand

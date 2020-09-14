@@ -20,12 +20,14 @@ import Kore.Internal.TermLike
     , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
+    ( OnePathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( OnePathClaim (..)
-    , claimPattern
+    ( claimPattern
     )
 import Kore.Step.RulePattern
     ( RHS (RHS)

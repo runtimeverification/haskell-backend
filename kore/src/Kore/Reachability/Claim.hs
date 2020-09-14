@@ -17,14 +17,14 @@ module Kore.Reachability.Claim
     , transitionRule
     , isTrusted
     -- * Re-exports
-    , ReachabilityClaim (..)
-    , AllPathClaim (..)
-    , OnePathClaim (..)
-    , Rule (..)
     , RewriteRule (..)
     , module Kore.Log.InfoReachability
-    , getConfiguration
-    , getDestination
+    -- * For Claim implementations
+    , deriveSeqClaim
+    , checkImplication'
+    , simplify'
+    , derivePar'
+    , deriveSeq'
     -- * For testing
     , checkImplicationWorker
     ) where
@@ -35,9 +35,6 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
-import Control.Monad
-    ( foldM
-    )
 import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
@@ -48,16 +45,10 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce
-    ( coerce
-    )
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Generics.Product
     ( field
-    )
-import Data.Generics.Wrapped
-    ( _Unwrapped
     )
 import qualified Data.Monoid as Monoid
 import Data.Stream.Infinite
@@ -75,7 +66,6 @@ import qualified Kore.Attribute.Label as Attribute
 import qualified Kore.Attribute.RuleIndex as Attribute
     ( RuleIndex
     )
-import Kore.Reachability.Prim
 import qualified Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
     )
@@ -113,17 +103,17 @@ import Kore.Log.WarnStuckClaimState
     ( warnStuckClaimStateTermsNotUnifiable
     , warnStuckClaimStateTermsUnifiable
     )
+import Kore.Reachability.ClaimState hiding
+    ( claimState
+    )
+import qualified Kore.Reachability.ClaimState as ClaimState
+import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
     )
 import Kore.Step.ClaimPattern
-    ( AllPathClaim (..)
-    , ClaimPattern (..)
-    , OnePathClaim (..)
-    , ReachabilityClaim (..)
-    , getConfiguration
-    , getDestination
+    ( ClaimPattern (..)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
@@ -131,13 +121,9 @@ import Kore.Step.Result
     , Results (..)
     )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
-    ( QualifiedAxiomPattern (..)
-    , fromSentenceAxiom
-    )
 import Kore.Step.RulePattern
-    ( RulePattern (..)
-    , RewriteRule (..)
+    ( RewriteRule (..)
+    , RulePattern (..)
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -158,11 +144,6 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
-import Kore.Reachability.ClaimState hiding
-    ( claimState
-    )
-import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( isBottom
@@ -286,75 +267,6 @@ extractClaims
     -> [claim]
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
-{- NOTE: Non-deterministic semantics
-
-The current implementation of one-path verification assumes that the proof claim
-is deterministic, that is: the proof claim would not be discharged during at a
-non-confluent state in the execution of a non-deterministic semantics. (Often
-this means that the definition is simply deterministic.) As a result, given the
-non-deterministic definition
-
-> module ABC
->   import DOMAINS
->   syntax S ::= "a" | "b" | "c"
->   rule [ab]: a => b
->   rule [ac]: a => c
-> endmodule
-
-this claim would be provable,
-
-> rule a => b [claim]
-
-but this claim would **not** be provable,
-
-> rule a => c [claim]
-
-because the algorithm would first apply semantic rule [ab], which prevents rule
-[ac] from being used.
-
-We decided to assume that the definition is deterministic because one-path
-verification is mainly used only for deterministic semantics and the assumption
-simplifies the implementation. However, this assumption is not an essential
-feature of the algorithm. You should not rely on this assumption elsewhere. This
-decision is subject to change without notice.
-
-This instance contains the default implementation for a one-path strategy. You
-can apply it to the first two arguments and pass the resulting function to
-'Kore.Reachability.Prove.verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
--}
-
-instance Claim OnePathClaim where
-
-    newtype instance Rule OnePathClaim =
-        OnePathRewriteRule
-        { unRuleOnePath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
-
-    simplify = simplify' _Unwrapped
-
-    checkImplication = checkImplication' _Unwrapped
-
-    applyClaims claims = deriveSeqClaim _Unwrapped OnePathClaim claims
-
-    applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
-
-instance SOP.Generic (Rule OnePathClaim)
-
-instance SOP.HasDatatypeInfo (Rule OnePathClaim)
-
-instance Debug (Rule OnePathClaim)
-
-instance Diff (Rule OnePathClaim)
-
-instance From (Rule OnePathClaim) Attribute.Axiom.PriorityAttributes where
-    from = from @(RewriteRule _) . unRuleOnePath
-
 deriveSeqClaim
     :: MonadSimplify m
     => Step.UnifyingRule claim
@@ -386,171 +298,6 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
         AppliedClaim
         . mkClaim
         . Step.withoutUnification
-
-deriveSeqAxiomOnePath
-    ::  MonadSimplify simplifier
-    =>  [Rule OnePathClaim]
-    ->  OnePathClaim
-    ->  Strategy.TransitionT (AppliedRule OnePathClaim) simplifier
-            (ClaimState OnePathClaim)
-deriveSeqAxiomOnePath rules =
-    deriveSeq' _Unwrapped OnePathRewriteRule rewrites
-  where
-    rewrites = unRuleOnePath <$> rules
-
-instance ClaimExtractor OnePathClaim where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just claim
-            _ -> Nothing
-
-instance Claim AllPathClaim where
-
-    newtype instance Rule AllPathClaim =
-        AllPathRewriteRule
-        { unRuleAllPath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
-
-    simplify = simplify' _Unwrapped
-    checkImplication = checkImplication' _Unwrapped
-    applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
-
-    applyAxioms axiomss = \claim ->
-        foldM applyAxioms1 (Remaining claim) axiomss
-      where
-        applyAxioms1 claimState axioms
-          | Just claim <- retractRewritable claimState =
-            deriveParAxiomAllPath axioms claim
-            >>= simplifyRemainder
-          | otherwise =
-            pure claimState
-
-        simplifyRemainder claimState =
-            case claimState of
-                Remaining claim -> Remaining <$> simplify claim
-                _ -> return claimState
-
-instance SOP.Generic (Rule AllPathClaim)
-
-instance SOP.HasDatatypeInfo (Rule AllPathClaim)
-
-instance Debug (Rule AllPathClaim)
-
-instance Diff (Rule AllPathClaim)
-
-instance From (Rule AllPathClaim) Attribute.Axiom.PriorityAttributes where
-    from = from @(RewriteRule _) . unRuleAllPath
-
-deriveParAxiomAllPath
-    ::  MonadSimplify simplifier
-    =>  [Rule AllPathClaim]
-    ->  AllPathClaim
-    ->  Strategy.TransitionT (AppliedRule AllPathClaim) simplifier
-            (ClaimState AllPathClaim)
-deriveParAxiomAllPath rules =
-    derivePar' _Unwrapped AllPathRewriteRule rewrites
-  where
-    rewrites = unRuleAllPath <$> rules
-
-instance ClaimExtractor AllPathClaim where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (AllPathClaimPattern claim) -> Just claim
-            _ -> Nothing
-
-instance Claim ReachabilityClaim where
-
-    newtype instance Rule ReachabilityClaim =
-        ReachabilityRewriteRule
-            { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
-
-    simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
-    simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim
-
-    checkImplication (AllPath claim) = fmap AllPath <$> checkImplication claim
-    checkImplication (OnePath claim) = fmap OnePath <$> checkImplication claim
-
-    applyClaims claims (AllPath claim) =
-        applyClaims (mapMaybe maybeAllPath claims) claim
-        & fmap (fmap AllPath)
-        & allPathTransition
-    applyClaims claims (OnePath claim) =
-        applyClaims (mapMaybe maybeOnePath claims) claim
-        & fmap (fmap OnePath)
-        & onePathTransition
-
-    applyAxioms axiomGroups (AllPath claim) =
-        applyAxioms (coerce axiomGroups) claim
-        & fmap (fmap AllPath)
-        & allPathTransition
-    applyAxioms axiomGroups (OnePath claim) =
-        applyAxioms (coerce axiomGroups) claim
-        & fmap (fmap OnePath)
-        & onePathTransition
-
-instance SOP.Generic (Rule ReachabilityClaim)
-
-instance SOP.HasDatatypeInfo (Rule ReachabilityClaim)
-
-instance Debug (Rule ReachabilityClaim)
-
-instance Diff (Rule ReachabilityClaim)
-
-instance From (Rule ReachabilityClaim) Attribute.Axiom.PriorityAttributes where
-    from = from @(RewriteRule _) . unReachabilityRewriteRule
-
-instance From (Rule ReachabilityClaim) Attribute.SourceLocation where
-    from = from @(RewriteRule _) . unReachabilityRewriteRule
-
-instance From (Rule ReachabilityClaim) Attribute.Label where
-    from = from @(RewriteRule _) . unReachabilityRewriteRule
-
-instance From (Rule ReachabilityClaim) Attribute.RuleIndex where
-    from = from @(RewriteRule _) . unReachabilityRewriteRule
-
-instance ClaimExtractor ReachabilityClaim where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just (OnePath claim)
-            Right (AllPathClaimPattern claim) -> Just (AllPath claim)
-            _ -> Nothing
-
-allPathTransition
-    :: Monad m
-    => Strategy.TransitionT (AppliedRule AllPathClaim) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityClaim) m a
-allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
-
-onePathTransition
-    :: Monad m
-    => Strategy.TransitionT (AppliedRule OnePathClaim) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityClaim) m a
-onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
-
-maybeOnePath :: ReachabilityClaim -> Maybe OnePathClaim
-maybeOnePath (OnePath rule) = Just rule
-maybeOnePath _ = Nothing
-
-maybeAllPath :: ReachabilityClaim -> Maybe AllPathClaim
-maybeAllPath (AllPath rule) = Just rule
-maybeAllPath _ = Nothing
-
-ruleAllPathToRuleReachability
-    :: AppliedRule AllPathClaim
-    -> AppliedRule ReachabilityClaim
-ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
-    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
-ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
-    AppliedClaim (AllPath allPathRule)
-
-ruleOnePathToRuleReachability
-    :: AppliedRule OnePathClaim
-    -> AppliedRule ReachabilityClaim
-ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
-    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
-ruleOnePathToRuleReachability (AppliedClaim onePathRule) =
-    AppliedClaim (OnePath onePathRule)
 
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
