@@ -132,16 +132,14 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import qualified Kore.Reachability.Claim as Claim
-import Kore.Reachability.Prove
-    ( Stuck (..)
-    )
-import Kore.Rewriting.RewritingVariable
-import Kore.Step
-import Kore.Step.ClaimPattern
-    ( SomeClaim
+import Kore.Reachability
+    ( ProofStuck (..)
+    , SomeClaim
     , toSentence
     )
+import qualified Kore.Reachability.Claim as Claim
+import Kore.Rewriting.RewritingVariable
+import Kore.Step
 import Kore.Step.RulePattern
     ( RewriteRule
     )
@@ -697,7 +695,7 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left Stuck { stuckPatterns, provenClaims } -> do
+        Left ProofStuck { stuckPatterns, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
