@@ -149,15 +149,6 @@ simplifies the implementation. However, this assumption is not an essential
 feature of the algorithm. You should not rely on this assumption elsewhere. This
 decision is subject to change without notice.
 
-This instance contains the default implementation for a one-path strategy. You
-can apply it to the first two arguments and pass the resulting function to
-'Kore.Reachability.Prove.verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
 -}
 
 instance Claim OnePathClaim where
