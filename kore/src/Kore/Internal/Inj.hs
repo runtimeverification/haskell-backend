@@ -103,7 +103,7 @@ instance Synthetic (FreeVariables variable) Inj where
     {-# INLINE synthetic #-}
 
 instance TopBottom a => TopBottom (Inj a) where
-    isTop Inj { injChild } = isTop injChild
+    isTop _ = False
     isBottom Inj { injChild } = isBottom injChild
 
 toSymbol :: Inj a -> Symbol
