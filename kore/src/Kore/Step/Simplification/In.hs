@@ -82,13 +82,11 @@ simplifyEvaluatedIn sideCondition first second
   | OrPattern.isTrue first = Ceil.simplifyEvaluated sideCondition second
   | OrPattern.isTrue second = Ceil.simplifyEvaluated sideCondition first
 
-  | otherwise = do
-    result <-
-        OrPattern.observeAllT $ do
-            pattFirst <- Logic.scatter first
-            pattSecond <- Logic.scatter second
-            makeEvaluateIn sideCondition pattFirst pattSecond
-    return (OrPattern.flatten result)
+  | otherwise =
+    OrPattern.observeAllT $ do
+        pattFirst <- Logic.scatter first
+        pattSecond <- Logic.scatter second
+        makeEvaluateIn sideCondition pattFirst pattSecond >>= Logic.scatter
 
 makeEvaluateIn
     :: (InternalVariable variable, MonadSimplify simplifier)
