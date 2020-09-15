@@ -48,7 +48,7 @@ data ErrorRewriteLoop =
 instance Exception ErrorRewriteLoop where
     toException = toException . SomeEntry
     fromException exn =
-        fromException exn >>= \entry -> fromEntry entry
+        fromException exn >>= fromEntry
 
 instance Pretty ErrorRewriteLoop where
     pretty ErrorRewriteLoop { rule, errorCallStack } =
