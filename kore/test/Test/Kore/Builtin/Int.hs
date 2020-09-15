@@ -587,6 +587,30 @@ test_unifyIntEq =
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
+    , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
+        let term1 =
+                eqInt
+                    (addInt (mkElemVar x) (asInternal 1))
+                    (addInt (mkElemVar y) (asInternal 1))
+            term2 = Test.Bool.asInternal False
+            expect =
+                makeEqualsPredicate_
+                    (addInt (mkElemVar x) (asInternal 1))
+                    (addInt (mkElemVar y) (asInternal 1))
+                & makeNotPredicate
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyIntEq term1 term2
+            assertEqual "" [Just expect] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
     ]
   where
     x, y :: ElementVariable VariableName

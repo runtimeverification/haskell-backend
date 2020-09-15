@@ -652,7 +652,9 @@ checkImplication'
     -> m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
     goal
-    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
+    & Lens.traverseOf
+        lensRulePattern
+        (Compose . checkImplicationWorker)
     & getCompose
 
 assertFunctionLikeConfiguration

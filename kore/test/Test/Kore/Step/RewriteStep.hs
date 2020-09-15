@@ -1095,7 +1095,7 @@ applyRewriteRulesParallel initial rules =
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 applyClaimsSequence
     :: TestPattern
@@ -1109,7 +1109,7 @@ applyClaimsSequence initial claims =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 checkResults
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName

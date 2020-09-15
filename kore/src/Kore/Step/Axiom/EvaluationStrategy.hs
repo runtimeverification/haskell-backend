@@ -13,11 +13,20 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplificationEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
+    -- * For testing
+    , attemptEquationAndAccumulateErrors
+    , attemptEquations
     ) where
 
 import Prelude.Kore
 
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.Except
+    ( ExceptT (..)
+    , runExceptT
+    )
+import Data.EitherR
+    ( ExceptRT (..)
+    )
 import qualified Data.Foldable as Foldable
 import Data.Semigroup
     ( Min (..)
@@ -27,9 +36,13 @@ import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation
-    ( Equation
+    ( AttemptEquationError
+    , Equation
     )
 import qualified Kore.Equation as Equation
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -43,6 +56,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     )
 import Kore.Unparser
     ( unparse
+    )
+import Kore.Variables.Target
+    ( Target
     )
 import qualified Kore.Variables.Target as Target
 import qualified Pretty
@@ -70,31 +86,53 @@ definitionEvaluation equations =
                 Equation.mapVariables (pure fromVariableName)
                 <$> equations
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        let -- Attempt an equation, pairing it with its result, if applicable.
-            attemptEquation equation =
-                Equation.attemptEquation condition term' equation
-                >>= return . Bifunctor.second apply
-              where
-                apply = Equation.applyEquation condition equation
-        traverse attemptEquation equations' >>=
-            (partitionEithers >>> \case
-                (_, applied : _) -> do
-                    results <- applied
-                    (return . Applied) AttemptedAxiomResults
-                        { results
-                        , remainders = OrPattern.bottom
-                        }
-                (errors, []) ->
-                    case minError of
-                        Just (Equation.WhileCheckRequires _) ->
-                            (return . NotApplicableUntilConditionChanges)
-                                (SideCondition.toRepresentation condition)
-                        _ -> return NotApplicable
-                  where
-                    minError =
-                        (fmap getMin . getOption)
-                        (foldMap (Option . Just . Min) errors)
-            )
+        result <-
+            attemptEquations
+                (attemptEquationAndAccumulateErrors condition term')
+                equations'
+        case result of
+            Right results ->
+                (return . Applied) AttemptedAxiomResults
+                    { results
+                    , remainders = OrPattern.bottom
+                    }
+            Left minError ->
+                case getMin <$> getOption minError of
+                    Just (Equation.WhileCheckRequires _) ->
+                        (return . NotApplicableUntilConditionChanges)
+                            (SideCondition.toRepresentation condition)
+                    _ -> return NotApplicable
+
+attemptEquationAndAccumulateErrors
+    :: (InternalVariable variable, MonadSimplify simplifier)
+    => SideCondition variable
+    -> TermLike (Target variable)
+    -> Equation variable
+    -> ExceptRT
+        (OrPattern variable)
+        simplifier
+        (Option (Min (AttemptEquationError variable)))
+attemptEquationAndAccumulateErrors condition term equation =
+    attemptEquation
+  where
+    attemptEquation =
+        ExceptRT . ExceptT
+        $ Equation.attemptEquation condition term equation
+        >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
+    apply = Equation.applyEquation condition equation
+
+attemptEquations
+    :: MonadSimplify simplifier
+    => Monoid error
+    => (Equation variable -> ExceptRT result simplifier error)
+    -> [Equation variable]
+    -> simplifier (Either error result)
+attemptEquations accumulator equations =
+    Foldable.foldlM
+        (\err equation -> mappend err <$> accumulator equation)
+        mempty
+        equations
+    & runExceptRT & runExceptT
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
