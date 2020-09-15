@@ -33,6 +33,7 @@ import Test.Tasty.HUnit
 import Control.Monad.Catch
     ( MonadMask
     )
+import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -264,7 +265,7 @@ evaluateT = lift . evaluate
 
 evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
 evaluateToList =
-    fmap MultiOr.extractPatterns
+    fmap Foldable.toList
     . runSimplifier testEnv
     . TermLike.simplify SideCondition.top
 

@@ -27,7 +27,6 @@ import Data.Text
     )
 import GHC.Generics
 
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -99,7 +98,6 @@ data ProofState patt
     -- ^ State which can't be rewritten anymore.
   deriving (Show, Eq, Ord, Generic, Functor)
 
--- TODO: is this right?
 instance TopBottom (ProofState patt) where
     isTop _ = False
     isBottom _ = False
@@ -173,7 +171,7 @@ transitionRule
                 else
                     Foldable.asum
                     $ pure . wrapper
-                    <$> MultiOr.extractPatterns filteredConfigs
+                    <$> Foldable.toList filteredConfigs
 
     transitionUnroll
         :: CommonModalPattern

@@ -32,9 +32,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrCondition as OrCondition
     ( fromCondition
     )
@@ -313,7 +310,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                     }
         orPattern <-
             lift $ Pattern.simplify sideCondition substituted
-        Logic.scatter (MultiOr.extractPatterns orPattern)
+        Logic.scatter (Foldable.toList orPattern)
   where
     someVariableName = inject (variableName variable)
 

@@ -30,9 +30,6 @@ import Kore.Equation
     ( Equation
     )
 import qualified Kore.Equation as Equation
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -260,7 +257,7 @@ applyFirstSimplifierThatWorksWorker
             }
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
-          | length (MultiOr.extractPatterns orResults) > 1 ->
+          | length (Foldable.toList orResults) > 1 ->
             -- We should only allow multiple simplification results
             -- when they are created by unification splitting the
             -- configuration.
