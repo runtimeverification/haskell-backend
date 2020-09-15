@@ -18,6 +18,12 @@ import Control.Monad.Catch
     ( MonadThrow
     )
 
+import Control.Lens
+    ( (%~)
+    )
+import Data.Generics.Product
+    ( field
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
@@ -33,7 +39,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    (makeMultipleAndPredicate,  wrapPredicate
+    ( makeAndPredicate
+    , wrapPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -152,7 +159,10 @@ makeExpandedApplication sideCondition symbol children = do
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term = symbolApplication symbol (Pattern.term <$> children)
-        definednessConditions = foldr1 mkAnd (fmap Pattern.toTermLike children)
-        withDefinednessConditions = merged { predicate = makeMultipleAndPredicate [mPredicate, wrapPredicate definednessConditions] }
-        Conditional { predicate = mPredicate } = merged
+        definednessConditions =
+            foldr1 mkAnd (mkDefined . Pattern.term <$> children)
+        withDefinednessConditions =
+            merged
+            & field @"predicate"
+                %~ (`makeAndPredicate` wrapPredicate definednessConditions)
     return $ Conditional.withCondition term withDefinednessConditions
