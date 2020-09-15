@@ -29,7 +29,7 @@ import Pretty
     )
 import qualified Pretty
 
-{- | The state of the reachability proof strategy for @goal@.
+{- | The state of the reachability proof strategy for @claim@.
  -}
 data ClaimState claim
     = Claimed !claim
