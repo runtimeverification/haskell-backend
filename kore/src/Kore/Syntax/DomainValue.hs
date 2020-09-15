@@ -76,5 +76,5 @@ instance Synthetic Sort (DomainValue Sort) where
     {-# INLINE synthetic #-}
 
 instance TopBottom a => TopBottom (DomainValue Sort a) where
-    isTop DomainValue { domainValueChild } = isTop domainValueChild
+    isTop _ = False
     isBottom DomainValue { domainValueChild } = isBottom domainValueChild
