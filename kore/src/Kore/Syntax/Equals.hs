@@ -78,6 +78,27 @@ instance Unparse child => Unparse (Equals Sort child) where
             , unparse2 equalsSecond
             ])
 
+instance Unparse child => Unparse (Equals () child) where
+    unparse
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> arguments [equalsFirst, equalsSecond]
+
+    unparse2
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      = Pretty.parens (Pretty.fillSep
+            [ "\\equals"
+            , unparse2 equalsFirst
+            , unparse2 equalsSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Equals sort) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}

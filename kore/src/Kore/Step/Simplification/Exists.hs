@@ -201,7 +201,7 @@ makeEvaluate sideCondition variables original = do
                     normalized { Conditional.substitution = boundSubstitution }
                 if matched
                     then return normalized
-                        { Conditional.predicate = Predicate.makeTruePredicate_
+                        { Conditional.predicate = Predicate.makeTruePredicate
                         , Conditional.substitution = freeSubstitution
                         }
                     else makeEvaluateBoundRight

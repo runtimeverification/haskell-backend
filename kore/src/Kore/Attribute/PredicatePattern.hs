@@ -11,9 +11,12 @@ module Kore.Attribute.PredicatePattern
     -- simplified is excluded on purpose
     , simplifiedAttribute
     , isSimplified
+    , isFullySimplified
+    , setSimplified
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
+    , fromPattern
     -- , fromPattern
     -- * Re-exports
     , module Kore.Attribute.Pattern.FreeVariables
@@ -88,20 +91,19 @@ instance
         }
 
 
-simplifiedAttribute :: HasCallStack => PredicatePattern variable -> Simplified
+simplifiedAttribute :: PredicatePattern variable -> Simplified
 simplifiedAttribute PredicatePattern {simplified} = simplified
 
 {- Checks whether the pattern is simplified relative to the given side
 condition.
 -}
 isSimplified
-    :: HasCallStack
-    => SideCondition.Representation -> PredicatePattern variable -> Bool
+    :: SideCondition.Representation -> PredicatePattern variable -> Bool
 isSimplified sideCondition = Simplified.isSimplified sideCondition . simplifiedAttribute
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
-isFullySimplified :: HasCallStack => PredicatePattern variable -> Bool
+isFullySimplified :: PredicatePattern variable -> Bool
 isFullySimplified PredicatePattern {simplified} = Simplified.isFullySimplified simplified
 
 setSimplified :: Simplified -> PredicatePattern variable -> PredicatePattern variable

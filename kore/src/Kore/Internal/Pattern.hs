@@ -214,7 +214,7 @@ bottom :: InternalVariable variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
-        , predicate = Predicate.makeFalsePredicate_
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -227,7 +227,7 @@ bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Predicate.makeFalsePredicate resultSort
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -238,7 +238,7 @@ top :: InternalVariable variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
-        , predicate = Predicate.makeTruePredicate_
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -248,7 +248,7 @@ topOf :: InternalVariable variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
-        , predicate = Predicate.makeTruePredicate resultSort
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -269,7 +269,7 @@ fromTermLike term
   | otherwise =
     Conditional
         { term
-        , predicate = Predicate.makeTruePredicate (termLikeSort term)
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -316,16 +316,12 @@ coerceSort
             else TermLike.forceSort sort term
         -- Need to override this since a 'ceil' (say) over a predicate is that
         -- predicate with a different sort.
-        , predicate = Predicate.coerceSort sort predicate
+        , predicate = predicate
         , substitution
         }
 
 patternSort :: Pattern variable -> Sort
-patternSort Conditional {term, predicate} =
-    if termSort == Sort.predicateSort then predicateSort else termSort
-  where
-    termSort = termLikeSort term
-    predicateSort = Predicate.predicateSort predicate
+patternSort Conditional {term} = termLikeSort term
 
 syncSort
     :: (HasCallStack, InternalVariable variable)
@@ -363,10 +359,8 @@ requireDefined Conditional { term, predicate, substitution } =
         , substitution
         , predicate =
             Predicate.makeAndPredicate predicate
-            $ Predicate.makeCeilPredicate sort term
+            $ Predicate.makeCeilPredicate term
         }
-  where
-    sort = termLikeSort term
 
 {- | Apply a normalized 'Substitution' to a 'Pattern'.
 

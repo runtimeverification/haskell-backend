@@ -333,9 +333,9 @@ evalInKeys resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | TermLike.isDefinedPattern termLike = Condition.topOf
       | otherwise =
-        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+        Condition.fromPredicate (makeCeilPredicate termLike)
 
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments

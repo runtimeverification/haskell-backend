@@ -61,7 +61,21 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
-import Kore.Internal.Predicate
+import Kore.Internal.Predicate hiding
+    ( AndF
+    , BottomF
+    , CeilF
+    , EqualsF
+    , ExistsF
+    , FloorF
+    , ForallF
+    , IffF
+    , ImpliesF
+    , InF
+    , NotF
+    , OrF
+    , TopF
+    )
 import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
@@ -109,8 +123,7 @@ translatePredicateWith
     -> Translator m variable SExpr
 translatePredicateWith translateTerm predicate =
     translatePredicatePattern
-    $ unwrapPredicate
-    $ coerceSort Sort.predicateSort predicate
+    $ fromPredicate () predicate
   where
     translateUninterpreted t pat = translateTerm t (UninterpretedTerm pat)
     translatePredicatePattern :: p -> Translator m variable SExpr

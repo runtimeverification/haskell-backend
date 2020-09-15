@@ -567,7 +567,7 @@ makeEvaluateTermCeil
     -> TermLike variable
     -> simplifier (OrCondition variable)
 makeEvaluateTermCeil sideCondition sort child =
-    Predicate.makeCeilPredicate sort child
+    Predicate.makeCeilPredicate child
     & Condition.fromPredicate
     & simplifyCondition sideCondition
     & OrCondition.observeAllT
@@ -582,7 +582,7 @@ makeEvaluateCeil sideCondition child =
     do
         let (childTerm, childCondition) = Pattern.splitTerm child
         ceilCondition <-
-            Predicate.makeCeilPredicate_ childTerm
+            Predicate.makeCeilPredicate childTerm
             & Condition.fromPredicate
             & simplifyCondition sideCondition
         Pattern.andCondition Pattern.top (ceilCondition <> childCondition)

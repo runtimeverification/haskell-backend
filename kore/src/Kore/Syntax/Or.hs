@@ -65,6 +65,18 @@ instance Unparse child => Unparse (Or Sort child) where
             , unparse2 orSecond
             ])
 
+instance Unparse child => Unparse (Or () child) where
+    unparse Or { orFirst, orSecond } =
+        "\\or"
+        <> arguments [orFirst, orSecond]
+
+    unparse2 Or { orFirst, orSecond } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\or"
+            , unparse2 orFirst
+            , unparse2 orSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}

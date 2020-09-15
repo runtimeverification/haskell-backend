@@ -50,7 +50,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeMultipleExists
     , makeMultipleOrPredicate
     , makeOrPredicate
@@ -59,7 +59,7 @@ import qualified Kore.Internal.Predicate as Predicate
     ( forgetSimplified
     , mapVariables
     , substitute
-    , wrapPredicate
+    , makePredicate
     )
 import Kore.Internal.TermLike
     ( pattern And_
@@ -346,7 +346,7 @@ parseLhs lhs = case aliasTerm of
         (And_ _ predicate term) ->
             Just AntiLeftLhs
                 { existentials
-                , predicate = Predicate.wrapPredicate predicate
+                , predicate = Predicate.makePredicate predicate
                 , term
                 }
         _ -> Nothing
@@ -414,7 +414,7 @@ antiLeftHandsPredicate antiLefts termLike =
             existentials
             (makeAndPredicate
                 predicate
-                (makeCeilPredicate_ (mkAnd termLike term))
+                (makeCeilPredicate (mkAnd termLike term))
             )
       where
         used :: Set (SomeVariableName variable)

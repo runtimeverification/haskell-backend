@@ -26,8 +26,6 @@ module Kore.Internal.Condition
     , Conditional.fromSubstitution
     , toPredicate
     , hasFreeVariable
-    , coerceSort
-    , conditionSort
     , Kore.Internal.Condition.mapVariables
     , fromNormalizationSimplified
     -- * Re-exports
@@ -109,7 +107,7 @@ top :: InternalVariable variable => Condition variable
 top =
     Conditional
         { term = ()
-        , predicate = Predicate.makeTruePredicate_
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -117,23 +115,23 @@ bottom :: InternalVariable variable => Condition variable
 bottom =
     Conditional
         { term = ()
-        , predicate = Predicate.makeFalsePredicate_
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
-topOf :: InternalVariable variable => Sort -> Condition variable
-topOf sort =
+topOf :: InternalVariable variable => Condition variable
+topOf =
     Conditional
         { term = ()
-        , predicate = Predicate.makeTruePredicate sort
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
-bottomOf :: InternalVariable variable => Sort -> Condition variable
-bottomOf sort =
+bottomOf :: InternalVariable variable => Condition variable
+bottomOf =
     Conditional
         { term = ()
-        , predicate = Predicate.makeFalsePredicate sort
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -208,20 +206,3 @@ fromNormalizationSimplified
             foldMap
                 (TermLike.simplifiedAttribute . Substitution.assignedTerm)
                 childrenList
-
-conditionSort :: Condition variable -> Sort
-conditionSort Conditional {term = (), predicate} =
-    Predicate.predicateSort predicate
-
-coerceSort
-    :: (HasCallStack, InternalVariable variable)
-    => Sort -> Condition variable -> Condition variable
-coerceSort
-    sort
-    Conditional {term = (), predicate, substitution}
-  =
-    Conditional
-        { term = ()
-        , predicate = Predicate.coerceSort sort predicate
-        , substitution
-        }

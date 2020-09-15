@@ -41,7 +41,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
     ( mkAnd
@@ -181,7 +181,7 @@ toPredicate
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
     case predicates of
-        [] -> makeTruePredicate_
+        [] -> makeTruePredicate
         _  -> foldr1 makeAndPredicate predicates
 
 toPattern

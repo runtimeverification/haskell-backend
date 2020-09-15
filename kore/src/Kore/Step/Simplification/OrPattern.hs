@@ -38,7 +38,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -103,7 +103,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                         -- so we may remove a substitution here. However,
                         -- we are not able to handle that properly.
                         return previous
-                            { Conditional.predicate = makeTruePredicate_ }
+                            { Conditional.predicate = makeTruePredicate }
                     Just False -> return Condition.bottom
                     Nothing -> return previous
 

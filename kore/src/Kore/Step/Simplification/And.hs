@@ -65,13 +65,13 @@ import Kore.Internal.Predicate
     , getMultiAndPredicate
     , makeAndPredicate
     , makePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( depth
     , setSimplified
     , simplifiedAttribute
-    , unwrapPredicate
+    , fromPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -279,10 +279,10 @@ promoteSubTermsToTop predicate =
         Unchanged unchanged -> Unchanged $
             foldl'
                 makeSimplifiedAndPredicate
-                makeTruePredicate_
+                makeTruePredicate
                 (List.sort unchanged)
         Changed changed -> Changed $
-            foldl' makeAndPredicate makeTruePredicate_ changed
+            foldl' makeAndPredicate makeTruePredicate changed
   where
     andPredicates :: [Predicate variable]
     andPredicates = getMultiAndPredicate predicate
@@ -298,7 +298,7 @@ promoteSubTermsToTop predicate =
         flip evalStateT HashMap.empty
         $ for sortedAndPredicates
         $ \predicate' -> do
-            let original = Predicate.unwrapPredicate predicate'
+            let original = Predicate.fromPredicate () predicate'
             result <- replaceWithTopNormalized original
             insertAssumption result
             return result
@@ -315,7 +315,7 @@ promoteSubTermsToTop predicate =
                 Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
                 -- Infer that the predicate is \top.
                 _               -> HashMap.insert termLike (mkTop    sort)
-        termLike = Predicate.unwrapPredicate predicate1
+        termLike = Predicate.fromPredicate () predicate1
         sort = termLikeSort termLike
 
     replaceWithTopNormalized
