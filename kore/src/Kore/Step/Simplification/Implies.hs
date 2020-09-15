@@ -89,10 +89,10 @@ simplifyEvaluated sideCondition first second
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
   | otherwise =
-      OrPattern.flatten
-      <$> OrPattern.traverse
-          (simplifyEvaluateHalfImplies sideCondition first)
-          second
+      OrPattern.observeAllT $ do
+          second' <- Logic.scatter second
+          simplified <- simplifyEvaluateHalfImplies sideCondition first second'
+          Logic.scatter simplified
 
 simplifyEvaluateHalfImplies
     :: (InternalVariable variable, MonadSimplify simplifier)
