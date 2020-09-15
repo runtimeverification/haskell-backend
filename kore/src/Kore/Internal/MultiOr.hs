@@ -195,7 +195,7 @@ distributeAnd =
     foldr (crossProductGeneric and') (singleton MultiAnd.top)
   where
     and' term ma =
-        term : MultiAnd.extractPatterns ma & MultiAnd.make
+        term : Foldable.toList ma & MultiAnd.make
 
 distributeApplication
     :: Ord head

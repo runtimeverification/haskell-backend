@@ -28,9 +28,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -337,7 +334,7 @@ runSimplifyRuleNoSMT
     => rule
     -> IO [rule]
 runSimplifyRuleNoSMT rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runNoSMT
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -348,7 +345,7 @@ runSimplifyRule
     => rule
     -> IO [rule]
 runSimplifyRule rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runSMT (pure ())
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -421,7 +418,7 @@ test_simplifyClaimRule =
         -- Test simplifyClaimRule through the OnePathRule instance.
         testCase name $ do
             actual <- run $ simplifyRuleLhs input
-            assertEqual "" expect (MultiAnd.extractPatterns actual)
+            assertEqual "" expect (Foldable.toList actual)
       where
         run =
             runSMT (pure ())

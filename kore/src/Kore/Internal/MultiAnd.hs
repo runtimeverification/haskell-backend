@@ -14,7 +14,6 @@ Portability : portable
 module Kore.Internal.MultiAnd
     ( MultiAnd
     , top
-    , extractPatterns
     , make
     , toPredicate
     , fromPredicate
@@ -33,6 +32,7 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
@@ -150,12 +150,6 @@ make patts = filterAnd (MultiAnd patts)
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
 
-{-| Returns the patterns inside an @\and@.
--}
-extractPatterns :: MultiAnd term -> [term]
-extractPatterns = getMultiAnd
-
-
 {- | Simplify the conjunction.
 
 The arguments are simplified by filtering on @\\top@ and @\\bottom@. The
@@ -247,7 +241,7 @@ map
     => (child1 -> child2)
     -> MultiAnd child1
     -> MultiAnd child2
-map f = make . fmap f . extractPatterns
+map f = make . fmap f . Foldable.toList
 {-# INLINE map #-}
 
 traverse
@@ -257,5 +251,5 @@ traverse
     => (child1 -> f child2)
     -> MultiAnd child1
     -> f (MultiAnd child2)
-traverse f = fmap make . Traversable.traverse f . extractPatterns
+traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}

@@ -183,7 +183,7 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         Foldable.foldlM
             unify
             Pattern.top
-            (term <$> MultiAnd.extractPatterns patterns)
+            (term <$> Foldable.toList patterns)
     let substitutions =
             Pattern.substitution unified
             <> foldMap Pattern.substitution patterns
