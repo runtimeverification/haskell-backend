@@ -33,7 +33,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( wrapPredicate
+    (makeMultipleAndPredicate,  wrapPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -152,9 +152,7 @@ makeExpandedApplication sideCondition symbol children = do
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term = symbolApplication symbol (Pattern.term <$> children)
-        withDefinednessConditions =
-            foldl Conditional.andPredicate merged definednessConditions
-        definednessConditions =
-            fmap (wrapPredicate . mkDefined . Pattern.toTermLike) children
-
+        definednessConditions = foldr1 mkAnd (fmap Pattern.toTermLike children)
+        withDefinednessConditions = merged { predicate = makeMultipleAndPredicate [mPredicate, wrapPredicate definednessConditions] }
+        Conditional { predicate = mPredicate } = merged
     return $ Conditional.withCondition term withDefinednessConditions
