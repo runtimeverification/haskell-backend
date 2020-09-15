@@ -88,24 +88,24 @@ Returns 'Nothing' if there is no remaining unproven claim.
 
  -}
 extractUnproven :: ClaimState a -> Maybe a
-extractUnproven (Claimed t)    = Just t
+extractUnproven (Claimed t)   = Just t
 extractUnproven (Rewritten t) = Just t
 extractUnproven (Remaining t) = Just t
-extractUnproven (Stuck t) = Just t
-extractUnproven Proven      = Nothing
+extractUnproven (Stuck t)     = Just t
+extractUnproven Proven        = Nothing
 
 extractRemaining :: ClaimState a -> Maybe a
 extractRemaining (Remaining t) = Just t
-extractRemaining _           = Nothing
+extractRemaining _             = Nothing
 
 extractStuck :: ClaimState a -> Maybe a
 extractStuck (Stuck a) = Just a
-extractStuck _             = Nothing
+extractStuck _         = Nothing
 
 retractRewritable :: ClaimState a -> Maybe a
-retractRewritable (Claimed a) = Just a
+retractRewritable (Claimed a)   = Just a
 retractRewritable (Remaining a) = Just a
-retractRewritable _ = Nothing
+retractRewritable _             = Nothing
 
 isRewritable :: ClaimState a -> Bool
 isRewritable = isJust . retractRewritable
