@@ -147,7 +147,7 @@ gatherResults = Foldable.fold . fmap result . results
 transitionResult :: Result rule config -> TransitionT rule m config
 transitionResult Result { appliedRule, result } = do
     Transition.addRule appliedRule
-    Foldable.asum (return <$> MultiOr.extractPatterns result)
+    Foldable.asum (return <$> Foldable.toList result)
 
 {- | Distribute the 'Results' over a transition rule.
  -}
@@ -157,7 +157,7 @@ transitionResults Results { results, remainders } =
   where
     transitionResultsResults = Foldable.asum (transitionResult <$> results)
     transitionResultsRemainders =
-        Foldable.asum (return <$> MultiOr.extractPatterns remainders)
+        Foldable.asum (return <$> Foldable.toList remainders)
 
 {- | Apply a function to the rules of the 'results'.
 

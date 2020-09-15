@@ -14,7 +14,6 @@ Portability : portable
 module Kore.Internal.MultiOr
     ( MultiOr (..)
     , bottom
-    , extractPatterns
     , filterOr
     , flatten
     , distributeAnd
@@ -42,6 +41,7 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Control.Lens as Lens
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -185,15 +185,6 @@ singleton
 singleton term
   | isBottom term = MultiOr []
   | otherwise     = MultiOr [term]
-
-{-| 'extractPatterns' instantiates 'getMultiOr' at 'Pattern'.
-
-It returns the patterns inside an @\or@.
--}
-extractPatterns
-    :: MultiOr term
-    -> [term]
-extractPatterns = getMultiOr
 
 distributeAnd
     :: Ord term
@@ -367,7 +358,7 @@ map
     => (child1 -> child2)
     -> MultiOr child1
     -> MultiOr child2
-map f = make . fmap f . extractPatterns
+map f = make . fmap f . Foldable.toList
 {-# INLINE map #-}
 
 traverse
@@ -377,7 +368,7 @@ traverse
     => (child1 -> f child2)
     -> MultiOr child1
     -> f (MultiOr child2)
-traverse f = fmap make . Traversable.traverse f . extractPatterns
+traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
 
 traverseLogic

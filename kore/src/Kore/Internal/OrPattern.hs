@@ -155,7 +155,7 @@ toPattern
     => OrPattern variable
     -> Pattern variable
 toPattern multiOr =
-    case MultiOr.extractPatterns multiOr of
+    case Foldable.toList multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
         patts -> Foldable.foldr1 mergeWithOr patts
@@ -191,7 +191,7 @@ toTermLike
     :: InternalVariable variable
     => OrPattern variable -> TermLike variable
 toTermLike multiOr =
-    case MultiOr.extractPatterns multiOr of
+    case Foldable.toList multiOr of
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
         patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)

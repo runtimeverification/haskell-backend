@@ -14,6 +14,7 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -25,9 +26,6 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
@@ -1565,7 +1563,7 @@ simplifyEquals
     -> TermLike VariableName
     -> IO (Maybe [Condition VariableName])
 simplifyEquals simplifierAxioms first second =
-    (fmap . fmap) MultiOr.extractPatterns
+    (fmap . fmap) Foldable.toList
     $ runSimplifier mockEnv
     $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
