@@ -1,4 +1,4 @@
-module Test.Kore.Strategies.OnePath.Step
+module Test.Kore.Reachability.OnePathStrategy
     ( test_onePathStrategy
     ) where
 
