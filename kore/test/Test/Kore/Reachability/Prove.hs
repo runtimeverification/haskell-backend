@@ -1,8 +1,5 @@
 module Test.Kore.Reachability.Prove
     ( test_reachabilityVerification
-    , simpleRewrite
-    , Test.Kore.Reachability.Prove.proveClaims
-    , proveClaims_
     ) where
 
 import Prelude.Kore
