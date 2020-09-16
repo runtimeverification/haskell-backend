@@ -64,9 +64,15 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Symbol
+    ( isConstructor
+    , isFunction
+    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
+    , pattern App_
+    , pattern Equals_
     , pattern Exists_
     , pattern Forall_
     , pattern Mu_
@@ -255,16 +261,28 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
         :: Predicate variable
         -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
     assume predicate1 =
-        State.modify' insert
+        State.modify' (insert termLike)
       where
-        insert =
-            case termLike of
-                -- Infer that the predicate is \bottom.
-                Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
-                -- Infer that the predicate is \top.
-                _               -> HashMap.insert termLike (mkTop    sort)
+        insert (Not_ _ notChild) =
+            -- Infer that the predicate is \bottom.
+            HashMap.insert notChild (mkBottom sort)
+        insert
+            term@(
+                Equals_ _ _
+                    child1@(App_ symbol1 _)
+                    child2@(App_ symbol2 _)
+                 )
+          | isConstructor symbol1, isFunction symbol2 =
+              HashMap.insert child2 child1
+          | isConstructor symbol2, isFunction symbol1 =
+              HashMap.insert child1 child2
+        -- Infer that the predicate is \top.
+          | otherwise = HashMap.insert term (mkTop sort)
+        insert term = HashMap.insert term (mkTop sort)
+
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
+
 
     applyAssumptions
         ::  TermLike variable
