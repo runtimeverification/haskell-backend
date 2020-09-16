@@ -112,7 +112,7 @@ transitionRule =
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        Foldable.asum (pure <$> filteredConfigs)
+        Foldable.asum (pure <$> Foldable.toList filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         results <-
@@ -122,7 +122,7 @@ transitionRule =
                 config
             & lift
         Foldable.asum
-            (pure <$> Step.gatherResults results)
+            (pure <$> Foldable.toList (Step.gatherResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.

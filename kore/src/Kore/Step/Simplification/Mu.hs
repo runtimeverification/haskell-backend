@@ -12,6 +12,7 @@ import Prelude.Kore
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -38,7 +39,8 @@ simplify
     :: InternalVariable variable
     => Mu variable (OrPattern variable)
     -> OrPattern variable
-simplify Mu { muVariable, muChild } = makeEvaluate muVariable <$> muChild
+simplify Mu { muVariable, muChild } =
+    OrPattern.map (makeEvaluate muVariable) muChild
 
 {-| evaluates a 'Mu' given its two 'Pattern' children.
 

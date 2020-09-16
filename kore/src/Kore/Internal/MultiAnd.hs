@@ -13,6 +13,7 @@ Portability : portable
 
 module Kore.Internal.MultiAnd
     ( MultiAnd
+    , top
     , extractPatterns
     , make
     , toPredicate
@@ -114,6 +115,9 @@ instance
   where
     from = fromTermLike
     {-# INLINE from #-}
+
+top :: MultiAnd term
+top = MultiAnd []
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.

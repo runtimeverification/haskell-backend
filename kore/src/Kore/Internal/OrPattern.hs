@@ -26,6 +26,7 @@ module Kore.Internal.OrPattern
     , MultiOr.gather
     , MultiOr.observeAllT
     , MultiOr.map
+    , MultiOr.traverse
     ) where
 
 import Prelude.Kore
@@ -153,7 +154,7 @@ toPattern
     => OrPattern variable
     -> Pattern variable
 toPattern multiOr =
-    case MultiOr.extractPatterns multiOr of
+    case Foldable.toList multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
         patts -> Foldable.foldr1 mergeWithOr patts
@@ -189,7 +190,7 @@ toTermLike
     :: InternalVariable variable
     => OrPattern variable -> TermLike variable
 toTermLike multiOr =
-    case MultiOr.extractPatterns multiOr of
+    case Foldable.toList multiOr of
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
         patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
@@ -213,13 +214,15 @@ targetBinder Binder { binderVariable, binderChild } =
             targetIfEqual
             $ unElementVariableName . variableName $ binderVariable
         newChild =
-            Pattern.mapVariables
-                AdjSomeVariableName
-                { adjSomeVariableNameElement =
-                    ElementVariableName targetBoundVariables
-                , adjSomeVariableNameSet = SetVariableName NonTarget
-                }
-            <$> binderChild
+            MultiOr.map
+                (Pattern.mapVariables
+                    AdjSomeVariableName
+                    { adjSomeVariableNameElement =
+                        ElementVariableName targetBoundVariables
+                    , adjSomeVariableNameSet = SetVariableName NonTarget
+                    }
+                )
+                binderChild
      in Binder
          { binderVariable = newVar
          , binderChild = newChild

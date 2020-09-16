@@ -14,8 +14,9 @@ module Kore.Step.Simplification.Implies
 
 import Prelude.Kore
 
+import qualified Data.Foldable as Foldable
+
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -34,6 +35,10 @@ import qualified Kore.Step.Simplification.Not as Not
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
+import Logic
+    ( LogicT
+    )
+import qualified Logic
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -88,29 +93,33 @@ simplifyEvaluated sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.top
   | OrPattern.isTrue second  = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated sideCondition first
-  | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies sideCondition first) second
-    return (MultiOr.flatten results)
+  | otherwise =
+      OrPattern.observeAllT
+      $ Logic.scatter second
+      >>= simplifyEvaluateHalfImplies sideCondition first
 
 simplifyEvaluateHalfImplies
     :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> OrPattern variable
     -> Pattern variable
-    -> simplifier (OrPattern variable)
+    -> LogicT simplifier (Pattern variable)
 simplifyEvaluateHalfImplies
     sideCondition
     first
     second
-  | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
-  | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second = Not.simplifyEvaluated sideCondition first
+  | OrPattern.isTrue first  = return second
+  | OrPattern.isFalse first = return Pattern.top
+  | Pattern.isTop second    = return Pattern.top
+  | Pattern.isBottom second =
+      Not.simplifyEvaluated sideCondition first
+      >>= Logic.scatter
   | otherwise =
-    case MultiOr.extractPatterns first of
-        [firstP] -> return $ makeEvaluateImplies firstP second
+    case Foldable.toList first of
+        [firstP] -> Logic.scatter $ makeEvaluateImplies firstP second
         firstPatterns ->
             distributeEvaluateImplies sideCondition firstPatterns second
+            >>= Logic.scatter
 
 distributeEvaluateImplies
     :: (MonadSimplify simplifier, InternalVariable variable)

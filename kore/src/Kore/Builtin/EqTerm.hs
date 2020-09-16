@@ -18,6 +18,7 @@ import Control.Error
 import qualified Control.Monad as Monad
 
 import qualified Kore.Builtin.Bool as Bool
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -72,7 +73,7 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
   | Just value2 <- Bool.matchBool termLike2
   = lift $ do
     solution <- unifyChildren operand1 operand2 & OrPattern.gather
-    let solution' = fmap eraseTerm solution
+    let solution' = MultiOr.map eraseTerm solution
     (if value2 then pure else notSimplifier SideCondition.top) solution'
         >>= Unify.scatter
   | otherwise = empty

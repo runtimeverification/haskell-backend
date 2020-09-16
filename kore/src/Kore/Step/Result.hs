@@ -22,7 +22,11 @@ module Kore.Step.Result
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
 import Data.Sequence
     ( Seq
     )
@@ -54,15 +58,33 @@ data Result rule config =
         { appliedRule :: !rule
         , result      :: !(MultiOr config)
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+    deriving (Eq, Foldable, GHC.Generic, Ord, Show)
 
 {- | Apply a function to the 'appliedRule' of a 'Result'.
-
-See also: 'mapRules'
 
  -}
 mapRule :: (rule1 -> rule2) -> Result rule1 config -> Result rule2 config
 mapRule f r@Result { appliedRule } = r { appliedRule = f appliedRule }
+
+{- | Apply a function to the 'result' of a 'Result'.
+
+ -}
+mapResult
+    :: Ord config2
+    => TopBottom config2
+    => (config1 -> config2)
+    -> Result rule config1
+    -> Result rule config2
+mapResult f = Lens.over (field @"result") (MultiOr.map f)
+
+traverseResult
+    :: Ord config2
+    => TopBottom config2
+    => Applicative f
+    => (config1 -> f config2)
+    -> Result rule config1
+    -> f (Result rule config2)
+traverseResult f = Lens.traverseOf (field @"result") (MultiOr.traverse f)
 
 {- | The results of applying many rules.
 
@@ -125,7 +147,7 @@ gatherResults = Foldable.fold . fmap result . results
 transitionResult :: Result rule config -> TransitionT rule m config
 transitionResult Result { appliedRule, result } = do
     Transition.addRule appliedRule
-    Foldable.asum (return <$> result)
+    Foldable.asum (return <$> Foldable.toList result)
 
 {- | Distribute the 'Results' over a transition rule.
  -}
@@ -134,7 +156,8 @@ transitionResults Results { results, remainders } =
     transitionResultsResults <|> transitionResultsRemainders
   where
     transitionResultsResults = Foldable.asum (transitionResult <$> results)
-    transitionResultsRemainders = Foldable.asum (return <$> remainders)
+    transitionResultsRemainders =
+        Foldable.asum (return <$> Foldable.toList remainders)
 
 {- | Apply a function to the rules of the 'results'.
 
@@ -147,29 +170,33 @@ mapRules f rs@Results { results } = rs { results = mapRule f <$> results }
 {- | Apply functions to the configurations of the 'results' and 'remainders'.
  -}
 mapConfigs
-   :: (config1 -> config2)  -- ^ map 'results'
-   -> (config1 -> config2)  -- ^ map 'remainders'
-   -> Results rule config1
-   -> Results rule config2
+    :: Ord config2
+    => TopBottom config2
+    => (config1 -> config2)  -- ^ map 'results'
+    -> (config1 -> config2)  -- ^ map 'remainders'
+    -> Results rule config1
+    -> Results rule config2
 mapConfigs mapResults mapRemainders Results { results, remainders } =
     Results
-        { results = fmap mapResults <$> results
-        , remainders = mapRemainders <$> remainders
+        { results = mapResult mapResults <$> results
+        , remainders = MultiOr.map mapRemainders remainders
         }
 
 {- | Apply 'Applicative' transformations to the configurations of the 'results'
 and 'remainders'.
  -}
 traverseConfigs
-   :: Applicative f
-   => (config1 -> f config2)  -- ^ traverse 'results'
-   -> (config1 -> f config2)  -- ^ traverse 'remainders'
-   -> Results rule config1
-   -> f (Results rule config2)
+    :: Ord config2
+    => TopBottom config2
+    => Applicative f
+    => (config1 -> f config2)  -- ^ traverse 'results'
+    -> (config1 -> f config2)  -- ^ traverse 'remainders'
+    -> Results rule config1
+    -> f (Results rule config2)
 traverseConfigs traverseResults traverseRemainders rs =
     Results
-        <$> (traverse . traverse) traverseResults (results rs)
-        <*> traverse traverseRemainders (remainders rs)
+        <$> (traverse . traverseResult) traverseResults (results rs)
+        <*> MultiOr.traverse traverseRemainders (remainders rs)
 
 toAttemptedAxiom
     :: InternalVariable variable

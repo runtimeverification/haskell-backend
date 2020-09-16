@@ -646,8 +646,10 @@ parseRightHandSide term =
     let (term', condition) =
             parsePatternFromTermLike term
             & Pattern.splitTerm
-     in flip Pattern.andCondition condition
-        <$> parseOrPatternFromTermLike term'
+     in
+        OrPattern.map
+            (flip Pattern.andCondition condition)
+            (parseOrPatternFromTermLike term')
   where
     parseOrPatternFromTermLike
         :: TermLike variable

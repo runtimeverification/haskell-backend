@@ -44,6 +44,7 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -82,7 +83,6 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -342,7 +342,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
-                case MultiOr.extractPatterns simplifiedPatterns of
+                case Foldable.toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
@@ -356,7 +356,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 (match SideCondition.topTODO (mkRewritingPattern searchPattern))
                 executionGraph
         let
-            solutions = concatMap MultiOr.extractPatterns solutionsLists
+            solutions = concatMap Foldable.toList solutionsLists
             orPredicate =
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return
