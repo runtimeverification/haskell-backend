@@ -162,7 +162,7 @@ import Kore.Strategies.Rule
 import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
-    ( isBottom
+    ( TopBottom (..)
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
@@ -184,10 +184,12 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
+    .  Ord a
+    => TopBottom a
+    => Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
-    MultiOr.MultiOr
+    MultiOr.make
     $ mapMaybe extractUnproven
     $ Strategy.pickFinal executionGraph
 
@@ -195,7 +197,9 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
+    .  Ord a
+    => TopBottom a
+    => Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
 

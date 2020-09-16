@@ -98,9 +98,7 @@ import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiOr
-    ( MultiOr (..)
-    )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
@@ -1824,7 +1822,7 @@ test_concretizeKeysAxiom =
             , rhs = injectTermIntoRHS x
             , attributes = Default.def
             }
-    expected = MultiOr
+    expected = MultiOr.make
         [ Conditional
             { term = symbolicKey
             , predicate = makeTruePredicate intSort
