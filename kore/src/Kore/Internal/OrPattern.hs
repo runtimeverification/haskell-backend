@@ -27,7 +27,6 @@ module Kore.Internal.OrPattern
     , MultiOr.observeAllT
     , MultiOr.map
     , MultiOr.traverse
-    , MultiOr.traverseLogic
     ) where
 
 import Prelude.Kore

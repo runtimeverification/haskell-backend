@@ -27,7 +27,6 @@ module Kore.Internal.MultiOr
     , singleton
     , map
     , traverse
-    , traverseLogic
     -- * Re-exports
     , Alternative (..)
     ) where
@@ -361,6 +360,7 @@ map
 map f = make . fmap f . Foldable.toList
 {-# INLINE map #-}
 
+-- | Warning: 'traverse' should not be used with 'LogicT'.
 traverse
     :: Ord child2
     => TopBottom child2
@@ -370,13 +370,3 @@ traverse
     -> f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
-
-traverseLogic
-    :: Ord child2
-    => TopBottom child2
-    => Monad m
-    => (child1 -> m child2)
-    -> MultiOr child1
-    -> m (MultiOr child2)
-traverseLogic f multiOr = observeAllT $ Logic.scatter multiOr >>= lift . f
-{-# INLINE traverseLogic #-}
