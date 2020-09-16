@@ -25,9 +25,6 @@ import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
     )
-import Kore.Sort
-    ( predicateSort
-    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )

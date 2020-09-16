@@ -110,7 +110,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
-import qualified Kore.Sort as Sort
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
@@ -669,7 +668,7 @@ unifyNotInKeys
   where
     defineTerm :: TermLike variable -> unifier (Condition variable)
     defineTerm termLike =
-        makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
+        makeEvaluateTermCeil SideCondition.topTODO termLike
         >>= Unify.scatter
 
     eraseTerm =

@@ -193,13 +193,13 @@ test_attemptEquation =
     , testCase "equation requirement" $ do
         let
             requires =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             expect1 =
@@ -211,7 +211,7 @@ test_attemptEquation =
         attemptEquation SideCondition.top initial equation
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             sideCondition2 =
@@ -241,7 +241,7 @@ test_attemptEquation =
         let expect =
                 WhileCheckRequires CheckRequiresError
                     { matchPredicate = makeTruePredicate_
-                    , equationRequires = makeFalsePredicate sortR
+                    , equationRequires = makeFalsePredicate
                     , sideCondition = SideCondition.top
                     }
             initial = Mock.a
@@ -296,7 +296,7 @@ test_attemptEquation =
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (axiom (f x) (g x) (makeFalsePredicate sortR))
+        (axiom (f x) (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
     , notMatched "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
@@ -464,7 +464,7 @@ test_attemptEquationUnification =
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (functionAxiomUnification fSymbol [x] (g x) (makeFalsePredicate sortR))
+        (functionAxiomUnification fSymbol [x] (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
     , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
@@ -511,24 +511,21 @@ test_attemptEquationUnification =
 -- * Test data
 
 equationId :: Equation'
-equationId = mkEquation sortR (mkElemVar Mock.x) (mkElemVar Mock.x)
+equationId = mkEquation (mkElemVar Mock.x) (mkElemVar Mock.x)
 
 equationRequiresBottom :: Equation'
 equationRequiresBottom =
-    (mkEquation sortR Mock.a Mock.b)
-        { requires = makeFalsePredicate sortR }
+    (mkEquation Mock.a Mock.b)
+        { requires = makeFalsePredicate }
 
 equationEnsuresBottom :: Equation'
 equationEnsuresBottom =
-    (mkEquation sortR Mock.a Mock.b)
-        { ensures = makeFalsePredicate sortR }
+    (mkEquation Mock.a Mock.b)
+        { ensures = makeFalsePredicate }
 
 equationBottom :: Equation'
 equationBottom =
-    mkEquation sortR Mock.a (mkBottom Mock.testSort)
-
-sortR :: Sort
-sortR = mkSortVariable (testId "R")
+    mkEquation Mock.a (mkBottom Mock.testSort)
 
 f, g :: TestTerm -> TestTerm
 f = Mock.functionalConstr10
@@ -587,13 +584,13 @@ axiom
     -> TestPredicate
     -> Equation'
 axiom left right requires =
-    (mkEquation sortR left right) { requires }
+    (mkEquation left right) { requires }
 
 axiom_
     :: TestTerm
     -> TestTerm
     -> Equation'
-axiom_ left right = axiom left right (makeTruePredicate sortR)
+axiom_ left right = axiom left right makeTruePredicate
 
 functionAxiomUnification
     :: Symbol
@@ -603,8 +600,8 @@ functionAxiomUnification
     -> Equation'
 functionAxiomUnification symbol args right requires =
     case args of
-        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
-        _  -> (mkEquation sortR left right) { requires, argument }
+        [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation left right) { requires, argument }
   where
     left = mkApplySymbol symbol variables
     sorts = fmap termLikeSort args
@@ -614,7 +611,7 @@ functionAxiomUnification symbol args right requires =
     argument =
         Just
         $ foldr1 makeAndPredicate
-        $ fmap (uncurry (makeInPredicate sortR))
+        $ fmap (uncurry makeInPredicate)
         $ zip variables args
     makeElementVariable (num, sort) =
         mkElementVariable' (testId "funcVar") num sort
@@ -633,7 +630,7 @@ functionAxiomUnification_
     -> TestTerm
     -> Equation'
 functionAxiomUnification_ symbol args right =
-    functionAxiomUnification symbol args right (makeTruePredicate sortR)
+    functionAxiomUnification symbol args right makeTruePredicate
 
 concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =

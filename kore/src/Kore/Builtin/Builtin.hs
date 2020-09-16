@@ -503,7 +503,6 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     orCondition <-
         makeEvaluateTermCeil
             SideCondition.topTODO
-            predicateSort
             unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)

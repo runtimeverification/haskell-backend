@@ -48,7 +48,6 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Sort as Sort
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
@@ -369,8 +368,8 @@ makeEvaluateTermsToPredicate first second sideCondition
                 $ Predicate.markSimplified
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort first
-            secondCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort second
+            firstCeilOr <- makeEvaluateTermCeil sideCondition first
+            secondCeilOr <- makeEvaluateTermCeil sideCondition second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate

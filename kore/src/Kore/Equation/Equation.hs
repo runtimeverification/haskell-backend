@@ -95,11 +95,10 @@ data Equation variable = Equation
 mkEquation
     :: HasCallStack
     => InternalVariable variable
-    => Sort
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> Equation variable
-mkEquation sort left right =
+mkEquation left right =
     assert (TermLike.termLikeSort left == TermLike.termLikeSort right)
     Equation
         { left

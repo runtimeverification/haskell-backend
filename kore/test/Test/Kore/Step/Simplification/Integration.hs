@@ -210,7 +210,6 @@ test_simplificationIntegration =
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
                             ,   [ mkEquation
-                                    Kore.Sort.predicateSort
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -1247,7 +1246,7 @@ conditionalEqualityPattern
     -> TermLike variable
     -> Equation variable
 conditionalEqualityPattern left requires right =
-    mkEquation Kore.Sort.predicateSort left right
+    mkEquation left right
     & Lens.set (field @"requires") requires
 
 test_substitute :: [TestTree]

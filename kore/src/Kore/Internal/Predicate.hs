@@ -45,7 +45,6 @@ module Kore.Internal.Predicate
     , getMultiAndPredicate
     , getMultiOrPredicate
     , NotPredicate
-    , makePredicate
     , isPredicate
     , simplifiedAttribute
     , isSimplified
@@ -116,7 +115,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.PredicatePattern
-    ( PredicatePattern (PredicatePattern)
+    ( PredicatePattern
     )
 import qualified Kore.Attribute.PredicatePattern as Attribute
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -128,7 +127,7 @@ import Kore.Attribute.Pattern.FreeVariables as FreeVariables
       getFreeElementVariables )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
 import Kore.Attribute.Pattern.Simplified
-    ( Simplified(Simplified, NotSimplified)
+    ( Simplified(NotSimplified)
     )
 import Kore.Attribute.Synthetic
 import Kore.Variables.Fresh

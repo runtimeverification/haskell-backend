@@ -80,7 +80,6 @@ import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
     )
-import qualified Kore.Sort as Sort
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol

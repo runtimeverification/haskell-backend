@@ -34,7 +34,7 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern
-    ( Pattern(Pattern)
+    ( Pattern
     )
 import Kore.Attribute.Pattern.FreeVariables hiding
     ( freeVariables

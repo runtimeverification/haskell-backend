@@ -191,7 +191,7 @@ newBuiltinAssocCommCeilSimplifier
             (BuiltinAssocComm normalized variable)
             (OrCondition variable)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
-    CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \Ceil { ceilChild } -> do
         let internalAc@Domain.InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
         let normalizedAc = Domain.unwrapAc builtinAcChild

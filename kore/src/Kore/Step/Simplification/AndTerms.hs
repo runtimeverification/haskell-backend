@@ -354,7 +354,7 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
+    secondCeil <- makeEvaluateTermCeil sideCondition second
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
@@ -424,8 +424,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                let sort = termLikeSort first
-                resultOr <- makeEvaluateTermCeil sideCondition sort second
+                resultOr <- makeEvaluateTermCeil sideCondition second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom

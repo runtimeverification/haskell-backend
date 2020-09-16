@@ -32,9 +32,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     )
-import Kore.Internal.TermLike
-    ( termLikeSort
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )

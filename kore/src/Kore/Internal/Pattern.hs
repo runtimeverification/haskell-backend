@@ -81,9 +81,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Sort as Sort
-    ( predicateSort
-    )
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
