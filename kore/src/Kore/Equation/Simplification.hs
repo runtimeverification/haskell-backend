@@ -82,11 +82,11 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         Monad.guard (isTop predicate)
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst term
-            requires' = TermLike.substitute subst <$> requires
-            argument' = (fmap . fmap) (TermLike.substitute subst) argument
-            antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
+            requires' = Predicate.substitute subst requires
+            argument' = Predicate.substitute subst <$> argument
+            antiLeft' = Predicate.substitute subst <$> antiLeft
             right' = TermLike.substitute subst right
-            ensures' = TermLike.substitute subst <$> ensures
+            ensures' = Predicate.substitute subst ensures
         return Equation
             { left = TermLike.forgetSimplified left'
             , requires = Predicate.forgetSimplified requires'
