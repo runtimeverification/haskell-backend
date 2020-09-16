@@ -109,4 +109,4 @@ toPredicate
     :: InternalVariable variable
     => MultiOr (Predicate variable) -> Predicate variable
 toPredicate multiOr =
-    Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+    Predicate.makeMultipleOrPredicate (Foldable.toList multiOr)

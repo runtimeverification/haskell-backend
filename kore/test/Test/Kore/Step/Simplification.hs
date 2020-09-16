@@ -37,6 +37,7 @@ import Kore.Internal.OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -131,10 +132,10 @@ simplifiedOrPattern
     :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
-simplifiedOrPattern = fmap simplifiedPattern
+simplifiedOrPattern = OrPattern.map simplifiedPattern
 
 simplifiedOrCondition
     :: InternalVariable variable
     => OrCondition variable
     -> OrCondition variable
-simplifiedOrCondition = fmap simplifiedCondition
+simplifiedOrCondition = OrPattern.map simplifiedCondition

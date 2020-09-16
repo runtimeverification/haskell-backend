@@ -19,18 +19,9 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
-import Kore.Internal.MultiOr
-    ( MultiOr
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
-    )
-import Kore.Internal.Pattern
-    ( Condition
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -40,9 +31,6 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.Substitution as Substitution
-import Logic
-    ( LogicT
-    )
 import qualified Logic as LogicT
 
 simplifyEvaluatedMultiPredicate
@@ -52,18 +40,11 @@ simplifyEvaluatedMultiPredicate
     -> MultiAnd (OrCondition variable)
     -> simplifier (OrCondition variable)
 simplifyEvaluatedMultiPredicate sideCondition predicates = do
-    let
-        crossProduct :: MultiOr [Condition variable]
-        crossProduct =
-            MultiOr.fullCrossProduct
-                (MultiAnd.extractPatterns predicates)
+    let crossProduct = MultiOr.distributeAnd predicates
     MultiOr.observeAllT $ do
         element <- LogicT.scatter crossProduct
         andConditions element
   where
-    andConditions
-        :: [Condition variable]
-        -> LogicT simplifier (Condition variable)
     andConditions predicates' =
         fmap markSimplified
         $ Substitution.normalize sideCondition (Foldable.fold predicates')

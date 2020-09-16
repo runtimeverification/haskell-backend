@@ -126,7 +126,7 @@ test_applyInitialConditions =
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
         [applied] <- applyInitialConditions initial unification
-        let actual = Conditional.predicate <$> applied
+        let actual = MultiOr.map Conditional.predicate applied
         assertEqual "" expect actual
 
     , testCase "conflicting initial and rule conditions" $ do
@@ -902,7 +902,7 @@ test_applyRewriteRule_ =
         -> IO [OrPattern VariableName]
     applyRewriteRuleParallel_ patt rule =
         applyRewriteRule_ applyRewriteRulesParallel patt rule
-        & (fmap . fmap . fmap) getRewritingPattern
+        & (fmap . fmap . OrPattern.map) getRewritingPattern
 
     applyClaim
         :: TestPattern
@@ -910,7 +910,7 @@ test_applyRewriteRule_ =
         -> IO [OrPattern VariableName]
     applyClaim patt rule =
         applyClaim_ applyClaimsSequence patt rule
-        & (fmap . fmap . fmap) getRewritingPattern
+        & (fmap . fmap . OrPattern.map) getRewritingPattern
 
     ruleId =
         rulePattern
@@ -1095,7 +1095,7 @@ applyRewriteRulesParallel initial rules =
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 applyClaimsSequence
     :: TestPattern
@@ -1109,7 +1109,7 @@ applyClaimsSequence initial claims =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
-    & runSimplifierNoSMT Mock.env
+    & runSimplifier Mock.env
 
 checkResults
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
@@ -1120,7 +1120,7 @@ checkResults
 checkResults expect actual =
     assertEqual "compare results"
         expect
-        (getRewritingPattern <$> Step.gatherResults actual)
+        (OrPattern.map getRewritingPattern $ Step.gatherResults actual)
 
 checkRemainders
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
@@ -1131,7 +1131,7 @@ checkRemainders
 checkRemainders expect actual =
     assertEqual "compare remainders"
         expect
-        (getRewritingPattern <$> Step.remainders actual)
+        (OrPattern.map getRewritingPattern $ Step.remainders actual)
 
 test_applyRewriteRulesParallel :: [TestTree]
 test_applyRewriteRulesParallel =

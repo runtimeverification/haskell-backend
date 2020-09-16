@@ -12,10 +12,11 @@ import Kore.Internal.InternalBytes
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
 
 simplify
     :: InternalVariable variable
     => InternalBytes
     -> OrPattern variable
-simplify = pure . pure . mkInternalBytes'
+simplify = OrPattern.fromPattern . pure . mkInternalBytes'

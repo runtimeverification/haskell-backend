@@ -103,7 +103,8 @@ simplifyEvaluated
 simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = simplified
   | OrPattern.isFalse simplified = simplified
-  | otherwise                    = makeEvaluate variable <$> simplified
+  | otherwise =
+      OrPattern.map (makeEvaluate variable) simplified
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 

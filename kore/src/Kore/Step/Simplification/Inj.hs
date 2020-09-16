@@ -9,12 +9,16 @@ module Kore.Step.Simplification.Inj
 
 import Prelude.Kore
 
-import Data.Functor.Compose
+import Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 
 import Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -23,6 +27,9 @@ import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.TopBottom
+    ( TopBottom
+    )
 
 {- |'simplify' simplifies an 'Inj' of 'OrPattern'.
 
@@ -32,15 +39,18 @@ simplify
     => Inj (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify injOrPattern = do
-    let composed = Compose . fmap liftConditional $ distributeOr injOrPattern
+    let composed = MultiOr.map liftConditional $ distributeOr injOrPattern
     InjSimplifier { evaluateInj } <- askInjSimplifier
-    let evaluated = evaluateInj <$> composed
-    return (getCompose evaluated)
+    let evaluated = MultiOr.map (fmap evaluateInj) composed
+    return evaluated
 
 distributeOr
-    :: Inj (MultiOr a)
+    :: Ord a
+    => TopBottom a
+    => Inj (MultiOr a)
     -> MultiOr (Inj a)
-distributeOr = sequenceA
+distributeOr inj@Inj { injChild } =
+    MultiOr.map (flip (Lens.set (field @"injChild")) inj) injChild
 
 liftConditional
     :: InternalVariable variable
