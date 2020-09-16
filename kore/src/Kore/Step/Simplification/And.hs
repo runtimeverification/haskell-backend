@@ -283,7 +283,6 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
-
     applyAssumptions
         ::  TermLike variable
         ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
