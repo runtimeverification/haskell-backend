@@ -175,6 +175,7 @@ import Logic
     )
 import qualified Logic
 import qualified Pretty
+import qualified SMT
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -527,8 +528,10 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (GoalStuck _) = empty
-    transitionRuleWorker Begin (GoalRewritten goal) = pure (Goal goal)
-    transitionRuleWorker Begin proofState = pure proofState
+    transitionRuleWorker Begin (GoalRewritten goal) =
+        SMT.reinit >> pure (Goal goal)
+    transitionRuleWorker Begin proofState =
+        SMT.reinit >> pure proofState
 
     transitionRuleWorker Simplify proofState
       | Just goal <- retractSimplifiable proofState =
@@ -649,7 +652,9 @@ checkImplication'
     -> m (CheckImplicationResult goal)
 checkImplication' lensRulePattern goal =
     goal
-    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
+    & Lens.traverseOf
+        lensRulePattern
+        (Compose . checkImplicationWorker)
     & getCompose
 
 assertFunctionLikeConfiguration

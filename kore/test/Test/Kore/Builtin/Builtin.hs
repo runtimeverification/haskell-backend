@@ -7,7 +7,7 @@ module Test.Kore.Builtin.Builtin
     , testEnv
     , testConditionSimplifier
     , testEvaluators
-    , testSymbolWithSolver
+    , testSymbolWithoutSolver
     , simplify
     , evaluate
     , evaluateT
@@ -118,7 +118,7 @@ import Kore.Unparser
     )
 import qualified Logic
 import SMT
-    ( SMT
+    ( NoSMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -136,12 +136,12 @@ mkPair
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
-testSymbolWithSolver
+testSymbolWithoutSolver
     ::  ( HasCallStack
         , p ~ TermLike VariableName
         , expanded ~ Pattern VariableName
         )
-    => (p -> SMT expanded)
+    => (p -> NoSMT expanded)
     -- ^ evaluator function for the builtin
     -> String
     -- ^ test name
@@ -152,9 +152,9 @@ testSymbolWithSolver
     -> expanded
     -- ^ expected result
     -> TestTree
-testSymbolWithSolver eval title symbol args expected =
+testSymbolWithoutSolver eval title symbol args expected =
     testCase title $ do
-        actual <- runSMT eval'
+        actual <- runNoSMT eval'
         assertEqual "" expected actual
   where
     eval' = eval $ mkApplySymbol symbol args
@@ -264,7 +264,7 @@ evaluateT
     -> t smt (Pattern VariableName)
 evaluateT = lift . evaluate
 
-evaluateToList :: TermLike VariableName -> SMT [Pattern VariableName]
+evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
@@ -275,7 +275,7 @@ runStep
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (OrPattern VariableName)
+    -> NoSMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
     return . fmap getRewritingPattern $ Step.gatherResults results
@@ -285,7 +285,7 @@ runStepResult
     -- ^ configuration
     -> RewriteRule VariableName
     -- ^ axiom
-    -> SMT (Step.Results (RulePattern RewritingVariableName))
+    -> NoSMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure

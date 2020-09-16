@@ -3,11 +3,18 @@ module Test.Kore.Step.Axiom.EvaluationStrategy
     , test_firstFullEvaluation
     , test_simplifierWithFallback
     , test_builtinEvaluation
+    , test_attemptEquations
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
+
+import Data.IORef
+    ( modifyIORef'
+    , newIORef
+    , readIORef
+    )
 
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
@@ -42,6 +49,44 @@ import Test.Kore.Equation.Application
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+
+test_attemptEquations :: [TestTree]
+test_attemptEquations =
+    [ testCase "Stops attempting equations at first successful result" $ do
+        counter <- newIORef (0 :: Int)
+        let condition =
+                SideCondition.assumeTruePredicate makeTruePredicate_
+            term = Mock.functionalConstr10 Mock.a
+            equations =
+                [ notApplicable1, applicable, notApplicable2, applicable
+                ]
+        _ <-
+            attemptEquations
+                (attemptEquationAndAccumulateErrors' counter condition term)
+                equations
+            & runSimplifier Mock.env
+        updatedCounter <- readIORef counter
+        assertEqual "" 2 updatedCounter
+    ]
+  where
+    attemptEquationAndAccumulateErrors' counter condition term equation = do
+        liftIO $ modifyIORef' counter (+ 1)
+        attemptEquationAndAccumulateErrors condition term equation
+    applicable =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.a
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+    notApplicable1 =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.c
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c)
+    notApplicable2 =
+        axiom
+          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          Mock.b
+          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =

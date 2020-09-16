@@ -245,7 +245,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Map.unifyEquals s))
     , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
-    , (EqualsT, \_ _ s -> Builtin.Set.unifyNotIn s notSimplifier)
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
@@ -695,7 +694,11 @@ stringLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {- | Unify any two function patterns.
 
-The function patterns are unified by creating an @\\equals@ predicate.
+The function patterns are unified by creating an @\\equals@ predicate. If either
+argument is constructor-like, that argument will be the resulting 'term';
+otherwise, the lesser argument is the resulting 'term'. The term always appears
+on the left-hand side of the @\\equals@ predicate, and the other argument
+appears on the right-hand side.
 
 -}
 functionAnd
@@ -705,15 +708,20 @@ functionAnd
     -> Maybe (Pattern variable)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
-    makeEqualsPredicate first second
+    makeEqualsPredicate first' second'
     & Predicate.markSimplified
     -- Ceil predicate not needed since first being
     -- bottom will make the entire term bottom. However,
     -- one must be careful to not just drop the term.
     & Condition.fromPredicate
-    & Pattern.withCondition first  -- different for Equals
+    & Pattern.withCondition first'  -- different for Equals
     & pure
   | otherwise = empty
+  where
+    (first', second')
+      | isConstructorLike first = (first, second)
+      | isConstructorLike second = (second, first)
+      | otherwise = minMax first second
 
 bytesDifferent
     :: InternalVariable variable

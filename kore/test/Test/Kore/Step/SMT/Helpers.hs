@@ -181,10 +181,9 @@ getSmtResult
     let
         smtResult :: SMT SMT.Result
         smtResult = do
-            preludeAction
             sequence_ actions
             SMT.check
-    runSMT smtResult
+    runSMT preludeAction smtResult
 
 assertSmtResult
     :: HasCallStack

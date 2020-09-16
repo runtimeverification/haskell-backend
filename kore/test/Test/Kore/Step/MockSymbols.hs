@@ -575,7 +575,7 @@ elementMapSymbol =
 concatMapSymbol :: Symbol
 concatMapSymbol =
     symbol concatMapId [mapSort, mapSort] mapSort
-    & functional & hook "MAP.concat"
+    & function & hook "MAP.concat"
 
 opaqueMapSymbol :: Symbol
 opaqueMapSymbol =
@@ -620,7 +620,7 @@ unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
 concatSetSymbol :: Symbol
 concatSetSymbol =
     symbol concatSetId [setSort, setSort] setSort
-    & functional & hook "SET.concat"
+    & function & hook "SET.concat"
 
 elementSetSymbol :: Symbol
 elementSetSymbol =
@@ -629,10 +629,6 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
-
-inSetSymbol :: Internal.Symbol
-inSetSymbol =
-    symbol "inSet" [testSort, setSort] boolSort & hook "SET.in"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
@@ -1236,14 +1232,6 @@ concatSet
     -> TermLike variable
     -> TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
-
-inSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
-inSet element set = Internal.mkApplySymbol inSetSymbol [element, set]
 
 opaqueSet
     :: InternalVariable variable

@@ -19,9 +19,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT (..)
     )
-import Control.Monad
-    ( foldM
-    )
 import Data.List
     ( foldl'
     )
@@ -49,7 +46,7 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
-    ( simplifyEvaluated
+    ( simplify
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
@@ -227,19 +224,15 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        foldM
-            (And.simplifyEvaluated Not.notSimplifier sideCondition)
-            (OrPattern.fromPatterns [Pattern.top])
-            (firstNotCeil : secondNotCeils)
+        And.simplify  Not.notSimplifier sideCondition
+            (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        foldM
-            (And.simplifyEvaluated Not.notSimplifier sideCondition)
-            firstCeil
-            (oneNotBottom : firstEqualsSeconds)
+        And.simplify Not.notSimplifier sideCondition
+            (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
@@ -297,14 +290,15 @@ makeEvaluate
     firstCeilNegation <- Not.simplifyEvaluated sideCondition firstCeil
     secondCeilNegation <- Not.simplifyEvaluated sideCondition secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <- simplifyEvaluatedAnd firstCeilNegation secondCeilNegation
-    ceilAnd <- simplifyEvaluatedAnd firstCeil secondCeil
-    equalityAnd <- simplifyEvaluatedAnd termEquality ceilAnd
+    negationAnd <-
+        And.simplify Not.notSimplifier sideCondition
+            (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+    equalityAnd <-
+        And.simplify Not.notSimplifier sideCondition
+            (MultiAnd.make [termEquality, firstCeil, secondCeil])
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
-    simplifyEvaluatedAnd =
-        And.simplifyEvaluated Not.notSimplifier sideCondition
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside

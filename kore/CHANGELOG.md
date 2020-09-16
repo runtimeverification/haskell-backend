@@ -14,6 +14,27 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.29.0.0] - 2020-09-04
+
+### Added
+
+- The SMT solver transcript (`--solver-transcript`) shows reponses received from
+  the solver. (#1688)
+
+### Changed
+
+- The internal representation of terms is simplified. (#2104)
+- The prover keeps the right-hand side of its working claim simplified. (#1278)
+
+### Fixed
+
+- The SMT solver no longer fails to solve simple queries. (#2075)
+- The SMT solver no longer leaks memory. (#2087)
+- Simplifying conjunctions of predicates runs in linear time, rather than
+  quadratic. (#2102)
+- Proven states are not accidentally reported as "stuck". (#2021)
+- The prover halts at the first unproven state. (#2071)
+
 ## [0.28.0.0] - 2020-08-19
 
 ### Added

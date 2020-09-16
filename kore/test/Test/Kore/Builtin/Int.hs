@@ -463,12 +463,12 @@ testInt
     -> [TermLike VariableName]
     -> Pattern VariableName
     -> TestTree
-testInt name = testSymbolWithSolver evaluate name
+testInt name = testSymbolWithoutSolver evaluate name
 
 -- | "\equal"ed internal Integers that are not equal
 test_unifyEqual_NotEqual :: TestTree
 test_unifyEqual_NotEqual =
-    testCaseWithSMT "unifyEqual BuiltinInteger: Not Equal" $ do
+    testCaseWithoutSMT "unifyEqual BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
         actual <- evaluate $ mkEquals_ dv1 dv2
@@ -477,7 +477,7 @@ test_unifyEqual_NotEqual =
 -- | "\equal"ed internal Integers that are equal
 test_unifyEqual_Equal :: TestTree
 test_unifyEqual_Equal =
-    testCaseWithSMT "unifyEqual BuiltinInteger: Equal" $ do
+    testCaseWithoutSMT "unifyEqual BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkEquals_ dv1 dv1
         assertEqual' "" top actual
@@ -485,7 +485,7 @@ test_unifyEqual_Equal =
 -- | "\and"ed internal Integers that are not equal
 test_unifyAnd_NotEqual :: TestTree
 test_unifyAnd_NotEqual =
-    testCaseWithSMT "unifyAnd BuiltinInteger: Not Equal" $ do
+    testCaseWithoutSMT "unifyAnd BuiltinInteger: Not Equal" $ do
         let dv1 = asInternal 1
             dv2 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv2
@@ -494,7 +494,7 @@ test_unifyAnd_NotEqual =
 -- | "\and"ed internal Integers that are equal
 test_unifyAnd_Equal :: TestTree
 test_unifyAnd_Equal =
-    testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
+    testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv1
         assertEqual' "" (Pattern.fromTermLike dv1) actual
@@ -502,7 +502,7 @@ test_unifyAnd_Equal =
 -- | "\and"ed then "\equal"ed internal Integers that are equal
 test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
-    testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
+    testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
         actual <- evaluate $ mkEquals_ dv $  mkAnd dv dv
         assertEqual' "" top actual
@@ -525,7 +525,7 @@ test_unifyAnd_Fn =
 
 test_reflexivity_symbolic :: TestTree
 test_reflexivity_symbolic =
-    testCaseWithSMT "evaluate symbolic reflexivity for equality" $ do
+    testCaseWithoutSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
@@ -533,7 +533,7 @@ test_reflexivity_symbolic =
 
 test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
-    testCaseWithSMT "evaluate symbolic equality for different variables" $ do
+    testCaseWithoutSMT "evaluate symbolic equality for different variables" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
             y = mkElemVar $ "y" `ofSort` intSort
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
@@ -580,6 +580,30 @@ test_unifyIntEq =
             -- inconsistency.
             let expect' = expect { predicate = makeTruePredicate intSort }
             assertEqual "" [Just expect'] actual
+        -- integration test
+        do
+            actual <-
+                makeEqualsPredicate_ term1 term2
+                & Condition.fromPredicate
+                & simplifyCondition'
+            assertEqual "" [expect { term = () }] actual
+    , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
+        let term1 =
+                eqInt
+                    (addInt (mkElemVar x) (asInternal 1))
+                    (addInt (mkElemVar y) (asInternal 1))
+            term2 = Test.Bool.asInternal False
+            expect =
+                makeEqualsPredicate_
+                    (addInt (mkElemVar x) (asInternal 1))
+                    (addInt (mkElemVar y) (asInternal 1))
+                & makeNotPredicate
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+        -- unit test
+        do
+            actual <- unifyIntEq term1 term2
+            assertEqual "" [Just expect] actual
         -- integration test
         do
             actual <-
