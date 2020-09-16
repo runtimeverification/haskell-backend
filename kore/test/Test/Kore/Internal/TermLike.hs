@@ -42,6 +42,11 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
     ( resynthesize
     )
+import Kore.Domain.Builtin
+    ( Builtin (..)
+    , InternalInt (..)
+    )
+import Kore.Internal.ApplicationSorts
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -52,11 +57,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import Kore.Domain.Builtin
-    ( Builtin (..)
-    , InternalInt (..)
-    )
-import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
