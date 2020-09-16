@@ -6,12 +6,17 @@ License     : NCSA
 
 module Kore.Reachability.SomeClaim
     ( SomeClaim (..)
-    , Rule (..)
     , makeTrusted
     , getConfiguration
     , getDestination
     , toSentence
     , lensClaimPattern
+    -- * Re-exports
+    , Claim (..)
+    , ClaimExtractor (..)
+    , Rule (..)
+    , AllPathClaim (..)
+    , OnePathClaim (..)
     ) where
 
 import Prelude.Kore
@@ -127,13 +132,11 @@ toSentence :: SomeClaim -> Verified.Sentence
 toSentence rule =
     Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
         { sentenceAxiomParameters = []
-        , sentenceAxiomPattern    = patt
+        , sentenceAxiomPattern
         , sentenceAxiomAttributes = Default.def
         }
   where
-    patt = case rule of
-        OnePath rule' -> onePathRuleToTerm rule'
-        AllPath rule' -> allPathRuleToTerm rule'
+    AxiomPattern sentenceAxiomPattern = from rule
 
 getConfiguration :: SomeClaim -> Pattern RewritingVariableName
 getConfiguration = Lens.view (lensClaimPattern . field @"left")
