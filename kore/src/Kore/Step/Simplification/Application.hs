@@ -40,7 +40,8 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , wrapPredicate
+    , makeCeilPredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -158,11 +159,13 @@ makeExpandedApplication sideCondition symbol children = do
             sideCondition
             (map Pattern.predicate children)
             (map Pattern.substitution children)
-    let term = symbolApplication symbol (Pattern.term <$> children)
-        definednessConditions =
-            foldr1 mkAnd (mkDefined . Pattern.term <$> children)
+    let term = symbolApplication symbol (mkDefined . Pattern.term <$> children)
+        addDefinednessConditions cond =
+            foldr
+                makeAndPredicate
+                cond
+                (makeCeilPredicate_ . Pattern.term <$> children)
         withDefinednessConditions =
             merged
-            & field @"predicate"
-                %~ (`makeAndPredicate` wrapPredicate definednessConditions)
+            & field @"predicate" %~ addDefinednessConditions
     return $ Conditional.withCondition term withDefinednessConditions
