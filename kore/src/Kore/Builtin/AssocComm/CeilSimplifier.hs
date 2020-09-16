@@ -101,13 +101,13 @@ newSetCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
                 & TermLike.mkBuiltinSet
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -128,13 +128,13 @@ newMapCeilSimplifier
             (BuiltinAssocComm Domain.NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkBuiltinMap
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -213,7 +213,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                         emptyNormalizedAc { opaque = [opaque1, opaque2] }
                     }
                 & mkBuiltin
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -246,7 +246,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
                 :: TermLike variable -> MaybeT simplifier (OrCondition variable)
-            makeEvaluateTerm = makeEvaluateTermCeil sideCondition ceilResultSort
+            makeEvaluateTerm = makeEvaluateTermCeil sideCondition
             defineAbstractKey = makeEvaluateTerm
             defineOpaque = makeEvaluateTerm
 

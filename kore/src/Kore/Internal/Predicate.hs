@@ -58,8 +58,11 @@ module Kore.Internal.Predicate
     , depth
     , markSimplified
     , markSimplifiedConditional
+    , markSimplifiedMaybeConditional
     , setSimplified
     , forgetSimplified
+    , wrapPredicate
+    , unwrapPredicate
     , pattern PredicateTrue
     , pattern PredicateFalse
     , pattern PredicateAnd
@@ -165,6 +168,9 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
+import Kore.Sort
+    ( predicateSort
+    )
 
 import Kore.TopBottom
     ( TopBottom (..)
@@ -791,6 +797,15 @@ markSimplifiedConditional
         :< predF
         )
 
+markSimplifiedMaybeConditional
+    :: (HasCallStack, InternalVariable variable)
+    => Maybe SideCondition.Representation
+    -> Predicate variable
+    -> Predicate variable
+markSimplifiedMaybeConditional Nothing = markSimplified
+markSimplifiedMaybeConditional (Just condition) =
+    markSimplifiedConditional condition
+
 setSimplified
     :: (HasCallStack, InternalVariable variable)
     => Simplified -> Predicate variable -> Predicate variable
@@ -894,7 +909,6 @@ mapVariables (fmap ((.) pure) -> adj) predicate = runIdentity $
             _ -> sequence predF >>= traverseVariablesF askSomeVariableName
         (pure . Recursive.embed) (attrs' :< predF')
 
-
 -- |Is the predicate free of the given variables?
 isFreeOf
     :: Ord variable
@@ -920,6 +934,37 @@ The 'freeVariables' annotation is used to avoid traversing subterms that
 contain none of the targeted variables.
 
  -}
+
+
+
+ -- !!  The following are just temporary solutions and the code using these  !!
+ -- !!  functions should be refactored                                       !!
+
+wrapPredicate ::
+    InternalVariable variable
+    => TermLike variable -> Predicate variable
+wrapPredicate = either
+    (error "Term cannot be wrapped.\n\
+            \Input TermLike is not a Predicate \
+            \despite being supposed to be\n"
+    )
+    id
+    . makePredicate
+
+unwrapPredicate ::
+    InternalVariable variable
+    => Predicate variable -> TermLike variable
+unwrapPredicate = fromPredicate predicateSort
+
+instance InternalVariable variable => From (Predicate variable) (TermLike variable) where
+    from = unwrapPredicate
+    {-# INLINE from #-}
+
+instance InternalVariable variable => From (TermLike variable) (Predicate variable) where
+    from = wrapPredicate
+    {-# INLINE from #-}
+
+
 
 substitute
     :: InternalVariable variable

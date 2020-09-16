@@ -71,7 +71,7 @@ import qualified Kore.Internal.Predicate as Predicate
     ( depth
     , setSimplified
     , simplifiedAttribute
-    , fromPredicate
+    , unwrapPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -298,7 +298,7 @@ promoteSubTermsToTop predicate =
         flip evalStateT HashMap.empty
         $ for sortedAndPredicates
         $ \predicate' -> do
-            let original = Predicate.fromPredicate () predicate'
+            let original = Predicate.unwrapPredicate predicate'
             result <- replaceWithTopNormalized original
             insertAssumption result
             return result
@@ -315,7 +315,7 @@ promoteSubTermsToTop predicate =
                 Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
                 -- Infer that the predicate is \top.
                 _               -> HashMap.insert termLike (mkTop    sort)
-        termLike = Predicate.fromPredicate () predicate1
+        termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
     replaceWithTopNormalized

@@ -563,10 +563,9 @@ makeEvaluateTermCeil
     :: InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> Sort
     -> TermLike variable
     -> simplifier (OrCondition variable)
-makeEvaluateTermCeil sideCondition sort child =
+makeEvaluateTermCeil sideCondition child =
     Predicate.makeCeilPredicate child
     & Condition.fromPredicate
     & simplifyCondition sideCondition

@@ -116,7 +116,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ Predicate.fromPredicate () predicate
+        $ Predicate.unwrapPredicate predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)

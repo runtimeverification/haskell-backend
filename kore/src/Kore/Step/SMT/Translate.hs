@@ -123,7 +123,7 @@ translatePredicateWith
     -> Translator m variable SExpr
 translatePredicateWith translateTerm predicate =
     translatePredicatePattern
-    $ fromPredicate () predicate
+    $ unwrapPredicate predicate
   where
     translateUninterpreted t pat = translateTerm t (UninterpretedTerm pat)
     translatePredicatePattern :: p -> Translator m variable SExpr

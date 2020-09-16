@@ -103,11 +103,11 @@ mkEquation sort left right =
     assert (TermLike.termLikeSort left == TermLike.termLikeSort right)
     Equation
         { left
-        , requires = Predicate.makeTruePredicate sort
+        , requires = Predicate.makeTruePredicate
         , argument = Nothing
         , antiLeft = Nothing
         , right
-        , ensures = Predicate.makeTruePredicate sort
+        , ensures = Predicate.makeTruePredicate
         , attributes = Default.def
         }
 

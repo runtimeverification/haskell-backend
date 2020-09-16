@@ -59,7 +59,7 @@ import qualified Kore.Internal.Predicate as Predicate
     ( forgetSimplified
     , mapVariables
     , substitute
-    , makePredicate
+    , wrapPredicate
     )
 import Kore.Internal.TermLike
     ( pattern And_
@@ -346,7 +346,7 @@ parseLhs lhs = case aliasTerm of
         (And_ _ predicate term) ->
             Just AntiLeftLhs
                 { existentials
-                , predicate = Predicate.makePredicate predicate
+                , predicate = Predicate.wrapPredicate predicate
                 , term
                 }
         _ -> Nothing
