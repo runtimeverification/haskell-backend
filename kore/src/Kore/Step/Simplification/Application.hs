@@ -41,7 +41,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
-    , makeTruePredicate_
     )
 import Kore.Internal.SideCondition
     ( SideCondition
