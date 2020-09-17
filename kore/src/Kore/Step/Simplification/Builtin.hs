@@ -23,7 +23,7 @@ import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -31,6 +31,10 @@ import Kore.Internal.Predicate
     ( makeFalsePredicate_
     )
 import Kore.Internal.TermLike
+import Logic
+    ( Logic
+    )
+import qualified Logic
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
@@ -40,14 +44,14 @@ simplify
     => Builtin (OrPattern variable)
     -> OrPattern variable
 simplify builtin =
-    MultiOr.filterOr $ do
+    MultiOr.observeAll $ do
         child <- simplifyBuiltin builtin
         return (markSimplified <$> child)
 
 simplifyBuiltin
     :: InternalVariable variable
     => Builtin (OrPattern variable)
-    -> MultiOr (Conditional variable (TermLike variable))
+    -> Logic (Conditional variable (TermLike variable))
 simplifyBuiltin =
     \case
         Domain.BuiltinMap map' ->
@@ -67,9 +71,9 @@ simplifyInternal
     :: (InternalVariable variable, Traversable t)
     => (t (TermLike variable) -> Maybe (t (TermLike variable)))
     -> t (OrPattern variable)
-    -> MultiOr (Conditional variable (t (TermLike variable)))
+    -> Logic (Conditional variable (t (TermLike variable)))
 simplifyInternal normalizer tOrPattern = do
-    conditional <- getCompose $ traverse Compose tOrPattern
+    conditional <- sequenceA <$> traverse Logic.scatter tOrPattern
     let bottom = conditional `Conditional.andPredicate` makeFalsePredicate_
         normalized = fromMaybe bottom $ traverse normalizer conditional
     return normalized
@@ -80,9 +84,9 @@ simplifyInternalMap
         -> NormalizedMapResult variable
        )
     -> InternalMap (TermLike Concrete) (OrPattern variable)
-    -> MultiOr (Conditional variable (TermLike variable))
+    -> Logic (Conditional variable (TermLike variable))
 simplifyInternalMap normalizer tOrPattern = do
-    conditional <- getCompose $ traverse Compose tOrPattern
+    conditional <- getCompose $ traverse (Compose . Logic.scatter) tOrPattern
     let normalized = normalizedMapResultToTerm . normalizer <$> conditional
     return normalized
 
@@ -122,7 +126,7 @@ normalizeInternalMap map' =
 simplifyInternalSet
     :: InternalVariable variable
     => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
-    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+    -> Logic (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalSet =
     (fmap . fmap) Domain.BuiltinSet
     . simplifyInternal normalizeInternalSet
@@ -137,5 +141,5 @@ normalizeInternalSet =
 simplifyInternalList
     :: InternalVariable variable
     => Domain.InternalList (OrPattern variable)
-    -> MultiOr (Conditional variable (Builtin (TermLike variable)))
+    -> Logic (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalList = (fmap . fmap) Domain.BuiltinList . simplifyInternal pure

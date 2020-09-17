@@ -45,6 +45,9 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Log
     ( MonadLog (..)
     )
@@ -56,6 +59,18 @@ import SMT
     )
 
 import Test.Terse
+
+newtype MockInteger = MockInteger { unMockInteger :: Integer }
+    deriving (Eq, Ord, Num, GHC.Generic)
+
+instance Diff MockInteger
+instance SOP.Generic MockInteger
+instance SOP.HasDatatypeInfo MockInteger
+instance Debug MockInteger
+
+instance TopBottom MockInteger where
+    isTop _ = False
+    isBottom _ = False
 
 --
 -- -- * Tests
@@ -73,7 +88,7 @@ test_unprovenNodes =
     , unprovenNodes
         (goal 0)
         `equals`
-        MultiOr.MultiOr [0]
+        [0]
         $  "returns single unproven node"
     , unprovenNodes
         (goal 0
@@ -81,14 +96,14 @@ test_unprovenNodes =
             & insNode (2, ClaimState.Proven)
         )
         `equals_`
-        MultiOr.MultiOr [0, 1]
+        [0, 1]
     , unprovenNodes
         (goal 0
             & subgoal 0 (1, ClaimState.Claimed 1)
             & subgoal 0 (2, ClaimState.Proven)
         )
         `equals_`
-        MultiOr.MultiOr [1]
+        [1]
     , unprovenNodes
         (goal 0
             & subgoal 0 (1, ClaimState.Claimed 1)
@@ -96,22 +111,22 @@ test_unprovenNodes =
             & subgoal 2 (3, ClaimState.Proven)
         )
         `equals_`
-        MultiOr.MultiOr []
+        []
     , unprovenNodes
         (goal 0
             & subgoal 0 (1, ClaimState.Remaining 1)
             & subgoal 0 (2, ClaimState.Proven)
         )
         `equals_`
-        MultiOr.MultiOr [1]
+        [1]
     ]
   where
-    goal :: Integer -> ExecutionGraph
+    goal :: MockInteger -> ExecutionGraph
     goal n = emptyExecutionGraph (ClaimState.Claimed n)
 
     subgoal
         :: Gr.Node
-        -> (Gr.Node, ClaimState.ClaimState Integer)
+        -> (Gr.Node, ClaimState.ClaimState MockInteger)
         -> ExecutionGraph -> ExecutionGraph
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
@@ -119,8 +134,8 @@ test_unprovenNodes =
 test_transitionRule_Begin :: [TestTree]
 test_transitionRule_Begin =
     [ done ClaimState.Proven
-    , unmodified (ClaimState.Claimed    (A, B))
-    , unmodified (ClaimState.Remaining (A, B))
+    , unmodified (ClaimState.Claimed    (Goal (A, B)))
+    , unmodified (ClaimState.Remaining (Goal (A, B)))
     ]
   where
     run = runTransitionRule [] [] Prim.Begin
@@ -132,8 +147,8 @@ test_transitionRule_Begin =
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Stuck (A, B))
-    , ClaimState.Claimed (B, B) `becomes` (ClaimState.Proven, mempty)
+    , unmodified (ClaimState.Stuck (Goal (A, B)))
+    , ClaimState.Claimed (Goal (B, B)) `becomes` (ClaimState.Proven, mempty)
     ]
   where
     run = runTransitionRule [] [] Prim.CheckImplication
@@ -144,20 +159,25 @@ test_transitionRule_CheckImplication =
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten    (A, B))
+    , unmodified (ClaimState.Rewritten    (Goal (A, B)))
     , [Rule (A, C)]
         `derives`
-        [ (ClaimState.Rewritten (C,   C), Seq.singleton $ AppliedClaim (A, C))
-        , (ClaimState.Remaining (Bot, C), mempty)
+        [ (,)
+            (ClaimState.Rewritten (Goal (C,   C)))
+            (Seq.singleton $ AppliedClaim (Goal (A, C)))
+        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ClaimState.Rewritten (B  , C), Seq.singleton $ AppliedClaim (A, B))
-        , (ClaimState.Remaining (Bot, C), mempty)
+        [ (,)
+            (ClaimState.Rewritten (Goal (B  , C)))
+            (Seq.singleton $ AppliedClaim (Goal (A, B)))
+        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
         ]
     ]
   where
-    run rules = runTransitionRule (map unRule rules) [] Prim.ApplyClaims
+    run rules =
+        runTransitionRule (map (Goal . unRule) rules) [] Prim.ApplyClaims
     unmodified :: HasCallStack => ClaimState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
@@ -167,21 +187,21 @@ test_transitionRule_ApplyClaims =
         -> [(ClaimState, Seq (Claim.AppliedRule Goal))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ClaimState.Claimed (A, C))
+    derives rules = equals_ (run rules $ ClaimState.Claimed (Goal (A, C)))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten    (A, B))
+    , unmodified (ClaimState.Rewritten    (Goal (A, B)))
     , [Rule (A, C)]
         `derives`
-        [ (ClaimState.Rewritten (C,   C), Seq.singleton $ axiom (A, C))
-        , (ClaimState.Remaining (Bot, C), mempty)
+        [ (ClaimState.Rewritten (Goal (C,   C)), Seq.singleton $ axiom (A, C))
+        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ClaimState.Rewritten (B  , C), Seq.singleton $ axiom (A, B))
-        , (ClaimState.Remaining (Bot, C), mempty)
+        [ (ClaimState.Rewritten (Goal (B  , C)), Seq.singleton $ axiom (A, B))
+        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
         ]
     ]
   where
@@ -196,29 +216,29 @@ test_transitionRule_ApplyAxioms =
         -> [(ClaimState, Seq (Claim.AppliedRule Goal))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ClaimState.Remaining (A, C))
+    derives rules = equals_ (run rules $ ClaimState.Remaining (Goal (A, C)))
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    [ [] `proves`    (A, A)
-    , [] `disproves` (A, B) $ [(A, B)]
+    [ [] `proves`    Goal (A, A)
+    , [] `disproves` Goal (A, B) $ [Goal (A, B)]
 
-    , [Rule (A, Bot)] `proves` (A, A)
-    , [Rule (A, Bot)] `proves` (A, B)
+    , [Rule (A, Bot)] `proves` Goal (A, A)
+    , [Rule (A, Bot)] `proves` Goal (A, B)
 
-    , [Rule (A, B)] `proves`    (A, B   )
-    , [Rule (A, B)] `proves`    (A, BorC)
-    , [Rule (A, B)] `disproves` (A, C   ) $ [(B, C)]
+    , [Rule (A, B)] `proves`    Goal (A, B   )
+    , [Rule (A, B)] `proves`    Goal (A, BorC)
+    , [Rule (A, B)] `disproves` Goal (A, C   ) $ [Goal (B, C)]
 
-    , [Rule (A, A)] `proves` (A, B)
-    , [Rule (A, A)] `proves` (A, C)
+    , [Rule (A, A)] `proves` Goal (A, B)
+    , [Rule (A, A)] `proves` Goal (A, C)
 
-    , [Rule (A, NotDef)] `disproves` (A, C) $ []
+    , [Rule (A, NotDef)] `disproves` Goal (A, C) $ []
 
-    , fmap Rule [(A, B), (A, C)] `proves`    (A, BorC)
-    , fmap Rule [(A, B), (A, C)] `disproves` (A, B   ) $ [(C, B)]
+    , fmap Rule [(A, B), (A, C)] `proves`    Goal (A, BorC)
+    , fmap Rule [(A, B), (A, C)] `disproves` Goal (A, B   ) $ [Goal (C, B)]
 
-    , differentLengthPaths `proves` (A, F)
+    , differentLengthPaths `proves` Goal (A, F)
     ]
   where
     run
@@ -230,9 +250,9 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Unlimited
-            (Claim.transitionRule [unRule goal] [axioms])
+            (Claim.transitionRule [Goal (unRule goal)] [axioms])
             (Foldable.toList Claim.strategy)
-            (ClaimState.Claimed . unRule $ goal)
+            (ClaimState.Claimed . Goal . unRule $ goal)
     disproves
         :: HasCallStack
         => [Claim.Rule Goal]
@@ -242,9 +262,9 @@ test_runStrategy =
         -> [Goal]
         -- ^ Unproven goals
         -> TestTree
-    disproves axioms goal unproven =
+    disproves axioms (Goal goal) unproven =
         equals
-            (Foldable.toList $ unprovenNodes $ run axioms (Rule goal))
+            (unprovenNodes $ run axioms (Rule goal))
             unproven
             (show axioms ++ " disproves " ++ show goal)
     proves
@@ -254,7 +274,7 @@ test_runStrategy =
         -> Goal
         -- ^ Proof goal
         -> TestTree
-    proves axioms goal =
+    proves axioms (Goal goal) =
         satisfies
             (run axioms (Rule goal))
             proven
@@ -262,13 +282,16 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (ClaimState.ClaimState Integer) (AppliedRule Goal)
+type ExecutionGraph =
+    Strategy.ExecutionGraph
+        (ClaimState.ClaimState MockInteger)
+        (AppliedRule Goal)
 
-emptyExecutionGraph :: ClaimState.ClaimState Integer -> ExecutionGraph
+emptyExecutionGraph :: ClaimState.ClaimState MockInteger -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
 
 insNode
-    :: (Gr.Node, ClaimState.ClaimState Integer)
+    :: (Gr.Node, ClaimState.ClaimState MockInteger)
     -> ExecutionGraph
     -> ExecutionGraph
 insNode = Strategy.insNode
@@ -291,6 +314,12 @@ instance Debug K
 
 instance Diff K
 
+instance TopBottom K where
+    isTop _ = False
+
+    isBottom Bot = True
+    isBottom _ = False
+
 instance Pretty K where
     pretty = pretty . show
 
@@ -306,7 +335,17 @@ difference a    b
   | a `matches` b = Bot
   | otherwise     = a
 
-type Goal = (K, K)
+newtype Goal = Goal { unGoal :: (K, K) }
+    deriving (Eq, Ord, GHC.Generic)
+
+instance Diff Goal
+instance SOP.Generic Goal
+instance SOP.HasDatatypeInfo Goal
+instance Debug Goal
+
+instance TopBottom Goal where
+    isTop _ = False
+    isBottom _ = False
 
 type ClaimState = ClaimState.ClaimState Goal
 
@@ -317,35 +356,34 @@ instance Claim Goal where
     newtype Rule Goal = Rule { unRule :: (K, K) }
         deriving (Eq, GHC.Generic, Show)
 
-    checkImplication (src, dst)
+    checkImplication (Goal (src, dst))
       | src' == Bot = return Claim.Implied
       | src == NotDef = return Claim.Implied
-      | otherwise = return $ Claim.NotImplied (src', dst)
+      | otherwise = return $ Claim.NotImplied (Goal (src', dst))
       where
         src' = difference src dst
 
     simplify = return
 
-    applyClaims claims =
-        derivePar AppliedClaim (map Rule claims)
+    applyClaims claims = derivePar AppliedClaim (map (Rule . unGoal) claims)
 
     applyAxioms axiomGroups =
-        derivePar (AppliedAxiom . Rule) (concat axiomGroups)
+        derivePar (AppliedAxiom . Rule . unGoal) (concat axiomGroups)
 
 derivePar
     :: (Goal -> Claim.AppliedRule Goal)
     -> [Claim.Rule Goal]
-    -> (K, K)
-    -> Transition.TransitionT (Claim.AppliedRule Goal) m (ClaimState.ClaimState (K, K))
-derivePar mkAppliedRule rules (src, dst) =
+    -> Goal
+    -> Transition.TransitionT (Claim.AppliedRule Goal) m (ClaimState.ClaimState Goal)
+derivePar mkAppliedRule rules (Goal (src, dst)) =
     goals <|> goalRemainder
   where
     goal (Rule rule@(_, to)) = do
-        Transition.addRule (mkAppliedRule rule)
-        (pure . ClaimState.Rewritten) (to, dst)
+        Transition.addRule (mkAppliedRule (Goal rule))
+        (pure . ClaimState.Rewritten . Goal) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ClaimState.Remaining) (r, dst)
+        (pure . ClaimState.Remaining . Goal) (r, dst)
     applyRule rule@(Rule (fromGoal, _))
         | fromGoal `matches` src = Just rule
         | otherwise = Nothing
@@ -428,10 +466,11 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall a
-    .  Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
-    -> MultiOr.MultiOr a
+    .  (Ord a, TopBottom a)
+    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
+    -> [a]
 unprovenNodes executionGraph =
-    MultiOr.MultiOr
+    Foldable.toList . MultiOr.make
     $ mapMaybe ClaimState.extractUnproven
     $ Strategy.pickFinal executionGraph
 
@@ -439,6 +478,7 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall a
-    .  Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
+    .  (Ord a, TopBottom a)
+    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
     -> Bool
 proven = Foldable.null . unprovenNodes

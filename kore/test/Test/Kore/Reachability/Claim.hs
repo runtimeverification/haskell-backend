@@ -224,7 +224,7 @@ mkGoal
     -> ClaimPattern
 mkGoal
     (mkRewritingPattern -> leftPatt)
-    (fmap mkRewritingPattern -> rightPatts)
+    (OrPattern.map mkRewritingPattern -> rightPatts)
     (fmap (TermLike.mapElementVariable (pure mkConfigVariable)) ->
         existentialVars
     )

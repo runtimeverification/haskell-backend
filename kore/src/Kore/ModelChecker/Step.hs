@@ -63,6 +63,7 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
     ( VariableName
     )
+import Kore.TopBottom
 import qualified Kore.Unification.Procedure as Unification
 import qualified Pretty
 
@@ -96,6 +97,10 @@ data ProofState patt
     | GoalRemLHS !patt
     -- ^ State which can't be rewritten anymore.
   deriving (Show, Eq, Ord, Generic, Functor)
+
+instance TopBottom (ProofState patt) where
+    isTop _ = False
+    isBottom _ = False
 
 -- | A 'ProofState' instantiated to 'Pattern VariableName' for convenience.
 type CommonProofState = ProofState (Pattern VariableName)
@@ -163,7 +168,10 @@ transitionRule
             filteredConfigs <- SMT.Evaluator.filterMultiOr configs
             if null filteredConfigs
                 then return Proven
-                else Foldable.asum (pure . wrapper <$> filteredConfigs)
+                else
+                    Foldable.asum
+                    $ pure . wrapper
+                    <$> Foldable.toList filteredConfigs
 
     transitionUnroll
         :: CommonModalPattern

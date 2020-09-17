@@ -20,6 +20,7 @@ import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -36,18 +37,24 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import Kore.TopBottom
+    ( TopBottom
+    )
 import Logic
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
     :: forall variable term simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    .  InternalVariable variable
+    => Ord term
+    => TopBottom term
+    => MonadSimplify simplifier
     => SideCondition variable
     -> Conditional variable term
     -> LogicT simplifier (Conditional variable term)
 normalize sideCondition conditional@Conditional { substitution } = do
     results <- simplifySubstitution sideCondition substitution & lift
-    scatter (applyTermPredicate <$> results)
+    scatter (MultiOr.map applyTermPredicate results)
   where
     applyTermPredicate =
         Pattern.andCondition conditional { substitution = mempty }

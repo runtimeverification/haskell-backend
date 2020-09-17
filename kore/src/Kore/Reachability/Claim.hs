@@ -146,7 +146,7 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import Kore.TopBottom
-    ( isBottom
+    ( TopBottom (..)
     )
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
@@ -616,7 +616,7 @@ simplify' lensClaimPattern claim = do
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
-            Foldable.asum (pure <$> configs)
+            Foldable.asum (pure <$> Foldable.toList configs)
 
     simplifyRightHandSide sideCondition =
         Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->

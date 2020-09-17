@@ -210,7 +210,8 @@ finalizeRule toRule finalizeApplied initialVariables initial unifiedRule =
         checkSubstitutionCoverage initial (toRule <$> unifiedRule)
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeApplied renamedRule applied
-        let result = resetResultPattern initialVariables <$> final
+        let result =
+                OrPattern.map (resetResultPattern initialVariables) final
         return Step.Result { appliedRule = unifiedRule, result }
 
 -- | Finalizes a list of applied rules into 'Results'.
