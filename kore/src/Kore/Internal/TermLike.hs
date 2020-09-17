@@ -1489,16 +1489,19 @@ mkDefined = worker
                         { applicationSymbolOrAlias
                         , applicationChildren
                         } ->
-                    mkDefined1
-                        ( Recursive.embed
-                            ( attrs
-                                :< ApplySymbolF
-                                    ( Application
-                                        applicationSymbolOrAlias
-                                        (fmap worker applicationChildren)
+                            let mkDef
+                                  | isFunctional applicationSymbolOrAlias = id
+                                  | otherwise = mkDefined1
+                            in
+                            mkDef
+                                $ Recursive.embed
+                                    ( attrs
+                                        :< ApplySymbolF
+                                            ( Application
+                                                applicationSymbolOrAlias
+                                                (worker <$> applicationChildren)
+                                            )
                                     )
-                            )
-                        )
                 ApplyAliasF _ ->
                     mkDefined1 term
                 BottomF _ ->
