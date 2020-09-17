@@ -134,147 +134,154 @@ test_unprovenNodes =
 test_transitionRule_Begin :: [TestTree]
 test_transitionRule_Begin =
     [ done ClaimState.Proven
-    , unmodified (ClaimState.Claimed    (Goal (A, B)))
-    , unmodified (ClaimState.Remaining (Goal (A, B)))
+    , unmodified (ClaimState.Claimed    (MockClaim (A, B)))
+    , unmodified (ClaimState.Remaining (MockClaim (A, B)))
     ]
   where
     run = runTransitionRule [] [] Prim.Begin
-    unmodified :: HasCallStack => ClaimState -> TestTree
+    unmodified :: HasCallStack => MockClaimState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
-    done :: HasCallStack => ClaimState -> TestTree
+    done :: HasCallStack => MockClaimState -> TestTree
     done state = run state `satisfies_` Foldable.null
 
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Stuck (Goal (A, B)))
-    , ClaimState.Claimed (Goal (B, B)) `becomes` (ClaimState.Proven, mempty)
+    , unmodified (ClaimState.Stuck (MockClaim (A, B)))
+    , ClaimState.Claimed (MockClaim (B, B))
+        `becomes` (ClaimState.Proven, mempty)
     ]
   where
     run = runTransitionRule [] [] Prim.CheckImplication
-    unmodified :: HasCallStack => ClaimState -> TestTree
+    unmodified :: HasCallStack => MockClaimState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     becomes initial final = run initial `equals_` [final]
 
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten    (Goal (A, B)))
+    , unmodified (ClaimState.Rewritten    (MockClaim (A, B)))
     , [Rule (A, C)]
         `derives`
         [ (,)
-            (ClaimState.Rewritten (Goal (C,   C)))
-            (Seq.singleton $ AppliedClaim (Goal (A, C)))
-        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
+            (ClaimState.Rewritten (MockClaim (C,   C)))
+            (Seq.singleton $ AppliedClaim (MockClaim (A, C)))
+        , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
         [ (,)
-            (ClaimState.Rewritten (Goal (B  , C)))
-            (Seq.singleton $ AppliedClaim (Goal (A, B)))
-        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
+            (ClaimState.Rewritten (MockClaim (B  , C)))
+            (Seq.singleton $ AppliedClaim (MockClaim (A, B)))
+        , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
         ]
     ]
   where
     run rules =
-        runTransitionRule (map (Goal . unRule) rules) [] Prim.ApplyClaims
-    unmodified :: HasCallStack => ClaimState -> TestTree
+        runTransitionRule (map (MockClaim . unRule) rules) [] Prim.ApplyClaims
+    unmodified :: HasCallStack => MockClaimState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
         :: HasCallStack
-        => [Claim.Rule Goal]
+        => [MockRule]
         -- ^ rules to apply in parallel
-        -> [(ClaimState, Seq (Claim.AppliedRule Goal))]
+        -> [(MockClaimState, Seq (MockAppliedRule))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ClaimState.Claimed (Goal (A, C)))
+    derives rules = equals_ (run rules $ ClaimState.Claimed (MockClaim (A, C)))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =
     [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten    (Goal (A, B)))
+    , unmodified (ClaimState.Rewritten    (MockClaim (A, B)))
     , [Rule (A, C)]
         `derives`
-        [ (ClaimState.Rewritten (Goal (C,   C)), Seq.singleton $ axiom (A, C))
-        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
+        [ (,)
+            (ClaimState.Rewritten (MockClaim (C,   C)))
+            (Seq.singleton $ axiom (A, C))
+        , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
-        [ (ClaimState.Rewritten (Goal (B  , C)), Seq.singleton $ axiom (A, B))
-        , (ClaimState.Remaining (Goal (Bot, C)), mempty)
+        [ (,)
+            (ClaimState.Rewritten (MockClaim (B  , C)))
+            (Seq.singleton $ axiom (A, B))
+        , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
         ]
     ]
   where
     run rules = runTransitionRule [] [rules] Prim.ApplyAxioms
     axiom = AppliedAxiom . Rule
-    unmodified :: HasCallStack => ClaimState -> TestTree
+    unmodified :: HasCallStack => MockClaimState -> TestTree
     unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
     derives
         :: HasCallStack
-        => [Claim.Rule Goal]
+        => [MockRule]
         -- ^ rules to apply in parallel
-        -> [(ClaimState, Seq (Claim.AppliedRule Goal))]
+        -> [(MockClaimState, Seq (MockAppliedRule))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ ClaimState.Remaining (Goal (A, C)))
+    derives rules =
+        equals_ (run rules $ ClaimState.Remaining (MockClaim (A, C)))
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
-    [ [] `proves`    Goal (A, A)
-    , [] `disproves` Goal (A, B) $ [Goal (A, B)]
+    [ [] `proves`    MockClaim (A, A)
+    , [] `disproves` MockClaim (A, B) $ [MockClaim (A, B)]
 
-    , [Rule (A, Bot)] `proves` Goal (A, A)
-    , [Rule (A, Bot)] `proves` Goal (A, B)
+    , [Rule (A, Bot)] `proves` MockClaim (A, A)
+    , [Rule (A, Bot)] `proves` MockClaim (A, B)
 
-    , [Rule (A, B)] `proves`    Goal (A, B   )
-    , [Rule (A, B)] `proves`    Goal (A, BorC)
-    , [Rule (A, B)] `disproves` Goal (A, C   ) $ [Goal (B, C)]
+    , [Rule (A, B)] `proves`    MockClaim (A, B   )
+    , [Rule (A, B)] `proves`    MockClaim (A, BorC)
+    , [Rule (A, B)] `disproves` MockClaim (A, C   ) $ [MockClaim (B, C)]
 
-    , [Rule (A, A)] `proves` Goal (A, B)
-    , [Rule (A, A)] `proves` Goal (A, C)
+    , [Rule (A, A)] `proves` MockClaim (A, B)
+    , [Rule (A, A)] `proves` MockClaim (A, C)
 
-    , [Rule (A, NotDef)] `disproves` Goal (A, C) $ []
+    , [Rule (A, NotDef)] `disproves` MockClaim (A, C) $ []
 
-    , fmap Rule [(A, B), (A, C)] `proves`    Goal (A, BorC)
-    , fmap Rule [(A, B), (A, C)] `disproves` Goal (A, B   ) $ [Goal (C, B)]
+    , fmap Rule [(A, B), (A, C)] `proves`    MockClaim (A, BorC)
+    , fmap Rule [(A, B), (A, C)]
+        `disproves` MockClaim (A, B) $ [MockClaim (C, B)]
 
-    , differentLengthPaths `proves` Goal (A, F)
+    , differentLengthPaths `proves` MockClaim (A, F)
     ]
   where
     run
-        :: [Claim.Rule Goal]
-        -> Claim.Rule Goal
-        -> Strategy.ExecutionGraph ClaimState (Claim.AppliedRule Goal)
+        :: [MockRule]
+        -> MockRule
+        -> Strategy.ExecutionGraph MockClaimState MockAppliedRule
     run axioms goal =
         runIdentity
         . unAllPathIdentity
         $ Strategy.runStrategy
             Unlimited
-            (Claim.transitionRule [Goal (unRule goal)] [axioms])
+            (Claim.transitionRule [MockClaim (unRule goal)] [axioms])
             (Foldable.toList Claim.strategy)
-            (ClaimState.Claimed . Goal . unRule $ goal)
+            (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves
         :: HasCallStack
-        => [Claim.Rule Goal]
+        => [MockRule]
         -- ^ Axioms
-        -> Goal
+        -> MockClaim
         -- ^ Proof goal
-        -> [Goal]
+        -> [MockClaim]
         -- ^ Unproven goals
         -> TestTree
-    disproves axioms (Goal goal) unproven =
+    disproves axioms (MockClaim goal) unproven =
         equals
             (unprovenNodes $ run axioms (Rule goal))
             unproven
             (show axioms ++ " disproves " ++ show goal)
     proves
         :: HasCallStack
-        => [Claim.Rule Goal]
+        => [MockRule]
         -- ^ Axioms
-        -> Goal
+        -> MockClaim
         -- ^ Proof goal
         -> TestTree
-    proves axioms (Goal goal) =
+    proves axioms (MockClaim goal) =
         satisfies
             (run axioms (Rule goal))
             proven
@@ -285,7 +292,7 @@ test_runStrategy =
 type ExecutionGraph =
     Strategy.ExecutionGraph
         (ClaimState.ClaimState MockInteger)
-        (AppliedRule Goal)
+        MockAppliedRule
 
 emptyExecutionGraph :: ClaimState.ClaimState MockInteger -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
@@ -335,75 +342,80 @@ difference a    b
   | a `matches` b = Bot
   | otherwise     = a
 
-newtype Goal = Goal { unGoal :: (K, K) }
+newtype MockClaim = MockClaim { unMockClaim :: (K, K) }
     deriving (Eq, Ord, GHC.Generic)
 
-instance Diff Goal
-instance SOP.Generic Goal
-instance SOP.HasDatatypeInfo Goal
-instance Debug Goal
+instance Diff MockClaim
+instance SOP.Generic MockClaim
+instance SOP.HasDatatypeInfo MockClaim
+instance Debug MockClaim
 
-instance TopBottom Goal where
+instance TopBottom MockClaim where
     isTop _ = False
     isBottom _ = False
 
-type ClaimState = ClaimState.ClaimState Goal
-
 type Prim = Claim.Prim
 
-instance Claim Goal where
+type MockAppliedRule = Claim.AppliedRule MockClaim
 
-    newtype Rule Goal = Rule { unRule :: (K, K) }
+type MockRule = Claim.Rule MockClaim
+
+type MockClaimState = ClaimState.ClaimState MockClaim
+
+instance Claim MockClaim where
+
+    newtype Rule MockClaim = Rule { unRule :: (K, K) }
         deriving (Eq, GHC.Generic, Show)
 
-    checkImplication (Goal (src, dst))
+    checkImplication (MockClaim (src, dst))
       | src' == Bot = return Claim.Implied
       | src == NotDef = return Claim.Implied
-      | otherwise = return $ Claim.NotImplied (Goal (src', dst))
+      | otherwise = return $ Claim.NotImplied (MockClaim (src', dst))
       where
         src' = difference src dst
 
     simplify = return
 
-    applyClaims claims = derivePar AppliedClaim (map (Rule . unGoal) claims)
+    applyClaims claims =
+        derivePar AppliedClaim (map (Rule . unMockClaim) claims)
 
     applyAxioms axiomGroups =
-        derivePar (AppliedAxiom . Rule . unGoal) (concat axiomGroups)
+        derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
+
+instance SOP.Generic (Claim.Rule MockClaim)
+
+instance SOP.HasDatatypeInfo (Claim.Rule MockClaim)
+
+instance Debug (Claim.Rule MockClaim)
+
+instance Diff (Claim.Rule MockClaim)
 
 derivePar
-    :: (Goal -> Claim.AppliedRule Goal)
-    -> [Claim.Rule Goal]
-    -> Goal
-    -> Transition.TransitionT (Claim.AppliedRule Goal) m (ClaimState.ClaimState Goal)
-derivePar mkAppliedRule rules (Goal (src, dst)) =
+    :: (MockClaim -> MockAppliedRule)
+    -> [MockRule]
+    -> MockClaim
+    -> Transition.TransitionT MockAppliedRule m MockClaimState
+derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
   where
     goal (Rule rule@(_, to)) = do
-        Transition.addRule (mkAppliedRule (Goal rule))
-        (pure . ClaimState.Rewritten . Goal) (to, dst)
+        Transition.addRule (mkAppliedRule (MockClaim rule))
+        (pure . ClaimState.Rewritten . MockClaim) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ClaimState.Remaining . Goal) (r, dst)
-    applyRule rule@(Rule (fromGoal, _))
-        | fromGoal `matches` src = Just rule
+        (pure . ClaimState.Remaining . MockClaim) (r, dst)
+    applyRule rule@(Rule (fromMockClaim, _))
+        | fromMockClaim `matches` src = Just rule
         | otherwise = Nothing
     applied = mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
 
-instance SOP.Generic (Claim.Rule Goal)
-
-instance SOP.HasDatatypeInfo (Claim.Rule Goal)
-
-instance Debug (Claim.Rule Goal)
-
-instance Diff (Claim.Rule Goal)
-
 runTransitionRule
-    :: [Goal]
-    -> [[Claim.Rule Goal]]
+    :: [MockClaim]
+    -> [[MockRule]]
     -> Prim
-    -> ClaimState
-    -> [(ClaimState, Seq (Claim.AppliedRule Goal))]
+    -> MockClaimState
+    -> [(MockClaimState, Seq MockAppliedRule)]
 runTransitionRule claims axiomGroups prim state =
     (runIdentity . unAllPathIdentity . runTransitionT)
         (Claim.transitionRule claims axiomGroups prim state)
@@ -444,7 +456,7 @@ instance MonadSimplify AllPathIdentity where
     askInjSimplifier = undefined
     askOverloadSimplifier = undefined
 
-differentLengthPaths :: [Claim.Rule Goal]
+differentLengthPaths :: [MockRule]
 differentLengthPaths =
     fmap Rule
     [ -- Length 5 path
@@ -467,7 +479,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
 unprovenNodes
     :: forall a
     .  (Ord a, TopBottom a)
-    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
+    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim)
     -> [a]
 unprovenNodes executionGraph =
     Foldable.toList . MultiOr.make
@@ -479,6 +491,6 @@ unprovenNodes executionGraph =
 proven
     :: forall a
     .  (Ord a, TopBottom a)
-    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule Goal)
+    => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim)
     -> Bool
 proven = Foldable.null . unprovenNodes
