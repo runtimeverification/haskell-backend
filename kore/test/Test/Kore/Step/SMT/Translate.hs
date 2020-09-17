@@ -168,11 +168,11 @@ test_translatePredicateWith =
     var :: Integer -> SExpr
     var i = Atom $ "<" <> Text.pack (show i) <> ">"
     pleq = Mock.lessInt
-    peq = Predicate.makeEqualsPredicate_
+    peq = Predicate.makeEqualsPredicate
     pand = Predicate.makeAndPredicate
-    pceil = Predicate.makeCeilPredicate_
-    pceil' = Predicate.makeCeilPredicate Mock.intSort
-    true = Predicate.makeTruePredicate_
+    pceil = Predicate.makeCeilPredicate
+    pceil' = Predicate.makeCeilPredicate
+    true = Predicate.makeTruePredicate
     pexists (TermLike.ElemVar_ v) p = Predicate.makeExistsPredicate v p
     pexists _ _ = undefined
     exists i p = existsQ [List [var i, Atom "Int"]] p

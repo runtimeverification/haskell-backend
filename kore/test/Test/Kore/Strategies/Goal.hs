@@ -25,7 +25,7 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeExistsPredicate
     , makeNotPredicate
     , makeOrPredicate
@@ -76,7 +76,7 @@ test_checkImplication =
                 Lens.over
                     (field @"left")
                     (flip Pattern.andCondition
-                        (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+                        (makeEqualsPredicate (mkElemVar Mock.x) Mock.a
                         & Predicate.mapVariables (pure mkConfigVariable)
                         & from
                         )
@@ -89,7 +89,7 @@ test_checkImplication =
         let config = Mock.a & Pattern.fromTermLike
             dest =
                 Pattern.withCondition Mock.b
-                    (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a & from)
+                    (makeEqualsPredicate (mkElemVar Mock.x) Mock.a & from)
                 & OrPattern.fromPattern
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
@@ -147,12 +147,12 @@ test_checkImplication =
                 Pattern.fromTermAndPredicate
                     (Mock.f (mkElemVar Mock.x))
                     (makeAndPredicate
-                        (makeCeilPredicate Mock.testSort
+                        (makeCeilPredicate
                             (Mock.f (mkElemVar Mock.x))
                         )
                         (makeNotPredicate
                             (makeExistsPredicate Mock.y
-                                (makeEqualsPredicate Mock.testSort
+                                (makeEqualsPredicate
                                     (Mock.f (mkElemVar Mock.x))
                                     (Mock.f (mkElemVar Mock.y))
                                 )
@@ -179,13 +179,13 @@ test_checkImplication =
             dest =
                 [ Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
-                    (makeEqualsPredicate Mock.testSort
+                    (makeEqualsPredicate
                         (mkElemVar Mock.x)
                         Mock.a
                     )
                 , Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
-                    (makeEqualsPredicate Mock.testSort
+                    (makeEqualsPredicate
                         (mkElemVar Mock.x)
                         Mock.b
                     )
@@ -201,11 +201,11 @@ test_checkImplication =
                 Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
                     (makeOrPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.b
                         )

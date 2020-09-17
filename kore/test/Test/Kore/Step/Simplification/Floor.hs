@@ -26,9 +26,9 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeEqualsPredicate_
-    , makeFloorPredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeFloorPredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
@@ -55,7 +55,7 @@ test_floorSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeFloorPredicate_ (mkOr a b)
+                    , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
                     }
                 ]
@@ -128,8 +128,8 @@ test_floorSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeFloorPredicate_ a)
-                            (makeEqualsPredicate_ fOfA gOfA)
+                            (makeFloorPredicate a)
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -140,7 +140,7 @@ test_floorSimplification =
             (makeEvaluate
                 Conditional
                     { term = a
-                    , predicate = makeEqualsPredicate_ fOfA gOfA
+                    , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
@@ -172,12 +172,12 @@ test_floorSimplification =
     gOfA = mkApplySymbol gSymbol [a]
     aExpanded = Conditional
         { term = a
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     bExpanded = Conditional
         { term = b
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 

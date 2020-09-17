@@ -37,7 +37,6 @@ import Kore.Internal.TermLike
     , Symbol
     , TermLike
     , VariableName
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Sentence

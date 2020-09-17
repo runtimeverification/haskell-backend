@@ -30,7 +30,7 @@ test_stringLiteralSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkStringLiteral "a"
-                    , predicate = makeTruePredicate stringMetaSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]

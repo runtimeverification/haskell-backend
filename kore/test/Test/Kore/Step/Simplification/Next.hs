@@ -12,9 +12,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
+    ( makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Next
@@ -31,7 +31,7 @@ test_nextSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkNext Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -40,7 +40,7 @@ test_nextSimplification =
                 (makeNext
                     [ Conditional
                         { term = Mock.a
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]
@@ -57,7 +57,7 @@ test_nextSimplification =
                                 Mock.a
                                 (mkAnd Mock.b (mkEquals_ Mock.a Mock.b))
                             )
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -66,12 +66,12 @@ test_nextSimplification =
                 (makeNext
                     [ Conditional
                         { term = Mock.a
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.b
-                        , predicate = makeEqualsPredicate_ Mock.a Mock.b
+                        , predicate = makeEqualsPredicate Mock.a Mock.b
                         , substitution = mempty
                         }
                     ]

@@ -198,8 +198,7 @@ test_SubstitutionSimplifier =
                     actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
-                assertEqual ""
-                    (fixExpectedSorts expect actualConditions)
+                assertEqual "" expect
                     actualConditions
                 assertBool "Expected normalized substitutions"
                     (all Substitution.isNormalized actualSubstitutions)
@@ -215,20 +214,13 @@ test_SubstitutionSimplifier =
                         (fmap . fmap) Condition.substitution actualConditions
                     allNormalized = (all . all) Substitution.isNormalized
                     expectSorted =
-                        fixExpectedSorts expect <$> actualConditions
+                        expect <$ actualConditions
                 assertEqual ""
                     expectSorted
                     actualConditions
                 assertBool "Expected normalized substitutions"
                     (allNormalized actualSubstitutions)
             ]
-
-    fixExpectedSorts expect actual =
-        case actual of
-            [] -> expect
-            first:_ ->
-                let sort = Condition.conditionSort first
-                in Condition.coerceSort sort <$> expect
 
 x, y, z, xs, ys :: SomeVariable VariableName
 x = inject Mock.x

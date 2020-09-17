@@ -33,8 +33,8 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate_
-    , makeTruePredicate_
+    , makeCeilPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
@@ -86,14 +86,14 @@ test_matcherEqualHeads =
         ]
 
     , testCase "Bottom" $ do
-        let expect = Just (makeTruePredicate_, Map.empty)
+        let expect = Just (makeTruePredicate, Map.empty)
         actual <- matchDefinition mkBottom_ mkBottom_
         assertEqual "" expect actual
 
     , testCase "Ceil" $ do
         let expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton (inject Mock.x) Mock.a
                     )
         actual <-
@@ -105,7 +105,7 @@ test_matcherEqualHeads =
     , testCase "Equals" $ do
         let expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton
                         (inject Mock.x)
                         (mkElemVar Mock.y)
@@ -173,7 +173,7 @@ test_matcherEqualHeads =
         [ testCase "same symbol" $ do
             let expect =
                     mkMatchResult
-                        ( makeTruePredicate_
+                        ( makeTruePredicate
                         , Map.singleton (inject Mock.x) Mock.a
                         )
             actual <-
@@ -189,7 +189,7 @@ test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton
                        (inject Mock.x)
                         Mock.functional00
@@ -200,7 +200,7 @@ test_matcherVariableFunction =
     , testCase "SetVariable vs Function" $ do
         let expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton
                         (inject Mock.setX)
                         Mock.cf
@@ -211,7 +211,7 @@ test_matcherVariableFunction =
     , testCase "SetVariable vs Bottom" $ do
         let expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton
                         (inject Mock.setX)
                         (mkBottom Mock.testSort)
@@ -222,7 +222,7 @@ test_matcherVariableFunction =
     , testCase "Function" $ do
         let expect =
                 mkMatchResult
-                    ( makeCeilPredicate_ Mock.cf
+                    ( makeCeilPredicate Mock.cf
                     , Map.singleton (inject Mock.x) Mock.cf
                     )
         actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
@@ -247,7 +247,7 @@ test_matcherVariableFunction =
             x = mkElementVariable (testId "x") Mock.subSort
             expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.singleton
                         (inject x)
                         (Mock.sortInjectionSubSubToSub a)
@@ -273,7 +273,7 @@ test_matcherVariableFunction =
         let
             expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.fromList
                         [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
@@ -299,7 +299,7 @@ test_matcherVariableFunction =
         let
             expect =
                 mkMatchResult
-                    ( makeTruePredicate_
+                    ( makeTruePredicate
                     , Map.fromList
                         [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
@@ -325,7 +325,7 @@ test_matcherVariableFunction =
         [ testCase "Function" $ do
             let expect =
                     mkMatchResult
-                        ( makeCeilPredicate_ Mock.cf
+                        ( makeCeilPredicate Mock.cf
                         , Map.singleton (inject Mock.x) Mock.cf
                         )
             actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
@@ -344,7 +344,7 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.functional00
                 expect =
                     mkMatchResult
-                        ( makeTruePredicate_
+                        ( makeTruePredicate
                         , Map.singleton
                             (inject Mock.x)
                             evaluated
@@ -356,7 +356,7 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.cf
                 expect =
                     mkMatchResult
-                        ( makeCeilPredicate_ evaluated
+                        ( makeCeilPredicate evaluated
                         , Map.singleton
                             (inject Mock.x)
                             evaluated
@@ -385,7 +385,7 @@ test_matcherMergeSubresults =
     [ testCase "Application" $ do
         let expect =
                 mkMatchResult
-                    ( makeCeilPredicate_ Mock.cf
+                    ( makeCeilPredicate Mock.cf
                     , Map.fromList
                         [ (inject Mock.x, Mock.cf)
                         , (inject Mock.y, Mock.b)
@@ -437,7 +437,7 @@ test_matching_Bool =
     top = topCondition
     substitution subst =
         mkMatchResult
-            ( makeTruePredicate_
+            ( makeTruePredicate
             , Map.fromList ((fmap . fmap) mkBool subst)
             )
     mkBool = Bool.asInternal Mock.boolSort
@@ -464,7 +464,7 @@ test_matching_Int =
     top = topCondition
     substitution subst =
         mkMatchResult
-            ( makeTruePredicate_
+            ( makeTruePredicate
             , Map.fromList ((fmap . fmap) mkInt subst)
             )
     matchConcrete = matchDefinition `on` mkInt
@@ -493,7 +493,7 @@ test_matching_String =
   where
     substitution subst =
         mkMatchResult
-            ( makeTruePredicate_
+            ( makeTruePredicate
             , Map.fromList ((fmap . fmap) mkStr subst)
             )
     mkStr = String.asInternal Mock.stringSort
@@ -765,7 +765,7 @@ mkPair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableNam
 mkPair = Test.pair
 
 topCondition :: MatchResult
-topCondition = Just (makeTruePredicate_, Map.empty)
+topCondition = Just (makeTruePredicate, Map.empty)
 
 test_matching_Set :: [TestTree]
 test_matching_Set =
@@ -925,7 +925,7 @@ test_matching_Map =
             , (mkInt 1, mkInt 2)
             ]
             [mkElemVar nMap])
-        (makeCeilPredicate_ (mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap]))
+        (makeCeilPredicate (mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap]))
         [ (inject yInt, mkInt 0)
         , (inject mMap, mkMap [(mkInt 1, mkInt 2)] [mkElemVar nMap])
         ]
@@ -936,7 +936,7 @@ test_matching_Map =
             , (mkInt 1, mkInt 2)
             ]
             [mkElemVar nMap])
-        (makeCeilPredicate_
+        (makeCeilPredicate
             (mkMap [(mkElemVar xInt, mkInt 0)] [mkElemVar nMap])
         )
         [ (inject yInt, mkInt 2)
@@ -1080,7 +1080,7 @@ matches
     -> TestTree
 matches comment term1 term2 substs =
     matchesAux comment term1 term2
-        (mkMatchResult (makeTruePredicate_, Map.fromList substs))
+        (mkMatchResult (makeTruePredicate, Map.fromList substs))
 
 matchesP
     :: HasCallStack

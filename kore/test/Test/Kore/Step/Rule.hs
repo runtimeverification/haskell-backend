@@ -73,11 +73,11 @@ axiomPatternsUnitTests =
                 (RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate sortAInt
+                    , requires = Predicate.makeTruePredicate
                     , rhs = RHS
                         { existentials = []
                         , right = varI2
-                        , ensures = Predicate.makeTruePredicate sortAInt
+                        , ensures = Predicate.makeTruePredicate
                         }
                     , attributes = def
                     }
@@ -91,11 +91,11 @@ axiomPatternsUnitTests =
                 ( RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate sortAInt
+                    , requires = Predicate.makeTruePredicate
                     , rhs = RHS
                         { existentials = []
                         , right = varI2
-                        , ensures = Predicate.makeTruePredicate sortAInt
+                        , ensures = Predicate.makeTruePredicate
                         }
                     , attributes = def
                     }
@@ -207,11 +207,11 @@ axiomPatternsIntegrationTests =
         RulePattern
             { left
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate sortTCell
+            , requires = Predicate.makeTruePredicate
             , rhs = RHS
                 { existentials = []
                 , right
-                , ensures = Predicate.makeTruePredicate sortTCell
+                , ensures = Predicate.makeTruePredicate
                 }
             , attributes = def
             }
@@ -314,7 +314,7 @@ test_parseClaimPattern =
                     { left =
                         Pattern.fromTermAndPredicate
                             Mock.a
-                            (Predicate.makeEqualsPredicate Mock.testSort
+                            (Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 Mock.c
                             )
@@ -323,7 +323,7 @@ test_parseClaimPattern =
                         Pattern.fromTermAndPredicate
                             Mock.b
                             (Predicate.makeNotPredicate
-                            $ Predicate.makeEqualsPredicate Mock.testSort
+                            $ Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 Mock.a
                             )
@@ -356,7 +356,7 @@ test_parseClaimPattern =
                     { left =
                         Pattern.fromTermAndPredicate
                             Mock.a
-                            (Predicate.makeEqualsPredicate Mock.testSort
+                            (Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 Mock.c
                             )
@@ -365,7 +365,7 @@ test_parseClaimPattern =
                         Pattern.fromTermAndPredicate
                             Mock.b
                             (Predicate.makeNotPredicate
-                            $ Predicate.makeEqualsPredicate Mock.testSort
+                            $ Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 (mkElemVar Mock.z)
                             )
@@ -404,7 +404,7 @@ test_parseClaimPattern =
                     { left =
                         Pattern.fromTermAndPredicate
                             Mock.a
-                            (Predicate.makeEqualsPredicate Mock.testSort
+                            (Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 Mock.c
                             )
@@ -413,7 +413,7 @@ test_parseClaimPattern =
                         [ Pattern.fromTermAndPredicate
                             Mock.b
                             (Predicate.makeNotPredicate
-                            $ Predicate.makeEqualsPredicate Mock.testSort
+                            $ Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 (mkElemVar Mock.z)
                             )
@@ -421,7 +421,7 @@ test_parseClaimPattern =
                         , Pattern.fromTermAndPredicate
                             Mock.c
                             (Predicate.makeNotPredicate
-                            $ Predicate.makeEqualsPredicate Mock.testSort
+                            $ Predicate.makeEqualsPredicate
                                 (mkElemVar Mock.x)
                                 (mkElemVar Mock.z)
                             )
@@ -445,8 +445,8 @@ rightP = mkExists Mock.y (mkElemVar Mock.y)
 initialRhs = mkAnd (Predicate.unwrapPredicate ensuresP) rightP
 
 requiresP, ensuresP :: Predicate.Predicate VariableName
-requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
-ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
+requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
+ensuresP = Predicate.makeCeilPredicate (mkElemVar Mock.t)
 
 attributesWithPriority :: Attribute.Axiom symbol variable
 attributesWithPriority =

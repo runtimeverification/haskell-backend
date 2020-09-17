@@ -42,9 +42,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.Symbol
     ( Symbol (Symbol, symbolConstructor)
@@ -234,7 +234,7 @@ actualTwoAxioms =
     runStep
         Conditional
             { term = mkElemVar (v1 Mock.testSort)
-            , predicate = makeTruePredicate_
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
         [ mkRewritingRule rewriteIdentity
@@ -248,7 +248,7 @@ initialFailSimple =
             metaSigma
                 (metaG (mkElemVar $ a1 Mock.testSort))
                 (metaF (mkElemVar $ b1 Mock.testSort))
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
@@ -274,7 +274,7 @@ initialFailCycle =
             metaSigma
                 (mkElemVar $ a1 Mock.testSort)
                 (mkElemVar $ a1 Mock.testSort)
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
@@ -297,7 +297,7 @@ initialIdentity :: Pattern VariableName
 initialIdentity =
     Conditional
         { term = mkElemVar (v1 Mock.testSort)
-        , predicate = makeTruePredicate Mock.testSort
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
@@ -349,7 +349,7 @@ smtTerm term = Mock.functionalConstr10 term
 smtSyntaxPredicate
     :: TermLike VariableName -> PredicateState -> Predicate VariableName
 smtSyntaxPredicate term predicateState =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (Mock.lessInt
             (Mock.fTestInt term)
             (Mock.builtinInt 0)
@@ -408,7 +408,7 @@ test_SMT =
         [ _actual1 ] <- runStepMockEnv
             Conditional
                 { term = Mock.functionalConstr10 Mock.b
-                , predicate = makeEqualsPredicate_
+                , predicate = makeEqualsPredicate
                     (Mock.lessInt
                         (Mock.fTestInt Mock.b)
                         (Mock.builtinInt 0)
@@ -421,7 +421,7 @@ test_SMT =
                 , antiLeft = Nothing
                 , rhs = injectTermIntoRHS Mock.a
                 , requires =
-                    makeEqualsPredicate_
+                    makeEqualsPredicate
                         (Mock.lessInt
                             (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                             (Mock.builtinInt 0)
@@ -434,7 +434,7 @@ test_SMT =
             [ Conditional
                 { term = Mock.a
                 , predicate =
-                    makeEqualsPredicate Mock.testSort
+                    makeEqualsPredicate
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -462,7 +462,7 @@ actualUnificationError =
                 metaSigma
                     (mkElemVar $ a1 Mock.testSort)
                     (metaI (mkElemVar $ b1 Mock.testSort))
-            , predicate = makeTruePredicate_
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
         [mkRewritingRule axiomMetaSigmaId]

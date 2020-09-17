@@ -176,13 +176,13 @@ test_attemptEquation =
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
-                $ makeEqualsPredicate Mock.testSort
+                $ makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.y))
                     (Mock.functional10 (mkElemVar Mock.y))
             initial = mkElemVar Mock.y
@@ -204,7 +204,7 @@ test_attemptEquation =
                     (Mock.functional10 Mock.a)
             expect1 =
                 WhileCheckRequires CheckRequiresError
-                { matchPredicate = makeTruePredicate_
+                { matchPredicate = makeTruePredicate
                 , equationRequires = requires1
                 , sideCondition = SideCondition.top
                 }
@@ -224,7 +224,7 @@ test_attemptEquation =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                $ Condition.topOf Mock.testSort
+                $ Condition.topOf
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
@@ -232,7 +232,7 @@ test_attemptEquation =
     , testCase "rule a => b ensures \\bottom" $ do
         let expect =
                 Pattern.withCondition Mock.b
-                $ Condition.bottomOf Mock.testSort
+                $ Condition.bottomOf
             initial = Mock.a
         attemptEquation SideCondition.top initial equationEnsuresBottom
             >>= expectRight >>= assertEqual "" expect
@@ -240,7 +240,7 @@ test_attemptEquation =
     , testCase "rule a => b requires \\bottom" $ do
         let expect =
                 WhileCheckRequires CheckRequiresError
-                    { matchPredicate = makeTruePredicate_
+                    { matchPredicate = makeTruePredicate
                     , equationRequires = makeFalsePredicate
                     , sideCondition = SideCondition.top
                     }
@@ -337,7 +337,7 @@ test_attemptEquation =
     , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
         let initial = tdivInt xInt xInt
             sideCondition =
-                makeCeilPredicate_ initial
+                makeCeilPredicate initial
                 & SideCondition.fromPredicate
             expect = Pattern.fromTermLike initial
         attemptEquation sideCondition initial equationId
@@ -409,7 +409,7 @@ test_attemptEquationUnification =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                $ Condition.topOf Mock.testSort
+                $ Condition.topOf
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
@@ -562,7 +562,7 @@ tdivInt = Mock.tdivInt
 
 positive :: TestTerm -> TestPredicate
 positive u' =
-    makeEqualsPredicate Mock.testSort
+    makeEqualsPredicate
         (Mock.lessInt
             (Mock.fTestInt u')  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)

@@ -32,8 +32,8 @@ import Test.Kore
 import Test.Kore.Internal.Predicate
     ( TestPredicate
     , makeAndPredicate
-    , makeEqualsPredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeTruePredicate
     )
 import Test.Kore.Internal.TermLike hiding
     ( forgetSimplified
@@ -348,17 +348,17 @@ test_toPredicate :: TestTree
 test_toPredicate =
     testCase "toPredicate" $ do
         assertEqual "null substitutions is top"
-            makeTruePredicate_
+            makeTruePredicate
             (toPredicate mempty :: TestPredicate)
         assertEqual "a = b"
-            (makeAndPredicate pr1 makeTruePredicate_)
+            (makeAndPredicate pr1 makeTruePredicate)
             (toPredicate $ wrap
                 [assign (inject $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
             )
 
 pr1 :: TestPredicate
 pr1 =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 

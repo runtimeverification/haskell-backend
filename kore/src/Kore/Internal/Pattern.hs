@@ -218,7 +218,7 @@ bottom =
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
-The 'predicate' is set to 'makeFalsePredicate_'.
+The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
 bottomOf :: InternalVariable variable => Sort -> Pattern variable
@@ -255,7 +255,7 @@ topOf resultSort =
 The resulting @Pattern@ has a true predicate and an empty
 substitution, unless it is trivially 'Bottom'.
 
-See also: 'makeTruePredicate_', 'pure'
+See also: 'makeTruePredicate', 'pure'
 
  -}
 fromTermLike

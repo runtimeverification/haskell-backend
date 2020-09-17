@@ -44,9 +44,21 @@ import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
     ( Defined (..)
     )
-import Kore.Attribute.Pattern.FreeVariables hiding
-    ( freeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( bindVariable,
+      bindVariables,
+      emptyFreeVariables,
+      freeVariable,
+      getFreeElementVariables,
+      isFreeVariable,
+      mapFreeVariables,
+      nullFreeVariables,
+      toList,
+      toNames,
+      toSet,
+      traverseFreeVariables,
+      FreeVariables,
+      HasFreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
     ( freeVariables
     )

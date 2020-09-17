@@ -31,8 +31,8 @@ import qualified Kore.IndexedModule.MetadataTools as MetadataTools
     ( MetadataTools (..)
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
-    , makeTruePredicate_
+    ( makeEqualsPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.Symbol
     ( Symbol
@@ -103,9 +103,9 @@ test_expandRule =
         in assertEqual "" expected actual
     , testCase "Expands variable once to constant" $
         let expected =
-                Pair (Mock.f Mock.a, makeEqualsPredicate_ x Mock.a)
+                Pair (Mock.f Mock.a, makeEqualsPredicate x Mock.a)
                 `rewritesTo`
-                Pair (Mock.g Mock.a, makeTruePredicate_)
+                Pair (Mock.g Mock.a, makeTruePredicate)
             actual =
                 expandSingleConstructors
                     (metadataTools
@@ -120,14 +120,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor1 x00TestSort)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor1 x00TestSort)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor1 x00TestSort)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -147,14 +147,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor1 Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor1 Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor1 Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -177,14 +177,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor2 Mock.a Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor2 Mock.a Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor2 Mock.a Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -208,14 +208,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor2a x00TestSort1 Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor2a x00TestSort1 Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor2a x00TestSort1 Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -267,9 +267,9 @@ test_expandRule =
         in assertEqual "" expected actual
     , testCase "Expands variable once to constant" $
         let expected =
-                Pair (Mock.f Mock.a, makeEqualsPredicate_ x Mock.a)
+                Pair (Mock.f Mock.a, makeEqualsPredicate x Mock.a)
                 `rewritesTo`
-                Pair (Mock.g Mock.a, makeTruePredicate_)
+                Pair (Mock.g Mock.a, makeTruePredicate)
             actual =
                 expandSingleConstructors
                     (metadataTools
@@ -284,14 +284,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor1 x00TestSort)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor1 x00TestSort)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor1 x00TestSort)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -311,14 +311,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor1 Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor1 Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor1 Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -341,14 +341,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor2 Mock.a Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor2 Mock.a Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor2 Mock.a Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors
@@ -372,14 +372,14 @@ test_expandRule =
         let expected =
                 Pair
                     ( Mock.fSort0 (expandableConstructor2a x00TestSort1 Mock.a)
-                    , makeEqualsPredicate_
+                    , makeEqualsPredicate
                         x0
                         (expandableConstructor2a x00TestSort1 Mock.a)
                     )
                 `rewritesTo`
                 Pair
                     ( Mock.gSort0 (expandableConstructor2a x00TestSort1 Mock.a)
-                    , makeTruePredicate_
+                    , makeTruePredicate
                     )
             actual =
                 expandSingleConstructors

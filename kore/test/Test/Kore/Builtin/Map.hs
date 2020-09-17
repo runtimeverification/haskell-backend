@@ -779,7 +779,7 @@ test_unifyEmptyWithEmpty =
     expect =
         Conditional
             { term = emptyMapDV
-            , predicate = makeTruePredicate mapSort
+            , predicate = makeTruePredicate
             , substitution = Substitution.unsafeWrap []
             }
 
@@ -831,7 +831,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -865,7 +865,7 @@ test_unifySelectSingletonFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate 
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
@@ -893,7 +893,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate 
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
@@ -928,7 +928,7 @@ test_unifySelectFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [(key2, value2)])
@@ -939,7 +939,7 @@ test_unifySelectFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [(key1, value1)])
@@ -982,7 +982,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -995,7 +995,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -1033,7 +1033,7 @@ test_unifySameSymbolicKey =
                 expect1 =
                     Conditional
                         { term = mapValue
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -1087,7 +1087,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                 expect1 =
                     Conditional
                         { term = unifiedMap
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject minMapVar, mkElemVar maxMapVar)
@@ -1177,7 +1177,7 @@ test_concretizeKeys =
     expected =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
-            , predicate = Predicate.makeTruePredicate (termLikeSort original)
+            , predicate = Predicate.makeTruePredicate
             , substitution =
                 Substitution.unsafeWrap [(inject v, val), (inject x, key)]
             }
@@ -1219,14 +1219,14 @@ test_concretizeKeysAxiom =
         RewriteRule RulePattern
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate_
+            , requires = Predicate.makeTruePredicate
             , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
     expected = MultiOr
         [ Conditional
             { term = val
-            , predicate = makeTruePredicate intSort
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
         ]
@@ -1393,16 +1393,16 @@ test_inKeys =
                 let (term, condition) = splitTerm result
                 assertTop (substitution condition)
                 let expectPredicate
-                      | null predicates = makeTruePredicate boolSort
+                      | null predicates = makeTruePredicate
                       | otherwise = makeMultipleAndPredicate predicates
                     predicates =
                         catMaybes
                         [ do
                             (guard . not) (isDefinedPattern termKey)
-                            pure (makeCeilPredicate boolSort termKey)
+                            pure (makeCeilPredicate termKey)
                         , do
                             (guard . not) (isDefinedPattern termMap)
-                            pure (makeCeilPredicate boolSort termMap)
+                            pure (makeCeilPredicate termMap)
                         ]
                 assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term

@@ -12,7 +12,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -57,12 +57,12 @@ instance RuleBase Pair OnePathRule where
 
 instance RuleBase TermLike OnePathRule where
     t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate_)
-        `rewritesTo` Pair (t2, makeTruePredicate_)
+        Pair (t1, makeTruePredicate)
+        `rewritesTo` Pair (t2, makeTruePredicate)
 
     t1 `rewritesToWithSort` t2 =
-        Pair (t1, makeTruePredicate (TermLike.termLikeSort t1))
-        `rewritesToWithSort` Pair (t2, makeTruePredicate (TermLike.termLikeSort t2))
+        Pair (t1, makeTruePredicate)
+        `rewritesToWithSort` Pair (t2, makeTruePredicate)
 
 instance RuleBase Pair (RewriteRule VariableName) where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -81,9 +81,9 @@ instance RuleBase Pair (RewriteRule VariableName) where
 
 instance RuleBase TermLike (RewriteRule VariableName) where
     t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate_)
-        `rewritesTo` Pair (t2, makeTruePredicate_)
+        Pair (t1, makeTruePredicate)
+        `rewritesTo` Pair (t2, makeTruePredicate)
 
     t1 `rewritesToWithSort` t2 =
-        Pair (t1, makeTruePredicate (TermLike.termLikeSort t1))
-        `rewritesToWithSort` Pair (t2, makeTruePredicate (TermLike.termLikeSort t2))
+        Pair (t1, makeTruePredicate)
+        `rewritesToWithSort` Pair (t2, makeTruePredicate)

@@ -503,7 +503,7 @@ test_reachabilityVerification =
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
                     makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -535,7 +535,7 @@ test_reachabilityVerification =
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
                     makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -570,7 +570,7 @@ test_reachabilityVerification =
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
                     makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -602,7 +602,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate
                     (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -638,7 +638,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate
                     (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -677,7 +677,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
                 (Condition.fromPredicate
                     (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -1289,12 +1289,10 @@ simpleClaim
     ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
-                    left
-                    (makeTruePredicate (termLikeSort left))
+                    left makeTruePredicate
             , right =
                 Pattern.fromTermAndPredicate
-                    right
-                    (makeTruePredicate (termLikeSort right))
+                    right makeTruePredicate
                 & OrPattern.fromPattern
             , existentials = []
             , attributes = def

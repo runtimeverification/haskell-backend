@@ -22,7 +22,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate_
+    ( makeTruePredicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Builtin
@@ -58,7 +58,7 @@ test_simplify =
     aPat =
         Conditional
             { term = Mock.a
-            , predicate = makeTruePredicate_
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
     becomes

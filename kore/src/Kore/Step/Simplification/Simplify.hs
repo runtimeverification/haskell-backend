@@ -92,11 +92,10 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , Sort
     , TermLike
     , TermLikeF (..)
     )
-import Kore.Internal.Variable
+import Kore.Internal.Variable ( VariableName, InternalVariable )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
     )

@@ -33,7 +33,7 @@ import Kore.IndexedModule.MetadataTools
     )
 import Kore.Internal.Predicate
     ( Predicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     )
 import Kore.Internal.Symbol
@@ -190,14 +190,14 @@ test_sortDeclaration =
         )
         [ isSatisfiableWithTools
             [ encodeAndAssertPredicate $
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (mkElemVar x)
                     c
             ]
         , isNotSatisfiableWithTools
             [ encodeAndAssertPredicate $
                 makeNotPredicate
-                    (makeEqualsPredicate_
+                    (makeEqualsPredicate
                           (mkElemVar x)
                           c
                     )

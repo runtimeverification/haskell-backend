@@ -24,6 +24,9 @@ import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( fullySimplified
     , setSimplified
     )
+import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern
+    ( setSimplified
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -96,7 +99,12 @@ simplifiedTerm =
         :< patt
 
 simplifiedPredicate :: Predicate variable -> Predicate variable
-simplifiedPredicate = fmap simplifiedTerm
+simplifiedPredicate = 
+    Recursive.unfold (simplifiedWorker . Recursive.project)
+  where
+    simplifiedWorker (attrs :< patt) =
+        Attribute.PPattern.setSimplified Attribute.Pattern.fullySimplified attrs
+        :< patt
 
 simplifiedSubstitution
     :: InternalVariable variable

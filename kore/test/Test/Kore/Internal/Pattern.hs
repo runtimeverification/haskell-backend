@@ -14,9 +14,9 @@ import Test.Tasty
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
 
@@ -104,7 +104,7 @@ test_expandedPattern =
             (Pattern.toTermLike
                 Conditional
                     { term = var' 1
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
             )
@@ -128,7 +128,7 @@ test_expandedPattern =
             (Pattern.toTermLike
                 Conditional
                     { term = var' 1
-                    , predicate = makeFalsePredicate_
+                    , predicate = makeFalsePredicate
                     , substitution = mempty
                     }
             )
@@ -148,4 +148,4 @@ makeAnd p1 p2 = mkAnd p1 p2
 makeEquals
     :: InternalVariable var
     => TermLike var -> TermLike var -> Predicate var
-makeEquals p1 p2 = makeEqualsPredicate_ p1 p2
+makeEquals p1 p2 = makeEqualsPredicate p1 p2

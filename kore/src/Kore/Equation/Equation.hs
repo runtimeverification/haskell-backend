@@ -56,7 +56,6 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( Id (..)
     , InternalVariable
-    , Sort
     , TermLike
     , termLikeSort
     )

@@ -31,13 +31,13 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
+    , makeEqualsPredicate
+    , makeFalsePredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
@@ -97,7 +97,7 @@ test_applyInitialConditions =
         let unification =
                 Conditional
                     { term = ()
-                    , predicate = Predicate.makeTruePredicate_
+                    , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
             initial = Condition.bottom
@@ -116,11 +116,11 @@ test_applyInitialConditions =
         let unification = Condition.fromPredicate expect2
             initial = Condition.fromPredicate expect1
             expect1 =
-                Predicate.makeEqualsPredicate_
+                Predicate.makeEqualsPredicate
                     (Mock.f $ mkElemVar Mock.x)
                     Mock.a
             expect2 =
-                Predicate.makeEqualsPredicate_
+                Predicate.makeEqualsPredicate
                     (Mock.f $ mkElemVar Mock.y)
                     Mock.b
             expect =
@@ -130,7 +130,7 @@ test_applyInitialConditions =
         assertEqual "" expect actual
 
     , testCase "conflicting initial and rule conditions" $ do
-        let predicate = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+        let predicate = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
             unification = Condition.fromPredicate predicate
             initial =
                 Condition.fromPredicate
@@ -198,7 +198,7 @@ test_renameRuleVariables =
                     { left = Mock.f (mkElemVar Mock.x)
                     , antiLeft = Nothing
                     , requires =
-                        Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+                        Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
                     , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
@@ -206,7 +206,7 @@ test_renameRuleVariables =
                 claimPatternFromPatterns
                     ( Pattern.fromTermAndPredicate
                         (Mock.f (mkElemVar Mock.x))
-                        (Predicate.makeEqualsPredicate_
+                        (Predicate.makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -241,7 +241,7 @@ test_unifyRule =
                 RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate
                     , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
@@ -269,7 +269,7 @@ test_unifyRule =
                 RulePattern
                     { left = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate
                     , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
@@ -576,7 +576,7 @@ test_applyRewriteRule_ =
                         Mock.sigma
                             (mkElemVar Mock.x)
                             (Mock.functionalConstr10 (mkElemVar Mock.y))
-                    , predicate = Predicate.makeTruePredicate_
+                    , predicate = Predicate.makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -595,7 +595,7 @@ test_applyRewriteRule_ =
                 Conditional
                     { term = fy
                     , predicate =
-                        makeEqualsPredicate Mock.testSort (mkElemVar Mock.y) fy
+                        makeEqualsPredicate (mkElemVar Mock.y) fy
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -606,7 +606,7 @@ test_applyRewriteRule_ =
             initial =
                 Conditional
                     { term = Mock.sigma (mkElemVar Mock.x) fy
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -626,7 +626,7 @@ test_applyRewriteRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma zz zz
-                            , predicate = makeTruePredicate Mock.testSort
+                            , predicate = makeTruePredicate
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
@@ -658,7 +658,7 @@ test_applyRewriteRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma fb fb
-                            , predicate = makeTruePredicate Mock.testSort
+                            , predicate = makeTruePredicate
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
@@ -686,7 +686,7 @@ test_applyRewriteRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma fz fz
-                            , predicate = makeTruePredicate Mock.testSort
+                            , predicate = makeTruePredicate
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
@@ -702,7 +702,7 @@ test_applyRewriteRule_ =
                         Mock.sigma
                             (Mock.sigma (mkElemVar Mock.x) fy)
                             (mkElemVar Mock.x)
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -742,7 +742,7 @@ test_applyRewriteRule_ =
         let expect =
                 [ OrPattern.fromPatterns [initial] ]
             predicate =
-                makeEqualsPredicate Mock.testSort
+                makeEqualsPredicate
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             initial =
@@ -769,7 +769,7 @@ test_applyRewriteRule_ =
                         [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate =
-                                makeEqualsPredicate Mock.testSort
+                                makeEqualsPredicate
                                     (Mock.functional11 fb)
                                     (Mock.functional10 fb)
                             , substitution =
@@ -786,7 +786,7 @@ test_applyRewriteRule_ =
                             (Mock.sigma (mkElemVar Mock.x) fb)
                             (mkElemVar Mock.x)
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.functional11 (mkElemVar Mock.x))
                             (Mock.functional10 (mkElemVar Mock.x))
                     , substitution = mempty
@@ -803,7 +803,7 @@ test_applyRewriteRule_ =
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             rhs = (RulePattern.rhs ruleId) { ensures }
@@ -811,7 +811,7 @@ test_applyRewriteRule_ =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = mkElemVar Mock.y
-                        , predicate = makeEqualsPredicate Mock.testSort
+                        , predicate = makeEqualsPredicate
                             (Mock.functional11 (mkElemVar Mock.y))
                             (Mock.functional10 (mkElemVar Mock.y))
                         , substitution = mempty
@@ -839,7 +839,7 @@ test_applyRewriteRule_ =
     , testCase "conjoin rule requirement" $ do
         let
             requires =
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect =
@@ -927,7 +927,7 @@ test_applyRewriteRule_ =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , requires = makeTruePredicate_
+            , requires = makeTruePredicate
             , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
             , attributes = def
             }
@@ -942,11 +942,11 @@ test_applyRewriteRule_ =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , requires = makeTruePredicate_
+            , requires = makeTruePredicate
             , rhs = RHS
                 { existentials = []
                 , right = Mock.b
-                , ensures = makeFalsePredicate_
+                , ensures = makeFalsePredicate
                 }
             , attributes = def
             }
@@ -956,14 +956,14 @@ test_applyRewriteRule_ =
             (Mock.a & Pattern.fromTermLike )
             (Pattern.fromTermAndPredicate
                 Mock.b
-                makeFalsePredicate_
+                makeFalsePredicate
             )
 
     axiomRequiresBottom =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , requires = makeFalsePredicate_
+            , requires = makeFalsePredicate
             , rhs = injectTermIntoRHS Mock.b
             , attributes = def
             }
@@ -972,7 +972,7 @@ test_applyRewriteRule_ =
         claimPatternFromPatterns
             (Pattern.fromTermAndPredicate
                 Mock.a
-                makeFalsePredicate_
+                makeFalsePredicate
             )
             (Mock.b & Pattern.fromTermLike)
 
@@ -1079,7 +1079,7 @@ test_narrowing =
         $ Condition.fromPredicate
         $ Predicate.makeNotPredicate
         $ Predicate.makeExistsPredicate x'
-        $ Predicate.makeEqualsPredicate_
+        $ Predicate.makeEqualsPredicate
             (mkElemVar x)
             (Mock.sigma Mock.a (mkElemVar x'))
 
@@ -1152,7 +1152,7 @@ test_applyRewriteRulesParallel =
             results =
                 MultiOr.singleton Conditional
                     { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.testSort Mock.cg
+                    , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -1165,8 +1165,8 @@ test_applyRewriteRulesParallel =
                         , predicate =
                             makeNotPredicate
                             $ makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.cg)
-                                (makeEqualsPredicate Mock.testSort
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate
                                     (mkElemVar Mock.x)
                                     Mock.a
                                 )
@@ -1198,8 +1198,8 @@ test_applyRewriteRulesParallel =
                     { term = Mock.cg
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.testSort Mock.cf)
-                            (makeCeilPredicate_ Mock.cg)
+                            (makeCeilPredicate Mock.cf)
+                            (makeCeilPredicate Mock.cg)
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -1214,10 +1214,10 @@ test_applyRewriteRulesParallel =
                                 Mock.cg
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.cf)
+                                (makeCeilPredicate Mock.cf)
                                 (makeNotPredicate $ makeAndPredicate
-                                    (makeCeilPredicate Mock.testSort Mock.cg)
-                                    (makeEqualsPredicate Mock.testSort
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate
                                         (mkElemVar Mock.x)
                                         Mock.a
                                     )
@@ -1229,7 +1229,7 @@ test_applyRewriteRulesParallel =
             initial =
                 Conditional
                     { term = initialTerm
-                    , predicate = makeCeilPredicate_ Mock.cf
+                    , predicate = makeCeilPredicate Mock.cf
                     , substitution = mempty
                     }
         actual <- applyRewriteRulesParallel initial [axiomIfThen]
@@ -1264,7 +1264,7 @@ test_applyRewriteRulesParallel =
                     }
             initial = pure (Mock.functionalConstr10 (mkElemVar Mock.x))
             requirement =
-                makeEqualsPredicate Mock.testSort
+                makeEqualsPredicate
                     (Mock.f (mkElemVar Mock.x))
                     Mock.b
         actual <- applyRewriteRulesParallel initial [axiomSignum]
@@ -1288,7 +1288,7 @@ test_applyRewriteRulesParallel =
             results =
                 MultiOr.singleton Conditional
                     { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.testSort Mock.cg
+                    , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -1300,8 +1300,8 @@ test_applyRewriteRulesParallel =
                         { predicate =
                             makeNotPredicate
                             $ makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.cg)
-                                (makeEqualsPredicate Mock.testSort
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate
                                     (mkElemVar Mock.x)
                                     Mock.a
                                 )
@@ -1337,8 +1337,8 @@ test_applyRewriteRulesParallel =
         let
             definedBranches =
                 makeAndPredicate
-                    (makeCeilPredicate Mock.testSort Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
             results =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -1365,14 +1365,14 @@ test_applyRewriteRulesParallel =
                             Predicate.makeAndPredicate
                                 (makeNotPredicate $ makeAndPredicate
                                     definedBranches
-                                    (Predicate.makeEqualsPredicate Mock.testSort
+                                    (Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
                                         Mock.a
                                     )
                                 )
                                 (makeNotPredicate $ makeAndPredicate
                                     definedBranches
-                                    (Predicate.makeEqualsPredicate Mock.testSort
+                                    (Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
                                         Mock.b
                                     )
@@ -1403,7 +1403,7 @@ test_applyRewriteRulesParallel =
             results =
                 MultiOr.singleton Conditional
                     { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.testSort Mock.cg
+                    , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -1414,8 +1414,8 @@ test_applyRewriteRulesParallel =
                     [ initial
                         { predicate =
                             makeNotPredicate $ makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.cg)
-                                (makeEqualsPredicate Mock.testSort
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate
                                     (mkElemVar Mock.x)
                                     Mock.a
                                 )
@@ -1441,7 +1441,7 @@ test_applyRewriteRulesParallel =
             [ RewriteRule RulePattern
                 { left = Mock.a
                 , antiLeft = Nothing
-                , requires = makeTruePredicate_
+                , requires = makeTruePredicate
                 , rhs = injectTermIntoRHS (mkElemVar Mock.x)
                 , attributes = def
                 }
@@ -1461,7 +1461,7 @@ axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkElemVar Mock.y)
         , antiLeft = Nothing
-        , requires = makeEqualsPredicate_ (Mock.f (mkElemVar Mock.y)) Mock.b
+        , requires = makeEqualsPredicate (Mock.f (mkElemVar Mock.y)) Mock.b
         , rhs = injectTermIntoRHS Mock.a
         , attributes = def
         }
@@ -1554,8 +1554,8 @@ test_applyRewriteRulesSequence =
         let
             definedBranches =
                 makeAndPredicate
-                    (makeCeilPredicate Mock.testSort Mock.cf)
-                    (makeCeilPredicate_ Mock.cg)
+                    (makeCeilPredicate Mock.cf)
+                    (makeCeilPredicate Mock.cg)
             results =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -1583,7 +1583,7 @@ test_applyRewriteRulesSequence =
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
                                         definedBranches
-                                        (Predicate.makeEqualsPredicate_
+                                        (Predicate.makeEqualsPredicate
                                             (mkElemVar Mock.x)
                                             Mock.a
                                         )
@@ -1591,7 +1591,7 @@ test_applyRewriteRulesSequence =
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
                                         definedBranches
-                                        (Predicate.makeEqualsPredicate_
+                                        (Predicate.makeEqualsPredicate
                                             (mkElemVar Mock.x)
                                             Mock.b
                                         )

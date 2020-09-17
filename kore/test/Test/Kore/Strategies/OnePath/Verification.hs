@@ -27,7 +27,7 @@ import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -196,7 +196,7 @@ test_onePathVerification =
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
                     makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
+                        (makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
@@ -490,7 +490,7 @@ simplePriorityAxiom left right priority =
     $ RulePattern
         { left = left
         , antiLeft = Nothing
-        , requires = makeTruePredicate_
+        , requires = makeTruePredicate
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.priority = Attribute.Priority (Just priority)
@@ -509,12 +509,10 @@ simpleClaim
     $ ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
-                    left
-                    (makeTruePredicate (termLikeSort left))
+                    left makeTruePredicate
             , right =
                 Pattern.fromTermAndPredicate
-                    right
-                    (makeTruePredicate (termLikeSort right))
+                    right makeTruePredicate
                 & OrPattern.fromPattern
             , existentials = []
             , attributes = def
