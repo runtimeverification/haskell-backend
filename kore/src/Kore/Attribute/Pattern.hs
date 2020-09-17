@@ -38,8 +38,12 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
-    ( hasKnownCreator, Created(..) )
-import Kore.Attribute.Pattern.Defined ( Defined(..) )
+    ( Created (..)
+    , hasKnownCreator
+    )
+import Kore.Attribute.Pattern.Defined
+    ( Defined (..)
+    )
 import Kore.Attribute.Pattern.FreeVariables hiding
     ( freeVariables
     )

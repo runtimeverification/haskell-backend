@@ -70,22 +70,22 @@ module Kore.Internal.Predicate
 
 import Prelude.Kore
 
-import Control.Monad.Reader
-    ( ReaderT
+import qualified Control.Comonad.Trans.Cofree as Cofree
+    ( tailF
     )
 import qualified Control.Comonad.Trans.Env as Env
-import qualified Control.Comonad.Trans.Cofree as Cofree
-    (tailF
-    )
 import Control.DeepSeq
-    ( NFData(rnf)
+    ( NFData (rnf)
+    )
+import Control.Monad.Reader
+    ( ReaderT
     )
 import qualified Control.Monad.Trans.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const
-    ( Const(Const)
+    ( Const (Const)
     )
 import Data.Functor.Foldable
     ( Base
@@ -96,10 +96,10 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl'
     )
-import qualified Data.Map.Strict as Map
 import Data.Map.Strict
     ( Map
     )
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
@@ -114,21 +114,22 @@ import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+    ( FreeVariables
+    , HasFreeVariables (..)
+    , getFreeElementVariables
+    , isFreeVariable
+    , toNames
+    , toSet
+    )
+import Kore.Attribute.Pattern.Simplified
+    ( Simplified (NotSimplified)
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
 import Kore.Attribute.PredicatePattern
     ( PredicatePattern
     )
 import qualified Kore.Attribute.PredicatePattern as Attribute
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-    ( HasFreeVariables(..),
-      FreeVariables,
-      toSet,
-      toNames,
-      isFreeVariable,
-      getFreeElementVariables )
-import qualified Kore.Attribute.Pattern.Simplified as Simplified
-import Kore.Attribute.Pattern.Simplified
-    ( Simplified(NotSimplified)
-    )
 import Kore.Attribute.Synthetic
 import Kore.Variables.Fresh
     ( refreshElementVariable
@@ -154,6 +155,7 @@ import Kore.Internal.TermLike hiding
     , TopF
     , depth
     , extractAttributes
+    , forgetSimplified
     , hasFreeVariable
     , isSimplified
     , mapVariables
@@ -163,7 +165,6 @@ import Kore.Internal.TermLike hiding
     , setSimplified
     , simplifiedAttribute
     , substitute
-    , forgetSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
@@ -240,7 +241,7 @@ instance
         NotF not' -> synthetic not'
         OrF or' -> synthetic or'
         TopF top -> synthetic top
-            
+
 instance Synthetic Simplified (PredicateF variable)
   where
     synthetic = \case
@@ -873,7 +874,7 @@ traverseVariablesF adj =
         <*> pure forallChild
 
 mapVariables
-    :: forall variable1 variable2 
+    :: forall variable1 variable2
     . Ord variable1
     => FreshPartialOrd variable2
     => AdjSomeVariableName (variable1 -> variable2)

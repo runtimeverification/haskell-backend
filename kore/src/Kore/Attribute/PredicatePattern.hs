@@ -32,10 +32,10 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern
     ( Pattern
     )
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.FreeVariables hiding
     ( freeVariables
     )
