@@ -62,6 +62,7 @@ import Kore.Variables.Fresh
     ( refreshElementVariable
     )
 
+import qualified Data.Functor.Foldable as Recursive
 import Test.Kore hiding
     ( symbolGen
     )
@@ -545,8 +546,10 @@ test_mkDefined =
     , testCase "List" $ do
         let fx = Mock.f (mkElemVar Mock.x)
             fy = Mock.f (mkElemVar Mock.y)
-            actual = mkDefined (Mock.builtinList [fx, fy])
-            expect = Mock.builtinList [defined fx, defined fy]
+            (_ :< expect) =
+                Recursive.project $ Mock.builtinList [defined fx, defined fy]
+            (_ :< actual) =
+                Recursive.project $ mkDefined (Mock.builtinList [fx, fy])
         assertEqual "" expect actual
     , testGroup "Set" $
         let fx = Mock.f (mkElemVar Mock.x)
