@@ -1514,7 +1514,7 @@ mkDefined = worker
                     -- mkDefinedAtTop is not needed because the list is always
                     -- defined if its elements are all defined.
                     Recursive.embed
-                        ( attrs { Attribute.defined = Pattern.Defined True}
+                        ( attrs
                             :< BuiltinF
                                 ( Domain.BuiltinList
                                     $ fmap mkDefined internalList
@@ -1523,7 +1523,7 @@ mkDefined = worker
                 BuiltinF (Domain.BuiltinMap internalMap) ->
                     mkDefined1
                         ( Recursive.embed
-                            ( attrs { Attribute.defined = Pattern.Defined True}
+                            ( attrs
                                 :< BuiltinF
                                     ( Domain.BuiltinMap
                                         $ mkDefinedInternalAc internalMap
