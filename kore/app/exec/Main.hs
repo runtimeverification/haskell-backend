@@ -135,7 +135,6 @@ import Kore.Parser
 import Kore.Reachability
     ( ProofStuck (..)
     , SomeClaim
-    , toSentence
     )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
@@ -751,13 +750,15 @@ koreProve execOptions proveOptions = do
         isNotAxiomOrClaim (SentenceSortSentence _) = True
         isNotAxiomOrClaim (SentenceHookSentence _) = True
 
+        provenClaimSentences = map (from @SomeClaim @(Sentence _)) provenClaims
         provenModule =
             Module
                 { moduleName = savedProofsModuleName
                 , moduleSentences =
-                    specModuleDefinitions <> fmap toSentence provenClaims
+                    specModuleDefinitions <> provenClaimSentences
                 , moduleAttributes = def
                 }
+
         provenDefinition = Definition
             { definitionAttributes = def
             , definitionModules = [provenModule]

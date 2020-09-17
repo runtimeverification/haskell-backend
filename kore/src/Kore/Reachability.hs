@@ -12,7 +12,6 @@ module Kore.Reachability
     , SomeClaim (..)
     , makeTrusted
     , lensClaimPattern
-    , toSentence
     , getConfiguration
     , getDestination
     , AppliedRule (..)

@@ -9,7 +9,6 @@ module Kore.Reachability.SomeClaim
     , makeTrusted
     , getConfiguration
     , getDestination
-    , toSentence
     , lensClaimPattern
     -- * Re-exports
     , Claim (..)
@@ -128,15 +127,15 @@ instance From SomeClaim (AxiomPattern VariableName) where
     from (OnePath rule) = from rule
     from (AllPath rule) = from rule
 
-toSentence :: SomeClaim -> Verified.Sentence
-toSentence rule =
-    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
-        { sentenceAxiomParameters = []
-        , sentenceAxiomPattern
-        , sentenceAxiomAttributes = Default.def
-        }
-  where
-    AxiomPattern sentenceAxiomPattern = from rule
+instance From SomeClaim Verified.Sentence where
+    from claim =
+        Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
+            { sentenceAxiomParameters = []
+            , sentenceAxiomPattern
+            , sentenceAxiomAttributes = Default.def
+            }
+      where
+        AxiomPattern sentenceAxiomPattern = from claim
 
 getConfiguration :: SomeClaim -> Pattern RewritingVariableName
 getConfiguration = Lens.view (lensClaimPattern . field @"left")
