@@ -326,7 +326,7 @@ instance (Unparse variable, Ord variable) => Unparse (Predicate variable) where
                             Simplified.unparseTag
                             (Attribute.simplifiedAttribute attrs)
                         of
-                            Just result -> (result : [])
+                            Just result -> [result]
                             Nothing -> []
 
     unparse2 term =
@@ -691,8 +691,8 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
             (Either (NotPredicate variable) (Predicate variable))
         -> Either (NotPredicate variable) (Predicate variable)
     makePredicateBottomUp termE = do
-        term <- sequence termE
-        predicate <- case (Cofree.tailF term) of
+        _ :< term <- sequence termE
+        case term of
             TermLike.TopF _ -> return makeTruePredicate
             TermLike.BottomF _ -> return makeFalsePredicate
             TermLike.AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
@@ -706,7 +706,6 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
             TermLike.ForallF p -> return $
                 makeForallPredicate (forallVariable p) (forallChild p)
             p -> Left (NotPredicate p)
-        return predicate
 
     makePredicateTopDown
         :: TermLike variable
@@ -846,18 +845,18 @@ traverseVariablesF adj =
         AndF andP -> pure (AndF andP)
         BottomF botP -> pure (BottomF botP)
         CeilF ceilP -> do
-            termLike <- sequence $ (TermLike.traverseVariables adj <$> ceilP)
+            termLike <- sequence (TermLike.traverseVariables adj <$> ceilP)
             return $ CeilF termLike
         EqualsF eqP -> do
-            termLike <- sequence $ (TermLike.traverseVariables adj <$> eqP)
+            termLike <- sequence (TermLike.traverseVariables adj <$> eqP)
             return $ EqualsF termLike
         FloorF flrP -> do
-            termLike <- sequence $ (TermLike.traverseVariables adj <$> flrP)
+            termLike <- sequence (TermLike.traverseVariables adj <$> flrP)
             return $ FloorF termLike
         IffF iffP -> pure (IffF iffP)
         ImpliesF impP -> pure (ImpliesF impP)
         InF inP -> do
-            termLike <- sequence $ (TermLike.traverseVariables adj <$> inP)
+            termLike <- sequence (TermLike.traverseVariables adj <$> inP)
             return $ InF termLike
         NotF notP -> pure (NotF notP)
         OrF orP -> pure (OrF orP)
@@ -979,7 +978,7 @@ substitute subst predicate =
     subst' = Map.intersection subst (Map.fromSet id freeVars)
     originalVariables = Set.difference freeVars (Map.keysSet subst')
     targetFreeVariables = Foldable.foldl' Set.union Set.empty
-        (FreeVariables.toNames <$> freeVariables <$> subst')
+        (FreeVariables.toNames . freeVariables <$> subst')
     freeVariables' = Set.union originalVariables targetFreeVariables
     avoidCapture = refreshElementVariable freeVariables'
 
@@ -988,7 +987,7 @@ substitute subst predicate =
         | otherwise       = empty
 
     substituteBinder = case predF of
-        ExistsF (exists'@(Exists {existsVariable = var, existsChild = child})) -> do
+        ExistsF exists'@Exists {existsVariable = var, existsChild = child} -> do
             newVar <- avoidCapture var
             return $ synthesize $ ExistsF $ exists'
                 { existsVariable = newVar
@@ -1000,7 +999,7 @@ substitute subst predicate =
                     )
                     child
                 }
-        ForallF (forall'@(Forall {forallVariable = var, forallChild = child})) -> do
+        ForallF forall'@Forall {forallVariable = var, forallChild = child} -> do
             newVar <- avoidCapture var
             return $ synthesize $ ForallF $ forall'
                 { forallVariable = newVar
@@ -1017,20 +1016,20 @@ substitute subst predicate =
         _ :< predF = Recursive.project predicate
 
     substituteTermLike = case predF of
-        CeilF (ceil'@(Ceil {ceilChild})) ->
+        CeilF ceil'@Ceil {ceilChild} ->
             pure $ synthesize $ CeilF $ ceil'
             { ceilChild = TermLike.substitute subst' ceilChild
             }
-        EqualsF (equals'@(Equals {equalsFirst, equalsSecond})) ->
+        EqualsF equals'@Equals {equalsFirst, equalsSecond} ->
             pure $ synthesize $ EqualsF $ equals'
             { equalsFirst  = TermLike.substitute subst' equalsFirst
             , equalsSecond = TermLike.substitute subst' equalsSecond
             }
-        FloorF (floor'@(Floor {floorChild})) ->
+        FloorF floor'@Floor {floorChild} ->
             pure $ synthesize $ FloorF $ floor'
             { floorChild = TermLike.substitute subst' floorChild
             }
-        InF (in'@(In {inContainedChild, inContainingChild})) ->
+        InF in'@In {inContainedChild, inContainingChild} ->
             pure $ synthesize $ InF $ in'
             { inContainedChild  = TermLike.substitute subst' inContainedChild
             , inContainingChild = TermLike.substitute subst' inContainingChild
