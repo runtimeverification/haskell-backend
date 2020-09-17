@@ -75,6 +75,9 @@ import Test.Kore.Internal.Substitution as Substitution hiding
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import Kore.Internal.TermLike.TermLike
+    ( markDefined
+    )
 
 type SideCondition' = SideCondition VariableName
 
@@ -977,7 +980,7 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                 [ mkElemVar Mock.x
                     & Pattern.fromTermLike
-                , defined (Mock.g Mock.a)
+                , (markDefined . defined) (Mock.g Mock.a)
                     & Pattern.fromTermLike
                 ]
         actual <-

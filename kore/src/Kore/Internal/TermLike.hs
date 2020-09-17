@@ -1484,6 +1484,7 @@ mkDefined = worker
                                     )
                             )
                         )
+                    & markDefined
                 ApplySymbolF
                     Application
                         { applicationSymbolOrAlias
@@ -1494,7 +1495,7 @@ mkDefined = worker
                                   | otherwise = mkDefined1
                             in
                             mkDef
-                                $ Recursive.embed
+                                ( Recursive.embed
                                     ( attrs
                                         :< ApplySymbolF
                                             ( Application
@@ -1502,6 +1503,8 @@ mkDefined = worker
                                                 (worker <$> applicationChildren)
                                             )
                                     )
+                                )
+                            & markDefined
                 ApplyAliasF _ ->
                     mkDefined1 term
                 BottomF _ ->
@@ -1523,6 +1526,7 @@ mkDefined = worker
                                     $ fmap mkDefined internalList
                                 )
                         )
+                    & markDefined
                 BuiltinF (Domain.BuiltinMap internalMap) ->
                     mkDefined1
                         ( Recursive.embed
@@ -1533,6 +1537,7 @@ mkDefined = worker
                                     )
                             )
                         )
+                    & markDefined
                 BuiltinF (Domain.BuiltinSet internalSet) ->
                     mkDefined1
                         ( Recursive.embed
@@ -1543,6 +1548,7 @@ mkDefined = worker
                                     )
                             )
                         )
+                    & markDefined
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
@@ -1558,6 +1564,7 @@ mkDefined = worker
                                     )
                             )
                         )
+                    & markDefined
                 IffF _ -> mkDefined1 term
                 ImpliesF _ -> mkDefined1 term
                 InF _ -> term

@@ -58,6 +58,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
+import Kore.Internal.TermLike.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
@@ -463,13 +464,13 @@ test_mkDefined =
                     )
                     mkTop_
             expected =
-                defined
+                (markDefined . defined)
                     (mkAnd
-                        (defined
+                        ((markDefined . defined)
                             (mkAnd
                                 mkTop_
                                 (Mock.functional11
-                                    (defined (Mock.f mkTop_))
+                                    ((markDefined . defined) (Mock.f mkTop_))
                                 )
                             )
                         )
@@ -477,6 +478,7 @@ test_mkDefined =
                     )
             actual = mkDefined term
         assertEqual "" expected actual
+        
     , testCase "Forall" $ do
         let term = mkForall Mock.x (Mock.f (mkElemVar Mock.x))
             expected =
