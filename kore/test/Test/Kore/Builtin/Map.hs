@@ -90,9 +90,7 @@ import Kore.Domain.Builtin
     ( NormalizedMap (..)
     )
 import qualified Kore.Domain.Builtin as Domain
-import Kore.Internal.MultiOr
-    ( MultiOr (..)
-    )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -1223,7 +1221,7 @@ test_concretizeKeysAxiom =
             , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
-    expected = MultiOr
+    expected = MultiOr.make
         [ Conditional
             { term = val
             , predicate = makeTruePredicate

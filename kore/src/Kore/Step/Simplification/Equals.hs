@@ -19,6 +19,7 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT (..)
     )
+import qualified Data.Foldable as Foldable
 import Data.List
     ( foldl'
     )
@@ -206,8 +207,8 @@ simplifyEvaluated sideCondition first second
                     (OrPattern.toPattern second)
                     sideCondition
   where
-    firstPatterns = MultiOr.extractPatterns first
-    secondPatterns = MultiOr.extractPatterns second
+    firstPatterns = Foldable.toList first
+    secondPatterns = Foldable.toList second
 
 makeEvaluateFunctionalOr
     :: forall variable simplifier
@@ -276,7 +277,7 @@ makeEvaluate
     sideCondition
   = do
     result <- makeEvaluateTermsToPredicate firstTerm secondTerm sideCondition
-    return (Pattern.fromCondition_ <$> result)
+    return (MultiOr.map Pattern.fromCondition_ result)
 
 makeEvaluate
     first@Conditional { term = firstTerm }
@@ -333,7 +334,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
-    return (Pattern.fromCondition_ <$> result)
+    return (MultiOr.map Pattern.fromCondition_ result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 

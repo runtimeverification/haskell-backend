@@ -19,9 +19,7 @@ module Kore.Step.Simplification.AndTerms
     , andFunctions
     ) where
 
-import Prelude.Kore hiding
-    ( concat
-    )
+import Prelude.Kore
 
 import Control.Error
     ( MaybeT (..)
@@ -44,7 +42,6 @@ import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -354,7 +351,7 @@ bottomTermEquals
     second
   = lift $ do -- MonadUnify
     secondCeil <- makeEvaluateTermCeil sideCondition second
-    case MultiOr.extractPatterns secondCeil of
+    case Foldable.toList secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
           | substitution == mempty -> do
@@ -369,7 +366,7 @@ bottomTermEquals
                 , predicate =
                     makeNotPredicate
                     $ OrCondition.toPredicate
-                    $ Condition.toPredicate <$> secondCeil
+                    $ OrPattern.map Condition.toPredicate secondCeil
                 , substitution = mempty
                 }
 bottomTermEquals _ _ _ = empty
@@ -424,7 +421,7 @@ variableFunctionAndEquals
                 return Condition.top
             SimplificationType.Equals -> do
                 resultOr <- makeEvaluateTermCeil sideCondition second
-                case MultiOr.extractPatterns resultOr of
+                case Foldable.toList resultOr of
                     [] -> do
                         explainBottom
                            "Unification of variable and bottom \

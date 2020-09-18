@@ -33,6 +33,7 @@ import Test.Tasty.HUnit
 import Control.Monad.Catch
     ( MonadMask
     )
+import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -72,8 +73,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -266,7 +265,7 @@ evaluateT = lift . evaluate
 
 evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
 evaluateToList =
-    fmap MultiOr.extractPatterns
+    fmap Foldable.toList
     . runSimplifier testEnv
     . TermLike.simplify SideCondition.top
 
@@ -278,7 +277,7 @@ runStep
     -> NoSMT (OrPattern VariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return . fmap getRewritingPattern $ Step.gatherResults results
+    return . MultiOr.map getRewritingPattern $ Step.gatherResults results
 
 runStepResult
     :: Pattern VariableName

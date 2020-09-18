@@ -14,6 +14,7 @@ import Prelude.Kore
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
     , Conditional (..)
@@ -119,7 +120,7 @@ simplifyPredicate sideCondition predicate = do
         $ Predicate.unwrapPredicate predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
-    scatter (eraseTerm <$> patternOr)
+    scatter (OrPattern.map eraseTerm patternOr)
   where
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)

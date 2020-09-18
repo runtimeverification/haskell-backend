@@ -21,7 +21,6 @@ import Data.Text
     )
 
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     , topTODO
@@ -804,7 +803,7 @@ simplifyPattern (UnificationTerm term) = do
     simplifier = do
         simplifiedPatterns <-
             Pattern.simplify SideCondition.top expandedPattern
-        case MultiOr.extractPatterns simplifiedPatterns of
+        case Foldable.toList simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term

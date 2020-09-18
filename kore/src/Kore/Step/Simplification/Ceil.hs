@@ -120,7 +120,8 @@ simplifyEvaluated
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated sideCondition child =
-    MultiOr.flatten <$> traverse (makeEvaluate sideCondition) child
+    OrPattern.flatten
+    <$> OrPattern.traverse (makeEvaluate sideCondition) child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -156,7 +157,7 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
                 , termCeil
                 ]
             )
-    return (fmap Pattern.fromCondition_ result)
+    return (OrPattern.map Pattern.fromCondition_ result)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -282,7 +283,7 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
         Condition.top
         (synthesize $ CeilF input)
         (const empty)
-    return (fmap toCondition evaluation)
+    return (OrPattern.map toCondition evaluation)
   where
     toCondition Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
