@@ -40,36 +40,32 @@ type TestPredicate = Predicate VariableName
 test_predicate :: [TestTree]
 test_predicate =
     [ testCase "Wrapping and predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkAnd pa1 pa2
-                )
-                (makeAndPredicate pr1 pr2)
+        (assertEqual ""
+            (wrapPredicate $
+                mkAnd pa1 pa2
+            )
+            (makeAndPredicate pr1 pr2)
         )
     ,  testCase "Wrapping or predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkOr pa1 pa2
-                )
-                (makeOrPredicate pr1 pr2)
+        (assertEqual ""
+            (wrapPredicate $
+                mkOr pa1 pa2
+            )
+            (makeOrPredicate pr1 pr2)
  )
     ,  testCase "Wrapping implies predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkImplies pa1 pa2
-                )
-                (makeImpliesPredicate pr1 pr2)
+        (assertEqual ""
+            (wrapPredicate $
+                mkImplies pa1 pa2
+            )
+            (makeImpliesPredicate pr1 pr2)
         )
     , testCase "Wrapping iff predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkIff pa1 pa2
-                )
-                (makeIffPredicate pr1 pr2)
+        (assertEqual ""
+            (wrapPredicate $
+                mkIff pa1 pa2
+            )
+            (makeIffPredicate pr1 pr2)
         )
     , testCase "Wrapping not predicates without full simplification"
         (assertEqual ""
