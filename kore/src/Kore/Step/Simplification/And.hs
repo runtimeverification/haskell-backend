@@ -261,24 +261,24 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
         :: Predicate variable
         -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
     assume predicate1 =
-        State.modify' (insert termLike)
+        State.modify' (assumeEqualTerms . assumePredicate)
       where
-        insert (Not_ _ notChild) =
-            -- Infer that the predicate is \bottom.
-            HashMap.insert notChild (mkBottom sort)
-        insert
-            term@(
-                Equals_ _ _
-                    child1@(App_ symbol1 _)
-                    child2@(App_ symbol2 _)
-                 )
-          | isConstructor symbol1, isFunction symbol2 =
-              HashMap.insert child2 child1
-          | isConstructor symbol2, isFunction symbol1 =
-              HashMap.insert child1 child2
-        -- Infer that the predicate is \top.
-          | otherwise = HashMap.insert term (mkTop sort)
-        insert term = HashMap.insert term (mkTop sort)
+        assumePredicate =
+            case termLike of
+                Not_ _ notChild ->
+                    -- Infer that the predicate is \bottom.
+                    HashMap.insert notChild (mkBottom sort)
+                _ ->
+                    -- Infer that the predicate is \top.
+                    HashMap.insert termLike (mkTop sort)
+        assumeEqualTerms =
+            case termLike of
+                Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _)
+                  | isConstructor symbol1, isFunction symbol2 ->
+                    HashMap.insert term2 term1
+                  | isConstructor symbol2, isFunction symbol1 ->
+                    HashMap.insert term1 term2
+                _ -> id
 
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
