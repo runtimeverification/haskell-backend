@@ -69,6 +69,8 @@ import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import Kore.Unparser (unparseToString)
+import Kore.Internal.TermLike.TermLike (markDefined)
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -1367,11 +1369,15 @@ test_Defined =
             -- TODO (thomas.tuegel): condition should use defined1 instead of
             -- function1.
             condition =
-                makeEqualsPredicate Mock.testSort function1 function2
+                makeEqualsPredicate Mock.testSort (markDefined function1) function2
                 & Condition.fromPredicate
         in
             [ testCase "\\and" $ do
-                let expect = [Pattern.withCondition function1 condition]
+                let expect =
+                        [ Pattern.withCondition
+                            (markDefined function1)
+                            condition
+                        ]
                 (actualAnd, actualUnify) <- simplifyUnify defined1 function2
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify

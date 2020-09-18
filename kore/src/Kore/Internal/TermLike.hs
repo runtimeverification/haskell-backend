@@ -1474,7 +1474,7 @@ mkDefined = worker
          in case termF of
                 AndF And { andSort, andFirst, andSecond } ->
                     mkDefined1
-                        ( Recursive.embed
+                        $ Recursive.embed
                             ( attrs
                                 :< AndF
                                     ( And
@@ -1483,19 +1483,18 @@ mkDefined = worker
                                         (worker andSecond)
                                     )
                             )
-                        )
-                    & markDefined
                 ApplySymbolF
                     Application
                         { applicationSymbolOrAlias
                         , applicationChildren
                         } ->
                             let mkDef
-                                  | isFunctional applicationSymbolOrAlias = id
+                                  | isFunctional applicationSymbolOrAlias
+                                    = markDefined
                                   | otherwise = mkDefined1
                             in
                             mkDef
-                                ( Recursive.embed
+                                $ Recursive.embed
                                     ( attrs
                                         :< ApplySymbolF
                                             ( Application
@@ -1503,8 +1502,6 @@ mkDefined = worker
                                                 (worker <$> applicationChildren)
                                             )
                                     )
-                                )
-                            & markDefined
                 ApplyAliasF _ ->
                     mkDefined1 term
                 BottomF _ ->
@@ -1526,7 +1523,6 @@ mkDefined = worker
                                     $ fmap mkDefined internalList
                                 )
                         )
-                    & markDefined
                 BuiltinF (Domain.BuiltinMap internalMap) ->
                     mkDefined1
                         ( Recursive.embed
@@ -1537,7 +1533,6 @@ mkDefined = worker
                                     )
                             )
                         )
-                    & markDefined
                 BuiltinF (Domain.BuiltinSet internalSet) ->
                     mkDefined1
                         ( Recursive.embed
@@ -1548,7 +1543,6 @@ mkDefined = worker
                                     )
                             )
                         )
-                    & markDefined
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
@@ -1564,7 +1558,6 @@ mkDefined = worker
                                     )
                             )
                         )
-                    & markDefined
                 IffF _ -> mkDefined1 term
                 ImpliesF _ -> mkDefined1 term
                 InF _ -> term
@@ -1608,7 +1601,7 @@ mkDefinedAtTop :: TermLike variable -> TermLike variable
 mkDefinedAtTop term@(Recursive.project -> (attrs :< _)) =
     Recursive.embed
         ( attrs { Attribute.defined = Pattern.Defined True}
-            :< DefinedF (Defined term)
+            :< DefinedF (Defined $ markDefined term)
         )
 
 {- | Remove (recursively) the 'Defined' wrappers throughout a 'TermLike'.
