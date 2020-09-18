@@ -99,7 +99,7 @@ simplifiedTerm =
         :< patt
 
 simplifiedPredicate :: Predicate variable -> Predicate variable
-simplifiedPredicate = 
+simplifiedPredicate =
     Recursive.unfold (simplifiedWorker . Recursive.project)
   where
     simplifiedWorker (attrs :< patt) =

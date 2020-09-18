@@ -95,7 +95,10 @@ import Kore.Internal.TermLike
     , TermLike
     , TermLikeF (..)
     )
-import Kore.Internal.Variable ( VariableName, InternalVariable )
+import Kore.Internal.Variable
+    ( InternalVariable
+    , VariableName
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
     )

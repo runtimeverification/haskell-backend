@@ -865,7 +865,7 @@ test_unifySelectSingletonFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate 
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
@@ -893,7 +893,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate 
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
