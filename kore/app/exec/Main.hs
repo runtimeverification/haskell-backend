@@ -132,12 +132,13 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
+import Kore.Reachability
+    ( ProofStuck (..)
+    , SomeClaim
+    )
+import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.ClaimPattern
-    ( ReachabilityRule
-    , toSentence
-    )
 import Kore.Step.RulePattern
     ( RewriteRule
     )
@@ -148,10 +149,6 @@ import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
-    )
-import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.Verification
-    ( Stuck (..)
     )
 import Kore.Syntax.Definition
     ( Definition (Definition)
@@ -611,9 +608,9 @@ mainWithOptions execOptions = do
             Nothing -> errorException someException
         throwM someException
 
-    handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
+    handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
     handleWithConfiguration
-        (Goal.WithConfiguration lastConfiguration someException)
+        (Claim.WithConfiguration lastConfiguration someException)
       = do
         liftIO $ renderResult
             execOptions
@@ -697,7 +694,7 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
-        Left Stuck { stuckPatterns, provenClaims } -> do
+        Left ProofStuck { stuckPatterns, provenClaims } -> do
             maybe
                 (return ())
                 (lift . saveProven specModule provenClaims)
@@ -733,7 +730,7 @@ koreProve execOptions proveOptions = do
 
     saveProven
         :: VerifiedModule StepperAttributes
-        -> [ReachabilityRule]
+        -> [SomeClaim]
         -> FilePath
         -> IO ()
     saveProven specModule provenClaims outputFile =
@@ -753,13 +750,15 @@ koreProve execOptions proveOptions = do
         isNotAxiomOrClaim (SentenceSortSentence _) = True
         isNotAxiomOrClaim (SentenceHookSentence _) = True
 
+        provenClaimSentences = map (from @SomeClaim @(Sentence _)) provenClaims
         provenModule =
             Module
                 { moduleName = savedProofsModuleName
                 , moduleSentences =
-                    specModuleDefinitions <> fmap toSentence provenClaims
+                    specModuleDefinitions <> provenClaimSentences
                 , moduleAttributes = def
                 }
+
         provenDefinition = Definition
             { definitionAttributes = def
             , definitionModules = [provenModule]

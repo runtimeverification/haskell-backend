@@ -1,4 +1,4 @@
-module Test.Kore.Strategies.Goal
+module Test.Kore.Reachability.Claim
     ( test_checkImplication
     ) where
 
@@ -38,6 +38,10 @@ import Kore.Internal.TermLike
     , mkElemVar
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability.Claim
+    ( CheckImplicationResult (..)
+    , checkImplicationWorker
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkConfigVariable
     , mkRewritingPattern
@@ -45,10 +49,6 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
     , claimPattern
-    )
-import Kore.Strategies.Goal
-    ( CheckImplicationResult (..)
-    , checkImplicationWorker
     )
 import qualified Logic
 

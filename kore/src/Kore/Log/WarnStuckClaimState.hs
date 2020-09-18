@@ -4,10 +4,10 @@ License     : NCSA
 
 -}
 
-module Kore.Log.WarnStuckProofState
-    ( WarnStuckProofState (..)
-    , warnStuckProofStateTermsUnifiable
-    , warnStuckProofStateTermsNotUnifiable
+module Kore.Log.WarnStuckClaimState
+    ( WarnStuckClaimState (..)
+    , warnStuckClaimStateTermsUnifiable
+    , warnStuckClaimStateTermsNotUnifiable
     ) where
 
 import Prelude.Kore
@@ -18,12 +18,12 @@ import Pretty
     )
 import qualified Pretty
 
-{- | @WarnStuckProofState@ is emitted when a proof gets stuck.
+{- | @WarnStuckClaimState@ is emitted when a proof gets stuck.
 
 The warning message distinguishes for the user the ways that a proof can be stuck.
 
  -}
-data WarnStuckProofState
+data WarnStuckClaimState
     = TermsUnifiableStuck
     -- ^ The terms of the left- and right-hand sides do not unify,
     -- and the left-hand side cannot be rewritten any further.
@@ -32,18 +32,18 @@ data WarnStuckProofState
     -- condition does not imply the right-hand side condition.
     deriving Show
 
-instance Pretty WarnStuckProofState where
+instance Pretty WarnStuckClaimState where
     pretty TermsUnifiableStuck =
         "The proof has reached the final configuration, but the claimed implication is not valid."
     pretty TermsNotUnifiableStuck =
         "The claim cannot be rewritten further, and the claimed implication is not valid."
 
-instance Entry WarnStuckProofState where
+instance Entry WarnStuckClaimState where
     entrySeverity _ = Warning
     helpDoc _ = "distinguish the ways a proof can become stuck"
 
-warnStuckProofStateTermsUnifiable :: MonadLog log => log ()
-warnStuckProofStateTermsUnifiable = logEntry TermsUnifiableStuck
+warnStuckClaimStateTermsUnifiable :: MonadLog log => log ()
+warnStuckClaimStateTermsUnifiable = logEntry TermsUnifiableStuck
 
-warnStuckProofStateTermsNotUnifiable :: MonadLog log => log ()
-warnStuckProofStateTermsNotUnifiable = logEntry TermsNotUnifiableStuck
+warnStuckClaimStateTermsNotUnifiable :: MonadLog log => log ()
+warnStuckClaimStateTermsNotUnifiable = logEntry TermsNotUnifiableStuck

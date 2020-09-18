@@ -12,7 +12,7 @@ Portability : portable
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.MultiOr
-    ( MultiOr (..)
+    ( MultiOr
     , bottom
     , filterOr
     , flatten

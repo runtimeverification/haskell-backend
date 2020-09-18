@@ -36,14 +36,16 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( termLikeSort
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    , SomeClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (ClaimPattern)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    ( ClaimPattern (ClaimPattern)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -144,19 +146,19 @@ instance SimplifyRuleLHS (RewriteRule VariableName) where
         . simplifyRuleLhs
         . getRewriteRule
 
-instance SimplifyRuleLHS OnePathRule where
+instance SimplifyRuleLHS OnePathClaim where
     simplifyRuleLhs =
-        fmap (MultiAnd.map OnePathRule)
+        fmap (MultiAnd.map OnePathClaim)
         . simplifyClaimRule
-        . getOnePathRule
+        . getOnePathClaim
 
-instance SimplifyRuleLHS AllPathRule where
+instance SimplifyRuleLHS AllPathClaim where
     simplifyRuleLhs =
-        fmap (MultiAnd.map AllPathRule)
+        fmap (MultiAnd.map AllPathClaim)
         . simplifyClaimRule
-        . getAllPathRule
+        . getAllPathClaim
 
-instance SimplifyRuleLHS ReachabilityRule where
+instance SimplifyRuleLHS SomeClaim where
     simplifyRuleLhs (OnePath rule) =
         (fmap . MultiAnd.map) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =

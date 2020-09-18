@@ -32,7 +32,7 @@ import Kore.Internal.MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
-    ( MultiOr (..)
+    ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
