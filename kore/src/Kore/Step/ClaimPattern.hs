@@ -12,22 +12,12 @@ module Kore.Step.ClaimPattern
     , substitute
     , assertRefreshed
     , refreshExistentials
-    , OnePathRule (..)
-    , AllPathRule (..)
-    , ReachabilityRule (..)
-    , toSentence
     , applySubstitution
     , termToExistentials
-    , getConfiguration
-    , getDestination
-    , lensClaimPattern
     , mkGoal
     , forgetSimplified
-    , makeTrusted
     , parseRightHandSide
-    -- * For unparsing
-    , onePathRuleToTerm
-    , allPathRuleToTerm
+    , claimPatternToTerm
     ) where
 
 import Prelude.Kore
@@ -38,14 +28,11 @@ import Control.DeepSeq
 import Control.Error.Util
     ( hush
     )
-import qualified Control.Lens as Lens
 import Control.Monad.State.Strict
     ( evalState
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Default as Default
-import Data.Generics.Product
-import Data.Generics.Wrapped
 import Data.Map.Strict
     ( Map
     )
@@ -97,7 +84,6 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
     ( UnifyingRule (..)
     )
-import qualified Kore.Syntax.Definition as Syntax
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -107,7 +93,6 @@ import Kore.Unparser
 import Kore.Variables.Fresh
     ( refreshVariables
     )
-import qualified Kore.Verified as Verified
 
 import Pretty
     ( Pretty (..)
@@ -371,186 +356,6 @@ assertRefreshed claim@ClaimPattern { existentials } =
 refreshExistentials :: ClaimPattern -> ClaimPattern
 refreshExistentials = snd . refreshRule mempty
 
--- | One-Path-Claim claim pattern.
-newtype OnePathRule =
-    OnePathRule { getOnePathRule :: ClaimPattern }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData OnePathRule
-
-instance SOP.Generic OnePathRule
-
-instance SOP.HasDatatypeInfo OnePathRule
-
-instance Debug OnePathRule
-
-instance Diff OnePathRule
-
--- | Converts a 'OnePathRule' into its term representation.
--- This is intended to be used only in unparsing situations,
--- as some of the variable information related to the
--- rewriting algorithm is lost.
-onePathRuleToTerm :: OnePathRule -> TermLike VariableName
-onePathRuleToTerm (OnePathRule claimPattern') =
-    claimPatternToTerm TermLike.WEF claimPattern'
-
-instance Unparse OnePathRule where
-    unparse claimPattern' =
-        unparse $ onePathRuleToTerm claimPattern'
-    unparse2 claimPattern' =
-        unparse2 $ onePathRuleToTerm claimPattern'
-
-instance TopBottom OnePathRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance From OnePathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.Label where
-    from = Attribute.label . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getOnePathRule
-
-instance From OnePathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getOnePathRule
-
--- | All-Path-Claim claim pattern.
-newtype AllPathRule =
-    AllPathRule { getAllPathRule :: ClaimPattern }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData AllPathRule
-
-instance SOP.Generic AllPathRule
-
-instance SOP.HasDatatypeInfo AllPathRule
-
-instance Debug AllPathRule
-
-instance Diff AllPathRule
-
-instance Unparse AllPathRule where
-    unparse claimPattern' =
-        unparse $ allPathRuleToTerm claimPattern'
-    unparse2 claimPattern' =
-        unparse2 $ allPathRuleToTerm claimPattern'
-
-instance TopBottom AllPathRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance From AllPathRule Attribute.SourceLocation where
-    from = Attribute.sourceLocation . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.Label where
-    from = Attribute.label . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.RuleIndex where
-    from = Attribute.identifier . attributes . getAllPathRule
-
-instance From AllPathRule Attribute.Trusted where
-    from = Attribute.trusted . attributes . getAllPathRule
-
--- | Converts an 'AllPathRule' into its term representation.
--- This is intended to be used only in unparsing situations,
--- as some of the variable information related to the
--- rewriting algorithm is lost.
-allPathRuleToTerm :: AllPathRule -> TermLike VariableName
-allPathRuleToTerm (AllPathRule claimPattern') =
-    claimPatternToTerm TermLike.WAF claimPattern'
-
--- | Unified One-Path and All-Path claim pattern.
-data ReachabilityRule
-    = OnePath !OnePathRule
-    | AllPath !AllPathRule
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData ReachabilityRule
-
-instance SOP.Generic ReachabilityRule
-
-instance SOP.HasDatatypeInfo ReachabilityRule
-
-instance Debug ReachabilityRule
-
-instance Diff ReachabilityRule
-
-instance Unparse ReachabilityRule where
-    unparse (OnePath rule) = unparse rule
-    unparse (AllPath rule) = unparse rule
-    unparse2 (AllPath rule) = unparse2 rule
-    unparse2 (OnePath rule) = unparse2 rule
-
-instance TopBottom ReachabilityRule where
-    isTop _ = False
-    isBottom _ = False
-
-instance Pretty ReachabilityRule where
-    pretty (OnePath (OnePathRule rule)) =
-        Pretty.vsep ["One-Path reachability rule:", Pretty.pretty rule]
-    pretty (AllPath (AllPathRule rule)) =
-        Pretty.vsep ["All-Path reachability rule:", Pretty.pretty rule]
-
-instance From ReachabilityRule Attribute.SourceLocation where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.Label where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.RuleIndex where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-instance From ReachabilityRule Attribute.Trusted where
-    from (OnePath onePathRule) = from onePathRule
-    from (AllPath allPathRule) = from allPathRule
-
-toSentence :: ReachabilityRule -> Verified.Sentence
-toSentence rule =
-    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
-        { sentenceAxiomParameters = []
-        , sentenceAxiomPattern    = patt
-        , sentenceAxiomAttributes = Default.def
-        }
-  where
-    patt = case rule of
-        OnePath rule' -> onePathRuleToTerm rule'
-        AllPath rule' -> allPathRuleToTerm rule'
-
-getConfiguration :: ReachabilityRule -> Pattern RewritingVariableName
-getConfiguration = Lens.view (lensClaimPattern . field @"left")
-
-getDestination :: ReachabilityRule -> OrPattern RewritingVariableName
-getDestination = Lens.view (lensClaimPattern . field @"right")
-
-lensClaimPattern
-    :: Functor f
-    => (ClaimPattern -> f ClaimPattern)
-    -> ReachabilityRule
-    -> f ReachabilityRule
-lensClaimPattern =
-    Lens.lens
-        (\case
-            OnePath onePathRule ->
-                Lens.view _Unwrapped onePathRule
-            AllPath allPathRule ->
-                Lens.view _Unwrapped allPathRule
-        )
-        (\case
-            OnePath onePathRule -> \attrs ->
-                onePathRule
-                & Lens.set _Unwrapped attrs
-                & OnePath
-            AllPath allPathRule -> \attrs ->
-                allPathRule
-                & Lens.set _Unwrapped attrs
-                & AllPath
-        )
-
 instance UnifyingRule ClaimPattern where
     type UnifyingRuleVariable ClaimPattern = RewritingVariableName
 
@@ -592,26 +397,6 @@ instance UnifyingRule ClaimPattern where
             pure renaming
         ClaimPattern { existentials } = claim
 
-instance UnifyingRule OnePathRule where
-    type UnifyingRuleVariable OnePathRule = RewritingVariableName
-
-    matchingPattern (OnePathRule claim) = matchingPattern claim
-
-    precondition (OnePathRule claim) = precondition claim
-
-    refreshRule stale (OnePathRule claim) =
-        OnePathRule <$> refreshRule stale claim
-
-instance UnifyingRule AllPathRule where
-    type UnifyingRuleVariable AllPathRule = RewritingVariableName
-
-    matchingPattern (AllPathRule claim) = matchingPattern claim
-
-    precondition (AllPathRule claim) = precondition claim
-
-    refreshRule stale (AllPathRule claim) =
-        AllPathRule <$> refreshRule stale claim
-
 mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
     claimPattern'
@@ -627,15 +412,6 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
         }
   where
     ClaimPattern { left, right, existentials } = claimPattern'
-
-makeTrusted :: ReachabilityRule -> ReachabilityRule
-makeTrusted =
-    Lens.set
-        ( lensClaimPattern
-        . field @"attributes"
-        . field @"trusted"
-        )
-        (Attribute.Trusted True)
 
 parseRightHandSide
     :: forall variable
