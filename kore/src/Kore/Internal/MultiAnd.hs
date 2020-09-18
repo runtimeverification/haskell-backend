@@ -75,7 +75,6 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 -}
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
-    deriving (Semigroup, Monoid)
     deriving (Foldable)
     deriving (GHC.Generic, GHC.IsList)
 
@@ -96,6 +95,14 @@ instance TopBottom child => TopBottom (MultiAnd child) where
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
+    (MultiAnd []) <> b = b
+    a <> (MultiAnd []) = a
+    (MultiAnd a) <> (MultiAnd b) = make (a <> b)
+
+instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
+    mempty = make []
 
 instance
     InternalVariable variable
