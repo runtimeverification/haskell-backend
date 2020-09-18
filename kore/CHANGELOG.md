@@ -14,6 +14,17 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.30.0.0] - 2020-09-18
+
+### Changed
+
+- The prover halts if the SMT solver returns `unknown`. (#2072)
+
+### Fixed
+
+- Function evaluation returns a result after the first equation which
+  applies. (#1146)
+
 ## [0.29.0.0] - 2020-09-04
 
 ### Added
