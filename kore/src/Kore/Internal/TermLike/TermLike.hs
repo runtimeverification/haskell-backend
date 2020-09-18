@@ -56,6 +56,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
+import qualified Data.Functor.Foldable as Foldable
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.ConstructorLike
@@ -118,7 +119,6 @@ import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import qualified Pretty
 import qualified SQL
-import qualified Data.Functor.Foldable as Foldable
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -801,12 +801,11 @@ extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes (TermLike (attrs :< _)) = attrs
 
 markDefined :: TermLike variable -> TermLike variable
-markDefined (TermLike (attrs :< DefinedF (Defined term))) =
-    Foldable.embed (attrs :< DefinedF (Defined (markDefined term)))
+-- markDefined (TermLike (attrs :< DefinedF (Defined term))) =
+--     Foldable.embed (attrs :< DefinedF (Defined (markDefined term)))
 markDefined (TermLike (attrs :< termF)) = Foldable.embed (attrs' :< termF)
   where
     attrs' = attrs { Attribute.defined = Attribute.Defined True }
-
 
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
