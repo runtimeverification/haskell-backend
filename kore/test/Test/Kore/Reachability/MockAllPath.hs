@@ -185,7 +185,7 @@ test_transitionRule_ApplyClaims =
         :: HasCallStack
         => [MockRule]
         -- ^ rules to apply in parallel
-        -> [(MockClaimState, Seq (MockAppliedRule))]
+        -> [(MockClaimState, Seq MockAppliedRule)]
         -- ^ transitions
         -> TestTree
     derives rules = equals_ (run rules $ ClaimState.Claimed (MockClaim (A, C)))
@@ -218,7 +218,7 @@ test_transitionRule_ApplyAxioms =
         :: HasCallStack
         => [MockRule]
         -- ^ rules to apply in parallel
-        -> [(MockClaimState, Seq (MockAppliedRule))]
+        -> [(MockClaimState, Seq MockAppliedRule)]
         -- ^ transitions
         -> TestTree
     derives rules =
