@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
     , mkRepresentation
+    , implies
     ) where
 
 import Prelude.Kore
@@ -16,6 +17,7 @@ import Control.DeepSeq
 import Data.Hashable
     ( Hashed
     , hashed
+    , unhashed
     )
 
 import Data.Type.Equality
@@ -32,8 +34,14 @@ import Type.Reflection
     , typeRep
     )
 
+import Kore.TopBottom
+
 data Representation where
-    Representation :: Ord a => !(TypeRep a) -> !(Hashed a) -> Representation
+    Representation
+        :: (Ord a, TopBottom a)
+        => !(TypeRep a)
+        -> !(Hashed a)
+        -> Representation
 
 instance Eq Representation where
     (==) (Representation typeRep1 hashed1) (Representation typeRep2 hashed2) =
@@ -67,7 +75,9 @@ instance NFData Representation where
     rnf (Representation typeRep1 hashed1) = typeRep1 `seq` hashed1 `seq` ()
     {-# INLINE rnf #-}
 
-mkRepresentation :: (Ord a, Hashable a, Typeable a) => a -> Representation
+mkRepresentation
+    :: (Ord a, Hashable a, Typeable a, TopBottom a)
+    => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 
 instance Debug Representation where
@@ -77,3 +87,7 @@ instance Debug Representation where
 instance Diff Representation where
     diffPrec _ _ = Nothing
     {-# INLINE diffPrec #-}
+
+implies :: Representation -> Representation -> Bool
+implies r1 r2@(Representation _ hashed2) =
+    isTop (unhashed hashed2) || r1 == r2

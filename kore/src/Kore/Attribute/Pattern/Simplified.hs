@@ -37,6 +37,7 @@ import Kore.Internal.InternalBytes
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    , implies
     )
 import Kore.Syntax
     ( And
@@ -252,7 +253,7 @@ s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
 isSimplified _ (Simplified_ Fully Any) = True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
-    currentCondition == condition
+    SideCondition.implies currentCondition condition
 isSimplified _ (Simplified_ Fully Unknown) = False
 isSimplified _ (Simplified_ Partly _) = False
 isSimplified _ NotSimplified = False
