@@ -136,7 +136,7 @@ instance Semigroup Condition
     c <> Any = c
 
     c@(Condition c1) <> Condition c2 =
-        if c1 == c2
+        if SideCondition.implies c1 c2
             then c
             else Unknown
 
@@ -239,7 +239,7 @@ Simplified_ _ Unknown `simplifiedTo`    Simplified_ Fully _ =
     Simplified_ Fully Unknown
 
 Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2))
-  = if c1 == c2
+  = if SideCondition.implies c1 c2
     then s
     else Simplified_ Fully Unknown
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully (Condition _)) = s
