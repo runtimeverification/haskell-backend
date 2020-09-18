@@ -1525,30 +1525,28 @@ mkDefined = worker
                         )
                 BuiltinF (Domain.BuiltinMap internalMap) ->
                     mkDefined1
-                        ( Recursive.embed
+                        $ Recursive.embed
                             ( attrs
                                 :< BuiltinF
                                     ( Domain.BuiltinMap
                                         $ mkDefinedInternalAc internalMap
                                     )
                             )
-                        )
                 BuiltinF (Domain.BuiltinSet internalSet) ->
                     mkDefined1
-                        ( Recursive.embed
+                        $ Recursive.embed
                             ( attrs
                                 :< BuiltinF
                                     ( Domain.BuiltinSet
                                         $ mkDefinedInternalAc internalSet
                                     )
                             )
-                        )
                 EqualsF _ -> term
                 ExistsF _ -> mkDefinedAtTop term
                 FloorF _ -> term
                 ForallF Forall { forallSort, forallVariable, forallChild } ->
                     mkDefined1
-                        ( Recursive.embed
+                        $ Recursive.embed
                             ( attrs
                                 :< ForallF
                                     ( Forall
@@ -1557,7 +1555,6 @@ mkDefined = worker
                                         (worker forallChild)
                                     )
                             )
-                        )
                 IffF _ -> mkDefined1 term
                 ImpliesF _ -> mkDefined1 term
                 InF _ -> term
