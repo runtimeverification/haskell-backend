@@ -69,7 +69,6 @@ import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import Kore.Unparser (unparseToString)
 import Kore.Internal.TermLike.TermLike (markDefined)
 
 test_andTermsSimplification :: [TestTree]

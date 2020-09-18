@@ -47,16 +47,6 @@ import Kore.Domain.Builtin
     , InternalInt (..)
     )
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
 import Kore.Internal.TermLike
 import Kore.Internal.TermLike.TermLike
 import Kore.Variables.Fresh
@@ -71,8 +61,6 @@ import Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import Test.Terse
-import qualified Data.Foldable as Foldable
-import Kore.Unparser (unparseToString)
 
 type TestTerm = TermLike VariableName
 type ElementVariable' = ElementVariable VariableName
@@ -650,9 +638,3 @@ test_mkDefined =
   where
     defined :: TermLike VariableName -> TermLike VariableName
     defined = mkDefinedAtTop
-
-    sideRepresentation :: SideCondition.Representation
-    sideRepresentation =
-        SideCondition.toRepresentation
-        (SideCondition.top :: SideCondition VariableName)
-
