@@ -135,10 +135,10 @@ instance Semigroup Condition
     Any <> c = c
     c <> Any = c
 
-    c@(Condition c1) <> Condition c2 =
-        if SideCondition.implies c1 c2
-            then c
-            else Unknown
+    a@(Condition c1) <> b@(Condition c2)
+        | SideCondition.implies c1 c2 = a
+        | SideCondition.implies c2 c1 = b
+        | otherwise = Unknown
 
 instance Monoid Condition where
     mempty = Any
@@ -239,7 +239,7 @@ Simplified_ _ Unknown `simplifiedTo`    Simplified_ Fully _ =
     Simplified_ Fully Unknown
 
 Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2))
-  = if SideCondition.implies c1 c2
+  = if SideCondition.implies c2 c1
     then s
     else Simplified_ Fully Unknown
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully (Condition _)) = s
