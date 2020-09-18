@@ -63,19 +63,20 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Log as Log
+import Kore.Reachability
+    ( SomeClaim
+    , lensClaimPattern
+    )
+import Kore.Reachability.Claim
+import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.ClaimPattern
-    ( lensClaimPattern
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal
-import Kore.Strategies.Verification
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
@@ -107,7 +108,7 @@ runRepl
     => MonadMask m
     => [Axiom]
     -- ^ list of axioms to used in the proof
-    -> [ReachabilityRule]
+    -> [SomeClaim]
     -- ^ list of claims to be proven
     -> MVar (Log.LogAction IO Log.ActualEntry)
     -> ReplScript
@@ -226,8 +227,8 @@ runRepl
         lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
     addIndexesToClaims
-        :: [ReachabilityRule]
-        -> [ReachabilityRule]
+        :: [SomeClaim]
+        -> [SomeClaim]
     addIndexesToClaims =
         initializeRuleIndexes Attribute.ClaimIndex lensAttribute
       where
@@ -242,14 +243,14 @@ runRepl
                 (index & ctor & Just & RuleIndex)
                 rule
 
-    firstClaim :: ReachabilityRule
+    firstClaim :: SomeClaim
     firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
-        :: [ReachabilityRule]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
@@ -258,9 +259,9 @@ runRepl
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
-                catchEverything graph
-                $ catchInterruptWithDefault graph
-                $ verifyClaimStep claims axioms graph node
+                proveClaimStep claims axioms graph node
+                & catchInterruptWithDefault graph
+                & catchEverything graph
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a

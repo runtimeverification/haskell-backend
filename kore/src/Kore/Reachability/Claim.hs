@@ -2,8 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Strategies.Goal
-    ( Goal (..)
+module Kore.Reachability.Claim
+    ( Claim (..)
     , AppliedRule (..)
     , strategy
     , TransitionRule
@@ -12,17 +12,19 @@ module Kore.Strategies.Goal
     , WithConfiguration (..)
     , CheckImplicationResult (..)
     , extractClaims
-    , unprovenNodes
-    , proven
     , reachabilityFirstStep
     , reachabilityNextStep
     , transitionRule
     , isTrusted
     -- * Re-exports
-    , module Kore.Strategies.Rule
+    , RewriteRule (..)
     , module Kore.Log.InfoReachability
-    , getConfiguration
-    , getDestination
+    -- * For Claim implementations
+    , deriveSeqClaim
+    , checkImplication'
+    , simplify'
+    , derivePar'
+    , deriveSeq'
     -- * For testing
     , checkImplicationWorker
     ) where
@@ -33,9 +35,6 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
-import Control.Monad
-    ( foldM
-    )
 import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
@@ -46,16 +45,10 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce
-    ( coerce
-    )
 import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Generics.Product
     ( field
-    )
-import Data.Generics.Wrapped
-    ( _Unwrapped
     )
 import qualified Data.Monoid as Monoid
 import Data.Stream.Infinite
@@ -106,21 +99,21 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-import Kore.Log.WarnStuckProofState
-    ( warnStuckProofStateTermsNotUnifiable
-    , warnStuckProofStateTermsUnifiable
+import Kore.Log.WarnStuckClaimState
+    ( warnStuckClaimStateTermsNotUnifiable
+    , warnStuckClaimStateTermsUnifiable
     )
+import Kore.Reachability.ClaimState hiding
+    ( claimState
+    )
+import qualified Kore.Reachability.ClaimState as ClaimState
+import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
-    , getConfiguration
-    , getDestination
+    ( ClaimPattern (..)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.Result
@@ -128,12 +121,9 @@ import Kore.Step.Result
     , Results (..)
     )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
-    ( QualifiedAxiomPattern (..)
-    , fromSentenceAxiom
-    )
 import Kore.Step.RulePattern
-    ( RulePattern (..)
+    ( RewriteRule (..)
+    , RulePattern (..)
     )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
@@ -154,12 +144,6 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
-import Kore.Strategies.ProofState hiding
-    ( proofState
-    )
-import qualified Kore.Strategies.ProofState as ProofState
-import Kore.Strategies.Rule
-import qualified Kore.Syntax.Sentence as Syntax
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
@@ -177,50 +161,28 @@ import qualified Logic
 import qualified Pretty
 import qualified SMT
 
-{- | The final nodes of an execution graph which were not proven.
+class Claim claim where
+    {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
+    -}
+    data family Rule claim
 
-See also: 'Strategy.pickFinal', 'extractUnproven'
-
- -}
-unprovenNodes
-    :: forall goal a
-    .  Ord a
-    => TopBottom a
-    => Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
-    -> MultiOr.MultiOr a
-unprovenNodes executionGraph =
-    MultiOr.make
-    $ mapMaybe extractUnproven
-    $ Strategy.pickFinal executionGraph
-
-{- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
- -}
-proven
-    :: forall goal a
-    .  Ord a
-    => TopBottom a
-    => Strategy.ExecutionGraph (ProofState a) (AppliedRule goal)
-    -> Bool
-proven = Foldable.null . unprovenNodes
-
-class Goal goal where
     checkImplication
         :: MonadSimplify m
-        => goal
-        -> LogicT m (CheckImplicationResult goal)
+        => claim
+        -> LogicT m (CheckImplicationResult claim)
 
     simplify
         :: MonadSimplify m
-        => goal
-        -> Strategy.TransitionT (AppliedRule goal) m goal
+        => claim
+        -> Strategy.TransitionT (AppliedRule claim) m claim
 
     {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
 
-    > data ApplyResult goal
-    >     = ApplyRewritten !goal
-    >     | ApplyRemainder !goal
+    > data ApplyResult claim
+    >     = ApplyRewritten !claim
+    >     | ApplyRemainder !claim
 
-    Rationale: ProofState is part of the implementation of transitionRule, that
+    Rationale: ClaimState is part of the implementation of transitionRule, that
     is: these functions have hidden knowledge of how transitionRule works
     because they tell it what to do next. Instead, they should report their
     result and leave the decision up to transitionRule.
@@ -228,66 +190,69 @@ class Goal goal where
     -}
     applyClaims
         :: MonadSimplify m
-        => [goal]
-        -> goal
-        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+        => [claim]
+        -> claim
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     applyAxioms
         :: MonadSimplify m
-        => [[Rule goal]]
-        -> goal
-        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+        => [[Rule claim]]
+        -> claim
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
-data AppliedRule goal
-    = AppliedAxiom (Rule goal)
-    | AppliedClaim goal
+data AppliedRule claim
+    = AppliedAxiom (Rule claim)
+    | AppliedClaim claim
     deriving (GHC.Generic)
 
-instance SOP.Generic goal => SOP.Generic (AppliedRule goal)
+instance SOP.Generic claim => SOP.Generic (AppliedRule claim)
 
-instance SOP.HasDatatypeInfo goal => SOP.HasDatatypeInfo (AppliedRule goal)
-
-instance
-    ( Debug goal
-    , SOP.HasDatatypeInfo goal
-    , Debug (Rule goal)
-    , SOP.HasDatatypeInfo (Rule goal)
-    ) => Debug (AppliedRule goal)
+instance SOP.HasDatatypeInfo claim => SOP.HasDatatypeInfo (AppliedRule claim)
 
 instance
-    ( Diff goal
-    , Debug goal
-    , SOP.HasDatatypeInfo goal
-    , Diff (Rule goal)
-    , Debug (Rule goal)
-    , SOP.HasDatatypeInfo (Rule goal)
-    ) => Diff (AppliedRule goal)
+    ( Debug claim
+    , SOP.HasDatatypeInfo claim
+    , Debug (Rule claim)
+    , SOP.HasDatatypeInfo (Rule claim)
+    ) => Debug (AppliedRule claim)
 
-instance (From goal Attribute.Label, From (Rule goal) Attribute.Label)
-  => From (AppliedRule goal) Attribute.Label
+instance
+    ( Diff claim
+    , Debug claim
+    , SOP.HasDatatypeInfo claim
+    , Diff (Rule claim)
+    , Debug (Rule claim)
+    , SOP.HasDatatypeInfo (Rule claim)
+    ) => Diff (AppliedRule claim)
+
+instance (From claim Attribute.Label, From (Rule claim) Attribute.Label)
+  => From (AppliedRule claim) Attribute.Label
   where
     from (AppliedAxiom rule) = from rule
-    from (AppliedClaim goal) = from goal
+    from (AppliedClaim claim) = from claim
 
-instance (From goal Attribute.RuleIndex, From (Rule goal) Attribute.RuleIndex)
-  => From (AppliedRule goal) Attribute.RuleIndex
+instance (From claim Attribute.RuleIndex, From (Rule claim) Attribute.RuleIndex)
+  => From (AppliedRule claim) Attribute.RuleIndex
   where
     from (AppliedAxiom rule) = from rule
-    from (AppliedClaim goal) = from goal
+    from (AppliedClaim claim) = from claim
 
-instance (From goal Attribute.SourceLocation, From (Rule goal) Attribute.SourceLocation)
-  => From (AppliedRule goal) Attribute.SourceLocation
+instance
+    ( From claim Attribute.SourceLocation
+    , From (Rule claim) Attribute.SourceLocation
+    )
+    => From (AppliedRule claim) Attribute.SourceLocation
   where
     from (AppliedAxiom rule) = from rule
-    from (AppliedClaim goal) = from goal
+    from (AppliedClaim claim) = from claim
 
-instance (Unparse goal, Unparse (Rule goal)) => Unparse (AppliedRule goal)
+instance (Unparse claim, Unparse (Rule claim)) => Unparse (AppliedRule claim)
   where
     unparse (AppliedAxiom rule) = unparse rule
-    unparse (AppliedClaim goal) = unparse goal
+    unparse (AppliedClaim claim) = unparse claim
 
     unparse2 (AppliedAxiom rule) = unparse2 rule
-    unparse2 (AppliedClaim goal) = unparse2 goal
+    unparse2 (AppliedClaim claim) = unparse2 claim
 
 type AxiomAttributes = Attribute.Axiom.Axiom Symbol VariableName
 
@@ -302,73 +267,20 @@ extractClaims
     -> [claim]
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
-{- NOTE: Non-deterministic semantics
-
-The current implementation of one-path verification assumes that the proof goal
-is deterministic, that is: the proof goal would not be discharged during at a
-non-confluent state in the execution of a non-deterministic semantics. (Often
-this means that the definition is simply deterministic.) As a result, given the
-non-deterministic definition
-
-> module ABC
->   import DOMAINS
->   syntax S ::= "a" | "b" | "c"
->   rule [ab]: a => b
->   rule [ac]: a => c
-> endmodule
-
-this claim would be provable,
-
-> rule a => b [claim]
-
-but this claim would **not** be provable,
-
-> rule a => c [claim]
-
-because the algorithm would first apply semantic rule [ab], which prevents rule
-[ac] from being used.
-
-We decided to assume that the definition is deterministic because one-path
-verification is mainly used only for deterministic semantics and the assumption
-simplifies the implementation. However, this assumption is not an essential
-feature of the algorithm. You should not rely on this assumption elsewhere. This
-decision is subject to change without notice.
-
-This instance contains the default implementation for a one-path strategy. You
-can apply it to the first two arguments and pass the resulting function to
-'Kore.Strategies.Verification.verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
--}
-
-instance Goal OnePathRule where
-    simplify = simplify' _Unwrapped
-
-    checkImplication = checkImplication' _Unwrapped
-
-    applyClaims claims = deriveSeqClaim _Unwrapped OnePathRule claims
-
-    applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
-
-
 deriveSeqClaim
     :: MonadSimplify m
-    => Step.UnifyingRule goal
-    => Step.UnifyingRuleVariable goal ~ RewritingVariableName
-    => From goal (AxiomPattern RewritingVariableName)
-    => From goal Attribute.SourceLocation
-    => Lens' goal ClaimPattern
-    -> (ClaimPattern -> goal)
-    -> [goal]
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
-deriveSeqClaim lensClaimPattern mkClaim claims goal =
+    => Step.UnifyingRule claim
+    => Step.UnifyingRuleVariable claim ~ RewritingVariableName
+    => From claim (AxiomPattern RewritingVariableName)
+    => From claim Attribute.SourceLocation
+    => Lens' claim ClaimPattern
+    -> (ClaimPattern -> claim)
+    -> [claim]
+    -> claim
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose
-    $ Lens.forOf lensClaimPattern goal
+    $ Lens.forOf lensClaimPattern claim
     $ \claimPattern ->
         fmap (snd . Step.refreshRule mempty)
         $ Lens.forOf (field @"left") claimPattern
@@ -387,176 +299,50 @@ deriveSeqClaim lensClaimPattern mkClaim claims goal =
         . mkClaim
         . Step.withoutUnification
 
-deriveSeqAxiomOnePath
-    ::  MonadSimplify simplifier
-    =>  [Rule OnePathRule]
-    ->  OnePathRule
-    ->  Strategy.TransitionT (AppliedRule OnePathRule) simplifier
-            (ProofState OnePathRule)
-deriveSeqAxiomOnePath rules =
-    deriveSeq' _Unwrapped OnePathRewriteRule rewrites
-  where
-    rewrites = unRuleOnePath <$> rules
-
-instance ClaimExtractor OnePathRule where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just claim
-            _ -> Nothing
-
-instance Goal AllPathRule where
-    simplify = simplify' _Unwrapped
-    checkImplication = checkImplication' _Unwrapped
-    applyClaims claims = deriveSeqClaim _Unwrapped AllPathRule claims
-
-    applyAxioms axiomss = \goal ->
-        foldM applyAxioms1 (GoalRemainder goal) axiomss
-      where
-        applyAxioms1 proofState axioms
-          | Just goal <- retractRewritableGoal proofState =
-            deriveParAxiomAllPath axioms goal
-            >>= simplifyRemainder
-          | otherwise =
-            pure proofState
-
-        retractRewritableGoal (Goal goal) = Just goal
-        retractRewritableGoal (GoalRemainder goal) = Just goal
-        retractRewritableGoal _ = Nothing
-
-        simplifyRemainder proofState =
-            case proofState of
-                GoalRemainder goal -> GoalRemainder <$> simplify goal
-                _ -> return proofState
-
-deriveParAxiomAllPath
-    ::  MonadSimplify simplifier
-    =>  [Rule AllPathRule]
-    ->  AllPathRule
-    ->  Strategy.TransitionT (AppliedRule AllPathRule) simplifier
-            (ProofState AllPathRule)
-deriveParAxiomAllPath rules =
-    derivePar' _Unwrapped AllPathRewriteRule rewrites
-  where
-    rewrites = unRuleAllPath <$> rules
-
-instance ClaimExtractor AllPathRule where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (AllPathClaimPattern claim) -> Just claim
-            _ -> Nothing
-
-instance Goal ReachabilityRule where
-    simplify (AllPath goal) = allPathTransition $ AllPath <$> simplify goal
-    simplify (OnePath goal) = onePathTransition $ OnePath <$> simplify goal
-
-    checkImplication (AllPath goal) = fmap AllPath <$> checkImplication goal
-    checkImplication (OnePath goal) = fmap OnePath <$> checkImplication goal
-
-    applyClaims claims (AllPath goal) =
-        applyClaims (mapMaybe maybeAllPath claims) goal
-        & fmap (fmap AllPath)
-        & allPathTransition
-    applyClaims claims (OnePath goal) =
-        applyClaims (mapMaybe maybeOnePath claims) goal
-        & fmap (fmap OnePath)
-        & onePathTransition
-
-    applyAxioms axiomGroups (AllPath goal) =
-        applyAxioms (coerce axiomGroups) goal
-        & fmap (fmap AllPath)
-        & allPathTransition
-    applyAxioms axiomGroups (OnePath goal) =
-        applyAxioms (coerce axiomGroups) goal
-        & fmap (fmap OnePath)
-        & onePathTransition
-
-instance ClaimExtractor ReachabilityRule where
-    extractClaim (attrs, sentence) =
-        case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-            Right (OnePathClaimPattern claim) -> Just (OnePath claim)
-            Right (AllPathClaimPattern claim) -> Just (AllPath claim)
-            _ -> Nothing
-
-allPathTransition
-    :: Monad m
-    => Strategy.TransitionT (AppliedRule AllPathRule) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
-allPathTransition = Transition.mapRules ruleAllPathToRuleReachability
-
-onePathTransition
-    :: Monad m
-    => Strategy.TransitionT (AppliedRule OnePathRule) m a
-    -> Strategy.TransitionT (AppliedRule ReachabilityRule) m a
-onePathTransition = Transition.mapRules ruleOnePathToRuleReachability
-
-maybeOnePath :: ReachabilityRule -> Maybe OnePathRule
-maybeOnePath (OnePath rule) = Just rule
-maybeOnePath _ = Nothing
-
-maybeAllPath :: ReachabilityRule -> Maybe AllPathRule
-maybeAllPath (AllPath rule) = Just rule
-maybeAllPath _ = Nothing
-
-ruleAllPathToRuleReachability
-    :: AppliedRule AllPathRule
-    -> AppliedRule ReachabilityRule
-ruleAllPathToRuleReachability (AppliedAxiom (AllPathRewriteRule rewriteRule)) =
-    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
-ruleAllPathToRuleReachability (AppliedClaim allPathRule) =
-    AppliedClaim (AllPath allPathRule)
-
-ruleOnePathToRuleReachability
-    :: AppliedRule OnePathRule
-    -> AppliedRule ReachabilityRule
-ruleOnePathToRuleReachability (AppliedAxiom (OnePathRewriteRule rewriteRule)) =
-    AppliedAxiom (ReachabilityRewriteRule rewriteRule)
-ruleOnePathToRuleReachability (AppliedClaim onePathRule) =
-    AppliedClaim (OnePath onePathRule)
-
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
 
 transitionRule
-    :: forall m goal
+    :: forall m claim
     .  MonadSimplify m
-    => Goal goal
-    => [goal]
-    -> [[Rule goal]]
-    -> TransitionRule m (AppliedRule goal) (ProofState goal)
+    => Claim claim
+    => [claim]
+    -> [[Rule claim]]
+    -> TransitionRule m (AppliedRule claim) (ClaimState claim)
 transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
-        -> ProofState goal
-        -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+        -> ClaimState claim
+        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
-    transitionRuleWorker Begin (GoalStuck _) = empty
-    transitionRuleWorker Begin (GoalRewritten goal) =
-        SMT.reinit >> pure (Goal goal)
-    transitionRuleWorker Begin proofState =
-        SMT.reinit >> pure proofState
+    transitionRuleWorker Begin (Stuck _) = empty
+    transitionRuleWorker Begin (Rewritten claim) =
+        SMT.reinit >> pure (Claimed claim)
+    transitionRuleWorker Begin claimState =
+        SMT.reinit >> pure claimState
 
-    transitionRuleWorker Simplify proofState
-      | Just goal <- retractSimplifiable proofState =
-        Transition.ifte (simplify goal) (pure . ($>) proofState) (pure Proven)
+    transitionRuleWorker Simplify claimState
+      | Just claim <- retractSimplifiable claimState =
+        Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
       | otherwise =
-        pure proofState
+        pure claimState
 
-    transitionRuleWorker CheckImplication proofState
-      | Just goal <- retractRewritable proofState = do
-        result <- checkImplication goal & Logic.lowerLogicT
+    transitionRuleWorker CheckImplication claimState
+      | Just claim <- retractRewritable claimState = do
+        result <- checkImplication claim & Logic.lowerLogicT
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
-                warnStuckProofStateTermsUnifiable
-                pure (GoalStuck a)
+                warnStuckClaimStateTermsUnifiable
+                pure (Stuck a)
             NotImplied a
-              | isRemainder proofState -> do
-                warnStuckProofStateTermsNotUnifiable
-                pure (GoalStuck a)
-              | otherwise -> pure (Goal a)
-      | otherwise = pure proofState
+              | isRemainder claimState -> do
+                warnStuckClaimStateTermsNotUnifiable
+                pure (Stuck a)
+              | otherwise -> pure (Claimed a)
+      | otherwise = pure claimState
 
     -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
     --
@@ -569,28 +355,23 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- opaque way. I think that there's no good reason for wrapping the
     -- results in `derivePar` as opposed to here.
 
-    transitionRuleWorker ApplyClaims (Goal goal) =
-        applyClaims claims goal
-    transitionRuleWorker ApplyClaims proofState = pure proofState
+    transitionRuleWorker ApplyClaims (Claimed claim) =
+        applyClaims claims claim
+    transitionRuleWorker ApplyClaims claimState = pure claimState
 
-    transitionRuleWorker ApplyAxioms proofState
-      | Just goal <- retractRewritable proofState =
-        applyAxioms axiomGroups goal
-      | otherwise = pure proofState
+    transitionRuleWorker ApplyAxioms claimState
+      | Just claim <- retractRewritable claimState =
+        applyAxioms axiomGroups claim
+      | otherwise = pure claimState
 
-retractSimplifiable :: ProofState a -> Maybe a
-retractSimplifiable (ProofState.Goal a) = Just a
-retractSimplifiable (ProofState.GoalRewritten a) = Just a
-retractSimplifiable (ProofState.GoalRemainder a) = Just a
+retractSimplifiable :: ClaimState a -> Maybe a
+retractSimplifiable (Claimed a) = Just a
+retractSimplifiable (Rewritten a) = Just a
+retractSimplifiable (Remaining a) = Just a
 retractSimplifiable _ = Nothing
 
-retractRewritable :: ProofState a -> Maybe a
-retractRewritable (ProofState.Goal a) = Just a
-retractRewritable (ProofState.GoalRemainder a) = Just a
-retractRewritable _ = Nothing
-
-isRemainder :: ProofState a -> Bool
-isRemainder (ProofState.GoalRemainder _) = True
+isRemainder :: ClaimState a -> Bool
+isRemainder (Remaining _) = True
 isRemainder _ = False
 
 reachabilityFirstStep :: Strategy Prim
@@ -618,7 +399,7 @@ strategy :: Stream (Strategy Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
-{- | The result of checking the direct implication of a proof goal.
+{- | The result of checking the direct implication of a proof claim.
 
 As an optimization, 'checkImplication' returns 'NotImpliedStuck' when the
 implication between /terms/ is valid, but the implication between side
@@ -635,30 +416,28 @@ data CheckImplicationResult a
     -- side-conditions is not valid.
     deriving (Show, Eq, Functor, GHC.Generic)
 
-instance SOP.Generic goal =>
-    SOP.Generic (CheckImplicationResult goal)
+instance SOP.Generic claim =>
+    SOP.Generic (CheckImplicationResult claim)
 
-instance SOP.HasDatatypeInfo goal =>
-    SOP.HasDatatypeInfo (CheckImplicationResult goal)
+instance SOP.HasDatatypeInfo claim =>
+    SOP.HasDatatypeInfo (CheckImplicationResult claim)
 
-instance (Debug goal, SOP.HasDatatypeInfo goal) =>
-    Debug (CheckImplicationResult goal)
+instance (Debug claim, SOP.HasDatatypeInfo claim) =>
+    Debug (CheckImplicationResult claim)
 
-instance (Diff goal, Debug goal, SOP.HasDatatypeInfo goal) =>
-    Diff (CheckImplicationResult goal)
+instance (Diff claim, Debug claim, SOP.HasDatatypeInfo claim) =>
+    Diff (CheckImplicationResult claim)
 
--- | Remove the destination of the goal.
+-- | Remove the destination of the claim.
 checkImplication'
-    :: forall goal m
+    :: forall claim m
     .  (MonadLogic m, MonadSimplify m)
-    => Lens' goal ClaimPattern
-    -> goal
-    -> m (CheckImplicationResult goal)
-checkImplication' lensRulePattern goal =
-    goal
-    & Lens.traverseOf
-        lensRulePattern
-        (Compose . checkImplicationWorker)
+    => Lens' claim ClaimPattern
+    -> claim
+    -> m (CheckImplicationResult claim)
+checkImplication' lensRulePattern claim =
+    claim
+    & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
     & getCompose
 
 assertFunctionLikeConfiguration
@@ -815,13 +594,13 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
 
 simplify'
     :: MonadSimplify m
-    => Lens' goal ClaimPattern
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m goal
-simplify' lensClaimPattern goal = do
-    goal' <- simplifyLeftHandSide goal
-    let sideCondition = extractSideCondition goal'
-    simplifyRightHandSide sideCondition goal'
+    => Lens' claim ClaimPattern
+    -> claim
+    -> Strategy.TransitionT (AppliedRule claim) m claim
+simplify' lensClaimPattern claim = do
+    claim' <- simplifyLeftHandSide claim
+    let sideCondition = extractSideCondition claim'
+    simplifyRightHandSide sideCondition claim'
   where
     extractSideCondition =
         SideCondition.assumeTrueCondition
@@ -846,7 +625,7 @@ simplify' lensClaimPattern goal = do
             >>= Pattern.simplify sideCondition
             >>= Logic.scatter
 
-isTrusted :: From goal Attribute.Axiom.Trusted => goal -> Bool
+isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
 
 -- | Exception that contains the last configuration before the error.
@@ -856,15 +635,15 @@ data WithConfiguration =
 
 instance Exception WithConfiguration
 
--- | Apply 'Rule's to the goal in parallel.
+-- | Apply 'Rule's to the claim in parallel.
 derivePar'
-    :: forall m goal
+    :: forall m claim
     .  MonadSimplify m
-    => Lens' goal ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule goal)
+    => Lens' claim ClaimPattern
+    -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+    -> claim
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -874,19 +653,19 @@ type Deriver monad =
     ->  Pattern RewritingVariableName
     ->  monad (Step.Results (RulePattern RewritingVariableName))
 
--- | Apply 'Rule's to the goal in parallel.
+-- | Apply 'Rule's to the claim in parallel.
 deriveWith
-    :: forall m goal
+    :: forall m claim
     .  Monad m
-    => Lens' goal ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule goal)
+    => Lens' claim ClaimPattern
+    -> (RewriteRule RewritingVariableName -> Rule claim)
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
-deriveWith lensClaimPattern mkRule takeStep rewrites goal =
+    -> claim
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+deriveWith lensClaimPattern mkRule takeStep rewrites claim =
     getCompose
-    $ Lens.forOf lensClaimPattern goal
+    $ Lens.forOf lensClaimPattern claim
     $ \claimPattern ->
         fmap (snd . Step.refreshRule mempty)
         $ Lens.forOf (field @"left") claimPattern
@@ -900,26 +679,26 @@ deriveWith lensClaimPattern mkRule takeStep rewrites goal =
         . RewriteRule
         . Step.withoutUnification
 
--- | Apply 'Rule's to the goal in sequence.
+-- | Apply 'Rule's to the claim in sequence.
 deriveSeq'
-    :: forall m goal
+    :: forall m claim
     .  MonadSimplify m
-    => Lens' goal ClaimPattern
-    -> (RewriteRule RewritingVariableName -> Rule goal)
+    => Lens' claim ClaimPattern
+    -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
-    -> goal
-    -> Strategy.TransitionT (AppliedRule goal) m (ProofState goal)
+    -> claim
+    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
 
 deriveResults
     :: Step.UnifyingRuleVariable representation ~ RewritingVariableName
-    => (Step.UnifiedRule representation -> AppliedRule goal)
+    => (Step.UnifiedRule representation -> AppliedRule claim)
     -> Step.Results representation
-    -> Strategy.TransitionT (AppliedRule goal) simplifier
-        (ProofState.ProofState (Pattern RewritingVariableName))
--- TODO (thomas.tuegel): Remove goal argument.
+    -> Strategy.TransitionT (AppliedRule claim) simplifier
+        (ClaimState.ClaimState (Pattern RewritingVariableName))
+-- TODO (thomas.tuegel): Remove claim argument.
 deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
   where
@@ -930,12 +709,12 @@ deriveResults fromAppliedRule Results { results, remainders } =
         addRule appliedRule
         case Foldable.toList result of
             []      ->
-                -- If the rule returns \bottom, the goal is proven on the
+                -- If the rule returns \bottom, the claim is proven on the
                 -- current branch.
                 pure Proven
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . GoalRewritten
-    addRemainder = pure . GoalRemainder
+    addRewritten = pure . Rewritten
+    addRemainder = pure . Remaining
 
     addRule = Transition.addRule . fromAppliedRule
