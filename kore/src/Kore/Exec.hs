@@ -80,9 +80,6 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -712,7 +709,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
-            let result = MultiAnd.extractPatterns simplified
+            let result = Foldable.toList simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 
