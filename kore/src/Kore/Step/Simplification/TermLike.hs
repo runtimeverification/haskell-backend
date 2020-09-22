@@ -51,10 +51,12 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import qualified Kore.Internal.Substitution as Substitution
-    ( toMap
+    ( isSimplified
+    , toMap
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( pattern And_
+    , TermLike
     , TermLikeF (..)
     , termLikeSort
     )
@@ -441,7 +443,7 @@ ensureSimplifiedResult
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
-  | isSimplified results = pure results
+  | all areSimplifiedChildren results = pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -451,7 +453,17 @@ ensureSimplifiedResult repr termLike results
         , Pretty.indent 4 (unparse termLike)
         ]
   where
-    isSimplified = OrPattern.isSimplified repr
+    areSimplifiedChildren patt =
+        let term = Pattern.term patt
+            predicate = Pattern.predicate patt & Predicate.unwrapPredicate
+            subst = Pattern.substitution patt
+         in areSimplifiedChildrenOfConj term
+            && areSimplifiedChildrenOfConj predicate
+            && Substitution.isSimplified repr subst
+    areSimplifiedChildrenOfConj (And_ _ child1 child2) =
+        areSimplifiedChildrenOfConj child1
+        && areSimplifiedChildrenOfConj child2
+    areSimplifiedChildrenOfConj term = TermLike.isSimplified repr term
 
 ensureSimplifiedCondition
     :: InternalVariable variable
