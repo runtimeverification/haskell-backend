@@ -102,6 +102,7 @@ import Kore.Unparser
     ( unparse
     )
 import Logic
+import Pair
 import qualified Pretty
 
 {- | Simplify a conjunction of 'OrPattern'.
@@ -272,12 +273,8 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
                     -- Infer that the predicate is \top.
                     HashMap.insert termLike (mkTop sort)
         assumeEqualTerms =
-            case termLike of
-                Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _)
-                  | isConstructor symbol1, isFunction symbol2 ->
-                    HashMap.insert term2 term1
-                  | isConstructor symbol2, isFunction symbol1 ->
-                    HashMap.insert term1 term2
+            case retractLocalFunction termLike of
+                Just (Pair term1 term2) -> HashMap.insert term1 term2
                 _ -> id
 
         termLike = Predicate.unwrapPredicate predicate1
@@ -339,6 +336,29 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
                 assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
+
+{- | Get a local function definition from a 'TermLike'.
+
+A local function definition is a predicate that we can use to evaluate a
+function locally (based on the side conditions) when none of the functions
+global definitions (axioms) apply. We are looking for a 'TermLike' of the form
+
+@
+\equals(f(...), C(...))
+@
+
+where @f@ is a function and @C@ is a constructor. @retractLocalFunction@ will
+match an @\equals@ predicate with its arguments in either order, but the
+function pattern is always returned first in the 'Pair'.
+
+ -}
+retractLocalFunction
+    :: TermLike variable
+    -> Maybe (Pair (TermLike variable))
+retractLocalFunction (Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _))
+  | isConstructor symbol1, isFunction symbol2 = Just (Pair term2 term1)
+  | isConstructor symbol2, isFunction symbol1 = Just (Pair term1 term2)
+retractLocalFunction _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
