@@ -1,6 +1,7 @@
 module Test.Expect
     ( expectRight
     , expectLeft
+    , expectJust
     , expectOne
     , assertNull
     , assertTop
@@ -28,6 +29,9 @@ expectRight = either (assertFailure . show . debug) return
 
 expectLeft :: HasCallStack => Debug right => Either left right -> IO left
 expectLeft = either return (assertFailure . show . debug)
+
+expectJust :: HasCallStack => Maybe a -> IO a
+expectJust = maybe (assertFailure "expected Just _, found Nothing") return
 
 expectOne :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO a
 expectOne as =

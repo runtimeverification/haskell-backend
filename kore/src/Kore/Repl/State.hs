@@ -17,7 +17,7 @@ module Kore.Repl.State
     , getTargetNode, getInnerGraph, getExecutionGraph
     , smoothOutGraph
     , getInterestingBranchingNode
-    , getProofStateAt, getRuleFor, getLabels, setLabels
+    , getClaimStateAt, getRuleFor, getLabels, setLabels
     , runStepper, runStepper'
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
@@ -98,10 +98,8 @@ import Control.Monad.Reader
     ( MonadReader
     , asks
     )
-import qualified Kore.Attribute.Attributes as Syntax
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
-import qualified Kore.Attribute.Trusted as Attribute
 import Kore.Internal.Condition
     ( Condition
     )
@@ -115,6 +113,16 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Log as Log
+import Kore.Reachability
+    ( ClaimState (..)
+    , ClaimStateTransformer (..)
+    , SomeClaim (..)
+    , claimState
+    , extractUnproven
+    , getConfiguration
+    , isTrusted
+    )
+import Kore.Reachability.Prove
 import Kore.Repl.Data
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -122,23 +130,10 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
     )
-import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
-    , lensClaimPattern
-    )
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.ProofState
-    ( ProofState (Goal)
-    , ProofStateTransformer (ProofStateTransformer)
-    , extractUnproven
-    , proofState
-    )
-import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
-import Kore.Strategies.Verification
 import Kore.Syntax.Definition
     ( Definition (..)
     , Module (..)
@@ -151,9 +146,8 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: ReachabilityRule -> ExecutionGraph
-emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . Goal
+emptyExecutionGraph :: SomeClaim -> ExecutionGraph
+emptyExecutionGraph = Strategy.emptyExecutionGraph . Claimed
 
 ruleReference
     :: (Either AxiomIndex ClaimIndex -> a)
@@ -172,7 +166,7 @@ getClaimByIndex
     :: MonadState ReplState m
     => Int
     -- ^ index in the claims list
-    -> m (Maybe ReachabilityRule)
+    -> m (Maybe SomeClaim)
 getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
@@ -198,7 +192,7 @@ getClaimByName
     :: MonadState ReplState m
     => String
     -- ^ label attribute
-    -> m (Maybe ReachabilityRule)
+    -> m (Maybe SomeClaim)
 getClaimByName name = do
     claims <- Lens.use (field @"claims")
     return $ find (isNameEqual name) claims
@@ -215,7 +209,7 @@ getClaimIndexByName name= do
 getAxiomOrClaimByName
     :: MonadState ReplState m
     => RuleName
-    -> m (Maybe (Either Axiom ReachabilityRule))
+    -> m (Maybe (Either Axiom SomeClaim))
 getAxiomOrClaimByName (RuleName name) = do
     mAxiom <- getAxiomByName name
     case mAxiom of
@@ -250,7 +244,7 @@ getNameText = from
 getAxiomOrClaimByIndex
     :: MonadState ReplState m
     => Either AxiomIndex ClaimIndex
-    -> m (Maybe (Either Axiom ReachabilityRule))
+    -> m (Maybe (Either Axiom SomeClaim))
 getAxiomOrClaimByIndex =
     fmap bisequence
         . bitraverse
@@ -265,7 +259,7 @@ getInternalIdentifier = from
 -- | Update the currently selected claim to prove.
 switchToProof
     :: MonadState ReplState m
-    => ReachabilityRule -> ClaimIndex -> m ()
+    => SomeClaim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -418,11 +412,11 @@ getTargetNode maybeNode = do
        else pure Nothing
 
 -- | Get the proof state at selected node (or current node for 'Nothing').
-getProofStateAt
+getClaimStateAt
     :: MonadState ReplState m
     => Maybe ReplNode
-    -> m (Maybe (ReplNode, CommonProofState))
-getProofStateAt maybeNode = do
+    -> m (Maybe (ReplNode, CommonClaimState))
+getClaimStateAt maybeNode = do
     node' <- getTargetNode maybeNode
     case node' of
         Nothing -> pure Nothing
@@ -517,7 +511,7 @@ runStepper'
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => [ReachabilityRule]
+    => [SomeClaim]
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph, StepResult)
@@ -557,11 +551,11 @@ runUnifier sideCondition first second = do
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
-        . proofState ProofStateTransformer
-            { goalTransformer = const . Just $ UnevaluatedNode
-            , goalRemainderTransformer = const . Just $ StuckNode
-            , goalRewrittenTransformer = const . Just $ UnevaluatedNode
-            , goalStuckTransformer = const . Just $ StuckNode
+        . claimState ClaimStateTransformer
+            { claimedTransformer = const . Just $ UnevaluatedNode
+            , remainingTransformer = const . Just $ StuckNode
+            , rewrittenTransformer = const . Just $ UnevaluatedNode
+            , stuckTransformer = const . Just $ StuckNode
             , provenValue = Nothing
             }
         . Graph.lab'
@@ -571,7 +565,7 @@ getNodeState graph node =
 nodeToGoal
     :: InnerGraph
     -> Graph.Node
-    -> Maybe ReachabilityRule
+    -> Maybe SomeClaim
 nodeToGoal graph node =
     extractUnproven
     . Graph.lab'
@@ -664,7 +658,7 @@ conjOfClaims claims sort =
 generateInProgressClaims
     :: forall m
     .  MonadState ReplState m
-    => m [ReachabilityRule]
+    => m [SomeClaim]
 generateInProgressClaims = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -674,32 +668,27 @@ generateInProgressClaims = do
   where
     notStartedClaims
         :: Map.Map ClaimIndex ExecutionGraph
-        -> [ReachabilityRule]
-        -> [ReachabilityRule]
+        -> [SomeClaim]
+        -> [SomeClaim]
     notStartedClaims graphs claims =
-        filter (not . Goal.isTrusted)
-                ( (claims !!)
-                . unClaimIndex
-                <$> Set.toList
-                    (Set.difference
-                        ( Set.fromList
-                        $ fmap ClaimIndex [0..length claims - 1]
-                        )
-                        ( Set.fromList
-                        $ Map.keys graphs
-                        )
-                    )
-                )
+        Set.difference claimIndices startedClaims
+        & Set.toList
+        & map lookupClaim
+        & filter (not . isTrusted)
+      where
+        claimIndices = Set.fromList (ClaimIndex <$> take (length claims) [0..])
+        startedClaims = Map.keysSet graphs
+        lookupClaim = (!!) claims . unClaimIndex
 
 unprovenGoals
     :: Map ClaimIndex ExecutionGraph
-    -> [ReachabilityRule]
+    -> [SomeClaim]
 unprovenGoals graphs =
     findUnprovenGoals =<< Map.elems graphs
 
 findUnprovenGoals
     :: ExecutionGraph
-    -> [ReachabilityRule]
+    -> [SomeClaim]
 findUnprovenGoals (Strategy.graph -> graph) =
     mapMaybe (nodeToGoal graph)
     . findLeafNodes
@@ -710,7 +699,7 @@ currentClaimSort = do
     claim <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
         . Pattern.toTermLike
-        . Goal.getConfiguration
+        . getConfiguration
         $ claim
 
 sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
@@ -746,7 +735,7 @@ replOutputToString (ReplOutput out) =
 createNewDefinition
     :: ModuleName
     -> String
-    -> [Claim]
+    -> [SomeClaim]
     -> Definition (Sentence (TermLike VariableName))
 createNewDefinition mainModuleName name claims =
     Definition
@@ -772,26 +761,15 @@ createNewDefinition mainModuleName name claims =
                 , sentenceImportAttributes = mempty
                 }
 
-    claimToSentence :: Claim -> Sentence (TermLike VariableName)
+    claimToSentence :: SomeClaim -> Sentence (TermLike VariableName)
     claimToSentence claim =
         SentenceClaimSentence
         . SentenceClaim
         $ SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                from @Claim @(AxiomPattern _) claim & getAxiomPattern
-            , sentenceAxiomAttributes = trustedToAttribute claim
+                from @SomeClaim @(AxiomPattern _) claim
+                & getAxiomPattern
+            , sentenceAxiomAttributes =
+                from @Attribute.Trusted $ from @SomeClaim claim
             }
-
-    trustedToAttribute :: Claim -> Syntax.Attributes
-    trustedToAttribute claim
-        | isTrusted = Syntax.Attributes [Attribute.trustedAttribute]
-        | otherwise = mempty
-      where
-        Attribute.Trusted { isTrusted } =
-            Lens.view
-                ( lensClaimPattern
-                . field @"attributes"
-                . field @"trusted"
-                )
-                claim

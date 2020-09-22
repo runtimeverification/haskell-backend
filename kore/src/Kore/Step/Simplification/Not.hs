@@ -32,7 +32,7 @@ import Kore.Internal.MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
-    ( MultiOr (..)
+    ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -111,7 +111,8 @@ simplifyEvaluated
 simplifyEvaluated sideCondition simplified =
     OrPattern.observeAllT $ do
         let not' = Not { notChild = simplified, notSort = () }
-        andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
+        andPattern <-
+            scatterAnd (MultiAnd.map makeEvaluateNot (distributeNot not'))
         mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
@@ -122,7 +123,11 @@ simplifyEvaluatedPredicate notChild =
     OrCondition.observeAllT $ do
         let not' = Not { notChild = notChild, notSort = () }
         andPredicate <-
-            scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
+            scatterAnd
+                ( MultiAnd.map
+                    makeEvaluateNotPredicate
+                    (distributeNot not')
+                )
         mkMultiAndPredicate andPredicate
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
@@ -142,7 +147,7 @@ makeEvaluateNot
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
-        (Pattern.fromTermLike <$> makeTermNot term)
+        (MultiOr.map Pattern.fromTermLike $ makeTermNot term)
         (makeEvaluatePredicate condition
             & Pattern.fromCondition (termLikeSort term)
             & MultiOr.singleton
@@ -213,19 +218,14 @@ distributeNot notOr@Not { notChild } =
   where
     worker child = notOr { notChild = child }
 
-{- | Distribute 'MultiAnd' over 'MultiOr'.
- -}
-distributeAnd
-    :: MultiAnd (MultiOr child)
-    -> MultiOr (MultiAnd child)
-distributeAnd = sequenceA
-
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}
 scatterAnd
-    :: MultiAnd (MultiOr child)
+    :: Ord child
+    => TopBottom child
+    => MultiAnd (MultiOr child)
     -> LogicT m (MultiAnd child)
-scatterAnd = scatter . distributeAnd
+scatterAnd = scatter . MultiOr.distributeAnd
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}

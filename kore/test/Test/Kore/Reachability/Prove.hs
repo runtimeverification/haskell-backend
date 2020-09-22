@@ -1,4 +1,4 @@
-module Test.Kore.Strategies.Reachability.Verification
+module Test.Kore.Reachability.Prove
     ( test_reachabilityVerification
     ) where
 
@@ -7,6 +7,10 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
@@ -16,9 +20,15 @@ import Data.Generics.Product
 import Data.Limit
     ( Limit (..)
     )
+import Numeric.Natural
+    ( Natural
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
@@ -28,23 +38,33 @@ import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
-    , lensClaimPattern
+    ( ClaimPattern (..)
     )
-import Kore.Strategies.Goal
+import Kore.Step.RulePattern
+    ( RulePattern (..)
+    , injectTermIntoRHS
+    , mkRewritingRule
+    , rulePattern
+    )
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
+import Kore.Unparser
+    ( unparseToText2
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Strategies.Common
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_reachabilityVerification :: [TestTree]
@@ -53,7 +73,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -66,7 +86,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -79,7 +99,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
@@ -94,7 +114,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -107,7 +127,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -120,7 +140,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 0)
             Unlimited
             [simpleAxiom Mock.a Mock.b]
@@ -140,7 +160,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -158,7 +178,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -176,7 +196,7 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
@@ -187,11 +207,228 @@ test_reachabilityVerification =
         assertEqual ""
             (Left $ OrPattern.fromTermLike Mock.b)
             actual
+    , testCase "OnePath: Identity spec" $ do
+        -- Axioms: []
+        -- Claims: a => a
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 1)
+            []
+            [ simpleOnePathClaim Mock.a Mock.a ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: Identity spec" $ do
+        -- Axioms: []
+        -- Claims: a => a
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 1)
+            []
+            [ simpleAllPathClaim Mock.a Mock.a ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: Identity spec" $ do
+        -- Axioms: []
+        -- Claims: a => a
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 1)
+            []
+            [ simpleOnePathClaim Mock.a Mock.a
+            , simpleAllPathClaim Mock.a Mock.a
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "OnePath: Distinct spec" $ do
+        -- Axioms: []
+        -- Claims: a => b
+        -- Expected: error a
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            []
+            [ simpleOnePathClaim Mock.a Mock.b ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.a)
+            actual
+    , testCase "AllPath: Distinct spec" $ do
+        -- Axioms: []
+        -- Claims: a => b
+        -- Expected: error a
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            []
+            [ simpleAllPathClaim Mock.a Mock.b ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.a)
+            actual
+    , testCase "Mixed: Distinct spec" $ do
+        -- Axioms: []
+        -- Claims: a => b
+        -- Expected: error a
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            []
+            [ simpleOnePathClaim Mock.a Mock.b
+            , simpleAllPathClaim Mock.a Mock.b
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.a)
+            actual
+    , testCase "OnePath: b or c spec" $ do
+        -- Axioms: a => b
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            (Limit 2)
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c) ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: b or c spec" $ do
+        -- Axioms: a => b
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            (Limit 2)
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c) ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: b or c spec" $ do
+        -- Axioms: a => b
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            (Limit 2)
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c)
+            , simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c)
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "OnePath: Everything is provable when we have cyclic rules" $ do
+        -- Axioms: a => a
+        -- Claims: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.a Mock.a ]
+            [ simpleOnePathClaim Mock.a Mock.b ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: Everything is provable when we have cyclic rules" $ do
+        -- Axioms: a => a
+        -- Claims: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.a Mock.a ]
+            [ simpleAllPathClaim Mock.a Mock.b ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: Everything is provable when we have cyclic rules" $ do
+        -- Axioms: a => a
+        -- Claims: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.a Mock.a ]
+            [ simpleOnePathClaim Mock.a Mock.b
+            , simpleAllPathClaim Mock.a Mock.b
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "OnePath: Concurrent rules" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 2)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c) ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: Concurrent rules" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 2)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c) ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: Concurrent rules" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 2)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c)
+            , simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c)
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
     , testCase "OnePath: Returns first failing claim" $ do
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -204,7 +441,7 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -217,7 +454,7 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
@@ -232,7 +469,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -245,7 +482,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -258,7 +495,7 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
@@ -272,7 +509,7 @@ test_reachabilityVerification =
     , testCase "OnePath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -286,7 +523,7 @@ test_reachabilityVerification =
     , testCase "AllPath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -300,7 +537,7 @@ test_reachabilityVerification =
     , testCase "Mixed: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             []
@@ -318,7 +555,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -334,7 +571,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -350,7 +587,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -368,7 +605,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -384,7 +621,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -400,7 +637,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -419,7 +656,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -440,7 +677,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -461,7 +698,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -484,7 +721,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -516,7 +753,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -548,7 +785,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -583,7 +820,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -619,7 +856,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -655,7 +892,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             (Limit 1)
             Unlimited
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -696,7 +933,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -717,7 +954,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -738,7 +975,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -759,7 +996,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -780,7 +1017,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -801,7 +1038,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -822,7 +1059,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -843,7 +1080,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -864,7 +1101,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -878,13 +1115,70 @@ test_reachabilityVerification =
         assertEqual ""
             (Left $ OrPattern.fromTermLike Mock.e)
             actual
+    , testCase "OnePath: skips proven claim" $ do
+        -- Axiom: d => e
+        -- Claim: a => b
+        -- Claim: d => e
+        -- Already proven: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.d Mock.e
+            ]
+            [ simpleOnePathClaim Mock.a Mock.b
+            , simpleOnePathClaim Mock.d Mock.e
+            ]
+            [ simpleOnePathClaim Mock.a Mock.b
+            ]
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: skips proven claim" $ do
+        -- Axiom: d => e
+        -- Claim: a => b
+        -- Claim: d => e
+        -- Already proven: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.d Mock.e
+            ]
+            [ simpleAllPathClaim Mock.a Mock.b
+            , simpleAllPathClaim Mock.d Mock.e
+            ]
+            [ simpleAllPathClaim Mock.a Mock.b
+            ]
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: skips proven claim" $ do
+        -- Axiom: d => e
+        -- Claim: a => b
+        -- Claim: d => e
+        -- Already proven: a => b
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.d Mock.e
+            ]
+            [ simpleOnePathClaim Mock.a Mock.b
+            , simpleAllPathClaim Mock.d Mock.e
+            ]
+            [ simpleOnePathClaim Mock.a Mock.b
+            ]
+        assertEqual ""
+            (Right ())
+            actual
     , testCase "OnePath: second proves first but fails" $ do
         -- Axiom: a => b
         -- Axiom: c => d
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -903,7 +1197,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -922,7 +1216,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -944,7 +1238,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -963,7 +1257,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -982,7 +1276,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1001,7 +1295,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1023,7 +1317,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1042,7 +1336,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1061,7 +1355,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1080,7 +1374,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1102,7 +1396,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: error b
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1110,6 +1404,64 @@ test_reachabilityVerification =
             ]
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleAllPathTrustedClaim Mock.b Mock.c
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.b)
+            actual
+    , testCase "OnePath: trusted first proves second" $ do
+        -- Axiom: a => b
+        -- Axiom: c => d
+        -- Claim: b => c
+        -- Claim: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 4)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.c Mock.d
+            ]
+            [ simpleOnePathTrustedClaim Mock.b Mock.c
+            , simpleOnePathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath: trusted first proves second" $ do
+        -- Axiom: a => b
+        -- Axiom: c => d
+        -- Claim: b => c
+        -- Claim: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 4)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.c Mock.d
+            ]
+            [ simpleAllPathTrustedClaim Mock.b Mock.c
+            , simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed: trusted first doesn't proves second\
+                \ because they are different claim types" $ do
+        -- Axiom: a => b
+        -- Axiom: c => d
+        -- Claim: b => c
+        -- Claim: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            (Limit 4)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.c Mock.d
+            ]
+            [ simpleOnePathTrustedClaim Mock.b Mock.c
+            , simpleAllPathClaim Mock.a Mock.d
             ]
             []
         assertEqual ""
@@ -1125,7 +1477,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1149,7 +1501,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1173,7 +1525,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1199,7 +1551,7 @@ test_reachabilityVerification =
         -- Expected: error d
         --    first verification: a=>b=>c=>d
         --    second verification: b=>c=>d is now visible here
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -1220,7 +1572,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1238,7 +1590,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1256,7 +1608,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerificationToPattern
+        actual <- proveClaims_
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1269,12 +1621,195 @@ test_reachabilityVerification =
         assertEqual ""
             (Left $ OrPattern.fromTermLike Mock.c)
             actual
+    , testCase "OnePath Priority: can get stuck by choosing second axiom" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c
+        --     b => d
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.b Mock.c
+            , simpleAxiom Mock.b Mock.d
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
+    , testCase "AllPath Priority: can get stuck by choosing second axiom" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c
+        --     b => d
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.b Mock.c
+            , simpleAxiom Mock.b Mock.d
+            ]
+            [ simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
+    , testCase "Mixed Priority: can get stuck by choosing second axiom" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c
+        --     b => d
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.b Mock.c
+            , simpleAxiom Mock.b Mock.d
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            , simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
+    , testCase "OnePath Priority: should succeed, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.c 2
+            , simplePriorityAxiom Mock.b Mock.d 1
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "AllPath Priority: should succeed, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.c 2
+            , simplePriorityAxiom Mock.b Mock.d 1
+            ]
+            [ simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "Mixed Priority: should succeed, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: success
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.c 2
+            , simplePriorityAxiom Mock.b Mock.d 1
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            , simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Right ())
+            actual
+    , testCase "OnePath Priority: should fail, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.d 2
+            , simplePriorityAxiom Mock.b Mock.c 1
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
+    , testCase "AllPath Priority: should fail, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.d 2
+            , simplePriorityAxiom Mock.b Mock.c 1
+            ]
+            [ simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
+    , testCase "Mixed Priority: should fail, prefering axiom with priority 1" $ do
+        -- Axioms:
+        --     a => b
+        --     b => c [priority(2)]
+        --     b => d [priority(1)]
+        -- Claims: a => d
+        -- Expected: error c
+        actual <- proveClaims_
+            Unlimited
+            Unlimited
+            [ simpleAxiom Mock.a Mock.b
+            , simplePriorityAxiom Mock.b Mock.d 2
+            , simplePriorityAxiom Mock.b Mock.c 1
+            ]
+            [ simpleOnePathClaim Mock.a Mock.d
+            , simpleAllPathClaim Mock.a Mock.d
+            ]
+            []
+        assertEqual ""
+            (Left $ OrPattern.fromTermLike Mock.c)
+            actual
     ]
 
 simpleAxiom
     :: TermLike VariableName
     -> TermLike VariableName
-    -> Rule ReachabilityRule
+    -> Rule SomeClaim
 simpleAxiom left right =
     ReachabilityRewriteRule $ simpleRewrite left right
 
@@ -1303,37 +1838,104 @@ simpleClaim
 simpleOnePathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> SomeClaim
 simpleOnePathClaim left right =
-    OnePath . OnePathRule $ simpleClaim left right
+    OnePath . OnePathClaim $ simpleClaim left right
 
 simpleAllPathClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> SomeClaim
 simpleAllPathClaim left right =
-    AllPath . AllPathRule $ simpleClaim left right
+    AllPath . AllPathClaim $ simpleClaim left right
 
 simpleOnePathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> SomeClaim
 simpleOnePathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . OnePath
-    . OnePathRule
+    . OnePathClaim
     $ simpleClaim left right
 
 simpleAllPathTrustedClaim
     :: TermLike VariableName
     -> TermLike VariableName
-    -> ReachabilityRule
+    -> SomeClaim
 simpleAllPathTrustedClaim left right =
     Lens.set
         (lensClaimPattern . field @"attributes" . field @"trusted")
         (Attribute.Trusted True)
     . AllPath
-    . AllPathRule
+    . AllPathClaim
     $ simpleClaim left right
+
+simplePriorityAxiom
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> Integer
+    -> Rule SomeClaim
+simplePriorityAxiom left right priority =
+    ReachabilityRewriteRule . mkRewritingRule . RewriteRule
+    $ RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , requires = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
+        , attributes = def
+            { Attribute.priority = Attribute.Priority (Just priority)
+            }
+        }
+
+
+simpleRewrite
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> RewriteRule RewritingVariableName
+simpleRewrite left right =
+    mkRewritingRule $ RewriteRule $ rulePattern left right
+
+proveClaims
+    :: Limit Natural
+    -> Limit Natural
+    -> [Rule SomeClaim]
+    -> [SomeClaim]
+    -> [SomeClaim]
+    -> IO (Either ProofStuck ())
+proveClaims breadthLimit depthLimit axioms claims alreadyProven =
+    Kore.Reachability.proveClaims
+        breadthLimit
+        BreadthFirst
+        (AllClaims claims)
+        (Axioms axioms)
+        (AlreadyProven (map unparseToText2 alreadyProven))
+        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
+    & runExceptT
+    & runSimplifier mockEnv
+  where
+    mockEnv = Mock.env
+    applyDepthLimit claim = (claim, depthLimit)
+    selectUntrusted = filter (not . isTrusted)
+
+proveClaims_
+    :: Limit Natural
+    -> Limit Natural
+    -> [Rule SomeClaim]
+    -> [SomeClaim]
+    -> [SomeClaim]
+    -> IO (Either (OrPattern VariableName) ())
+proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
+    do
+        stuck <- Test.Kore.Reachability.Prove.proveClaims
+            breadthLimit
+            depthLimit
+            axioms
+            claims
+            alreadyProven
+        return (toPattern stuck)
+  where
+    toPattern :: Either ProofStuck a -> Either (OrPattern VariableName) a
+    toPattern = Bifunctor.first stuckPatterns

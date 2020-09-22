@@ -1,6 +1,6 @@
 module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule_RewriteRule
-    , test_simplifyRule_OnePathRule
+    , test_simplifyRule_OnePathClaim
     , test_simplifyClaimRule
     ) where
 
@@ -28,9 +28,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -54,6 +51,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
+    ( OnePathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingVariable
@@ -63,7 +63,6 @@ import Kore.Sort
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathRule (..)
     , claimPattern
     )
 import Kore.Step.Rule.Simplify
@@ -187,8 +186,8 @@ test_simplifyRule_RewriteRule =
 
     x = mkElemVar Mock.x
 
-test_simplifyRule_OnePathRule :: [TestTree]
-test_simplifyRule_OnePathRule =
+test_simplifyRule_OnePathClaim :: [TestTree]
+test_simplifyRule_OnePathClaim =
     [ testCase "No simplification needed" $ do
         let rule = Mock.a `rewritesToWithSort` Mock.cf
             expected = [rule]
@@ -324,10 +323,10 @@ test_simplifyRule_OnePathRule =
     ]
   where
     rewritesToWithSort
-        :: RuleBase base OnePathRule
+        :: RuleBase base OnePathClaim
         => base VariableName
         -> base VariableName
-        -> OnePathRule
+        -> OnePathClaim
     rewritesToWithSort = Common.rewritesToWithSort
 
     x = mkElemVar Mock.x
@@ -337,7 +336,7 @@ runSimplifyRuleNoSMT
     => rule
     -> IO [rule]
 runSimplifyRuleNoSMT rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runNoSMT
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -348,7 +347,7 @@ runSimplifyRule
     => rule
     -> IO [rule]
 runSimplifyRule rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runSMT (pure ())
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -417,11 +416,11 @@ test_simplifyClaimRule =
         -> ClaimPattern
         -> [ClaimPattern]
         -> TestTree
-    test name replacements (OnePathRule -> input) (map OnePathRule -> expect) =
-        -- Test simplifyClaimRule through the OnePathRule instance.
+    test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
+        -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
             actual <- run $ simplifyRuleLhs input
-            assertEqual "" expect (MultiAnd.extractPatterns actual)
+            assertEqual "" expect (Foldable.toList actual)
       where
         run =
             runSMT (pure ())
@@ -439,7 +438,7 @@ data TestEnv =
     TestEnv
     { replacements
         :: ![(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    , input :: !OnePathRule
+    , input :: !OnePathClaim
     , requires :: !(Condition RewritingVariableName)
     }
 
@@ -458,7 +457,7 @@ instance MFunctor TestSimplifierT where
 instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
     simplifyTermLike sideCondition termLike = do
         TestEnv { replacements, input, requires } <- Reader.ask
-        let rule = getOnePathRule input
+        let rule = getOnePathClaim input
             leftTerm =
                 Lens.view (field @"left") rule
                 & Pattern.term

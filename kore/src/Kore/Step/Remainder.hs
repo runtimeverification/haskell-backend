@@ -28,6 +28,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
@@ -74,8 +75,8 @@ remainder'
 remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
   where
-    conditions = mkMultiAndPredicate . unificationConditions <$> results
-    mkNotExists = mkNotMultiOr . fmap existentiallyQuantifyRuleVariables
+    conditions = MultiOr.map (mkMultiAndPredicate . unificationConditions) results
+    mkNotExists = mkNotMultiOr . MultiOr.map existentiallyQuantifyRuleVariables
 
 -- | Existentially-quantify target (axiom) variables in the 'Condition'.
 existentiallyQuantifyRuleVariables
@@ -118,7 +119,7 @@ unificationConditions
     -- ^ Unification solution
     -> MultiAnd (Predicate RewritingVariableName)
 unificationConditions Conditional { predicate, substitution } =
-    pure predicate <|> substitutionConditions substitution'
+    MultiAnd.singleton predicate <> substitutionConditions substitution'
   where
     substitution' = Substitution.filter isSomeConfigVariable substitution
 
@@ -151,7 +152,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
                 { term = ()
                 , predicate =
                     OrCondition.toPredicate
-                    . fmap Condition.toPredicate
+                    . MultiOr.map Condition.toPredicate
                     $ ceil
                 , substitution = mempty
                 }

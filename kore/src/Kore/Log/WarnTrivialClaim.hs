@@ -14,7 +14,7 @@ import Prelude.Kore
 
 import Kore.Attribute.SourceLocation
 import Kore.Log.InfoProofDepth
-import Kore.Step.ClaimPattern
+import Kore.Reachability.SomeClaim
 import Log
 import Pretty
     ( Pretty
@@ -22,9 +22,9 @@ import Pretty
 import qualified Pretty
 
 data WarnTrivialClaim
-    = WarnProvenClaimZeroDepth ReachabilityRule
+    = WarnProvenClaimZeroDepth SomeClaim
     -- ^ Warning when a claim is proved without rewriting.
-    | WarnTrivialClaimRemoved ReachabilityRule
+    | WarnTrivialClaimRemoved SomeClaim
     -- ^ Warning when a claim is proved during initialization.
     deriving Show
 
@@ -51,14 +51,14 @@ instance Entry WarnTrivialClaim where
 warnProvenClaimZeroDepth
     :: MonadLog log
     => ProofDepth
-    -> ReachabilityRule
+    -> SomeClaim
     -> log ()
 warnProvenClaimZeroDepth (ProofDepth depth) rule =
     when (depth == 0) $ logEntry (WarnProvenClaimZeroDepth rule)
 
 warnTrivialClaimRemoved
     :: MonadLog log
-    => ReachabilityRule
+    => SomeClaim
     -> log ()
 warnTrivialClaimRemoved rule =
     logEntry (WarnTrivialClaimRemoved rule)

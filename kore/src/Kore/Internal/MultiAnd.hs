@@ -13,7 +13,7 @@ Portability : portable
 
 module Kore.Internal.MultiAnd
     ( MultiAnd
-    , extractPatterns
+    , top
     , make
     , toPredicate
     , fromPredicate
@@ -21,17 +21,21 @@ module Kore.Internal.MultiAnd
     , singleton
     , toPattern
     , map
+    , traverse
     ) where
 
 import Prelude.Kore hiding
     ( map
+    , traverse
     )
 
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
+import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
@@ -71,9 +75,7 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 -}
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
-    deriving (Semigroup, Monoid)
-    deriving (Functor, Applicative, Monad, Alternative)
-    deriving (Foldable, Traversable)
+    deriving (Foldable)
     deriving (GHC.Generic, GHC.IsList)
 
 instance SOP.Generic (MultiAnd child)
@@ -93,6 +95,14 @@ instance TopBottom child => TopBottom (MultiAnd child) where
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
+    (MultiAnd []) <> b = b
+    a <> (MultiAnd []) = a
+    (MultiAnd a) <> (MultiAnd b) = make (a <> b)
+
+instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
+    mempty = make []
 
 instance
     InternalVariable variable
@@ -114,6 +124,9 @@ instance
   where
     from = fromTermLike
     {-# INLINE from #-}
+
+top :: MultiAnd term
+top = MultiAnd []
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
@@ -143,12 +156,6 @@ make patts = filterAnd (MultiAnd patts)
 -}
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
-
-{-| Returns the patterns inside an @\and@.
--}
-extractPatterns :: MultiAnd term -> [term]
-extractPatterns = getMultiAnd
-
 
 {- | Simplify the conjunction.
 
@@ -241,4 +248,15 @@ map
     => (child1 -> child2)
     -> MultiAnd child1
     -> MultiAnd child2
-map f = make . fmap f . extractPatterns
+map f = make . fmap f . Foldable.toList
+{-# INLINE map #-}
+
+traverse
+    :: Ord child2
+    => TopBottom child2
+    => Applicative f
+    => (child1 -> f child2)
+    -> MultiAnd child1
+    -> f (MultiAnd child2)
+traverse f = fmap make . Traversable.traverse f . Foldable.toList
+{-# INLINE traverse #-}
