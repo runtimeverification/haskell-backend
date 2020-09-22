@@ -552,102 +552,27 @@ test_andSimplification =
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Function application equals different constructors 1" $ do
-        let functionApplication = Mock.f (mkElemVar Mock.x)
-            definednessCondition = makeCeilPredicate_ functionApplication
-        actual <-
-            evaluatePatterns
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        functionApplication
-                        Mock.a
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        functionApplication
-                        Mock.b
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
-    , testCase "Function application equals different constructors 2" $ do
-        let functionApplication = Mock.f (mkElemVar Mock.x)
-            definednessCondition = makeCeilPredicate_ functionApplication
-        actual <-
-            evaluatePatterns
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        Mock.a
-                        functionApplication
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        functionApplication
-                        Mock.b
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
-    , testCase "Function application equals different constructors 3" $ do
-        let functionApplication = Mock.f (mkElemVar Mock.x)
-            definednessCondition = makeCeilPredicate_ functionApplication
-        actual <-
-            evaluatePatterns
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        Mock.a
-                        functionApplication
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        Mock.b
-                        functionApplication
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
-    , testCase "Function application equals different constructors 4" $ do
-        let functionApplication = Mock.f (mkElemVar Mock.x)
-            definednessCondition = makeCeilPredicate_ functionApplication
-        actual <-
-            evaluatePatterns
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        functionApplication
-                        Mock.a
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeAndPredicate
-                    definednessCondition
-                    (makeEqualsPredicate_
-                        Mock.b
-                        functionApplication
-                    )
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
+    , testGroup "Local function evaluation" $
+        let f = Mock.f (mkElemVar Mock.x)
+            defined = makeCeilPredicate_ f & Condition.fromPredicate
+            a = Mock.a
+            b = Mock.b
+            mkLocalDefn (Left t)  = makeEqualsPredicate_ t f
+            mkLocalDefn (Right t) = makeEqualsPredicate_ f t
+            test name eitherC1 eitherC2 =
+                testCase name $ do
+                    let equals1 = mkLocalDefn eitherC1 & Condition.fromPredicate
+                        equals2 = mkLocalDefn eitherC2 & Condition.fromPredicate
+                        pattern1 = Pattern.fromCondition_ (defined <> equals1)
+                        pattern2 = Pattern.fromCondition_ (defined <> equals2)
+                    actual <- evaluatePatterns pattern1 pattern2
+                    assertBool "Expected \\bottom" $ isBottom actual
+        in
+            [ test "contradiction: f(x) = a ∧ f(x) = b" (Right a) (Right b)
+            , test "contradiction: a = f(x) ∧ f(x) = b" (Left  a) (Right b)
+            , test "contradiction: a = f(x) ∧ b = f(x)" (Left  a) (Left  b)
+            , test "contradiction: f(x) = a ∧ b = f(x)" (Right a) (Left  b)
+            ]
     , testCase "Constructor equality" $ do
         actual <-
             evaluatePatterns
