@@ -20,7 +20,6 @@ module Kore.Internal.TermLike.TermLike
     , traverseVariablesF
     , updateCallStack
     , depth
-    , markDefined
     ) where
 
 import Prelude.Kore
@@ -56,7 +55,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
-import qualified Data.Functor.Foldable as Foldable
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.ConstructorLike
@@ -799,13 +797,6 @@ traverseVariablesF adj =
 
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes (TermLike (attrs :< _)) = attrs
-
-markDefined :: TermLike variable -> TermLike variable
--- markDefined (TermLike (attrs :< DefinedF (Defined term))) =
---     Foldable.embed (attrs :< DefinedF (Defined (markDefined term)))
-markDefined (TermLike (attrs :< termF)) = Foldable.embed (attrs' :< termF)
-  where
-    attrs' = attrs { Attribute.defined = Attribute.Defined True }
 
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes

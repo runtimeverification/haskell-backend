@@ -219,6 +219,7 @@ import Data.Text
 import qualified Data.Text as Text
 import Data.These
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import qualified Kore.Attribute.Pattern.Defined as Pattern
@@ -1464,6 +1465,12 @@ mkDefined = worker
       | isDefinedPattern term = term
       | otherwise = mkDefinedAtTop term
 
+    syntheticDefined
+        :: (Synthetic Attribute.Defined f)
+        => f (TermLike variable) -> Attribute.Defined
+    syntheticDefined fTermLike =
+        synthetic (Attribute.defined . Cofree.headF . getTermLike <$> fTermLike)
+
     worker
         :: TermLike variable
         -> TermLike variable
@@ -1471,112 +1478,105 @@ mkDefined = worker
       | isDefinedPattern term = term
       | otherwise =
         let (attrs :< termF) = Recursive.project term
-         in case termF of
-                AndF And { andSort, andFirst, andSecond } ->
-                    mkDefined1
-                        $ Recursive.embed
-                            ( attrs
-                                :< AndF
-                                    ( And
-                                        andSort
-                                        (worker andFirst)
-                                        (worker andSecond)
-                                    )
-                            )
-                ApplySymbolF
-                    Application
-                        { applicationSymbolOrAlias
-                        , applicationChildren
-                        } ->
-                            let mkDef
-                                  | isFunctional applicationSymbolOrAlias
-                                    = markDefined
-                                  | otherwise = mkDefined1
-                            in
-                            mkDef
+        in case termF of
+            AndF And { andSort, andFirst, andSecond } -> do
+                let and' = And andSort (worker andFirst) (worker andSecond)
+                mkDefined1
+                    $ Recursive.embed
+                        ( attrs {Attribute.defined = syntheticDefined and'}
+                            :< AndF and'
+                        )
+            ApplySymbolF
+                Application
+                    { applicationSymbolOrAlias
+                    , applicationChildren
+                    }
+                    -> do
+                    let app' =
+                            Application
+                                applicationSymbolOrAlias
+                                (worker <$> applicationChildren)
+                        defined =
+                            mkDefined1
                                 $ Recursive.embed
                                     ( attrs
-                                        :< ApplySymbolF
-                                            ( Application
-                                                applicationSymbolOrAlias
-                                                (worker <$> applicationChildren)
-                                            )
+                                        { Attribute.defined =
+                                            syntheticDefined app'
+                                        }
+                                        :< ApplySymbolF app'
                                     )
-                ApplyAliasF _ ->
-                    mkDefined1 term
-                BottomF _ ->
-                    error
-                        "Internal error: cannot mark\
-                        \ a \\bottom pattern as defined."
-                CeilF _ -> term
-                DomainValueF _  -> term
-                BuiltinF (Domain.BuiltinBool _) -> term
-                BuiltinF (Domain.BuiltinInt _) -> term
-                BuiltinF (Domain.BuiltinString _) -> term
-                BuiltinF (Domain.BuiltinList internalList) ->
-                    -- mkDefinedAtTop is not needed because the list is always
-                    -- defined if its elements are all defined.
-                    Recursive.embed
-                        ( attrs
-                            :< BuiltinF
-                                ( Domain.BuiltinList
-                                    $ fmap mkDefined internalList
-                                )
+                        result
+                          | TermLike (_ :< DefinedF (Defined termD)) <- defined
+                          , isFunctional applicationSymbolOrAlias
+                            = termD
+                          | otherwise = defined
+                    result
+            ApplyAliasF _ ->
+                mkDefined1 term
+            BottomF _ ->
+                error
+                    "Internal error: cannot mark\
+                    \ a \\bottom pattern as defined."
+            CeilF _ -> term
+            DomainValueF _  -> term
+            BuiltinF (Domain.BuiltinBool _) -> term
+            BuiltinF (Domain.BuiltinInt _) -> term
+            BuiltinF (Domain.BuiltinString _) -> term
+            BuiltinF (Domain.BuiltinList internalList) -> do
+                -- mkDefinedAtTop is not needed because the list is always
+                -- defined if its elements are all defined.
+                let list' = Domain.BuiltinList (fmap mkDefined internalList)
+                Recursive.embed
+                    ( attrs { Attribute.defined = syntheticDefined list' }
+                        :< BuiltinF list'
+                    )
+            BuiltinF (Domain.BuiltinMap internalMap) -> do
+                let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
+                mkDefined1
+                    $ Recursive.embed
+                        ( attrs { Attribute.defined = syntheticDefined map' }
+                            :< BuiltinF map'
                         )
-                BuiltinF (Domain.BuiltinMap internalMap) ->
-                    mkDefined1
-                        $ Recursive.embed
-                            ( attrs
-                                :< BuiltinF
-                                    ( Domain.BuiltinMap
-                                        $ mkDefinedInternalAc internalMap
-                                    )
-                            )
-                BuiltinF (Domain.BuiltinSet internalSet) ->
-                    mkDefined1
-                        $ Recursive.embed
-                            ( attrs
-                                :< BuiltinF
-                                    ( Domain.BuiltinSet
-                                        $ mkDefinedInternalAc internalSet
-                                    )
-                            )
-                EqualsF _ -> term
-                ExistsF _ -> mkDefinedAtTop term
-                FloorF _ -> term
-                ForallF Forall { forallSort, forallVariable, forallChild } ->
-                    mkDefined1
-                        $ Recursive.embed
-                            ( attrs
-                                :< ForallF
-                                    ( Forall
-                                        forallSort
-                                        forallVariable
-                                        (worker forallChild)
-                                    )
-                            )
-                IffF _ -> mkDefined1 term
-                ImpliesF _ -> mkDefined1 term
-                InF _ -> term
-                MuF _ -> mkDefined1 term
-                NextF _ -> mkDefined1 term
-                NotF _ -> mkDefined1 term
-                NuF _ -> mkDefined1 term
-                OrF _ -> mkDefined1 term
-                RewritesF _ -> mkDefined1 term
-                TopF _ -> term
-                VariableF (Const someVariable) ->
-                    if isElementVariable someVariable
-                        then term
-                        else mkDefined1 term
-                StringLiteralF _ -> term
-                EvaluatedF (Evaluated child) -> worker child
-                DefinedF _ -> term
-                EndiannessF _ -> term
-                SignednessF _ -> term
-                InjF _ -> mkDefined1 term
-                InhabitantF _ -> mkDefined1 term
-                InternalBytesF _ -> term
+            BuiltinF (Domain.BuiltinSet internalSet) -> do
+                let set' = Domain.BuiltinSet (mkDefinedInternalAc internalSet)
+                mkDefined1
+                    $ Recursive.embed
+                        ( attrs { Attribute.defined = syntheticDefined set' }
+                            :< BuiltinF set'
+                        )
+            EqualsF _ -> term
+            ExistsF _ -> mkDefinedAtTop term
+            FloorF _ -> term
+            ForallF Forall { forallSort, forallVariable, forallChild } -> do
+                let forall' =
+                        Forall forallSort forallVariable (worker forallChild)
+                mkDefined1
+                    $ Recursive.embed
+                        ( attrs { Attribute.defined = syntheticDefined forall' }
+                            :< ForallF forall'
+                        )
+            IffF _ -> mkDefined1 term
+            ImpliesF _ -> mkDefined1 term
+            InF _ -> term
+            MuF _ -> mkDefined1 term
+            NextF _ -> mkDefined1 term
+            NotF _ -> mkDefined1 term
+            NuF _ -> mkDefined1 term
+            OrF _ -> mkDefined1 term
+            RewritesF _ -> mkDefined1 term
+            TopF _ -> term
+            VariableF (Const someVariable) ->
+                if isElementVariable someVariable
+                    then term
+                    else mkDefined1 term
+            StringLiteralF _ -> term
+            EvaluatedF (Evaluated child) -> worker child
+            DefinedF _ -> term
+            EndiannessF _ -> term
+            SignednessF _ -> term
+            InjF _ -> mkDefined1 term
+            InhabitantF _ -> mkDefined1 term
+            InternalBytesF _ -> term
 
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
@@ -1594,12 +1594,8 @@ mkDefined = worker
         mkDefinedOpaque = map mkDefined
 
 -- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
-mkDefinedAtTop :: TermLike variable -> TermLike variable
-mkDefinedAtTop term@(Recursive.project -> (attrs :< _)) =
-    Recursive.embed
-        ( attrs { Attribute.defined = Pattern.Defined True}
-            :< DefinedF (Defined $ markDefined term)
-        )
+mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
+mkDefinedAtTop = synthesize . DefinedF . Defined
 
 {- | Remove (recursively) the 'Defined' wrappers throughout a 'TermLike'.
  -}

@@ -47,6 +47,16 @@ import Kore.Domain.Builtin
     , InternalInt (..)
     )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
@@ -466,7 +476,6 @@ test_mkDefined =
                     )
             actual = mkDefined term
         assertEqual "" expected actual
-
     , testCase "Forall" $ do
         let term = mkForall Mock.x (Mock.f (mkElemVar Mock.x))
             expected =
@@ -536,8 +545,8 @@ test_mkDefined =
     , testCase "List" $ do
         let fx = Mock.f (mkElemVar Mock.x)
             fy = Mock.f (mkElemVar Mock.y)
-            TermLike (_ :< expect) = Mock.builtinList [defined fx, defined fy]
-            TermLike (_ :< actual) = mkDefined (Mock.builtinList [fx, fy])
+            actual = mkDefined (Mock.builtinList [fx, fy])
+            expect = Mock.builtinList [defined fx, defined fy]
         assertEqual "" expect actual
     , testGroup "Set" $
         let fx = Mock.f (mkElemVar Mock.x)
@@ -557,22 +566,20 @@ test_mkDefined =
                         & defined
                 assertEqual "" expect actual
             , testCase "SetItem( f(a) )" $ do
-                let TermLike (_ :< actual) = mkDefined (Mock.builtinSet [fa])
-                    expect = DefinedF $ Defined $ Mock.builtinSet [defa]
+                let actual = mkDefined (Mock.builtinSet [fa])
+                    expect = Mock.builtinSet [defa]
                 assertEqual "" expect actual
             , testCase "SetItem( f(x) )" $ do
-                let TermLike (_ :< actual) = mkDefined (Mock.builtinSet [fx])
-                    expect = DefinedF $ Defined $ Mock.builtinSet [defx]
+                let actual = mkDefined (Mock.builtinSet [fx])
+                    expect = Mock.builtinSet [defx]
                 assertEqual "" expect actual
             , testCase "SetItem(a) SetItem( opaque(a) )" $ do
                 let actual = mkDefined (Mock.framedSet [Mock.a] [opaque])
                     expect = defined (Mock.framedSet [Mock.a] [defOpaque])
                 assertEqual "" expect actual
             , testCase "same result inside and outside" $ do
-                let defInside =
-                        DefinedF $ Defined $ Mock.builtinSet [mkDefined fx]
-                    TermLike (_ :< defOutside) =
-                        mkDefined $ Mock.builtinSet [fx]
+                let defInside = Mock.builtinSet [mkDefined fx]
+                    defOutside = mkDefined $ Mock.builtinSet [fx]
                 assertEqual "" defInside defOutside
             ]
     , testGroup "Map" $
@@ -601,28 +608,20 @@ test_mkDefined =
                         & defined
                 assertEqual "" expect actual
             , testCase "f(a) |-> a" $ do
-                let TermLike (_ :< actual) =
-                        mkDefined (Mock.builtinMap [(fa, Mock.a)])
-                    expect =
-                        DefinedF $ Defined $ Mock.builtinMap [(defa, Mock.a)]
+                let actual = mkDefined (Mock.builtinMap [(fa, Mock.a)])
+                    expect = Mock.builtinMap [(defa, Mock.a)]
                 assertEqual "" expect actual
             , testCase "f(x) |-> a" $ do
-                let TermLike (_ :< actual) =
-                        mkDefined (Mock.builtinMap [(fx, Mock.a)])
-                    expect =
-                        DefinedF $ Defined $ Mock.builtinMap [(defx, Mock.a)]
+                let actual = mkDefined (Mock.builtinMap [(fx, Mock.a)])
+                    expect = Mock.builtinMap [(defx, Mock.a)]
                 assertEqual "" expect actual
             , testCase "a |-> f(a)" $ do
-                let TermLike (_ :< actual) =
-                        mkDefined (Mock.builtinMap [(Mock.a, fa)])
-                    expect =
-                        DefinedF $ Defined $ Mock.builtinMap [(Mock.a, defa)]
+                let actual = mkDefined (Mock.builtinMap [(Mock.a, fa)])
+                    expect = Mock.builtinMap [(Mock.a, defa)]
                 assertEqual "" expect actual
             , testCase "a |-> f(y)" $ do
-                let TermLike (_ :< actual) =
-                        mkDefined (Mock.builtinMap [(Mock.a, fy)])
-                    expect =
-                        DefinedF $ Defined $ Mock.builtinMap [(Mock.a, defy)]
+                let actual = mkDefined (Mock.builtinMap [(Mock.a, fy)])
+                    expect = Mock.builtinMap [(Mock.a, defy)]
                 assertEqual "" expect actual
             , testCase "a |-> a  opaque(a)" $ do
                 let actual =
@@ -631,12 +630,22 @@ test_mkDefined =
                         defined (Mock.framedMap [(Mock.a, Mock.a)] [defOpaque])
                 assertEqual "" expect actual
             , testCase "same result inside and outside" $ do
-                let defInside =
-                        DefinedF $ Defined $ Mock.builtinMap [(defx, defa)]
-                    TermLike (_ :< defOutside) = mkDefined $ Mock.builtinMap [(fx, fa)]
+                let defInside = Mock.builtinMap [(defx, defa)]
+                    defOutside = mkDefined $ Mock.builtinMap [(fx, fa)]
                 assertEqual "" defInside defOutside
             ]
+        , testCase "Preserve \"simplified\" attribute" $ do
+            let initial = markSimplified Mock.cf :: TermLike VariableName
+                result = mkDefined initial
+            assertEqual ""
+                (isSimplified sideRepresentation initial)
+                (isSimplified sideRepresentation result)
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName
     defined = mkDefinedAtTop
+
+    sideRepresentation :: SideCondition.Representation
+    sideRepresentation =
+        SideCondition.toRepresentation
+        (SideCondition.top :: SideCondition VariableName)
