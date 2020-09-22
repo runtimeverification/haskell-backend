@@ -181,7 +181,8 @@ instance Claim SomeClaim where
     newtype Rule SomeClaim =
         ReachabilityRewriteRule
             { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
+        deriving (GHC.Generic, Show)
+        deriving newtype (Unparse)
 
     simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
     simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim

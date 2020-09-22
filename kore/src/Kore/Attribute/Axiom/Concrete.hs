@@ -43,7 +43,8 @@ import Kore.Syntax.Variable hiding
  -}
 newtype Concrete variable =
     Concrete { unConcrete :: FreeVariables variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Semigroup, Monoid)
+    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving newtype (Semigroup, Monoid)
 
 instance SOP.Generic (Concrete variable)
 

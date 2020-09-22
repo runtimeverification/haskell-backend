@@ -156,7 +156,8 @@ instance Claim OnePathClaim where
     newtype Rule OnePathClaim =
         OnePathRewriteRule
         { unRuleOnePath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
+        deriving (GHC.Generic, Show)
+        deriving newtype (Unparse)
 
     simplify = simplify' _Unwrapped
 

@@ -61,7 +61,8 @@ import SMT
 import Test.Terse
 
 newtype MockInteger = MockInteger { unMockInteger :: Integer }
-    deriving (Eq, Ord, Num, GHC.Generic)
+    deriving (Eq, Ord, GHC.Generic)
+    deriving newtype (Num)
 
 instance Diff MockInteger
 instance SOP.Generic MockInteger
@@ -421,7 +422,7 @@ runTransitionRule claims axiomGroups prim state =
         (Claim.transitionRule claims axiomGroups prim state)
 
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
-    deriving (Functor, Applicative, Monad)
+    deriving newtype (Functor, Applicative, Monad)
 
 instance MonadLog AllPathIdentity where
     logEntry = undefined

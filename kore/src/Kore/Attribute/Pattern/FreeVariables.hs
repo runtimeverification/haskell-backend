@@ -46,7 +46,7 @@ newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Map (SomeVariableName variable) Sort }
     deriving GHC.Generic
     deriving (Eq, Ord, Show)
-    deriving (Semigroup, Monoid)
+    deriving newtype (Semigroup, Monoid)
 
 instance SOP.Generic (FreeVariables variable)
 

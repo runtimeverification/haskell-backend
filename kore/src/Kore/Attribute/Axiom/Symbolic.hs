@@ -36,7 +36,8 @@ import Kore.Syntax.Variable
  -}
 newtype Symbolic variable =
     Symbolic { unSymbolic :: FreeVariables variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Semigroup, Monoid)
+    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving newtype (Semigroup, Monoid)
 
 instance SOP.Generic (Symbolic variable)
 

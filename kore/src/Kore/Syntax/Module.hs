@@ -36,7 +36,8 @@ import qualified Pretty
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, GHC.Generic, IsString, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving newtype (IsString)
 
 instance Hashable ModuleName
 

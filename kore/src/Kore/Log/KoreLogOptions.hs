@@ -261,7 +261,7 @@ instance Default WarningSwitch where
 newtype DebugApplyEquationOptions =
     DebugApplyEquationOptions { selected :: HashSet Text }
     deriving (Eq, Show)
-    deriving (Semigroup, Monoid)
+    deriving newtype (Semigroup, Monoid)
 
 instance Default DebugApplyEquationOptions where
     def = DebugApplyEquationOptions HashSet.empty
@@ -301,7 +301,7 @@ selectDebugApplyEquation options ActualEntry { actualEntry }
 newtype DebugAttemptEquationOptions =
     DebugAttemptEquationOptions { selected :: HashSet Text }
     deriving (Eq, Show)
-    deriving (Semigroup, Monoid)
+    deriving newtype (Semigroup, Monoid)
 
 instance Default DebugAttemptEquationOptions where
     def = DebugAttemptEquationOptions HashSet.empty
@@ -348,7 +348,7 @@ selectDebugAttemptEquation options ActualEntry { actualEntry }
 newtype DebugEquationOptions =
     DebugEquationOptions { selected :: HashSet Text }
     deriving (Eq, Show)
-    deriving (Semigroup, Monoid)
+    deriving newtype (Semigroup, Monoid)
 
 instance Default DebugEquationOptions where
     def = DebugEquationOptions HashSet.empty

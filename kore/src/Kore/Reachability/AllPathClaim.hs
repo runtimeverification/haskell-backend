@@ -135,7 +135,8 @@ instance Claim AllPathClaim where
     newtype Rule AllPathClaim =
         AllPathRewriteRule
         { unRuleAllPath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
+        deriving (GHC.Generic, Show)
+        deriving newtype (Unparse)
 
     simplify = simplify' _Unwrapped
     checkImplication = checkImplication' _Unwrapped

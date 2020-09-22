@@ -82,6 +82,7 @@ It is parameterized by the types of Patterns, @pat@.
 newtype Attributes =
     Attributes { getAttributes :: [AttributePattern] }
     deriving (Eq, Ord, GHC.Generic, Show)
+    deriving newtype (Semigroup, Monoid)
 
 instance Hashable Attributes
 
@@ -94,10 +95,6 @@ instance SOP.HasDatatypeInfo Attributes
 instance Debug Attributes
 
 instance Diff Attributes
-
-deriving instance Semigroup Attributes
-
-deriving instance Monoid Attributes
 
 instance Unparse Attributes where
     unparse = attributes . getAttributes
