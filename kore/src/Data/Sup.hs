@@ -34,7 +34,12 @@ If @a@ already has a least upper bound, 'Sup' is greater than that bound.
 data Sup a
     = Element !a
     | Sup  -- ^ least upper bound (supremum)
-    deriving (Data, Functor, GHC.Generic, Read, Show, Typeable)
+    deriving (Read, Show)
+    deriving (Data, Typeable)
+    deriving (Functor)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Eq a => Eq (Sup a) where
     (==) Sup         = \case { Sup       -> True  ; _ -> False }
@@ -43,14 +48,6 @@ instance Eq a => Eq (Sup a) where
 instance Ord a => Ord (Sup a) where
     compare Sup         = \case { Sup       -> EQ         ; _   -> GT }
     compare (Element a) = \case { Element b -> compare a b; Sup -> LT }
-
-instance Hashable a => Hashable (Sup a)
-
-instance NFData a => NFData (Sup a)
-
-instance SOP.Generic (Sup a)
-
-instance SOP.HasDatatypeInfo (Sup a)
 
 -- | 'Sup' is the annihilator of 'Element'.
 instance Ord a => Semigroup (Sup a) where

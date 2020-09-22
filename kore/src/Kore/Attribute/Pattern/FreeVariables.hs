@@ -44,19 +44,12 @@ import Kore.Syntax.Variable
 
 newtype FreeVariables variable =
     FreeVariables { getFreeVariables :: Map (SomeVariableName variable) Sort }
-    deriving GHC.Generic
     deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)
-
-instance SOP.Generic (FreeVariables variable)
-
-instance SOP.HasDatatypeInfo (FreeVariables variable)
-
-instance Debug variable => Debug (FreeVariables variable)
-
-instance (Debug variable, Diff variable) => Diff (FreeVariables variable)
-
-instance NFData variable => NFData (FreeVariables variable)
 
 instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt = hashWithSalt salt . toList

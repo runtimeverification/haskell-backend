@@ -149,21 +149,11 @@ data RHS variable = RHS
     , right :: !(TermLike.TermLike variable)
     , ensures :: !(Predicate variable)
     }
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-deriving instance Eq variable => Eq (RHS variable)
-deriving instance Ord variable => Ord (RHS variable)
-deriving instance Show variable => Show (RHS variable)
-
-instance NFData variable => NFData (RHS variable)
-
-instance SOP.Generic (RHS variable)
-
-instance SOP.HasDatatypeInfo (RHS variable)
-
-instance Debug variable => Debug (RHS variable)
-
-instance (Debug variable, Diff variable) => Diff (RHS variable)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Given a collection of 'FreeVariables' and a RHS, it removes
 converts existential quantifications at the top of the term to implicit
@@ -205,21 +195,11 @@ data RulePattern variable = RulePattern
     , rhs :: !(RHS variable)
     , attributes :: !(Attribute.Axiom Symbol variable)
     }
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-deriving instance Eq variable => Eq (RulePattern variable)
-deriving instance Ord variable => Ord (RulePattern variable)
-deriving instance Show variable => Show (RulePattern variable)
-
-instance NFData variable => NFData (RulePattern variable)
-
-instance SOP.Generic (RulePattern variable)
-
-instance SOP.HasDatatypeInfo (RulePattern variable)
-
-instance Debug variable => Debug (RulePattern variable)
-
-instance (Debug variable, Diff variable) => Diff (RulePattern variable)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance From (RulePattern variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes
@@ -510,17 +490,11 @@ instance HasAttributes RulePattern where
 -}
 newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData variable => NFData (RewriteRule variable)
-
-instance SOP.Generic (RewriteRule variable)
-
-instance SOP.HasDatatypeInfo (RewriteRule variable)
-
-instance Debug variable => Debug (RewriteRule variable)
-
-instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance From (RewriteRule variable) Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes . getRewriteRule
@@ -559,17 +533,11 @@ instance TopBottom (RewriteRule variable) where
 -}
 newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData variable => NFData (ImplicationRule variable)
-
-instance SOP.Generic (ImplicationRule variable)
-
-instance SOP.HasDatatypeInfo (ImplicationRule variable)
-
-instance Debug variable => Debug (ImplicationRule variable)
-
-instance (Debug variable, Diff variable) => Diff (ImplicationRule variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     InternalVariable variable

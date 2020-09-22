@@ -79,17 +79,11 @@ import qualified Pretty
 data SomeClaim
     = OnePath !OnePathClaim
     | AllPath !AllPathClaim
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData SomeClaim
-
-instance SOP.Generic SomeClaim
-
-instance SOP.HasDatatypeInfo SomeClaim
-
-instance Debug SomeClaim
-
-instance Diff SomeClaim
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse SomeClaim where
     unparse (OnePath rule) = unparse rule
@@ -181,7 +175,11 @@ instance Claim SomeClaim where
     newtype Rule SomeClaim =
         ReachabilityRewriteRule
             { unReachabilityRewriteRule :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
+        deriving anyclass (NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
 
     simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
@@ -207,14 +205,6 @@ instance Claim SomeClaim where
         applyAxioms (coerce axiomGroups) claim
         & fmap (fmap OnePath)
         & onePathTransition
-
-instance SOP.Generic (Rule SomeClaim)
-
-instance SOP.HasDatatypeInfo (Rule SomeClaim)
-
-instance Debug (Rule SomeClaim)
-
-instance Diff (Rule SomeClaim)
 
 instance From (Rule SomeClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unReachabilityRewriteRule

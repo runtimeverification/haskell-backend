@@ -38,7 +38,12 @@ data Alias patternType =
         , aliasLeft        :: [SomeVariable VariableName]
         , aliasRight       :: patternType
         }
-    deriving (GHC.Generic, Show)
+    deriving (Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Eq patternType => Eq (Alias patternType) where
     (==) a b =
@@ -54,16 +59,6 @@ instance Ord patternType => Ord (Alias patternType) where
 instance Hashable patternType => Hashable (Alias patternType) where
     hashWithSalt salt Alias { aliasConstructor, aliasParams } =
         salt `hashWithSalt` aliasConstructor `hashWithSalt` aliasParams
-
-instance NFData patternType => NFData (Alias patternType)
-
-instance SOP.Generic (Alias patternType)
-
-instance SOP.HasDatatypeInfo (Alias patternType)
-
-instance Debug patternType => Debug (Alias patternType)
-
-instance (Debug patternType, Diff patternType) => Diff (Alias patternType)
 
 instance Unparse (Alias patternType) where
     unparse Alias { aliasConstructor, aliasParams } =

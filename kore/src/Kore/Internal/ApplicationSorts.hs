@@ -33,19 +33,11 @@ data ApplicationSorts = ApplicationSorts
     { applicationSortsOperands :: ![Sort]
     , applicationSortsResult   :: !Sort
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData ApplicationSorts
-
-instance Hashable ApplicationSorts
-
-instance SOP.Generic ApplicationSorts
-
-instance SOP.HasDatatypeInfo ApplicationSorts
-
-instance Debug ApplicationSorts
-
-instance Diff ApplicationSorts
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 applicationSorts :: [Sort] -> Sort -> ApplicationSorts
 applicationSorts = ApplicationSorts

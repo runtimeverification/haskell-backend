@@ -36,18 +36,9 @@ data Stats =
         }
     deriving (Eq, Read, Show)
     deriving (GHC.Generic)
-
-instance FromJSON Stats
-
-instance ToJSON Stats
-
-instance SOP.Generic Stats
-
-instance SOP.HasDatatypeInfo Stats
-
-instance Debug Stats
-
-instance Diff Stats
+    deriving anyclass (FromJSON, ToJSON)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance From GHC.RTSStats Stats where
     from rtsStats =

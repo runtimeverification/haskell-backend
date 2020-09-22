@@ -36,10 +36,7 @@ data DebugEvaluateCondition
     | DebugEvaluateConditionResult Result
     deriving (Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic DebugEvaluateCondition
-
-instance SOP.HasDatatypeInfo DebugEvaluateCondition
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Pretty DebugEvaluateCondition where
     pretty (DebugEvaluateCondition predicates) =

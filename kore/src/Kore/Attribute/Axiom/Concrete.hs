@@ -43,18 +43,12 @@ import Kore.Syntax.Variable hiding
  -}
 newtype Concrete variable =
     Concrete { unConcrete :: FreeVariables variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)
-
-instance SOP.Generic (Concrete variable)
-
-instance SOP.HasDatatypeInfo (Concrete variable)
-
-instance Debug variable => Debug (Concrete variable)
-
-instance (Debug variable, Diff variable) => Diff (Concrete variable)
-
-instance NFData variable => NFData (Concrete variable)
 
 instance Default (Concrete variable) where
     def = Concrete FreeVariables.emptyFreeVariables

@@ -77,15 +77,9 @@ newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
     deriving (Foldable)
     deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving newtype (GHC.IsList)
-
-instance SOP.Generic (MultiAnd child)
-
-instance SOP.HasDatatypeInfo (MultiAnd child)
-
-instance NFData child => NFData (MultiAnd child)
-
-instance Hashable child => Hashable (MultiAnd child)
 
 instance TopBottom child => TopBottom (MultiAnd child) where
     isTop (MultiAnd []) = True

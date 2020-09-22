@@ -69,17 +69,11 @@ import Kore.Unparser
 -- | All-Path-Claim claim pattern.
 newtype AllPathClaim =
     AllPathClaim { getAllPathClaim :: ClaimPattern }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData AllPathClaim
-
-instance SOP.Generic AllPathClaim
-
-instance SOP.HasDatatypeInfo AllPathClaim
-
-instance Debug AllPathClaim
-
-instance Diff AllPathClaim
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse AllPathClaim where
     unparse claimPattern' =
@@ -135,7 +129,11 @@ instance Claim AllPathClaim where
     newtype Rule AllPathClaim =
         AllPathRewriteRule
         { unRuleAllPath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
+        deriving anyclass (NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
 
     simplify = simplify' _Unwrapped
@@ -156,14 +154,6 @@ instance Claim AllPathClaim where
             case claimState of
                 Remaining claim -> Remaining <$> simplify claim
                 _ -> return claimState
-
-instance SOP.Generic (Rule AllPathClaim)
-
-instance SOP.HasDatatypeInfo (Rule AllPathClaim)
-
-instance Debug (Rule AllPathClaim)
-
-instance Diff (Rule AllPathClaim)
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath

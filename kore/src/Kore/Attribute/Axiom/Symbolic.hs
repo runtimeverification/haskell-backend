@@ -36,18 +36,12 @@ import Kore.Syntax.Variable
  -}
 newtype Symbolic variable =
     Symbolic { unSymbolic :: FreeVariables variable }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving newtype (Semigroup, Monoid)
-
-instance SOP.Generic (Symbolic variable)
-
-instance SOP.HasDatatypeInfo (Symbolic variable)
-
-instance Debug variable => Debug (Symbolic variable)
-
-instance (Debug variable, Diff variable) => Diff (Symbolic variable)
-
-instance NFData variable => NFData (Symbolic variable)
 
 instance Default (Symbolic variable) where
     def = Symbolic FreeVariables.emptyFreeVariables

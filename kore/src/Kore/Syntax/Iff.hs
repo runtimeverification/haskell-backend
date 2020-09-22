@@ -36,21 +36,12 @@ data Iff sort child = Iff
     , iffFirst  :: child
     , iffSecond :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (Iff sort child)
-
-instance (NFData sort, NFData child) => NFData (Iff sort child)
-
-instance SOP.Generic (Iff sort child)
-
-instance SOP.HasDatatypeInfo (Iff sort child)
-
-instance (Debug sort, Debug child) => Debug (Iff sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (Iff sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Iff Sort child) where
     unparse Iff { iffSort, iffFirst, iffSecond } =

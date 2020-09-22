@@ -82,10 +82,8 @@ data SubstitutionCoverageError =
         , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
         }
     deriving (Show)
-
-instance SOP.Generic ErrorRewritesInstantiation
-
-instance SOP.HasDatatypeInfo ErrorRewritesInstantiation
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRewritesInstantiation where
     toException = toException . SomeEntry

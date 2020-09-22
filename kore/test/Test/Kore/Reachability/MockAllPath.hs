@@ -61,13 +61,11 @@ import SMT
 import Test.Terse
 
 newtype MockInteger = MockInteger { unMockInteger :: Integer }
-    deriving (Eq, Ord, GHC.Generic)
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving newtype (Num)
-
-instance Diff MockInteger
-instance SOP.Generic MockInteger
-instance SOP.HasDatatypeInfo MockInteger
-instance Debug MockInteger
 
 instance TopBottom MockInteger where
     isTop _ = False
@@ -312,15 +310,10 @@ insEdge = Strategy.insEdge
 
 -- | Simple program configurations for unit testing.
 data K = BorC | A | B | C | D | E | F | NotDef | Bot
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic K
-
-instance SOP.HasDatatypeInfo K
-
-instance Debug K
-
-instance Diff K
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance TopBottom K where
     isTop _ = False
@@ -344,12 +337,10 @@ difference a    b
   | otherwise     = a
 
 newtype MockClaim = MockClaim { unMockClaim :: (K, K) }
-    deriving (Eq, Ord, GHC.Generic)
-
-instance Diff MockClaim
-instance SOP.Generic MockClaim
-instance SOP.HasDatatypeInfo MockClaim
-instance Debug MockClaim
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance TopBottom MockClaim where
     isTop _ = False
@@ -366,7 +357,10 @@ type MockClaimState = ClaimState.ClaimState MockClaim
 instance Claim MockClaim where
 
     newtype Rule MockClaim = Rule { unRule :: (K, K) }
-        deriving (Eq, GHC.Generic, Show)
+        deriving (Eq, Show)
+        deriving (GHC.Generic)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
 
     checkImplication (MockClaim (src, dst))
       | src' == Bot = return Claim.Implied
@@ -382,14 +376,6 @@ instance Claim MockClaim where
 
     applyAxioms axiomGroups =
         derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
-
-instance SOP.Generic (Claim.Rule MockClaim)
-
-instance SOP.HasDatatypeInfo (Claim.Rule MockClaim)
-
-instance Debug (Claim.Rule MockClaim)
-
-instance Diff (Claim.Rule MockClaim)
 
 derivePar
     :: (MockClaim -> MockAppliedRule)

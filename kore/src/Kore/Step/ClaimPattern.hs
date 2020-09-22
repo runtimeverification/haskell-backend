@@ -107,17 +107,11 @@ data ClaimPattern =
     , right :: !(OrPattern RewritingVariableName)
     , attributes :: !(Attribute.Axiom Symbol RewritingVariableName)
     }
-    deriving (Eq, Ord, Show, GHC.Generic)
-
-instance NFData ClaimPattern
-
-instance SOP.Generic ClaimPattern
-
-instance SOP.HasDatatypeInfo ClaimPattern
-
-instance Debug ClaimPattern
-
-instance Diff ClaimPattern
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance From ClaimPattern Attribute.SourceLocation where
     from = Attribute.sourceLocation . attributes

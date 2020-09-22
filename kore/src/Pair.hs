@@ -20,11 +20,5 @@ data Pair a = Pair !a !a
     deriving (Eq, Ord, Read, Show)
     deriving (GHC.Generic)
     deriving (Foldable, Functor, Traversable)
-
-instance SOP.Generic (Pair a)
-
-instance SOP.HasDatatypeInfo (Pair a)
-
-instance Debug a => Debug (Pair a)
-
-instance (Debug a, Diff a) => Diff (Pair a)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)

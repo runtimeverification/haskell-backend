@@ -48,7 +48,11 @@ data Id = Id
     { getId      :: !Text
     , idLocation :: !AstLocation
     }
-    deriving (Show, GHC.Generic)
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
@@ -64,14 +68,6 @@ instance Eq Id where
 instance Hashable Id where
     hashWithSalt salt (Id text _) = hashWithSalt salt text
     {-# INLINE hashWithSalt #-}
-
-instance NFData Id
-
-instance SOP.Generic Id
-
-instance SOP.HasDatatypeInfo Id
-
-instance Debug Id
 
 instance Diff Id where
     diffPrec a b =
@@ -131,19 +127,11 @@ data AstLocation
     | AstLocationFile FileLocation
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
-    deriving (Eq, Show, GHC.Generic)
-
-instance Hashable AstLocation
-
-instance NFData AstLocation
-
-instance SOP.Generic AstLocation
-
-instance SOP.HasDatatypeInfo AstLocation
-
-instance Debug AstLocation
-
-instance Diff AstLocation
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
@@ -173,16 +161,8 @@ data FileLocation = FileLocation
     , line     :: Int
     , column   :: Int
     }
-    deriving (Eq, Show, GHC.Generic)
-
-instance Hashable FileLocation
-
-instance NFData FileLocation
-
-instance SOP.Generic FileLocation
-
-instance SOP.HasDatatypeInfo FileLocation
-
-instance Debug FileLocation
-
-instance Diff FileLocation
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)

@@ -24,7 +24,11 @@ import Pretty
 import Test.Kore.Variables.V
 
 data W = W { value :: String, counter :: Maybe (Sup Natural) }
-    deriving (Show, Eq, Ord, GHC.Generic)
+    deriving (Show, Eq, Ord)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 mkW :: String -> Variable W
 mkW value =
@@ -32,16 +36,6 @@ mkW value =
     { variableName = W { value, counter = Nothing }
     , variableSort = sortVariable
     }
-
-instance Hashable W
-
-instance SOP.Generic W
-
-instance SOP.HasDatatypeInfo W
-
-instance Debug W
-
-instance Diff W
 
 instance Unparse W where
     unparse (W name _) = "W" <> pretty name <> ":" <> unparse sortVariable

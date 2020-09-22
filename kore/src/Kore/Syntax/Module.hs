@@ -36,20 +36,12 @@ import qualified Pretty
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
     deriving newtype (IsString)
-
-instance Hashable ModuleName
-
-instance NFData ModuleName
-
-instance SOP.Generic ModuleName
-
-instance SOP.HasDatatypeInfo ModuleName
-
-instance Debug ModuleName
-
-instance Diff ModuleName
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse ModuleName where
     unparse = Pretty.pretty . getModuleName
@@ -72,15 +64,11 @@ data Module (sentence :: Type) =
         , moduleSentences  :: ![sentence]
         , moduleAttributes :: !Attributes
         }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Show, Traversable)
-
-instance Hashable sentence => Hashable (Module sentence)
-
-instance NFData sentence => NFData (Module sentence)
-
-instance SOP.Generic (Module sentence)
-
-instance SOP.HasDatatypeInfo (Module sentence)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Debug sentence => Debug (Module sentence)
 
