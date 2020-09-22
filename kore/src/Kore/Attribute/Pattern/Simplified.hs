@@ -13,6 +13,11 @@ module Kore.Attribute.Pattern.Simplified
     , simplifiedConditionally
     , simplifiableConditionally
     , unparseTag
+    -- * For testing
+    , SimplifiedData (..)
+    , Type (..)
+    , Condition (..)
+    , pattern Simplified_
     ) where
 
 import Prelude.Kore
