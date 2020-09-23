@@ -315,7 +315,7 @@ test_makeEvaluate =
                         makeExistsPredicate
                             Mock.x
                             (makeAndPredicate
-                                (makeEqualsPredicate_ fOfX (Mock.f Mock.a))
+                                (makeEqualsPredicate_ (Mock.f Mock.a) fOfX)
                                 (makeEqualsPredicate_ (mkElemVar Mock.y) fOfX)
                             )
                     , substitution =

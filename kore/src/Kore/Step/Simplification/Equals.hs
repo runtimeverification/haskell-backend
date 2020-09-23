@@ -164,7 +164,7 @@ simplify
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated sideCondition first second
+    simplifyEvaluated sideCondition (min first second) (max first second)
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 

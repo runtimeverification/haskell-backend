@@ -596,6 +596,7 @@ test_simplificationIntegration =
                                     )
                                 )
                                 (makeEqualsPredicate_
+                                    Mock.functionalInjective00
                                     (Mock.g
                                         (Mock.functionalConstr30
                                             (Mock.functionalTopConstr21
@@ -606,7 +607,6 @@ test_simplificationIntegration =
                                             Mock.cg
                                         )
                                     )
-                                    Mock.functionalInjective00
                                 )
                             )
                     , substitution = mempty
@@ -633,6 +633,7 @@ test_simplificationIntegration =
                             )
                             (makeAndPredicate
                                 (makeEqualsPredicate_
+                                    Mock.functionalInjective00
                                     (Mock.g
                                         (Mock.functionalConstr30
                                             (Mock.functionalTopConstr21
@@ -643,7 +644,6 @@ test_simplificationIntegration =
                                             Mock.cg
                                         )
                                     )
-                                    Mock.functionalInjective00
                                 )
                                 (makeNotPredicate
                                     (makeFloorPredicate_ (Mock.builtinList []))
@@ -776,10 +776,10 @@ test_simplificationIntegration =
                                 )
                             )
                             (makeIffPredicate
+                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate_
                                     (mkEvaluated (mkBottom Mock.testSort))
                                 )
-                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                             )
                         )
                         (makeImpliesPredicate
@@ -804,10 +804,10 @@ test_simplificationIntegration =
                                 )
                             )
                             (makeIffPredicate
+                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate_
                                     (mkEvaluated (mkBottom Mock.testSort))
                                 )
-                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                             )
                         )
                     , substitution = mempty
