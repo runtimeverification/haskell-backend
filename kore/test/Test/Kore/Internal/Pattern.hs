@@ -159,9 +159,8 @@ test_hasSimplifiedChildren =
     [ testCase "Children are fully simplified, regardless of the side condition" $ do
         let simplified = Simplified_ Fully Any
             term =
-                mkAnd
-                    (setSimplifiedTerm simplified mockTerm1)
-                    (setSimplifiedTerm simplified mockTerm2)
+                mkAnd mockTerm1 mockTerm2
+                & setSimplifiedTerm simplified
             predicate =
                 makeAndPredicate
                     (setSimplifiedPred simplified mockPredicate1)
@@ -173,8 +172,6 @@ test_hasSimplifiedChildren =
                     , predicate
                     , substitution
                     }
-        assertEqual "Term isn't simplified"
-            False (TermLike.isSimplified topSideCondition term)
         assertEqual "Predicate isn't simplified"
             False (Predicate.isSimplified topSideCondition predicate)
         assertEqual "Has simplified children"
@@ -182,30 +179,36 @@ test_hasSimplifiedChildren =
     , testCase "Children are fully simplified, regardless of the side condition,\
                 \ nested ands" $ do
         let simplified = Simplified_ Fully Any
-            term =
-                mkAnd
-                    (setSimplifiedTerm simplified mockTerm1)
-                    ( mkAnd
-                        (setSimplifiedTerm simplified mockTerm1)
-                        (setSimplifiedTerm simplified mockTerm2)
+            predicate =
+                makeAndPredicate
+                    (setSimplifiedPred simplified mockPredicate1)
+                    ( makeAndPredicate
+                        (setSimplifiedPred simplified mockPredicate1)
+                        (setSimplifiedPred simplified mockPredicate2)
                     )
-            patt = Pattern.fromTermLike term
-        assertEqual "Term isn't simplified"
-            False (TermLike.isSimplified topSideCondition term)
+            patt =
+                Pattern.fromCondition_
+                . Condition.fromPredicate
+                $ predicate
+        assertEqual "Predicate isn't simplified"
+            False (Predicate.isSimplified topSideCondition predicate)
         assertEqual "Has simplified children"
             True (Pattern.hasSimplifiedChildren topSideCondition patt)
     , testCase "One child isn't simplified, nested ands" $ do
         let simplified = Simplified_ Fully Any
-            term =
-                mkAnd
-                    (setSimplifiedTerm simplified mockTerm1)
-                    ( mkAnd
-                        mockTerm1
-                        (setSimplifiedTerm simplified mockTerm2)
+            predicate =
+                makeAndPredicate
+                    (setSimplifiedPred simplified mockPredicate1)
+                    ( makeAndPredicate
+                        mockPredicate1
+                        (setSimplifiedPred simplified mockPredicate2)
                     )
-            patt = Pattern.fromTermLike term
-        assertEqual "Term isn't simplified"
-            False (TermLike.isSimplified topSideCondition term)
+            patt =
+                Pattern.fromCondition_
+                . Condition.fromPredicate
+                $ predicate
+        assertEqual "Predicate isn't simplified"
+            False (Predicate.isSimplified topSideCondition predicate)
         assertEqual "Children aren't simplified"
             False (Pattern.hasSimplifiedChildren topSideCondition patt)
     , testCase "Subsitution isn't simplified" $ do
