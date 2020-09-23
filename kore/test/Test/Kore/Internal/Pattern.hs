@@ -247,6 +247,32 @@ test_hasSimplifiedChildren =
         assertEqual "Has simplified children\
                     \ because the side conditions are equal"
             True (Pattern.hasSimplifiedChildren mockSideCondition patt)
+    , testCase "From simplification property test suite 1" $ do
+        let fullySimplified = Simplified_ Fully Any
+            partiallySimplified = Simplified_ Partly Any
+            predicate =
+                makeAndPredicate
+                    (Predicate.makeFloorPredicate_
+                        (Mock.functional20
+                            (mkNu Mock.setX Mock.c)
+                            (Mock.functionalConstr10 mkTop_)
+                        )
+                    & Predicate.setSimplified fullySimplified
+                    )
+                    (Predicate.makeCeilPredicate_
+                        (Mock.tdivInt mkTop_ mkTop_)
+                    & Predicate.setSimplified fullySimplified
+                    )
+                & Predicate.setSimplified partiallySimplified
+            patt =
+                Pattern.fromCondition_
+                . Condition.fromPredicate
+                $ predicate
+        assertEqual "Predicate isn't simplified"
+            False (Predicate.isSimplified topSideCondition predicate)
+        assertEqual "Has simplified children"
+            True (Pattern.hasSimplifiedChildren topSideCondition patt)
+
     ]
   where
     mockTerm1, mockTerm2 :: TermLike VariableName
