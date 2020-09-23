@@ -17,6 +17,8 @@ module Kore.Equation.Application
     , DebugAttemptEquation (..)
     , DebugApplyEquation (..)
     , debugApplyEquation
+    -- * Testing
+    , applySubstitutionAndSimplify
     ) where
 
 import Prelude.Kore
@@ -224,29 +226,31 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
-    applySubstitutionAndSimplify
-        :: HasCallStack
-        => Predicate (Target variable)
-        -> Maybe (Predicate (Target variable))
-        -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
-        -> ExceptT
-            (MatchError (Target variable))
-            simplifier
-            [MatchResult (Target variable)]
-    applySubstitutionAndSimplify
-        argument
-        antiLeft
-        matchSubstitution
-      =
-        lift $ do
-            let toMatchResult Conditional { predicate, substitution } =
-                    (predicate, Substitution.toMap substitution)
-            Substitution.mergePredicatesAndSubstitutions
-                SideCondition.top
-                (argument : maybeToList antiLeft)
-                [from @_ @(Substitution _) matchSubstitution]
-                & Logic.observeAllT
-                & (fmap . fmap) toMatchResult
+applySubstitutionAndSimplify
+    :: HasCallStack
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => Predicate (Target variable)
+    -> Maybe (Predicate (Target variable))
+    -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
+    -> ExceptT
+        (MatchError (Target variable))
+        simplifier
+        [MatchResult (Target variable)]
+applySubstitutionAndSimplify
+    argument
+    antiLeft
+    matchSubstitution
+  =
+    lift $ do
+        let toMatchResult Conditional { predicate, substitution } =
+                (predicate, Substitution.toMap substitution)
+        Substitution.mergePredicatesAndSubstitutions
+            SideCondition.top
+            (argument : maybeToList antiLeft)
+            [from @_ @(Substitution _) matchSubstitution]
+            & Logic.observeAllT
+            & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
