@@ -242,7 +242,7 @@ applySubstitutionAndSimplify
     antiLeft
     matchSubstitution
   =
-    lift $ do
+    lift . Simplifier.localSimplifierAxioms mempty $ do
         let toMatchResult Conditional { predicate, substitution } =
                 (predicate, Substitution.toMap substitution)
         Substitution.mergePredicatesAndSubstitutions
