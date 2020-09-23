@@ -13,7 +13,6 @@ module Kore.Attribute.Pattern.Simplified
     , simplifiedConditionally
     , simplifiableConditionally
     , unparseTag
-    -- * For testing
     , SimplifiedData (..)
     , Type (..)
     , Condition (..)
