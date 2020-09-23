@@ -1496,14 +1496,7 @@ mkDefined = worker
                         Application
                             applicationSymbolOrAlias
                             (worker <$> applicationChildren)
-                    defined = (mkDefined1 . embed) (ApplySymbolF app')
-                    result
-                      -- TODO (thomas.tuegel): Suspicious
-                      | TermLike (_ :< DefinedF (Defined termD)) <- defined
-                      , isFunctional applicationSymbolOrAlias
-                      = termD
-                      | otherwise = defined
-                in result
+                in (mkDefined1 . embed) (ApplySymbolF app')
             ApplyAliasF _ -> mkDefined1 term
             BottomF _ ->
                 error
