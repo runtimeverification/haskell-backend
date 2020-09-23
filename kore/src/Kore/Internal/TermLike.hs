@@ -1483,20 +1483,8 @@ mkDefined = worker
               where
                 attrs' = attrs { Attribute.defined = syntheticDefined termF' }
         in case termF of
-            AndF And { andSort, andFirst, andSecond } ->
-                let and' = And andSort (worker andFirst) (worker andSecond)
-                in (mkDefined1 . embed) (AndF and')
-            ApplySymbolF
-                Application
-                    { applicationSymbolOrAlias
-                    , applicationChildren
-                    }
-              ->
-                let app' =
-                        Application
-                            applicationSymbolOrAlias
-                            (worker <$> applicationChildren)
-                in (mkDefined1 . embed) (ApplySymbolF app')
+            AndF _ -> (mkDefined1 . embed) (worker <$> termF)
+            ApplySymbolF _ -> (mkDefined1 . embed) (worker <$> termF)
             ApplyAliasF _ -> mkDefined1 term
             BottomF _ ->
                 error
@@ -1507,11 +1495,10 @@ mkDefined = worker
             BuiltinF (Domain.BuiltinBool _) -> term
             BuiltinF (Domain.BuiltinInt _) -> term
             BuiltinF (Domain.BuiltinString _) -> term
-            BuiltinF (Domain.BuiltinList internalList) ->
+            BuiltinF (Domain.BuiltinList _) ->
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
-                let list' = Domain.BuiltinList (fmap mkDefined internalList)
-                in embed (BuiltinF list')
+                embed (worker <$> termF)
             BuiltinF (Domain.BuiltinMap internalMap) ->
                 let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
                 in (mkDefined1 . embed) (BuiltinF map')
@@ -1521,10 +1508,7 @@ mkDefined = worker
             EqualsF _ -> term
             ExistsF _ -> mkDefinedAtTop term
             FloorF _ -> term
-            ForallF Forall { forallSort, forallVariable, forallChild } ->
-                let forall' =
-                        Forall forallSort forallVariable (worker forallChild)
-                in (mkDefined1 . embed) (ForallF forall')
+            ForallF _ -> (mkDefined1 . embed) (worker <$> termF)
             IffF _ -> mkDefined1 term
             ImpliesF _ -> mkDefined1 term
             InF _ -> term
