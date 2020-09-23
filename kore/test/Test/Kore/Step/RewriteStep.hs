@@ -42,10 +42,12 @@ import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Reachability
+    ( AllPathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern
+    ( ClaimPattern
     , claimPattern
     , refreshExistentials
     )
@@ -1105,7 +1107,7 @@ applyClaimsSequence
     -> IO (Step.Results ClaimPattern)
 applyClaimsSequence initial claims =
     Step.applyClaimsSequence
-        AllPathRule
+        AllPathClaim
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
