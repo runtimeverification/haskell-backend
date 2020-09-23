@@ -164,6 +164,8 @@ import qualified Pretty
 -- instances of that.
 
 {- | Simplify 'TermLike' pattern to a disjunction of function-like 'Pattern's.
+    All the terms will be simplified, but the predicates may only be conjunctions
+    of simplified clauses.
  -}
 simplify
     :: forall variable simplifier

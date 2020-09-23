@@ -136,15 +136,15 @@ isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
     && Condition.isSimplified sideCondition p
 
--- | Checks whether a pattern has simplified children. A term with
--- a conjunction at the top is simplified if its subterms are simplified.
+-- | Checks whether a pattern has simplified children. A predicate with
+-- a conjunction at the top is simplified if its children are simplified.
 hasSimplifiedChildren
     :: SideCondition.Representation -> Pattern variable -> Bool
 hasSimplifiedChildren sideCondition patt =
     let term1 = term patt
         term2 = predicate patt & Predicate.unwrapPredicate
         subst = substitution patt
-     in areSimplifiedChildrenOfConj term1
+     in TermLike.isSimplified sideCondition term1
         && areSimplifiedChildrenOfConj term2
         && Substitution.isSimplified sideCondition subst
   where

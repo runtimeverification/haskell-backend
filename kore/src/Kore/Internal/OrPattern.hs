@@ -85,7 +85,7 @@ isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
 -- | Checks whether all the patterns in the disjunction have simplified children.
--- A term with a conjunction at the top is simplified if its subterms are simplified.
+-- A predicate with a conjunction at the top is simplified if its children are simplified.
 hasSimplifiedChildren
     :: SideCondition.Representation -> OrPattern variable -> Bool
 hasSimplifiedChildren sideCondition =
