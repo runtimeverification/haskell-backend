@@ -8,6 +8,7 @@ module Kore.Equation.Application
     ( attemptEquation
     , AttemptEquationResult
     , applyEquation
+    , applySubstitutionAndSimplify
     -- * Errors
     , AttemptEquationError (..)
     , MatchError (..)
@@ -17,8 +18,6 @@ module Kore.Equation.Application
     , DebugAttemptEquation (..)
     , DebugApplyEquation (..)
     , debugApplyEquation
-    -- * Testing
-    , applySubstitutionAndSimplify
     ) where
 
 import Prelude.Kore
@@ -226,6 +225,11 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
+-- | Simplify the argument of a function definition equation with the
+-- match substitution and the priority predicate. This will avoid
+-- evaluating any function applications or builtins present in
+-- the predicates. It will not attempt any user defined simplification rules
+-- either.
 applySubstitutionAndSimplify
     :: HasCallStack
     => MonadSimplify simplifier
