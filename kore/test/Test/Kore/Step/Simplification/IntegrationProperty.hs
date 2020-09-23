@@ -72,7 +72,7 @@ test_simplifiesToSimplified =
         simplified <- catch
             (evaluateT (Pattern.fromTermLike term))
             (exceptionHandler term)
-        (===) True (OrPattern.hasSimplifiedChildren sideRepresentation simplified)
+        (===) True (OrPattern.isSimplified sideRepresentation simplified)
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler
