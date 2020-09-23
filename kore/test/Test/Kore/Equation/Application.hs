@@ -50,9 +50,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Axiom.EvaluationStrategy
-    ( simplifierWithFallback
-    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
@@ -522,35 +519,28 @@ test_attemptEquationUnification =
 
 test_applySubstitutionAndSimplify :: [TestTree]
 test_applySubstitutionAndSimplify =
-    [ testCase "TESTING Function application in argument doesn't get evaluated" $ do
+    [ testCase "Function application in argument doesn't get evaluated" $ do
         let mockArgument :: Predicate (Target.Target VariableName)
             mockArgument =
                 var1Term `makeInPredicate_` Mock.f var2Term
-        actual <-
+            expected =
+                ( makeCeilPredicate_ (Mock.f var2Term)
+                , variableName someVar1 `subst` Mock.f var2Term
+                )
+        (Right [actual]) <-
             applySubstitutionAndSimplify
                 mockArgument
                 Nothing
                 mempty
             & runExceptT
             & runSimplifier env
-        assertEqual
-            ""
-            (Right
-                [ ( makeCeilPredicate_ (Mock.f var2Term)
-                  , [( variableName someVar1, Mock.f var2Term )] & Map.fromList
-                  )
-                ]
-            )
-            actual
+        assertEqual "" expected actual
     ]
   where
+    subst var term =
+        Map.fromList [(var, term)]
     env = Mock.env { simplifierAxioms }
     simplifierAxioms =
-        Map.unionWith
-            simplifierWithFallback
-            mempty
-            axioms
-    axioms =
         mkEvaluatorRegistry
         $ Map.fromList
         [ (AxiomIdentifier.Application Mock.fId
