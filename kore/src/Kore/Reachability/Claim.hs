@@ -619,14 +619,11 @@ simplify' lensClaimPattern claim = do
             Foldable.asum (pure <$> Foldable.toList configs)
 
     simplifyRightHandSide sideCondition =
-        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest -> do
-            let definedDest =
-                    OrPattern.filterOr
-                        (OrPattern.map Pattern.requireDefined dest)
+        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
             OrPattern.observeAllT
-                $ Logic.scatter definedDest
-                >>= Pattern.simplify sideCondition
-                >>= Logic.scatter
+            $ Logic.scatter dest
+            >>= Pattern.simplify sideCondition . Pattern.requireDefined
+            >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
