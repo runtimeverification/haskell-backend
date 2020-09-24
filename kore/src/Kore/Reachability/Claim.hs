@@ -633,6 +633,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
         OrPattern.observeAllT
         $ Logic.scatter dest
         >>= Pattern.simplify sideCondition
+        >>= SMT.Evaluator.filterMultiOr
         >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
