@@ -151,9 +151,6 @@ hasSimplifiedChildren sideCondition patt =
     areSimplifiedChildrenOfConj (TermLike.And_ _ child1 child2) =
         areSimplifiedChildrenOfConj child1
         && areSimplifiedChildrenOfConj child2
-    areSimplifiedChildrenOfConj (TermLike.Equals_ _ _ child1 child2) =
-        areSimplifiedChildrenOfConj child1
-        && areSimplifiedChildrenOfConj child2
     areSimplifiedChildrenOfConj term =
         TermLike.isSimplified sideCondition term
 

@@ -35,13 +35,10 @@ import Type.Reflection
     )
 
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
 
 data Representation where
     Representation
-        :: (Ord a, TopBottom a, Unparse a)
+        :: (Ord a, TopBottom a)
         => !(TypeRep a)
         -> !(Hashed a)
         -> Representation
@@ -78,12 +75,8 @@ instance NFData Representation where
     rnf (Representation typeRep1 hashed1) = typeRep1 `seq` hashed1 `seq` ()
     {-# INLINE rnf #-}
 
-instance Unparse Representation where
-    unparse (Representation _ hashed') = unparse (unhashed hashed')
-    unparse2 = unparse
-
 mkRepresentation
-    :: (Ord a, Hashable a, Typeable a, TopBottom a, Unparse a)
+    :: (Ord a, Hashable a, Typeable a, TopBottom a)
     => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 
