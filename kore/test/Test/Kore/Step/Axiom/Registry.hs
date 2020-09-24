@@ -14,6 +14,7 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -45,7 +46,6 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -454,7 +454,7 @@ test_functionRegistry =
             $ makePattern $ mkApplySymbol gHead []
         let actual =
                 Pattern.term $ head
-                $ MultiOr.extractPatterns simplified
+                $ Foldable.toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApplySymbol tHead []
@@ -464,7 +464,7 @@ test_functionRegistry =
             $ makePattern $ mkApplySymbol pHead []
         let actual =
                 Pattern.term $ head
-                $ MultiOr.extractPatterns simplified
+                $ Foldable.toList simplified
         assertEqual "" expect actual
     , testCase "Function rules sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")

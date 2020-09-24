@@ -8,9 +8,7 @@ import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.MultiOr
-    ( MultiOr (MultiOr)
-    )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -276,7 +274,7 @@ test_andSimplification =
                             [(inject Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
-            assertEqual "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr.make [expect]) actual
 
         , testCase "term-variable" $ do
             let expect =
@@ -287,7 +285,7 @@ test_andSimplification =
                             [(inject Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
-            assertEqual "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr.make [expect]) actual
         ]
 
     , testGroup "constructor and"
@@ -310,7 +308,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate_
                         , substitution = mempty
                         }
-            assertEqual "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr.make [expect]) actual
 
         , testCase "different constructors" $ do
             actual <-
@@ -325,7 +323,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate_
                         , substitution = mempty
                         }
-            assertEqual "" (MultiOr []) actual
+            assertEqual "" (MultiOr.make []) actual
         ]
 
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
@@ -395,7 +393,7 @@ test_andSimplification =
                     , predicate = makeCeilPredicate_ fOfX
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
     , testCase "Contradictions result in bottom" $ do
         actual <-
             evaluatePatterns
@@ -436,7 +434,7 @@ test_andSimplification =
                         (makeCeilPredicate_ gOfX)
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
     , testCase "Simplifies Implies - Negative" $ do
         let expect =
                 Conditional
@@ -462,7 +460,7 @@ test_andSimplification =
                             (makeCeilPredicate_ gOfX)
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
     , testCase "Simplifies multiple Implies" $ do
         let expect =
                 Conditional
@@ -497,7 +495,7 @@ test_andSimplification =
                             )
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
     , testCase "Does not replace and terms under intersecting quantifiers" $ do
         let expect =
                 Conditional
@@ -523,7 +521,7 @@ test_andSimplification =
                         makeExistsPredicate Mock.x (makeCeilPredicate_ fOfX)
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
     , testCase "Replaces and terms under independent quantifiers" $ do
         let expect =
                 Conditional
@@ -553,7 +551,44 @@ test_andSimplification =
                             )
                     , substitution = mempty
                     }
-        assertEqual "" (MultiOr [expect]) actual
+        assertEqual "" (MultiOr.make [expect]) actual
+    , testGroup "Local function evaluation" $
+        let f = Mock.f (mkElemVar Mock.x)
+            defined = makeCeilPredicate_ f & Condition.fromPredicate
+            a = Mock.a
+            b = Mock.b
+            mkLocalDefn (Left t)  = makeEqualsPredicate_ t f
+            mkLocalDefn (Right t) = makeEqualsPredicate_ f t
+            test name eitherC1 eitherC2 =
+                testCase name $ do
+                    let equals1 = mkLocalDefn eitherC1 & Condition.fromPredicate
+                        equals2 = mkLocalDefn eitherC2 & Condition.fromPredicate
+                        pattern1 = Pattern.fromCondition_ (defined <> equals1)
+                        pattern2 = Pattern.fromCondition_ (defined <> equals2)
+                    actual <- evaluatePatterns pattern1 pattern2
+                    assertBool "Expected \\bottom" $ isBottom actual
+        in
+            [ test "contradiction: f(x) = a ∧ f(x) = b" (Right a) (Right b)
+            , test "contradiction: a = f(x) ∧ f(x) = b" (Left  a) (Right b)
+            , test "contradiction: a = f(x) ∧ b = f(x)" (Left  a) (Left  b)
+            , test "contradiction: f(x) = a ∧ b = f(x)" (Right a) (Left  b)
+            ]
+    , testCase "Constructor equality" $ do
+        actual <-
+            evaluatePatterns
+                (makeEqualsPredicate_
+                    Mock.c
+                    Mock.a
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+                )
+                ( makeEqualsPredicate_
+                    Mock.b
+                    Mock.c
+                & Condition.fromPredicate
+                & Pattern.fromCondition_
+                )
+        assertEqual "" (MultiOr.make []) actual
     ]
   where
     yExpanded = Conditional

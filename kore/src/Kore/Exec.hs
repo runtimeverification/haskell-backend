@@ -44,6 +44,7 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -79,10 +80,6 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -105,14 +102,23 @@ import Kore.Log.KoreLogOptions
     )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
+import Kore.Reachability
+    ( AllClaims (AllClaims)
+    , AlreadyProven (AlreadyProven)
+    , Axioms (Axioms)
+    , ProofStuck (..)
+    , Rule (ReachabilityRewriteRule)
+    , SomeClaim (..)
+    , ToProve (ToProve)
+    , extractClaims
+    , isTrusted
+    , lensClaimPattern
+    , proveClaims
+    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.ClaimPattern
-    ( ReachabilityRule (..)
-    , lensClaimPattern
-    )
 import Kore.Step.Rule
     ( extractImplicationClaims
     , extractRewriteAxioms
@@ -155,15 +161,6 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( runTransitionT
-    )
-import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.Verification
-    ( AllClaims (AllClaims)
-    , AlreadyProven (AlreadyProven)
-    , Axioms (Axioms)
-    , Stuck (..)
-    , ToProve (ToProve)
-    , verify
     )
 import Kore.Syntax.Module
     ( ModuleName
@@ -342,7 +339,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
-                case MultiOr.extractPatterns simplifiedPatterns of
+                case Foldable.toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
@@ -356,7 +353,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 (match SideCondition.topTODO (mkRewritingPattern searchPattern))
                 executionGraph
         let
-            solutions = concatMap MultiOr.extractPatterns solutionsLists
+            solutions = concatMap Foldable.toList solutionsLists
             orPredicate =
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return
@@ -386,7 +383,7 @@ prove
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> smt (Either Stuck ())
+    -> smt (Either ProofStuck ())
 prove
     searchOrder
     breadthLimit
@@ -402,7 +399,7 @@ prove
                 specModule
                 trustedModule
         let InitializedProver { axioms, claims, alreadyProven } = initialized
-        verify
+        proveClaims
             breadthLimit
             searchOrder
             (AllClaims claims)
@@ -415,8 +412,8 @@ prove
             )
             & runExceptT
   where
-    extractUntrustedClaims' :: [ReachabilityRule] -> [ReachabilityRule]
-    extractUntrustedClaims' = filter (not . Goal.isTrusted)
+    extractUntrustedClaims' :: [SomeClaim] -> [SomeClaim]
+    extractUntrustedClaims' = filter (not . isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -650,11 +647,11 @@ makeImplicationRule
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 
-simplifyReachabilityRule
+simplifySomeClaim
     :: MonadSimplify simplifier
-    => ReachabilityRule
-    -> simplifier ReachabilityRule
-simplifyReachabilityRule rule = do
+    => SomeClaim
+    -> simplifier SomeClaim
+simplifySomeClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
@@ -684,9 +681,9 @@ initialize verifiedModule = do
 
 data InitializedProver =
     InitializedProver
-        { axioms :: ![Goal.Rule ReachabilityRule]
-        , claims :: ![ReachabilityRule]
-        , alreadyProven :: ![ReachabilityRule]
+        { axioms :: ![Rule SomeClaim]
+        , claims :: ![SomeClaim]
+        , alreadyProven :: ![SomeClaim]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -707,39 +704,35 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initialize definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
-        changedSpecClaims :: [MaybeChanged ReachabilityRule]
-        changedSpecClaims =
-            expandClaim tools <$> Goal.extractClaims specModule
-        simplifyToList
-            :: ReachabilityRule
-            -> simplifier [ReachabilityRule]
+        changedSpecClaims :: [MaybeChanged SomeClaim]
+        changedSpecClaims = expandClaim tools <$> extractClaims specModule
+        simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
-            let result = MultiAnd.extractPatterns simplified
+            let result = Foldable.toList simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 
-        trustedClaims :: [ReachabilityRule]
-        trustedClaims =
-            fmap Goal.extractClaims maybeTrustedModule & fromMaybe []
+        trustedClaims :: [SomeClaim]
+        trustedClaims = fmap extractClaims maybeTrustedModule & fromMaybe []
 
     mapM_ logChangedClaim changedSpecClaims
 
-    let specClaims :: [ReachabilityRule]
+    let specClaims :: [SomeClaim]
         specClaims = map fromMaybeChanged changedSpecClaims
     -- This assertion should come before simplifying the claims,
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <- mapM simplifyToList specClaims
-    claims <- traverse simplifyReachabilityRule (concat simplifiedSpecClaims)
+    claims <- traverse simplifySomeClaim (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
     pure InitializedProver { axioms, claims, alreadyProven }
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> ReachabilityRule
-        -> MaybeChanged ReachabilityRule
+        -> SomeClaim
+        -> MaybeChanged SomeClaim
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -748,7 +741,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: MaybeChanged ReachabilityRule
+        :: MaybeChanged SomeClaim
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)

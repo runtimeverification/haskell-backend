@@ -47,6 +47,16 @@ import Kore.Domain.Builtin
     , InternalInt (..)
     )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
@@ -624,7 +634,18 @@ test_mkDefined =
                     defOutside = mkDefined $ Mock.builtinMap [(fx, fa)]
                 assertEqual "" defInside defOutside
             ]
+        , testCase "Preserve \"simplified\" attribute" $ do
+            let initial = markSimplified Mock.cf :: TermLike VariableName
+                result = mkDefined initial
+            assertEqual ""
+                (isSimplified sideRepresentation initial)
+                (isSimplified sideRepresentation result)
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName
     defined = mkDefinedAtTop
+
+    sideRepresentation :: SideCondition.Representation
+    sideRepresentation =
+        SideCondition.toRepresentation
+        (SideCondition.top :: SideCondition VariableName)

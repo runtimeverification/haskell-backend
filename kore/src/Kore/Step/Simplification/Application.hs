@@ -26,9 +26,6 @@ import Data.Generics.Product
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-    ( fullCrossProduct
-    , mergeAll
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -80,21 +77,21 @@ simplify
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition application = do
-    evaluated <-
-        traverse
-            (makeAndEvaluateApplications sideCondition symbol)
-            childrenCrossProduct
+    evaluated <- OrPattern.observeAllT $ do
+        Application { applicationChildren = result } <-
+            Logic.scatter childrenCrossProduct
+        lift $ makeAndEvaluateApplications sideCondition symbol result
     return (OrPattern.flatten evaluated)
   where
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = children
         }
       = application
 
     -- The "Propagation Or" inference rule together with
     -- "Propagation Bottom" for the case when a child or is empty.
-    childrenCrossProduct = MultiOr.fullCrossProduct children
+    childrenCrossProduct =
+        MultiOr.distributeApplication application
 
 makeAndEvaluateApplications
     ::  ( InternalVariable variable
@@ -156,9 +153,12 @@ makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
             sideCondition
-            (map Pattern.predicate children)
-            (map Pattern.substitution children)
-    let term = symbolApplication symbol (mkDefined . Pattern.term <$> children)
+            (fmap Pattern.predicate children)
+            (fmap Pattern.substitution children)
+    let term =
+            symbolApplication
+                symbol
+                (mkDefined . Pattern.term <$> children)
         addDefinednessConditions cond =
             foldr
                 makeAndPredicate

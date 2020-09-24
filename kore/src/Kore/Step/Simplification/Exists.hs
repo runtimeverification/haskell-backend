@@ -32,9 +32,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrCondition as OrCondition
     ( fromCondition
     )
@@ -158,9 +155,11 @@ simplifyEvaluated
 simplifyEvaluated sideCondition variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
-  | otherwise = do
-    evaluated <- traverse (makeEvaluate sideCondition [variable]) simplified
-    return (OrPattern.flatten evaluated)
+  | otherwise =
+      OrPattern.flatten
+      <$> OrPattern.traverse
+          (makeEvaluate sideCondition [variable])
+          simplified
 
 {-| Evaluates a multiple 'Exists' given a pattern and a list of
 variables which are existentially quantified in the pattern. This
@@ -311,7 +310,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                     }
         orPattern <-
             lift $ Pattern.simplify sideCondition substituted
-        Logic.scatter (MultiOr.extractPatterns orPattern)
+        Logic.scatter (Foldable.toList orPattern)
   where
     someVariableName = inject (variableName variable)
 

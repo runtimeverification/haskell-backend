@@ -57,14 +57,15 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Reachability hiding
+    ( AppliedRule
+    )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathRule (..)
-    , ReachabilityRule (..)
     , claimPattern
     )
 import Kore.Step.RulePattern
@@ -75,12 +76,6 @@ import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Strategies.Goal hiding
-    ( AppliedRule
-    )
-import Kore.Strategies.Verification
-    ( verifyClaimStep
-    )
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
@@ -655,17 +650,17 @@ add1 =
     n       = mkElemVar $ mkElementVariable "x" intSort
     plusOne = n `addInt` one
 
-zeroToTen :: Claim
+zeroToTen :: SomeClaim
 zeroToTen =
-    OnePath . OnePathRule
+    OnePath . OnePathClaim
     $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
 
-emptyClaim :: Claim
+emptyClaim :: SomeClaim
 emptyClaim =
-    OnePath . OnePathRule
+    OnePath . OnePathClaim
     $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 mkNamedAxiom
@@ -708,15 +703,20 @@ mkAxiom left right =
     & mkRewritingRule
     & coerce
 
-run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
+run
+    :: ReplCommand
+    -> [Axiom]
+    -> [SomeClaim]
+    -> SomeClaim
+    -> IO Result
 run command axioms claims claim =
     runWithState command axioms claims claim id
 
 runWithState
     :: ReplCommand
     -> [Axiom]
-    -> [Claim]
-    -> Claim
+    -> [SomeClaim]
+    -> SomeClaim
     -> (ReplState -> ReplState)
     -> IO Result
 runWithState command axioms claims claim stateTransformer = do
@@ -794,8 +794,8 @@ tests = flip testCase
 mkState
     :: TimeSpec
     -> [Axiom]
-    -> [Claim]
-    -> Claim
+    -> [SomeClaim]
+    -> SomeClaim
     -> ReplState
 mkState startTime axioms claims claim =
     ReplState
@@ -828,13 +828,13 @@ mkConfig logger =
         }
   where
     stepper0
-        :: [Claim]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
         -> SimplifierT NoSMT ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
-        verifyClaimStep claims' axioms' graph node
+        proveClaimStep claims' axioms' graph node
 
 formatUnificationError
     :: Pretty.Doc ()

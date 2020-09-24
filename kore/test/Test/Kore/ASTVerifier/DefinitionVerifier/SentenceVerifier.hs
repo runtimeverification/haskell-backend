@@ -28,14 +28,18 @@ import Kore.Internal.TermLike
     , mkTop
     , weakExistsFinally
     )
+import Kore.Reachability
+    ( OnePathClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( mkElementRuleVariable
     )
+import Kore.Step.AxiomPattern
+    ( AxiomPattern (..)
+    )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , OnePathRule (..)
     )
-import qualified Kore.Step.Rule as Rule
 import Kore.Syntax
 import Kore.Syntax.Definition as Syntax
 
@@ -89,9 +93,8 @@ patternToSentence patt =
 
 patternFreeVarInRHS :: Pattern VariableName Null
 patternFreeVarInRHS =
-    externalize
-    $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
-    $ OnePathRule rulePatternFreeVarInRHS
+    externalize . getAxiomPattern . from
+    $ OnePathClaim rulePatternFreeVarInRHS
   where
     rulePatternFreeVarInRHS :: ClaimPattern
     rulePatternFreeVarInRHS = ClaimPattern
@@ -114,9 +117,8 @@ patternFreeVarInRHS =
 
 patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
-    externalize
-    $ Rule.axiomPatternToTerm $ Rule.OnePathClaimPattern
-    $ OnePathRule rulePatternNoFreeVarInRHS
+    externalize . getAxiomPattern . from
+    $ OnePathClaim rulePatternNoFreeVarInRHS
   where
     rulePatternNoFreeVarInRHS :: ClaimPattern
     rulePatternNoFreeVarInRHS = ClaimPattern

@@ -9,6 +9,7 @@ module Kore.Step.Simplification.Nu
 
 import Prelude.Kore
 
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -38,7 +39,7 @@ simplify
     :: InternalVariable variable
     => Nu variable (OrPattern variable)
     -> OrPattern variable
-simplify Nu { nuVariable, nuChild } = makeEvaluate nuVariable <$> nuChild
+simplify Nu { nuVariable, nuChild } = MultiOr.map (makeEvaluate nuVariable) nuChild
 
 {-| evaluates a 'Nu' given its two 'Pattern' children.
 

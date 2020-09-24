@@ -232,7 +232,7 @@ simplify sideCondition = \termLike ->
         resimplify result = do
             let (resultTerm, resultPredicate) = Pattern.splitTerm result
             simplified <- simplifyInternalWorker resultTerm
-            return ((`Conditional.andCondition` resultPredicate) <$> simplified)
+            return (MultiOr.map (`Conditional.andCondition` resultPredicate) simplified)
 
         applyTermSubstitution :: Pattern variable -> Pattern variable
         applyTermSubstitution
@@ -340,7 +340,9 @@ simplify sideCondition = \termLike ->
             AndF andF -> do
                 let conjuncts = foldMap MultiAnd.fromTermLike andF
                 And.simplify Not.notSimplifier sideCondition
-                    =<< simplifyChildren conjuncts
+                    =<< MultiAnd.traverse
+                        (simplifyTermLike sideCondition)
+                        conjuncts
             ApplySymbolF applySymbolF ->
                 Application.simplify sideCondition
                     =<< simplifyChildren applySymbolF
@@ -358,7 +360,7 @@ simplify sideCondition = \termLike ->
                         (targetSideCondition sideCondition)
                         (targetSimplifiedChildren simplifiedChildren)
                 let unTargetedResults =
-                        Pattern.mapVariables (pure unTarget) <$> targetedResults
+                        MultiOr.map (Pattern.mapVariables (pure unTarget)) targetedResults
                 return unTargetedResults
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder

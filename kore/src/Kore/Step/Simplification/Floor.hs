@@ -14,9 +14,8 @@ module Kore.Step.Simplification.Floor
 
 import Prelude.Kore
 
-import qualified Kore.Internal.MultiOr as MultiOr
-    ( extractPatterns
-    )
+import qualified Data.Foldable as Foldable
+
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -67,7 +66,7 @@ simplifyEvaluatedFloor
     => OrPattern variable
     -> OrPattern variable
 simplifyEvaluatedFloor child =
-    case MultiOr.extractPatterns child of
+    case Foldable.toList child of
         [childP] -> makeEvaluateFloor childP
         _ -> makeEvaluateFloor (OrPattern.toPattern child)
 
