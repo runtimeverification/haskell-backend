@@ -310,13 +310,18 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
-    , testCase "Predicate from normalizing substitution"
+    , testCase "qqPredicate from normalizing substitution"
         $ do
             let expect =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
+                            foldr1 Predicate.makeAndPredicate
+                                [ Predicate.makeCeilPredicate_ Mock.cf
+                                , Predicate.makeCeilPredicate_ Mock.cg
+                                , Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
+                                ]
+
                         , substitution = Substitution.unsafeWrap
                             [ (inject Mock.x, Mock.constr10 Mock.cf) ]
                         }
