@@ -1,5 +1,6 @@
 module Test.Kore.Reachability.Claim
     ( test_checkImplication
+    , test_simplifyRightHandSide
     ) where
 
 import Prelude.Kore
@@ -31,6 +32,7 @@ import Kore.Internal.Predicate
     , makeOrPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -41,6 +43,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
     ( CheckImplicationResult (..)
     , checkImplicationWorker
+    , simplifyRightHandSide
     )
 import Kore.Rewriting.RewritingVariable
     ( mkConfigVariable
@@ -215,6 +218,36 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" [Implied] actual
+    ]
+
+test_simplifyRightHandSide :: [TestTree]
+test_simplifyRightHandSide =
+    [ testCase "Unsatisfiable branch gets pruned" $ do
+        let claim =
+                mkGoal
+                    Pattern.top
+                    ([ Pattern.fromTermLike Mock.a
+                    , Pattern.fromTermAndPredicate
+                        Mock.b
+                        (makeEqualsPredicate_
+                            TermLike.mkTop_
+                            (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
+                        )
+                    ]
+                    & OrPattern.fromPatterns)
+                    []
+            expected =
+                mkGoal
+                    Pattern.top
+                    (Mock.a & OrPattern.fromTermLike)
+                    []
+        actual <-
+            simplifyRightHandSide
+                id
+                SideCondition.top
+                claim
+            & runSimplifier Mock.env
+        assertEqual "" expected actual
     ]
 
 mkGoal
