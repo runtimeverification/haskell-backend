@@ -41,6 +41,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
@@ -356,6 +359,20 @@ smtSyntaxPredicate term predicateState =
         )
         (Mock.builtinBool (predicateStateToBool predicateState))
 
+smtSyntaxPredicate'
+    :: TermLike VariableName -> PredicateState -> Predicate VariableName
+smtSyntaxPredicate' term predicateState =
+    makeAndPredicate
+        (makeCeilPredicate Mock.testSort (Mock.fTestInt Mock.b))
+        (makeEqualsPredicate_
+            (Mock.lessInt
+                (TermLike.mkDefined $ Mock.fTestInt term)
+                (Mock.builtinInt 0)
+            )
+            (Mock.builtinBool (predicateStateToBool predicateState))
+        )
+
+
 smtCondition :: TermLike VariableName -> PredicateState -> Condition VariableName
 smtCondition term predicateState =
     Condition.fromPredicate (smtSyntaxPredicate term predicateState)
@@ -394,8 +411,11 @@ test_SMT =
                 }
             ]
         assertEqual ""
-            [ Mock.a
-                `Pattern.withCondition` smtCondition Mock.b PredicatePositive
+            [ Pattern.withCondition
+                Mock.a
+                (Condition.fromPredicate
+                    (smtSyntaxPredicate' Mock.b PredicatePositive)
+                )
                 & mkRewritingPattern
             ]
             [ _actual1 ]
@@ -434,12 +454,17 @@ test_SMT =
             [ Conditional
                 { term = Mock.a
                 , predicate =
-                    makeEqualsPredicate Mock.testSort
-                        (Mock.lessInt
+                    makeAndPredicate
+                        (makeCeilPredicate Mock.testSort
                             (Mock.fTestInt Mock.b)
-                            (Mock.builtinInt 0)
                         )
-                        (Mock.builtinBool True)
+                        (makeEqualsPredicate Mock.testSort
+                            (Mock.lessInt
+                                (TermLike.mkDefined $ Mock.fTestInt Mock.b)
+                                (Mock.builtinInt 0)
+                            )
+                            (Mock.builtinBool True)
+                        )
                 , substitution = mempty
                 }
             ]

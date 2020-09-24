@@ -310,7 +310,7 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
-    , testCase "qqPredicate from normalizing substitution"
+    , testCase "Predicate from normalizing substitution"
         $ do
             let expect =
                     [ Conditional
