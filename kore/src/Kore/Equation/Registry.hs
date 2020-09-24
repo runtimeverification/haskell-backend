@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Equation.Registry
     ( extractEquations
+    , identifyEquation
     , partitionEquations
     , PartitionedEquations (..)
     ) where

@@ -52,7 +52,7 @@ import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import Kore.ASTVerifier.SortVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
-    ( Axiom
+    ( Axiom (simplification)
     , parseAxiomAttributes
     )
 import qualified Kore.Attribute.Hook as Attribute
@@ -60,10 +60,14 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Simplification
+    ( Simplification (NotSimplification)
+    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
     ( Sort
@@ -72,12 +76,19 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
+import Kore.Equation.Equation
+    ( Equation (..)
+    )
+import Kore.Equation.Registry
+    ( identifyEquation
+    )
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike.TermLike
-    ( freeVariables
+    ( extractAttributes
+    , freeVariables
     )
 import Kore.Reachability
     ( SomeClaim
@@ -362,6 +373,24 @@ verifyAxiomSentence sentence =
                 (freeVariables sentence)
                 (sentenceAxiomAttributes sentence)
         State.modify $ addAxiom verified attrs
+        maybe
+            (return ())
+            (\(_ , eq@Equation {left, attributes}) -> koreFailWhen
+                ( ( Attribute.simplification attributes
+                    == NotSimplification)
+                &&
+                  ( left
+                  & extractAttributes
+                  & Pattern.function
+                  & Pattern.isFunction
+                  & not)
+                )
+                ( "Left hand side of equation "
+                  ++ show eq
+                  ++ " is not a function"
+                )
+            )
+            $ identifyEquation (attrs, verified)
   where
     addAxiom verified attrs =
         Lens.over
