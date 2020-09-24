@@ -233,7 +233,7 @@ test_simplifyRightHandSide =
             claim =
                 mkGoal
                     Pattern.top
-                    ([ Pattern.fromTermLike Mock.a, unsatisfiableBranch]
+                    ([Pattern.fromTermLike Mock.a, unsatisfiableBranch]
                         & OrPattern.fromPatterns
                     )
                     []
