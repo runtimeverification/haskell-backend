@@ -64,9 +64,15 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Internal.Symbol
+    ( isConstructor
+    , isFunction
+    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
+    , pattern App_
+    , pattern Equals_
     , pattern Exists_
     , pattern Forall_
     , pattern Mu_
@@ -96,6 +102,7 @@ import Kore.Unparser
     ( unparse
     )
 import Logic
+import Pair
 import qualified Pretty
 
 {- | Simplify a conjunction of 'OrPattern'.
@@ -259,14 +266,21 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
         :: Predicate variable
         -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
     assume predicate1 =
-        State.modify' insert
+        State.modify' (assumeEqualTerms . assumePredicate)
       where
-        insert =
+        assumePredicate =
             case termLike of
-                -- Infer that the predicate is \bottom.
-                Not_ _ notChild -> HashMap.insert notChild (mkBottom sort)
-                -- Infer that the predicate is \top.
-                _               -> HashMap.insert termLike (mkTop    sort)
+                Not_ _ notChild ->
+                    -- Infer that the predicate is \bottom.
+                    HashMap.insert notChild (mkBottom sort)
+                _ ->
+                    -- Infer that the predicate is \top.
+                    HashMap.insert termLike (mkTop sort)
+        assumeEqualTerms =
+            case retractLocalFunction termLike of
+                Just (Pair term1 term2) -> HashMap.insert term1 term2
+                _ -> id
+
         termLike = Predicate.unwrapPredicate predicate1
         sort = termLikeSort termLike
 
@@ -326,6 +340,29 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
                 assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
+
+{- | Get a local function definition from a 'TermLike'.
+
+A local function definition is a predicate that we can use to evaluate a
+function locally (based on the side conditions) when none of the functions
+global definitions (axioms) apply. We are looking for a 'TermLike' of the form
+
+@
+\equals(f(...), C(...))
+@
+
+where @f@ is a function and @C@ is a constructor. @retractLocalFunction@ will
+match an @\equals@ predicate with its arguments in either order, but the
+function pattern is always returned first in the 'Pair'.
+
+ -}
+retractLocalFunction
+    :: TermLike variable
+    -> Maybe (Pair (TermLike variable))
+retractLocalFunction (Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _))
+  | isConstructor symbol1, isFunction symbol2 = Just (Pair term2 term1)
+  | isConstructor symbol2, isFunction symbol1 = Just (Pair term1 term2)
+retractLocalFunction _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
