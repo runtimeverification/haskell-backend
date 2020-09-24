@@ -453,6 +453,8 @@ ensureSimplifiedResult repr termLike results
             (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
+        , Pretty.indent 2 "with side condition:"
+        , Pretty.indent 4 (unparse repr)
         ]
 
 ensureSimplifiedCondition
