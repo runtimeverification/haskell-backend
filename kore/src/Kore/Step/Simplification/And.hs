@@ -72,9 +72,11 @@ import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
     , pattern App_
+    , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
     , pattern Forall_
+    , pattern Inj_
     , pattern Mu_
     , pattern Not_
     , pattern Nu_
@@ -351,9 +353,9 @@ global definitions (axioms) apply. We are looking for a 'TermLike' of the form
 \equals(f(...), C(...))
 @
 
-where @f@ is a function and @C@ is a constructor. @retractLocalFunction@ will
-match an @\equals@ predicate with its arguments in either order, but the
-function pattern is always returned first in the 'Pair'.
+where @f@ is a function and @C@ is a constructor, sort injection or builtin.
+@retractLocalFunction@ will match an @\equals@ predicate with its arguments
+in either order, but the function pattern is always returned first in the 'Pair'.
 
  -}
 retractLocalFunction
@@ -362,6 +364,14 @@ retractLocalFunction
 retractLocalFunction (Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _))
   | isConstructor symbol1, isFunction symbol2 = Just (Pair term2 term1)
   | isConstructor symbol2, isFunction symbol1 = Just (Pair term1 term2)
+retractLocalFunction (Equals_ _ _ term1@(App_ symbol _) term2@(Inj_ _))
+  | isFunction symbol = Just (Pair term1 term2)
+retractLocalFunction (Equals_ _ _ term1@(Inj_ _) term2@(App_ symbol _))
+  | isFunction symbol = Just (Pair term2 term1)
+retractLocalFunction (Equals_ _ _ term1@(App_ symbol _) term2@(Builtin_ _))
+  | isFunction symbol = Just (Pair term1 term2)
+retractLocalFunction (Equals_ _ _ term1@(Builtin_ _) term2@(App_ symbol _))
+  | isFunction symbol = Just (Pair term2 term1)
 retractLocalFunction _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
