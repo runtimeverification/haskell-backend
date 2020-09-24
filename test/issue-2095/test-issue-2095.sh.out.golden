@@ -1,12 +1,12 @@
-/* Spu */
+/* Spc */
 \or{SortGeneratedTopCell{}}(
-    /* Spu */
+    /* Spc */
     \or{SortGeneratedTopCell{}}(
-        /* Spu */
+        /* Spc */
         \or{SortGeneratedTopCell{}}(
-            /* Spu */
+            /* Spc */
             \or{SortGeneratedTopCell{}}(
-                /* Spu */
+                /* Spc */
                 \or{SortGeneratedTopCell{}}(
                     /* Created: Kore.Internal.Conditional.makeAndPredicate */
                     /* Spc */
@@ -1527,7 +1527,7 @@
                         )
                     ),
                     /* Created: Kore.Internal.Conditional.makeAndPredicate */
-                    /* Spu */
+                    /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Sfc */
@@ -3109,10 +3109,10 @@
                     )
                 ),
                 /* Created: Kore.Internal.Conditional.makeAndPredicate */
-                /* Spu */
+                /* Spc */
                 \and{SortGeneratedTopCell{}}(
-                    /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                    /* Sfu */
+                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                    /* Sfc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -3135,8 +3135,8 @@
                                 )
                             )
                         ),
-                        /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                        /* Spu */
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                        /* Spc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
                             \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -3161,8 +3161,8 @@
                                     )
                                 )
                             ),
-                            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                            /* Spu */
+                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                            /* Spc */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfa */
                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -3176,8 +3176,8 @@
                                         Var'QuesUnds'1:SortInt{}
                                     )
                                 ),
-                                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                                /* Spu */
+                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                /* Spc */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Sfc */
                                     \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -3194,10 +3194,10 @@
                                             Var'QuesUnds'3:SortMap{}
                                         )
                                     ),
-                                    /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                                    /* Spu */
+                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                    /* Spc */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfu */
+                                        /* Sfc */
                                         \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                             /* Fn Sfc */
                                             Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
@@ -4847,10 +4847,10 @@
                 )
             ),
             /* Created: Kore.Internal.Conditional.makeAndPredicate */
-            /* Spu */
+            /* Spc */
             \and{SortGeneratedTopCell{}}(
-                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                /* Sfu */
+                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                /* Sfc */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfc */
                     \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -4873,8 +4873,8 @@
                             )
                         )
                     ),
-                    /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                    /* Spu */
+                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                    /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -4899,8 +4899,8 @@
                                 )
                             )
                         ),
-                        /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                        /* Spu */
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                        /* Spc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
                             \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -4916,8 +4916,8 @@
                                     /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                                 )
                             ),
-                            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                            /* Spu */
+                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                            /* Spc */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfa */
                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -4931,10 +4931,10 @@
                                         Var'QuesUnds'1:SortInt{}
                                     )
                                 ),
-                                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                                /* Spu */
+                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                /* Spc */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfu */
+                                    /* Sfc */
                                     \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                         /* Fn Sfc */
                                         Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
@@ -6821,10 +6821,10 @@
             )
         ),
         /* Created: Kore.Internal.Conditional.makeAndPredicate */
-        /* Spu */
+        /* Spc */
         \and{SortGeneratedTopCell{}}(
-            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-            /* Sfu */
+            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+            /* Sfc */
             \and{SortGeneratedTopCell{}}(
                 /* Sfc */
                 \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -6847,8 +6847,8 @@
                         )
                     )
                 ),
-                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                /* Spu */
+                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                /* Spc */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfc */
                     \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -6873,8 +6873,8 @@
                             )
                         )
                     ),
-                    /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                    /* Spu */
+                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                    /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -6889,8 +6889,8 @@
                                 /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                             )
                         ),
-                        /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                        /* Spu */
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                        /* Spc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfa */
                             \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -6902,8 +6902,8 @@
                                     /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
                                 )
                             ),
-                            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                            /* Spu */
+                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                            /* Spc */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
                                 \equals{SortInt{}, SortGeneratedTopCell{}}(
@@ -6954,7 +6954,7 @@
                                     /* Fl Fn D Sfa Cl */
                                     /* builtin: */ \dv{SortInt{}}("0")
                                 ),
-                                /* Sfu */
+                                /* Sfc */
                                 \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                     /* Fn Sfc */
                                     Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
@@ -8569,10 +8569,10 @@
         )
     ),
     /* Created: Kore.Internal.Conditional.makeAndPredicate */
-    /* Spu */
+    /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-        /* Sfu */
+        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+        /* Sfc */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
             \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -8595,8 +8595,8 @@
                     )
                 )
             ),
-            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-            /* Spu */
+            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+            /* Spc */
             \and{SortGeneratedTopCell{}}(
                 /* Sfc */
                 \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -8619,8 +8619,8 @@
                         )
                     )
                 ),
-                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                /* Spu */
+                /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                /* Spc */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfa */
                     \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -8632,8 +8632,8 @@
                             /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
                         )
                     ),
-                    /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                    /* Spu */
+                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                    /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \equals{SortBool{}, SortGeneratedTopCell{}}(
@@ -8648,10 +8648,10 @@
                                 /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                             )
                         ),
-                        /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
-                        /* Spu */
+                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                        /* Spc */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfu */
+                            /* Sfc */
                             \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                 /* Fn Sfc */
                                 Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
