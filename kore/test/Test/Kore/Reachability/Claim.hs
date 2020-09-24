@@ -223,18 +223,19 @@ test_checkImplication =
 test_simplifyRightHandSide :: [TestTree]
 test_simplifyRightHandSide =
     [ testCase "Unsatisfiable branch gets pruned" $ do
-        let claim =
-                mkGoal
-                    Pattern.top
-                    ([ Pattern.fromTermLike Mock.a
-                    , Pattern.fromTermAndPredicate
+        let unsatisfiableBranch =
+                    Pattern.fromTermAndPredicate
                         Mock.b
                         (makeEqualsPredicate_
                             TermLike.mkTop_
                             (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                         )
-                    ]
-                    & OrPattern.fromPatterns)
+            claim =
+                mkGoal
+                    Pattern.top
+                    ([ Pattern.fromTermLike Mock.a, unsatisfiableBranch]
+                        & OrPattern.fromPatterns
+                    )
                     []
             expected =
                 mkGoal
