@@ -632,7 +632,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
         OrPattern.observeAllT
         $ Logic.scatter dest
-        >>= Pattern.simplify sideCondition
+        >>= Pattern.simplify sideCondition . Pattern.requireDefined
         >>= SMT.Evaluator.filterMultiOr
         >>= Logic.scatter
 
