@@ -96,7 +96,9 @@ makeEvaluateNonBoolFloor
   =
     OrPattern.fromPattern Conditional
         { term = mkTop_
-        , predicate = Predicate.markSimplified
-            $ makeAndPredicate (makeFloorPredicate_ term) predicate
+        , predicate =
+            makeAndPredicate
+                (Predicate.markSimplified $ makeFloorPredicate_ term)
+                predicate
         , substitution = substitution
         }
