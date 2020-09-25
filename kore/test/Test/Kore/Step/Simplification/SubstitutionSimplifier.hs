@@ -106,9 +106,18 @@ test_SubstitutionSimplifier =
         , test "length 1, beside unrelated substitutions"
             [(x, f (mkVar x)), (y, g (mkVar z)), (z, b)]
             [ mkNormalization [(z, b), (y, g b)] [(x, f (mkVar x))] ]
-        , test "length 1, with constructor"
-            [(x, (constr1 . f) (mkVar x))]
-            [ mkNormalization [] [(x, (constr1 . f) (mkVar x))] ]
+        , test0 "length 1, with constructor"
+            ( mkWrappedSubstitution
+                [(x, (constr1 . f) (mkVar x))]
+            )
+            [ Condition.fromNormalizationSimplified
+                ( mkNormalization
+                    []
+                    [(x, (constr1 . mkDefined . f) (mkVar x))]
+                )
+             & field @"predicate"
+                %~ (makeCeilPredicate_ (f $ mkVar x) `makeAndPredicate`)
+            ]
         , test "length 2, alone"
             [(x, f (mkVar y)), (y, g (mkVar x))]
             [ mkNormalization [] [(x, f (mkVar y)), (y, g (mkVar x))] ]
@@ -237,6 +246,12 @@ test_SubstitutionSimplifier =
                 let actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
+
+                traceM "actual"
+                Foldabe.traverse_ (traceM . unparseToString) actual
+                traceM "expect"
+                Foldabe.traverse_ (traceM . unparseToString) expect
+
                 assertEqual ""
                     (fixExpectedSorts expect actualConditions)
                     actualConditions
