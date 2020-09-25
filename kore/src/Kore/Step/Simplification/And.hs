@@ -16,40 +16,22 @@ import Prelude.Kore
 import Control.Error
     ( runMaybeT
     )
-import Control.Monad.State.Strict
-    ( StateT
-    , evalStateT
-    )
-import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.Functor.Foldable as Recursive
-import Data.HashMap.Strict
-    ( HashMap
-    )
-import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( foldl1'
-    , sortOn
     )
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Traversable
-    ( for
-    )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 
-import Changed
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -58,34 +40,19 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Internal.Symbol
-    ( isConstructor
-    , isFunction
-    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
-    , pattern App_
-    , pattern Equals_
-    , pattern Exists_
-    , pattern Forall_
-    , pattern Mu_
     , pattern Not_
-    , pattern Nu_
     , TermLike
-    , Variable (..)
     , mkAnd
-    , mkBottom
     , mkBottom_
     , mkNot
-    , mkTop
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
@@ -98,12 +65,7 @@ import Kore.Unification.UnifierT
     ( UnifierT (..)
     , runUnifierT
     )
-import Kore.Unparser
-    ( unparse
-    )
 import Logic
-import Pair
-import qualified Pretty
 
 {- | Simplify a conjunction of 'OrPattern'.
 
@@ -214,11 +176,6 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         simplified = foldMap Predicate.simplifiedAttribute predicates
      in Pattern.withCondition term (from substitution <> from predicate)
             & return
---         Changed changed ->
---             Pattern.withCondition term (from substitution <> from predicate)
---             & simplifyCondition sideCondition
---           where
---             predicate = MultiAnd.toPredicate changed
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable

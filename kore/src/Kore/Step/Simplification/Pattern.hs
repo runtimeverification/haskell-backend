@@ -124,7 +124,7 @@ simplify
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
-        withSimplifiedCondition <- simplifyCondition sideCondition (f pattern')
+        withSimplifiedCondition <- simplifyCondition sideCondition (f1 pattern')
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
@@ -133,9 +133,22 @@ simplify sideCondition pattern' =
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         simplifyCondition
             sideCondition
-            (f $ Conditional.andCondition simplifiedTerm simplifiedCondition)
+            (f2 $ Conditional.andCondition simplifiedTerm simplifiedCondition)
   where
-    f patt =
+    f1 patt =
+        let predicates = MultiAnd.fromPredicate . predicate $ patt
+            newPredicates = simplifyConjunctionByAssumption predicates
+         in case newPredicates of
+                Unchanged unchanged ->
+                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
+                  where
+                    predicate =
+                        MultiAnd.toPredicate unchanged
+                Changed changed ->
+                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
+                  where
+                    predicate = MultiAnd.toPredicate changed
+    f2 patt =
         let predicates = MultiAnd.fromPredicate . predicate $ patt
             newPredicates = simplifyConjunctionByAssumption predicates
          in case newPredicates of
