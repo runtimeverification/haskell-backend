@@ -37,6 +37,7 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -201,8 +202,8 @@ instance Claim SomeClaim where
         deriving anyclass (Debug, Diff)
         deriving newtype (Unparse)
 
-    simplify (AllPath claim) = allPathTransition $ AllPath <$> simplify claim
-    simplify (OnePath claim) = onePathTransition $ OnePath <$> simplify claim
+    simplify (AllPath claim) = MultiAnd.map AllPath <$> simplify claim
+    simplify (OnePath claim) = MultiAnd.map OnePath <$> simplify claim
 
     checkImplication (AllPath claim) = fmap AllPath <$> checkImplication claim
     checkImplication (OnePath claim) = fmap OnePath <$> checkImplication claim

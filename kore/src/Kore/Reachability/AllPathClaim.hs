@@ -69,6 +69,7 @@ import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
     )
+import qualified Logic
 
 -- | All-Path-Claim claim pattern.
 newtype AllPathClaim =
@@ -164,7 +165,9 @@ instance Claim AllPathClaim where
 
         simplifyRemainder applied =
             case applied of
-                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                -- TODO (thomas.tuegel): Use a Prism
+                ApplyRemainder claim ->
+                    ApplyRemainder <$> (simplify claim >>= Logic.scatter)
                 _ -> return applied
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where

@@ -1,6 +1,5 @@
 module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule_RewriteRule
-    , test_simplifyRule_OnePathClaim
     , test_simplifyClaimRule
     ) where
 
@@ -41,7 +40,6 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
-    , makeNotPredicate
     , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -60,7 +58,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
     ( OnePathClaim (..)
-    , simplify
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -87,9 +84,6 @@ import Kore.Step.Simplification.Simplify
     , emptyConditionSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
-import Kore.Step.Transition
-    ( runTransitionT
-    )
 import Kore.Syntax.Variable
     ( VariableName
     , fromVariableName
@@ -197,193 +191,6 @@ test_simplifyRule_RewriteRule =
 
     x = mkElemVar Mock.x
 
-test_simplifyRule_OnePathClaim :: [TestTree]
-test_simplifyRule_OnePathClaim =
-    [ testCase "No simplification needed" $ do
-        let rule = Mock.a `rewritesToWithSort` Mock.cf
-            expected = [rule]
-
-        actual <- runSimplifyRuleNoSMT rule
-
-        assertEqual "" expected actual
-
-    , testCase "Simplify lhs term" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.cf]
-
-        actual <- runSimplifyRuleNoSMT
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
-                `rewritesToWithSort`
-                Mock.cf
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Does not simplify rhs term" $ do
-        let rule =
-                Mock.a
-                `rewritesToWithSort`
-                mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
-            expected = [rule]
-
-        actual <- runSimplifyRuleNoSMT rule
-
-        assertEqual "" expected actual
-
-    , testCase "Substitution in lhs term" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
-
-        actual <- runSimplifyRuleNoSMT
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
-                `rewritesToWithSort` Mock.f x
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Simplifies requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.cf]
-
-        actual <- runSimplifyRuleNoSMT
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b Mock.b)
-                `rewritesToWithSort`
-                Pair (Mock.cf, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Does not simplify ensures predicate" $ do
-        let rule =
-                Pair (Mock.a,  makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.cf, makeEqualsPredicate Mock.testSort Mock.b Mock.b)
-            expected = [rule]
-
-        actual <- runSimplifyRuleNoSMT rule
-
-        assertEqual "" expected actual
-
-    , testCase "Substitution in requires predicate" $ do
-        let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
-
-        actual <- runSimplifyRuleNoSMT
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.testSort Mock.b x)
-                `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "Splits rule" $ do
-        let expected =
-                [ Mock.a `rewritesToWithSort` Mock.cf
-                , Mock.b `rewritesToWithSort` Mock.cf
-                ]
-
-        actual <- runSimplifyRuleNoSMT
-            (   mkOr Mock.a Mock.b
-                `rewritesToWithSort`
-                Mock.cf
-            )
-
-        assertEqual "" expected actual
-    , testCase "Case where f(x) is defined;\
-               \ Case where it is not is simplified" $ do
-        let expected =
-                [   Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
-                    `rewritesToWithSort`
-                    Pair (Mock.a, makeTruePredicate Mock.testSort)
-                ]
-
-        actual <- runSimplifyRule
-            (   Pair (Mock.f x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-    , testCase "lhs: f(x) is always defined" $ do
-        let expected =
-                [ Mock.functional10 x `rewritesToWithSort` Mock.a
-                ]
-
-        actual <- runSimplifyRuleNoSMT
-            (   Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-    , testCase "Predicate simplification removes trivial claim" $ do
-        let expected = []
-        actual <- runSimplifyRuleNoSMT
-            ( Pair
-                ( Mock.b
-                , makeAndPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort x Mock.b)
-                    )
-                    (makeNotPredicate
-                        (makeNotPredicate
-                            (makeEqualsPredicate Mock.testSort x Mock.b)
-                        )
-                    )
-                )
-              `rewritesToWithSort`
-              Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
-        assertEqual "" expected actual
-
-    , testCase "rhs: f(x) is always defined" $ do
-        let expected =
-                [ Mock.a `rewritesToWithSort` Mock.functional10 x
-                ]
-
-        actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "infer rhs is defined" $ do
-        let expected =
-                [   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                    `rewritesToWithSort`
-                    Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
-                ]
-
-        actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-    ]
-  where
-    simplClaim
-        :: forall simplifier
-        .  MonadSimplify simplifier
-        => OnePathClaim
-        -> simplifier [OnePathClaim]
-    simplClaim claim =
-        runTransitionT (simplify claim)
-        & (fmap . fmap) fst
-
-    runSimpl :: OnePathClaim -> IO [OnePathClaim]
-    runSimpl claim =
-        runSMT (pure ())
-        $ runSimplifier Mock.env (simplClaim claim)
-
-    rewritesToWithSort
-        :: RuleBase base OnePathClaim
-        => base VariableName
-        -> base VariableName
-        -> OnePathClaim
-    rewritesToWithSort = Common.rewritesToWithSort
-
-    x = mkElemVar Mock.x
-
 runSimplifyRuleNoSMT
     :: SimplifyRuleLHS rule
     => rule
@@ -391,17 +198,6 @@ runSimplifyRuleNoSMT
 runSimplifyRuleNoSMT rule =
     fmap Foldable.toList
     $ runNoSMT
-    $ runSimplifier Mock.env $ do
-        SMT.All.declare Mock.smtDeclarations
-        simplifyRuleLhs rule
-
-runSimplifyRule
-    :: SimplifyRuleLHS rule
-    => rule
-    -> IO [rule]
-runSimplifyRule rule =
-    fmap Foldable.toList
-    $ runSMT (pure ())
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
         simplifyRuleLhs rule

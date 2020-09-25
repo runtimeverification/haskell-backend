@@ -32,7 +32,6 @@ import Kore.Internal.Predicate
     , makeOrPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -250,7 +249,6 @@ test_simplifyRightHandSide =
         actual <-
             simplifyRightHandSide
                 id
-                SideCondition.top
                 claim
             & runSimplifier Mock.env
         assertEqual "" expected actual

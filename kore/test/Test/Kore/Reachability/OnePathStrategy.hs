@@ -788,8 +788,7 @@ test_onePathStrategy =
                         )
                     )
             original = makeOnePathGoalFromPatterns left right
-            right' = right & Pattern.mapVariables (pure mkConfigVariable)
-            expect = mkOnePathClaim left' [] (OrPattern.fromPattern right')
+            expect = mkOnePathClaim left' [] OrPattern.bottom
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)

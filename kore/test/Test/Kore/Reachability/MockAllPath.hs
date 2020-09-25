@@ -29,6 +29,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim
     ( AppliedRule (..)
@@ -370,7 +371,7 @@ instance Claim MockClaim where
       where
         src' = difference src dst
 
-    simplify = return
+    simplify = pure . MultiAnd.singleton
 
     applyClaims claims =
         derivePar AppliedClaim (map (Rule . unMockClaim) claims)

@@ -79,22 +79,25 @@ import Kore.IndexedModule.IndexedModule
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
     )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
 import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -178,10 +181,7 @@ class Claim claim where
         => claim
         -> LogicT m (CheckImplicationResult claim)
 
-    simplify
-        :: MonadSimplify m
-        => claim
-        -> Strategy.TransitionT (AppliedRule claim) m claim
+    simplify :: MonadSimplify m => claim -> m (MultiAnd claim)
 
     applyClaims
         :: MonadSimplify m
@@ -320,7 +320,10 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Simplify claimState
       | Just claim <- retractSimplifiable claimState =
-        Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
+        Transition.ifte
+            (lift (simplify claim) >>= Logic.scatter)
+            (pure . ($>) claimState)
+            (pure Proven)
       | otherwise =
         pure claimState
 
@@ -594,20 +597,18 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
         (_, condition) = Pattern.splitTerm stuck
 
 simplify'
-    :: MonadSimplify m
+    :: MonadSimplify simplify
+    => (Ord claim, TopBottom claim)
     => Lens' claim ClaimPattern
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m claim
-simplify' lensClaimPattern claim = do
-    claim' <- simplifyLeftHandSide claim
-    let sideCondition = extractSideCondition claim'
-    simplifyRightHandSide lensClaimPattern sideCondition claim'
+    -> simplify (MultiAnd claim)
+simplify' lensClaimPattern claim =
+    do
+        claim' <- simplifyLeftHandSide claim
+        simplifyRightHandSide lensClaimPattern claim'
+    & Logic.observeAllT
+    & fmap MultiAnd.make
   where
-    extractSideCondition =
-        SideCondition.assumeTrueCondition
-        . Pattern.withoutTerm
-        . Lens.view (lensClaimPattern . field @"left")
-
     simplifyLeftHandSide =
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
             let definedConfig =
@@ -617,21 +618,27 @@ simplify' lensClaimPattern claim = do
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
-            Foldable.asum (pure <$> Foldable.toList configs)
+            Logic.scatter configs
 
 simplifyRightHandSide
-    :: MonadSimplify m
+    :: MonadSimplify simplify
     => Lens' claim ClaimPattern
-    -> SideCondition RewritingVariableName
     -> claim
-    -> m claim
-simplifyRightHandSide lensClaimPattern sideCondition =
-    Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
+    -> simplify claim
+simplifyRightHandSide lensClaimPattern claim =
+    Lens.forOf (lensClaimPattern . field @"right") claim $ \dest ->
         OrPattern.observeAllT
         $ Logic.scatter dest
-        >>= Pattern.simplify sideCondition . Pattern.requireDefined
+        >>= Pattern.simplify sideCondition
+            . Pattern.requireDefined
+            . Pattern.substitute subst
         >>= SMT.Evaluator.filterMultiOr
         >>= Logic.scatter
+  where
+    ClaimPattern { left } = Lens.view lensClaimPattern claim
+    sideCondition = Pattern.withoutTerm left & SideCondition.assumeTrueCondition
+    Conditional { substitution } = left
+    subst = Substitution.toMap substitution
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
