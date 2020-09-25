@@ -37,15 +37,11 @@ import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-
-import qualified Data.Foldable as Foldabe
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
     )
-import Kore.Unparser
-    ( unparseToString
-    )
+
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
     ( runSimplifier
