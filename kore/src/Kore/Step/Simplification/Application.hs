@@ -144,7 +144,9 @@ evaluateApplicationFunction
         term
 
 makeExpandedApplication
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    :: HasCallStack
+    => InternalVariable variable
+    => MonadSimplify simplifier
     => SideCondition variable
     -> Symbol
     -> [Pattern variable]

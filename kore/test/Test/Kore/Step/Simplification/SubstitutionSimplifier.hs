@@ -41,7 +41,6 @@ import Kore.Unification.UnifierT
 import qualified Data.Foldable as Foldabe
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate
     , makeCeilPredicate_
     )
 import Kore.Unparser

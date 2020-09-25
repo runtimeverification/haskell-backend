@@ -13,17 +13,15 @@ import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import Kore.Internal.TermLike
-    ( mkDefined
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
     ( bottom
     , fromPatterns
     , top
     )
 import Kore.Internal.Predicate
-    (makeCeilPredicate, makeCeilPredicate_,  Predicate
+    ( Predicate
     , makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
@@ -34,6 +32,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( TermLike
+    , mkDefined
     , mkElemVar
     )
 import Kore.Step.Simplification.OrPattern
@@ -44,8 +43,6 @@ import Kore.Syntax.Variable
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
-import Kore.Unparser (unparseToString)
-import qualified Data.Foldable as Foldable
 
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
