@@ -13,13 +13,16 @@ import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import Kore.Internal.TermLike
+    ( mkDefined
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
     ( bottom
     , fromPatterns
     , top
     )
 import Kore.Internal.Predicate
-    ( Predicate
+    (makeCeilPredicate, makeCeilPredicate_,  Predicate
     , makeAndPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
@@ -41,6 +44,8 @@ import Kore.Syntax.Variable
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
+import Kore.Unparser (unparseToString)
+import qualified Data.Foldable as Foldable
 
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
@@ -54,7 +59,7 @@ test_orPatternSimplification =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = positive x
+                    , predicate = positive' x
                     , substitution = mempty
                     }
                 ]
@@ -111,6 +116,19 @@ positive u =
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)
+
+positive' :: TermLike VariableName -> Predicate VariableName
+positive' u =
+    makeAndPredicate
+        (makeCeilPredicate Mock.testSort $ Mock.fTestInt u)
+        (makeEqualsPredicate Mock.testSort
+            (Mock.lessInt
+                (mkDefined $ Mock.fTestInt u)  -- wrap the given term for sort agreement
+                (Mock.builtinInt 0)
+            )
+            (Mock.builtinBool False)
+        )
+
 
 negative :: TermLike VariableName -> Predicate VariableName
 negative u =
