@@ -246,11 +246,6 @@ test_SubstitutionSimplifier =
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
 
-                traceM "actual"
-                Foldabe.traverse_ (traceM . unparseToString) actual
-                traceM "expect"
-                Foldabe.traverse_ (traceM . unparseToString) expect
-
                 assertEqual ""
                     (fixExpectedSorts expect actualConditions)
                     actualConditions
