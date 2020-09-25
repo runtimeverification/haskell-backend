@@ -6,6 +6,13 @@ module Test.Kore.Step.Simplification.SubstitutionSimplifier
 
 import Prelude.Kore
 
+import Control.Lens
+    ( (%~)
+    )
+import Data.Generics.Product
+    ( field
+    )
+
 import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
@@ -31,6 +38,15 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 
+import qualified Data.Foldable as Foldabe
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeCeilPredicate_
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
     ( runSimplifier
@@ -126,11 +142,17 @@ test_SubstitutionSimplifier =
         , test "length 2, alone"
             [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
             [ mkNormalization [] [(xs, f (mkVar ys)), (ys, g (mkVar xs))] ]
-        , test "length 2, beside related substitution"
-            [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, h (mkVar ys))]
-            [ mkNormalization
-                [(z, h (mkVar ys))]
-                [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+        , test0 "length 2, beside related substitution"
+            (mkWrappedSubstitution
+                [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, h (mkVar ys))]
+            )
+            [ Condition.fromNormalizationSimplified
+                (mkNormalization
+                    [(z, h (mkDefined $ mkVar ys))]
+                    [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+                )
+             & field @"predicate"
+                %~ (makeCeilPredicate_ (mkVar ys) `makeAndPredicate`)
             ]
         , test "length 2, beside unrelated substitution"
             [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, a)]
@@ -185,17 +207,34 @@ test_SubstitutionSimplifier =
         -> TestTree
     test
         testName
-        (Substitution.wrap . Substitution.mkUnwrappedSubstitution -> input)
-        results
+        (mkWrappedSubstitution -> input)
+        (fmap Condition.fromNormalizationSimplified -> expect)
       =
+        test0 testName input expect
+
+    mkWrappedSubstitution
+        :: [(SomeVariable VariableName, TermLike VariableName)]
+        -> Substitution.Substitution VariableName
+    mkWrappedSubstitution =
+        Substitution.wrap . Substitution.mkUnwrappedSubstitution
+
+    test0
+        :: HasCallStack
+        => TestName
+        -> Substitution.Substitution VariableName
+        -- ^ Test input
+        -> [Condition.Condition VariableName]
+        -- ^ Expected normalized, denormalized outputs
+        -> TestTree
+
+    test0 testName input expect =
         testGroup testName
             [ testCase "simplification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Simplification.substitutionSimplifier
                 actual <- runSimplifier Mock.env
                     $ simplifySubstitution SideCondition.top input
-                let expect = Condition.fromNormalizationSimplified <$> results
-                    actualConditions = OrCondition.toConditions actual
+                let actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
                 assertEqual ""
@@ -209,8 +248,7 @@ test_SubstitutionSimplifier =
                 actual <-
                     runSimplifier Mock.env . runUnifierT Not.notSimplifier
                     $ simplifySubstitution SideCondition.top input
-                let expect = Condition.fromNormalizationSimplified <$> results
-                    actualConditions = OrCondition.toConditions <$> actual
+                let actualConditions = OrCondition.toConditions <$> actual
                     actualSubstitutions =
                         (fmap . fmap) Condition.substitution actualConditions
                     allNormalized = (all . all) Substitution.isNormalized
