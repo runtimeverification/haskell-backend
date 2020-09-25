@@ -27,6 +27,7 @@ module Kore.Reachability.Claim
     , deriveSeq'
     -- * For testing
     , checkImplicationWorker
+    , simplifyRightHandSide
     ) where
 
 import Prelude.Kore
@@ -87,6 +88,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -600,7 +604,7 @@ simplify'
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
     let sideCondition = extractSideCondition claim'
-    simplifyRightHandSide sideCondition claim'
+    simplifyRightHandSide lensClaimPattern sideCondition claim'
   where
     extractSideCondition =
         SideCondition.assumeTrueCondition
@@ -618,12 +622,19 @@ simplify' lensClaimPattern claim = do
                 & lift
             Foldable.asum (pure <$> Foldable.toList configs)
 
-    simplifyRightHandSide sideCondition =
-        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
-            OrPattern.observeAllT
-            $ Logic.scatter dest
-            >>= Pattern.simplify sideCondition . Pattern.requireDefined
-            >>= Logic.scatter
+simplifyRightHandSide
+    :: MonadSimplify m
+    => Lens' claim ClaimPattern
+    -> SideCondition RewritingVariableName
+    -> claim
+    -> m claim
+simplifyRightHandSide lensClaimPattern sideCondition =
+    Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
+        OrPattern.observeAllT
+        $ Logic.scatter dest
+        >>= Pattern.simplify sideCondition . Pattern.requireDefined
+        >>= SMT.Evaluator.filterMultiOr
+        >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted

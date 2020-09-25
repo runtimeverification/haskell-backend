@@ -364,7 +364,9 @@ test_simplifyRule_OnePathClaim =
         & (fmap . fmap) fst
 
     runSimpl :: OnePathClaim -> IO [OnePathClaim]
-    runSimpl claim = runNoSMT $ runSimplifier Mock.env (simplClaim claim)
+    runSimpl claim =
+        runSMT (pure ())
+        $ runSimplifier Mock.env (simplClaim claim)
 
     rewritesToWithSort
         :: RuleBase base OnePathClaim
