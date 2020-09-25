@@ -224,12 +224,12 @@ test_simplifyRightHandSide :: [TestTree]
 test_simplifyRightHandSide =
     [ testCase "Unsatisfiable branch gets pruned" $ do
         let unsatisfiableBranch =
-                    Pattern.fromTermAndPredicate
-                        Mock.b
-                        (makeEqualsPredicate_
-                            TermLike.mkTop_
-                            (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
-                        )
+                Pattern.fromTermAndPredicate
+                    Mock.b
+                    (makeEqualsPredicate_
+                        TermLike.mkTop_
+                        (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
+                    )
             claim =
                 mkGoal
                     Pattern.top
