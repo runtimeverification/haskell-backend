@@ -8,6 +8,7 @@ module Kore.Equation.Application
     ( attemptEquation
     , AttemptEquationResult
     , applyEquation
+    , applySubstitutionAndSimplify
     -- * Errors
     , AttemptEquationError (..)
     , MatchError (..)
@@ -224,29 +225,36 @@ attemptEquation sideCondition termLike equation =
         debugAttemptEquationResult equation result
         return result
 
-    applySubstitutionAndSimplify
-        :: HasCallStack
-        => Predicate (Target variable)
-        -> Maybe (Predicate (Target variable))
-        -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
-        -> ExceptT
-            (MatchError (Target variable))
-            simplifier
-            [MatchResult (Target variable)]
-    applySubstitutionAndSimplify
-        argument
-        antiLeft
-        matchSubstitution
-      =
-        lift $ do
-            let toMatchResult Conditional { predicate, substitution } =
-                    (predicate, Substitution.toMap substitution)
-            Substitution.mergePredicatesAndSubstitutions
-                SideCondition.top
-                (argument : maybeToList antiLeft)
-                [from @_ @(Substitution _) matchSubstitution]
-                & Logic.observeAllT
-                & (fmap . fmap) toMatchResult
+-- | Simplify the argument of a function definition equation with the
+-- match substitution and the priority predicate. This will avoid
+-- evaluating any function applications or builtins present in
+-- the predicates. It will not attempt any user defined simplification rules
+-- either.
+applySubstitutionAndSimplify
+    :: HasCallStack
+    => MonadSimplify simplifier
+    => InternalVariable variable
+    => Predicate (Target variable)
+    -> Maybe (Predicate (Target variable))
+    -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
+    -> ExceptT
+        (MatchError (Target variable))
+        simplifier
+        [MatchResult (Target variable)]
+applySubstitutionAndSimplify
+    argument
+    antiLeft
+    matchSubstitution
+  =
+    lift . Simplifier.localSimplifierAxioms mempty $ do
+        let toMatchResult Conditional { predicate, substitution } =
+                (predicate, Substitution.toMap substitution)
+        Substitution.mergePredicatesAndSubstitutions
+            SideCondition.top
+            (argument : maybeToList antiLeft)
+            [from @_ @(Substitution _) matchSubstitution]
+            & Logic.observeAllT
+            & (fmap . fmap) toMatchResult
 
 applyEquation
     :: forall simplifier variable
