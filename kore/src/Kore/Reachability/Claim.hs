@@ -622,7 +622,7 @@ simplify' lensClaimPattern claim = do
         Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
             OrPattern.observeAllT
             $ Logic.scatter dest
-            >>= Pattern.simplify sideCondition
+            >>= Pattern.simplify sideCondition . Pattern.requireDefined
             >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
