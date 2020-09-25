@@ -124,38 +124,32 @@ simplify
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
-        let predicates = MultiAnd.fromPredicate . predicate $ pattern'
-            newPredicates = simplifyConjunctionByAssumption predicates
-            newPattern = f pattern' newPredicates
-        withSimplifiedCondition <- simplifyCondition sideCondition newPattern
+        withSimplifiedCondition <- simplifyCondition sideCondition (f pattern')
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
-        let predicates' =
-                (MultiAnd.fromPredicate . predicate $ simplifiedCondition)
-                <> (MultiAnd.fromPredicate . predicate $ simplifiedTerm)
-            newPredicates' = simplifyConjunctionByAssumption predicates'
-            newPattern' = f (Conditional.andCondition simplifiedTerm simplifiedCondition) newPredicates'
         simplifyCondition
             sideCondition
-            (Conditional.andCondition simplifiedTerm simplifiedCondition)
+            (f $ Conditional.andCondition simplifiedTerm simplifiedCondition)
   where
-    f patt preds =
-        case preds of
-            Unchanged unchanged ->
-                Pattern.withCondition (term pattern') (from (substitution patt) <> from predicate)
-              where
-                predicate =
-                    MultiAnd.toPredicate unchanged
-                    & Predicate.setSimplified simplified
-                simplified = foldMap Predicate.simplifiedAttribute unchanged
-            Changed changed ->
-                Pattern.withCondition (term pattern') (from (substitution patt) <> from predicate)
-              where
-                predicate = MultiAnd.toPredicate changed
+    f patt =
+        let predicates = MultiAnd.fromPredicate . predicate $ patt
+            newPredicates = simplifyConjunctionByAssumption predicates
+         in case newPredicates of
+                Unchanged unchanged ->
+                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
+                  where
+                    predicate =
+                        MultiAnd.toPredicate unchanged
+                        & Predicate.setSimplified simplified
+                    simplified = foldMap Predicate.simplifiedAttribute unchanged
+                Changed changed ->
+                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
+                  where
+                    predicate = MultiAnd.toPredicate changed
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
