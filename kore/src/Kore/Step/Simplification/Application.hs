@@ -69,7 +69,8 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( InternalVariable variable
+    :: HasCallStack
+    =>  ( InternalVariable variable
         , MonadSimplify simplifier
         , MonadThrow simplifier
         )
@@ -94,7 +95,8 @@ simplify sideCondition application = do
         MultiOr.distributeApplication application
 
 makeAndEvaluateApplications
-    ::  ( InternalVariable variable
+    :: HasCallStack
+    =>  ( InternalVariable variable
         , MonadSimplify simplifier
         , MonadThrow simplifier
         )
@@ -106,7 +108,8 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    ::  ( InternalVariable variable
+    :: HasCallStack
+    =>  ( InternalVariable variable
         , MonadSimplify simplifier
         , MonadThrow simplifier
         )
