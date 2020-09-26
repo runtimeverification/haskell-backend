@@ -17,6 +17,10 @@ import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate_
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
@@ -36,10 +40,6 @@ import qualified Kore.Unification.SubstitutionSimplifier as Unification
     )
 import Kore.Unification.UnifierT
     ( runUnifierT
-    )
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate_
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
