@@ -394,19 +394,15 @@ strategy =
 
 {- | The result of checking the direct implication of a proof claim.
 
-As an optimization, 'checkImplication' returns 'NotImpliedStuck' when the
-implication between /terms/ is valid, but the implication between side
-conditions does not hold.
-
  -}
 data CheckImplicationResult a
     = Implied
     -- ^ The implication is valid.
     | NotImplied !a
-    -- ^ The implication is not valid.
+    -- ^ The implication is not valid, but we can continue rewriting.
     | NotImpliedStuck !a
-    -- ^ The implication between /terms/ is valid, but the implication between
-    -- side-conditions is not valid.
+    -- ^ The implication is not valid, and we should not continue rewriting. See
+    -- 'checkImplicationWorker'.
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -503,7 +499,9 @@ When the implication formula is valid, @checkImplicationWorker@ returns
 'Implied'. When the implication formula is not valid, we apply the following
 heuristic:
 
-* If any of the unification problems @⌈t(X) ∧ tᵢ(X, Y)⌉@ succeeded,
+* If the right-hand side is not defined, @checkImplicationWorker@ returns
+  'NotImpliedStuck', or
+* if any of the unification problems @⌈t(X) ∧ tᵢ(X, Y)⌉@ succeeded,
   @checkImplicationWorker@ returns 'NotImpliedStuck',
 * otherwise, it returns 'NotImplied'.
 
@@ -520,7 +518,9 @@ checkImplicationWorker
     .  (MonadLogic m, MonadSimplify m)
     => ClaimPattern
     -> m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
+checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
+  | isBottom right = pure (NotImpliedStuck claimPattern)
+  | otherwise =
     do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
