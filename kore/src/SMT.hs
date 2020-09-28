@@ -65,11 +65,12 @@ import Control.Monad.Catch
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Morph as Morph
-import Control.Monad.Reader
-    ( ReaderT (..)
-    , runReaderT
-    )
 import qualified Control.Monad.Reader as Reader
+import Control.Monad.RWS.Strict
+    ( RWST (RWST)
+    , runRWST
+    )
+import qualified Control.Monad.State as State
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
@@ -274,19 +275,22 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: ReaderT SolverInitAndHandle (LoggerT IO) a }
+newtype SMT a = SMT { getSMT :: RWST SolverInitAndHandle () Int (LoggerT IO) a }
     deriving
         ( Applicative
         , Functor
         , Monad
         , MonadIO
-        , MonadLog
+        -- , MonadLog
         )
     deriving
         ( MonadCatch
         , MonadThrow
         , MonadMask
         )
+
+instance (MonadLog (RWST SolverInitAndHandle () Int (LoggerT IO))) where
+
 
 instance MonadProf SMT where
     traceEvent name = SMT (traceEvent name)
@@ -321,14 +325,23 @@ instance MonadSMT SMT where
             -- Run the SMT with the unshared mutex.
             -- The SMT will never block waiting to acquire the solver.
             Trans.liftIO $ push solver
-            (SMT . Trans.lift)
-                (Exception.finally
-                    (runReaderT
+            counter <- SMT State.get
+            a <- (SMT . RWST) $ \ _ _ ->
+                Exception.finally
+                    (runRWST
                         (getSMT smt)
                         (SolverInitAndHandle userInit mvar config)
+                        counter
                     )
                     (Trans.liftIO $ pop solver)
-                )
+            SMT $ State.modify (+ 1)
+            counterNew <- SMT State.get
+            -- Due to an issue with the SMT solver, we need to
+            -- reinitialise it after a number of runs, specified here.
+            -- This number can be adjusted based on experimentation
+            when (counterNew >= 100)
+                (reinit >> SMT $ State.put 0)
+            return a
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver (Atom name) typ
@@ -372,7 +385,7 @@ instance MonadSMT m => MonadSMT (LogicT m) where
     withSolver = mapLogicT withSolver
     {-# INLINE withSolver #-}
 
-instance MonadSMT m => MonadSMT (ReaderT r m)
+instance MonadSMT m => MonadSMT (RWST r () Int m)
 
 instance MonadSMT m => MonadSMT (Maybe.MaybeT m)
 
@@ -468,7 +481,7 @@ runSMT config userInit smt =
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
 runSMT' config userInit mvar SMT { getSMT = smt } =
-    runReaderT
+    runRWST
         (getSMT (initSolver config) >> smt)
         (SolverInitAndHandle userInit mvar config)
 
