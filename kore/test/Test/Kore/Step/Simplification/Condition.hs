@@ -44,8 +44,6 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
-import qualified Data.Foldable as Foldable
-import Kore.Unparser (unparseToString)
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =

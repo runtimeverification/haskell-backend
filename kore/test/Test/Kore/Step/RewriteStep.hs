@@ -81,7 +81,6 @@ import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import Kore.Unparser (unparseToString)
 
 type RewriteRule' = RewriteRule VariableName
 type Results' = Step.Results (RulePattern RewritingVariableName)
@@ -120,12 +119,12 @@ test_applyInitialConditions =
             initial = Condition.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate_
-                    (Mock.f $ mkElemVar Mock.x)
                     Mock.a
+                    (Mock.f $ mkElemVar Mock.x)
             expect2 =
                 Predicate.makeEqualsPredicate_
-                    (Mock.f $ mkElemVar Mock.y)
                     Mock.b
+                    (Mock.f $ mkElemVar Mock.y)
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
         [applied] <- applyInitialConditions initial unification
@@ -773,8 +772,8 @@ test_applyRewriteRule_ =
                             { term = Mock.sigma fb fb
                             , predicate =
                                 makeEqualsPredicate Mock.testSort
-                                    (Mock.functional11 fb)
                                     (Mock.functional10 fb)
+                                    (Mock.functional11 fb)
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
@@ -815,8 +814,8 @@ test_applyRewriteRule_ =
                     [ Conditional
                         { term = mkElemVar Mock.y
                         , predicate = makeEqualsPredicate Mock.testSort
-                            (Mock.functional11 (mkElemVar Mock.y))
                             (Mock.functional10 (mkElemVar Mock.y))
+                            (Mock.functional11 (mkElemVar Mock.y))
                         , substitution = mempty
                         }
                     ]
