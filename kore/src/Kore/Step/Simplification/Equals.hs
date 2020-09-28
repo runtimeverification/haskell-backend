@@ -160,8 +160,7 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    :: (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
