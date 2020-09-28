@@ -44,6 +44,8 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
+import qualified Data.Foldable as Foldable
+import Kore.Unparser (unparseToString)
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
@@ -231,8 +233,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate_
-                            (Mock.g Mock.b)
                             (Mock.g Mock.a)
+                            (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.a)
                         , (inject Mock.y, Mock.b)
@@ -267,6 +269,10 @@ test_predicateSimplification =
                         [ (inject Mock.y, Mock.b)
                         ]
                     }
+        traceM "actual"
+        Foldable.traverse_ (traceM . unparseToString) actual
+        traceM "expected"
+        Foldable.traverse_ (traceM . unparseToString) (MultiOr.singleton expect)
         assertEqual "" (MultiOr.singleton expect) actual
     ]
 
