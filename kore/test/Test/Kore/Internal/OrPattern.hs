@@ -4,6 +4,7 @@ module Test.Kore.Internal.OrPattern
     , hprop_flattenIdemOr
     , test_distributeAnd
     , test_distributeApplication
+    , hprop_preserveOrdOr
     -- * Re-exports
     , OrTestPattern
     , module OrPattern
@@ -53,6 +54,12 @@ type OrTestPattern = OrPattern VariableName
 orPatternGen :: Gen OrTestPattern
 orPatternGen =
     OrPattern.fromPatterns <$> Gen.list (Range.linear 0 64) internalPatternGen
+
+hprop_preserveOrdOr :: Property
+hprop_preserveOrdOr = Hedgehog.property $ do
+    ors1 <- Hedgehog.forAll (standaloneGen orPatternGen)
+    ors2 <- Hedgehog.forAll (standaloneGen orPatternGen)
+    compare ors1 ors1 === compare (toPattern ors1) (toPattern ors2)
 
 -- | Check that 'merge' preserves the @\\or@-idempotency condition.
 hprop_mergeIdemOr :: Property
