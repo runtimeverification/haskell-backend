@@ -375,7 +375,7 @@ verifyAxiomSentence sentence =
         State.modify $ addAxiom verified attrs
         maybe
             (return ())
-            (\(_ , eq@Equation {left, attributes}) -> koreFailWhen
+            (\(_ , eq@Equation {left, attributes}) -> koreFailWithLocationsWhen
                 ( Attribute.simplification attributes
                   == NotSimplification
                   &&
@@ -385,10 +385,9 @@ verifyAxiomSentence sentence =
                   & Pattern.isFunction
                   & not)
                 )
-                ( "Left hand side of equation "
-                  ++ show eq
-                  ++ " is not a function"
-                )
+                [eq]
+                "Left hand side of NotSimplification equation axiom is\
+                \ not a function"
             )
             $ identifyEquation (attrs, verified)
   where
