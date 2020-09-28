@@ -1267,8 +1267,8 @@ test_applyRewriteRulesParallel =
             initial = pure (Mock.functionalConstr10 (mkElemVar Mock.x))
             requirement =
                 makeEqualsPredicate Mock.testSort
-                    (Mock.f (mkElemVar Mock.x))
                     Mock.b
+                    (Mock.f (mkElemVar Mock.x))
         actual <- applyRewriteRulesParallel initial [axiomSignum]
         checkResults results actual
         checkRemainders remainders actual
