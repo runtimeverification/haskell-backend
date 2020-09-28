@@ -81,6 +81,7 @@ import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import Kore.Unparser (unparseToString)
 
 type RewriteRule' = RewriteRule VariableName
 type Results' = Step.Results (RulePattern RewritingVariableName)
@@ -842,8 +843,8 @@ test_applyRewriteRule_ =
         let
             requires =
                 makeEqualsPredicate_
-                    (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.x))
             expect =
                 [ OrPattern.fromPatterns
                     [ initialTerm
