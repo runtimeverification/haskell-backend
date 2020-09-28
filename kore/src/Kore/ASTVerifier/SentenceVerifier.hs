@@ -376,9 +376,9 @@ verifyAxiomSentence sentence =
         maybe
             (return ())
             (\(_ , eq@Equation {left, attributes}) -> koreFailWhen
-                ( ( Attribute.simplification attributes
-                    == NotSimplification)
-                &&
+                ( Attribute.simplification attributes
+                  == NotSimplification
+                  &&
                   ( left
                   & extractAttributes
                   & Pattern.function
