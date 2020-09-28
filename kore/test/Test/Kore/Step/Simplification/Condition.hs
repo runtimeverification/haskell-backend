@@ -117,7 +117,7 @@ test_predicateSimplification =
         let expect =
                 Conditional
                     { term = ()
-                    , predicate = makeEqualsPredicate_ Mock.functional00 Mock.a
+                    , predicate = makeEqualsPredicate_ Mock.a Mock.functional00
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.functional00)
                         , (inject Mock.y, Mock.functional01)
@@ -269,10 +269,6 @@ test_predicateSimplification =
                         [ (inject Mock.y, Mock.b)
                         ]
                     }
-        traceM "actual"
-        Foldable.traverse_ (traceM . unparseToString) actual
-        traceM "expected"
-        Foldable.traverse_ (traceM . unparseToString) (MultiOr.singleton expect)
         assertEqual "" (MultiOr.singleton expect) actual
     ]
 
