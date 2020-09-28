@@ -37,6 +37,7 @@ import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import qualified Data.Foldable as Foldable
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -280,7 +281,7 @@ test_makeEvaluate =
                         [(inject Mock.x, gOfA)]
                     }
         assertEqual "exists reevaluates" expect actual
-    , testCase "exists matches equality if result is top" $ do
+    , testCase "qqexists matches equality if result is top" $ do
         -- exists x . (f(x) = f(a))
         --    = top.s
         let expect = OrPattern.fromPatterns
@@ -304,6 +305,10 @@ test_makeEvaluate =
                         $ Substitution.mkUnwrappedSubstitution
                         [(inject Mock.y, fOfA)]
                     }
+        traceM "expect"
+        Foldable.traverse_ (traceM . unparseToString) expect
+        traceM "actual"
+        Foldable.traverse_ (traceM . unparseToString) actual
         assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
         -- exists x . (f(x) = f(a)) and (y=f(x))

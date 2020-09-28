@@ -55,6 +55,7 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermEquals
+    , compareForEquals
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
@@ -159,14 +160,22 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    :: forall variable simplifier
+    .  (InternalVariable variable, MonadSimplify simplifier)
     => SideCondition variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated sideCondition minTerm maxTerm
+    simplifyEvaluated sideCondition first' second'
   where
-    (minTerm, maxTerm) = minMax first second
+    (first', second') =
+        case compareForEquals
+                (OrPattern.toTermLike first)
+                (OrPattern.toTermLike second)
+            of
+                LT -> (first, second)
+                _  -> (second, first)
+
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
