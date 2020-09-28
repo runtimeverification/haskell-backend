@@ -68,8 +68,8 @@ test_simplify =
         (Pattern.topOf Mock.testSort)
             { Conditional.predicate =
                 Predicate.makeEqualsPredicate_
-                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
                     (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
+                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
