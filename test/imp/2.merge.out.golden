@@ -7,6 +7,7 @@
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
+                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("false"),
                 /* Fl Fn D Sfc */
                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                     /* Fl Fn D Sfc */
@@ -14,8 +15,7 @@
                         /* Fl Fn D Sfa */ VarX:SortId{}
                     ),
                     /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
-                ),
-                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("false")
+                )
             ),
             /* Sfc */
             \equals{SortMap{}, SortGeneratedTopCell{}}(

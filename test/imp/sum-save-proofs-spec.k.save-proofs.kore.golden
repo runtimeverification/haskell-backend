@@ -8,12 +8,12 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
         \and{SortGeneratedTopCell{}}(
             /* Spa */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
+                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true"),
                 /* Fl Fn D Spa */
                 Lbl'Unds-GT-Eqls'Int'Unds'{}(
                     /* Fl Fn D Sfa */ VarN:SortInt{},
                     /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
-                ),
-                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true")
+                )
             ),
             /* Fl Fn D Spa */
             Lbl'-LT-'generatedTop'-GT-'{}(
