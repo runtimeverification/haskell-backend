@@ -37,7 +37,6 @@ import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import qualified Data.Foldable as Foldable
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -299,16 +298,12 @@ test_makeEvaluate =
                 Mock.x
                 Conditional
                     { term = fOfA
-                    , predicate = makeEqualsPredicate_ fOfX (Mock.f Mock.a)
+                    , predicate = makeEqualsPredicate_ (Mock.f Mock.a) fOfX
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
                         [(inject Mock.y, fOfA)]
                     }
-        traceM "expect"
-        Foldable.traverse_ (traceM . unparseToString) expect
-        traceM "actual"
-        Foldable.traverse_ (traceM . unparseToString) actual
         assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
         -- exists x . (f(x) = f(a)) and (y=f(x))

@@ -54,8 +54,8 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
 import Kore.Step.Simplification.AndTerms
-    ( maybeTermEquals
-    , compareForEquals
+    ( compareForEquals
+    , maybeTermEquals
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate

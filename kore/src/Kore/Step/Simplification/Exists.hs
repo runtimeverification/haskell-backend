@@ -245,8 +245,9 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
-    matchResult <- matchIncremental first second
-    case matchResult of
+    matchResultFS <- matchIncremental first second
+    matchResultSF <- matchIncremental second first
+    case matchResultFS <|> matchResultSF of
         Just (Predicate.PredicateTrue, results) ->
             return (singleVariableSubstitution variable results)
         _ -> return False
