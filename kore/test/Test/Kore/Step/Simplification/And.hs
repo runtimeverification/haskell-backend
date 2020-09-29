@@ -589,22 +589,6 @@ test_andSimplification =
             , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
             , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
             ]
-    , testCase "Constructor equality" $ do
-        actual <-
-            evaluatePatterns
-                (makeEqualsPredicate_
-                    Mock.c
-                    Mock.a
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeEqualsPredicate_
-                    Mock.b
-                    Mock.c
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
     ]
   where
     yExpanded = Conditional
