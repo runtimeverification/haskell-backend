@@ -79,8 +79,9 @@ import qualified Kore.Builtin as Builtin
 import Kore.Equation.Equation
     ( Equation (..)
     )
-import Kore.Equation.Registry
-    ( identifyEquation
+import Kore.Equation.Sentence
+    ( MatchEquationError(..)
+    , fromSentenceAxiom
     )
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -373,9 +374,30 @@ verifyAxiomSentence sentence =
                 (freeVariables sentence)
                 (sentenceAxiomAttributes sentence)
         State.modify $ addAxiom verified attrs
-        maybe
-            (return ())
-            (\(_ , eq@Equation {left, attributes}) -> koreFailWithLocationsWhen
+        either
+            (\case
+                RequiresError _ ->
+                    koreFailWithLocations
+                    [sentenceAxiomPattern verified]
+                        "RequiresError thrown during equation check"
+                ArgumentError _ ->
+                    koreFailWithLocations
+                    [sentenceAxiomPattern verified]
+                        "ArgumentError thrown during equation check"
+                AntiLeftError _ ->
+                    koreFailWithLocations
+                    [sentenceAxiomPattern verified]
+                        "AntiLeftError thrown during equation check"
+                EnsuresError _ ->
+                    koreFailWithLocations
+                    [sentenceAxiomPattern verified]
+                        "EnsuresError thrown during equation check"
+                NotEquation _ -> return ()
+                FunctionalAxiom -> return ()
+                ConstructorAxiom -> return ()
+                SubsortAxiom -> return ()
+            )
+            (\ Equation {left, attributes} -> koreFailWithLocationsWhen
                 ( Attribute.simplification attributes
                   == NotSimplification
                   &&
@@ -385,11 +407,11 @@ verifyAxiomSentence sentence =
                   & Pattern.isFunction
                   & not)
                 )
-                [eq]
+                [sentenceAxiomPattern verified]
                 "Left hand side of NotSimplification equation axiom is\
                 \ not a function"
             )
-            $ identifyEquation (attrs, verified)
+            $ fromSentenceAxiom (attrs, verified)
   where
     addAxiom verified attrs =
         Lens.over

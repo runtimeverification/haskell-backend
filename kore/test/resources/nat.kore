@@ -4,11 +4,11 @@ module NAT
 
   sort Nat{} []
 
-  symbol zero{}() : Nat{} []
+  symbol zero{}() : Nat{} [constructor{}(), functional{}()]
 
-  symbol succ{}(Nat{}) : Nat{} []
+  symbol succ{}(Nat{}) : Nat{} [constructor{}(), functional{}()]
 
-  symbol plus{}(Nat{},Nat{}) : Nat{} []
+  symbol plus{}(Nat{},Nat{}) : Nat{} [functional{}()]
 
   axiom{S}
     \exists{S}(
@@ -49,7 +49,7 @@ module NAT
   axiom{S}
     \equals{Nat{},S}(
       plus{}(X:Nat{},zero{}()),
-      X:Nat{}) []
+      X:Nat{}) [unit{}()]
 
   axiom{S}
     \equals{Nat{},S}(

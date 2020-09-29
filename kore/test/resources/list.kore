@@ -4,11 +4,11 @@ module LIST
 
   sort List{S} []
 
-  symbol nil{S}() : List{S} []
+  symbol nil{S}() : List{S} [constructor{}(), functional{}()]
 
-  symbol cons{S}(S,List{S}) : List{S} []
+  symbol cons{S}(S,List{S}) : List{S} [constructor{}(), functional{}()]
 
-  symbol append{S}(List{S},List{S}) : List{S} []
+  symbol append{S}(List{S},List{S}) : List{S} [functional{}()]
 
   axiom{S,R}
     \exists{R}(
@@ -53,7 +53,7 @@ module LIST
   axiom{S,R}
     \equals{List{S},R}(
       append{S}(nil{S}(),L:List{S}),
-      L:List{S}) []
+      L:List{S}) [unit{}()]
 
   axiom{S,R}
     \equals{List{S},R}(
