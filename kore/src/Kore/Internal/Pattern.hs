@@ -32,6 +32,7 @@ module Kore.Internal.Pattern
     , assign
     , requireDefined
     , substitute
+    , fromMultiAnd
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -44,6 +45,7 @@ module Kore.Internal.Pattern
 
 import Prelude.Kore
 
+import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -63,6 +65,9 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -415,3 +420,12 @@ substitute subst Conditional { term, predicate, substitution } =
     , predicate = Predicate.substitute subst predicate
     , substitution = Substitution.substitute subst substitution
     }
+
+fromMultiAnd
+    :: InternalVariable variable
+    => MultiAnd (Pattern variable)
+    -> Pattern variable
+fromMultiAnd patterns =
+    case Foldable.toList patterns of
+       [] -> top
+       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
