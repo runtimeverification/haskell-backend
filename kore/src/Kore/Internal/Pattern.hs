@@ -67,6 +67,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -154,20 +155,15 @@ children of the 'Pattern' are considered simplified if the 'term' and
 simplified.
  -}
 hasSimplifiedChildren
-    :: SideCondition.Representation -> Pattern variable -> Bool
+    :: Ord variable
+    => SideCondition.Representation -> Pattern variable -> Bool
 hasSimplifiedChildren sideCondition patt =
-    let term1 = term patt
-        term2 = predicate patt & Predicate.unwrapPredicate
-        subst = substitution patt
-     in TermLike.isSimplified sideCondition term1
-        && areSimplifiedChildrenOfConj term2
-        && Substitution.isSimplified sideCondition subst
+    TermLike.isSimplified sideCondition term
+    && all (Predicate.isSimplified sideCondition) clauses
+    && Substitution.isSimplified sideCondition substitution
   where
-    areSimplifiedChildrenOfConj (TermLike.And_ _ child1 child2) =
-        areSimplifiedChildrenOfConj child1
-        && areSimplifiedChildrenOfConj child2
-    areSimplifiedChildrenOfConj term =
-        TermLike.isSimplified sideCondition term
+    Conditional { term, predicate, substitution } = patt
+    clauses = MultiAnd.fromPredicate predicate
 
 forgetSimplified
     :: InternalVariable variable => Pattern variable -> Pattern variable
