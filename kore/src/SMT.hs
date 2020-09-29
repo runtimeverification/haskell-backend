@@ -281,7 +281,7 @@ newtype SMT a = SMT { getSMT :: RWST SolverInitAndHandle () Int (LoggerT IO) a }
         , Functor
         , Monad
         , MonadIO
-        -- , MonadLog
+        , MonadLog
         )
     deriving
         ( MonadCatch
@@ -289,7 +289,6 @@ newtype SMT a = SMT { getSMT :: RWST SolverInitAndHandle () Int (LoggerT IO) a }
         , MonadMask
         )
 
-instance (MonadLog (RWST SolverInitAndHandle () Int (LoggerT IO))) where
 
 
 instance MonadProf SMT where
@@ -339,8 +338,7 @@ instance MonadSMT SMT where
             -- Due to an issue with the SMT solver, we need to
             -- reinitialise it after a number of runs, specified here.
             -- This number can be adjusted based on experimentation
-            when (counterNew >= 100)
-                (reinit >> SMT $ State.put 0)
+            when (counterNew >= 100) reinit
             return a
 
     declare name typ =
@@ -374,6 +372,7 @@ instance MonadSMT SMT where
         withSolver' $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
         config <- SMT (Reader.asks config)
         initSolver config
+        SMT $ State.put 0
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -384,6 +383,8 @@ instance MonadSMT m => MonadSMT (IdentityT m)
 instance MonadSMT m => MonadSMT (LogicT m) where
     withSolver = mapLogicT withSolver
     {-# INLINE withSolver #-}
+
+instance MonadSMT m => MonadSMT (Reader.ReaderT r m)
 
 instance MonadSMT m => MonadSMT (RWST r () Int m)
 
@@ -480,10 +481,12 @@ runSMT config userInit smt =
         (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' config userInit mvar SMT { getSMT = smt } =
-    runRWST
+runSMT' config userInit mvar SMT { getSMT = smt } = do
+    (a, _, _) <- runRWST
         (getSMT (initSolver config) >> smt)
         (SolverInitAndHandle userInit mvar config)
+        0
+    return a
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

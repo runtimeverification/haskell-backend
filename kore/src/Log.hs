@@ -51,6 +51,9 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import Control.Monad.Trans.Accum
     ( AccumT
     , mapAccumT
@@ -223,6 +226,8 @@ instance MonadLog log => MonadLog (MaybeT log)
 instance MonadLog log => MonadLog (ReaderT a log)
 
 instance MonadLog log => MonadLog (Strict.StateT state log)
+
+instance MonadLog log => MonadLog (RWST a () state log)
 
 -- ---------------------------------------------------------------------
 -- * LoggerT
