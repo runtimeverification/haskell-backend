@@ -11,8 +11,8 @@ module Kore.Step.Simplification.Pattern
 import Prelude.Kore
 
 import Control.Monad.State.Strict
-    ( StateT
-    , evalStateT
+    ( State
+    , evalState
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
@@ -92,7 +92,6 @@ import Kore.Unparser
     ( unparse
     )
 
-import Changed
 import Pair
 import qualified Pretty
 
@@ -124,7 +123,7 @@ simplify
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
-        withSimplifiedCondition <- simplifyCondition sideCondition (f1 pattern')
+        withSimplifiedCondition <- simplifyCondition sideCondition (f pattern')
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
@@ -133,36 +132,12 @@ simplify sideCondition pattern' =
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         simplifyCondition
             sideCondition
-            (f2 $ Conditional.andCondition simplifiedTerm simplifiedCondition)
+            (f $ Conditional.andCondition simplifiedTerm simplifiedCondition)
   where
-    f1 patt =
+    f patt =
         let predicates = MultiAnd.fromPredicate . predicate $ patt
-            newPredicates = simplifyConjunctionByAssumption predicates
-         in case newPredicates of
-                Unchanged unchanged ->
-                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
-                  where
-                    predicate =
-                        MultiAnd.toPredicate unchanged
-                Changed changed ->
-                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
-                  where
-                    predicate = MultiAnd.toPredicate changed
-    f2 patt =
-        let predicates = MultiAnd.fromPredicate . predicate $ patt
-            newPredicates = simplifyConjunctionByAssumption predicates
-         in case newPredicates of
-                Unchanged unchanged ->
-                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
-                  where
-                    predicate =
-                        MultiAnd.toPredicate unchanged
-                        & Predicate.setSimplified simplified
-                    simplified = foldMap Predicate.simplifiedAttribute unchanged
-                Changed changed ->
-                    Pattern.withCondition (term patt) (from (substitution patt) <> from predicate)
-                  where
-                    predicate = MultiAnd.toPredicate changed
+            newPredicate = MultiAnd.toPredicate $ simplifyConjunctionByAssumption predicates
+         in Pattern.withCondition (term patt) (from (substitution patt) <> from newPredicate)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
@@ -177,10 +152,10 @@ simplifyConjunctionByAssumption
     :: forall variable
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
-    -> Changed (MultiAnd (Predicate variable))
+    -> MultiAnd (Predicate variable)
 simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
-    fmap MultiAnd.make
-    $ flip evalStateT HashMap.empty
+    MultiAnd.make
+    $ flip evalState HashMap.empty
     $ for (sortBySize andPredicates)
     $ \predicate' -> do
         let original = Predicate.unwrapPredicate predicate'
@@ -204,7 +179,7 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
 
     assume
         :: Predicate variable
-        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
+        -> State (HashMap (TermLike variable) (TermLike variable)) ()
     assume predicate1 =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
@@ -226,13 +201,16 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
 
     applyAssumptions
         ::  TermLike variable
-        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
+        ->  State
+                (HashMap (TermLike variable) (TermLike variable))
                 (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        lift $ fmap
-            (unsafeMakePredicate assumptions replaceIn)
+        unsafeMakePredicate
+            assumptions
+            replaceIn
             (applyAssumptionsWorker assumptions replaceIn)
+            & return
 
     unsafeMakePredicate replacements original result =
         case makePredicate result of
@@ -251,18 +229,15 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
     applyAssumptionsWorker
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
-        -> Changed (TermLike variable)
+        -> TermLike variable
     applyAssumptionsWorker assumptions original
-      | Just result <- HashMap.lookup original assumptions = Changed result
+      | Just result <- HashMap.lookup original assumptions = result
 
-      | HashMap.null assumptions' = Unchanged original
+      | HashMap.null assumptions' = original
 
       | otherwise =
-        traverse (applyAssumptionsWorker assumptions') replaceIn
-        & getChanged
-        -- The next line ensures that if the result is Unchanged, any allocation
-        -- performed while computing that result is collected.
-        & maybe (Unchanged original) (Changed . synthesize)
+        fmap (applyAssumptionsWorker assumptions') replaceIn
+        & synthesize
 
       where
         _ :< replaceIn = Recursive.project original
