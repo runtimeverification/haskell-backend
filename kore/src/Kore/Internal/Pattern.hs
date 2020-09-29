@@ -45,7 +45,6 @@ module Kore.Internal.Pattern
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -426,6 +425,11 @@ fromMultiAnd
     => MultiAnd (Pattern variable)
     -> Pattern variable
 fromMultiAnd patterns =
-    case Foldable.toList patterns of
-       [] -> top
-       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
+    foldr
+        (\pattern1 ->
+             pure . maybe pattern1
+                (\pattern2 -> mkAnd <$> pattern1 <*> pattern2)
+        )
+        Nothing
+        patterns
+    & fromMaybe top
