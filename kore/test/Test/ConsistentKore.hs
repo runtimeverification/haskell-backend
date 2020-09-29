@@ -89,7 +89,6 @@ import Kore.Internal.TermLike
     , mkCeil
     , mkElemVar
     , mkEquals
-    , mkEvaluated
     , mkExists
     , mkFloor
     , mkForall
@@ -350,7 +349,6 @@ termGenerators = do
             , orGenerator
             , rewritesGenerator
             , topGenerator
-            , evaluatedGenerator
             ]
     literals <- filterGeneratorsAndGroup
         (catMaybes
@@ -578,9 +576,6 @@ rewritesGenerator = binaryOperatorGenerator mkRewrites
 
 topGenerator :: TermGenerator
 topGenerator = nullaryFreeSortOperatorGenerator mkTop
-
-evaluatedGenerator :: TermGenerator
-evaluatedGenerator = unaryOperatorGenerator mkEvaluated
 
 maybeStringLiteralGenerator :: Setup -> Maybe TermGenerator
 maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =
