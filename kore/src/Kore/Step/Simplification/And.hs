@@ -355,24 +355,27 @@ global definitions (axioms) apply. We are looking for a 'TermLike' of the form
 
 where @f@ is a function and @C@ is a constructor, sort injection or builtin.
 @retractLocalFunction@ will match an @\equals@ predicate with its arguments
-in either order, but the function pattern is always returned first in the 'Pair'.
+in either order, but the function pattern is always returned first in the
+'Pair'.
 
  -}
 retractLocalFunction
     :: TermLike variable
     -> Maybe (Pair (TermLike variable))
-retractLocalFunction (Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _))
-  | isConstructor symbol1, isFunction symbol2 = Just (Pair term2 term1)
-  | isConstructor symbol2, isFunction symbol1 = Just (Pair term1 term2)
-retractLocalFunction (Equals_ _ _ term1@(App_ symbol _) term2@(Inj_ _))
-  | isFunction symbol = Just (Pair term1 term2)
-retractLocalFunction (Equals_ _ _ term1@(Inj_ _) term2@(App_ symbol _))
-  | isFunction symbol = Just (Pair term2 term1)
-retractLocalFunction (Equals_ _ _ term1@(App_ symbol _) term2@(Builtin_ _))
-  | isFunction symbol = Just (Pair term1 term2)
-retractLocalFunction (Equals_ _ _ term1@(Builtin_ _) term2@(App_ symbol _))
-  | isFunction symbol = Just (Pair term2 term1)
-retractLocalFunction _ = Nothing
+retractLocalFunction =
+    \case
+        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        _ -> Nothing
+  where
+    go term1@(App_ symbol1 _) term2
+      | isFunction symbol1 =
+        case term2 of
+            App_ symbol2 _
+              | isConstructor symbol2 -> Just (Pair term1 term2)
+            Inj_ _     -> Just (Pair term1 term2)
+            Builtin_ _ -> Just (Pair term1 term2)
+            _          -> Nothing
+    go _ _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
