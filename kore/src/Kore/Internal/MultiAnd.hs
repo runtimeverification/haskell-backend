@@ -213,7 +213,7 @@ toPredicate (MultiAnd predicates) =
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
-    :: InternalVariable variable
+    :: Ord variable
     => Predicate variable
     -> MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
