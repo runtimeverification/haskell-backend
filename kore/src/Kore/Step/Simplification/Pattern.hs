@@ -123,21 +123,30 @@ simplify
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
-        withSimplifiedCondition <- simplifyCondition sideCondition (f pattern')
+        withSimplifiedCondition <-
+            simplifyCondition
+                sideCondition
+                (simplifyConjunctions pattern')
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
             term' = substitute (toMap $ substitution simplifiedCondition) term
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
+        let simplifiedPattern =
+                Conditional.andCondition simplifiedTerm simplifiedCondition
         simplifyCondition
             sideCondition
-            (f $ Conditional.andCondition simplifiedTerm simplifiedCondition)
+            (simplifyConjunctions simplifiedPattern)
   where
-    f patt =
+    simplifyConjunctions patt =
         let predicates = MultiAnd.fromPredicate . predicate $ patt
-            newPredicate = MultiAnd.toPredicate $ simplifyConjunctionByAssumption predicates
-         in Pattern.withCondition (term patt) (from (substitution patt) <> from newPredicate)
+            newPredicate =
+                MultiAnd.toPredicate
+                $ simplifyConjunctionByAssumption predicates
+         in Pattern.withCondition
+                (term patt)
+                (from (substitution patt) <> from newPredicate)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
