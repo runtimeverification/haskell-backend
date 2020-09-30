@@ -8,6 +8,7 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -17,8 +18,14 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeCeilPredicate_
+    , makeEqualsPredicate
     , makeEqualsPredicate_
+    , makeExistsPredicate
+    , makeImpliesPredicate
+    , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -66,8 +73,142 @@ test_Pattern_simplify =
             , test "contradiction: a = f(x) ∧ b = f(x)" (Left  a) (Left  b)
             , test "contradiction: f(x) = a ∧ b = f(x)" (Right a) (Left  b)
             ]
+    , testCase "Replaces and terms under independent quantifiers" $ do
+        let expect =
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (makeAndPredicate
+                        (makeCeilPredicate Mock.testSort fOfX)
+                        (makeExistsPredicate Mock.y
+                            (makeCeilPredicate Mock.testSort fOfY)
+                        )
+                    )
+        actual <-
+            simplify
+                (Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (makeAndPredicate
+                        (makeCeilPredicate Mock.testSort fOfX)
+                        (makeExistsPredicate Mock.y
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.testSort fOfX)
+                                (makeCeilPredicate Mock.testSort fOfY)
+                            )
+                        )
+                    )
+                )
+        assertEqual "" (OrPattern.fromPattern expect) actual
+    , testCase "Simplifies multiple Implies" $ do
+        let expect =
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    ( MultiAnd.toPredicate . MultiAnd.make $
+                    [ makeCeilPredicate Mock.testSort fOfX
+                    , makeCeilPredicate Mock.testSort fOfY
+                    , makeCeilPredicate Mock.testSort gOfX
+                    , makeEqualsPredicate_ fOfX gOfX
+                    ]
+                    )
+        actual <-
+            simplify
+                $ Pattern.fromTermAndPredicate
+                    (mkAnd
+                        (Mock.constr10 fOfX)
+                        (Mock.constr10 gOfX)
+                    )
+                    ( MultiAnd.toPredicate . MultiAnd.make $
+                    [ makeCeilPredicate_ fOfX
+                    , makeImpliesPredicate
+                        (makeCeilPredicate_ fOfX)
+                        (makeCeilPredicate_ gOfX)
+                    , makeImpliesPredicate
+                        (makeCeilPredicate_ gOfX)
+                        (makeCeilPredicate_ fOfY)
+                    ]
+                    )
+        assertEqual "" (OrPattern.fromPattern expect) actual
+    , testCase "Does not replace and terms under intersecting quantifiers" $ do
+        let expect =
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                     (makeAndPredicate
+                         (makeCeilPredicate Mock.testSort fOfX)
+                         (makeExistsPredicate Mock.x
+                             (makeCeilPredicate Mock.testSort fOfX)
+                         )
+                     )
+        actual <-
+            simplify $
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (makeAndPredicate
+                        (makeCeilPredicate_ fOfX)
+                        (makeExistsPredicate Mock.x (makeCeilPredicate_ fOfX))
+                    )
+        assertEqual "" (OrPattern.fromPattern expect) actual
+    , testCase "Contradictions result in bottom" $ do
+        actual <-
+            simplify $
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (makeAndPredicate
+                        (makeCeilPredicate_ fOfX)
+                        (mkNot <$> makeCeilPredicate_ fOfX)
+                    )
+        assertEqual "" mempty actual
+    , testCase "Simplifies Implies - Positive" $ do
+        let expect =
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (MultiAnd.toPredicate . MultiAnd.make $
+                    [ makeCeilPredicate Mock.testSort fOfX
+                    , makeCeilPredicate Mock.testSort gOfX
+                    , makeEqualsPredicate_ fOfX gOfX
+                    ]
+                    )
+        actual <-
+            simplify $
+                Pattern.fromTermAndPredicate
+                    (mkAnd
+                        (Mock.constr10 fOfX)
+                        (Mock.constr10 gOfX)
+                    )
+                    (makeAndPredicate
+                        (makeCeilPredicate_ fOfX)
+                        (makeImpliesPredicate
+                            (makeCeilPredicate_ fOfX)
+                            (makeCeilPredicate_ gOfX)
+                        )
+                    )
+        assertEqual "" (OrPattern.fromPattern expect) actual
+    , testCase "Simplifies Implies - Negative" $ do
+        let expect =
+                Pattern.fromTermAndPredicate
+                    (Mock.constr10 fOfX)
+                    (makeAndPredicate
+                        (makeEqualsPredicate Mock.testSort fOfX gOfX)
+                        (makeNotPredicate $ makeCeilPredicate Mock.testSort fOfX)
+                    )
+        actual <-
+            simplify $
+                Pattern.fromTermAndPredicate
+                    (mkAnd
+                        (Mock.constr10 fOfX)
+                        (Mock.constr10 gOfX)
+                    )
+                    (makeAndPredicate
+                        (makeNotPredicate $ makeCeilPredicate_ fOfX)
+                        (makeImpliesPredicate
+                            (makeCeilPredicate_ fOfX)
+                            (makeCeilPredicate_ gOfX)
+                        )
+                    )
+        assertEqual "" (OrPattern.fromPattern expect) actual
     ]
   where
+    fOfX = Mock.f (mkElemVar Mock.x)
+    fOfY = Mock.f (mkElemVar Mock.y)
+    gOfX = Mock.g (mkElemVar Mock.x)
     becomes
         :: HasCallStack
         => Pattern VariableName -> OrPattern VariableName -> String -> TestTree
