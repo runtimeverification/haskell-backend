@@ -110,6 +110,14 @@ instance From AllPathClaim Attribute.RuleIndex where
 instance From AllPathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathClaim
 
+mkAllPathClaim
+    :: Pattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
+    -> AllPathClaim
+mkAllPathClaim left existentials right =
+    AllPathClaim (mkClaimPattern left existentials right)
+
 -- | Converts an 'AllPathClaim' into its term representation.
 -- This is intended to be used only in unparsing situations,
 -- as some of the variable information related to the
