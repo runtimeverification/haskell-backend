@@ -21,134 +21,74 @@ import Test.Kore
 import qualified Test.Terse as Terse
 
 -- A simple type with one constructor
-data A = A deriving GHC.Generic
-
-instance SOP.Generic A
-
-instance SOP.HasDatatypeInfo A
-
-instance Debug A
-
-instance Diff A
+data A = A
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A simple type with one constructor
-data B = B deriving GHC.Generic
-
-instance SOP.Generic B
-
-instance SOP.HasDatatypeInfo B
-
-instance Debug B
-
-instance Diff B
+data B = B
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A record type
 data R = R { rA :: A, rB :: B }
     deriving GHC.Generic
-
-instance SOP.Generic R
-
-instance SOP.HasDatatypeInfo R
-
-instance Debug R
-
-instance Diff R
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A sum type with unary constructors
-data S = SA A | SB B deriving GHC.Generic
-
-instance SOP.Generic S
-
-instance SOP.HasDatatypeInfo S
-
-instance Debug S
-
-instance Diff S
+data S = SA A | SB B
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A product type with one constructor
-data P = P A B deriving GHC.Generic
-
-instance SOP.Generic P
-
-instance SOP.HasDatatypeInfo P
-
-instance Debug P
-
-instance Diff P
+data P = P A B
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A complex algebraic data type
-data D = D S P deriving GHC.Generic
-
-instance SOP.Generic D
-
-instance SOP.HasDatatypeInfo D
-
-instance Debug D
-
-instance Diff D
+data D = D S P
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A product type with an infix constructor
-data I a b = a ::: b deriving GHC.Generic
+data I a b = a ::: b
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 infixl 7 :::
 
-instance SOP.Generic (I a b)
-
-instance SOP.HasDatatypeInfo (I a b)
-
-instance (Debug a, Debug b) => Debug (I a b)
-
-instance (Debug a, Debug b, Diff a, Diff b) => Diff (I a b)
-
 -- A product type with a prefix constructor and an auxiliary fixity declaration
-data I' = (::::) S S deriving GHC.Generic
+data I' = (::::) S S
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 infixl 7 ::::
 
-instance SOP.Generic I'
-
-instance SOP.HasDatatypeInfo I'
-
-instance Debug I'
-
-instance Diff I'
-
 -- A newtype
-newtype N a = N a deriving GHC.Generic
-
-instance SOP.Generic (N a)
-
-instance SOP.HasDatatypeInfo (N a)
-
-instance Debug a => Debug (N a)
-
-instance (Debug a, Diff a) => Diff (N a)
+newtype N a = N a
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A record newtype
-newtype Rn a = Rn { unRn :: a } deriving GHC.Generic
-
-instance SOP.Generic (Rn a)
-
-instance SOP.HasDatatypeInfo (Rn a)
-
-instance Debug a => Debug (Rn a)
-
-instance (Debug a, Diff a) => Diff (Rn a)
-
+newtype Rn a = Rn { unRn :: a }
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- A record
 data R3 a b c = R3 { fieldA :: a, fieldB :: b, fieldC :: c }
     deriving GHC.Generic
-
-instance SOP.Generic (R3 a b c)
-
-instance SOP.HasDatatypeInfo (R3 a b c)
-
-instance (Debug a, Debug b, Debug c) => Debug (R3 a b c)
-
-instance
-    ( Debug a, Debug b, Debug c, Diff a, Diff b, Diff c )
-    => Diff (R3 a b c)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 test_debug :: [TestTree]
 test_debug =

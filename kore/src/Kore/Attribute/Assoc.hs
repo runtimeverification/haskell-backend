@@ -22,17 +22,11 @@ import Kore.Debug
 {- | @Assoc@ represents the @assoc@ attribute for axioms.
  -}
 newtype Assoc = Assoc { isAssoc :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Assoc
-
-instance SOP.HasDatatypeInfo Assoc
-
-instance Debug Assoc
-
-instance Diff Assoc
-
-instance NFData Assoc
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Assoc where
     def = Assoc False

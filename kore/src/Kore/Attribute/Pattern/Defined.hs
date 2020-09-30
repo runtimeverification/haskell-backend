@@ -35,20 +35,12 @@ import Kore.Syntax
 {- | A pattern is 'Defined' if it matches at least one element.
  -}
 newtype Defined = Defined { isDefined :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
-
-instance SOP.Generic Defined
-
-instance SOP.HasDatatypeInfo Defined
-
-instance Debug Defined
-
-instance Diff Defined
-
-instance NFData Defined
-
-instance Hashable Defined
 
 instance Synthetic Defined (And sort) where
     synthetic = const (Defined False)

@@ -161,9 +161,9 @@ newtype RuleName = RuleName
 -- printing functions. For example, the pipe command will only send KoreOut to the
 -- process' input handle.
 newtype ReplOutput =
-    ReplOutput
-    { unReplOutput :: [ReplOut]
-    } deriving (Eq, Show, Semigroup, Monoid)
+    ReplOutput { unReplOutput :: [ReplOut] }
+    deriving (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
 
 -- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
 newtype PrintAuxOutput = PrintAuxOutput
@@ -600,7 +600,7 @@ newtype UnifierWithExplanation m a =
         { getUnifierWithExplanation
             :: UnifierT (AccumT (First ReplOutput) m) a
         }
-  deriving (Alternative, Applicative, Functor, Monad, MonadPlus)
+  deriving newtype (Alternative, Applicative, Functor, Monad, MonadPlus)
 
 instance Monad m => MonadLogic (UnifierWithExplanation m) where
     msplit act =
@@ -609,7 +609,7 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
       where
         wrapNext = (fmap . fmap) UnifierWithExplanation
 
-deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
+deriving newtype instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift

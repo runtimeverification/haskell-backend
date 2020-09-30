@@ -381,19 +381,11 @@ data AttemptedAxiomResults variable =
         , remainders :: !(OrPattern variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance (NFData variable) => NFData (AttemptedAxiomResults variable)
-
-instance SOP.Generic (AttemptedAxiomResults variable)
-
-instance SOP.HasDatatypeInfo (AttemptedAxiomResults variable)
-
-instance Debug variable => Debug (AttemptedAxiomResults variable)
-
-instance
-    (Diff variable, InternalVariable variable)
-    => Diff (AttemptedAxiomResults variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable) where
     (<>)
@@ -436,19 +428,11 @@ data AttemptedAxiom variable
     -- ^ The axiom(s) can't be applied with the given side condition, but
     -- we may be able to apply them when the side condition changes.
     | Applied !(AttemptedAxiomResults variable)
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance (NFData variable) => NFData (AttemptedAxiom variable)
-
-instance SOP.Generic (AttemptedAxiom variable)
-
-instance SOP.HasDatatypeInfo (AttemptedAxiom variable)
-
-instance Debug variable => Debug (AttemptedAxiom variable)
-
-instance
-    (Diff variable, InternalVariable variable)
-    => Diff (AttemptedAxiom variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 isApplicable
     , isNotApplicable

@@ -155,21 +155,12 @@ data VariableName =
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 mkVariableName :: Id -> VariableName
 mkVariableName base = VariableName { base, counter = mempty }
-
-instance Hashable VariableName
-
-instance NFData VariableName
-
-instance SOP.Generic VariableName
-
-instance SOP.HasDatatypeInfo VariableName
-
-instance Debug VariableName
-
-instance Diff VariableName
 
 instance Unparse VariableName where
     unparse VariableName { base, counter } =
@@ -187,9 +178,11 @@ instance From VariableName VariableName where
 newtype ElementVariableName variable =
     ElementVariableName { unElementVariableName :: variable }
     deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic, GHC.Generic1)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup a => Semigroup (ElementVariableName a) where
     (<>) a b = ElementVariableName (on (<>) unElementVariableName a b)
@@ -210,18 +203,6 @@ instance Applicative ElementVariableName where
 instance Distributive ElementVariableName where
     distribute = ElementVariableName . fmap unElementVariableName
     {-# INLINE distribute #-}
-
-instance Hashable variable => Hashable (ElementVariableName variable)
-
-instance NFData variable => NFData (ElementVariableName variable)
-
-instance SOP.Generic (ElementVariableName variable)
-
-instance SOP.HasDatatypeInfo (ElementVariableName variable)
-
-instance Debug variable => Debug (ElementVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (ElementVariableName variable)
 
 instance Unparse variable => Unparse (ElementVariableName variable) where
     unparse = unparseGeneric
@@ -244,6 +225,9 @@ newtype SetVariableName variable =
     deriving (Functor)
     deriving (Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup a => Semigroup (SetVariableName a) where
     (<>) a b = SetVariableName (on (<>) unSetVariableName a b)
@@ -263,18 +247,6 @@ instance Applicative SetVariableName where
 instance Distributive SetVariableName where
     distribute = SetVariableName . fmap unSetVariableName
     {-# INLINE distribute #-}
-
-instance Hashable variable => Hashable (SetVariableName variable)
-
-instance NFData variable => NFData (SetVariableName variable)
-
-instance SOP.Generic (SetVariableName variable)
-
-instance SOP.HasDatatypeInfo (SetVariableName variable)
-
-instance Debug variable => Debug (SetVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (SetVariableName variable)
 
 instance Unparse variable => Unparse (SetVariableName variable) where
     unparse = unparseGeneric
@@ -303,21 +275,11 @@ data Variable variable =
     , variableSort :: !Sort
     }
     deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
+    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
-
-instance Hashable variable => Hashable (Variable variable)
-
-instance NFData variable => NFData (Variable variable)
-
-instance SOP.Generic (Variable variable)
-
-instance SOP.HasDatatypeInfo (Variable variable)
-
-instance Debug variable => Debug (Variable variable)
-
-instance (Debug variable, Diff variable) => Diff (Variable variable)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse variable => Unparse (Variable variable) where
     unparse Variable { variableName, variableSort } =
@@ -391,21 +353,11 @@ data SomeVariableName variable
     = SomeVariableNameElement !(ElementVariableName variable)
     | SomeVariableNameSet     !(SetVariableName     variable)
     deriving (Eq, Ord, Show)
-    deriving (Functor)
-    deriving (Foldable, Traversable)
+    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
-
-instance Hashable variable => Hashable (SomeVariableName variable)
-
-instance NFData variable => NFData (SomeVariableName variable)
-
-instance SOP.Generic (SomeVariableName variable)
-
-instance SOP.HasDatatypeInfo (SomeVariableName variable)
-
-instance Debug variable => Debug (SomeVariableName variable)
-
-instance (Debug variable, Diff variable) => Diff (SomeVariableName variable)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse variable => Unparse (SomeVariableName variable) where
     unparse = unparseGeneric

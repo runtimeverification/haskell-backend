@@ -119,19 +119,11 @@ from function axioms (used for functional simplification).
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
     | ImplicationAxiomPattern (ImplicationRule variable)
-    deriving (Eq, GHC.Generic, Ord, Show)
-    -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
-    -- not only to function-related ones.
-
-instance NFData variable => NFData (QualifiedAxiomPattern variable)
-
-instance SOP.Generic (QualifiedAxiomPattern variable)
-
-instance SOP.HasDatatypeInfo (QualifiedAxiomPattern variable)
-
-instance (Debug variable) => Debug (QualifiedAxiomPattern variable)
-
-instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms

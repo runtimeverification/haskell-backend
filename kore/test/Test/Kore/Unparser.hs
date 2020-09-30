@@ -355,19 +355,19 @@ instance Unparse C where
     unparse2 C = "C"
 
 -- A sum type with three different symbols
-data S = SA A | SB B | SC C deriving GHC.Generic
-
-instance SOP.Generic S
+data S = SA A | SB B | SC C
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic)
 
 -- A product type with three different symbols
-data P = P A B C deriving GHC.Generic
-
-instance SOP.Generic P
+data P = P A B C
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic)
 
 -- A complex algebraic type with sums and products
-data D = D0 | D1 A | D2 A B | D3 A B C deriving GHC.Generic
-
-instance SOP.Generic D
+data D = D0 | D1 A | D2 A B | D3 A B C
+    deriving GHC.Generic
+    deriving anyclass (SOP.Generic)
 
 test_unparseGeneric :: [TestTree]
 test_unparseGeneric =

@@ -23,17 +23,11 @@ import Kore.Debug
 {- | @Comm@ represents the @comm@ attribute for axioms.
  -}
 newtype Comm = Comm { isComm :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Comm
-
-instance SOP.HasDatatypeInfo Comm
-
-instance Debug Comm
-
-instance Diff Comm
-
-instance NFData Comm
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Comm where
     def = Comm False

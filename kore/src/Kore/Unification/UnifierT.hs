@@ -51,19 +51,20 @@ newtype UnifierT (m :: Type -> Type) a =
                 (LogicT m)
                 a
         }
-    deriving (Functor, Applicative, Monad, Alternative, MonadPlus)
+    deriving newtype (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift
     {-# INLINE lift #-}
 
-deriving instance MonadLog m => MonadLog (UnifierT m)
+deriving newtype instance MonadLog m => MonadLog (UnifierT m)
 
-deriving instance Monad m => MonadLogic (UnifierT m)
+deriving newtype instance Monad m => MonadLogic (UnifierT m)
 
-deriving instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
+deriving newtype
+    instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 
-deriving instance MonadSMT m => MonadSMT (UnifierT m)
+deriving newtype instance MonadSMT m => MonadSMT (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
     localSimplifierAxioms locally (UnifierT readerT) =

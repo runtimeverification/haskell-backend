@@ -29,19 +29,12 @@ category from the Semantics of K, Section 9.1.4 (Patterns).
 
  -}
 newtype Bottom sort child = Bottom { bottomSort :: sort }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
-
-instance Hashable sort => Hashable (Bottom sort child)
-
-instance NFData sort => NFData (Bottom sort child)
-
-instance SOP.Generic (Bottom sort child)
-
-instance SOP.HasDatatypeInfo (Bottom sort child)
-
-instance Debug sort => Debug (Bottom sort child)
-
-instance (Debug sort, Diff sort) => Diff (Bottom sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (Bottom Sort child) where
     unparse Bottom { bottomSort } =

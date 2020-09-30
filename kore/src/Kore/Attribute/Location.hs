@@ -29,35 +29,27 @@ import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
 import qualified Kore.Error
 
-data LineColumn = LineColumn
+data LineColumn =
+    LineColumn
     { line   :: !Int
     , column :: !Int
-    } deriving (Eq, GHC.Generic, Ord, Show)
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-instance SOP.Generic LineColumn
-
-instance SOP.HasDatatypeInfo LineColumn
-
-instance Debug LineColumn
-
-instance Diff LineColumn
-
-instance NFData LineColumn
-
-data Location = Location
+data Location =
+    Location
     { start :: Maybe LineColumn
     , end   :: Maybe LineColumn
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Location
-
-instance SOP.HasDatatypeInfo Location
-
-instance Debug Location
-
-instance Diff Location
-
-instance NFData Location
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Location where
     def = Location Nothing Nothing
