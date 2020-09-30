@@ -1,15 +1,11 @@
 module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule_RewriteRule
-    , test_simplifyClaimRule
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Applicative
-    ( ZipList (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad.Morph
     ( MFunctor (..)
@@ -17,7 +13,6 @@ import Control.Monad.Morph
 import Control.Monad.Reader
     ( MonadReader
     , ReaderT
-    , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
@@ -28,11 +23,9 @@ import Data.Generics.Product
 
 import Kore.Internal.Condition
     ( Condition
-    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -44,7 +37,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( AdjSomeVariableName
     , InternalVariable
@@ -66,22 +58,16 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Sort
     ( predicateSort
     )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
-    , mkClaimPattern
-    )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
     ( RewriteRule
     )
 import Kore.Step.Simplification.Data
-    ( Env (..)
-    , runSimplifier
+    ( runSimplifier
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSMT
     , MonadSimplify (..)
-    , emptyConditionSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
 import Kore.Syntax.Variable
@@ -98,7 +84,6 @@ import Test.Kore.Step.Rule.Common
 import qualified Test.Kore.Step.Rule.Common as Common
 import Test.SMT
     ( runNoSMT
-    , runSMT
     )
 import Test.Tasty.HUnit.Ext
 
@@ -202,93 +187,6 @@ runSimplifyRuleNoSMT rule =
         SMT.All.declare Mock.smtDeclarations
         simplifyRuleLhs rule
 
-test_simplifyClaimRule :: [TestTree]
-test_simplifyClaimRule =
-    [ test "infers definedness" []
-        rule1
-        [rule1']
-    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
-        rule2
-        [rule2']
-    ]
-  where
-    rule1, rule2, rule2' :: ClaimPattern
-    rule1 =
-        mkClaimPattern
-            (Pattern.fromTermLike (Mock.f Mock.a))
-            []
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
-    rule1' = rule1 & requireDefined
-    rule2 =
-        mkClaimPattern
-            (Pattern.fromTermLike (Mock.g Mock.a))
-            []
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
-        & require aEqualsb
-    rule2' =
-        rule2
-        & requireDefined
-        & Lens.over
-            (field @"left")
-            ( Pattern.andCondition
-                (Mock.f Mock.a & Pattern.fromTermLike)
-            . Pattern.withoutTerm
-            )
-
-    require condition =
-        Lens.over
-            (field @"left")
-            (flip Pattern.andCondition condition)
-
-    aEqualsb =
-        makeEqualsPredicate Mock.testSort Mock.a Mock.b
-        & Condition.fromPredicate
-
-    requireDefined =
-        Lens.over
-            (field @"left")
-            (\left' ->
-                let leftTerm = Pattern.term left'
-                    leftSort = TermLike.termLikeSort leftTerm
-                 in Pattern.andCondition
-                        left'
-                        ( makeCeilPredicate leftSort leftTerm
-                        & Condition.fromPredicate
-                        )
-            )
-
-    test
-        :: HasCallStack
-        => TestName
-        -> [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-        -- ^ replacements
-        -> ClaimPattern
-        -> [ClaimPattern]
-        -> TestTree
-    test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
-        -- Test simplifyClaimRule through the OnePathClaim instance.
-        testCase name $ do
-            actual <- run (simplifyRuleLhs input) & fmap Foldable.toList
-            -- Equivalent under associativity of \\and
-            let checkEquivalence
-                    (fmap getOnePathClaim -> claims1)
-                    (fmap getOnePathClaim -> claims2)
-                  =
-                    and (areEquivalent <$> ZipList claims1 <*> ZipList claims2)
-            assertEqual "" True (checkEquivalence expect actual)
-      where
-        run =
-            runSMT (pure ())
-            . runSimplifier env
-            . flip runReaderT TestEnv
-                { replacements, input, requires = aEqualsb }
-            . runTestSimplifierT
-        env =
-            Mock.env
-                { simplifierCondition = emptyConditionSimplifier
-                , simplifierAxioms = mempty
-                }
-
 data TestEnv =
     TestEnv
     { replacements
@@ -374,46 +272,3 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
             => AdjSomeVariableName (RewritingVariableName -> variable)
         liftRewritingVariable =
             pure (.) <*> pure fromVariableName <*> getRewritingVariable
-
--- | The terms of the implication are equivalent in respect to
--- the associativity, commutativity, and idempotence of \\and.
---
--- Warning: this should only be used when the distinction between the
--- predicate and substitution of a pattern is not of importance.
-areEquivalent
-    :: ClaimPattern
-    -> ClaimPattern
-    -> Bool
-areEquivalent
-    ClaimPattern
-        { left = left1
-        , right = right1
-        , existentials = existentials1
-        , attributes = attributes1
-        }
-    ClaimPattern
-        { left = left2
-        , right = right2
-        , existentials = existentials2
-        , attributes = attributes2
-        }
-  =
-    let leftsAreEquivalent =
-            toConjunctionOfTerms left1
-            == toConjunctionOfTerms left2
-        rightsAreEquivalent =
-            MultiOr.map toConjunctionOfTerms right1
-            == MultiOr.map toConjunctionOfTerms right2
-     in leftsAreEquivalent
-        && rightsAreEquivalent
-        && existentials1 == existentials2
-        && attributes1 == attributes2
-  where
-    toConjunctionOfTerms Conditional { term, predicate, substitution } =
-        MultiAnd.fromTermLike term
-        <> MultiAnd.fromTermLike (Predicate.unwrapPredicate predicate)
-        <> MultiAnd.fromTermLike
-            ( Predicate.unwrapPredicate
-            . Substitution.toPredicate
-            $ substitution
-            )

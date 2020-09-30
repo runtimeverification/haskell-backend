@@ -8,7 +8,6 @@ module Kore.Reachability.OnePathClaim
     ( OnePathClaim (..)
     , mkOnePathClaim
     , onePathRuleToTerm
-    , mkOnePathClaim
     , Rule (..)
     ) where
 
@@ -91,14 +90,6 @@ mkOnePathClaim left existentials right =
 onePathRuleToTerm :: OnePathClaim -> TermLike VariableName
 onePathRuleToTerm (OnePathClaim claimPattern') =
     claimPatternToTerm TermLike.WEF claimPattern'
-
-mkOnePathClaim
-    :: Pattern RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> OrPattern RewritingVariableName
-    -> OnePathClaim
-mkOnePathClaim left existentials right =
-    OnePathClaim (mkClaimPattern left existentials right)
 
 instance Unparse OnePathClaim where
     unparse claimPattern' =
