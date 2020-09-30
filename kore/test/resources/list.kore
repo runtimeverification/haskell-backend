@@ -53,7 +53,7 @@ module LIST
   axiom{S,R}
     \equals{List{S},R}(
       append{S}(nil{S}(),L:List{S}),
-      L:List{S}) [unit{}()]
+      L:List{S}) []
 
   axiom{S,R}
     \equals{List{S},R}(

@@ -63,12 +63,12 @@ module BOOL
   axiom{S}
     \equals{Bool{},S}(
       andBool{}(true{}(),X:Bool{}),
-      X:Bool{}) [unit{}()]
+      X:Bool{}) []
 
   axiom{S}
     \equals{Bool{},S}(
       andBool{}(false{}(),X:Bool{}),
-      false{}()) [unit{}()]
+      false{}()) []
 
   axiom{S}
     \equals{Bool{},S}(
