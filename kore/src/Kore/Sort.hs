@@ -68,23 +68,15 @@ Semantics of K, Section 9.1.2 (Sorts).
  -}
 newtype SortVariable = SortVariable
     { getSortVariable  :: Id }
-    deriving (Show, Eq, Ord, GHC.Generic)
-
-instance Hashable SortVariable
-
-instance NFData SortVariable
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable { getSortVariable } = unparse2 getSortVariable
-
-instance SOP.Generic SortVariable
-
-instance SOP.HasDatatypeInfo SortVariable
-
-instance Debug SortVariable
-
-instance Diff SortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -95,19 +87,11 @@ data SortActual = SortActual
     { sortActualName  :: !Id
     , sortActualSorts :: ![Sort]
     }
-    deriving (Show, Eq, Ord, GHC.Generic)
-
-instance Hashable SortActual
-
-instance NFData SortActual
-
-instance SOP.Generic SortActual
-
-instance SOP.HasDatatypeInfo SortActual
-
-instance Debug SortActual
-
-instance Diff SortActual
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse SortActual where
     unparse SortActual { sortActualName, sortActualSorts } =
@@ -129,19 +113,11 @@ Section 9.1.2 (Sorts).
 data Sort
     = SortVariableSort !SortVariable
     | SortActualSort !SortActual
-    deriving (Show, Eq, Ord, GHC.Generic)
-
-instance Hashable Sort
-
-instance NFData Sort
-
-instance SOP.Generic Sort
-
-instance SOP.HasDatatypeInfo Sort
-
-instance Debug Sort
-
-instance Diff Sort
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse Sort where
     unparse =

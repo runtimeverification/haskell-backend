@@ -73,15 +73,10 @@ separate record of applied rules after the branch.
  -}
 newtype TransitionT rule m a =
     TransitionT { getTransitionT :: AccumT (Seq rule) (LogicT m) a }
-    deriving
-        ( Alternative
-        , Applicative
-        , Functor
-        , Monad
-        , MonadIO
-        , MonadPlus
-        , Typeable
-        )
+    deriving (Typeable)
+    deriving newtype (Applicative, Functor, Monad)
+    deriving newtype (Alternative, MonadPlus)
+    deriving newtype (MonadIO)
 
 type Transition r = TransitionT r Identity
 
@@ -110,9 +105,9 @@ instance MonadReader e m => MonadReader e (TransitionT rule m) where
     local f = TransitionT . Accum.mapAccumT (local f) . getTransitionT
     {-# INLINE local #-}
 
-deriving instance MonadSMT m => MonadSMT (TransitionT rule m)
+deriving newtype instance MonadSMT m => MonadSMT (TransitionT rule m)
 
-deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
+deriving newtype instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 
 instance MonadThrow m => MonadThrow (TransitionT rule m) where
     throwM = lift . throwM

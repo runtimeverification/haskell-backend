@@ -22,20 +22,14 @@ import Kore.Debug
 
 -- | @Klabel@ represents the @klabel@ attribute for symbols.
 newtype Klabel = Klabel { getKlabel :: Maybe Text }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Klabel where
     def = Klabel Nothing
-
-instance NFData Klabel
-
-instance SOP.Generic Klabel
-
-instance SOP.HasDatatypeInfo Klabel
-
-instance Debug Klabel
-
-instance Diff Klabel
 
 -- | Kore identifier representing the @klabel@ attribute symbol.
 klabelId :: Id

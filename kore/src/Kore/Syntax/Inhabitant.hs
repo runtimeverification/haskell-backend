@@ -27,19 +27,12 @@ import Kore.Unparser
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
 newtype Inhabitant child = Inhabitant { inhSort :: Sort }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable (Inhabitant child)
-
-instance NFData (Inhabitant child)
-
-instance SOP.Generic (Inhabitant child)
-
-instance SOP.HasDatatypeInfo (Inhabitant child)
-
-instance Debug (Inhabitant child)
-
-instance Diff (Inhabitant child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (Inhabitant child) where
     unparse = unparse . inhSort

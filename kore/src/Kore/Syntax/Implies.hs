@@ -36,21 +36,12 @@ data Implies sort child = Implies
     , impliesFirst  :: child
     , impliesSecond :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (Implies sort child)
-
-instance (NFData sort, NFData child) => NFData (Implies sort child)
-
-instance SOP.Generic (Implies sort child)
-
-instance SOP.HasDatatypeInfo (Implies sort child)
-
-instance (Debug sort, Debug child) => Debug (Implies sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (Implies sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Implies Sort child) where
     unparse Implies { impliesSort, impliesFirst, impliesSecond } =

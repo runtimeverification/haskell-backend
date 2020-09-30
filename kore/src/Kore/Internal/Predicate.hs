@@ -200,23 +200,9 @@ data PredicateF variable child
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
-
-
-instance SOP.Generic (PredicateF variable child)
-
-instance SOP.HasDatatypeInfo (PredicateF variable child)
-
-instance (Debug child, Debug variable) => Debug (PredicateF variable child)
-
-instance
-    ( Debug child, Debug variable, Diff child, Diff variable )
-    => Diff (PredicateF variable child)
-
-instance
-    (Hashable child, Hashable variable)
-    => Hashable (PredicateF variable child)
-
-instance (NFData child, NFData variable) => NFData (PredicateF variable child)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Ord variable, Unparse variable, Unparse child) => Unparse (PredicateF variable child)
@@ -663,12 +649,8 @@ getMultiOrPredicate = \case
 newtype NotPredicate variable
     = NotPredicate (TermLikeF variable (Predicate variable))
     deriving (GHC.Generic)
-
-instance SOP.Generic (NotPredicate variable)
-
-instance SOP.HasDatatypeInfo (NotPredicate variable)
-
-instance (Debug (Predicate variable), Debug variable) => Debug (NotPredicate variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance (Unparse (Predicate variable), InternalVariable variable) => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =

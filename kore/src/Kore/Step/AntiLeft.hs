@@ -126,21 +126,11 @@ data AntiLeftLhs variable = AntiLeftLhs
     , predicate :: !(Predicate variable)
     , term :: !(TermLike variable)
     }
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-deriving instance Eq variable => Eq (AntiLeftLhs variable)
-deriving instance Ord variable => Ord (AntiLeftLhs variable)
-deriving instance Show variable => Show (AntiLeftLhs variable)
-
-instance NFData variable => NFData (AntiLeftLhs variable)
-
-instance SOP.Generic (AntiLeftLhs variable)
-
-instance SOP.HasDatatypeInfo (AntiLeftLhs variable)
-
-instance Debug variable => Debug (AntiLeftLhs variable)
-
-instance (Debug variable, Diff variable) => Diff (AntiLeftLhs variable)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Expansion of an antileft alias.
 
@@ -165,21 +155,11 @@ data AntiLeft variable = AntiLeft
     , leftHands :: ![AntiLeftLhs variable]
     -- ^ patterns corresponding to rules with the same priority number.
     }
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-deriving instance Eq variable => Eq (AntiLeft variable)
-deriving instance Ord variable => Ord (AntiLeft variable)
-deriving instance Show variable => Show (AntiLeft variable)
-
-instance NFData variable => NFData (AntiLeft variable)
-
-instance SOP.Generic (AntiLeft variable)
-
-instance SOP.HasDatatypeInfo (AntiLeft variable)
-
-instance Debug variable => Debug (AntiLeft variable)
-
-instance (Debug variable, Diff variable) => Diff (AntiLeft variable)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     InternalVariable variable

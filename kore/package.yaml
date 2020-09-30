@@ -1,5 +1,5 @@
 name:                kore
-version:             0.29.0.0
+version:             0.30.0.0
 github:              "kframework/kore"
 license:             NCSA
 license-file:        LICENSE
@@ -103,6 +103,7 @@ default-extensions:
   - ConstraintKinds
   - DataKinds
   - DefaultSignatures
+  - DeriveAnyClass
   - DeriveDataTypeable
   - DeriveFoldable
   - DeriveFunctor

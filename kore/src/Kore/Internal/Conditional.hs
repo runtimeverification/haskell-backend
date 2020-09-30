@@ -94,37 +94,18 @@ data Conditional variable child =
         , predicate :: !(Predicate variable)
         , substitution :: !(Substitution variable)
         }
-    deriving (Foldable, Functor, GHC.Generic, Traversable)
-
-deriving instance
-    (Eq child, Ord variable, SubstitutionOrd variable) =>
-    Eq (Conditional variable child)
-
-deriving instance
-    (Ord child, Ord variable, SubstitutionOrd variable) =>
-    Ord (Conditional variable child)
-
-deriving instance
-    (Show child, Show variable) =>
-    Show (Conditional variable child)
-
-instance SOP.Generic (Conditional variable child)
-
-instance SOP.HasDatatypeInfo (Conditional variable child)
-
-instance (Debug variable, Debug child) => Debug (Conditional variable child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance
-    ( Debug child, Diff variable, Diff child, InternalVariable variable )
+    ( Debug child, Diff child
+    , Debug variable, Diff variable, Ord variable, SubstitutionOrd variable
+    )
     => Diff (Conditional variable child)
-
-instance
-    (Hashable child, Hashable variable) =>
-    Hashable (Conditional variable child)
-
-instance
-    (NFData child, NFData variable) =>
-    NFData (Conditional variable child)
 
 instance
     (InternalVariable variable, Semigroup term)

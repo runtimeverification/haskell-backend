@@ -16,14 +16,14 @@ import Prelude.Kore
 
 import qualified Data.Foldable as Foldable
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeFloorPredicate
+    ( makeFloorPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
@@ -91,12 +91,13 @@ makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
     OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
-makeEvaluateNonBoolFloor
-    Conditional {term, predicate, substitution}
-  =
-    OrPattern.fromPattern Conditional
-        { term = mkTop_
-        , predicate = Predicate.markSimplified
-            $ makeAndPredicate (makeFloorPredicate term) predicate
-        , substitution = substitution
-        }
+makeEvaluateNonBoolFloor patt =
+    floorCondition <> condition
+    & Pattern.fromCondition_
+    & OrPattern.fromPattern
+  where
+    (term, condition) = Pattern.splitTerm patt
+    floorCondition =
+        makeFloorPredicate term
+        & Predicate.markSimplified
+        & Condition.fromPredicate

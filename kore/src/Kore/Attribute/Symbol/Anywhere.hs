@@ -11,6 +11,7 @@ module Kore.Attribute.Symbol.Anywhere
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -19,26 +20,15 @@ import Kore.Debug
 
 -- | @Anywhere@ represents the @anywhere@ attribute for symbols.
 newtype Anywhere = Anywhere { isAnywhere :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
-
-instance Semigroup Anywhere where
-    (<>) (Anywhere a) (Anywhere b) = Anywhere (a || b)
-
-instance Monoid Anywhere where
-    mempty = Anywhere False
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via Monoid.Any
 
 instance Default Anywhere where
     def = mempty
-
-instance NFData Anywhere
-
-instance SOP.Generic Anywhere
-
-instance SOP.HasDatatypeInfo Anywhere
-
-instance Debug Anywhere
-
-instance Diff Anywhere
 
 -- | Kore identifier representing the @anywhere@ attribute symbol.
 anywhereId :: Id

@@ -79,17 +79,16 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
     )
+import Kore.Reachability
+    ( SomeClaim
+    , extractClaim
+    , lensClaimPattern
+    )
 import Kore.Sort
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern
-    , OnePathRule (..)
+    ( ClaimPattern
     , freeVariablesLeft
     , freeVariablesRight
-    )
-import Kore.Step.Rule
-    ( QualifiedAxiomPattern (..)
-    , fromSentenceAxiom
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
@@ -406,12 +405,11 @@ verifyClaimSentence sentence =
             (field @"indexedModuleClaims")
             ((attrs, verified) :)
     rejectClaim attrs verified =
-        case fromSentenceAxiom (attrs, verified) of
-            Right (OnePathClaimPattern (OnePathRule claimPattern))
-              | rejectClaimPattern claimPattern -> True
-            Right (AllPathClaimPattern (AllPathRule claimPattern))
-              | rejectClaimPattern claimPattern -> True
-            _ -> False
+        do
+            someClaim <- extractClaim @SomeClaim (attrs, SentenceClaim verified)
+            let claimPattern = Lens.view lensClaimPattern someClaim
+            pure (rejectClaimPattern claimPattern)
+        & fromMaybe False
     rejectClaimPattern :: ClaimPattern -> Bool
     rejectClaimPattern claimPattern =
         not $ Set.isSubsetOf freeRightVars freeLeftVars

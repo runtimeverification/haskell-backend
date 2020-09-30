@@ -1,6 +1,6 @@
 module Test.Kore.Step.Rule.Simplify
     ( test_simplifyRule_RewriteRule
-    , test_simplifyRule_OnePathRule
+    , test_simplifyRule_OnePathClaim
     , test_simplifyClaimRule
     ) where
 
@@ -28,9 +28,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( extractPatterns
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -53,13 +50,16 @@ import Kore.Internal.TermLike
     , mkOr
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Reachability
+    ( OnePathClaim (..)
+    , simplify
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , getRewritingVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , OnePathRule (..)
     , claimPattern
     )
 import Kore.Step.Rule.Simplify
@@ -71,16 +71,19 @@ import Kore.Step.Simplification.Data
     , runSimplifier
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadLog
-    , MonadSMT
+    ( MonadSMT
     , MonadSimplify (..)
     , emptyConditionSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import Kore.Syntax.Variable
     ( VariableName
     , fromVariableName
     )
+import Log
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Rule.Common
@@ -183,8 +186,8 @@ test_simplifyRule_RewriteRule =
 
     x = mkElemVar Mock.x
 
-test_simplifyRule_OnePathRule :: [TestTree]
-test_simplifyRule_OnePathRule =
+test_simplifyRule_OnePathClaim :: [TestTree]
+test_simplifyRule_OnePathClaim =
     [ testCase "No simplification needed" $ do
         let rule = Mock.a `rewritesToWithSort` Mock.cf
             expected = [rule]
@@ -286,7 +289,7 @@ test_simplifyRule_OnePathRule =
             )
 
         assertEqual "" expected actual
-    , testCase "f(x) is always defined" $ do
+    , testCase "lhs: f(x) is always defined" $ do
         let expected =
                 [ Mock.functional10 x `rewritesToWithSort` Mock.a
                 ]
@@ -317,13 +320,55 @@ test_simplifyRule_OnePathRule =
               Pair (Mock.a, makeTruePredicate)
             )
         assertEqual "" expected actual
+
+    , testCase "rhs: f(x) is always defined" $ do
+        let expected =
+                [ Mock.a `rewritesToWithSort` Mock.functional10 x
+                ]
+
+        actual <- runSimpl
+            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                `rewritesToWithSort`
+                Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
+            )
+
+        assertEqual "" expected actual
+
+    , testCase "infer rhs is defined" $ do
+        let expected =
+                [   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                    `rewritesToWithSort`
+                    Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
+                ]
+
+        actual <- runSimpl
+            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                `rewritesToWithSort`
+                Pair (Mock.f x, makeTruePredicate Mock.testSort)
+            )
+
+        assertEqual "" expected actual
     ]
   where
+    simplClaim
+        :: forall simplifier
+        .  MonadSimplify simplifier
+        => OnePathClaim
+        -> simplifier [OnePathClaim]
+    simplClaim claim =
+        runTransitionT (simplify claim)
+        & (fmap . fmap) fst
+
+    runSimpl :: OnePathClaim -> IO [OnePathClaim]
+    runSimpl claim =
+        runSMT (pure ())
+        $ runSimplifier Mock.env (simplClaim claim)
+
     rewritesToWithSort
-        :: RuleBase base OnePathRule
+        :: RuleBase base OnePathClaim
         => base VariableName
         -> base VariableName
-        -> OnePathRule
+        -> OnePathClaim
     rewritesToWithSort = Common.rewritesToWithSort
 
     x = mkElemVar Mock.x
@@ -333,7 +378,7 @@ runSimplifyRuleNoSMT
     => rule
     -> IO [rule]
 runSimplifyRuleNoSMT rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runNoSMT
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -344,7 +389,7 @@ runSimplifyRule
     => rule
     -> IO [rule]
 runSimplifyRule rule =
-    fmap MultiAnd.extractPatterns
+    fmap Foldable.toList
     $ runSMT (pure ())
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -412,11 +457,11 @@ test_simplifyClaimRule =
         -> ClaimPattern
         -> [ClaimPattern]
         -> TestTree
-    test name replacements (OnePathRule -> input) (map OnePathRule -> expect) =
-        -- Test simplifyClaimRule through the OnePathRule instance.
+    test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
+        -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
             actual <- run $ simplifyRuleLhs input
-            assertEqual "" expect (MultiAnd.extractPatterns actual)
+            assertEqual "" expect (Foldable.toList actual)
       where
         run =
             runSMT (pure ())
@@ -434,15 +479,15 @@ data TestEnv =
     TestEnv
     { replacements
         :: ![(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    , input :: !OnePathRule
+    , input :: !OnePathClaim
     , requires :: !(Condition RewritingVariableName)
     }
 
 newtype TestSimplifierT m a =
     TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadReader TestEnv)
-    deriving (MonadLog, MonadSMT)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadReader TestEnv)
+    deriving newtype (MonadLog, MonadSMT)
 
 instance MonadTrans TestSimplifierT where
     lift = TestSimplifierT . lift
@@ -453,7 +498,7 @@ instance MFunctor TestSimplifierT where
 instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
     simplifyTermLike sideCondition termLike = do
         TestEnv { replacements, input, requires } <- Reader.ask
-        let rule = getOnePathRule input
+        let rule = getOnePathClaim input
             leftTerm =
                 Lens.view (field @"left") rule
                 & Pattern.term

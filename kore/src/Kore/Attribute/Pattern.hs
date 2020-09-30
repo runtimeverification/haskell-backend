@@ -98,18 +98,10 @@ data Pattern variable =
         , simplified :: !Simplified
         , constructorLike :: !ConstructorLike
         }
-    deriving (Eq, GHC.Generic, Show)
-
--- TODO (thomas.tuegel): Lift 'simplified' to the 'Conditional' level once we
--- treat the latter as an aggregate root.
-
-instance NFData variable => NFData (Pattern variable)
-
-instance Hashable variable => Hashable (Pattern variable)
-
-instance SOP.Generic (Pattern variable)
-
-instance SOP.HasDatatypeInfo (Pattern variable)
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Debug variable => Debug (Pattern variable) where
     debugPrecBrief _ _ = "_"

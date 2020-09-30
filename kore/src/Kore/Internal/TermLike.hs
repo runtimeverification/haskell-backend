@@ -219,6 +219,7 @@ import Data.Text
 import qualified Data.Text as Text
 import Data.These
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import qualified Kore.Attribute.Pattern.Defined as Pattern
@@ -1464,80 +1465,72 @@ mkDefined = worker
       | isDefinedPattern term = term
       | otherwise = mkDefinedAtTop term
 
+    syntheticDefined
+        :: (Synthetic Attribute.Defined f)
+        => f (TermLike variable) -> Attribute.Defined
+    syntheticDefined fTermLike =
+        synthetic (Attribute.defined . Cofree.headF . getTermLike <$> fTermLike)
+
     worker
         :: TermLike variable
         -> TermLike variable
     worker term
       | isDefinedPattern term = term
       | otherwise =
-        let (_ :< termF) = Recursive.project term
-         in case termF of
-                AndF And { andFirst, andSecond } ->
-                    mkDefined1
-                        ( mkAnd
-                            (worker andFirst)
-                            (worker andSecond)
-                        )
-                ApplySymbolF
-                    Application
-                        { applicationSymbolOrAlias
-                        , applicationChildren
-                        } ->
-                    mkDefined1
-                    $ mkApplySymbol applicationSymbolOrAlias
-                    $ fmap worker applicationChildren
-                ApplyAliasF _ ->
-                    mkDefined1 term
-                BottomF _ ->
-                    error
-                        "Internal error: cannot mark\
-                        \ a \\bottom pattern as defined."
-                CeilF _ -> term
-                DomainValueF _  -> term
-                BuiltinF (Domain.BuiltinBool _) -> term
-                BuiltinF (Domain.BuiltinInt _) -> term
-                BuiltinF (Domain.BuiltinString _) -> term
-                BuiltinF (Domain.BuiltinList internalList) ->
-                    -- mkDefinedAtTop is not needed because the list is always
-                    -- defined if its elements are all defined.
-                    mkBuiltinList $ mkDefined <$> internalList
-                BuiltinF (Domain.BuiltinMap internalMap) ->
-                    mkDefined1 . mkBuiltinMap
-                    $ mkDefinedInternalAc internalMap
-                BuiltinF (Domain.BuiltinSet internalSet) ->
-                    mkDefined1 . mkBuiltinSet
-                    $ mkDefinedInternalAc internalSet
-                EqualsF _ -> term
-                ExistsF _ -> mkDefinedAtTop term
-                FloorF _ -> term
-                ForallF Forall { forallVariable, forallChild } ->
-                    mkDefined1
-                        ( mkForall
-                            forallVariable
-                            (worker forallChild)
-                        )
-                IffF _ -> mkDefined1 term
-                ImpliesF _ -> mkDefined1 term
-                InF _ -> term
-                MuF _ -> mkDefined1 term
-                NextF _ -> mkDefined1 term
-                NotF _ -> mkDefined1 term
-                NuF _ -> mkDefined1 term
-                OrF _ -> mkDefined1 term
-                RewritesF _ -> mkDefined1 term
-                TopF _ -> term
-                VariableF (Const someVariable) ->
-                    if isElementVariable someVariable
-                        then term
-                        else mkDefined1 term
-                StringLiteralF _ -> term
-                EvaluatedF (Evaluated child) -> worker child
-                DefinedF _ -> term
-                EndiannessF _ -> term
-                SignednessF _ -> term
-                InjF _ -> mkDefined1 term
-                InhabitantF _ -> mkDefined1 term
-                InternalBytesF _ -> term
+        let (attrs :< termF) = Recursive.project term
+            embed termF' =
+                Recursive.embed (attrs' :< termF')
+              where
+                attrs' = attrs { Attribute.defined = syntheticDefined termF' }
+        in case termF of
+            AndF _ -> (mkDefined1 . embed) (worker <$> termF)
+            ApplySymbolF _ -> (mkDefined1 . embed) (worker <$> termF)
+            ApplyAliasF _ -> mkDefined1 term
+            BottomF _ ->
+                error
+                    "Internal error: cannot mark\
+                    \ a \\bottom pattern as defined."
+            CeilF _ -> term
+            DomainValueF _  -> term
+            BuiltinF (Domain.BuiltinBool _) -> term
+            BuiltinF (Domain.BuiltinInt _) -> term
+            BuiltinF (Domain.BuiltinString _) -> term
+            BuiltinF (Domain.BuiltinList _) ->
+                -- mkDefinedAtTop is not needed because the list is always
+                -- defined if its elements are all defined.
+                embed (worker <$> termF)
+            BuiltinF (Domain.BuiltinMap internalMap) ->
+                let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
+                in (mkDefined1 . embed) (BuiltinF map')
+            BuiltinF (Domain.BuiltinSet internalSet) ->
+                let set' = Domain.BuiltinSet (mkDefinedInternalAc internalSet)
+                in (mkDefined1 . embed) (BuiltinF set')
+            EqualsF _ -> term
+            ExistsF _ -> mkDefinedAtTop term
+            FloorF _ -> term
+            ForallF _ -> (mkDefined1 . embed) (worker <$> termF)
+            IffF _ -> mkDefined1 term
+            ImpliesF _ -> mkDefined1 term
+            InF _ -> term
+            MuF _ -> mkDefined1 term
+            NextF _ -> mkDefined1 term
+            NotF _ -> mkDefined1 term
+            NuF _ -> mkDefined1 term
+            OrF _ -> mkDefined1 term
+            RewritesF _ -> mkDefined1 term
+            TopF _ -> term
+            VariableF (Const someVariable) ->
+                if isElementVariable someVariable
+                    then term
+                    else mkDefined1 term
+            StringLiteralF _ -> term
+            EvaluatedF (Evaluated child) -> worker child
+            DefinedF _ -> term
+            EndiannessF _ -> term
+            SignednessF _ -> term
+            InjF _ -> mkDefined1 term
+            InhabitantF _ -> mkDefined1 term
+            InternalBytesF _ -> term
 
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc

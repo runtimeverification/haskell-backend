@@ -22,7 +22,11 @@ import Pretty
 
 data V =
     V { value :: Integer, counter :: Maybe (Sup Natural) }
-    deriving (Show, Eq, Ord, GHC.Generic)
+    deriving (Show, Eq, Ord)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 mkV :: Integer -> Variable V
 mkV value =
@@ -30,16 +34,6 @@ mkV value =
     { variableName = V { value, counter = Nothing }
     , variableSort = sortVariable
     }
-
-instance Hashable V
-
-instance SOP.Generic V
-
-instance SOP.HasDatatypeInfo V
-
-instance Debug V
-
-instance Diff V
 
 instance Unparse V where
     unparse (V n _) = "V" <> pretty n <> ":" <> unparse sortVariable

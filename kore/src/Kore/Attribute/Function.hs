@@ -21,7 +21,11 @@ import Kore.Debug
 
 -- | @Function@ represents the @function@ attribute for symbols.
 newtype Function = Function { isDeclaredFunction :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup Function where
     (<>) (Function a) (Function b) = Function (a || b)
@@ -31,16 +35,6 @@ instance Monoid Function where
 
 instance Default Function where
     def = mempty
-
-instance NFData Function
-
-instance SOP.Generic Function
-
-instance SOP.HasDatatypeInfo Function
-
-instance Debug Function
-
-instance Diff Function
 
 -- | Kore identifier representing the @function@ attribute symbol.
 functionId :: Id

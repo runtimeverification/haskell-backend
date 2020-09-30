@@ -7,6 +7,7 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -22,15 +23,10 @@ import Kore.TopBottom
 import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic TestTopBottom
-
-instance SOP.HasDatatypeInfo TestTopBottom
-
-instance Debug TestTopBottom
-
-instance Diff TestTopBottom
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance TopBottom TestTopBottom where
     isTop TestTop = True
@@ -72,7 +68,7 @@ hasPatterns actual expected =
     testCase "hasPattern"
         (assertEqual ""
             expected
-            (MultiAnd.extractPatterns actual)
+            (Foldable.toList actual)
         )
 
 assertIsTop :: Bool -> MultiAnd TestTopBottom -> TestTree

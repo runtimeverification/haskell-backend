@@ -36,29 +36,12 @@ data Forall sort variable child = Forall
     , forallVariable :: !(ElementVariable variable)
     , forallChild    :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance
-    (Hashable sort, Hashable variable, Hashable child) =>
-    Hashable (Forall sort variable child)
-
-instance
-    (NFData sort, NFData variable, NFData child) =>
-    NFData (Forall sort variable child)
-
-instance SOP.Generic (Forall sort variable child)
-
-instance SOP.HasDatatypeInfo (Forall sort variable child)
-
-instance
-    (Debug sort, Debug variable, Debug child) =>
-    Debug (Forall sort variable child)
-
-instance
-    ( Debug sort, Debug variable, Debug child
-    , Diff sort, Diff variable, Diff child
-    )
-    => Diff (Forall sort variable child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Unparse variable, Unparse child) => Unparse (Forall Sort variable child)

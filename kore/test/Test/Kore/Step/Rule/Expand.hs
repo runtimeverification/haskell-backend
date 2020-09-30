@@ -46,8 +46,8 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
-import Kore.Step.ClaimPattern
-    ( OnePathRule
+import Kore.Reachability
+    ( OnePathClaim
     )
 import Kore.Step.Rule.Expand
 import Kore.Syntax.Id
@@ -402,10 +402,10 @@ test_expandRule =
     ]
 
 rewritesTo
-    :: RuleBase base OnePathRule
+    :: RuleBase base OnePathClaim
     => base VariableName
     -> base VariableName
-    -> OnePathRule
+    -> OnePathClaim
 rewritesTo = Common.rewritesTo
 
 x, x0 :: TermLike VariableName

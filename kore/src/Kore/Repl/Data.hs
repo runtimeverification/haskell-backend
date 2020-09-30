@@ -13,7 +13,6 @@ module Kore.Repl.Data
     , AxiomIndex (..), ClaimIndex (..)
     , RuleName (..), RuleReference(..)
     , ReplNode (..)
-    , Claim
     , Axiom
     , AppliedRule
     , ReplState (..)
@@ -96,6 +95,10 @@ import Kore.Log
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
+import Kore.Reachability hiding
+    ( AppliedRule
+    )
+import qualified Kore.Reachability as Reachability
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
@@ -104,13 +107,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.Goal hiding
-    ( AppliedRule
-    )
-import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.Verification
-    ( CommonProofState
-    )
 import Logic
 
 import Kore.Syntax.Module
@@ -165,9 +161,9 @@ newtype RuleName = RuleName
 -- printing functions. For example, the pipe command will only send KoreOut to the
 -- process' input handle.
 newtype ReplOutput =
-    ReplOutput
-    { unReplOutput :: [ReplOut]
-    } deriving (Eq, Show, Semigroup, Monoid)
+    ReplOutput { unReplOutput :: [ReplOut] }
+    deriving (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
 
 -- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
 newtype PrintAuxOutput = PrintAuxOutput
@@ -537,25 +533,20 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph =
-    Strategy.ExecutionGraph
-        CommonProofState
-        AppliedRule
+type ExecutionGraph = Strategy.ExecutionGraph CommonClaimState AppliedRule
 
-type InnerGraph =
-    Gr CommonProofState (Seq AppliedRule)
+type InnerGraph = Gr CommonClaimState (Seq AppliedRule)
 
-type Claim = ReachabilityRule
-type Axiom = Rule Claim
-type AppliedRule = Goal.AppliedRule Claim
+type Axiom = Rule SomeClaim
+type AppliedRule = Reachability.AppliedRule SomeClaim
 
 -- | State for the repl.
 data ReplState = ReplState
     { axioms     :: [Axiom]
     -- ^ List of available axioms
-    , claims     :: [Claim]
+    , claims     :: [SomeClaim]
     -- ^ List of claims to be proven
-    , claim      :: Claim
+    , claim      :: SomeClaim
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
@@ -580,7 +571,7 @@ data ReplState = ReplState
 -- | Configuration environment for the repl.
 data Config m = Config
     { stepper
-        :: [Claim]
+        :: [SomeClaim]
         -> [Axiom]
         -> ExecutionGraph
         -> ReplNode
@@ -609,7 +600,7 @@ newtype UnifierWithExplanation m a =
         { getUnifierWithExplanation
             :: UnifierT (AccumT (First ReplOutput) m) a
         }
-  deriving (Alternative, Applicative, Functor, Monad, MonadPlus)
+  deriving newtype (Alternative, Applicative, Functor, Monad, MonadPlus)
 
 instance Monad m => MonadLogic (UnifierWithExplanation m) where
     msplit act =
@@ -618,7 +609,7 @@ instance Monad m => MonadLogic (UnifierWithExplanation m) where
       where
         wrapNext = (fmap . fmap) UnifierWithExplanation
 
-deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
+deriving newtype instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 instance MonadTrans UnifierWithExplanation where
     lift = UnifierWithExplanation . lift . lift

@@ -33,21 +33,12 @@ data Next sort child = Next
     { nextSort  :: !sort
     , nextChild :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (Next sort child)
-
-instance (NFData sort, NFData child) => NFData (Next sort child)
-
-instance SOP.Generic (Next sort child)
-
-instance SOP.HasDatatypeInfo (Next sort child)
-
-instance (Debug sort, Debug child) => Debug (Next sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (Next sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Next Sort child) where
     unparse Next { nextSort, nextChild } =

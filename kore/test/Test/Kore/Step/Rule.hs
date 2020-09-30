@@ -1,7 +1,6 @@
 module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_patternToAxiomPatternAndBack
-    , test_parseClaimPattern
     , test_rewritePatternToRewriteRuleAndBack
     ) where
 
@@ -34,17 +33,8 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (..)
     )
-import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (..)
-    )
 import Kore.Step.Rule
 import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
@@ -270,6 +260,7 @@ test_patternToAxiomPatternAndBack =
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
+<<<<<<< HEAD
 test_parseClaimPattern :: [TestTree]
 test_parseClaimPattern =
     [ testCase "Simple claim without constraints" $ do
@@ -438,6 +429,8 @@ test_parseClaimPattern =
         assertEqual "" (Right expected) actual
     ]
 
+=======
+>>>>>>> master
 leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
 antiLeftP = mkElemVar Mock.u

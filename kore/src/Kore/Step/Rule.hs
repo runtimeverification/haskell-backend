@@ -8,16 +8,16 @@ module Kore.Step.Rule
     ( AxiomPatternError (..)
     , allPathGlobally
     , axiomPatternToTerm
-    , QualifiedAxiomPattern (..)
-    , fromSentenceAxiom
     , extractRewriteAxioms
     , extractImplicationClaims
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
     , onePathRuleToTerm
-    -- only for testing
     , termToAxiomPattern
+    , QualifiedAxiomPattern (..)
+    , fromSentenceAxiom
+    -- only for testing
     , fromSentence
     , simpleRewriteTermToRule
     , complexRewriteTermToRule
@@ -55,14 +55,13 @@ import Kore.Internal.Alias
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
-import Kore.Internal.TermLike
-    ( weakAlwaysFinally
-    , weakExistsFinally
-    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     , VariableName
+    )
+import Kore.Reachability
+    ( onePathRuleToTerm
     )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
@@ -75,11 +74,7 @@ import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (ClaimPattern)
-    , OnePathRule (..)
-    , allPathRuleToTerm
-    , onePathRuleToTerm
+    ( ClaimPattern (ClaimPattern)
     , parseRightHandSide
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
@@ -116,34 +111,19 @@ instance NFData AxiomPatternError
 reachabilityModalityToConstructor
     :: Alias (TermLike.TermLike VariableName)
     -> Maybe (ClaimPattern -> QualifiedAxiomPattern VariableName)
-reachabilityModalityToConstructor patternHead
-    | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
-    | headName == weakAlwaysFinally = Just $ AllPathClaimPattern . AllPathRule
-    | otherwise = Nothing
-  where
-    headName = getId (aliasConstructor patternHead)
+reachabilityModalityToConstructor _ = Nothing
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
 data QualifiedAxiomPattern variable
     = RewriteAxiomPattern (RewriteRule variable)
-    | OnePathClaimPattern OnePathRule
-    | AllPathClaimPattern AllPathRule
     | ImplicationAxiomPattern (ImplicationRule variable)
-    deriving (Eq, GHC.Generic, Ord, Show)
-    -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
-    -- not only to function-related ones.
-
-instance NFData variable => NFData (QualifiedAxiomPattern variable)
-
-instance SOP.Generic (QualifiedAxiomPattern variable)
-
-instance SOP.HasDatatypeInfo (QualifiedAxiomPattern variable)
-
-instance (Debug variable) => Debug (QualifiedAxiomPattern variable)
-
-instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms
@@ -388,8 +368,6 @@ axiomPatternToTerm
     -> TermLike.TermLike VariableName
 axiomPatternToTerm = \case
     RewriteAxiomPattern rule -> rewriteRuleToTerm rule
-    OnePathClaimPattern rule -> onePathRuleToTerm rule
-    AllPathClaimPattern rule -> allPathRuleToTerm rule
     ImplicationAxiomPattern rule -> implicationRuleToTerm rule
 
 -- TODO(Ana): are these three functions used anywhere anymore?

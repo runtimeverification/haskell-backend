@@ -49,16 +49,9 @@ data Error a = Error
     , errorError   :: !String
     }
     deriving (Eq, GHC.Generic, Show)
-
-instance NFData a => NFData (Error a)
-
-instance SOP.Generic (Error a)
-
-instance SOP.HasDatatypeInfo (Error a)
-
-instance Debug (Error a)
-
-instance Diff (Error a)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-|'printError' provides a one-line representation of a string. -}
 printError :: Error a -> String

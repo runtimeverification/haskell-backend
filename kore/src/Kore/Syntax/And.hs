@@ -37,20 +37,12 @@ data And sort child = And
     , andFirst  :: child
     , andSecond :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (And sort child)
-
-instance (NFData sort, NFData child) => NFData (And sort child)
-
-instance SOP.Generic (And sort child)
-
-instance SOP.HasDatatypeInfo (And sort child)
-
-instance (Debug sort, Debug child) => Debug (And sort child)
-
-instance
-    (Debug sort, Debug child, Diff sort, Diff child) => Diff (And sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (And Sort child) where
     unparse And { andSort, andFirst, andSecond } =

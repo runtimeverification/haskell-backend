@@ -22,8 +22,6 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( make
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -32,14 +30,16 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     )
+import Kore.Reachability
+    ( AllPathClaim (..)
+    , OnePathClaim (..)
+    , SomeClaim (..)
+    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( AllPathRule (..)
-    , ClaimPattern (ClaimPattern)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
+    ( ClaimPattern (ClaimPattern)
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -135,21 +135,27 @@ instance SimplifyRuleLHS ClaimPattern
 
 instance SimplifyRuleLHS (RewriteRule VariableName) where
     simplifyRuleLhs =
-        fmap (fmap RewriteRule) . simplifyRuleLhs . getRewriteRule
+        fmap (MultiAnd.map RewriteRule)
+        . simplifyRuleLhs
+        . getRewriteRule
 
-instance SimplifyRuleLHS OnePathRule where
+instance SimplifyRuleLHS OnePathClaim where
     simplifyRuleLhs =
-        fmap (fmap OnePathRule) . simplifyClaimRule . getOnePathRule
+        fmap (MultiAnd.map OnePathClaim)
+        . simplifyClaimRule
+        . getOnePathClaim
 
-instance SimplifyRuleLHS AllPathRule where
+instance SimplifyRuleLHS AllPathClaim where
     simplifyRuleLhs =
-        fmap (fmap AllPathRule) . simplifyClaimRule . getAllPathRule
+        fmap (MultiAnd.map AllPathClaim)
+        . simplifyClaimRule
+        . getAllPathClaim
 
-instance SimplifyRuleLHS ReachabilityRule where
+instance SimplifyRuleLHS SomeClaim where
     simplifyRuleLhs (OnePath rule) =
-        (fmap . fmap) OnePath $ simplifyRuleLhs rule
+        (fmap . MultiAnd.map) OnePath $ simplifyRuleLhs rule
     simplifyRuleLhs (AllPath rule) =
-        (fmap . fmap) AllPath $ simplifyRuleLhs rule
+        (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule
     :: forall simplifier

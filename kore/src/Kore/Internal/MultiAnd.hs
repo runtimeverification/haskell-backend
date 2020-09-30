@@ -14,34 +14,32 @@ Portability : portable
 module Kore.Internal.MultiAnd
     ( MultiAnd
     , top
-    , extractPatterns
     , make
     , toPredicate
     , fromPredicate
     , fromTermLike
     , singleton
-    , toPattern
     , map
+    , traverse
     ) where
 
 import Prelude.Kore hiding
     ( map
+    , traverse
     )
 
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
+import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
@@ -51,7 +49,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
-    , mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -72,18 +69,11 @@ A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 -}
 newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving (Eq, Ord, Show)
-    deriving (Semigroup, Monoid)
-    deriving (Functor, Applicative, Monad, Alternative)
-    deriving (Foldable, Traversable)
-    deriving (GHC.Generic, GHC.IsList)
-
-instance SOP.Generic (MultiAnd child)
-
-instance SOP.HasDatatypeInfo (MultiAnd child)
-
-instance NFData child => NFData (MultiAnd child)
-
-instance Hashable child => Hashable (MultiAnd child)
+    deriving (Foldable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving newtype (GHC.IsList)
 
 instance TopBottom child => TopBottom (MultiAnd child) where
     isTop (MultiAnd []) = True
@@ -94,6 +84,14 @@ instance TopBottom child => TopBottom (MultiAnd child) where
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
+
+instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
+    (MultiAnd []) <> b = b
+    a <> (MultiAnd []) = a
+    (MultiAnd a) <> (MultiAnd b) = make (a <> b)
+
+instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
+    mempty = make []
 
 instance
     InternalVariable variable
@@ -147,12 +145,6 @@ make patts = filterAnd (MultiAnd patts)
 -}
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
 singleton term = make [term]
-
-{-| Returns the patterns inside an @\and@.
--}
-extractPatterns :: MultiAnd term -> [term]
-extractPatterns = getMultiAnd
-
 
 {- | Simplify the conjunction.
 
@@ -216,7 +208,7 @@ toPredicate (MultiAnd predicates) =
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
-    :: InternalVariable variable
+    :: Ord variable
     => Predicate variable
     -> MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
@@ -230,19 +222,21 @@ fromTermLike termLike =
         _ :< AndF andF -> foldMap fromTermLike andF
         _              -> make [termLike]
 
-toPattern
-    :: InternalVariable variable
-    => MultiAnd (Pattern variable)
-    -> Pattern variable
-toPattern (MultiAnd patterns) =
-    case patterns of
-       [] -> Pattern.top
-       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
-
 map
     :: Ord child2
     => TopBottom child2
     => (child1 -> child2)
     -> MultiAnd child1
     -> MultiAnd child2
-map f = make . fmap f . extractPatterns
+map f = make . fmap f . Foldable.toList
+{-# INLINE map #-}
+
+traverse
+    :: Ord child2
+    => TopBottom child2
+    => Applicative f
+    => (child1 -> f child2)
+    -> MultiAnd child1
+    -> f (MultiAnd child2)
+traverse f = fmap make . Traversable.traverse f . Foldable.toList
+{-# INLINE traverse #-}

@@ -17,17 +17,11 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 newtype Owise = Owise { isOwise :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Owise
-
-instance SOP.HasDatatypeInfo Owise
-
-instance Debug Owise
-
-instance Diff Owise
-
-instance NFData Owise
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Owise where
     def = Owise False

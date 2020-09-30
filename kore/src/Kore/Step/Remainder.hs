@@ -119,7 +119,7 @@ unificationConditions
     -- ^ Unification solution
     -> MultiAnd (Predicate RewritingVariableName)
 unificationConditions Conditional { predicate, substitution } =
-    pure predicate <|> substitutionConditions substitution'
+    MultiAnd.singleton predicate <> substitutionConditions substitution'
   where
     substitution' = Substitution.filter isSomeConfigVariable substitution
 
