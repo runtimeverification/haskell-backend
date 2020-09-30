@@ -75,6 +75,8 @@ import Test.Kore.Internal.Substitution as Substitution hiding
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import qualified Data.Foldable as Foldable
+import Kore.Unparser (unparseToString)
 
 type SideCondition' = SideCondition VariableName
 
@@ -449,7 +451,12 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                 [ Conditional
                     { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
-                    , predicate = requirement
+                    , predicate = simplificationWithTopPredicate1
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = simplificationWithTopPredicate2
                     , substitution = mempty
                     }
                 ]
@@ -563,6 +570,27 @@ test_simplificationIntegration =
                 , variableSort = Mock.boolSort
                 }
 
+            ceilList =
+                [ makeCeilPredicate Mock.otherSort Mock.cg
+                , makeCeilPredicate Mock.otherSort Mock.ch
+                , makeCeilPredicate Mock.testSort
+                    (Mock.g
+                        (Mock.functionalConstr30
+                            (Mock.functionalTopConstr21
+                                (mkDefined Mock.ch)
+                                Mock.aTopSort
+                            )
+                            (mkDefined
+                                $ mkIff Mock.plain00 Mock.d
+                            )
+                            (mkDefined Mock.cg)
+                        )
+                    )
+                , makeCeilPredicate Mock.testSort
+                    (mkIff Mock.plain00 Mock.d)
+                ]
+
+
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop Mock.otherSort
@@ -595,18 +623,24 @@ test_simplificationIntegration =
                                         )
                                     )
                                 )
-                                (makeEqualsPredicate_
-                                    (Mock.g
-                                        (Mock.functionalConstr30
-                                            (Mock.functionalTopConstr21
-                                                Mock.ch
-                                                Mock.aTopSort
+                                (foldr
+                                    makeAndPredicate
+                                    (makeEqualsPredicate_
+                                        (Mock.g
+                                            (Mock.functionalConstr30
+                                                (Mock.functionalTopConstr21
+                                                    (mkDefined Mock.ch)
+                                                    Mock.aTopSort
+                                                )
+                                                (mkDefined 
+                                                    $ mkIff Mock.plain00 Mock.d
+                                                )
+                                                (mkDefined Mock.cg)
                                             )
-                                            (mkIff Mock.plain00 Mock.d)
-                                            Mock.cg
                                         )
+                                        Mock.functionalInjective00
                                     )
-                                    Mock.functionalInjective00
+                                    ceilList
                                 )
                             )
                     , substitution = mempty
@@ -631,23 +665,31 @@ test_simplificationIntegration =
                                     )
                                 )
                             )
-                            (makeAndPredicate
-                                (makeEqualsPredicate_
-                                    (Mock.g
-                                        (Mock.functionalConstr30
-                                            (Mock.functionalTopConstr21
-                                                Mock.ch
-                                                Mock.aTopSort
+                            (foldr
+                                makeAndPredicate
+                                (makeAndPredicate
+                                    (makeEqualsPredicate_
+                                        (Mock.g
+                                            (Mock.functionalConstr30
+                                                (Mock.functionalTopConstr21
+                                                    (mkDefined Mock.ch)
+                                                    Mock.aTopSort
+                                                )
+                                                (mkDefined
+                                                    $ mkIff Mock.plain00 Mock.d
+                                                )
+                                                (mkDefined Mock.cg)
                                             )
-                                            (mkIff Mock.plain00 Mock.d)
-                                            Mock.cg
+                                        )
+                                        Mock.functionalInjective00
+                                    )
+                                    (makeNotPredicate
+                                        (makeFloorPredicate_
+                                            (Mock.builtinList [])
                                         )
                                     )
-                                    Mock.functionalInjective00
                                 )
-                                (makeNotPredicate
-                                    (makeFloorPredicate_ (Mock.builtinList []))
-                                )
+                                ceilList
                             )
                     , substitution = mempty
                     }
@@ -1038,8 +1080,14 @@ test_simplificationIntegrationUnification =
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromTermLike
-                $ Mock.functionalConstr11 $ Mock.g Mock.a
+                OrPattern.fromPatterns
+                [Conditional
+                    { term = Mock.functionalConstr11 (mkDefined $ Mock.g Mock.a)
+                    , predicate =
+                        makeCeilPredicate Mock.testSort (Mock.g Mock.a)
+                    , substitution = mempty
+                    }
+                ]
         actual <-
             evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
@@ -1179,7 +1227,12 @@ test_simplificationIntegrationUnification =
                 OrPattern.fromPatterns
                 [ Conditional
                     { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
-                    , predicate = requirement
+                    , predicate = simplificationWithTopPredicate1
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = simplificationWithTopPredicate2
                     , substitution = mempty
                     }
                 ]
@@ -1213,7 +1266,12 @@ test_simplificationIntegrationUnification =
                 OrPattern.fromPatterns
                 [ Conditional
                     { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
-                    , predicate = requirement
+                    , predicate = simplificationWithTopPredicate1
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = simplificationWithTopPredicate2
                     , substitution = mempty
                     }
                 ]
@@ -1239,6 +1297,43 @@ test_simplificationIntegrationUnification =
                     }
         assertEqual "" expect actual
     ]
+
+simplificationWithTopPredicate1 :: Predicate VariableName
+simplificationWithTopPredicate1 =
+    foldr
+        makeAndPredicate
+        (makeEqualsPredicate Mock.testSort
+            (Mock.f $ mkDefined (mkSetVar Mock.setX))
+            (Mock.g Mock.b)
+        )
+        [ makeCeilPredicate Mock.testSort
+            (Mock.f $ mkDefined (mkSetVar Mock.setX))
+        , makeCeilPredicate Mock.testSort
+            (Mock.g Mock.b)
+        , makeCeilPredicate Mock.testSort
+            (mkSetVar Mock.setX)
+        ]
+simplificationWithTopPredicate2 :: Predicate VariableName
+simplificationWithTopPredicate2 =
+    makeAndPredicate
+        (makeNotPredicate
+            (makeAndPredicate
+                (makeCeilPredicate Mock.testSort
+                    (Mock.f
+                        $ mkDefined (mkSetVar Mock.setX)
+                    )
+                )
+                (makeCeilPredicate Mock.testSort
+                    (mkSetVar Mock.setX)
+                )
+            )
+        )
+        (makeNotPredicate
+            (makeCeilPredicate Mock.testSort
+                (Mock.g Mock.b)
+            )
+        )
+
 
 conditionalEqualityPattern
     :: InternalVariable variable
