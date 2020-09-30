@@ -228,8 +228,8 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: LoggerT IO a }
-    deriving (Functor, Applicative, Monad, MonadIO)
-    deriving (MonadCatch, MonadThrow, MonadMask)
+    deriving newtype (Functor, Applicative, Monad, MonadIO)
+    deriving newtype (MonadCatch, MonadThrow, MonadMask)
 
 runNoSMT :: NoSMT a -> LoggerT IO a
 runNoSMT = getNoSMT
@@ -276,20 +276,9 @@ access to the solver for a sequence of commands.
 
  -}
 newtype SMT a = SMT { getSMT :: RWST SolverInitAndHandle () Int (LoggerT IO) a }
-    deriving
-        ( Applicative
-        , Functor
-        , Monad
-        , MonadIO
-        , MonadLog
-        )
-    deriving
-        ( MonadCatch
-        , MonadThrow
-        , MonadMask
-        )
-
-
+    deriving newtype (Applicative, Functor, Monad)
+    deriving newtype (MonadIO, MonadLog)
+    deriving newtype (MonadCatch, MonadThrow, MonadMask)
 
 instance MonadProf SMT where
     traceEvent name = SMT (traceEvent name)

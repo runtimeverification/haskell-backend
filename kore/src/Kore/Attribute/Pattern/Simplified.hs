@@ -6,6 +6,9 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
+    , Condition (..)
+    , pattern Simplified_
+    , Type (..)
     , isSimplified
     , isFullySimplified
     , simplifiedTo
@@ -73,20 +76,11 @@ data Type
     -- ^ The pattern's subterms are either fully simplified or partly
     -- simplified. Normally all the leaves in a partly simplified
     -- subterm tree are fully simplified.
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Type
-
-instance SOP.HasDatatypeInfo Type
-
-instance Debug Type
-
-instance Diff Type where
-    diffPrec = diffPrecIgnore
-
-instance NFData Type
-
-instance Hashable Type
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance Semigroup Type
   where
@@ -111,20 +105,14 @@ data Condition
     -- term.
     | Unknown
     -- ^ Parts of the term are simplified under different side conditions.
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Condition
-
-instance SOP.HasDatatypeInfo Condition
-
-instance Debug Condition
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance Diff Condition where
     diffPrec = diffPrecIgnore
-
-instance NFData Condition
-
-instance Hashable Condition
 
 instance Semigroup Condition
   where
@@ -147,20 +135,14 @@ data SimplifiedData =
         { sType :: !Type
         , condition :: !Condition
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic SimplifiedData
-
-instance SOP.HasDatatypeInfo SimplifiedData
-
-instance Debug SimplifiedData
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance Diff SimplifiedData where
     diffPrec = diffPrecIgnore
-
-instance NFData SimplifiedData
-
-instance Hashable SimplifiedData
 
 {- | A pattern is 'Simplified' if it has run through the simplifier.
 
@@ -174,16 +156,16 @@ simplified status is reset by any substitution under the pattern.
 data Simplified
     = Simplified !SimplifiedData
     | NotSimplified
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
-pattern Simplified_ :: Type -> Condition -> Simplified
-pattern Simplified_ sType condition =
-    (Simplified SimplifiedData { sType, condition })
+instance Diff Simplified where
+    diffPrec = diffPrecIgnore
 
-{-# COMPLETE Simplified_, NotSimplified #-}
-
-instance Semigroup Simplified
-  where
+instance Semigroup Simplified where
     NotSimplified <> _ = NotSimplified
     _ <> NotSimplified = NotSimplified
 
@@ -193,18 +175,11 @@ instance Semigroup Simplified
 instance Monoid Simplified where
     mempty = Simplified_ mempty mempty
 
-instance SOP.Generic Simplified
+pattern Simplified_ :: Type -> Condition -> Simplified
+pattern Simplified_ sType condition =
+    (Simplified SimplifiedData { sType, condition })
 
-instance SOP.HasDatatypeInfo Simplified
-
-instance Debug Simplified
-
-instance Diff Simplified where
-    diffPrec = diffPrecIgnore
-
-instance NFData Simplified
-
-instance Hashable Simplified
+{-# COMPLETE Simplified_, NotSimplified #-}
 
 {- | Computes the 'Simplified' attribute for a pattern given its default
 attribute (usually a merge of the pattern's subterm simplification attributes)

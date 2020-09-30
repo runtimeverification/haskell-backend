@@ -35,21 +35,12 @@ data Not sort child = Not
     { notSort  :: !sort
     , notChild :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (Not sort child)
-
-instance (NFData sort, NFData child) => NFData (Not sort child)
-
-instance SOP.Generic (Not sort child)
-
-instance SOP.HasDatatypeInfo (Not sort child)
-
-instance (Debug sort, Debug child) => Debug (Not sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (Not sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Not Sort child) where
     unparse Not { notSort, notChild } =

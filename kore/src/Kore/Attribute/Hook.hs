@@ -25,22 +25,14 @@ import Kore.Debug
 import Kore.Error
 
 newtype Hook = Hook { getHook :: Maybe Text }
-    deriving (Eq, GHC.Generic, Ord, Read, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Hook where
     def = emptyHook
-
-instance Hashable Hook
-
-instance NFData Hook
-
-instance SOP.Generic Hook
-
-instance SOP.HasDatatypeInfo Hook
-
-instance Debug Hook
-
-instance Diff Hook
 
 {- | Parse the @hook@ Kore attribute, if present.
 

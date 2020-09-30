@@ -39,21 +39,12 @@ data In sort child = In
     , inContainedChild  :: child
     , inContainingChild :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (In sort child)
-
-instance (NFData sort, NFData child) => NFData (In sort child)
-
-instance SOP.Generic (In sort child)
-
-instance SOP.HasDatatypeInfo (In sort child)
-
-instance (Debug sort, Debug child) => Debug (In sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (In sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (In Sort child) where
     unparse

@@ -22,17 +22,11 @@ import Kore.Debug
 {- | @Idem@ represents the @idem@ attribute for axioms.
  -}
 newtype Idem = Idem { isIdem :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Idem
-
-instance SOP.HasDatatypeInfo Idem
-
-instance Debug Idem
-
-instance Diff Idem
-
-instance NFData Idem
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Idem where
     def = Idem False

@@ -234,8 +234,8 @@ instance MonadLog log => MonadLog (RWST a () state log)
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LoggerEnv m) m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 data LoggerEnv monad =
     LoggerEnv

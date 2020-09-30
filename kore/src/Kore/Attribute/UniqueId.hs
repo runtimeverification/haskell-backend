@@ -29,17 +29,11 @@ import Kore.Debug
 {- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
  -}
 newtype UniqueId = UniqueId { getUniqueId :: Maybe Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic UniqueId
-
-instance SOP.HasDatatypeInfo UniqueId
-
-instance Debug UniqueId
-
-instance NFData UniqueId
-
-instance Diff UniqueId
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default UniqueId where
     def = UniqueId Nothing

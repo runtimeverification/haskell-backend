@@ -45,19 +45,12 @@ data Definition (sentence :: Type) =
         { definitionAttributes :: !Attributes
         , definitionModules    :: ![Module sentence]
         }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Show, Traversable)
-
-instance Hashable sentence => Hashable (Definition sentence)
-
-instance NFData sentence => NFData (Definition sentence)
-
-instance SOP.Generic (Definition sentence)
-
-instance SOP.HasDatatypeInfo (Definition sentence)
-
-instance Debug sentence => Debug (Definition sentence)
-
-instance (Debug sentence, Diff sentence) => Diff (Definition sentence)
+    deriving (Eq, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse sentence => Unparse (Definition sentence) where
     unparse Definition { definitionAttributes, definitionModules } =

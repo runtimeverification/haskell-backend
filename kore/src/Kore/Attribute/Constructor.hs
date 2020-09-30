@@ -13,6 +13,7 @@ module Kore.Attribute.Constructor
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -21,26 +22,15 @@ import Kore.Debug
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor { isConstructor :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
-
-instance Semigroup Constructor where
-    (<>) (Constructor a) (Constructor b) = Constructor (a || b)
-
-instance Monoid Constructor where
-    mempty = Constructor False
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via Monoid.Any
 
 instance Default Constructor where
     def = mempty
-
-instance NFData Constructor
-
-instance SOP.Generic Constructor
-
-instance SOP.HasDatatypeInfo Constructor
-
-instance Debug Constructor
-
-instance Diff Constructor
 
 -- | Kore identifier representing the @constructor@ attribute symbol.
 constructorId :: Id

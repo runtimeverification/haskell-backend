@@ -90,6 +90,9 @@ data Equation variable = Equation
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Creates a basic, unconstrained, Equality pattern
 mkEquation
@@ -110,16 +113,6 @@ mkEquation sort left right =
         , ensures = Predicate.makeTruePredicate sort
         , attributes = Default.def
         }
-
-instance NFData variable => NFData (Equation variable)
-
-instance SOP.Generic (Equation variable)
-
-instance SOP.HasDatatypeInfo (Equation variable)
-
-instance Debug variable => Debug (Equation variable)
-
-instance (Debug variable, Diff variable) => Diff (Equation variable)
 
 instance InternalVariable variable => Pretty (Equation variable) where
     pretty equation@(Equation _ _ _ _ _ _ _) =

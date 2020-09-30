@@ -34,10 +34,7 @@ data InfoAttemptUnification =
     InfoAttemptUnification { term1, term2 :: TermLike VariableName }
     deriving (Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic InfoAttemptUnification
-
-instance SOP.HasDatatypeInfo InfoAttemptUnification
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Entry InfoAttemptUnification where
     entrySeverity _ = Info

@@ -66,18 +66,9 @@ data RewritingVariableName
     | RuleVariableName   !VariableName
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance Hashable RewritingVariableName
-
-instance NFData RewritingVariableName
-
-instance SOP.Generic RewritingVariableName
-
-instance SOP.HasDatatypeInfo RewritingVariableName
-
-instance Debug RewritingVariableName
-
-instance Diff RewritingVariableName
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance SubstitutionOrd RewritingVariableName where
     compareSubstitution (RuleVariableName _) (ConfigVariableName _) = LT
