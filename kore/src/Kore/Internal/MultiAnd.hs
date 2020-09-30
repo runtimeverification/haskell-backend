@@ -19,10 +19,8 @@ module Kore.Internal.MultiAnd
     , fromPredicate
     , fromTermLike
     , singleton
-    , toPattern
     , map
     , traverse
-    , fromPatternToTerms
     ) where
 
 import Prelude.Kore hiding
@@ -42,23 +40,15 @@ import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
-    , mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -223,7 +213,7 @@ toPredicate (MultiAnd predicates) =
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
-    :: InternalVariable variable
+    :: Ord variable
     => Predicate variable
     -> MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
@@ -236,15 +226,6 @@ fromTermLike termLike =
     case Recursive.project termLike of
         _ :< AndF andF -> foldMap fromTermLike andF
         _              -> make [termLike]
-
-toPattern
-    :: InternalVariable variable
-    => MultiAnd (Pattern variable)
-    -> Pattern variable
-toPattern (MultiAnd patterns) =
-    case patterns of
-       [] -> Pattern.top
-       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
 
 map
     :: Ord child2
@@ -264,16 +245,3 @@ traverse
     -> f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
-
-fromPatternToTerms
-    :: InternalVariable variable
-    => Pattern variable
-    -> MultiAnd (TermLike variable)
-fromPatternToTerms Conditional { term, predicate, substitution } =
-    fromTermLike term
-    <> fromTermLike (Predicate.unwrapPredicate predicate)
-    <> fromTermLike
-        ( Predicate.unwrapPredicate
-        . Substitution.toPredicate
-        $ substitution
-        )

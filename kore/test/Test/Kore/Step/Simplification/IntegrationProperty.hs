@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.IntegrationProperty
     ( test_simplifiesToSimplified
+    , test_regressionGeneratedTerms
     ) where
 
 import Prelude.Kore
@@ -62,6 +63,7 @@ import Test.Kore.Step.Simplification
 import Test.SMT
     ( testPropertyWithoutSolver
     )
+import Test.Tasty.HUnit.Ext
 
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
@@ -87,6 +89,37 @@ test_simplifiesToSimplified =
       | otherwise = do
         traceM ("Error for input: " ++ unparseToString term)
         throwM err
+
+test_regressionGeneratedTerms :: [TestTree]
+test_regressionGeneratedTerms =
+    [ testCase "Term simplifier should not crash with not simplified error" $ do
+        let term =
+                mkFloor Mock.testSort1
+                    (mkAnd
+                        (mkIff
+                            Mock.plain00SubSubsort
+                            Mock.aSubSubsort
+                        )
+                        (mkEquals
+                            Mock.subSubsort
+                            (mkCeil stringMetaSort
+                                (mkCeil Mock.boolSort (mkExists Mock.xSubOtherSort Mock.b))
+                            )
+                            (mkNu
+                                Mock.xStringMetaSort
+                                (mkForall
+                                    Mock.xSubSort (mkSetVar Mock.xStringMetaSort)
+                                )
+                            )
+                        )
+                    )
+        simplified <-
+            Pattern.simplify
+                SideCondition.top
+                (Pattern.fromTermLike term)
+            & runSimplifier Mock.env
+        assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
+    ]
 
 evaluateT
     :: MonadTrans t

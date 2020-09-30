@@ -50,7 +50,6 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -488,11 +487,11 @@ areEquivalent
         }
   =
     let leftsAreEquivalent =
-            MultiAnd.fromPatternToTerms left1
-            == MultiAnd.fromPatternToTerms left2
+            Pattern.toConjunctionOfTerms left1
+            == Pattern.toConjunctionOfTerms left2
         rightsAreEquivalent =
-            MultiOr.map MultiAnd.fromPatternToTerms right1
-            == MultiOr.map MultiAnd.fromPatternToTerms right2
+            MultiOr.map Pattern.toConjunctionOfTerms right1
+            == MultiOr.map Pattern.toConjunctionOfTerms right2
      in leftsAreEquivalent
         && rightsAreEquivalent
         && existentials1 == existentials2
