@@ -19,7 +19,6 @@ module Kore.Internal.MultiAnd
     , fromPredicate
     , fromTermLike
     , singleton
-    , toPattern
     , map
     , traverse
     ) where
@@ -41,10 +40,6 @@ import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
@@ -54,7 +49,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
-    , mkAnd
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -214,7 +208,7 @@ toPredicate (MultiAnd predicates) =
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
-    :: InternalVariable variable
+    :: Ord variable
     => Predicate variable
     -> MultiAnd (Predicate variable)
 fromPredicate = make . getMultiAndPredicate
@@ -227,15 +221,6 @@ fromTermLike termLike =
     case Recursive.project termLike of
         _ :< AndF andF -> foldMap fromTermLike andF
         _              -> make [termLike]
-
-toPattern
-    :: InternalVariable variable
-    => MultiAnd (Pattern variable)
-    -> Pattern variable
-toPattern (MultiAnd patterns) =
-    case patterns of
-       [] -> Pattern.top
-       _ -> foldr1 (\pat1 pat2 -> pure mkAnd <*> pat1 <*> pat2) patterns
 
 map
     :: Ord child2

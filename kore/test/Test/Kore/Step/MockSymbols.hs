@@ -724,6 +724,8 @@ xOtherSort :: MockElementVariable
 xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
+xStringMetaSort :: MockSetVariable
+xStringMetaSort = MockSetVariable (testId "xStringMetaSort") mempty stringMetaSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =

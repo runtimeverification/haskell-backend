@@ -6,6 +6,9 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
+    , Condition (..)
+    , pattern Simplified_
+    , Type (..)
     , isSimplified
     , isFullySimplified
     , simplifiedTo

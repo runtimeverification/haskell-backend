@@ -554,41 +554,41 @@ test_andSimplification =
         assertEqual "" (MultiOr.make [expect]) actual
     , testGroup "Local function evaluation" $
         let f = Mock.f (mkElemVar Mock.x)
+            fInt = Mock.fInt (mkElemVar Mock.xInt)
             defined = makeCeilPredicate_ f & Condition.fromPredicate
             a = Mock.a
             b = Mock.b
-            mkLocalDefn (Left t)  = makeEqualsPredicate_ t f
-            mkLocalDefn (Right t) = makeEqualsPredicate_ f t
-            test name eitherC1 eitherC2 =
+            injA = Mock.sortInjection10 Mock.a
+            injB = Mock.sortInjection10 Mock.b
+            int2 = Mock.builtinInt 2
+            int3 = Mock.builtinInt 3
+            mkLocalDefn func (Left t)  = makeEqualsPredicate_ t func
+            mkLocalDefn func (Right t) = makeEqualsPredicate_ func t
+            test name func eitherC1 eitherC2 =
                 testCase name $ do
-                    let equals1 = mkLocalDefn eitherC1 & Condition.fromPredicate
-                        equals2 = mkLocalDefn eitherC2 & Condition.fromPredicate
+                    let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
+                        equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
                         pattern1 = Pattern.fromCondition_ (defined <> equals1)
                         pattern2 = Pattern.fromCondition_ (defined <> equals2)
                     actual <- evaluatePatterns pattern1 pattern2
                     assertBool "Expected \\bottom" $ isBottom actual
         in
-            [ test "contradiction: f(x) = a ∧ f(x) = b" (Right a) (Right b)
-            , test "contradiction: a = f(x) ∧ f(x) = b" (Left  a) (Right b)
-            , test "contradiction: a = f(x) ∧ b = f(x)" (Left  a) (Left  b)
-            , test "contradiction: f(x) = a ∧ b = f(x)" (Right a) (Left  b)
+            [ -- Constructor at top
+              test "contradiction: f(x) = a ∧ f(x) = b" f (Right a) (Right b)
+            , test "contradiction: a = f(x) ∧ f(x) = b" f (Left  a) (Right b)
+            , test "contradiction: a = f(x) ∧ b = f(x)" f (Left  a) (Left  b)
+            , test "contradiction: f(x) = a ∧ b = f(x)" f (Right a) (Left  b)
+            -- Sort injection at top
+            , test "contradiction: f(x) = injA ∧ f(x) = injB" f (Right injA) (Right injB)
+            , test "contradiction: injA = f(x) ∧ f(x) = injB" f (Left  injA) (Right injB)
+            , test "contradiction: injA = f(x) ∧ injB = f(x)" f (Left  injA) (Left  injB)
+            , test "contradiction: f(x) = injA ∧ injB = f(x)" f (Right injA) (Left  injB)
+            -- Builtin at top
+            , test "contradiction: f(x) = 2 ∧ f(x) = 3" fInt (Right int2) (Right int3)
+            , test "contradiction: 2 = f(x) ∧ f(x) = 3" fInt (Left  int2) (Right int3)
+            , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
+            , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
             ]
-    , testCase "Constructor equality" $ do
-        actual <-
-            evaluatePatterns
-                (makeEqualsPredicate_
-                    Mock.c
-                    Mock.a
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-                ( makeEqualsPredicate_
-                    Mock.b
-                    Mock.c
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
-                )
-        assertEqual "" (MultiOr.make []) actual
     ]
   where
     yExpanded = Conditional
