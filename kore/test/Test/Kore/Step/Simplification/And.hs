@@ -20,10 +20,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeExistsPredicate
     , makeFalsePredicate_
-    , makeImpliesPredicate
-    , makeNotPredicate
     , makeTruePredicate
     , makeTruePredicate_
     )
@@ -394,164 +391,6 @@ test_andSimplification =
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Contradictions result in bottom" $ do
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = mkNot <$> makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-        assertEqual "" mempty actual
-    , testCase "Simplifies Implies - Positive" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        (MultiAnd.toPredicate . MultiAnd.make)
-                        [ makeCeilPredicate Mock.testSort fOfX
-                        , makeCeilPredicate Mock.testSort gOfX
-                        , makeEqualsPredicate_ fOfX gOfX
-                        ]
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate = makeImpliesPredicate
-                        (makeCeilPredicate_ fOfX)
-                        (makeCeilPredicate_ gOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Simplifies Implies - Negative" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeEqualsPredicate testSort fOfX gOfX)
-                            (makeNotPredicate $ makeCeilPredicate testSort fOfX)
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeNotPredicate $ makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate =
-                        makeImpliesPredicate
-                            (makeCeilPredicate_ fOfX)
-                            (makeCeilPredicate_ gOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Simplifies multiple Implies" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        (MultiAnd.toPredicate . MultiAnd.make)
-                        [ makeCeilPredicate Mock.testSort fOfX
-                        , makeCeilPredicate Mock.testSort fOfY
-                        , makeCeilPredicate Mock.testSort gOfX
-                        , makeEqualsPredicate_ fOfX gOfX
-                        ]
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeImpliesPredicate
-                                (makeCeilPredicate_ fOfX)
-                                (makeCeilPredicate_ gOfX)
-                            )
-                            (makeImpliesPredicate
-                                (makeCeilPredicate_ gOfX)
-                                (makeCeilPredicate_ fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Does not replace and terms under intersecting quantifiers" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.testSort fOfX)
-                            (makeExistsPredicate Mock.x
-                                (makeCeilPredicate Mock.testSort fOfX)
-                            )
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeExistsPredicate Mock.x (makeCeilPredicate_ fOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Replaces and terms under independent quantifiers" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.testSort fOfX)
-                            (makeExistsPredicate Mock.y
-                                (makeCeilPredicate Mock.testSort fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate Mock.testSort fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeExistsPredicate Mock.y
-                            (makeAndPredicate
-                                (makeCeilPredicate Mock.testSort fOfX)
-                                (makeCeilPredicate Mock.testSort fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
     ]
   where
     yExpanded = Conditional
@@ -561,7 +400,6 @@ test_andSimplification =
         }
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXExpanded = Pattern.fromTermLike fOfX
-    fOfY = Mock.f (mkElemVar Mock.y)
     gOfX = Mock.g (mkElemVar Mock.x)
     gOfXExpanded = Conditional
         { term = gOfX
