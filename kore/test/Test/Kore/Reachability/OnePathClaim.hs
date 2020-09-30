@@ -29,13 +29,11 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
     ( OnePathClaim (..)
+    , mkOnePathClaim
     , simplify
     )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( mkClaimPattern
     )
 import Kore.Step.Simplification.Data
     ( runSimplifier
@@ -62,49 +60,44 @@ test_simplify :: [TestTree]
 test_simplify =
     [ testCase "already simplified" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike Mock.b)
-                & OnePathClaim
             expect = [claim]
         actual <- runSimpl claim
         assertEqual "" expect actual
 
     , testCase "simplify left term" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.fromTermLike
                         (mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a))
                     )
                     []
                     (OrPattern.fromTermLike Mock.b)
-                & OnePathClaim
             expect =
-                [ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike Mock.b)
-                    & OnePathClaim
                 ]
         actual <- runSimpl claim
         assertEqual "" expect actual
 
     , testCase "simplify right term" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike
                         (mkAnd Mock.b (mkEquals Mock.testSort Mock.a Mock.a))
                     )
-                & OnePathClaim
             expected =
-                [ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike Mock.b)
-                    & OnePathClaim
                 ]
 
         actual <- runSimpl claim
@@ -113,7 +106,7 @@ test_simplify =
 
     , testCase "applies substitution from left term" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.fromTermLike
                         (mkAnd
                             Mock.a
@@ -122,22 +115,20 @@ test_simplify =
                     )
                     []
                     (OrPattern.fromTermLike (Mock.functional10 (mkElemVar x')))
-                & OnePathClaim
             expect =
-                [ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.withCondition Mock.a
                         (Condition.assign (inject x') Mock.b)
                     )
                     []
                     (OrPattern.fromTermLike (Mock.functional10 Mock.b))
-                    & OnePathClaim
                 ]
         actual <- runSimpl claim
         assertEqual "" expect actual
 
     , testCase "simplifies requires predicate" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.withCondition Mock.a
                         (makeEqualsPredicate_ Mock.c Mock.c
                             & Condition.fromPredicate
@@ -145,13 +136,11 @@ test_simplify =
                     )
                     []
                     (OrPattern.fromTermLike Mock.b)
-                & OnePathClaim
             expected =
-                [ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike Mock.b)
-                    & OnePathClaim
                 ]
 
         actual <- runSimpl claim
@@ -160,7 +149,7 @@ test_simplify =
 
     , testCase "simplifies ensures predicate" $ do
         let claim =
-                mkClaimPattern
+                mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (Pattern.withCondition Mock.b
@@ -169,13 +158,11 @@ test_simplify =
                         )
                         & OrPattern.fromPattern
                     )
-                & OnePathClaim
             expected =
-                [ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.fromTermLike Mock.a)
                     []
                     (OrPattern.fromTermLike Mock.b)
-                    & OnePathClaim
                 ]
 
         actual <- runSimpl claim
@@ -184,7 +171,7 @@ test_simplify =
 
     , testCase "applies substitution from requires" $ do
         let expected =
-                [ OnePathClaim $ mkClaimPattern
+                [ mkOnePathClaim
                     (Pattern.withCondition Mock.a
                         (Condition.assign (inject x') Mock.b)
                     )
@@ -195,7 +182,7 @@ test_simplify =
                     )
                 ]
         actual <-
-            mkClaimPattern
+            mkOnePathClaim
                 (Pattern.withCondition Mock.a
                     (makeEqualsPredicate_ Mock.b (mkElemVar x')
                         & Condition.fromPredicate
@@ -203,7 +190,6 @@ test_simplify =
                 )
                 []
                 (OrPattern.fromTermLike (Mock.f $ mkElemVar x'))
-            & OnePathClaim
             & runSimpl
 
         assertEqual "" expected actual

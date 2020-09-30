@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Reachability.OnePathClaim
     ( OnePathClaim (..)
+    , mkOnePathClaim
     , onePathRuleToTerm
     , mkOnePathClaim
     , Rule (..)
@@ -68,13 +69,20 @@ import Kore.Unparser
     )
 
 -- | One-Path-Claim claim pattern.
-newtype OnePathClaim =
-    OnePathClaim { getOnePathClaim :: ClaimPattern }
+newtype OnePathClaim = OnePathClaim { getOnePathClaim :: ClaimPattern }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+mkOnePathClaim
+    :: Pattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
+    -> OnePathClaim
+mkOnePathClaim left existentials right =
+    OnePathClaim (mkClaimPattern left existentials right)
 
 -- | Converts a 'OnePathClaim' into its term representation.
 -- This is intended to be used only in unparsing situations,
