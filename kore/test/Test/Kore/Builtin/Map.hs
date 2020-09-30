@@ -65,11 +65,15 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import Control.Lens
+    ( (.~)
+    )
 import Control.Monad
     ( guard
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import Data.Generics.Product
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -94,9 +98,13 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate_
     , makeMultipleAndPredicate
+    , makeNotPredicate
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
@@ -109,6 +117,9 @@ import SMT
     ( NoSMT
     )
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Test.Expect
 import Test.Kore
     ( elementVariableGen
@@ -656,7 +667,9 @@ test_symbolic =
                 expect = asVariablePattern varMap
             if Map.null elements
                 then discard
-                else (===) expect =<< evaluateT patMap
+                else do
+                    actual <- evaluateT patMap
+                    term expect === term actual
         )
 
 test_isBuiltin :: [TestTree]

@@ -54,6 +54,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 
+import qualified Data.Foldable as Foldable
 import Test.Kore
 import Test.Kore.Equation.Application
     ( functionAxiomUnification
@@ -75,8 +76,6 @@ import Test.Kore.Internal.Substitution as Substitution hiding
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import qualified Data.Foldable as Foldable
-import Kore.Unparser (unparseToString)
 
 type SideCondition' = SideCondition VariableName
 
@@ -161,22 +160,36 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
-                        , predicate = makeAndPredicate
-                            (makeAndPredicate
-                                (makeCeilPredicate_ Mock.cf)
-                                (makeCeilPredicate_ (Mock.plain10 Mock.cf))
-                            )
-                            (makeAndPredicate
-                                (makeCeilPredicate_
-                                    (mkAnd
-                                        (Mock.plain10 Mock.cf)
-                                        (Mock.plain10 (mkElemVar Mock.x))
+                        , predicate =
+                            makeAndPredicate
+                                (makeAndPredicate
+                                    (makeCeilPredicate_
+                                        $ mkAnd
+                                            (Mock.plain10 (mkElemVar Mock.x))
+                                            (Mock.plain10 $ mkDefined Mock.cf)
+                                    )
+                                    (makeAndPredicate
+                                        (makeCeilPredicate_
+                                            $ Mock.plain10 (mkElemVar Mock.x)
+                                        )
+                                        (makeCeilPredicate_
+                                            $ Mock.plain10 $ mkDefined Mock.cf
+                                        )
                                     )
                                 )
-                                (makeCeilPredicate_
-                                    (Mock.plain10 (mkElemVar Mock.x))
+                                (makeAndPredicate
+                                    (makeCeilPredicate_
+                                        Mock.cf
+                                    )
+                                    (makeAndPredicate
+                                        (makeCeilPredicate_
+                                            $ Mock.plain10 (mkElemVar Mock.x)
+                                        )
+                                        (makeCeilPredicate_
+                                            $ Mock.plain10 $ mkDefined Mock.cf
+                                        )
+                                    )
                                 )
-                            )
                         , substitution = Substitution.unsafeWrap
                             [(inject Mock.y, Mock.b)]
                         }
@@ -198,6 +211,11 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
+        traceM "expect"
+        Foldable.traverse_ (traceM . show) expect
+        traceM "actual"
+        Foldable.traverse_ (traceM . show) actual
+
         assertEqual "" expect actual
     , testCase "map function, non-matching" $ do
         let
@@ -237,8 +255,14 @@ test_simplificationIntegration =
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromTermLike
-                $ Mock.functionalConstr11 $ Mock.g Mock.a
+                OrPattern.fromPatterns
+                [Conditional
+                    { term = Mock.functionalConstr11 (mkDefined $ Mock.g Mock.a)
+                    , predicate =
+                        makeCeilPredicate Mock.testSort (Mock.g Mock.a)
+                    , substitution = mempty
+                    }
+                ]
         actual <-
             evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
@@ -418,7 +442,12 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                 [ Conditional
                     { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
-                    , predicate = requirement
+                    , predicate = simplificationWithTopPredicate1
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = simplificationWithTopPredicate2
                     , substitution = mempty
                     }
                 ]
@@ -632,7 +661,7 @@ test_simplificationIntegration =
                                                     (mkDefined Mock.ch)
                                                     Mock.aTopSort
                                                 )
-                                                (mkDefined 
+                                                (mkDefined
                                                     $ mkIff Mock.plain00 Mock.d
                                                 )
                                                 (mkDefined Mock.cg)
