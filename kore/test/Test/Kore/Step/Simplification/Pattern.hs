@@ -7,6 +7,7 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -15,12 +16,19 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate_
+    , makeEqualsPredicate_
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import Kore.TopBottom
+    ( isBottom
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -34,6 +42,30 @@ test_Pattern_simplify =
         $ "\\or(a, a)"
     , bottomLike `becomes` OrPattern.bottom
         $ "\\and(a, \\bottom)"
+    , testGroup "Local function evaluation" $
+        let f = Mock.f (mkElemVar Mock.x)
+            defined = makeCeilPredicate_ f & Condition.fromPredicate
+            a = Mock.a
+            b = Mock.b
+            mkLocalDefn (Left t)  = makeEqualsPredicate_ t f
+            mkLocalDefn (Right t) = makeEqualsPredicate_ f t
+            test name eitherC1 eitherC2 =
+                testCase name $ do
+                    let equals1 = mkLocalDefn eitherC1 & Condition.fromPredicate
+                        equals2 = mkLocalDefn eitherC2 & Condition.fromPredicate
+                        patt =
+                            Pattern.fromCondition_
+                                ( defined <> equals1
+                                <> defined <> equals2
+                                )
+                    actual <- simplify patt
+                    assertBool "Expected \\bottom" $ isBottom actual
+        in
+            [ test "contradiction: f(x) = a ∧ f(x) = b" (Right a) (Right b)
+            , test "contradiction: a = f(x) ∧ f(x) = b" (Left  a) (Right b)
+            , test "contradiction: a = f(x) ∧ b = f(x)" (Left  a) (Left  b)
+            , test "contradiction: f(x) = a ∧ b = f(x)" (Right a) (Left  b)
+            ]
     ]
   where
     becomes
