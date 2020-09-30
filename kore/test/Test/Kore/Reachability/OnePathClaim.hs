@@ -68,175 +68,228 @@ test_simplify =
         actual <- runSimpl claim
         assertEqual "" expect actual
 
-    , testCase "simplify left term" $ do
-        let claim =
-                mkOnePathClaim
-                    (Pattern.fromTermLike
-                        (mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a))
-                    )
-                    []
-                    (OrPattern.fromTermLike Mock.b)
-            expect =
-                [ mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
-                    []
-                    (OrPattern.fromTermLike Mock.b)
-                ]
-        actual <- runSimpl claim
-        assertEqual "" expect actual
+    , testGroup "simplifies left-hand side"
 
-    , testCase "simplify right term" $ do
-        let claim =
-                mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
-                    []
-                    (OrPattern.fromTermLike
-                        (mkAnd Mock.b (mkEquals Mock.testSort Mock.a Mock.a))
-                    )
-            expected =
-                [ mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
-                    []
-                    (OrPattern.fromTermLike Mock.b)
-                ]
-
-        actual <- runSimpl claim
-
-        assertEqual "" expected actual
-
-    , testCase "applies substitution from left term" $ do
-        let claim =
-                mkOnePathClaim
-                    (Pattern.fromTermLike
-                        (mkAnd
-                            Mock.a
-                            (mkEquals Mock.testSort Mock.b (mkElemVar x'))
+        [ testCase "simplifies left-hand term" $ do
+            let claim =
+                    mkOnePathClaim
+                        (Pattern.fromTermLike
+                            (mkAnd
+                                Mock.a
+                                (mkEquals Mock.testSort Mock.a Mock.a)
+                            )
                         )
-                    )
-                    []
-                    (OrPattern.fromTermLike (Mock.functional10 (mkElemVar x')))
-            expect =
-                [ mkOnePathClaim
-                    (Pattern.withCondition Mock.a
-                        (Condition.assign (inject x') Mock.b)
-                    )
-                    []
-                    (OrPattern.fromTermLike (Mock.functional10 Mock.b))
-                ]
-        actual <- runSimpl claim
-        assertEqual "" expect actual
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                expect =
+                    [ mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                    ]
+            actual <- runSimpl claim
+            assertEqual "" expect actual
 
-    , testCase "simplifies requires predicate" $ do
-        let claim =
+        , testCase "applies substitution from left term" $ do
+            let claim =
+                    mkOnePathClaim
+                        (Pattern.fromTermLike
+                            (mkAnd
+                                Mock.a
+                                (mkEquals Mock.testSort Mock.b (mkElemVar x'))
+                            )
+                        )
+                        []
+                        (OrPattern.fromTermLike
+                            (Mock.functional10 (mkElemVar x'))
+                        )
+                expect =
+                    [ mkOnePathClaim
+                        (Pattern.withCondition Mock.a
+                            (Condition.assign (inject x') Mock.b)
+                        )
+                        []
+                        (OrPattern.fromTermLike (Mock.functional10 Mock.b))
+                    ]
+            actual <- runSimpl claim
+            assertEqual "" expect actual
+
+        , testCase "simplifies requires predicate" $ do
+            let claim =
+                    mkOnePathClaim
+                        (Pattern.withCondition Mock.a
+                            (makeEqualsPredicate_ Mock.c Mock.c
+                                & Condition.fromPredicate
+                            )
+                        )
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                expected =
+                    [ mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                    ]
+
+            actual <- runSimpl claim
+
+            assertEqual "" expected actual
+
+        , testCase "applies substitution from requires" $ do
+            let expected =
+                    [ mkOnePathClaim
+                        (Pattern.withCondition Mock.a
+                            (Condition.assign (inject x') Mock.b)
+                        )
+                        []
+                        (Pattern.fromTermLike (Mock.f Mock.b)
+                            & Pattern.requireDefined
+                            & OrPattern.fromPattern
+                        )
+                    ]
+            actual <-
                 mkOnePathClaim
                     (Pattern.withCondition Mock.a
-                        (makeEqualsPredicate_ Mock.c Mock.c
+                        (makeEqualsPredicate_ Mock.b (mkElemVar x')
                             & Condition.fromPredicate
                         )
                     )
                     []
-                    (OrPattern.fromTermLike Mock.b)
-            expected =
-                [ mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
-                    []
-                    (OrPattern.fromTermLike Mock.b)
-                ]
+                    (OrPattern.fromTermLike (Mock.f $ mkElemVar x'))
+                & runSimpl
 
-        actual <- runSimpl claim
+            assertEqual "" expected actual
 
-        assertEqual "" expected actual
+        , testCase "splits rule on disjunction in left-hand term" $ do
+            let expected =
+                    [ mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike Mock.c)
+                    , mkOnePathClaim
+                        (Pattern.fromTermLike Mock.b)
+                        []
+                        (OrPattern.fromTermLike Mock.c)
+                    ]
 
-    , testCase "simplifies ensures predicate" $ do
-        let claim =
+            actual <-
                 mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
+                    (Pattern.fromTermLike (mkOr Mock.a Mock.b))
                     []
-                    (Pattern.withCondition Mock.b
-                        (makeEqualsPredicate_ Mock.c Mock.c
-                            & Condition.fromPredicate
+                    (OrPattern.fromTermLike Mock.c)
+                & runSimpl
+
+            assertEqual "" expected actual
+        ]
+
+    , testGroup "simplifies right-hand side"
+        [ testCase "simplifies right-hand term" $ do
+            let claim =
+                    mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike
+                            (mkAnd
+                                Mock.b
+                                (mkEquals Mock.testSort Mock.a Mock.a)
+                            )
                         )
-                        & OrPattern.fromPattern
-                    )
-            expected =
-                [ mkOnePathClaim
-                    (Pattern.fromTermLike Mock.a)
-                    []
-                    (OrPattern.fromTermLike Mock.b)
-                ]
+                expected =
+                    [ mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                    ]
 
-        actual <- runSimpl claim
+            actual <- runSimpl claim
 
-        assertEqual "" expected actual
+            assertEqual "" expected actual
 
-    , testCase "applies substitution from requires" $ do
-        let expected =
-                [ mkOnePathClaim
-                    (Pattern.withCondition Mock.a
-                        (Condition.assign (inject x') Mock.b)
-                    )
-                    []
-                    (Pattern.fromTermLike (Mock.f Mock.b)
-                        & Pattern.requireDefined
-                        & OrPattern.fromPattern
-                    )
-                ]
-        actual <-
-            mkOnePathClaim
-                (Pattern.withCondition Mock.a
-                    (makeEqualsPredicate_ Mock.b (mkElemVar x')
-                        & Condition.fromPredicate
-                    )
-                )
-                []
-                (OrPattern.fromTermLike (Mock.f $ mkElemVar x'))
-            & runSimpl
-
-        assertEqual "" expected actual
-
-    , testCase "Splits rule" $ do
-        let expected =
-                [ Mock.a `rewritesToWithSort` Mock.c
-                , Mock.b `rewritesToWithSort` Mock.c
-                ]
-
-        actual <- runSimpl
-            (   mkOr Mock.a Mock.b
-                `rewritesToWithSort`
-                Mock.c
-            )
-
-        assertEqual "" expected actual
-    , testCase "Case where f(x) is defined;\
-               \ Case where it is not is simplified" $ do
-        let expected =
-                [   Pair
-                        ( mkDefined (Mock.f x)
-                        , makeCeilPredicate Mock.testSort (Mock.f x)
+        , testCase "simplifies ensures predicate" $ do
+            let claim =
+                    mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (Pattern.withCondition Mock.b
+                            (makeEqualsPredicate_ Mock.c Mock.c
+                                & Condition.fromPredicate
+                            )
+                            & OrPattern.fromPattern
                         )
+                expected =
+                    [ mkOnePathClaim
+                        (Pattern.fromTermLike Mock.a)
+                        []
+                        (OrPattern.fromTermLike Mock.b)
+                    ]
+
+            actual <- runSimpl claim
+
+            assertEqual "" expected actual
+        ]
+
+    , testGroup "infers left-hand side is defined"
+        [ testCase "left-hand side is partial" $ do
+            let expected =
+                    [   Pair
+                            ( mkDefined (Mock.f x)
+                            , makeCeilPredicate Mock.testSort (Mock.f x)
+                            )
+                        `rewritesToWithSort`
+                        Pair (Mock.a, makeTruePredicate Mock.testSort)
+                    ]
+
+            actual <- runSimpl
+                (   Pair (Mock.f x, makeTruePredicate Mock.testSort)
                     `rewritesToWithSort`
                     Pair (Mock.a, makeTruePredicate Mock.testSort)
-                ]
+                )
 
-        actual <- runSimpl
-            (   Pair (Mock.f x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
+            assertEqual "" expected actual
+        , testCase "left-hand side is total" $ do
+            let expected =
+                    [ Mock.functional10 x `rewritesToWithSort` Mock.a
+                    ]
 
-        assertEqual "" expected actual
-    , testCase "lhs: f(x) is always defined" $ do
-        let expected =
-                [ Mock.functional10 x `rewritesToWithSort` Mock.a
-                ]
+            actual <- runSimpl
+                (   Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
+                    `rewritesToWithSort`
+                    Pair (Mock.a, makeTruePredicate Mock.testSort)
+                )
 
-        actual <- runSimpl
-            (   Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate Mock.testSort)
-            )
+            assertEqual "" expected actual
+        ]
 
-        assertEqual "" expected actual
+    , testGroup "infers right-hand side is defined"
+        [ testCase "right-hand side is total" $ do
+            let expected =
+                    [ Mock.a `rewritesToWithSort` Mock.functional10 x
+                    ]
+
+            actual <- runSimpl
+                (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                    `rewritesToWithSort`
+                    Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
+                )
+
+            assertEqual "" expected actual
+
+        , testCase "right-hand side is partial" $ do
+            let expected =
+                    [   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                        `rewritesToWithSort`
+                        Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
+                    ]
+
+            actual <- runSimpl
+                (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                    `rewritesToWithSort`
+                    Pair (Mock.f x, makeTruePredicate Mock.testSort)
+                )
+
+            assertEqual "" expected actual
+        ]
+
     , testCase "Predicate simplification removes trivial claim" $ do
         let expected = []
         actual <- runSimpl
@@ -257,33 +310,6 @@ test_simplify =
             )
         assertEqual "" expected actual
 
-    , testCase "rhs: f(x) is always defined" $ do
-        let expected =
-                [ Mock.a `rewritesToWithSort` Mock.functional10 x
-                ]
-
-        actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
-
-    , testCase "infer rhs is defined" $ do
-        let expected =
-                [   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                    `rewritesToWithSort`
-                    Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
-                ]
-
-        actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
-                `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate Mock.testSort)
-            )
-
-        assertEqual "" expected actual
     ]
   where
     simplClaim
