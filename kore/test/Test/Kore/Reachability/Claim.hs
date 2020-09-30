@@ -226,7 +226,7 @@ test_simplifyRightHandSide =
         let unsatisfiableBranch =
                 Pattern.fromTermAndPredicate
                     Mock.b
-                    (makeEqualsPredicate_
+                    (makeEqualsPredicate
                         TermLike.mkTop_
                         (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                     )

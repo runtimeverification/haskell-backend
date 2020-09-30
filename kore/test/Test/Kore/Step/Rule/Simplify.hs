@@ -327,24 +327,24 @@ test_simplifyRule_OnePathClaim =
                 ]
 
         actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+            (   Pair (Mock.a, makeTruePredicate)
                 `rewritesToWithSort`
-                Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
+                Pair (Mock.functional10 x, makeTruePredicate)
             )
 
         assertEqual "" expected actual
 
     , testCase "infer rhs is defined" $ do
         let expected =
-                [   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                [   Pair (Mock.a, makeTruePredicate)
                     `rewritesToWithSort`
-                    Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
+                    Pair (Mock.f x, makeCeilPredicate (Mock.f x))
                 ]
 
         actual <- runSimpl
-            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+            (   Pair (Mock.a, makeTruePredicate)
                 `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate Mock.testSort)
+                Pair (Mock.f x, makeTruePredicate)
             )
 
         assertEqual "" expected actual

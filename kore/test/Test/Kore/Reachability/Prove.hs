@@ -38,7 +38,6 @@ import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -1881,7 +1880,7 @@ simplePriorityAxiom left right priority =
     $ RulePattern
         { left = left
         , antiLeft = Nothing
-        , requires = makeTruePredicate_
+        , requires = makeTruePredicate
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.priority = Attribute.Priority (Just priority)

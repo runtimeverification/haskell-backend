@@ -24,6 +24,8 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeFalsePredicate
     , makeTruePredicate
@@ -248,14 +250,14 @@ test_hasSimplifiedChildren =
             partiallySimplified = Simplified_ Partly Any
             predicate =
                 makeAndPredicate
-                    (Predicate.makeFloorPredicate_
+                    (Predicate.makeFloorPredicate
                         (Mock.functional20
                             (mkNu Mock.setX Mock.c)
                             (Mock.functionalConstr10 mkTop_)
                         )
                     & Predicate.setSimplified fullySimplified
                     )
-                    (Predicate.makeCeilPredicate_
+                    (Predicate.makeCeilPredicate
                         (Mock.tdivInt mkTop_ mkTop_)
                     & Predicate.setSimplified fullySimplified
                     )
@@ -276,8 +278,8 @@ test_hasSimplifiedChildren =
     mockTerm2 = Mock.f Mock.b
 
     mockPredicate1, mockPredicate2 :: Predicate VariableName
-    mockPredicate1 = makeCeilPredicate_ mockTerm1
-    mockPredicate2 = makeCeilPredicate_ mockTerm2
+    mockPredicate1 = makeCeilPredicate mockTerm1
+    mockPredicate2 = makeCeilPredicate mockTerm2
 
     topSideCondition :: SideCondition.Representation
     topSideCondition =
@@ -286,7 +288,7 @@ test_hasSimplifiedChildren =
 
     mockSideCondition :: SideCondition.Representation
     mockSideCondition =
-        makeEqualsPredicate_
+        makeEqualsPredicate
             (Mock.f (mkElemVar Mock.x))
             Mock.a
         & Condition.fromPredicate

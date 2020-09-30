@@ -555,15 +555,15 @@ test_andSimplification =
     , testGroup "Local function evaluation" $
         let f = Mock.f (mkElemVar Mock.x)
             fInt = Mock.fInt (mkElemVar Mock.xInt)
-            defined = makeCeilPredicate_ f & Condition.fromPredicate
+            defined = makeCeilPredicate f & Condition.fromPredicate
             a = Mock.a
             b = Mock.b
             injA = Mock.sortInjection10 Mock.a
             injB = Mock.sortInjection10 Mock.b
             int2 = Mock.builtinInt 2
             int3 = Mock.builtinInt 3
-            mkLocalDefn func (Left t)  = makeEqualsPredicate_ t func
-            mkLocalDefn func (Right t) = makeEqualsPredicate_ func t
+            mkLocalDefn func (Left t)  = makeEqualsPredicate t func
+            mkLocalDefn func (Right t) = makeEqualsPredicate func t
             test name func eitherC1 eitherC2 =
                 testCase name $ do
                     let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
