@@ -162,6 +162,9 @@ import Logic
     , MonadLogic
     )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 import qualified SMT
 
@@ -431,6 +434,19 @@ instance (Debug claim, SOP.HasDatatypeInfo claim) =>
 
 instance (Diff claim, Debug claim, SOP.HasDatatypeInfo claim) =>
     Diff (CheckImplicationResult claim)
+
+instance Pretty a => Pretty (CheckImplicationResult a) where
+    pretty Implied = "Implied"
+    pretty (NotImplied a) =
+        Pretty.vsep
+            [ "NotImplied:"
+            , Pretty.indent 4 $ pretty a
+            ]
+    pretty (NotImpliedStuck a) =
+        Pretty.vsep
+            [ "NotImpliedStuck:"
+            , Pretty.indent 4 $ pretty a
+            ]
 
 -- | Remove the destination of the claim.
 checkImplication'

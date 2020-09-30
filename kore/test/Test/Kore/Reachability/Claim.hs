@@ -155,9 +155,14 @@ test_checkImplication =
                         )
                         (makeNotPredicate
                             (makeExistsPredicate Mock.y
-                                (makeEqualsPredicate Mock.testSort
-                                    (Mock.f (mkElemVar Mock.x))
-                                    (Mock.f (mkElemVar Mock.y))
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.testSort
+                                        (Mock.f (mkElemVar Mock.x))
+                                    )
+                                    (makeEqualsPredicate Mock.testSort
+                                        (Mock.f (mkElemVar Mock.x))
+                                        (Mock.f (mkElemVar Mock.y))
+                                    )
                                 )
                             )
                         )
