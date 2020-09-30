@@ -319,27 +319,21 @@ instance MonadSMT SMT where
             -- Create an unshared "dummy" mutex for the solverHandle.
             mvar <- Trans.liftIO $ newMVar solverHandle
             logAction <- askLogAction
-            SolverInitAndHandle userInit _ config <- SMT Reader.ask
             let solver = Solver solverHandle logAction
+            Trans.liftIO $ push solver
             -- Run the SMT with the unshared mutex.
             -- The SMT will never block waiting to acquire the solver.
-            Trans.liftIO $ push solver
-            counter <- SMT State.get
-            a <- (SMT . RWST) $ \ _ _ ->
-                Exception.finally
-                    (runRWST
-                        (getSMT smt)
-                        (SolverInitAndHandle userInit mvar config)
-                        counter
-                    )
-                    (Trans.liftIO $ pop solver)
-            SMT $ State.modify (+ 1)
-            counterNew <- SMT State.get
-            -- Due to an issue with the SMT solver, we need to
-            -- reinitialise it after a number of runs, specified here.
-            -- This number can be adjusted based on experimentation
-            when (counterNew >= 100) reinit
-            return a
+            SMT $ Reader.local
+                (\handle -> handle {mSolverHandle = mvar})
+                (Exception.finally (getSMT smt) $ do
+                    -- Due to an issue with the SMT solver, we need to
+                    -- reinitialise it after a number of runs, specified here.
+                    -- This number can be adjusted based on experimentation
+                    Trans.liftIO $ pop solver
+                    State.modify (+ 1)
+                    counter <- State.get
+                    when (counter >= 100) (getSMT reinit)
+                )
 
     declare name typ =
         withSolver' $ \solver -> SimpleSMT.declare solver (Atom name) typ
