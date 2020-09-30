@@ -18,6 +18,7 @@ module Kore.Step.ClaimPattern
     , forgetSimplified
     , parseRightHandSide
     , claimPatternToTerm
+    , areEquivalent
     ) where
 
 import Prelude.Kore
@@ -49,6 +50,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -463,3 +466,34 @@ parseRightHandSide term =
       where
         tryPredicate = hush . Predicate.makePredicate
     parsePatternFromTermLike term' = Pattern.fromTermLike term'
+
+-- | The terms of the implication are equivalent in respect to
+-- the associativity of \\and
+areEquivalent
+    :: ClaimPattern
+    -> ClaimPattern
+    -> Bool
+areEquivalent
+    ClaimPattern
+        { left = left1
+        , right = right1
+        , existentials = existentials1
+        , attributes = attributes1
+        }
+    ClaimPattern
+        { left = left2
+        , right = right2
+        , existentials = existentials2
+        , attributes = attributes2
+        }
+  =
+    let leftsAreEquivalent =
+            MultiAnd.fromPatternToTerms left1
+            == MultiAnd.fromPatternToTerms left2
+        rightsAreEquivalent =
+            MultiOr.map MultiAnd.fromPatternToTerms right1
+            == MultiOr.map MultiAnd.fromPatternToTerms right2
+     in leftsAreEquivalent
+        && rightsAreEquivalent
+        && existentials1 == existentials2
+        && attributes1 == attributes2

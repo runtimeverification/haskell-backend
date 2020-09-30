@@ -22,6 +22,7 @@ module Kore.Internal.MultiAnd
     , toPattern
     , map
     , traverse
+    , fromPatternToTerms
     ) where
 
 import Prelude.Kore hiding
@@ -42,7 +43,8 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -51,6 +53,8 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -260,3 +264,16 @@ traverse
     -> f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
+
+fromPatternToTerms
+    :: InternalVariable variable
+    => Pattern variable
+    -> MultiAnd (TermLike variable)
+fromPatternToTerms Conditional { term, predicate, substitution } =
+    fromTermLike term
+    <> fromTermLike (Predicate.unwrapPredicate predicate)
+    <> fromTermLike
+        ( Predicate.unwrapPredicate
+        . Substitution.toPredicate
+        $ substitution
+        )

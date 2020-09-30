@@ -8,6 +8,9 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Control.Applicative
+    ( ZipList (..)
+    )
 import qualified Control.Lens as Lens
 import Control.Monad.Morph
     ( MFunctor (..)
@@ -28,6 +31,7 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -64,6 +68,7 @@ import Kore.Sort
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern
+    , areEquivalent
     , claimPattern
     )
 import Kore.Step.Rule.Simplify
@@ -465,8 +470,14 @@ test_simplifyClaimRule =
     test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
         -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
-            actual <- run $ simplifyRuleLhs input
-            assertEqual "" expect (Foldable.toList actual)
+            actual <- run (simplifyRuleLhs input) & fmap Foldable.toList
+            -- Equivalent under associativity of \\and
+            let checkEquivalence
+                    (fmap getOnePathClaim -> claims1)
+                    (fmap getOnePathClaim -> claims2)
+                  =
+                    and (areEquivalent <$> ZipList claims1 <*> ZipList claims2)
+            assertEqual "" True (checkEquivalence expect actual)
       where
         run =
             runSMT (pure ())
@@ -516,7 +527,12 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
                 & Predicate.coerceSort predicateSort
                 & Condition.fromPredicate
                 & SideCondition.fromCondition
-            satisfied = sideCondition == expectSideCondition
+            -- Equivalent under associativity of \\and
+            checkEquivalence cond1 cond2 =
+                (==)
+                    (cond1 & SideCondition.toPredicate & MultiAnd.fromPredicate)
+                    (cond2 & SideCondition.toPredicate & MultiAnd.fromPredicate)
+            satisfied = checkEquivalence sideCondition expectSideCondition
         return
             . OrPattern.fromTermLike
             . (if satisfied then applyReplacements replacements else id)
