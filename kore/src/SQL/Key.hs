@@ -26,11 +26,5 @@ newtype Key a = Key { getKey :: Int64 }
     deriving (Eq, Ord, Read, Show)
     deriving (Functor, Foldable)
     deriving (GHC.Generic)
-
-instance SOP.Generic (Key a)
-
-instance SOP.HasDatatypeInfo (Key a)
-
-instance Debug (Key a)
-
-instance Diff (Key a)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)

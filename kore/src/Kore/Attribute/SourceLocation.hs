@@ -46,20 +46,16 @@ import Pretty
     )
 import qualified Pretty
 
-data SourceLocation = SourceLocation
+data SourceLocation =
+    SourceLocation
     { location :: !Location
     , source   :: !Source
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic SourceLocation
-
-instance SOP.HasDatatypeInfo SourceLocation
-
-instance Debug SourceLocation
-
-instance Diff SourceLocation
-
-instance NFData SourceLocation
+    }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default SourceLocation where
     def = SourceLocation def def

@@ -139,19 +139,11 @@ data Axiom symbol variable =
     , owise :: !Owise
     -- ^ This is an owise evaluation rule.
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic (Axiom symbol variable)
-
-instance SOP.HasDatatypeInfo (Axiom symbol variable)
-
-instance (Debug symbol, Debug variable) => Debug (Axiom symbol variable)
-
-instance
-    (Debug symbol, Debug variable, Diff symbol, Diff variable)
-    => Diff (Axiom symbol variable)
-
-instance (NFData symbol, NFData variable) => NFData (Axiom symbol variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default (Axiom symbol variable) where
     def =
@@ -330,4 +322,3 @@ getPriorityOfAxiom
                 <> show errorCase
                 <> " Please report this error."
                 )
-

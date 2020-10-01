@@ -72,9 +72,11 @@ import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
     , pattern App_
+    , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
     , pattern Forall_
+    , pattern Inj_
     , pattern Mu_
     , pattern Not_
     , pattern Nu_
@@ -351,18 +353,29 @@ global definitions (axioms) apply. We are looking for a 'TermLike' of the form
 \equals(f(...), C(...))
 @
 
-where @f@ is a function and @C@ is a constructor. @retractLocalFunction@ will
-match an @\equals@ predicate with its arguments in either order, but the
-function pattern is always returned first in the 'Pair'.
+where @f@ is a function and @C@ is a constructor, sort injection or builtin.
+@retractLocalFunction@ will match an @\equals@ predicate with its arguments
+in either order, but the function pattern is always returned first in the
+'Pair'.
 
  -}
 retractLocalFunction
     :: TermLike variable
     -> Maybe (Pair (TermLike variable))
-retractLocalFunction (Equals_ _ _ term1@(App_ symbol1 _) term2@(App_ symbol2 _))
-  | isConstructor symbol1, isFunction symbol2 = Just (Pair term2 term1)
-  | isConstructor symbol2, isFunction symbol1 = Just (Pair term1 term2)
-retractLocalFunction _ = Nothing
+retractLocalFunction =
+    \case
+        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        _ -> Nothing
+  where
+    go term1@(App_ symbol1 _) term2
+      | isFunction symbol1 =
+        case term2 of
+            App_ symbol2 _
+              | isConstructor symbol2 -> Just (Pair term1 term2)
+            Inj_ _     -> Just (Pair term1 term2)
+            Builtin_ _ -> Just (Pair term1 term2)
+            _          -> Nothing
+    go _ _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable

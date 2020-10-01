@@ -7,6 +7,7 @@ module Kore.Internal.OrPattern
     ( OrPattern
     , coerceSort
     , isSimplified
+    , hasSimplifiedChildren
     , forgetSimplified
     , fromPatterns
     , toPatterns
@@ -82,6 +83,17 @@ type OrPattern variable = MultiOr (Pattern variable)
 
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
+
+{- | Checks whether all patterns in the disjunction have simplified children.
+
+See also: 'Pattern.hasSimplifiedChildren'
+
+ -}
+hasSimplifiedChildren
+    :: InternalVariable variable
+    => SideCondition.Representation -> OrPattern variable -> Bool
+hasSimplifiedChildren sideCondition =
+    all (Pattern.hasSimplifiedChildren sideCondition)
 
 forgetSimplified
     :: InternalVariable variable => OrPattern variable -> OrPattern variable

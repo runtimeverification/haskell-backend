@@ -125,19 +125,12 @@ could be made.
 
  -}
 newtype Evaluated child = Evaluated { getEvaluated :: child }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (Evaluated child)
-
-instance SOP.HasDatatypeInfo (Evaluated child)
-
-instance Debug child => Debug (Evaluated child)
-
-instance (Debug child, Diff child) => Diff (Evaluated child)
-
-instance Hashable child => Hashable (Evaluated child)
-
-instance NFData child => NFData (Evaluated child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Evaluated child) where
     unparse evaluated =
@@ -160,19 +153,12 @@ known to be defined.
 
  -}
 newtype Defined child = Defined { getDefined :: child }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (Defined child)
-
-instance SOP.HasDatatypeInfo (Defined child)
-
-instance Debug child => Debug (Defined child)
-
-instance (Debug child, Diff child) => Diff (Defined child)
-
-instance Hashable child => Hashable (Defined child)
-
-instance NFData child => NFData (Defined child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Defined child) where
     unparse defined =
@@ -223,24 +209,11 @@ data TermLikeF variable child
     | InjF           !(Inj child)
     | DefinedF       !(Defined child)
     deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
+    deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
-
-instance SOP.Generic (TermLikeF variable child)
-
-instance SOP.HasDatatypeInfo (TermLikeF variable child)
-
-instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
-
-instance
-    ( Debug child, Debug variable, Diff child, Diff variable )
-    => Diff (TermLikeF variable child)
-
-instance
-    (Hashable child, Hashable variable)
-    => Hashable (TermLikeF variable child)
-
-instance (NFData child, NFData variable) => NFData (TermLikeF variable child)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Unparse variable, Unparse child) => Unparse (TermLikeF variable child)
@@ -507,13 +480,10 @@ newtype TermLike variable =
                     (Attribute.Pattern variable)
                     (TermLike variable)
         }
-    deriving (GHC.Generic, Show)
-
-instance SOP.Generic (TermLike variable)
-
-instance SOP.HasDatatypeInfo (TermLike variable)
-
-instance Debug variable => Debug (TermLike variable)
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance (Debug variable, Diff variable) => Diff (TermLike variable) where
     diffPrec

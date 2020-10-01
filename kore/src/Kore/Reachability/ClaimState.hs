@@ -43,21 +43,12 @@ data ClaimState claim
     -- does not hold.
     | Proven
     -- ^ The claim was proven.
-    deriving (Eq, Show, Ord)
-    deriving (Foldable, Functor)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
-
-instance NFData claim => NFData (ClaimState claim)
-
-instance Hashable claim => Hashable (ClaimState claim)
-
-instance SOP.Generic (ClaimState a)
-
-instance SOP.HasDatatypeInfo (ClaimState a)
-
-instance Debug a => Debug (ClaimState a)
-
-instance (Debug a, Diff a) => Diff (ClaimState a)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse claim => Pretty (ClaimState claim) where
     pretty (Claimed claim) =

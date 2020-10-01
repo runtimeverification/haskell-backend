@@ -87,18 +87,12 @@ patterns.
 
 -}
 newtype MultiOr child = MultiOr { getMultiOr :: [child] }
-    deriving
-        ( Eq
-        , Foldable
-        , GHC.Generic
-        , IsList
-        , Ord
-        , Show
-        )
-
-instance SOP.Generic (MultiOr child)
-
-instance SOP.HasDatatypeInfo (MultiOr child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving newtype (IsList)
 
 instance Debug child => Debug (MultiOr child)
 
@@ -111,8 +105,6 @@ instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
 
 instance (Ord child, TopBottom child) => Monoid (MultiOr child) where
     mempty = make []
-
-instance NFData child => NFData (MultiOr child)
 
 instance TopBottom child => TopBottom (MultiOr child) where
     isTop (MultiOr [child]) = isTop child

@@ -176,15 +176,10 @@ data ProofStuck =
     { stuckPatterns :: !(OrPattern VariableName)
     , provenClaims :: ![SomeClaim]
     }
-    deriving (Eq, GHC.Generic, Show)
-
-instance SOP.Generic ProofStuck
-
-instance SOP.HasDatatypeInfo ProofStuck
-
-instance Debug ProofStuck
-
-instance Diff ProofStuck
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}

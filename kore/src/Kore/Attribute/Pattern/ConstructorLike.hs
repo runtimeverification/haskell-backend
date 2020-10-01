@@ -61,20 +61,14 @@ newtype ConstructorLike =
     ConstructorLike
         { getConstructorLike :: Maybe ConstructorLikeHead
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic ConstructorLike
-
-instance SOP.HasDatatypeInfo ConstructorLike
-
-instance Debug ConstructorLike
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance Diff ConstructorLike where
     diffPrec = diffPrecIgnore
-
-instance NFData ConstructorLike
-
-instance Hashable ConstructorLike
 
 instance Synthetic ConstructorLike (And sort) where
     synthetic = const (ConstructorLike Nothing)
@@ -253,20 +247,14 @@ instance Synthetic ConstructorLike Inj where
 
 data ConstructorLikeHead = ConstructorLikeHead
                          | SortInjectionHead
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic ConstructorLikeHead
-
-instance SOP.HasDatatypeInfo ConstructorLikeHead
-
-instance Debug ConstructorLikeHead
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance Diff ConstructorLikeHead where
     diffPrec = diffPrecIgnore
-
-instance NFData ConstructorLikeHead
-
-instance Hashable ConstructorLikeHead
 
 class HasConstructorLike a where
     extractConstructorLike :: a -> ConstructorLike

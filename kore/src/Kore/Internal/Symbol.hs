@@ -66,7 +66,11 @@ data Symbol =
         , symbolSorts       :: !ApplicationSorts
         , symbolAttributes  :: !Attribute.Symbol
         }
-    deriving (GHC.Generic, Show)
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Eq Symbol where
     (==) a b =
@@ -82,16 +86,6 @@ instance Ord Symbol where
 instance Hashable Symbol where
     hashWithSalt salt Symbol { symbolConstructor, symbolParams } =
         salt `hashWithSalt` symbolConstructor `hashWithSalt` symbolParams
-
-instance NFData Symbol
-
-instance SOP.Generic Symbol
-
-instance SOP.HasDatatypeInfo Symbol
-
-instance Debug Symbol
-
-instance Diff Symbol
 
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =

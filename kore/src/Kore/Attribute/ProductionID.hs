@@ -25,17 +25,11 @@ import Kore.Debug
 {- | @ProductionID@ represents the @productionID@ attribute.
  -}
 newtype ProductionID = ProductionID { getProductionID :: Maybe Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic ProductionID
-
-instance SOP.HasDatatypeInfo ProductionID
-
-instance Debug ProductionID
-
-instance Diff ProductionID
-
-instance NFData ProductionID
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default ProductionID where
     def = ProductionID Nothing
