@@ -141,14 +141,10 @@ simplify sideCondition pattern' =
             sideCondition
             (simplifyConjunctions simplifiedPattern)
   where
-    simplifyConjunctions patt =
-        let predicates = MultiAnd.fromPredicate . predicate $ patt
-            newPredicate =
-                MultiAnd.toPredicate
-                $ simplifyConjunctionByAssumption predicates
-         in Pattern.withCondition
-                (term patt)
-                (from (substitution patt) <> from newPredicate)
+    simplifyConjunctions =
+        -- We should probably move this to Kore.Internal.MultiAnd.
+        let lensPredicate = Lens.iso MultiAnd.fromPredicate MultiAnd.toPredicate
+        in Lens.over (field @"predicate" . lensPredicate) simplifyConjunctionByAssumption
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
