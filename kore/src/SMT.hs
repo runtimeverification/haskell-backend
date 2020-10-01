@@ -323,6 +323,12 @@ modifySolverHandle action = do
         )
         (Trans.liftIO $ putMVar mvar solverHandle)
 
+{- | Run an 'SMT' action with a 'SolverHandle' that is not shared.
+
+@unshareSolverHandle@ works by locking the received 'MVar' and running the
+action with a new 'MVar' that is not shared with any other thread.
+
+ -}
 unshareSolverHandle :: SMT a -> SMT a
 unshareSolverHandle action = do
     mvarShared <- SMT (Reader.asks refSolverHandle)
