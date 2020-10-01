@@ -72,6 +72,7 @@ import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -296,6 +297,8 @@ applyRemainder initial remainder = do
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!
-    Simplifier.simplifyCondition
-        SideCondition.topTODO
-        (Pattern.andCondition initial partial)
+    simplified <-
+        Pattern.simplify
+            SideCondition.topTODO
+            (Pattern.andCondition initial partial)
+    Logic.scatter simplified

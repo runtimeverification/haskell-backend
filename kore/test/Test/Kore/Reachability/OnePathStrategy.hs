@@ -674,8 +674,6 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
-            -- Is this right?
-            , Proven
             ]
             _actual
         assertEqual "onepath == reachability onepath"
@@ -756,8 +754,6 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
-            -- Is this right?
-            , Proven
             ]
             _actual
         assertEqual "onepath == reachability onepath"

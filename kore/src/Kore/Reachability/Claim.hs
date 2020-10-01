@@ -551,6 +551,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             simplifyConditionsWithSmt sideCondition configs'
             >>= Logic.scatter
+            >>= Pattern.simplify sideCondition
+            >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied
   where
