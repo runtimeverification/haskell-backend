@@ -162,11 +162,14 @@ test_makeEvaluate =
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = Mock.f gOfA
+                        { term = Mock.f $ mkDefined gOfA
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate Mock.testSort gOfA)
-                                (makeCeilPredicate Mock.testSort (Mock.h gOfA))
+                                (makeCeilPredicate
+                                    Mock.testSort
+                                    (Mock.h $ mkDefined gOfA)
+                                )
                         , substitution = Substitution.unsafeWrap
                             [(inject Mock.y, fOfA)]
                         }

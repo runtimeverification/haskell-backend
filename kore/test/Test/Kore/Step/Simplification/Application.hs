@@ -22,6 +22,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
@@ -57,22 +58,34 @@ test_applicationSimplification =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.testSort Mock.a)
+                                (makeCeilPredicate Mock.testSort Mock.c)
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.a Mock.d
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.testSort Mock.a)
+                                (makeCeilPredicate Mock.testSort Mock.d)
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.b Mock.c
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.testSort Mock.b)
+                                (makeCeilPredicate Mock.testSort Mock.c)
                         , substitution = mempty
                         }
                     ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.testSort Mock.b)
+                                (makeCeilPredicate Mock.testSort Mock.d)
                         , substitution = mempty
                         }
                     ]
@@ -104,7 +117,14 @@ test_applicationSimplification =
     , testCase "Application - preserves sort for top child" $ do
         -- sigma(a, top) = top
         let expect = OrPattern.fromPatterns
-                [ Pattern.fromTermLike (Mock.sigma Mock.a (mkTop Mock.testSort))
+                [ Conditional
+                    { term = Mock.sigma Mock.a (mkTop Mock.testSort)
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.testSort Mock.a)
+                            (makeCeilPredicate Mock.testSort mkTop_)
+                    , substitution = mempty
+                    }
                 ]
         actual <-
             evaluate
@@ -149,12 +169,14 @@ test_applicationSimplification =
                         [ Conditional
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
-                                makeAndPredicate
-                                    (makeEqualsPredicate Mock.testSort
+                                foldr1 makeAndPredicate
+                                    [ makeCeilPredicate Mock.testSort Mock.a
+                                    , makeCeilPredicate Mock.testSort Mock.b
+                                    , makeEqualsPredicate Mock.testSort
                                         fOfA
                                         fOfB
-                                    )
-                                    (makeEqualsPredicate_ gOfA gOfB)
+                                    , makeEqualsPredicate_ gOfA gOfB
+                                    ]
                             , substitution = Substitution.unsafeWrap
                                 [ (inject Mock.x, fOfA)
                                 , (inject Mock.y, gOfA)

@@ -34,6 +34,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
@@ -42,6 +44,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( TermLike
+    , mkDefined
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -666,12 +669,17 @@ test_onePathStrategy =
                 Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate Mock.testSort
-                            (Mock.lessInt
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.testSort
                                 (Mock.fTestInt Mock.b)
-                                (Mock.builtinInt 0)
                             )
-                            (Mock.builtinBool True)
+                            (makeEqualsPredicate Mock.testSort
+                                (Mock.lessInt
+                                    (mkDefined $ Mock.fTestInt Mock.b)
+                                    (Mock.builtinInt 0)
+                                )
+                                (Mock.builtinBool True)
+                            )
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
@@ -749,12 +757,17 @@ test_onePathStrategy =
                 Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate Mock.testSort
-                            (Mock.lessInt
+                        makeAndPredicate
+                            (makeCeilPredicate Mock.testSort
                                 (Mock.fTestInt Mock.b)
-                                (Mock.builtinInt 0)
                             )
-                            (Mock.builtinBool True)
+                            (makeEqualsPredicate Mock.testSort
+                                (Mock.lessInt
+                                    (mkDefined $ Mock.fTestInt Mock.b)
+                                    (Mock.builtinInt 0)
+                                )
+                                (Mock.builtinBool True)
+                            )
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)

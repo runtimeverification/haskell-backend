@@ -251,7 +251,9 @@ test_combineRules =
         let expected =
                 [   Pair
                         ( Mock.a
-                        , makeEqualsPredicate_ Mock.b Mock.cf
+                        , makeAndPredicate
+                            (makeCeilPredicate_ Mock.cf)
+                            (makeEqualsPredicate_ Mock.b Mock.cf)
                         )
                     `rewritesTo` Pair (Mock.cg, makeTruePredicate_)
                 ]

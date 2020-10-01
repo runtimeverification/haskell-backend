@@ -427,7 +427,7 @@ test_functionIntegration =
                     , predicate = makeAndPredicate
                         (makeCeilPredicate Mock.testSort Mock.cf)
                         (makeCeilPredicate Mock.testSort
-                            (Mock.plain10 Mock.cf)
+                            (Mock.plain10 $ mkDefined Mock.cf)
                         )
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.var_x_1, Mock.cf)
