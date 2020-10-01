@@ -36,29 +36,12 @@ data Exists sort variable child = Exists
     , existsVariable :: !(ElementVariable variable)
     , existsChild    :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance
-    (Hashable sort, Hashable variable, Hashable child) =>
-    Hashable (Exists sort variable child)
-
-instance
-    (NFData sort, NFData variable, NFData child) =>
-    NFData (Exists sort variable child)
-
-instance SOP.Generic (Exists sort variable child)
-
-instance SOP.HasDatatypeInfo (Exists sort variable child)
-
-instance
-    (Debug sort, Debug variable, Debug child) =>
-    Debug (Exists sort variable child)
-
-instance
-    ( Debug sort, Debug variable, Debug child
-    , Diff sort, Diff variable, Diff child
-    )
-    => Diff (Exists sort variable child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Unparse variable, Unparse child) => Unparse (Exists Sort variable child)

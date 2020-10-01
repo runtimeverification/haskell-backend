@@ -114,15 +114,11 @@ data InternalList child =
         , builtinListConcat :: !Symbol
         , builtinListChild :: !(Seq child)
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (InternalList child)
-
-instance SOP.HasDatatypeInfo (InternalList child)
-
-instance Debug child => Debug (InternalList child)
-
-instance (Debug child, Diff child) => Diff (InternalList child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt builtin =
@@ -395,7 +391,10 @@ data InternalAc key (normalized :: Type -> Type -> Type) child =
         , builtinAcConcat :: !Symbol
         , builtinAcChild :: normalized key child
         }
-    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 {- | Establishes a bijection between value wrappers and entire-structure
 wrappers, with a few utility functions for the two.
@@ -493,10 +492,6 @@ instance Hashable (normalized key child)
 instance (NFData (normalized key child))
     => NFData (InternalAc key normalized child)
 
-instance SOP.Generic (InternalAc key normalized child)
-
-instance SOP.HasDatatypeInfo (InternalAc key normalized child)
-
 instance (Debug (normalized key child))
     => Debug (InternalAc key normalized child)
 
@@ -535,61 +530,38 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
 -}
 type MapValue = Value NormalizedMap
 
-instance Hashable child => Hashable (MapValue child) where
-    hashWithSalt salt (MapValue child) = hashWithSalt salt child
-
-instance NFData child => NFData (MapValue child)
-
-instance SOP.Generic (MapValue child)
-
-instance SOP.HasDatatypeInfo (MapValue child)
-
-instance Debug child => Debug (MapValue child)
-
 {- | Wrapper for map elements.
  -}
 type MapElement = Element NormalizedMap
-
-instance Hashable child => Hashable (MapElement child) where
-    hashWithSalt salt (MapElement child) = hashWithSalt salt child
-
-instance NFData child => NFData (MapElement child)
-
-instance SOP.Generic (MapElement child)
-
-instance SOP.HasDatatypeInfo (MapElement child)
-
-instance Debug child => Debug (MapElement child)
 
 {- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
 -}
 newtype NormalizedMap key child =
     NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable key, Hashable child) => Hashable (NormalizedMap key child)
-  where
-    hashWithSalt salt (NormalizedMap m) = hashWithSalt salt m
-
-instance (NFData key, NFData child) => NFData (NormalizedMap key child)
-
-instance SOP.Generic (NormalizedMap key child)
-
-instance SOP.HasDatatypeInfo (NormalizedMap key child)
-
-instance (Debug key, Debug child) => Debug (NormalizedMap key child)
-
-instance
-    ( Debug key, Debug child, Diff key, Diff child )
-    => Diff (NormalizedMap key child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance AcWrapper NormalizedMap where
     newtype Value NormalizedMap child = MapValue { getMapValue :: child }
-        deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
+        deriving anyclass (Hashable, NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
 
     newtype Element NormalizedMap child =
         MapElement { getMapElement :: (child, child) }
-        deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
+        deriving anyclass (Hashable, NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
 
     wrapAc = NormalizedMap
     unwrapAc = getNormalizedMap
@@ -605,10 +577,6 @@ instance AcWrapper NormalizedMap where
     unparseConcreteElement keyUnparser childUnparser (key, MapValue value) =
         arguments' [keyUnparser key, childUnparser value]
 
-instance (Debug child, Diff child) => Diff (Element NormalizedMap child)
-
-instance (Debug child, Diff child) => Diff (Value NormalizedMap child)
-
 {- | Internal representation of the builtin @MAP.Map@ domain.
 -}
 type InternalMap key child = InternalAc key NormalizedMap child
@@ -620,62 +588,38 @@ for a given key.
 -}
 type SetValue = Value NormalizedSet
 
-instance Hashable (SetValue child) where
-    hashWithSalt salt SetValue = hashWithSalt salt (0 :: Int)
-
-instance NFData (SetValue child)
-
-instance SOP.Generic (SetValue child)
-
-instance SOP.HasDatatypeInfo (SetValue child)
-
-instance Debug (SetValue child)
-
 {- | Wrapper for set elements.
 -}
 type SetElement = Element NormalizedSet
-
-instance Hashable child => Hashable (SetElement child) where
-    hashWithSalt salt (SetElement key) = hashWithSalt salt key
-
-instance NFData child => NFData (SetElement child)
-
-instance SOP.Generic (SetElement child)
-
-instance SOP.HasDatatypeInfo (SetElement child)
-
-instance Debug child => Debug (SetElement child)
 
 {- | Wrapper for normalized sets, to be used in the `builtinAcChild` field.
 -}
 newtype NormalizedSet key child =
     NormalizedSet { getNormalizedSet :: NormalizedAc NormalizedSet key child }
-    deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
-
-instance (Hashable key, Hashable child) => Hashable (NormalizedSet key child)
-  where
-    hashWithSalt salt (NormalizedSet set) =
-        hashWithSalt salt set
-
-instance (NFData key, NFData child) => NFData (NormalizedSet key child)
-
-instance SOP.Generic (NormalizedSet key child)
-
-instance SOP.HasDatatypeInfo (NormalizedSet key child)
-
-instance (Debug key, Debug child) => Debug (NormalizedSet key child)
-
-instance
-    ( Debug key, Debug child, Diff key, Diff child )
-    => Diff (NormalizedSet key child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance AcWrapper NormalizedSet where
     data Value NormalizedSet child = SetValue
-        deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
+        deriving anyclass (Hashable, NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
 
     newtype Element NormalizedSet child =
         SetElement { getSetElement :: child }
-        deriving (Eq, Foldable, Functor, Traversable, GHC.Generic, Ord, Show)
+        deriving (Eq, Ord, Show)
+        deriving (Foldable, Functor, Traversable)
+        deriving (GHC.Generic)
+        deriving anyclass (Hashable, NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
 
     wrapAc = NormalizedSet
     unwrapAc = getNormalizedSet
@@ -687,10 +631,6 @@ instance AcWrapper NormalizedSet where
         argument' (childUnparser key)
     unparseConcreteElement keyUnparser _childUnparser (key, SetValue) =
         argument' (keyUnparser key)
-
-instance (Debug child, Diff child) => Diff (Element NormalizedSet child)
-
-instance Diff child => Diff (Value NormalizedSet child)
 
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
@@ -705,19 +645,11 @@ data InternalInt =
         { builtinIntSort :: !Sort
         , builtinIntValue :: !Integer
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable InternalInt
-
-instance NFData InternalInt
-
-instance SOP.Generic InternalInt
-
-instance SOP.HasDatatypeInfo InternalInt
-
-instance Debug InternalInt
-
-instance Diff InternalInt
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse InternalInt where
     unparse InternalInt { builtinIntSort, builtinIntValue } =
@@ -739,19 +671,11 @@ data InternalBool =
         { builtinBoolSort :: !Sort
         , builtinBoolValue :: !Bool
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable InternalBool
-
-instance NFData InternalBool
-
-instance SOP.Generic InternalBool
-
-instance SOP.HasDatatypeInfo InternalBool
-
-instance Debug InternalBool
-
-instance Diff InternalBool
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
@@ -781,19 +705,11 @@ data InternalString =
         { internalStringSort :: !Sort
         , internalStringValue :: !Text
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable InternalString
-
-instance NFData InternalString
-
-instance SOP.Generic InternalString
-
-instance SOP.HasDatatypeInfo InternalString
-
-instance Debug InternalString
-
-instance Diff InternalString
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse InternalString where
     unparse InternalString { internalStringSort, internalStringValue } =
@@ -815,20 +731,12 @@ data Builtin key child
     | BuiltinInt !InternalInt
     | BuiltinBool !InternalBool
     | BuiltinString !InternalString
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (Builtin key child)
-
-instance SOP.HasDatatypeInfo (Builtin key child)
-
-instance (Debug key, Debug child) => Debug (Builtin key child)
-
-instance
-    (Debug key, Debug child, Diff key, Diff child) => Diff (Builtin key child)
-
-instance (Hashable key, Hashable child) => Hashable (Builtin key child)
-
-instance (NFData key, NFData child) => NFData (Builtin key child)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
     unparse evaluated =

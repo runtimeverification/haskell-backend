@@ -54,16 +54,10 @@ data Narrowing variable
         , overloadPair  :: !(Pair (TermLike variable))
         -- overload solution
         }
-  deriving (GHC.Generic, Show)
-
-instance SOP.Generic (Narrowing variable)
-
-instance SOP.HasDatatypeInfo (Narrowing variable)
-
-instance Debug variable => Debug (Narrowing variable)
-
-instance
-    (Diff variable, InternalVariable variable) => Diff (Narrowing variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Result of applying the 'unifyOverloading' resolution procedure
 data OverloadingResolution variable
@@ -71,18 +65,10 @@ data OverloadingResolution variable
     -- ^The overloading resolves yielding the transformed pair of terms
     | WithNarrowing !(Narrowing variable)
     -- ^Overloading resolves, but additional narrowing is needed for solution
-  deriving (GHC.Generic, Show)
-
-instance SOP.Generic (OverloadingResolution variable)
-
-instance SOP.HasDatatypeInfo (OverloadingResolution variable)
-
-instance Debug variable => Debug (OverloadingResolution variable)
-
-instance
-    ( Diff variable
-    , InternalVariable variable
-    ) => Diff (OverloadingResolution variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Describes the possible errors encountered during unification.
 data UnifyOverloadingError
@@ -92,20 +78,16 @@ data UnifyOverloadingError
     {- ^ There was a clash, unification will fail.
          Reason for the clash is included.
     -}
-  deriving (GHC.Generic, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup UnifyOverloadingError where
     NotApplicable   <> b                = b
     a               <> NotApplicable    = a
     Clash a         <> Clash b          = Clash (a <> b)
-
-instance SOP.Generic UnifyOverloadingError
-
-instance SOP.HasDatatypeInfo UnifyOverloadingError
-
-instance Debug UnifyOverloadingError
-
-instance Diff UnifyOverloadingError
 
 instance Monoid UnifyOverloadingError where
     mempty = NotApplicable

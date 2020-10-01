@@ -48,14 +48,8 @@ data OverloadGraph =
         -- ^maps a symbol to the symbols overloaded by it
         }
     deriving (GHC.Generic, Typeable)
-
-instance SOP.Generic OverloadGraph
-
-instance SOP.HasDatatypeInfo OverloadGraph
-
-instance Debug OverloadGraph
-
-instance Diff OverloadGraph
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Whether the symbol is an overloading symbol
 isOverloaded :: OverloadGraph -> Symbol -> Bool

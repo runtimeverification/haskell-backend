@@ -23,32 +23,18 @@ data Subsort = Subsort
     { subsort :: Sort
     , supersort :: Sort
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Subsort
-
-instance SOP.HasDatatypeInfo Subsort
-
-instance Debug Subsort
-
-instance Diff Subsort
-
-instance NFData Subsort
-
-instance Hashable Subsort
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 newtype Subsorts = Subsorts { getSubsorts :: [Subsort] }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Subsorts
-
-instance SOP.HasDatatypeInfo Subsorts
-
-instance Debug Subsorts
-
-instance Diff Subsorts
-
-instance NFData Subsorts
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Subsorts where
     def = Subsorts []

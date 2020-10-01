@@ -26,17 +26,11 @@ import Kore.Debug
 {- | @Trusted@ represents the @trusted@ attribute for claim sentences.
  -}
 newtype Trusted = Trusted { isTrusted :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Trusted
-
-instance SOP.HasDatatypeInfo Trusted
-
-instance Debug Trusted
-
-instance Diff Trusted
-
-instance NFData Trusted
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Trusted where
     def = Trusted False

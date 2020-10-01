@@ -18,20 +18,14 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 newtype NoEvaluators = NoEvaluators { hasNoEvaluators :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default NoEvaluators where
     def = NoEvaluators False
-
-instance NFData NoEvaluators
-
-instance SOP.Generic NoEvaluators
-
-instance SOP.HasDatatypeInfo NoEvaluators
-
-instance Debug NoEvaluators
-
-instance Diff NoEvaluators
 
 noEvaluatorsId :: Id
 noEvaluatorsId = "no-evaluators"

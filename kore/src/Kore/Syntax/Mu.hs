@@ -34,21 +34,12 @@ data Mu variable child = Mu
     { muVariable :: !(SetVariable variable)
     , muChild    :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable variable, Hashable child) => Hashable (Mu variable child)
-
-instance (NFData variable, NFData child) => NFData (Mu variable child)
-
-instance SOP.Generic (Mu variable child)
-
-instance SOP.HasDatatypeInfo (Mu variable child)
-
-instance (Debug variable, Debug child) => Debug (Mu variable child)
-
-instance
-    ( Debug variable, Debug child, Diff variable, Diff child )
-    => Diff (Mu variable child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Unparse variable, Unparse child) => Unparse (Mu variable child)

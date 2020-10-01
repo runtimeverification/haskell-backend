@@ -432,8 +432,10 @@ data AttemptEquationError variable
     = WhileMatch !(MatchError (Target variable))
     | WhileApplyMatchResult !(ApplyMatchResultErrors (Target variable))
     | WhileCheckRequires !(CheckRequiresError variable)
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 mapAttemptEquationErrorVariables
     :: (InternalVariable variable1, InternalVariable variable2)
@@ -473,16 +475,6 @@ whileCheckRequires
     -> ExceptT (AttemptEquationError variable) monad a
 whileCheckRequires = withExceptT WhileCheckRequires
 
-instance SOP.Generic (AttemptEquationError variable)
-
-instance SOP.HasDatatypeInfo (AttemptEquationError variable)
-
-instance Debug variable => Debug (AttemptEquationError variable)
-
-instance
-    (InternalVariable variable, Diff variable)
-    => Diff (AttemptEquationError variable)
-
 instance
     InternalVariable variable
     => Pretty (AttemptEquationError variable)
@@ -501,16 +493,10 @@ data MatchError variable =
     { matchTerm :: !(TermLike variable)
     , matchEquation :: !(Equation variable)
     }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic (MatchError variable)
-
-instance SOP.HasDatatypeInfo (MatchError variable)
-
-instance Debug variable => Debug (MatchError variable)
-
-instance (Debug variable, Diff variable) => Diff (MatchError variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance InternalVariable variable => Pretty (MatchError variable) where
     pretty _ = "equation did not match term"
@@ -538,18 +524,10 @@ data ApplyMatchResultErrors variable =
     { matchResult :: !(MatchResult variable)
     , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
     }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic (ApplyMatchResultErrors variable)
-
-instance SOP.HasDatatypeInfo (ApplyMatchResultErrors variable)
-
-instance Debug variable => Debug (ApplyMatchResultErrors variable)
-
-instance
-    (Debug variable, Diff variable)
-    => Diff (ApplyMatchResultErrors variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     InternalVariable variable
@@ -604,18 +582,10 @@ data ApplyMatchResultError variable
     -- ^ The variable was not matched.
     | NonMatchingSubstitution (SomeVariableName variable)
     -- ^ The variable is not part of the matching solution.
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic (ApplyMatchResultError variable)
-
-instance SOP.HasDatatypeInfo (ApplyMatchResultError variable)
-
-instance Debug variable => Debug (ApplyMatchResultError variable)
-
-instance
-    (Debug variable, Diff variable)
-    => Diff (ApplyMatchResultError variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     InternalVariable variable
@@ -672,18 +642,10 @@ data CheckRequiresError variable =
     , equationRequires :: !(Predicate variable)
     , sideCondition :: !(SideCondition variable)
     }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic (CheckRequiresError variable)
-
-instance SOP.HasDatatypeInfo (CheckRequiresError variable)
-
-instance Debug variable => Debug (CheckRequiresError variable)
-
-instance
-    (InternalVariable variable, Diff variable)
-    => Diff (CheckRequiresError variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance InternalVariable variable => Pretty (CheckRequiresError variable) where
     pretty checkRequiresError =

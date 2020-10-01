@@ -123,13 +123,10 @@ data Symbol =
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
     }
-    deriving (Eq, Ord, GHC.Generic, Show)
-
-instance NFData Symbol
-
-instance SOP.Generic Symbol
-
-instance SOP.HasDatatypeInfo Symbol
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Debug Symbol where
     debugPrecBrief _ _ = "_"

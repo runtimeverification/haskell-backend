@@ -104,19 +104,11 @@ data Symbol = Symbol
     { symbolConstructor :: !Id
     , symbolParams      :: ![SortVariable]
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable Symbol
-
-instance NFData Symbol
-
-instance SOP.Generic Symbol
-
-instance SOP.HasDatatypeInfo Symbol
-
-instance Debug Symbol
-
-instance Diff Symbol
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
@@ -146,19 +138,11 @@ data Alias = Alias
     { aliasConstructor :: !Id
     , aliasParams      :: ![SortVariable]
     }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable Alias
-
-instance NFData Alias
-
-instance SOP.Generic Alias
-
-instance SOP.HasDatatypeInfo Alias
-
-instance Debug Alias
-
-instance Diff Alias
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse Alias where
     unparse Alias { aliasConstructor, aliasParams } =
@@ -180,20 +164,12 @@ data SentenceAlias (patternType :: Type) =
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable patternType => Hashable (SentenceAlias patternType)
-
-instance NFData patternType => NFData (SentenceAlias patternType)
-
-instance SOP.Generic (SentenceAlias patternType)
-
-instance SOP.HasDatatypeInfo (SentenceAlias patternType)
-
-instance Debug patternType => Debug (SentenceAlias patternType)
-
-instance
-    (Debug patternType, Diff patternType) => Diff (SentenceAlias patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse patternType => Unparse (SentenceAlias patternType) where
     unparse
@@ -251,19 +227,12 @@ data SentenceSymbol (patternType :: Type) =
         , sentenceSymbolResultSort :: !Sort
         , sentenceSymbolAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceSymbol patternType)
-
-instance NFData (SentenceSymbol patternType)
-
-instance SOP.Generic (SentenceSymbol patternType)
-
-instance SOP.HasDatatypeInfo (SentenceSymbol patternType)
-
-instance Debug (SentenceSymbol patternType)
-
-instance Diff (SentenceSymbol patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (SentenceSymbol patternType) where
     unparse
@@ -332,19 +301,12 @@ data SentenceImport (patternType :: Type) =
         { sentenceImportModuleName :: !ModuleName
         , sentenceImportAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceImport patternType)
-
-instance NFData (SentenceImport patternType)
-
-instance SOP.Generic (SentenceImport patternType)
-
-instance SOP.HasDatatypeInfo (SentenceImport patternType)
-
-instance Debug (SentenceImport patternType)
-
-instance Diff (SentenceImport patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (SentenceImport patternType) where
     unparse
@@ -384,19 +346,12 @@ data SentenceSort (patternType :: Type) =
         , sentenceSortParameters :: ![SortVariable]
         , sentenceSortAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceSort patternType)
-
-instance NFData (SentenceSort patternType)
-
-instance SOP.Generic (SentenceSort patternType)
-
-instance SOP.HasDatatypeInfo (SentenceSort patternType)
-
-instance Debug (SentenceSort patternType)
-
-instance Diff (SentenceSort patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (SentenceSort patternType) where
     unparse
@@ -454,20 +409,12 @@ data SentenceAxiom (patternType :: Type) =
         , sentenceAxiomPattern    :: !patternType
         , sentenceAxiomAttributes :: !Attributes
         }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable patternType => Hashable (SentenceAxiom patternType)
-
-instance NFData patternType => NFData (SentenceAxiom patternType)
-
-instance SOP.Generic (SentenceAxiom patternType)
-
-instance SOP.HasDatatypeInfo (SentenceAxiom patternType)
-
-instance Debug patternType => Debug (SentenceAxiom patternType)
-
-instance
-    (Debug patternType, Diff patternType) => Diff (SentenceAxiom patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse = unparseAxiom "axiom"
@@ -526,23 +473,15 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
  -}
 newtype SentenceClaim (patternType :: Type) =
     SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 sentenceClaimAttributes :: SentenceClaim patternType -> Attributes
 sentenceClaimAttributes = sentenceAxiomAttributes . getSentenceClaim
-
-instance Hashable patternType => Hashable (SentenceClaim patternType)
-
-instance NFData patternType => NFData (SentenceClaim patternType)
-
-instance SOP.Generic (SentenceClaim patternType)
-
-instance SOP.HasDatatypeInfo (SentenceClaim patternType)
-
-instance Debug patternType => Debug (SentenceClaim patternType)
-
-instance
-    (Debug patternType, Diff patternType) => Diff (SentenceClaim patternType)
 
 instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse = unparseAxiom "claim" . getSentenceClaim
@@ -564,19 +503,12 @@ See also: 'SentenceSort', 'SentenceSymbol'
 data SentenceHook (patternType :: Type)
     = SentenceHookedSort !(SentenceSort patternType)
     | SentenceHookedSymbol !(SentenceSymbol patternType)
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable (SentenceHook patternType)
-
-instance NFData (SentenceHook patternType)
-
-instance SOP.Generic (SentenceHook patternType)
-
-instance SOP.HasDatatypeInfo (SentenceHook patternType)
-
-instance Debug (SentenceHook patternType)
-
-instance Diff (SentenceHook patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (SentenceHook patternType) where
     unparse =
@@ -612,18 +544,12 @@ data Sentence (patternType :: Type)
     | SentenceClaimSentence  !(SentenceClaim patternType)
     | SentenceSortSentence   !(SentenceSort patternType)
     | SentenceHookSentence   !(SentenceHook patternType)
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance NFData patternType => NFData (Sentence patternType)
-
-instance SOP.Generic (Sentence patternType)
-
-instance SOP.HasDatatypeInfo (Sentence patternType)
-
-instance Debug patternType => Debug (Sentence patternType)
-
-instance
-    (Debug patternType, Diff patternType) => Diff (Sentence patternType)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse patternType => Unparse (Sentence patternType) where
      unparse = unparseGeneric

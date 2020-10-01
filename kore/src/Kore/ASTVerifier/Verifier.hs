@@ -78,13 +78,13 @@ newtype Verifier a =
             ::  RWST VerifierContext () VerifierState
                     (Either (Error VerifyError)) a
         }
-    deriving (Functor, Applicative, Monad)
+    deriving newtype (Functor, Applicative, Monad)
 
-deriving instance MonadReader VerifierContext Verifier
+deriving newtype instance MonadReader VerifierContext Verifier
 
-deriving instance MonadState VerifierState Verifier
+deriving newtype instance MonadState VerifierState Verifier
 
-deriving instance MonadError (Error VerifyError) Verifier
+deriving newtype instance MonadError (Error VerifyError) Verifier
 
 runVerifier
     :: Verifier a

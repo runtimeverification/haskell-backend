@@ -13,7 +13,7 @@ import Prelude.Kore
 
 import Control.DeepSeq
 import qualified Generics.SOP as SOP
-import GHC.Generics
+import qualified GHC.Generics as GHC
 import GHC.Stack
     ( SrcLoc (..)
     )
@@ -31,7 +31,11 @@ import qualified Pretty
 -- and it will default to 'Nothing'. This field is populated via the smart
 -- constructors in 'Kore.Internal.TermLike'.
 newtype Created = Created { getCreated :: Maybe GHC.CallStack }
-    deriving (Generic, Show)
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 hasKnownCreator :: Created -> Bool
 hasKnownCreator = isJust . getCallStackHead
@@ -39,16 +43,8 @@ hasKnownCreator = isJust . getCallStackHead
 instance Eq Created where
     (==) _ _ = True
 
-instance SOP.Generic Created
-
-instance SOP.HasDatatypeInfo Created
-
-instance NFData Created
-
 instance Hashable Created where
     hashWithSalt _ _ = 0
-
-instance Debug Created
 
 instance Diff Created where
     diffPrec = diffPrecIgnore

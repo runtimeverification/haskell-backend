@@ -61,12 +61,8 @@ data MatchEquationError variable
     | ConstructorAxiom
     | SubsortAxiom
     deriving (GHC.Generic)
-
-instance SOP.Generic (MatchEquationError variable)
-
-instance SOP.HasDatatypeInfo (MatchEquationError variable)
-
-instance Debug variable => Debug (MatchEquationError variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 matchEquation
     :: forall variable

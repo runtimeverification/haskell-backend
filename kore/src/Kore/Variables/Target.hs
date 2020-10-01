@@ -48,8 +48,11 @@ substitutions for 'Target' variables instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (GHC.Generic, Show)
-    deriving (Functor, Foldable, Traversable)
+    deriving (Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Eq variable => Eq (Target variable) where
     (==) a b = unTarget a == unTarget b
@@ -62,14 +65,6 @@ instance Ord variable => Ord (Target variable) where
 instance Hashable variable => Hashable (Target variable) where
     hashWithSalt salt target = hashWithSalt salt (unTarget target)
     {-# INLINE hashWithSalt #-}
-
-instance SOP.Generic (Target variable)
-
-instance SOP.HasDatatypeInfo (Target variable)
-
-instance Debug variable => Debug (Target variable)
-
-instance (Debug variable, Diff variable) => Diff (Target variable)
 
 {- | Prefer substitutions for 'isTarget' variables.
  -}

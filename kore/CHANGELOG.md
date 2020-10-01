@@ -14,6 +14,23 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.31.0.0] - 2020-09-30
+
+### Added
+
+- Inferred conditions are used to simplify unevaluated functions. (#2095)
+
+### Changed
+
+- The prover infers that the right-hand sides of claims are defined. (#2110)
+
+### Fixed
+
+- Unsatisfiable configurations are filtered from the right-hand side of
+  claims. (#2145)
+- Function evaluation is disabled while matching the left-hand side of an
+  equation. (#2143)
+
 ## [0.30.0.0] - 2020-09-18
 
 ### Changed
