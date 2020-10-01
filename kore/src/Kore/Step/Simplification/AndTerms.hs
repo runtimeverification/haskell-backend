@@ -728,9 +728,9 @@ compareForEquals
     -> TermLike variable
     -> Ordering
 compareForEquals first second
-      | isConstructorLike first = LT
-      | isConstructorLike second = GT
-      | otherwise = compare first second
+  | isConstructorLike first = LT
+  | isConstructorLike second = GT
+  | otherwise = compare first second
 
 bytesDifferent
     :: InternalVariable variable

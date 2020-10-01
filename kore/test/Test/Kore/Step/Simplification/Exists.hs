@@ -280,7 +280,7 @@ test_makeEvaluate =
                         [(inject Mock.x, gOfA)]
                     }
         assertEqual "exists reevaluates" expect actual
-    , testCase "qqexists matches equality if result is top" $ do
+    , testCase "exists matches equality if result is top" $ do
         -- exists x . (f(x) = f(a))
         --    = top.s
         let expect = OrPattern.fromPatterns
