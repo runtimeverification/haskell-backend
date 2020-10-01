@@ -13,3 +13,11 @@
   <k>
     partial ( X ) ~> .
   </k>
+#And
+  {
+    _DotVar0
+  #Equals
+    <generatedCounter>
+      _DotVar1
+    </generatedCounter>
+  }

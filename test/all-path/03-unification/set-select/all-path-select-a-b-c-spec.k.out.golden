@@ -1,10 +1,18 @@
-<generatedTop>
-  <k>
-    a ~> .
-  </k>
-  <state>
-    SetItem ( a )
-    SetItem ( b )
-    SetItem ( c )
-  </state>
-</generatedTop>
+  <generatedTop>
+    <k>
+      a ~> .
+    </k>
+    <state>
+      SetItem ( a )
+      SetItem ( b )
+      SetItem ( c )
+    </state>
+  </generatedTop>
+#And
+  {
+    _DotVar0
+  #Equals
+    <generatedCounter>
+      _DotVar1
+    </generatedCounter>
+  }

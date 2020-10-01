@@ -1,3 +1,11 @@
-<k>
-  i1  i2  .EmptyStmts ~> _DotVar1 ~> .
-</k>
+  <k>
+    i1  i2  .EmptyStmts ~> _DotVar1 ~> .
+  </k>
+#And
+  {
+    _DotVar0
+  #Equals
+    <generatedCounter>
+      _DotVar2
+    </generatedCounter>
+  }

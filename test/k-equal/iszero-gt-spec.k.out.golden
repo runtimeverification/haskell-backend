@@ -9,3 +9,11 @@
   #Equals
     I >Int 0
   }
+#And
+  {
+    _DotVar0
+  #Equals
+    <generatedCounter>
+      _DotVar1
+    </generatedCounter>
+  }

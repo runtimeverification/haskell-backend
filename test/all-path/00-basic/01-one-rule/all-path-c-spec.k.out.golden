@@ -1,3 +1,11 @@
-<k>
-  b ~> .
-</k>
+  <k>
+    b ~> .
+  </k>
+#And
+  {
+    _DotVar0
+  #Equals
+    <generatedCounter>
+      _DotVar1
+    </generatedCounter>
+  }
