@@ -335,20 +335,25 @@ unshareSolverHandle action = do
             Trans.liftIO $ takeMVar mvarUnshared >>= putMVar mvarShared
     Exception.finally (unshare action) replaceMVar
 
+{- | Increase the 'queryCounter' and indicate if the solver should be reset.
+ -}
+incrementQueryCounter :: Monad monad => StateT SolverHandle monad Bool
+incrementQueryCounter = do
+    Lens.modifying (field @"queryCounter") (+ 1)
+    counter <- Lens.use (field @"queryCounter")
+    -- Due to an issue with the SMT solver, we need to reinitialise it after a
+    -- number of runs, specified here. This number can be adjusted based on
+    -- experimentation.
+    pure (counter >= 100)
+
 instance MonadSMT SMT where
-    withSolver smt =
+    withSolver action =
         unshareSolverHandle $ do
             withSolver' push
-            Exception.finally smt
+            Exception.finally action
                 (do
                     withSolver' pop
-                    needReset <- modifySolverHandle $ do
-                        Lens.modifying (field @"queryCounter") (+ 1)
-                        counter <- Lens.use (field @"queryCounter")
-                        pure (counter >= 100)
-                    -- Due to an issue with the SMT solver, we need to
-                    -- reinitialise it after a number of runs, specified here.
-                    -- This number can be adjusted based on experimentation.
+                    needReset <- modifySolverHandle incrementQueryCounter
                     when needReset reinit
                 )
 
