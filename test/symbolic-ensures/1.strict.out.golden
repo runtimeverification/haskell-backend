@@ -5,5 +5,11 @@
   {
     true
   #Equals
+    ?X <=Int 3
+  }
+#And
+  {
+    true
+  #Equals
     ?X >=Int 1
   }
