@@ -16,12 +16,13 @@ module Kore.Internal.MultiAnd
     , top
     , make
     , toPredicate
+    , toPredicateSorted
     , fromPredicate
     , fromTermLike
     , singleton
     , map
     , traverse
-    , lensPredicate
+    , lensPredicateSorted
     ) where
 
 import Prelude.Kore hiding
@@ -46,10 +47,12 @@ import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Sort
+    , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
@@ -214,6 +217,16 @@ toPredicate (MultiAnd predicates) =
         [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates
 
+toPredicateSorted
+    :: InternalVariable variable
+    => Sort
+    -> MultiAnd (Predicate variable)
+    -> Predicate variable
+toPredicateSorted sort (MultiAnd predicates) =
+    case predicates of
+        [] -> makeTruePredicate sort
+        _  -> foldr1 makeAndPredicate predicates
+
 fromPredicate
     :: Ord variable
     => Predicate variable
@@ -248,12 +261,13 @@ traverse
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
 
-lensPredicate
+lensPredicateSorted
     :: InternalVariable variable
     => Functor f
-    => (MultiAnd (Predicate variable)
+    => Sort
+    -> (MultiAnd (Predicate variable)
     -> f (MultiAnd (Predicate variable)))
     -> Predicate variable
     -> f (Predicate variable)
-lensPredicate =
-    Lens.iso fromPredicate toPredicate
+lensPredicateSorted sort =
+    Lens.iso fromPredicate (toPredicateSorted sort)

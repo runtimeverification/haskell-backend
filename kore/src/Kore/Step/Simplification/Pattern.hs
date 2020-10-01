@@ -47,6 +47,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
+    , patternSort
     )
 import Kore.Internal.Predicate
     ( Predicate
@@ -144,10 +145,12 @@ simplify sideCondition pattern' =
             sideCondition
             (simplifyConjunctions simplifiedPattern)
   where
-    simplifyConjunctions =
-        Lens.over
-            (field @"predicate" . MultiAnd.lensPredicate)
-            simplifyConjunctionByAssumption
+    simplifyConjunctions patt =
+        let sort = patternSort patt
+         in Lens.over
+                (field @"predicate" . MultiAnd.lensPredicateSorted sort)
+                simplifyConjunctionByAssumption
+                patt
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
