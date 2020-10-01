@@ -10,6 +10,7 @@ module Kore.Step.Simplification.Pattern
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Control.Monad.State.Strict
     ( State
     , evalState
@@ -17,6 +18,9 @@ import Control.Monad.State.Strict
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
+    ( field
+    )
 import Data.HashMap.Strict
     ( HashMap
     )
@@ -44,7 +48,6 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makePredicate
@@ -142,9 +145,9 @@ simplify sideCondition pattern' =
             (simplifyConjunctions simplifiedPattern)
   where
     simplifyConjunctions =
-        -- We should probably move this to Kore.Internal.MultiAnd.
-        let lensPredicate = Lens.iso MultiAnd.fromPredicate MultiAnd.toPredicate
-        in Lens.over (field @"predicate" . lensPredicate) simplifyConjunctionByAssumption
+        Lens.over
+            (field @"predicate" . MultiAnd.lensPredicate)
+            simplifyConjunctionByAssumption
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 
