@@ -467,7 +467,7 @@ parseRightHandSide term =
     parsePatternFromTermLike term' = Pattern.fromTermLike term'
 
 -- | The terms of the implication are equivalent in respect to
--- the associativity of \\and
+-- the associativity, commutativity, and idempotence of \\and
 areEquivalent
     :: ClaimPattern
     -> ClaimPattern
