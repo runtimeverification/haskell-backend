@@ -56,6 +56,7 @@ import Control.Concurrent.MVar
 import Control.Exception
     ( IOException
     )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
@@ -65,23 +66,30 @@ import Control.Monad.Catch
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Morph as Morph
-import qualified Control.Monad.Reader as Reader
-import Control.Monad.RWS.Strict
-    ( RWST (RWST)
-    , runRWST
+import Control.Monad.Reader
+    ( ReaderT
+    , runReaderT
     )
-import qualified Control.Monad.State as State
+import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Lazy as State.Lazy
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
+import Data.Generics.Product
+    ( field
+    )
 import Data.Limit
 import Data.Text
     ( Text
     )
+import qualified GHC.Generics as GHC
 
 import Control.Monad
     ( join
@@ -260,12 +268,13 @@ instance MonadSMT NoSMT where
 
 -- * Implementation
 
-data SolverInitAndHandle =
-    SolverInitAndHandle
+data Private =
+    Private
         { userInit :: !(SMT ())
-        , mSolverHandle :: !(MVar SolverHandle)
+        , refSolverHandle :: !(MVar SolverHandle)
         , config :: !Config
         }
+    deriving (GHC.Generic)
 
 {- | Query an external SMT solver.
 
@@ -275,7 +284,7 @@ different threads may be interleaved; use 'inNewScope' to acquire exclusive
 access to the solver for a sequence of commands.
 
  -}
-newtype SMT a = SMT { getSMT :: RWST SolverInitAndHandle () Int (LoggerT IO) a }
+newtype SMT a = SMT { getSMT :: ReaderT Private (LoggerT IO) a }
     deriving newtype (Applicative, Functor, Monad)
     deriving newtype (MonadIO, MonadLog)
     deriving newtype (MonadCatch, MonadThrow, MonadMask)
@@ -286,7 +295,7 @@ instance MonadProf SMT where
 
 withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
 withSolverHandle action = do
-    mvar <- SMT (Reader.asks mSolverHandle)
+    mvar <- SMT (Reader.asks refSolverHandle)
     Exception.bracket
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
@@ -302,27 +311,45 @@ withSolver' action =
         logAction <- askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
+modifySolverHandle :: StateT SolverHandle SMT a -> SMT a
+modifySolverHandle action = do
+    mvar <- SMT (Reader.asks refSolverHandle)
+    solverHandle <- Trans.liftIO $ takeMVar mvar
+    Exception.onException
+        (do
+            (a, solverHandle') <- (runStateT action solverHandle)
+            Trans.liftIO $ putMVar mvar solverHandle'
+            pure a
+        )
+        (Trans.liftIO $ putMVar mvar solverHandle)
+
+unshareSolverHandle :: SMT a -> SMT a
+unshareSolverHandle action = do
+    mvarShared <- SMT (Reader.asks refSolverHandle)
+    mvarUnshared <- Trans.liftIO $ takeMVar mvarShared >>= newMVar
+    let unshare =
+            SMT
+            . Reader.local (Lens.set (field @"refSolverHandle") mvarUnshared)
+            . getSMT
+        replaceMVar =
+            Trans.liftIO $ takeMVar mvarUnshared >>= putMVar mvarShared
+    Exception.finally (unshare action) replaceMVar
+
 instance MonadSMT SMT where
     withSolver smt =
-        withSolverHandle $ \solverHandle -> do
-            -- Create an unshared "dummy" mutex for the solverHandle.
-            mvar <- Trans.liftIO $ newMVar solverHandle
-            logAction <- askLogAction
-            let solver = Solver solverHandle logAction
-            -- Run the SMT with the unshared mutex.
-            -- The SMT will never block waiting to acquire the solver.
-            Trans.liftIO $ push solver
-            SMT $ Reader.local
-                (\handle -> handle {mSolverHandle = mvar})
-                (Exception.finally (getSMT smt) $ do
-                    _ <- Trans.liftIO $ tryPutMVar mvar solverHandle
-                    Trans.liftIO $ pop solver
-                    State.modify (+ 1)
-                    counter <- State.get
+        unshareSolverHandle $ do
+            withSolver' push
+            Exception.finally smt
+                (do
+                    withSolver' pop
+                    needReset <- modifySolverHandle $ do
+                        Lens.modifying (field @"queryCounter") (+ 1)
+                        counter <- Lens.use (field @"queryCounter")
+                        pure (counter >= 100)
                     -- Due to an issue with the SMT solver, we need to
                     -- reinitialise it after a number of runs, specified here.
-                    -- This number can be adjusted based on experimentation
-                    when (counter >= 100) (getSMT reinit)
+                    -- This number can be adjusted based on experimentation.
+                    when needReset reinit
                 )
 
     declare name typ =
@@ -352,11 +379,11 @@ instance MonadSMT SMT where
     loadFile path =
         withSolver' $ \solver -> SimpleSMT.loadFile solver path
 
-    reinit = do
+    reinit = unshareSolverHandle $ do
         withSolver' $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
         config <- SMT (Reader.asks config)
         initSolver config
-        SMT $ State.put 0
+        modifySolverHandle $ Lens.assign (field @"queryCounter") 0
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -369,8 +396,6 @@ instance MonadSMT m => MonadSMT (LogicT m) where
     {-# INLINE withSolver #-}
 
 instance MonadSMT m => MonadSMT (Reader.ReaderT r m)
-
-instance MonadSMT m => MonadSMT (RWST r () Int m)
 
 instance MonadSMT m => MonadSMT (Maybe.MaybeT m)
 
@@ -465,12 +490,10 @@ runSMT config userInit smt =
         (\mvar -> runSMT' config userInit mvar smt)
 
 runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' config userInit mvar SMT { getSMT = smt } = do
-    (a, _, _) <- runRWST
+runSMT' config userInit refSolverHandle SMT { getSMT = smt } =
+    runReaderT
         (getSMT (initSolver config) >> smt)
-        (SolverInitAndHandle userInit mvar config)
-        0
-    return a
+        Private { userInit, refSolverHandle, config }
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
