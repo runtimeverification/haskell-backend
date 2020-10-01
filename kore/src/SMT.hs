@@ -315,7 +315,7 @@ instance MonadSMT SMT where
             SMT $ Reader.local
                 (\handle -> handle {mSolverHandle = mvar})
                 (Exception.finally (getSMT smt) $ do
-                    Trans.liftIO $ tryPutMVar mvar solverHandle
+                    _ <- Trans.liftIO $ tryPutMVar mvar solverHandle
                     Trans.liftIO $ pop solver
                     State.modify (+ 1)
                     counter <- State.get
