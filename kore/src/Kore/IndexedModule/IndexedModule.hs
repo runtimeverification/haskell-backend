@@ -562,7 +562,6 @@ implicitNames :: Map Text AstLocation
 implicitNames =
     Map.mapKeys getId
     $ Map.fromSet idLocation
-    $ Set.insert predicateSortId implicitSortNames
 
 implicitSortNames :: Set Id
 implicitSortNames = Set.fromList [stringMetaSortId]

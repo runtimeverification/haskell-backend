@@ -169,13 +169,13 @@ test_unparse =
                 , makeCeilPredicate Mock.c
                 ]
             )
-            "\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+            "\\and{}(\n\
+            \    /* Spa */ \\ceil{testSort{}}(\
                     \/* Fl Fn D Sfa Cl */ a{}()),\n\
-            \\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+            \\\and{}(\n\
+            \    /* Spa */ \\ceil{testSort{}}(\
                     \/* Fl Fn D Sfa Cl */ b{}()),\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
+            \    /* Spa */ \\ceil{testSort{}}(\
                     \/* Fl Fn D Sfa Cl */ c{}())\n\
             \))"
         , unparseTest @(Pattern.Pattern VariableName)

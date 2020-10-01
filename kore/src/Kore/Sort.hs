@@ -25,8 +25,6 @@ module Kore.Sort
     , stringMetaSortId
     , stringMetaSortActual
     , stringMetaSort
-    , predicateSortId
-    , predicateSortActual
     , predicateSort
     -- * Exceptions
     , SortMismatch (..)
@@ -213,12 +211,6 @@ stringMetaSortActual = SortActual stringMetaSortId []
 
 stringMetaSort :: Sort
 stringMetaSort = SortActualSort stringMetaSortActual
-
-predicateSortId :: Id
-predicateSortId = implicitId "_PREDICATE"
-
-predicateSortActual :: SortActual
-predicateSortActual = SortActual predicateSortId []
 
 {- | Placeholder sort for constructing new predicates.
 
