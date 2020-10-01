@@ -522,9 +522,9 @@ test_applySubstitutionAndSimplify =
     [ testCase "Function application in argument doesn't get evaluated" $ do
         let mockArgument :: Predicate (Target.Target VariableName)
             mockArgument =
-                var1Term `makeInPredicate_` Mock.f var2Term
+                var1Term `makeInPredicate` Mock.f var2Term
             expected =
-                ( makeCeilPredicate_ (Mock.f var2Term)
+                ( makeCeilPredicate (Mock.f var2Term)
                 , variableName someVar1 `subst` Mock.f var2Term
                 )
         (Right [actual]) <-
