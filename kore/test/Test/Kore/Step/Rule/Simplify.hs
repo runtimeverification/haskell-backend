@@ -29,9 +29,11 @@ import Data.Generics.Product
 
 import Kore.Internal.Condition
     ( Condition
+    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -44,6 +46,7 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( AdjSomeVariableName
     , InternalVariable
@@ -67,8 +70,7 @@ import Kore.Sort
     ( predicateSort
     )
 import Kore.Step.ClaimPattern
-    ( ClaimPattern
-    , areEquivalent
+    ( ClaimPattern (..)
     , claimPattern
     )
 import Kore.Step.Rule.Simplify
@@ -576,3 +578,46 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
             => AdjSomeVariableName (RewritingVariableName -> variable)
         liftRewritingVariable =
             pure (.) <*> pure fromVariableName <*> getRewritingVariable
+
+-- | The terms of the implication are equivalent in respect to
+-- the associativity, commutativity, and idempotence of \\and.
+--
+-- Warning: this should only be used when the distinction between the
+-- predicate and substitution of a pattern is not of importance.
+areEquivalent
+    :: ClaimPattern
+    -> ClaimPattern
+    -> Bool
+areEquivalent
+    ClaimPattern
+        { left = left1
+        , right = right1
+        , existentials = existentials1
+        , attributes = attributes1
+        }
+    ClaimPattern
+        { left = left2
+        , right = right2
+        , existentials = existentials2
+        , attributes = attributes2
+        }
+  =
+    let leftsAreEquivalent =
+            toConjunctionOfTerms left1
+            == toConjunctionOfTerms left2
+        rightsAreEquivalent =
+            MultiOr.map toConjunctionOfTerms right1
+            == MultiOr.map toConjunctionOfTerms right2
+     in leftsAreEquivalent
+        && rightsAreEquivalent
+        && existentials1 == existentials2
+        && attributes1 == attributes2
+  where
+    toConjunctionOfTerms Conditional { term, predicate, substitution } =
+        MultiAnd.fromTermLike term
+        <> MultiAnd.fromTermLike (Predicate.unwrapPredicate predicate)
+        <> MultiAnd.fromTermLike
+            ( Predicate.unwrapPredicate
+            . Substitution.toPredicate
+            $ substitution
+            )

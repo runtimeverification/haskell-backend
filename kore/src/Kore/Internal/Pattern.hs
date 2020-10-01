@@ -33,7 +33,6 @@ module Kore.Internal.Pattern
     , requireDefined
     , substitute
     , fromMultiAnd
-    , toConjunctionOfTerms
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -430,16 +429,3 @@ fromMultiAnd patterns =
         Nothing
         patterns
     & fromMaybe top
-
-toConjunctionOfTerms
-    :: InternalVariable variable
-    => Pattern variable
-    -> MultiAnd (TermLike variable)
-toConjunctionOfTerms Conditional { term, predicate, substitution } =
-    MultiAnd.fromTermLike term
-    <> MultiAnd.fromTermLike (Predicate.unwrapPredicate predicate)
-    <> MultiAnd.fromTermLike
-        ( Predicate.unwrapPredicate
-        . Substitution.toPredicate
-        $ substitution
-        )
