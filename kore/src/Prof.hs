@@ -15,6 +15,9 @@ import Control.Monad.Catch
     ( MonadMask
     , bracket_
     )
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import Control.Monad.Trans.Except
     ( ExceptT
     )
@@ -76,6 +79,13 @@ instance
 instance
     (MonadMask prof, MonadProf prof)
     => MonadProf (Strict.StateT s prof)
+  where
+    traceEvent name = lift (traceEvent name)
+    {-# INLINE traceEvent #-}
+
+instance
+    (MonadMask prof, MonadProf prof)
+    => MonadProf (RWST r () s prof)
   where
     traceEvent name = lift (traceEvent name)
     {-# INLINE traceEvent #-}
