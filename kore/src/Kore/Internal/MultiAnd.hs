@@ -16,11 +16,13 @@ module Kore.Internal.MultiAnd
     , top
     , make
     , toPredicate
+    , toPredicateSorted
     , fromPredicate
     , fromTermLike
     , singleton
     , map
     , traverse
+    , lensPredicateSorted
     ) where
 
 import Prelude.Kore hiding
@@ -31,6 +33,7 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
@@ -44,10 +47,12 @@ import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Sort
+    , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
@@ -207,6 +212,16 @@ toPredicate (MultiAnd predicates) =
         [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates
 
+toPredicateSorted
+    :: InternalVariable variable
+    => Sort
+    -> MultiAnd (Predicate variable)
+    -> Predicate variable
+toPredicateSorted sort (MultiAnd predicates) =
+    case predicates of
+        [] -> makeTruePredicate sort
+        _  -> foldr1 makeAndPredicate predicates
+
 fromPredicate
     :: Ord variable
     => Predicate variable
@@ -240,3 +255,14 @@ traverse
     -> f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
+
+lensPredicateSorted
+    :: InternalVariable variable
+    => Functor f
+    => Sort
+    -> (MultiAnd (Predicate variable)
+    -> f (MultiAnd (Predicate variable)))
+    -> Predicate variable
+    -> f (Predicate variable)
+lensPredicateSorted sort =
+    Lens.iso fromPredicate (toPredicateSorted sort)

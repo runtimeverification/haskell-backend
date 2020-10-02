@@ -10,6 +10,9 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
@@ -27,9 +30,11 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate
     ( pattern PredicateFalse
+    , forgetSort
     , makeAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
@@ -51,6 +56,7 @@ import Kore.Step.Simplification.Equals
     , makeEvaluateTermsToPredicate
     , simplify
     )
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -145,7 +151,7 @@ test_equalsSimplification_Or_Pattern =
         assertEqual "" expect actual
 
     , testCase "f vs g or h" $ do
-        let expect =
+        let expectEvaluateEquals =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
@@ -153,7 +159,9 @@ test_equalsSimplification_Or_Pattern =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate_ Mock.cf
                             , makeCeilPredicate_ Mock.cg
-                            , makeEqualsPredicate_ Mock.cf Mock.cg
+                            , makeImpliesPredicate
+                                (makeCeilPredicate_ Mock.cg)
+                                (makeEqualsPredicate_ Mock.cf Mock.cg)
                             , makeImpliesPredicate
                                 (makeCeilPredicate_ Mock.ch)
                                 (makeEqualsPredicate_ Mock.cf Mock.ch)
@@ -166,10 +174,12 @@ test_equalsSimplification_Or_Pattern =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate_ Mock.cf
                             , makeCeilPredicate_ Mock.ch
-                            , makeEqualsPredicate_ Mock.cf Mock.ch
                             , makeImpliesPredicate
                                 (makeCeilPredicate_ Mock.cg)
                                 (makeEqualsPredicate_ Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                (makeCeilPredicate_ Mock.ch)
+                                (makeEqualsPredicate_ Mock.cf Mock.ch)
                             ]
                         , substitution = mempty
                         }
@@ -180,6 +190,45 @@ test_equalsSimplification_Or_Pattern =
                             [ makeNotPredicate $ makeCeilPredicate_ Mock.cf
                             , makeNotPredicate $ makeCeilPredicate_ Mock.cg
                             , makeNotPredicate $ makeCeilPredicate_ Mock.ch
+                            ]
+                        , substitution = mempty
+                        }
+                    ]
+            expectSimplified =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeCeilPredicate Mock.testSort Mock.cf
+                            , makeCeilPredicate Mock.testSort Mock.cg
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.testSort Mock.ch)
+                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                            ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeCeilPredicate Mock.testSort Mock.cf
+                            , makeCeilPredicate Mock.testSort Mock.ch
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.testSort Mock.cg)
+                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                            ]
+                        , substitution = mempty
+                        }
+                    ,  Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
+                            , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                            , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
                             ]
                         , substitution = mempty
                         }
@@ -206,7 +255,8 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
         assertBidirectionalEqualityResult "f" "g or h"
-            expect
+            expectEvaluateEquals
+            expectSimplified
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -215,15 +265,30 @@ test_equalsSimplification_Or_Pattern =
                 }
 
     , testCase "f vs g or h where f /= g" $ do
-        let expect =
+        let expectEvaluateEquals =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate_ Mock.cf
+                            , makeCeilPredicate_ Mock.cg
+                            , makeImpliesPredicate
+                                (makeCeilPredicate_ Mock.ch)
+                                (makeEqualsPredicate_ Mock.cf Mock.ch)
+                            , makeNotPredicate (makeCeilPredicate_ Mock.cg)
+                            ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeCeilPredicate_ Mock.cf
                             , makeCeilPredicate_ Mock.ch
-                            , makeEqualsPredicate_ Mock.cf Mock.ch
+                            , makeImpliesPredicate
+                                (makeCeilPredicate_ Mock.ch)
+                                (makeEqualsPredicate_ Mock.cf Mock.ch)
                             , makeNotPredicate $ makeCeilPredicate_ Mock.cg
                             ]
                         , substitution = mempty
@@ -235,6 +300,30 @@ test_equalsSimplification_Or_Pattern =
                             [ makeNotPredicate $ makeCeilPredicate_ Mock.cf
                             , makeNotPredicate $ makeCeilPredicate_ Mock.cg
                             , makeNotPredicate $ makeCeilPredicate_ Mock.ch
+                            ]
+                        , substitution = mempty
+                        }
+                    ]
+            expectSimplified =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeCeilPredicate Mock.testSort Mock.cf
+                            , makeCeilPredicate Mock.testSort Mock.ch
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                            , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                            ]
+                        , substitution = mempty
+                        }
+                    ,  Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
+                            , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                            , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
                             ]
                         , substitution = mempty
                         }
@@ -261,7 +350,8 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
         assertBidirectionalEqualityResult "f" "g or h"
-            expect
+            expectEvaluateEquals
+            expectSimplified
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -270,17 +360,52 @@ test_equalsSimplification_Or_Pattern =
                 }
 
     , testCase "f vs g[x = a] or h" $ do
-        let expect =
+        let definedF = makeCeilPredicate Mock.testSort Mock.cf
+            definedG = makeCeilPredicate Mock.testSort Mock.cg
+            predicateSubstitution =
+                makeEqualsPredicate Mock.testSort (mkElemVar Mock.x) Mock.a
+            definedGWithSubstitution =
+                makeAndPredicate
+                    definedG
+                    predicateSubstitution
+            definedH = makeCeilPredicate Mock.testSort Mock.ch
+            first =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = Mock.cf
+                        , predicate = makeTruePredicate Mock.testSort
+                        , substitution = mempty
+                        }
+                    ]
+            second =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = Mock.cg
+                        , predicate = makeTruePredicate Mock.testSort
+                        , substitution =
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(inject Mock.x, Mock.a)]
+                        }
+                    , Conditional
+                        { term = Mock.ch
+                        , predicate = makeTruePredicate Mock.testSort
+                        , substitution = mempty
+                        }
+                    ]
+            expectEvaluateEquals =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedG
-                            , makeEqualsPredicate_ Mock.cf Mock.cg
+                            [ forgetSort definedF
+                            , forgetSort definedG
                             , makeImpliesPredicate
-                                definedH
+                                (forgetSort definedGWithSubstitution)
+                                (makeEqualsPredicate_ Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                (forgetSort definedH)
                                 (makeEqualsPredicate_ Mock.cf Mock.ch)
                             ]
                         , substitution = Substitution.unsafeWrap
@@ -290,17 +415,59 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedH
-                            , makeEqualsPredicate_ Mock.cf Mock.ch
+                            [ forgetSort definedF
+                            , forgetSort definedH
                             , makeImpliesPredicate
-                                definedGWithSubstitution
+                                (forgetSort definedGWithSubstitution)
                                 (makeEqualsPredicate_ Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                (forgetSort definedH)
+                                (makeEqualsPredicate_ Mock.cf Mock.ch)
                             ]
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeNotPredicate (forgetSort definedGWithSubstitution)
+                            , makeNotPredicate (forgetSort definedF)
+                            , makeNotPredicate (forgetSort definedH)
+                            ]
+                        , substitution = mempty
+                        }
+                    ]
+            expectSimplified =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ definedF
+                            , definedG
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                            , makeImpliesPredicate
+                                definedH
+                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                            ]
+                        , substitution = Substitution.unsafeWrap
+                            [(inject Mock.x, Mock.a)]
+                        }
+                    , Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ definedF
+                            , definedH
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                            , makeImpliesPredicate
+                                definedGWithSubstitution
+                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                            ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop Mock.testSort
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeNotPredicate definedGWithSubstitution
@@ -310,42 +477,9 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-              where
-                definedF = makeCeilPredicate_ Mock.cf
-                definedG = makeCeilPredicate_ Mock.cg
-                predicateSubstitution =
-                    makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
-                definedGWithSubstitution =
-                    makeAndPredicate
-                        definedG
-                        predicateSubstitution
-                definedH = makeCeilPredicate_ Mock.ch
-            first =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.cf
-                        , predicate = makeTruePredicate_
-                        , substitution = mempty
-                        }
-                    ]
-            second =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.cg
-                        , predicate = makeTruePredicate_
-                        , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.x, Mock.a)]
-                        }
-                    , Conditional
-                        { term = Mock.ch
-                        , predicate = makeTruePredicate_
-                        , substitution = mempty
-                        }
-                    ]
         assertBidirectionalEqualityResult "f" "g[x = a] or h"
-            expect
+            expectEvaluateEquals
+            expectSimplified
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -953,12 +1087,14 @@ assertBidirectionalEqualityResult
     :: String
     -> String
     -> OrPattern VariableName
+    -> OrPattern VariableName
     -> Equals Sort (OrPattern VariableName)
     -> IO ()
 assertBidirectionalEqualityResult
     firstName
     secondName
-    expect
+    expectEvaluateEquals
+    expectSimplified
     equality@Equals{equalsFirst, equalsSecond}
   = do
     testOneDirection equality
@@ -969,18 +1105,33 @@ assertBidirectionalEqualityResult
     testOneDirection reverseEquality
   where
     testOneDirection orderedEquality = do
-        actual <- evaluateOr orderedEquality
-        let message =
-                unlines
-                    [ firstName ++ " vs " ++ secondName ++ ":"
-                    , "Expected"
-                    , unparseToString (OrPattern.toPattern <$> orderedEquality)
-                    , "would simplify to:"
-                    , unlines (unparseToString <$> Foldable.toList expect)
-                    , "but instead found:"
-                    , unlines (unparseToString <$> Foldable.toList actual)
-                    ]
-        assertEqual message expect actual
+        actualEvaluateEquals <- evaluateOr orderedEquality
+        let patternEquality =
+                fmap OrPattern.toTermLike orderedEquality
+                & EqualsF
+                & synthesize
+                & Pattern.fromTermLike
+        actualSimplified <-
+            Pattern.simplify SideCondition.top patternEquality
+            & runSimplifier Mock.env
+        let assertEqual' name expect actual =
+                let message =
+                        unlines
+                        [ firstName ++ " vs " ++ secondName ++ ":"
+                        , "Expected " <> name
+                        , unparseToString (OrPattern.toPattern <$> orderedEquality)
+                        , "would simplify to:"
+                        , unlines (unparseToString <$> Foldable.toList expect)
+                        , "but instead found:"
+                        , unlines (unparseToString <$> Foldable.toList actual)
+                        ]
+                 in assertEqual message expect actual
+        assertEqual' "evaluate equals"
+            expectEvaluateEquals
+            actualEvaluateEquals
+        assertEqual' "simplify pattern"
+            expectSimplified
+            actualSimplified
 
 assertTermEquals
     :: HasCallStack

@@ -52,6 +52,7 @@ module Kore.Internal.Predicate
     , mapVariables
     , stringFromPredicate
     , coerceSort
+    , forgetSort
     , predicateSort
     , fromPredicate
     , unwrapPredicate
@@ -113,6 +114,7 @@ import Kore.Internal.TermLike hiding
     , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Sort as Sort
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -226,6 +228,14 @@ coerceSort
     -> Predicate variable
     -> Predicate variable
 coerceSort sort = fmap (TermLike.fullyOverrideSort sort)
+
+{- | Forget the sort of a 'Predicate'. Used in testing.
+-}
+forgetSort
+    :: (HasCallStack, InternalVariable variable)
+    => Predicate variable
+    -> Predicate variable
+forgetSort = coerceSort Sort.predicateSort
 
 predicateSort :: Predicate variable -> Sort
 predicateSort = termLikeSort . unwrapPredicate
