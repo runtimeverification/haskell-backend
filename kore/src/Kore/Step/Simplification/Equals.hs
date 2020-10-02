@@ -168,13 +168,7 @@ simplify sideCondition Equals { equalsFirst = first, equalsSecond = second } =
     simplifyEvaluated sideCondition first' second'
   where
     (first', second') =
-        case compareForEquals
-                (OrPattern.toTermLike first)
-                (OrPattern.toTermLike second)
-            of
-                LT -> (first, second)
-                _  -> (second, first)
-
+        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 

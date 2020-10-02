@@ -717,11 +717,12 @@ functionAnd first second
     & pure
   | otherwise = empty
   where
-    (first', second') =
-        case compareForEquals first second of
-            LT -> (first, second)
-            _  -> (second, first)
+    (first', second') = minMaxBy compareForEquals first second
 
+
+{- | Gives an order for terms in \equals(_, ) to avoid duplicate clauses
+
+-}
 compareForEquals
     :: InternalVariable variable
     => TermLike variable

@@ -231,7 +231,7 @@ makeEvaluate sideCondition variables original = do
                 (Conditional.substitution original)
 
 
-
+-- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution
     :: (InternalVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
