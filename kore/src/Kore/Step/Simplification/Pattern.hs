@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     , simplify
+    , simplifyConjunctions
     ) where
 
 import Prelude.Kore
@@ -144,13 +145,17 @@ simplify sideCondition pattern' =
         simplifyCondition
             sideCondition
             (simplifyConjunctions simplifiedPattern)
-  where
-    simplifyConjunctions patt =
-        let sort = patternSort patt
-         in Lens.over
-                (field @"predicate" . MultiAnd.lensPredicateSorted sort)
-                simplifyConjunctionByAssumption
-                patt
+
+simplifyConjunctions
+    :: InternalVariable variable
+    => Pattern variable
+    -> Pattern variable
+simplifyConjunctions patt =
+    let sort = patternSort patt
+     in Lens.over
+            (field @"predicate" . MultiAnd.lensPredicateSorted sort)
+            simplifyConjunctionByAssumption
+            patt
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 

@@ -297,8 +297,7 @@ applyRemainder initial remainder = do
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!
-    simplified <-
-        Pattern.simplify
-            SideCondition.topTODO
-            (Pattern.andCondition initial partial)
-    Logic.scatter simplified
+    Simplifier.simplifyCondition
+        SideCondition.topTODO
+        (Pattern.andCondition initial partial)
+        >>= return . Pattern.simplifyConjunctions
