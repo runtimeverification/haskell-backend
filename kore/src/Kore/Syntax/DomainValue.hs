@@ -38,21 +38,12 @@ data DomainValue sort child = DomainValue
     { domainValueSort  :: !sort
     , domainValueChild :: !child
     }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance (Hashable sort, Hashable child) => Hashable (DomainValue sort child)
-
-instance (NFData sort, NFData child) => NFData (DomainValue sort child)
-
-instance SOP.Generic (DomainValue sort child)
-
-instance SOP.HasDatatypeInfo (DomainValue sort child)
-
-instance (Debug sort, Debug child) => Debug (DomainValue sort child)
-
-instance
-    ( Debug sort, Debug child, Diff sort, Diff child )
-    => Diff (DomainValue sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (DomainValue Sort child) where
     unparse DomainValue { domainValueSort, domainValueChild } =

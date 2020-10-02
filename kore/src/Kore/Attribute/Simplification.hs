@@ -42,17 +42,11 @@ type SimplificationPriority = Maybe Integer
 data Simplification
     = IsSimplification !SimplificationPriority
     | NotSimplification
-    deriving (Eq, Ord, Show, GHC.Generic)
-
-instance SOP.Generic Simplification
-
-instance SOP.HasDatatypeInfo Simplification
-
-instance Debug Simplification
-
-instance Diff Simplification
-
-instance NFData Simplification
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Simplification where
     def = NotSimplification

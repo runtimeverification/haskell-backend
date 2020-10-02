@@ -31,17 +31,11 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 
 data Null = Null
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData Null
-
-instance SOP.Generic Null
-
-instance SOP.HasDatatypeInfo Null
-
-instance Debug Null
-
-instance Diff Null
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Null where
     def = Null

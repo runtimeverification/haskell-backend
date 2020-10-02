@@ -69,15 +69,11 @@ data AxiomIdentifier
     -- ^ An @\\exists@ pattern with the given child.
     | Variable
     -- ^ Any variable pattern.
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic AxiomIdentifier
-
-instance SOP.HasDatatypeInfo AxiomIdentifier
-
-instance Debug AxiomIdentifier
-
-instance Diff AxiomIdentifier
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Pretty AxiomIdentifier where
     pretty (Application name) = unparse name

@@ -23,33 +23,21 @@ import Kore.Debug
 data RuleIndexCase
     = AxiomIndex !Int
     | ClaimIndex !Int
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic RuleIndexCase
-
-instance SOP.HasDatatypeInfo RuleIndexCase
-
-instance Debug RuleIndexCase
-
-instance Diff RuleIndexCase
-
-instance NFData RuleIndexCase
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {- | This attribute is used in the REPL for tagging
     and uniquely identifiying axioms and claims.
  -}
 newtype RuleIndex = RuleIndex { getRuleIndex :: Maybe RuleIndexCase }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic RuleIndex
-
-instance SOP.HasDatatypeInfo RuleIndex
-
-instance Debug RuleIndex
-
-instance Diff RuleIndex
-
-instance NFData RuleIndex
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default RuleIndex where
     def = RuleIndex Nothing

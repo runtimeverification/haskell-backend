@@ -21,20 +21,14 @@ import Kore.Debug
 
 -- | @SmtLemma@ represents the @smt-lemma@ attribute for symbols.
 newtype SmtLemma = SmtLemma { isSmtLemma :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic SmtLemma
-
-instance SOP.HasDatatypeInfo SmtLemma
-
-instance Debug SmtLemma
-
-instance Diff SmtLemma
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default SmtLemma where
     def = SmtLemma False
-
-instance NFData SmtLemma
 
 -- | Kore identifier representing the @smt-lemma@ attribute symbol.
 smtLemmaId :: Id

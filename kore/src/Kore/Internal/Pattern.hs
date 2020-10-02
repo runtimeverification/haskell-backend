@@ -32,6 +32,7 @@ module Kore.Internal.Pattern
     , assign
     , requireDefined
     , substitute
+    , fromMultiAnd
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -63,6 +64,10 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -136,23 +141,29 @@ isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
     && Condition.isSimplified sideCondition p
 
--- | Checks whether a pattern has simplified children. A predicate with
--- a conjunction at the top is simplified if its children are simplified.
+{- | Checks whether the conjunction a 'Pattern' has simplified children.
+
+A 'Pattern' is a conjunction at the top level:
+
+@
+\\and{S}('term', \\and{S}('predicate', 'substitution'))
+@
+
+where 'predicate' itself is generally a conjunction of many clauses. The
+children of the 'Pattern' are considered simplified if the 'term' and
+'substitution' are simplified and the individual clauses of the 'predicate' are
+simplified.
+ -}
 hasSimplifiedChildren
-    :: SideCondition.Representation -> Pattern variable -> Bool
+    :: Ord variable
+    => SideCondition.Representation -> Pattern variable -> Bool
 hasSimplifiedChildren sideCondition patt =
-    let term1 = term patt
-        term2 = predicate patt & Predicate.unwrapPredicate
-        subst = substitution patt
-     in TermLike.isSimplified sideCondition term1
-        && areSimplifiedChildrenOfConj term2
-        && Substitution.isSimplified sideCondition subst
+    TermLike.isSimplified sideCondition term
+    && all (Predicate.isSimplified sideCondition) clauses
+    && Substitution.isSimplified sideCondition substitution
   where
-    areSimplifiedChildrenOfConj (TermLike.And_ _ child1 child2) =
-        areSimplifiedChildrenOfConj child1
-        && areSimplifiedChildrenOfConj child2
-    areSimplifiedChildrenOfConj term =
-        TermLike.isSimplified sideCondition term
+    Conditional { term, predicate, substitution } = patt
+    clauses = MultiAnd.fromPredicate predicate
 
 forgetSimplified
     :: InternalVariable variable => Pattern variable -> Pattern variable
@@ -404,3 +415,17 @@ substitute subst Conditional { term, predicate, substitution } =
     , predicate = Predicate.substitute subst predicate
     , substitution = Substitution.substitute subst substitution
     }
+
+fromMultiAnd
+    :: InternalVariable variable
+    => MultiAnd (Pattern variable)
+    -> Pattern variable
+fromMultiAnd patterns =
+    foldr
+        (\pattern1 ->
+             pure . maybe pattern1
+                (\pattern2 -> mkAnd <$> pattern1 <*> pattern2)
+        )
+        Nothing
+        patterns
+    & fromMaybe top

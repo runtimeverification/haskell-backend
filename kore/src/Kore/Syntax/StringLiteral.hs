@@ -34,19 +34,11 @@ import qualified Pretty
 Section 9.1.1 (Lexicon).
 -}
 newtype StringLiteral = StringLiteral { getStringLiteral :: Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable StringLiteral
-
-instance NFData StringLiteral
-
-instance SOP.Generic StringLiteral
-
-instance SOP.HasDatatypeInfo StringLiteral
-
-instance Debug StringLiteral
-
-instance Diff StringLiteral
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse StringLiteral where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral

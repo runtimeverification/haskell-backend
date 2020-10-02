@@ -75,7 +75,7 @@ newtype DeclaredVariables =
                     (SomeVariableName VariableName)
                     (SomeVariable VariableName)
         }
-    deriving (Monoid, Semigroup)
+    deriving newtype (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
 emptyDeclaredVariables = mempty
@@ -131,11 +131,11 @@ verifiedModuleContext verifiedModule =
 newtype PatternVerifier a =
     PatternVerifier
         { getPatternVerifier :: ReaderT Context (Either (Error VerifyError)) a }
-    deriving (Applicative, Functor, Monad)
+    deriving newtype (Applicative, Functor, Monad)
+    deriving newtype (MonadReader Context)
 
-deriving instance MonadReader Context PatternVerifier
-
-deriving instance e ~ VerifyError => MonadError (Error e) PatternVerifier
+deriving newtype
+    instance e ~ VerifyError => MonadError (Error e) PatternVerifier
 
 runPatternVerifier
     :: Context

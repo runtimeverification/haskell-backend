@@ -44,6 +44,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Variable
     ( InternalVariable
+    , SubstitutionOrd
     )
 import Kore.Syntax.Variable
 import Kore.TopBottom
@@ -69,19 +70,13 @@ data SideCondition variable =
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic (SideCondition variable)
-
-instance SOP.HasDatatypeInfo (SideCondition variable)
-
-instance Hashable variable => Hashable (SideCondition variable)
-
-instance NFData variable => NFData (SideCondition variable)
-
-instance Debug variable => Debug (SideCondition variable)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 instance
-    (InternalVariable variable, Diff variable) => Diff (SideCondition variable)
+    (Debug variable, Diff variable, Ord variable, SubstitutionOrd variable)
+    => Diff (SideCondition variable)
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn

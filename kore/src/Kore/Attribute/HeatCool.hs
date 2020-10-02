@@ -28,17 +28,11 @@ import Kore.Debug
 
  -}
 data HeatCool = Heat | Normal | Cool
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic HeatCool
-
-instance SOP.HasDatatypeInfo HeatCool
-
-instance Debug HeatCool
-
-instance Diff HeatCool
-
-instance NFData HeatCool
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default HeatCool where
     def = Normal

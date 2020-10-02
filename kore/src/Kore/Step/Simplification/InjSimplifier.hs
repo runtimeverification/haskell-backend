@@ -36,16 +36,11 @@ Otherwise, 'unifyInj' may return 'Unknown'.
 
  -}
 data Distinct = Distinct | Unknown
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance SOP.Generic Distinct
-
-instance SOP.HasDatatypeInfo Distinct
-
-instance Debug Distinct
-
-instance Diff Distinct
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 data InjSimplifier =
     InjSimplifier

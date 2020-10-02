@@ -13,6 +13,7 @@ module Kore.Attribute.Overload
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -21,29 +22,17 @@ import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload symbol =
-    Overload
-        { getOverload :: Maybe (symbol, symbol) }
-    deriving (Eq, GHC.Generic, Ord, Show, Functor)
-
-instance SOP.Generic (Overload symbol)
-
-instance SOP.HasDatatypeInfo (Overload symbol)
-
-instance Debug symbol => Debug (Overload symbol)
-
-instance (Debug symbol, Diff symbol) => Diff (Overload symbol)
-
-instance Semigroup (Overload symbol) where
-    (<>) a@(Overload (Just _)) _ = a
-    (<>) _                     b = b
-
-instance Monoid (Overload symbol) where
-    mempty = Overload { getOverload = Nothing }
+    Overload { getOverload :: Maybe (symbol, symbol) }
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via (Monoid.First (symbol, symbol))
 
 instance Default (Overload symbol) where
     def = mempty
-
-instance NFData symbol => NFData (Overload symbol)
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id

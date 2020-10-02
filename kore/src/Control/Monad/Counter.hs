@@ -58,13 +58,13 @@ type Counter = CounterT Monad.Identity.Identity
  -}
 newtype CounterT m a =
     CounterT { getCounterT :: Monad.State.Strict.StateT Natural m a }
-    deriving (Alternative, Applicative, Functor, Monad, MonadPlus, MonadTrans)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (Alternative, MonadPlus)
+    deriving newtype (MonadTrans, MonadState Natural)
 
 instance Monad m => MonadCounter (CounterT m) where
     increment = CounterT incrementState
     {-# INLINE increment #-}
-
-deriving instance Monad m => MonadState Natural (CounterT m)
 
 instance MonadIO m => MonadIO (CounterT m) where
     liftIO = CounterT . liftIO

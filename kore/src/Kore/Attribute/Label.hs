@@ -10,6 +10,7 @@ module Kore.Attribute.Label
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import Data.Text
     ( Text
     )
@@ -21,28 +22,15 @@ import Kore.Debug
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label { unLabel :: Maybe Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Label
-
-instance SOP.HasDatatypeInfo Label
-
-instance Debug Label
-
-instance Diff Label
-
-instance Semigroup Label where
-    (<>) a@(Label (Just _)) _ = a
-    (<>) _                  b = b
-
-instance Monoid Label where
-    mappend = (<>)
-    mempty = Label Nothing
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via (Monoid.First Text)
 
 instance Default Label where
     def = mempty
-
-instance NFData Label
 
 -- | Kore identifier representing the @label@ attribute symbol.
 labelId :: Id

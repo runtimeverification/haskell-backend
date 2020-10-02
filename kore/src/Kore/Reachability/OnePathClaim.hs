@@ -65,17 +65,11 @@ import Kore.Unparser
 -- | One-Path-Claim claim pattern.
 newtype OnePathClaim =
     OnePathClaim { getOnePathClaim :: ClaimPattern }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance NFData OnePathClaim
-
-instance SOP.Generic OnePathClaim
-
-instance SOP.HasDatatypeInfo OnePathClaim
-
-instance Debug OnePathClaim
-
-instance Diff OnePathClaim
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Converts a 'OnePathClaim' into its term representation.
 -- This is intended to be used only in unparsing situations,
@@ -156,7 +150,12 @@ instance Claim OnePathClaim where
     newtype Rule OnePathClaim =
         OnePathRewriteRule
         { unRuleOnePath :: RewriteRule RewritingVariableName }
-        deriving (GHC.Generic, Show, Unparse)
+        deriving (Eq, Ord, Show)
+        deriving (GHC.Generic)
+        deriving anyclass (NFData)
+        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+        deriving anyclass (Debug, Diff)
+        deriving newtype (Unparse)
 
     simplify = simplify' _Unwrapped
 
@@ -165,14 +164,6 @@ instance Claim OnePathClaim where
     applyClaims claims = deriveSeqClaim _Unwrapped OnePathClaim claims
 
     applyAxioms axioms = deriveSeqAxiomOnePath (concat axioms)
-
-instance SOP.Generic (Rule OnePathClaim)
-
-instance SOP.HasDatatypeInfo (Rule OnePathClaim)
-
-instance Debug (Rule OnePathClaim)
-
-instance Diff (Rule OnePathClaim)
 
 instance From (Rule OnePathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath

@@ -445,7 +445,7 @@ ensureSimplifiedResult
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
-  | OrPattern.hasSimplifiedChildren repr results = pure results
+  | hasSimplifiedChildren results = pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -454,6 +454,8 @@ ensureSimplifiedResult repr termLike results
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]
+  where
+    hasSimplifiedChildren = OrPattern.hasSimplifiedChildren repr
 
 ensureSimplifiedCondition
     :: InternalVariable variable

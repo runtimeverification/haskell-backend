@@ -22,21 +22,15 @@ import Kore.Debug
 
 -- | @Memo@ represents the @memo@ attribute for symbols.
 newtype Memo = Memo { isMemo :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via Any
 
 instance Default Memo where
     def = mempty
-
-instance NFData Memo
-
-instance SOP.Generic Memo
-
-instance SOP.HasDatatypeInfo Memo
-
-instance Debug Memo
-
-instance Diff Memo
 
 -- | Kore identifier representing the @memo@ attribute symbol.
 memoId :: Id

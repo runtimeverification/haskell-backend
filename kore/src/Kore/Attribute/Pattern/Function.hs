@@ -34,20 +34,12 @@ import Kore.Syntax
 {- | A pattern is 'Function' if it matches zero or one elements.
  -}
 newtype Function = Function { isFunction :: Bool }
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
-
-instance SOP.Generic Function
-
-instance SOP.HasDatatypeInfo Function
-
-instance Debug Function
-
-instance Diff Function
-
-instance NFData Function
-
-instance Hashable Function
 
 instance Synthetic Function (And sort) where
     -- TODO (thomas.tuegel):

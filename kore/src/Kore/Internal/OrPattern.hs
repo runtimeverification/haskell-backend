@@ -84,10 +84,14 @@ type OrPattern variable = MultiOr (Pattern variable)
 isSimplified :: SideCondition.Representation -> OrPattern variable -> Bool
 isSimplified sideCondition = all (Pattern.isSimplified sideCondition)
 
--- | Checks whether all the patterns in the disjunction have simplified children.
--- A predicate with a conjunction at the top is simplified if its children are simplified.
+{- | Checks whether all patterns in the disjunction have simplified children.
+
+See also: 'Pattern.hasSimplifiedChildren'
+
+ -}
 hasSimplifiedChildren
-    :: SideCondition.Representation -> OrPattern variable -> Bool
+    :: InternalVariable variable
+    => SideCondition.Representation -> OrPattern variable -> Bool
 hasSimplifiedChildren sideCondition =
     all (Pattern.hasSimplifiedChildren sideCondition)
 
