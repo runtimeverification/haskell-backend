@@ -317,7 +317,7 @@ modifySolverHandle action = do
     solverHandle <- Trans.liftIO $ takeMVar mvar
     Exception.onException
         (do
-            (a, solverHandle') <- (runStateT action solverHandle)
+            (a, solverHandle') <- runStateT action solverHandle
             Trans.liftIO $ putMVar mvar solverHandle'
             pure a
         )
