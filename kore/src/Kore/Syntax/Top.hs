@@ -30,19 +30,12 @@ Section 9.1.4 (Patterns).
 'topSort' is the sort of the result.
 -}
 newtype Top sort child = Top { topSort :: sort }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
-
-instance Hashable sort => Hashable (Top sort child)
-
-instance NFData sort => NFData (Top sort child)
-
-instance SOP.Generic (Top sort child)
-
-instance SOP.HasDatatypeInfo (Top sort child)
-
-instance Debug sort => Debug (Top sort child)
-
-instance (Debug sort, Diff sort) => Diff (Top sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse (Top Sort child) where
     unparse Top { topSort } = "\\top" <> parameters [topSort] <> noArguments

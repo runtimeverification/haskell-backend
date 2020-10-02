@@ -503,9 +503,9 @@ data TestEnv =
 
 newtype TestSimplifierT m a =
     TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadReader TestEnv)
-    deriving (MonadLog, MonadSMT)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadReader TestEnv)
+    deriving newtype (MonadLog, MonadSMT)
 
 instance MonadTrans TestSimplifierT where
     lift = TestSimplifierT . lift

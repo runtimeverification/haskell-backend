@@ -13,6 +13,7 @@ module Kore.Attribute.SortInjection
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -21,26 +22,15 @@ import Kore.Debug
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection { isSortInjection :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
-
-instance Semigroup SortInjection where
-    (<>) (SortInjection a) (SortInjection b) = SortInjection (a || b)
-
-instance Monoid SortInjection where
-    mempty = SortInjection False
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via Monoid.Any
 
 instance Default SortInjection where
     def = mempty
-
-instance NFData SortInjection
-
-instance SOP.Generic SortInjection
-
-instance SOP.HasDatatypeInfo SortInjection
-
-instance Debug SortInjection
-
-instance Diff SortInjection
 
 -- | Kore identifier representing the @sortInjection@ attribute symbol.
 sortInjectionId :: Id

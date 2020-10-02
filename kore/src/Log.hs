@@ -51,6 +51,9 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import Control.Monad.Trans.Accum
     ( AccumT
     , mapAccumT
@@ -224,13 +227,15 @@ instance MonadLog log => MonadLog (ReaderT a log)
 
 instance MonadLog log => MonadLog (Strict.StateT state log)
 
+instance MonadLog log => MonadLog (RWST a () state log)
+
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LoggerEnv m) m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadIO, MonadThrow, MonadCatch, MonadMask)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 data LoggerEnv monad =
     LoggerEnv

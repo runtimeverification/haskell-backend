@@ -377,14 +377,8 @@ only requires some instances to be derived:
 
 > data DataType = ...
 >     deriving (GHC.Generics.Generic)
->
-> instance Generics.SOP.Generic DataType
->
-> instance Generics.SOP.HasDatatypeInfo DataType
->
-> instance Debug DataType
->
-> instance Diff DataType
+>     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+>     deriving anyclass (Debug, Diff)
 
  -}
 class Diff a where

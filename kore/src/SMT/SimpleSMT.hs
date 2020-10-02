@@ -274,7 +274,9 @@ data SolverHandle = SolverHandle
     , hOut   :: !Handle
     , hErr   :: !Handle
     , hProc  :: !ProcessHandle
+    , queryCounter :: !Int
     }
+    deriving (GHC.Generic)
 
 data SolverException =
     SolverException
@@ -317,7 +319,7 @@ newSolver
     -> IO SolverHandle
 newSolver exe opts logger = do
     (hIn, hOut, hErr, hProc) <- runInteractiveProcess exe opts Nothing Nothing
-    let solverHandle = SolverHandle { hIn, hOut, hErr, hProc }
+    let solverHandle = SolverHandle { hIn, hOut, hErr, hProc, queryCounter = 0 }
         solver = Solver { solverHandle, logger }
 
     _ <- forkIO $ do

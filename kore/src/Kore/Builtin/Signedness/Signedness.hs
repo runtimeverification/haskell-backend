@@ -42,18 +42,9 @@ data Signedness
     | Unsigned !Symbol
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-
-instance Hashable Signedness
-
-instance NFData Signedness
-
-instance SOP.Generic Signedness
-
-instance SOP.HasDatatypeInfo Signedness
-
-instance Debug Signedness
-
-instance Diff Signedness
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse Signedness where
     unparse = unparse . toApplication @Void

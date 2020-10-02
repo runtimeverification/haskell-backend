@@ -30,19 +30,11 @@ data InternalBytes =
         { bytesSort          :: !Sort
         , bytesValue         :: !ByteString
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance Hashable InternalBytes
-
-instance NFData InternalBytes
-
-instance SOP.Generic InternalBytes
-
-instance SOP.HasDatatypeInfo InternalBytes
-
-instance Debug InternalBytes
-
-instance Diff InternalBytes
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse InternalBytes where
     unparse internalBytes@(InternalBytes _ _) =

@@ -81,20 +81,8 @@ data Sort sort symbol name =
         -- dependencies on other sorts and symbols.
         }
     deriving (GHC.Generic)
-
-instance SOP.Generic (Sort sort symbol name)
-
-instance SOP.HasDatatypeInfo (Sort sort symbol name)
-
-instance
-    ( Debug sort, Debug symbol, Debug name )
-    => Debug (Sort sort symbol name)
-
-instance
-    ( Debug sort, Debug symbol, Debug name
-    , Diff sort, Diff symbol, Diff name
-    )
-    => Diff (Sort sort symbol name)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance (Show sort, Show symbol, Show name)
     => Show (Sort sort symbol name)
@@ -124,16 +112,8 @@ data Symbol sort name =
         -- dependencies on other sorts and symbols.
         }
     deriving (GHC.Generic)
-
-instance SOP.Generic (Symbol sort name)
-
-instance SOP.HasDatatypeInfo (Symbol sort name)
-
-instance (Debug sort, Debug name) => Debug (Symbol sort name)
-
-instance
-    ( Debug sort, Debug name, Diff sort, Diff name )
-    => Diff (Symbol sort name)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance (Show sort, Show name) => Show (Symbol sort name) where
     show s@(Symbol _ _) =
@@ -156,21 +136,10 @@ data KoreSortDeclaration sort symbol name
     | SortDeclaredIndirectly !name
     -- ^ Sort that we don't need to declare (e.g. builtins like Int) so we just
     -- represent that the SMT already knows about it.
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic (KoreSortDeclaration sort symbol name)
-
-instance SOP.HasDatatypeInfo (KoreSortDeclaration sort symbol name)
-
-instance
-    (Debug sort, Debug symbol, Debug name)
-    => Debug (KoreSortDeclaration sort symbol name)
-
-instance
-    ( Debug sort, Debug symbol, Debug name
-    , Diff sort, Diff symbol, Diff name
-    )
-    => Diff (KoreSortDeclaration sort symbol name)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Data needed for declaring an SMT symbol.
 
@@ -188,17 +157,10 @@ data KoreSymbolDeclaration sort name
     -- ^ Constructors are declared to the SMT when declaring the sort.
     -- The IndirectSymbolDeclaration value holds dependencies on other sorts
     -- and debug information.
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic (KoreSymbolDeclaration sort name)
-
-instance SOP.HasDatatypeInfo (KoreSymbolDeclaration sort name)
-
-instance (Debug sort, Debug name) => Debug (KoreSymbolDeclaration sort name)
-
-instance
-    ( Debug sort, Debug name, Diff sort, Diff name )
-    => Diff (KoreSymbolDeclaration sort name)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Holds the sorts on which an already declared symbol depends.
 -}
@@ -207,16 +169,16 @@ data IndirectSymbolDeclaration sort name =
         { name :: !name
         , sortDependencies :: ![sort]
         }
-    deriving (Eq, GHC.Generic, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-instance SOP.Generic (IndirectSymbolDeclaration sort name)
-
-instance SOP.HasDatatypeInfo (IndirectSymbolDeclaration sort name)
-
-instance (Debug sort, Debug name) => Debug (IndirectSymbolDeclaration sort name)
+instance (Debug name, Debug sort) => Debug (IndirectSymbolDeclaration sort name)
 
 instance
-    ( Debug sort, Debug name, Diff sort, Diff name )
+    ( Debug name, Diff name
+    , Debug sort, Diff sort
+    )
     => Diff (IndirectSymbolDeclaration sort name)
 
 {-| Holds things that we declare to an SMT. When encountered in its
@@ -228,48 +190,27 @@ data Declarations sort symbol name =
         { sorts :: Map Kore.Id (Sort sort symbol name)
         , symbols :: Map Kore.Id (Symbol sort name)
         }
-    deriving (GHC.Generic, Show)
-
-instance SOP.Generic (Declarations sort symbol name)
-
-instance SOP.HasDatatypeInfo (Declarations sort symbol name)
-
-instance
-    (Debug sort, Debug symbol, Debug name)
-    => Debug (Declarations sort symbol name)
-
-instance
-    ( Debug sort, Debug symbol, Debug name
-    , Diff sort, Diff symbol, Diff name
-    )
-    => Diff (Declarations sort symbol name)
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Marks a dependency on a given sort.
 -}
 newtype SortReference = SortReference { getSortReference :: Kore.Sort }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic SortReference
-
-instance SOP.HasDatatypeInfo SortReference
-
-instance Debug SortReference
-
-instance Diff SortReference
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Marks a dependency on a given symbol.
 -}
 newtype SymbolReference =
     SymbolReference { getSymbolReference :: Kore.Id }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic SymbolReference
-
-instance SOP.HasDatatypeInfo SymbolReference
-
-instance Debug SymbolReference
-
-instance Diff SymbolReference
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {-| Data that should be encoded before being used with the SMT.
 
@@ -279,15 +220,10 @@ and @encode@ to extract its data
 data Encodable
     = AlreadyEncoded !SExpr
     | Encodable !SExpr
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Encodable
-
-instance SOP.HasDatatypeInfo Encodable
-
-instance Debug Encodable
-
-instance Diff Encodable
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- Type instantiations to be used by the SMT.
 type SmtDeclarations = Declarations AST.SExpr Text AST.SExpr

@@ -58,20 +58,14 @@ valid SMT-LIB S-expressions.
 
  -}
 newtype Smtlib = Smtlib { getSmtlib :: Maybe SExpr }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Smtlib where
     def = Smtlib Nothing
-
-instance NFData Smtlib
-
-instance SOP.Generic Smtlib
-
-instance SOP.HasDatatypeInfo Smtlib
-
-instance Debug Smtlib
-
-instance Diff Smtlib
 
 instance From Smtlib Attributes where
     from =

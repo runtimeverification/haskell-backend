@@ -166,7 +166,6 @@ import Pretty
     ( Pretty (..)
     )
 import qualified Pretty
-import qualified SMT
 
 class Claim claim where
     {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
@@ -211,25 +210,13 @@ data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
     deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-instance SOP.Generic claim => SOP.Generic (AppliedRule claim)
-
-instance SOP.HasDatatypeInfo claim => SOP.HasDatatypeInfo (AppliedRule claim)
-
-instance
-    ( Debug claim
-    , SOP.HasDatatypeInfo claim
-    , Debug (Rule claim)
-    , SOP.HasDatatypeInfo (Rule claim)
-    ) => Debug (AppliedRule claim)
+instance (Debug claim, Debug (Rule claim)) => Debug (AppliedRule claim)
 
 instance
-    ( Diff claim
-    , Debug claim
-    , SOP.HasDatatypeInfo claim
-    , Diff (Rule claim)
-    , Debug (Rule claim)
-    , SOP.HasDatatypeInfo (Rule claim)
+    ( Diff claim, Debug claim
+    , Diff (Rule claim), Debug (Rule claim)
     ) => Diff (AppliedRule claim)
 
 instance (From claim Attribute.Label, From (Rule claim) Attribute.Label)
@@ -325,10 +312,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
-    transitionRuleWorker Begin (Rewritten claim) =
-        SMT.reinit >> pure (Claimed claim)
-    transitionRuleWorker Begin claimState =
-        SMT.reinit >> pure claimState
+    transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
+    transitionRuleWorker Begin claimState = pure claimState
 
     transitionRuleWorker Simplify claimState
       | Just claim <- retractSimplifiable claimState =
@@ -421,19 +406,12 @@ data CheckImplicationResult a
     | NotImpliedStuck !a
     -- ^ The implication between /terms/ is valid, but the implication between
     -- side-conditions is not valid.
-    deriving (Show, Eq, Functor, GHC.Generic)
-
-instance SOP.Generic claim =>
-    SOP.Generic (CheckImplicationResult claim)
-
-instance SOP.HasDatatypeInfo claim =>
-    SOP.HasDatatypeInfo (CheckImplicationResult claim)
-
-instance (Debug claim, SOP.HasDatatypeInfo claim) =>
-    Debug (CheckImplicationResult claim)
-
-instance (Diff claim, Debug claim, SOP.HasDatatypeInfo claim) =>
-    Diff (CheckImplicationResult claim)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Pretty a => Pretty (CheckImplicationResult a) where
     pretty Implied = "Implied"

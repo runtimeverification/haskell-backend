@@ -130,19 +130,12 @@ Should not be exported, and should be treated as an opaque entity which
 can be manipulated only by functions in this module.
 -}
 newtype GenericPredicate pat = GenericPredicate pat
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (GenericPredicate pat)
-
-instance SOP.HasDatatypeInfo (GenericPredicate pat)
-
-instance Debug pat => Debug (GenericPredicate pat)
-
-instance (Debug pat, Diff pat) => Diff (GenericPredicate pat)
-
-instance Hashable pat => Hashable (GenericPredicate pat)
-
-instance NFData pat => NFData (GenericPredicate pat)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isTop (GenericPredicate patt) = isTop patt
@@ -564,12 +557,8 @@ instance Monoid HasChanged where
 newtype NotPredicate variable
     = NotPredicate (TermLikeF variable (Predicate variable))
     deriving (GHC.Generic)
-
-instance SOP.Generic (NotPredicate variable)
-
-instance SOP.HasDatatypeInfo (NotPredicate variable)
-
-instance Debug variable => Debug (NotPredicate variable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance InternalVariable variable => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =

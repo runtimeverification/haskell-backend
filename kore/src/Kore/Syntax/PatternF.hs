@@ -86,23 +86,12 @@ data PatternF variable child
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
     | VariableF      !(Const (SomeVariable variable) child)
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (PatternF variable child)
-
-instance SOP.HasDatatypeInfo (PatternF variable child)
-
-instance (Debug variable, Debug child) => Debug (PatternF variable child)
-
-instance
-    ( Debug variable, Debug child, Diff variable, Diff child )
-    => Diff (PatternF variable child)
-
-instance
-    (Hashable child, Hashable variable) =>
-    Hashable (PatternF variable child)
-
-instance (NFData child, NFData variable) => NFData (PatternF variable child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance
     (Unparse variable, Unparse child) => Unparse (PatternF variable child)

@@ -47,14 +47,8 @@ import Kore.Sort
  -}
 newtype SortGraph = SortGraph { unSortGraph :: Map Sort (Set Sort) }
     deriving (GHC.Generic, Typeable)
-
-instance SOP.Generic SortGraph
-
-instance SOP.HasDatatypeInfo SortGraph
-
-instance Debug SortGraph
-
-instance Diff SortGraph
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 {- | Build a 'SortGraph' from a list of 'Subsort' relations.
  -}
