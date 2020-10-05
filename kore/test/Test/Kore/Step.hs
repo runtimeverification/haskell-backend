@@ -350,11 +350,11 @@ smtSyntaxPredicate
     :: TermLike VariableName -> PredicateState -> Predicate VariableName
 smtSyntaxPredicate term predicateState =
     makeEqualsPredicate_
+        (Mock.builtinBool (predicateStateToBool predicateState))
         (Mock.lessInt
             (Mock.fTestInt term)
             (Mock.builtinInt 0)
         )
-        (Mock.builtinBool (predicateStateToBool predicateState))
 
 smtCondition :: TermLike VariableName -> PredicateState -> Condition VariableName
 smtCondition term predicateState =
@@ -435,11 +435,11 @@ test_SMT =
                 { term = Mock.a
                 , predicate =
                     makeEqualsPredicate Mock.testSort
+                        (Mock.builtinBool True)
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
                         )
-                        (Mock.builtinBool True)
                 , substitution = mempty
                 }
             ]
