@@ -336,7 +336,11 @@ test_attemptEquation =
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (axiom (f x) a (positive x))
-        (SideCondition.fromPredicate $ positive z)
+        (makeAndPredicate
+            (positive z)
+            (makeCeilPredicate_ (Mock.fTestInt z))
+            & SideCondition.fromPredicate
+        )
         (f z)
         (Pattern.fromTermLike a)
     , testCase "X => X does not apply to X / X" $ do
@@ -508,7 +512,11 @@ test_attemptEquationUnification =
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (functionAxiomUnification fSymbol [x] a (positive x))
-        (SideCondition.fromPredicate $ positive z)
+        (makeAndPredicate
+            (positive z)
+            (makeCeilPredicate_ (Mock.fTestInt z))
+            & SideCondition.fromPredicate
+        )
         (f z)
         (Pattern.fromTermLike a)
     , notInstantiated "does not introduce variables"
@@ -709,7 +717,8 @@ withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
 
 applies
-    :: TestName
+    :: HasCallStack
+    => TestName
     -> Equation'
     -> TestSideCondition
     -> TestTerm
