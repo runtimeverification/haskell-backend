@@ -14,8 +14,8 @@ import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict
-    ( State
-    , evalState
+    ( StateT
+    , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
@@ -34,6 +34,7 @@ import Data.Traversable
     ( for
     )
 
+import Changed
 import Kore.Attribute.Synthetic
     ( synthesize
     )
@@ -192,29 +193,36 @@ simplifyConjunctions
     => Conditional variable any
     -> Conditional variable any
 simplifyConjunctions cond =
-    let sort = predicateSort . predicate $ cond
-     in Lens.over
-            (field @"predicate" . MultiAnd.lensPredicateSorted sort)
-            simplifyConjunctionByAssumption
-            cond
+    Lens.over
+        (field @"predicate") -- . MultiAnd.lensPredicateSorted sort)
+        simplifyConjunctionByAssumption'
+        cond
+  where
+    sort = predicateSort . predicate $ cond
+    simplifyConjunctionByAssumption' (MultiAnd.fromPredicate -> predicates) =
+        case simplifyConjunctionByAssumption predicates of
+            Unchanged unchanged ->
+                let simplified =
+                        foldMap Predicate.simplifiedAttribute unchanged
+                 in Predicate.setSimplified
+                        simplified
+                        (MultiAnd.toPredicateSorted sort unchanged)
+            Changed changed -> MultiAnd.toPredicateSorted sort changed
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
-
 The conjunction is simplified by the identity:
-
 @
 A ∧ P(A) = A ∧ P(⊤)
 @
-
  -}
 simplifyConjunctionByAssumption
     :: forall variable
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
-    -> MultiAnd (Predicate variable)
+    -> Changed (MultiAnd (Predicate variable))
 simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
-    MultiAnd.make
-    $ flip evalState HashMap.empty
+    fmap MultiAnd.make
+    $ flip evalStateT HashMap.empty
     $ for (sortBySize andPredicates)
     $ \predicate' -> do
         let original = Predicate.unwrapPredicate predicate'
@@ -238,7 +246,7 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
 
     assume
         :: Predicate variable
-        -> State (HashMap (TermLike variable) (TermLike variable)) ()
+        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
     assume predicate1 =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
@@ -260,16 +268,13 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
 
     applyAssumptions
         ::  TermLike variable
-        ->  State
-                (HashMap (TermLike variable) (TermLike variable))
+        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
                 (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        unsafeMakePredicate
-            assumptions
-            replaceIn
+        lift $ fmap
+            (unsafeMakePredicate assumptions replaceIn)
             (applyAssumptionsWorker assumptions replaceIn)
-            & return
 
     unsafeMakePredicate replacements original result =
         case makePredicate result of
@@ -288,15 +293,18 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
     applyAssumptionsWorker
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
-        -> TermLike variable
+        -> Changed (TermLike variable)
     applyAssumptionsWorker assumptions original
-      | Just result <- HashMap.lookup original assumptions = result
+      | Just result <- HashMap.lookup original assumptions = Changed result
 
-      | HashMap.null assumptions' = original
+      | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        fmap (applyAssumptionsWorker assumptions') replaceIn
-        & synthesize
+        traverse (applyAssumptionsWorker assumptions') replaceIn
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
 
       where
         _ :< replaceIn = Recursive.project original
@@ -316,20 +324,16 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
 
 {- | Get a local function definition from a 'TermLike'.
-
 A local function definition is a predicate that we can use to evaluate a
 function locally (based on the side conditions) when none of the functions
 global definitions (axioms) apply. We are looking for a 'TermLike' of the form
-
 @
 \equals(f(...), C(...))
 @
-
 where @f@ is a function and @C@ is a constructor, sort injection or builtin.
 @retractLocalFunction@ will match an @\equals@ predicate with its arguments
 in either order, but the function pattern is always returned first in the
 'Pair'.
-
  -}
 retractLocalFunction
     :: TermLike variable
