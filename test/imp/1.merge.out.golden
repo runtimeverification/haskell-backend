@@ -2,10 +2,21 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* D Sfa */ \top{SortGeneratedTopCell{}}(),
-        /* Fn Sfc */
+        /* Sfc */
+        \equals{SortBool{}, SortGeneratedTopCell{}}(
+            /* Fl Fn D Sfc */
+            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                /* Fl Fn D Sfc */
+                /* Inj: */ inj{SortId{}, SortKItem{}}(
+                    /* Fl Fn D Sfa */ VarX:SortId{}
+                ),
+                /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
+            ),
+            /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("false")
+        ),
+        /* Fn D Sfc */
         Lbl'-LT-'generatedTop'-GT-'{}(
-            /* Fn Sfc */
+            /* Fn D Sfc */
             Lbl'-LT-'T'-GT-'{}(
                 /* Fl Fn D Sfc */
                 Lbl'-LT-'k'-GT-'{}(
@@ -18,8 +29,10 @@
                         /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
                     )
                 ),
-                /* Fn Sfc */
+                /* Fn D Sfc */
                 Lbl'-LT-'state'-GT-'{}(
+                    /* Fn D Sfc */
+                    /* defined: */
                     /* Fn Sfc */
                     /* builtin: */
                     Lbl'Unds'Map'Unds'{}(
@@ -38,9 +51,9 @@
             /* Fl Fn D Sfa */ Var'Unds'DotVar0:SortGeneratedCounterCell{}
         )
     ),
-    /* Fn Spc */
+    /* Fn D Spc */
     Lbl'-LT-'generatedTop'-GT-'{}(
-        /* Fn Spc */
+        /* Fn D Spc */
         Lbl'-LT-'T'-GT-'{}(
             /* Fl Fn D Spa */
             Lbl'-LT-'k'-GT-'{}(
@@ -50,8 +63,10 @@
                     /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortK{}
                 )
             ),
-            /* Fn Sfc */
+            /* Fn D Sfc */
             Lbl'-LT-'state'-GT-'{}(
+                /* Fn D Sfc */
+                /* defined: */
                 /* Fn Sfc */
                 /* builtin: */
                 Lbl'Unds'Map'Unds'{}(
