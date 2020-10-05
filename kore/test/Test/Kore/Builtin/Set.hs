@@ -118,6 +118,9 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Test.Expect
 import Test.Kore
     ( elementVariableGen
@@ -273,7 +276,7 @@ test_inConcatSymbolic :: TestTree
 test_inConcatSymbolic =
     testPropertyWithSolver
         "in{}(concat{}(_, element{}(e)), e)\
-        \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
+        \ === and(_, ceil(concat{}(_, element{}(e))))"
         (do
             keys <- forAll genKeys
             patKey <- forAll genKey
@@ -287,7 +290,7 @@ test_inConcatSymbolic =
                         patTrue
                         (Conditional.withoutTerm condition)
             actual <- evaluateT patIn
-            actual === expected
+            Conditional.withoutTerm actual === Conditional.withoutTerm expected
         )
 
 test_inConcat :: TestTree

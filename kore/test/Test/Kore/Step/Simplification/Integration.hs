@@ -211,10 +211,6 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
-        traceM "expect"
-        Foldable.traverse_ (traceM . show) expect
-        traceM "actual"
-        Foldable.traverse_ (traceM . show) actual
 
         assertEqual "" expect actual
     , testCase "map function, non-matching" $ do
