@@ -54,7 +54,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 
-import qualified Data.Foldable as Foldable
 import Test.Kore
 import Test.Kore.Equation.Application
     ( functionAxiomUnification

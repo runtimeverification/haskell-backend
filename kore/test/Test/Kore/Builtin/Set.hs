@@ -118,9 +118,6 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Test.Expect
 import Test.Kore
     ( elementVariableGen
