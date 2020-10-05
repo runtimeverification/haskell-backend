@@ -720,7 +720,9 @@ functionAnd first second
     (first', second') = minMaxBy compareForEquals first second
 
 
-{- | Gives an order for terms in \equals(_, ) to avoid duplicate clauses
+{- | Normal ordering for terms in @\equals(_, _)@.
+
+The normal ordering is arbitrary, but important to avoid duplication.
 
 -}
 compareForEquals
