@@ -18,12 +18,7 @@ import Control.Monad.Catch
     ( MonadThrow
     )
 
-import Control.Lens
-    ( (%~)
-    )
-import Data.Generics.Product
-    ( field
-    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -36,8 +31,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate_
+    ( makeCeilPredicate_
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -47,9 +41,6 @@ import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutions
-    )
 import Logic
     ( LogicT
     )
@@ -155,21 +146,14 @@ makeExpandedApplication
     -> [Pattern variable]
     -> LogicT simplifier (ExpandedApplication variable)
 makeExpandedApplication sideCondition symbol children = do
+    let mkDefinedTerm (Pattern.splitTerm -> (term, condition)) =
+            let defined = makeCeilPredicate_ term & Condition.fromPredicate in
+            Pattern.withCondition
+                (mkDefined term)
+                (condition <> defined)
+        definedChildren = mkDefinedTerm <$> children
     merged <-
-        mergePredicatesAndSubstitutions
-            sideCondition
-            (fmap Pattern.predicate children)
-            (fmap Pattern.substitution children)
-    let term =
-            symbolApplication
-                symbol
-                (mkDefined . Pattern.term <$> children)
-        addDefinednessConditions cond =
-            foldr
-                makeAndPredicate
-                cond
-                (makeCeilPredicate_ . Pattern.term <$> children)
-        withDefinednessConditions =
-            merged
-            & field @"predicate" %~ addDefinednessConditions
-    return $ Conditional.withCondition term withDefinednessConditions
+        foldMap Pattern.withoutTerm definedChildren
+        & simplifyCondition sideCondition
+    let term = symbolApplication symbol (Pattern.term <$> definedChildren)
+    return $ Conditional.withCondition term merged

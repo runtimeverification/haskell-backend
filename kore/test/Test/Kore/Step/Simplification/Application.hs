@@ -14,6 +14,7 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
 import Data.Sup
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -21,9 +22,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
+    ( makeEqualsPredicate
     , makeEqualsPredicate_
     , makeTruePredicate
     , makeTruePredicate_
@@ -56,38 +55,10 @@ test_applicationSimplification =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
                 OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.sigma Mock.a Mock.c
-                        , predicate =
-                            makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.a)
-                                (makeCeilPredicate Mock.testSort Mock.c)
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = Mock.sigma Mock.a Mock.d
-                        , predicate =
-                            makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.a)
-                                (makeCeilPredicate Mock.testSort Mock.d)
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = Mock.sigma Mock.b Mock.c
-                        , predicate =
-                            makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.b)
-                                (makeCeilPredicate Mock.testSort Mock.c)
-                        , substitution = mempty
-                        }
-                    ,  Conditional
-                        { term = Mock.sigma Mock.b Mock.d
-                        , predicate =
-                            makeAndPredicate
-                                (makeCeilPredicate Mock.testSort Mock.b)
-                                (makeCeilPredicate Mock.testSort Mock.d)
-                        , substitution = mempty
-                        }
+                    [ Pattern.fromTermLike (Mock.sigma Mock.a Mock.c)
+                    , Pattern.fromTermLike (Mock.sigma Mock.a Mock.d)
+                    , Pattern.fromTermLike (Mock.sigma Mock.b Mock.c)
+                    , Pattern.fromTermLike (Mock.sigma Mock.b Mock.d)
                     ]
         actual <-
             evaluate
@@ -116,16 +87,8 @@ test_applicationSimplification =
 
     , testCase "Application - preserves sort for top child" $ do
         -- sigma(a, top) = top
-        let expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = Mock.sigma Mock.a (mkTop Mock.testSort)
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.testSort Mock.a)
-                            (makeCeilPredicate Mock.testSort mkTop_)
-                    , substitution = mempty
-                    }
-                ]
+        let expect =
+                OrPattern.fromTermLike (Mock.sigma Mock.a (mkTop Mock.testSort))
         actual <-
             evaluate
                 Map.empty
@@ -165,47 +128,25 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma Mock.a Mock.b
-                            , predicate =
-                                foldr1 makeAndPredicate
-                                    [ makeCeilPredicate Mock.testSort Mock.a
-                                    , makeCeilPredicate Mock.testSort Mock.b
-                                    , makeEqualsPredicate Mock.testSort
-                                        fOfA
-                                        fOfB
-                                    , makeEqualsPredicate_ gOfA gOfB
-                                    ]
-                            , substitution = Substitution.unsafeWrap
-                                [ (inject Mock.x, fOfA)
-                                , (inject Mock.y, gOfA)
-                                ]
-                            }
-                        ]
+                    Pattern.withCondition
+                        (Mock.sigma Mock.a Mock.b)
+                        (condition1 <> condition2)
+                    & OrPattern.fromPattern
+                condition1 =
+                    Condition.fromPredicate
+                        (makeEqualsPredicate Mock.testSort fOfA fOfB)
+                    <> Condition.assign (inject Mock.x) fOfA
+                condition2 =
+                    Condition.fromPredicate
+                        (makeEqualsPredicate Mock.testSort gOfA gOfB)
+                    <> Condition.assign (inject Mock.y) gOfA
             actual <-
                 evaluate
                     Map.empty
                     (makeApplication
                         Mock.sigmaSymbol
-                        [   [ Conditional
-                                { term = Mock.a
-                                , predicate = makeEqualsPredicate_ fOfA fOfB
-                                , substitution =
-                                    Substitution.wrap
-                                    $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
-                                }
-                            ]
-                        ,   [ Conditional
-                                { term = Mock.b
-                                , predicate = makeEqualsPredicate_ gOfA gOfB
-                                , substitution =
-                                    Substitution.wrap
-                                    $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
-                                }
-                            ]
+                        [ [ Pattern.withCondition Mock.a condition1 ]
+                        , [ Pattern.withCondition Mock.b condition2 ]
                         ]
                     )
             assertEqual "" expect actual
