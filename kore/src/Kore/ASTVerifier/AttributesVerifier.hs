@@ -32,6 +32,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
+    , sourceLocation
     )
 import Kore.Attribute.Hook
 import Kore.Attribute.Overload
@@ -62,6 +63,7 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Verified as Verified
+import Pretty
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -146,9 +148,10 @@ verifyNoHookAttribute attributes = do
 verifyNoHookedSupersort
     :: MonadError (Error VerifyError) error
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> Attribute.Axiom SymbolOrAlias VariableName
     -> [Subsort.Subsort]
     -> error ()
-verifyNoHookedSupersort indexedModule subsorts= do
+verifyNoHookedSupersort indexedModule axiom subsorts = do
     let isHooked =
             getHasDomainValues . hasDomainValues
             . getSortAttributes indexedModule
@@ -162,6 +165,8 @@ verifyNoHookedSupersort indexedModule subsorts= do
                 , show . unparse $ Subsort.supersort s
                 , "its subsort:"
                 , show . unparse $ Subsort.subsort s
+                , "Location: "
+                , show . pretty $ Attribute.sourceLocation axiom
                 ]
 
 verifyAxiomAttributes
@@ -173,7 +178,7 @@ verifyAxiomAttributes
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
         subsorts = getSubsorts (axiom Lens.^. field @"subsorts")
-    verifyNoHookedSupersort indexedModule subsorts
+    verifyNoHookedSupersort indexedModule axiom subsorts
     case getOverload overload of
             Nothing -> do
                 let newOverload = Overload Nothing
