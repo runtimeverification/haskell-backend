@@ -120,9 +120,7 @@ simplify
     ->  Conditional variable any
     ->  LogicT simplifier (Conditional variable any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
-    normalize
-    >=> worker
-    >=> return . simplifyConjunctions
+    normalize >=> worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
@@ -134,14 +132,17 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
-        if fullySimplified normalized
-            then return normalized { term }
-            else worker normalized { term }
+        let simplifiedPattern = simplifyConjunctions normalized { term }
+        if fullySimplified simplifiedPattern
+            then return (extract simplifiedPattern)
+            else worker (extract simplifiedPattern)
 
-    fullySimplified Conditional { predicate, substitution } =
+    -- TODO(Ana): this should also check if the predicate is simplified
+    fullySimplified (Unchanged Conditional { predicate, substitution }) =
         Predicate.isFreeOf predicate variables
       where
         variables = Substitution.variables substitution
+    fullySimplified (Changed _) = False
 
     normalize
         ::  forall any'
@@ -191,23 +192,21 @@ simplifyPredicate sideCondition predicate = do
 simplifyConjunctions
     :: InternalVariable variable
     => Conditional variable any
-    -> Conditional variable any
+    -> Changed (Conditional variable any)
 simplifyConjunctions cond =
-    Lens.over
-        (field @"predicate") -- . MultiAnd.lensPredicateSorted sort)
+    Lens.traverseOf
+        (field @"predicate")
         simplifyConjunctionByAssumption'
         cond
   where
     sort = predicateSort . predicate $ cond
-    simplifyConjunctionByAssumption' (MultiAnd.fromPredicate -> predicates) =
+    simplifyConjunctionByAssumption'
+        original@(MultiAnd.fromPredicate -> predicates)
+      =
         case simplifyConjunctionByAssumption predicates of
-            Unchanged unchanged ->
-                let simplified =
-                        foldMap Predicate.simplifiedAttribute unchanged
-                 in Predicate.setSimplified
-                        simplified
-                        (MultiAnd.toPredicateSorted sort unchanged)
-            Changed changed -> MultiAnd.toPredicateSorted sort changed
+            Unchanged _ -> Unchanged original
+            Changed changed ->
+                Changed (MultiAnd.toPredicateSorted sort changed)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
