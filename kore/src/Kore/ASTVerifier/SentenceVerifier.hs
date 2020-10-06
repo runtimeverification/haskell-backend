@@ -80,7 +80,7 @@ import Kore.Equation.Equation
     ( Equation (..)
     )
 import Kore.Equation.Sentence
-    ( MatchEquationError(..)
+    ( MatchEquationError (..)
     , fromSentenceAxiom
     )
 import Kore.Error
