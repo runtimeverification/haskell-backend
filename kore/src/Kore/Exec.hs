@@ -86,7 +86,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeMultipleOrPredicate
-    , unwrapPredicate
+    , fromPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -359,7 +359,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
         return
             . forceSort patternSort
             . getRewritingTerm
-            . unwrapPredicate
+            . fromPredicate patternSort
             $ orPredicate
   where
     patternSort = termLikeSort termLike

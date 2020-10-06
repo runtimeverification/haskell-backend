@@ -48,6 +48,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Internal.Predicate
     ( Predicate
+    , fromPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
@@ -165,8 +166,8 @@ instance
       | Just argument' <- argument
       , Just antiLeft' <- antiLeft
       =
-        let antiLeftTerm = from @(Predicate variable) antiLeft'
-            argumentTerm = from @(Predicate variable) argument'
+        let antiLeftTerm = fromPredicate sort antiLeft'
+            argumentTerm = fromPredicate sort argument'
          in
             TermLike.mkImplies
                 (TermLike.mkAnd
@@ -184,7 +185,7 @@ instance
       -- function rule without priority
       | Just argument' <- argument
       =
-        let argumentTerm = from @(Predicate variable) argument'
+        let argumentTerm = fromPredicate sort argument'
          in TermLike.mkImplies
             (TermLike.mkAnd
                 requires'
@@ -211,8 +212,8 @@ instance
             )
 
       where
-        requires' = from @(Predicate variable) requires
-        ensures' = from @(Predicate variable) ensures
+        requires' = fromPredicate sort requires
+        ensures' = fromPredicate sort ensures
         sort = termLikeSort requires'
         Equation
             { requires

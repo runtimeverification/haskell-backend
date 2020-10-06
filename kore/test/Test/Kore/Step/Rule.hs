@@ -211,10 +211,12 @@ test_rewritePatternToRewriteRuleAndBack =
     testGroup
         "rewrite pattern to rewrite rule to pattern"
         [
-            let initialLhs =
+            let leftPSort = termLikeSort leftP
+                initialLhs =
                     mkAnd
                         (mkNot antiLeftP)
-                        (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
+                        (mkAnd (Predicate.fromPredicate leftPSort requiresP)
+                            leftP)
                 initialPattern =
                     Rewrites Mock.testSort initialLhs initialRhs
                 finalTerm = mkRewrites initialLhs initialRhs
@@ -227,7 +229,11 @@ test_rewritePatternToRewriteRuleAndBack =
                             initialPattern
                         )
         ,
-            let initialLhs = mkAnd (Predicate.unwrapPredicate requiresP) leftP
+            let leftPSort = termLikeSort leftP
+                initialLhs =
+                    mkAnd
+                        (Predicate.fromPredicate leftPSort requiresP)
+                        leftP
                 initialPattern =
                     Rewrites Mock.testSort initialLhs initialRhs
                 finalTerm = mkRewrites initialLhs initialRhs
@@ -264,7 +270,9 @@ leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
 antiLeftP = mkElemVar Mock.u
 rightP = mkExists Mock.y (mkElemVar Mock.y)
-initialRhs = mkAnd (Predicate.unwrapPredicate ensuresP) rightP
+initialRhs = mkAnd (Predicate.fromPredicate sort ensuresP) rightP
+  where
+    sort = termLikeSort rightP
 
 requiresP, ensuresP :: Predicate.Predicate VariableName
 requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)

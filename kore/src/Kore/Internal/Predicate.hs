@@ -61,11 +61,17 @@ module Kore.Internal.Predicate
     , setSimplified
     , forgetSimplified
     , wrapPredicate
-    , unwrapPredicate
     , pattern PredicateTrue
     , pattern PredicateFalse
     , pattern PredicateAnd
     , pattern PredicateOr
+    , pattern PredicateNot
+    , pattern PredicateCeil
+    , pattern PredicateFloor
+    , pattern PredicateEquals
+    , pattern PredicateIn
+    , pattern PredicateExists
+    , pattern PredicateForall
     ) where
 
 import Prelude.Kore
@@ -168,9 +174,6 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
-import Kore.Sort
-    ( predicateSort
-    )
 
 import Kore.TopBottom
     ( TopBottom (..)
@@ -459,11 +462,35 @@ pattern PredicateTrue  <- (Recursive.project -> _ :< TopF _)
 
 pattern PredicateAnd
     :: Predicate variable -> Predicate variable -> Predicate variable
-pattern PredicateAnd p1 p2 <- (Recursive.project -> _ :< AndF And {andSort = (), andFirst = p1, andSecond = p2})
+pattern PredicateAnd p1 p2 <-
+    (Recursive.project -> _ :< AndF (And () p1 p2))
 
 pattern PredicateOr
     :: Predicate variable -> Predicate variable -> Predicate variable
-pattern PredicateOr p1 p2 <- (Recursive.project -> _ :< OrF Or {orSort = (), orFirst = p1, orSecond = p2})
+pattern PredicateOr p1 p2 <-
+    (Recursive.project -> _ :< OrF (Or () p1 p2))
+
+pattern PredicateNot :: Predicate variable -> Predicate variable
+pattern PredicateNot p <-
+    (Recursive.project -> _ :< NotF (Not () p))
+
+pattern PredicateCeil :: TermLike variable -> Predicate variable
+pattern PredicateCeil t <- (Recursive.project -> _ :< CeilF (Ceil () () t))
+
+pattern PredicateFloor :: TermLike variable -> Predicate variable
+pattern PredicateFloor t <- (Recursive.project -> _ :< FloorF (Floor () () t))
+
+pattern PredicateEquals :: TermLike variable -> TermLike variable -> Predicate variable
+pattern PredicateEquals t1 t2 <- (Recursive.project -> _ :< EqualsF (Equals () () t1 t2))
+
+pattern PredicateIn :: TermLike variable -> TermLike variable -> Predicate variable
+pattern PredicateIn t1 t2 <- (Recursive.project -> _ :< InF (In () () t1 t2))
+
+pattern PredicateExists :: ElementVariable variable -> Predicate variable -> Predicate variable
+pattern PredicateExists var p <- (Recursive.project -> _ :< ExistsF (Exists () var p))
+
+pattern PredicateForall :: ElementVariable variable -> Predicate variable -> Predicate variable
+pattern PredicateForall var p <- (Recursive.project -> _ :< ForallF (Forall () var p))
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
@@ -918,8 +945,8 @@ contain none of the targeted variables.
 
 
 
- -- !!  The following are just temporary solutions and the code using these  !!
- -- !!  functions should be refactored                                       !!
+ -- !!  The following is just a temporary solution and      !!
+ -- !!  the code using wrapPredicate should be refactored   !!
 
 wrapPredicate ::
     InternalVariable variable
@@ -931,21 +958,6 @@ wrapPredicate = either
     )
     id
     . makePredicate
-
-unwrapPredicate ::
-    InternalVariable variable
-    => Predicate variable -> TermLike variable
-unwrapPredicate = fromPredicate predicateSort
-
-instance InternalVariable variable => From (Predicate variable) (TermLike variable) where
-    from = unwrapPredicate
-    {-# INLINE from #-}
-
-instance InternalVariable variable => From (TermLike variable) (Predicate variable) where
-    from = wrapPredicate
-    {-# INLINE from #-}
-
-
 
 substitute
     :: InternalVariable variable

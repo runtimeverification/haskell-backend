@@ -11,6 +11,14 @@ module Kore.Step.Simplification.Condition
     ) where
 
 import Prelude.Kore
+    ( otherwise,
+      ($),
+      Show(show),
+      Semigroup((<>)),
+      Monoid(mempty),
+      error,
+      Category((.)),
+      HasCallStack )
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -31,6 +39,9 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
+    )
+import Kore.Sort
+    ( predicateSort
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
@@ -117,7 +128,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ Predicate.unwrapPredicate predicate
+        $ Predicate.fromPredicate predicateSort predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (OrPattern.map eraseTerm patternOr)

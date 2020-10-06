@@ -41,6 +41,10 @@ import qualified Data.Set as Set
 import Data.Traversable
     ( for
     )
+import Data.Tuple.Extra
+    ( (***)
+    )
+import qualified Data.Tuple.Extra as Tuple
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -58,7 +62,12 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makePredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    , pattern PredicateNot
+    , pattern PredicateExists
+    , pattern PredicateForall
+    , pattern PredicateEquals
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -83,11 +92,9 @@ import Kore.Internal.TermLike
     , TermLike
     , Variable (..)
     , mkAnd
-    , mkBottom
     , mkBottom_
     , mkNot
-    , mkTop
-    , termLikeSort
+    , mkEquals_
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
@@ -100,12 +107,8 @@ import Kore.Unification.UnifierT
     ( UnifierT (..)
     , runUnifierT
     )
-import Kore.Unparser
-    ( unparse
-    )
 import Logic
 import Pair
-import qualified Pretty
 
 {- | Simplify a conjunction of 'OrPattern'.
 
@@ -242,10 +245,9 @@ simplifyConjunctionByAssumption
     -> Changed (MultiAnd (Predicate variable))
 simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
     fmap MultiAnd.make
-    $ flip evalStateT HashMap.empty
+    $ flip evalStateT (HashMap.empty, HashMap.empty)
     $ for (sortBySize andPredicates)
-    $ \predicate' -> do
-        let original = Predicate.unwrapPredicate predicate'
+    $ \original -> do
         result <- applyAssumptions original
         assume result
         return result
@@ -254,7 +256,7 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
     -- which could contain it, because the containing clause is necessarily
     -- larger.
     sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortOn (size . from)
+    sortBySize = sortOn predSize
 
     size :: TermLike variable -> Int
     size =
@@ -264,63 +266,105 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + Foldable.sum termLikeF
 
+    predSize :: Predicate variable -> Int
+    predSize =
+        Recursive.fold $ \(_ :< predF) ->
+            case predF of
+                Predicate.CeilF ceil_ -> 1 + Foldable.sum (size <$> ceil_)
+                Predicate.EqualsF equals_ -> 1 + Foldable.sum (size <$> equals_)
+                Predicate.FloorF floor_ -> 1 + Foldable.sum (size <$> floor_)
+                Predicate.InF in_ -> 1 + Foldable.sum (size <$> in_)
+                _ -> 1 + Foldable.sum predF
+
     assume
-        :: Predicate variable
-        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
-    assume predicate1 =
+        :: Predicate variable ->
+        StateT 
+            ( HashMap (TermLike variable) (TermLike variable)
+            , HashMap (Predicate variable) (Predicate variable))
+            Changed ()
+    assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
         assumePredicate =
-            case termLike of
-                Not_ _ notChild ->
+            case predicate of
+                PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    HashMap.insert notChild (mkBottom sort)
+                    Tuple.second $ HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    HashMap.insert termLike (mkTop sort)
+                    Tuple.second $ HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
-            case retractLocalFunction termLike of
-                Just (Pair term1 term2) -> HashMap.insert term1 term2
+            case predicate of
+                PredicateEquals t1 t2 ->
+                    case retractLocalFunction (mkEquals_ t1 t2) of
+                        Just (Pair t1' t2') -> Tuple.first $ HashMap.insert t1' t2'
+                        _ -> id
                 _ -> id
 
-        termLike = Predicate.unwrapPredicate predicate1
-        sort = termLikeSort termLike
-
     applyAssumptions
-        ::  TermLike variable
-        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
-                (Predicate variable)
+        ::  Predicate variable
+        ->  StateT
+            ( HashMap (TermLike variable) (TermLike variable)
+            , HashMap (Predicate variable) (Predicate variable))
+            Changed (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        lift $ fmap
-            (unsafeMakePredicate assumptions replaceIn)
-            (applyAssumptionsWorker assumptions replaceIn)
-
-    unsafeMakePredicate replacements original result =
-        case makePredicate result of
-            -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
-            -- should make it impossible to have an error here.
-            Left err ->
-                (error . show . Pretty.vsep . map (either id (Pretty.indent 4)))
-                [ Left "Replacing"
-                , Right (Pretty.vsep (unparse <$> HashMap.keys replacements))
-                , Left "in"
-                , Right (unparse original)
-                , Right (Pretty.pretty err)
-                ]
-            Right p -> p
+        lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
+        :: ( HashMap (TermLike variable) (TermLike variable)
+           , HashMap (Predicate variable) (Predicate variable))
+        -> Predicate variable
+        -> Changed (Predicate variable)
+    applyAssumptionsWorker assumptions original
+      | Just result <- HashMap.lookup original (snd assumptions) = Changed result
+
+      | HashMap.null (fst assumptions') &&
+        HashMap.null (snd assumptions') = Unchanged original
+
+      | otherwise = (case replaceIn of
+          Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
+                             (applyAssumptionsWorkerTerm (fst assumptions')) ceil_
+          Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
+                             (applyAssumptionsWorkerTerm (fst assumptions')) floor_
+          Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
+                             (applyAssumptionsWorkerTerm (fst assumptions')) equals_
+          Predicate.InF in_ -> Predicate.InF <$> traverse
+                             (applyAssumptionsWorkerTerm (fst assumptions')) in_
+          _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
+        )
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
+
+      where
+        _ :< replaceIn = Recursive.project original
+
+        assumptions'
+          | PredicateExists var _ <- original = restrictAssumptions (inject var)
+          | PredicateForall var _ <- original = restrictAssumptions (inject var)
+          | otherwise = assumptions
+
+        restrictAssumptions Variable { variableName } =
+            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term) ***
+            HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
+            assumptions
+          where
+            wouldNotCapture = not . Predicate.hasFreeVariable variableName
+            wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
+
+    applyAssumptionsWorkerTerm
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorker assumptions original
+    applyAssumptionsWorkerTerm assumptions original
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        traverse (applyAssumptionsWorker assumptions') replaceIn
+        traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.
@@ -337,11 +381,13 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
           | otherwise = assumptions
 
         restrictAssumptions Variable { variableName } =
-            HashMap.filterWithKey
-                (\termLike _ -> wouldNotCapture termLike)
+            (HashMap.filterWithKey
+                $ \termLike _ -> wouldNotCapture termLike)
                 assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
+
+
 
 {- | Get a local function definition from a 'TermLike'.
 

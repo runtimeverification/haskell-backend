@@ -16,7 +16,7 @@ import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , unwrapPredicate
+    , fromPredicate
     )
 import Kore.Internal.TermLike
 import Kore.Reachability.SomeClaim
@@ -74,13 +74,15 @@ test_extractClaim =
     test name leftTerm requires existentials rightTerms ensures =
         testCase name $ do
             let rightTerm = foldr1 mkOr rightTerms
+                leftSort = termLikeSort leftTerm
+                rightSort = termLikeSort rightTerm
                 termLike =
                     mkImplies
-                        (mkAnd (unwrapPredicate requires) leftTerm)
+                        (mkAnd (fromPredicate leftSort requires) leftTerm)
                         (applyModality WAF
                             (foldr
                                 mkExists
-                                (mkAnd (unwrapPredicate ensures) rightTerm)
+                                (mkAnd (fromPredicate rightSort ensures) rightTerm)
                                 existentials
                             )
                         )
