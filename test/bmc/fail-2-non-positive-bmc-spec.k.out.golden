@@ -8,13 +8,13 @@
   </T>
 #And
   {
-    X <Int 0
+    false
   #Equals
-    true
+    X >Int 0
   }
 #And
   {
-    X >Int 0
+    true
   #Equals
-    false
+    X <Int 0
   }

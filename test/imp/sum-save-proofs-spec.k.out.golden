@@ -15,7 +15,7 @@
   </T>
 #And
   {
-    N >=Int 0
-  #Equals
     true
+  #Equals
+    N >=Int 0
   }

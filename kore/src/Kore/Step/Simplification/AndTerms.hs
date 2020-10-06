@@ -17,6 +17,7 @@ module Kore.Step.Simplification.AndTerms
     , functionAnd
     , equalsFunctions
     , andFunctions
+    , compareForEquals
     ) where
 
 import Prelude.Kore
@@ -716,10 +717,23 @@ functionAnd first second
     & pure
   | otherwise = empty
   where
-    (first', second')
-      | isConstructorLike first = (first, second)
-      | isConstructorLike second = (second, first)
-      | otherwise = minMax first second
+    (first', second') = minMaxBy compareForEquals first second
+
+
+{- | Normal ordering for terms in @\equals(_, _)@.
+
+The normal ordering is arbitrary, but important to avoid duplication.
+
+-}
+compareForEquals
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> Ordering
+compareForEquals first second
+  | isConstructorLike first = LT
+  | isConstructorLike second = GT
+  | otherwise = compare first second
 
 bytesDifferent
     :: InternalVariable variable

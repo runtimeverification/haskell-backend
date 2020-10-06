@@ -3150,6 +3150,7 @@
                                     ),
                                     /* Fl Fn D Sfc */
                                     /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                         /* Fl Fn D Sfa */
                                         Var'QuesUnds'4:SortInt{}
                                     ),
@@ -3242,6 +3243,7 @@
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                                     /* Fl Fn D Sfa */
                                                     Var'QuesUnds'4:SortInt{}
                                                 ),
@@ -4886,7 +4888,9 @@
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Fl Fn D Sfa */
+                                    Var'QuesUnds'4:SortInt{}
                                 ),
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -4965,6 +4969,8 @@
                                     \not{SortGeneratedTopCell{}}(
                                         /* Sfc */
                                         \equals{SortInt{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            /* builtin: */ \dv{SortInt{}}("0"),
                                             /* Fn Sfc */
                                             Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
                                                 /* Fl Fn D Sfc */
@@ -4997,6 +5003,7 @@
                                                         ),
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                                             /* Fl Fn D Sfa */
                                                             Var'QuesUnds'4:SortInt{}
                                                         ),
@@ -5007,9 +5014,7 @@
                                                         )
                                                     )
                                                 )
-                                            ),
-                                            /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            )
                                         )
                                     )
                                 )
@@ -6857,7 +6862,9 @@
                             ),
                             /* Fl Fn D Sfc */
                             /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                /* Fl Fn D Sfa */
+                                Var'QuesUnds'4:SortInt{}
                             ),
                             /* Fl Fn D Sfa Cli */
                             /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -6900,6 +6907,8 @@
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
                                 \equals{SortInt{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    /* builtin: */ \dv{SortInt{}}("0"),
                                     /* Fn Sfc */
                                     Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
                                         /* Fl Fn D Sfc */
@@ -6932,6 +6941,7 @@
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                                     /* Fl Fn D Sfa */
                                                     Var'QuesUnds'4:SortInt{}
                                                 ),
@@ -6942,9 +6952,7 @@
                                                 )
                                             )
                                         )
-                                    ),
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    )
                                 ),
                                 /* Sfc */
                                 \equals{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -8697,7 +8705,9 @@
                                 LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
                                     /* Fl Fn D Sfc */
                                     /* Inj: */ inj{SortInt{}, SortData{}}(
-                                        /* Fl Fn D Sfa */ VarI3:SortInt{}
+                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                        /* Fl Fn D Sfa */
+                                        VarI3:SortInt{}
                                     )
                                 )
                             )

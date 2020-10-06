@@ -115,7 +115,7 @@ test_predicateSimplification =
         let expect =
                 Conditional
                     { term = ()
-                    , predicate = makeEqualsPredicate_ Mock.functional00 Mock.a
+                    , predicate = makeEqualsPredicate_ Mock.a Mock.functional00
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.functional00)
                         , (inject Mock.y, Mock.functional01)
@@ -231,8 +231,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate_
-                            (Mock.g Mock.b)
                             (Mock.g Mock.a)
+                            (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.a)
                         , (inject Mock.y, Mock.b)

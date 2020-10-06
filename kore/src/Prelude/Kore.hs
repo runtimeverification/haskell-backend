@@ -9,6 +9,7 @@ module Prelude.Kore
     , module Debug.Trace
     -- * Ord
     , minMax
+    , minMaxBy
     -- * Functions
     , (&)
     , on
@@ -156,4 +157,9 @@ import Injection
 minMax :: Ord a => a -> a -> (a, a)
 minMax a b
   | a < b     = (a, b)
+  | otherwise = (b, a)
+
+minMaxBy :: (a -> a -> Ordering) -> a -> a -> (a, a)
+minMaxBy cmp a b
+  | cmp a b == LT = (a, b)
   | otherwise = (b, a)
