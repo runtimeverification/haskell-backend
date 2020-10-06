@@ -68,8 +68,8 @@ test_simplify =
         (Pattern.topOf Mock.testSort)
             { Conditional.predicate =
                 Predicate.makeEqualsPredicate
-                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
                     (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
+                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
@@ -298,7 +298,7 @@ test_makeEvaluate =
                 Mock.x
                 Conditional
                     { term = fOfA
-                    , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
+                    , predicate = makeEqualsPredicate (Mock.f Mock.a) fOfX
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -315,7 +315,7 @@ test_makeEvaluate =
                         makeExistsPredicate
                             Mock.x
                             (makeAndPredicate
-                                (makeEqualsPredicate fOfX (Mock.f Mock.a))
+                                (makeEqualsPredicate (Mock.f Mock.a) fOfX)
                                 (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
                             )
                     , substitution =

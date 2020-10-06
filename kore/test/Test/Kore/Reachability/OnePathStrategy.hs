@@ -666,11 +666,11 @@ test_onePathStrategy =
                     { term = Mock.a
                     , predicate =
                         makeEqualsPredicate
+                            (Mock.builtinBool True)
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
                             )
-                            (Mock.builtinBool True)
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)
@@ -749,11 +749,11 @@ test_onePathStrategy =
                     { term = Mock.a
                     , predicate =
                         makeEqualsPredicate
+                            (Mock.builtinBool True)
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
                             )
-                            (Mock.builtinBool True)
                     , substitution = mempty
                     }
                 (fromTermLike Mock.a)

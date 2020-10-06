@@ -4969,6 +4969,8 @@
                                     \not{SortGeneratedTopCell{}}(
                                         /* Sfc */
                                         \equals{SortInt{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            /* builtin: */ \dv{SortInt{}}("0"),
                                             /* Fn Sfc */
                                             Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
                                                 /* Fl Fn D Sfc */
@@ -5012,9 +5014,7 @@
                                                         )
                                                     )
                                                 )
-                                            ),
-                                            /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            )
                                         )
                                     )
                                 )
@@ -6907,6 +6907,8 @@
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
                                 \equals{SortInt{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    /* builtin: */ \dv{SortInt{}}("0"),
                                     /* Fn Sfc */
                                     Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
                                         /* Fl Fn D Sfc */
@@ -6950,9 +6952,7 @@
                                                 )
                                             )
                                         )
-                                    ),
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    )
                                 ),
                                 /* Sfc */
                                 \equals{SortOptionData{}, SortGeneratedTopCell{}}(

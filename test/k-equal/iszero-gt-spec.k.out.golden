@@ -5,7 +5,7 @@
   </T>
 #And
   {
-    I >Int 0
-  #Equals
     true
+  #Equals
+    I >Int 0
   }

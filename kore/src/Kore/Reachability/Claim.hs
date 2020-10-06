@@ -163,7 +163,6 @@ import Logic
     )
 import qualified Logic
 import qualified Pretty
-import qualified SMT
 
 class Claim claim where
     {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
@@ -310,10 +309,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
-    transitionRuleWorker Begin (Rewritten claim) =
-        SMT.reinit >> pure (Claimed claim)
-    transitionRuleWorker Begin claimState =
-        SMT.reinit >> pure claimState
+    transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
+    transitionRuleWorker Begin claimState = pure claimState
 
     transitionRuleWorker Simplify claimState
       | Just claim <- retractSimplifiable claimState =

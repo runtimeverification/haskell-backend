@@ -350,7 +350,7 @@ test_functionIntegration =
                 Conditional
                     { term = Mock.f Mock.e
                     , predicate = makeEqualsPredicate
-                        (Mock.f Mock.e) Mock.e
+                        Mock.e (Mock.f Mock.e)
                     , substitution = mempty
                     }
         actual <-
@@ -811,7 +811,7 @@ test_functionIntegrationUnification =
                 Conditional
                     { term = Mock.f Mock.e
                     , predicate = makeEqualsPredicate
-                        (Mock.f Mock.e) Mock.e
+                        Mock.e (Mock.f Mock.e)
                     , substitution = mempty
                     }
         actual <-

@@ -106,11 +106,11 @@ test_orPatternSimplification =
 positive :: TermLike VariableName -> Predicate VariableName
 positive u =
     makeEqualsPredicate
+        (Mock.builtinBool False)
         (Mock.lessInt
             (Mock.fTestInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
-        (Mock.builtinBool False)
 
 negative :: TermLike VariableName -> Predicate VariableName
 negative u =

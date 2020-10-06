@@ -203,14 +203,14 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.x))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
                 makeEqualsPredicate
-                    (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
+                    (Mock.functional11 Mock.a)
             expect1 =
                 WhileCheckRequires CheckRequiresError
                 { matchPredicate = makeTruePredicate
@@ -221,8 +221,8 @@ test_attemptEquation =
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
                 makeEqualsPredicate
-                    (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
+                    (Mock.functional11 Mock.a)
             sideCondition2 =
                 SideCondition.fromCondition . Condition.fromPredicate
                 $ requires2
