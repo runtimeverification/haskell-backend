@@ -85,8 +85,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeMultipleOrPredicate
-    , fromPredicate
+    ( fromPredicate
+    , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top

@@ -13,10 +13,10 @@ import Data.Default
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
+    ( fromPredicate
+    , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , fromPredicate
     )
 import Kore.Internal.TermLike
 import Kore.Reachability.SomeClaim

@@ -62,12 +62,12 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makeFalsePredicate
-    , makeTruePredicate
-    , pattern PredicateNot
+    , pattern PredicateEquals
     , pattern PredicateExists
     , pattern PredicateForall
-    , pattern PredicateEquals
+    , pattern PredicateNot
+    , makeFalsePredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -93,8 +93,8 @@ import Kore.Internal.TermLike
     , Variable (..)
     , mkAnd
     , mkBottom_
-    , mkNot
     , mkEquals_
+    , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
@@ -278,7 +278,7 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
 
     assume
         :: Predicate variable ->
-        StateT 
+        StateT
             ( HashMap (TermLike variable) (TermLike variable)
             , HashMap (Predicate variable) (Predicate variable))
             Changed ()

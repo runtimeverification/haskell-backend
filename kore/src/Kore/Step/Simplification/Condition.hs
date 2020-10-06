@@ -11,14 +11,15 @@ module Kore.Step.Simplification.Condition
     ) where
 
 import Prelude.Kore
-    ( otherwise,
-      ($),
-      Show(show),
-      Semigroup((<>)),
-      Monoid(mempty),
-      error,
-      Category((.)),
-      HasCallStack )
+    ( Category ((.))
+    , HasCallStack
+    , Monoid (mempty)
+    , Semigroup ((<>))
+    , Show (show)
+    , error
+    , otherwise
+    , ($)
+    )
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -36,12 +37,12 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Sort
+    ( predicateSort
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
-    )
-import Kore.Sort
-    ( predicateSort
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
