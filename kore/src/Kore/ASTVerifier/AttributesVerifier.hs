@@ -19,6 +19,10 @@ module Kore.ASTVerifier.AttributesVerifier
     ) where
 
 import qualified Control.Lens as Lens
+import Data.Foldable
+    ( find
+    , for_
+    )
 import Data.Generics.Product
 import Prelude.Kore
 
@@ -53,6 +57,9 @@ import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
 import Kore.Syntax.Variable
     ( VariableName (..)
+    )
+import Kore.Unparser
+    ( unparse
     )
 import qualified Kore.Verified as Verified
 
@@ -138,11 +145,24 @@ verifyNoHookAttribute attributes = do
 
 verifyNoHookedSupersort
     :: MonadError (Error VerifyError) error
-    => [Kore.Attribute.Sort.Sort]
+    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> [Subsort.Subsort]
     -> error ()
-verifyNoHookedSupersort supersortsAtts = do
-    let isHooked = getHasDomainValues . hasDomainValues <$> supersortsAtts
-    when (or isHooked) $ koreFail "Hooked sorts may not have subsorts."
+verifyNoHookedSupersort indexedModule subsorts= do
+    let isHooked =
+            getHasDomainValues . hasDomainValues
+            . getSortAttributes indexedModule
+            . Subsort.supersort
+        hookedSubsort = find isHooked subsorts
+    for_ hookedSubsort
+        $ \s -> koreFail
+            $ unlines
+                [ "Hooked sorts may not have subsorts."
+                , "hooked sort:"
+                , show . unparse $ Subsort.supersort s
+                , "its subsort:"
+                , show . unparse $ Subsort.subsort s
+                ]
 
 verifyAxiomAttributes
     :: forall error attrs
@@ -152,9 +172,8 @@ verifyAxiomAttributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
-        supersorts = Subsort.supersort <$> getSubsorts (axiom Lens.^. field @"subsorts")
-        supersortsAtts = getSortAttributes indexedModule <$> supersorts
-    verifyNoHookedSupersort supersortsAtts
+        subsorts = getSubsorts (axiom Lens.^. field @"subsorts")
+    verifyNoHookedSupersort indexedModule subsorts
     case getOverload overload of
             Nothing -> do
                 let newOverload = Overload Nothing
