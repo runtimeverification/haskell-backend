@@ -569,45 +569,45 @@ test_simplificationIntegration =
                     { term = mkTop Mock.otherSort
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.otherSort
-                                (mkAnd
-                                    (Mock.tdivInt mkTop_ mkTop_)
-                                    (mkNu iz (Mock.builtinInt 595))
+                            (makeAndPredicate
+                                (makeCeilPredicate Mock.otherSort
+                                    (mkAnd
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
+                                )
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.otherSort
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                    )
+                                    (makeCeilPredicate Mock.otherSort
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
                                 )
                             )
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.otherSort
-                                    (Mock.tdivInt mkTop_ mkTop_)
+                                    (mkNot
+                                        (mkNu mx
+                                            (mkRewrites
+                                                mkBottom_
+                                                Mock.aSubOthersort
+                                            )
+                                        )
+                                    )
                                 )
-                                (makeAndPredicate
-                                    (makeCeilPredicate Mock.otherSort
-                                        (mkNu iz (Mock.builtinInt 595))
-                                    )
-                                    (makeAndPredicate
-                                        (makeCeilPredicate Mock.otherSort
-                                            (mkNot
-                                                (mkNu mx
-                                                    (mkRewrites
-                                                        mkBottom_
-                                                        Mock.aSubOthersort
-                                                    )
-                                                )
+                                (makeEqualsPredicate_
+                                    (Mock.g
+                                        (Mock.functionalConstr30
+                                            (Mock.functionalTopConstr21
+                                                Mock.ch
+                                                Mock.aTopSort
                                             )
-                                        )
-                                        (makeEqualsPredicate_
-                                            (Mock.g
-                                                (Mock.functionalConstr30
-                                                    (Mock.functionalTopConstr21
-                                                        Mock.ch
-                                                        Mock.aTopSort
-                                                    )
-                                                    (mkIff Mock.plain00 Mock.d)
-                                                    Mock.cg
-                                                )
-                                            )
-                                            Mock.functionalInjective00
+                                            (mkIff Mock.plain00 Mock.d)
+                                            Mock.cg
                                         )
                                     )
+                                    Mock.functionalInjective00
                                 )
                             )
                     , substitution = mempty
@@ -616,38 +616,38 @@ test_simplificationIntegration =
                     { term = mkTop Mock.otherSort
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.otherSort
-                                (mkAnd
-                                    (Mock.tdivInt mkTop_ mkTop_)
-                                    (mkNu iz (Mock.builtinInt 595))
-                                )
-                            )
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.otherSort
-                                    (Mock.tdivInt mkTop_ mkTop_)
+                                    (mkAnd
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                        (mkNu iz (Mock.builtinInt 595))
+                                    )
                                 )
                                 (makeAndPredicate
                                     (makeCeilPredicate Mock.otherSort
+                                        (Mock.tdivInt mkTop_ mkTop_)
+                                    )
+                                    (makeCeilPredicate Mock.otherSort
                                         (mkNu iz (Mock.builtinInt 595))
                                     )
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate_
-                                            (Mock.g
-                                                (Mock.functionalConstr30
-                                                    (Mock.functionalTopConstr21
-                                                        Mock.ch
-                                                        Mock.aTopSort
-                                                    )
-                                                    (mkIff Mock.plain00 Mock.d)
-                                                    Mock.cg
-                                                )
+                                )
+                            )
+                            (makeAndPredicate
+                                (makeEqualsPredicate_
+                                    (Mock.g
+                                        (Mock.functionalConstr30
+                                            (Mock.functionalTopConstr21
+                                                Mock.ch
+                                                Mock.aTopSort
                                             )
-                                            Mock.functionalInjective00
-                                        )
-                                        (makeNotPredicate
-                                            (makeFloorPredicate_ (Mock.builtinList []))
+                                            (mkIff Mock.plain00 Mock.d)
+                                            Mock.cg
                                         )
                                     )
+                                    Mock.functionalInjective00
+                                )
+                                (makeNotPredicate
+                                    (makeFloorPredicate_ (Mock.builtinList []))
                                 )
                             )
                     , substitution = mempty
