@@ -54,7 +54,8 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
 import Kore.Step.Simplification.AndTerms
-    ( maybeTermEquals
+    ( compareForEquals
+    , maybeTermEquals
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
@@ -164,7 +165,10 @@ simplify
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify sideCondition Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated sideCondition first second
+    simplifyEvaluated sideCondition first' second'
+  where
+    (first', second') =
+        minMaxBy (on compareForEquals OrPattern.toTermLike) first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 

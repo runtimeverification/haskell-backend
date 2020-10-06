@@ -119,12 +119,12 @@ test_applyInitialConditions =
             initial = Condition.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate_
-                    (Mock.f $ mkElemVar Mock.x)
                     Mock.a
+                    (Mock.f $ mkElemVar Mock.x)
             expect2 =
                 Predicate.makeEqualsPredicate_
-                    (Mock.f $ mkElemVar Mock.y)
                     Mock.b
+                    (Mock.f $ mkElemVar Mock.y)
             expect =
                 MultiOr.singleton (Predicate.makeAndPredicate expect1 expect2)
         [applied] <- applyInitialConditions initial unification
@@ -772,8 +772,8 @@ test_applyRewriteRule_ =
                             { term = Mock.sigma fb fb
                             , predicate =
                                 makeEqualsPredicate Mock.testSort
-                                    (Mock.functional11 fb)
                                     (Mock.functional10 fb)
+                                    (Mock.functional11 fb)
                             , substitution =
                                 Substitution.wrap
                                 $ Substitution.mkUnwrappedSubstitution
@@ -814,8 +814,8 @@ test_applyRewriteRule_ =
                     [ Conditional
                         { term = mkElemVar Mock.y
                         , predicate = makeEqualsPredicate Mock.testSort
-                            (Mock.functional11 (mkElemVar Mock.y))
                             (Mock.functional10 (mkElemVar Mock.y))
+                            (Mock.functional11 (mkElemVar Mock.y))
                         , substitution = mempty
                         }
                     ]
@@ -842,8 +842,8 @@ test_applyRewriteRule_ =
         let
             requires =
                 makeEqualsPredicate_
-                    (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.x))
             expect =
                 [ OrPattern.fromPatterns
                     [ initialTerm
@@ -1267,8 +1267,8 @@ test_applyRewriteRulesParallel =
             initial = pure (Mock.functionalConstr10 (mkElemVar Mock.x))
             requirement =
                 makeEqualsPredicate Mock.testSort
-                    (Mock.f (mkElemVar Mock.x))
                     Mock.b
+                    (Mock.f (mkElemVar Mock.x))
         actual <- applyRewriteRulesParallel initial [axiomSignum]
         checkResults results actual
         checkRemainders remainders actual
