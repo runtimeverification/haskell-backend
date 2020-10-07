@@ -147,7 +147,7 @@ instance
         unparseAssoc'
             ("\\and" <> parameters [sort])
             (unparse (mkTop sort :: TermLike variable))
-            (worker <$> getMultiAndPredicate predicate)
+            (worker <$> Foldable.toList (getMultiAndPredicate predicate))
       where
         worker (GenericPredicate termLike) = unparse termLike
         sort =
@@ -278,12 +278,13 @@ associativity.
 
 getMultiAndPredicate
     :: Predicate variable
-    -> [Predicate variable]
+    -> NonEmpty (Predicate variable)
 getMultiAndPredicate original@(GenericPredicate termLike) =
     case termLike of
         And_ _ left right ->
-            concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
-        _ -> [original]
+            getMultiAndPredicate (GenericPredicate left)
+            <> getMultiAndPredicate (GenericPredicate right)
+        _ -> original :| []
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.

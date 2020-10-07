@@ -13,7 +13,6 @@ Portability : portable
 
 module Kore.Internal.MultiAnd
     ( MultiAnd
-    , top
     , make
     , toPredicate
     , fromPredicate
@@ -33,7 +32,8 @@ import Control.DeepSeq
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Set as Set
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Set.NonEmpty as Set
 import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
@@ -47,7 +47,8 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( pattern And_
+    , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
@@ -67,7 +68,7 @@ which should preserve pattern sorts.
 A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
-newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
+newtype MultiAnd child = MultiAnd { getMultiAnd :: NonEmpty child }
     deriving (Eq, Ord, Show)
     deriving (Foldable)
     deriving (GHC.Generic)
@@ -76,9 +77,9 @@ newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
     deriving newtype (GHC.IsList)
 
 instance TopBottom child => TopBottom (MultiAnd child) where
-    isTop (MultiAnd []) = True
+    isTop (MultiAnd (child :| [])) = isTop child
     isTop _ = False
-    isBottom (MultiAnd [child]) = isBottom child
+    isBottom (MultiAnd (child :| [])) = isBottom child
     isBottom _ = False
 
 instance Debug child => Debug (MultiAnd child)
@@ -86,12 +87,7 @@ instance Debug child => Debug (MultiAnd child)
 instance (Debug child, Diff child) => Diff (MultiAnd child)
 
 instance (Ord child, TopBottom child) => Semigroup (MultiAnd child) where
-    (MultiAnd []) <> b = b
-    a <> (MultiAnd []) = a
     (MultiAnd a) <> (MultiAnd b) = make (a <> b)
-
-instance (Ord child, TopBottom child) => Monoid (MultiAnd child) where
-    mempty = make []
 
 instance
     InternalVariable variable
@@ -114,9 +110,6 @@ instance
     from = fromTermLike
     {-# INLINE from #-}
 
-top :: MultiAnd term
-top = MultiAnd []
-
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
 -}
@@ -138,13 +131,13 @@ patternToAndBool patt
 
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
-make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
+make :: (Ord term, TopBottom term) => NonEmpty term -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
 
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
 singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
-singleton term = make [term]
+singleton term = make (term :| [])
 
 {- | Simplify the conjunction.
 
@@ -185,27 +178,26 @@ filterGeneric
     -> MultiAnd child
     -> MultiAnd child
 filterGeneric andFilter (MultiAnd patts) =
-    go andFilter [] patts
-  where
-    go  :: (child -> AndBool)
-        -> [child]
-        -> [child]
-        -> MultiAnd child
-    go _ filtered [] = MultiAnd (reverse filtered)
-    go filterAnd' filtered (element:unfiltered) =
-        case filterAnd' element of
-            AndFalse -> MultiAnd [element]
-            AndTrue -> go filterAnd' filtered unfiltered
-            AndUnknown -> go filterAnd' (element:filtered) unfiltered
+    undefined
+--     go andFilter [] patts
+--   where
+--     go  :: (child -> AndBool)
+--         -> NonEmpty child
+--         -> NonEmpty child
+--         -> MultiAnd child
+--     go _ filtered [] = MultiAnd (reverse filtered)
+--     go filterAnd' filtered (element:unfiltered) =
+--         case filterAnd' element of
+--             AndFalse -> MultiAnd [element]
+--             AndTrue -> go filterAnd' filtered unfiltered
+--             AndUnknown -> go filterAnd' (element:filtered) unfiltered
 
 toPredicate
     :: InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
-    case predicates of
-        [] -> makeTruePredicate_
-        _  -> foldr1 makeAndPredicate predicates
+    foldr1 makeAndPredicate predicates
 
 fromPredicate
     :: Ord variable
@@ -218,9 +210,9 @@ fromTermLike
     => TermLike variable
     -> MultiAnd (TermLike variable)
 fromTermLike termLike =
-    case Recursive.project termLike of
-        _ :< AndF andF -> foldMap fromTermLike andF
-        _              -> make [termLike]
+    case termLike of
+        And_ _ child1 child2 -> fromTermLike child1 <> fromTermLike child2
+        _                    -> make (termLike :| [])
 
 map
     :: Ord child2
@@ -228,7 +220,7 @@ map
     => (child1 -> child2)
     -> MultiAnd child1
     -> MultiAnd child2
-map f = make . fmap f . Foldable.toList
+map f = make . fmap f . getMultiAnd
 {-# INLINE map #-}
 
 traverse
@@ -238,5 +230,5 @@ traverse
     => (child1 -> f child2)
     -> MultiAnd child1
     -> f (MultiAnd child2)
-traverse f = fmap make . Traversable.traverse f . Foldable.toList
+traverse f = fmap make . Traversable.traverse f . getMultiAnd
 {-# INLINE traverse #-}

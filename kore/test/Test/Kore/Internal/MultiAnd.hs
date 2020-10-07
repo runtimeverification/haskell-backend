@@ -8,6 +8,9 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable
+import Data.List.NonEmpty
+    ( (<|)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -36,30 +39,27 @@ instance TopBottom TestTopBottom where
 
 test_multiAndTopBottom :: [TestTree]
 test_multiAndTopBottom =
-    [ assertIsTop True  (MultiAnd.make [])
-    , assertIsTop True  (MultiAnd.make [TestTop])
-    , assertIsTop False (MultiAnd.make [TestTop, TestOther 1])
-    , assertIsTop False (MultiAnd.make [TestTop, TestBottom])
-    , assertIsTop False (MultiAnd.make [TestOther 1])
-    , assertIsTop False (MultiAnd.make [TestBottom])
+    [ assertIsTop True (MultiAnd.make (pure TestTop))
+    , assertIsTop False (MultiAnd.make (TestTop <| pure (TestOther 1)))
+    , assertIsTop False (MultiAnd.make (TestTop <| pure TestBottom))
+    , assertIsTop False (MultiAnd.make (pure (TestOther 1)))
+    , assertIsTop False (MultiAnd.make (pure TestBottom))
 
-    , assertIsBottom False (MultiAnd.make [])
-    , assertIsBottom False (MultiAnd.make [TestTop])
-    , assertIsBottom False (MultiAnd.make [TestTop, TestOther 1])
-    , assertIsBottom True  (MultiAnd.make [TestTop, TestBottom])
-    , assertIsBottom False (MultiAnd.make [TestOther 1])
-    , assertIsBottom True  (MultiAnd.make [TestBottom])
+    , assertIsBottom False (MultiAnd.make (pure TestTop))
+    , assertIsBottom False (MultiAnd.make (TestTop <| pure (TestOther 1)))
+    , assertIsBottom True (MultiAnd.make (TestTop <| pure TestBottom))
+    , assertIsBottom False (MultiAnd.make (pure $ TestOther 1))
+    , assertIsBottom True (MultiAnd.make (pure TestBottom))
     ]
 
 test_multiAndMake :: [TestTree]
 test_multiAndMake =
-    [ MultiAnd.make []                         `hasPatterns` []
-    , MultiAnd.make [TestTop]                  `hasPatterns` []
-    , MultiAnd.make [TestTop, TestOther 1]     `hasPatterns` [TestOther 1]
-    , MultiAnd.make [TestTop, TestBottom]      `hasPatterns` [TestBottom]
-    , MultiAnd.make [TestOther 1, TestOther 1] `hasPatterns` [TestOther 1]
-    , MultiAnd.make [TestBottom]               `hasPatterns` [TestBottom]
-    , MultiAnd.make [TestOther 1, TestOther 2]
+    [ MultiAnd.make (pure TestTop)                      `hasPatterns` [TestTop]
+    , MultiAnd.make (TestTop <| pure (TestOther 1))     `hasPatterns` [TestOther 1]
+    , MultiAnd.make (TestTop <| pure TestBottom)        `hasPatterns` [TestBottom]
+    , MultiAnd.make (TestOther 1 <| pure (TestOther 1)) `hasPatterns` [TestOther 1]
+    , MultiAnd.make (pure TestBottom)                   `hasPatterns` [TestBottom]
+    , MultiAnd.make (TestOther 1 <| pure (TestOther 2))
         `hasPatterns` [TestOther 1, TestOther 2]
     ]
 

@@ -72,6 +72,7 @@ dependencies:
   - memory >=0.14
   - mmorph >=1.1
   - mtl >=2.2
+  - nonempty-containers >= 0.3.3
   - optparse-applicative >=0.14
   - parser-combinators >=1.1
   - prettyprinter >=1.2
