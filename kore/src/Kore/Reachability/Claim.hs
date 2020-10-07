@@ -636,7 +636,12 @@ simplifyRightHandSide lensClaimPattern claim =
         >>= Logic.scatter
   where
     ClaimPattern { left } = Lens.view lensClaimPattern claim
-    sideCondition = Pattern.withoutTerm left & SideCondition.assumeTrueCondition
+    sideCondition =
+        -- term is irrelevant
+        -- substitution is already applied
+        Pattern.predicate left
+        & Condition.fromPredicate
+        & SideCondition.assumeTrueCondition
     Conditional { substitution } = left
     subst = Substitution.toMap substitution
 
