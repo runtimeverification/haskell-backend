@@ -82,7 +82,11 @@ newtype Pattern
   =
     Pattern
         { getPattern :: Cofree (PatternF variable) annotation }
-    deriving (Foldable, Functor, GHC.Generic, Traversable)
+    deriving (Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Eq variable => Eq (Pattern variable annotation) where
     (==) = eqWorker
@@ -104,10 +108,6 @@ instance Ord variable => Ord (Pattern variable annotation) where
             compare pat1 pat2
     {-# INLINE compare #-}
 
-deriving instance
-    (Show annotation, Show variable) =>
-    Show (Pattern variable annotation)
-
 instance Hashable variable => Hashable (Pattern variable annotation) where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
     {-# INLINE hashWithSalt #-}
@@ -118,18 +118,6 @@ instance
   where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat
-
-instance SOP.Generic (Pattern variable annotation)
-
-instance SOP.HasDatatypeInfo (Pattern variable annotation)
-
-instance
-    (Debug annotation, Debug variable) =>
-    Debug (Pattern variable annotation)
-
-instance
-    (Debug annotation, Debug variable, Diff annotation, Diff variable)
-    => Diff (Pattern variable annotation)
 
 instance
     (Unparse variable) =>

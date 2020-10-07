@@ -42,19 +42,11 @@ data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
     , symbolOrAliasParams      :: ![Sort]
     }
-    deriving (Show, Eq, Ord, GHC.Generic)
-
-instance Hashable SymbolOrAlias
-
-instance NFData SymbolOrAlias
-
-instance SOP.Generic SymbolOrAlias
-
-instance SOP.HasDatatypeInfo SymbolOrAlias
-
-instance Debug SymbolOrAlias
-
-instance Diff SymbolOrAlias
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse SymbolOrAlias where
     unparse
@@ -79,20 +71,18 @@ data Application head child = Application
     { applicationSymbolOrAlias :: !head
     , applicationChildren      :: [child]
     }
-    deriving (Eq, Functor, Foldable, Ord, Traversable, GHC.Generic, Show)
-
-instance (Hashable head, Hashable child) => Hashable (Application head child)
-
-instance (NFData head, NFData child) => NFData (Application head child)
-
-instance SOP.Generic (Application head child)
-
-instance SOP.HasDatatypeInfo (Application head child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug head, Debug child) => Debug (Application head child)
 
 instance
-    ( Debug head, Debug child, Diff head, Diff child )
+    ( Debug head, Diff head
+    , Debug child, Diff child
+    )
     => Diff (Application head child)
 
 instance (Unparse head, Unparse child) => Unparse (Application head child) where

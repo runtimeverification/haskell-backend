@@ -39,20 +39,14 @@ See 'Kore.Attribute.Smtlib.Smtlib'
 
  -}
 newtype Smthook = Smthook { getSmthook :: Maybe SExpr }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Smthook where
     def = Smthook Nothing
-
-instance NFData Smthook
-
-instance SOP.Generic Smthook
-
-instance SOP.HasDatatypeInfo Smthook
-
-instance Debug Smthook
-
-instance Diff Smthook
 
 -- | Kore identifier representing the @smthook@ attribute symbol.
 smthookId :: Id

@@ -23,15 +23,10 @@ import Kore.TopBottom
 import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic TestTopBottom
-
-instance SOP.HasDatatypeInfo TestTopBottom
-
-instance Debug TestTopBottom
-
-instance Diff TestTopBottom
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance TopBottom TestTopBottom where
     isTop TestTop = True

@@ -3,12 +3,6 @@
   </k>
 #And
   {
-    ?X <=Int 3
-  #Equals
-    true
-  }
-#And
-  {
     true
   #Equals
     ?X <=Int 3

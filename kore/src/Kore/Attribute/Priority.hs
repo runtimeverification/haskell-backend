@@ -25,17 +25,11 @@ import Kore.Debug
     or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
  -}
 newtype Priority = Priority { getPriority :: Maybe Integer }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Priority
-
-instance SOP.HasDatatypeInfo Priority
-
-instance Debug Priority
-
-instance Diff Priority
-
-instance NFData Priority
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Priority where
     def = Priority Nothing

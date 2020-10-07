@@ -22,7 +22,11 @@ import Kore.Debug
 {- | @Injective@ represents the @injective@ attribute for symbols.
  -}
 newtype Injective = Injective { isDeclaredInjective :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup Injective where
     (<>) (Injective a) (Injective b) = Injective (a || b)
@@ -32,16 +36,6 @@ instance Monoid Injective where
 
 instance Default Injective where
     def = mempty
-
-instance NFData Injective
-
-instance SOP.Generic Injective
-
-instance SOP.HasDatatypeInfo Injective
-
-instance Debug Injective
-
-instance Diff Injective
 
 -- | Kore identifier representing the @injective@ attribute symbol.
 injectiveId :: Id

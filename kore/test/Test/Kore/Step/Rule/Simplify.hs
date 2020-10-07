@@ -53,6 +53,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
     ( OnePathClaim (..)
+    , simplify
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -74,16 +75,19 @@ import Kore.Step.Simplification.Data
     , runSimplifier
     )
 import Kore.Step.Simplification.Simplify
-    ( MonadLog
-    , MonadSMT
+    ( MonadSMT
     , MonadSimplify (..)
     , emptyConditionSimplifier
     )
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import Kore.Syntax.Variable
     ( VariableName
     , fromVariableName
     )
+import Log
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Rule.Common
@@ -289,7 +293,7 @@ test_simplifyRule_OnePathClaim =
             )
 
         assertEqual "" expected actual
-    , testCase "f(x) is always defined" $ do
+    , testCase "lhs: f(x) is always defined" $ do
         let expected =
                 [ Mock.functional10 x `rewritesToWithSort` Mock.a
                 ]
@@ -320,8 +324,50 @@ test_simplifyRule_OnePathClaim =
               Pair (Mock.a, makeTruePredicate Mock.testSort)
             )
         assertEqual "" expected actual
+
+    , testCase "rhs: f(x) is always defined" $ do
+        let expected =
+                [ Mock.a `rewritesToWithSort` Mock.functional10 x
+                ]
+
+        actual <- runSimpl
+            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                `rewritesToWithSort`
+                Pair (Mock.functional10 x, makeTruePredicate Mock.testSort)
+            )
+
+        assertEqual "" expected actual
+
+    , testCase "infer rhs is defined" $ do
+        let expected =
+                [   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                    `rewritesToWithSort`
+                    Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
+                ]
+
+        actual <- runSimpl
+            (   Pair (Mock.a, makeTruePredicate Mock.testSort)
+                `rewritesToWithSort`
+                Pair (Mock.f x, makeTruePredicate Mock.testSort)
+            )
+
+        assertEqual "" expected actual
     ]
   where
+    simplClaim
+        :: forall simplifier
+        .  MonadSimplify simplifier
+        => OnePathClaim
+        -> simplifier [OnePathClaim]
+    simplClaim claim =
+        runTransitionT (simplify claim)
+        & (fmap . fmap) fst
+
+    runSimpl :: OnePathClaim -> IO [OnePathClaim]
+    runSimpl claim =
+        runSMT (pure ())
+        $ runSimplifier Mock.env (simplClaim claim)
+
     rewritesToWithSort
         :: RuleBase base OnePathClaim
         => base VariableName
@@ -444,9 +490,9 @@ data TestEnv =
 
 newtype TestSimplifierT m a =
     TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadReader TestEnv)
-    deriving (MonadLog, MonadSMT)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadReader TestEnv)
+    deriving newtype (MonadLog, MonadSMT)
 
 instance MonadTrans TestSimplifierT where
     lift = TestSimplifierT . lift

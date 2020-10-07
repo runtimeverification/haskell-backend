@@ -39,8 +39,8 @@ import qualified Database.SQLite.Simple as SQLite
 {- | @SQL@ is a 'Monad' for executing SQL statements.
  -}
 newtype SQL a = SQL { getSQL :: ReaderT SQLite.Connection IO a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadIO)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadIO)
 
 instance (Semigroup a) => Semigroup (SQL a) where
     (<>) sqlt1 sqlt2 = SQL $ (<>) <$> getSQL sqlt1 <*> getSQL sqlt2

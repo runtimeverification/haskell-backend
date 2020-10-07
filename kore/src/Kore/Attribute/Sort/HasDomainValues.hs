@@ -13,6 +13,7 @@ module Kore.Attribute.Sort.HasDomainValues
 
 import Prelude.Kore
 
+import qualified Data.Monoid as Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -21,24 +22,15 @@ import Kore.Debug
 
 -- | @HasDomainValues@ represents the @hasDomainValues@ attribute for symbols.
 newtype HasDomainValues = HasDomainValues { getHasDomainValues :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
-
-instance Semigroup HasDomainValues where
-    (<>) (HasDomainValues a) (HasDomainValues b) = HasDomainValues (a || b)
-
-instance Monoid HasDomainValues where
-    mempty = HasDomainValues False
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+    deriving (Semigroup, Monoid) via Monoid.Any
 
 instance Default HasDomainValues where
     def = mempty
-
-instance NFData HasDomainValues
-
-instance SOP.Generic HasDomainValues
-
-instance SOP.HasDatatypeInfo HasDomainValues
-
-instance Debug HasDomainValues
 
 -- | Kore identifier representing the @hasDomainValues@ attribute symbol.
 hasDomainValuesId :: Id

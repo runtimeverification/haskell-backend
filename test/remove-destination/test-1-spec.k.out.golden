@@ -40,7 +40,7 @@
   </k>
 #And
   {
-    K:Int in_keys ( M )
-  #Equals
     false
+  #Equals
+    K:Int in_keys ( M )
   }

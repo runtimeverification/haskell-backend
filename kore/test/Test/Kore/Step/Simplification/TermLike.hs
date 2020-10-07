@@ -47,8 +47,8 @@ simplifyEvaluated original =
         }
 
 newtype TestSimplifier a = TestSimplifier { getTestSimplifier :: Simplifier a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadLog, MonadSMT, MonadThrow)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadLog, MonadSMT, MonadThrow)
 
 instance MonadSimplify TestSimplifier where
     askMetadataTools = TestSimplifier askMetadataTools

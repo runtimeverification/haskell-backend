@@ -27,19 +27,12 @@ import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
 import qualified Kore.Error
 
-newtype Source = Source
-    { unSource :: Maybe String
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Source
-
-instance SOP.HasDatatypeInfo Source
-
-instance Debug Source
-
-instance Diff Source
-
-instance NFData Source
+newtype Source = Source { unSource :: Maybe String }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Source where
     def = Source Nothing

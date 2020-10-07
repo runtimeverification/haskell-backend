@@ -50,8 +50,12 @@ data Inj a =
         , injAttributes  :: !Attribute.Symbol
         , injChild       :: !a
         }
-    deriving (GHC.Generic, Show)
+    deriving (Show)
     deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Eq a => Eq (Inj a) where
     (==) a@(Inj _ _ _ _ _) b =
@@ -78,16 +82,6 @@ instance Hashable a => Hashable (Inj a) where
         `hashWithSalt` injChild
       where
         Inj { injConstructor, injFrom, injTo, injChild } = inj
-
-instance NFData a => NFData (Inj a)
-
-instance SOP.Generic (Inj a)
-
-instance SOP.HasDatatypeInfo (Inj a)
-
-instance Debug a => Debug (Inj a)
-
-instance (Debug a, Diff a) => Diff (Inj a)
 
 instance Unparse a => Unparse (Inj a) where
     unparse inj = Pretty.hsep ["/* Inj: */", unparse (toApplication inj)]

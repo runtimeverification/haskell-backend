@@ -27,6 +27,7 @@ module Kore.Reachability.Claim
     , deriveSeq'
     -- * For testing
     , checkImplicationWorker
+    , simplifyRightHandSide
     ) where
 
 import Prelude.Kore
@@ -87,6 +88,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -159,7 +163,6 @@ import Logic
     )
 import qualified Logic
 import qualified Pretty
-import qualified SMT
 
 class Claim claim where
     {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
@@ -204,25 +207,13 @@ data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
     deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-instance SOP.Generic claim => SOP.Generic (AppliedRule claim)
-
-instance SOP.HasDatatypeInfo claim => SOP.HasDatatypeInfo (AppliedRule claim)
-
-instance
-    ( Debug claim
-    , SOP.HasDatatypeInfo claim
-    , Debug (Rule claim)
-    , SOP.HasDatatypeInfo (Rule claim)
-    ) => Debug (AppliedRule claim)
+instance (Debug claim, Debug (Rule claim)) => Debug (AppliedRule claim)
 
 instance
-    ( Diff claim
-    , Debug claim
-    , SOP.HasDatatypeInfo claim
-    , Diff (Rule claim)
-    , Debug (Rule claim)
-    , SOP.HasDatatypeInfo (Rule claim)
+    ( Diff claim, Debug claim
+    , Diff (Rule claim), Debug (Rule claim)
     ) => Diff (AppliedRule claim)
 
 instance (From claim Attribute.Label, From (Rule claim) Attribute.Label)
@@ -318,10 +309,8 @@ transitionRule claims axiomGroups = transitionRuleWorker
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
-    transitionRuleWorker Begin (Rewritten claim) =
-        SMT.reinit >> pure (Claimed claim)
-    transitionRuleWorker Begin claimState =
-        SMT.reinit >> pure claimState
+    transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
+    transitionRuleWorker Begin claimState = pure claimState
 
     transitionRuleWorker Simplify claimState
       | Just claim <- retractSimplifiable claimState =
@@ -414,19 +403,12 @@ data CheckImplicationResult a
     | NotImpliedStuck !a
     -- ^ The implication between /terms/ is valid, but the implication between
     -- side-conditions is not valid.
-    deriving (Show, Eq, Functor, GHC.Generic)
-
-instance SOP.Generic claim =>
-    SOP.Generic (CheckImplicationResult claim)
-
-instance SOP.HasDatatypeInfo claim =>
-    SOP.HasDatatypeInfo (CheckImplicationResult claim)
-
-instance (Debug claim, SOP.HasDatatypeInfo claim) =>
-    Debug (CheckImplicationResult claim)
-
-instance (Diff claim, Debug claim, SOP.HasDatatypeInfo claim) =>
-    Diff (CheckImplicationResult claim)
+    deriving (Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | Remove the destination of the claim.
 checkImplication'
@@ -600,7 +582,7 @@ simplify'
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
     let sideCondition = extractSideCondition claim'
-    simplifyRightHandSide sideCondition claim'
+    simplifyRightHandSide lensClaimPattern sideCondition claim'
   where
     extractSideCondition =
         SideCondition.assumeTrueCondition
@@ -618,12 +600,19 @@ simplify' lensClaimPattern claim = do
                 & lift
             Foldable.asum (pure <$> Foldable.toList configs)
 
-    simplifyRightHandSide sideCondition =
-        Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
-            OrPattern.observeAllT
-            $ Logic.scatter dest
-            >>= Pattern.simplify sideCondition
-            >>= Logic.scatter
+simplifyRightHandSide
+    :: MonadSimplify m
+    => Lens' claim ClaimPattern
+    -> SideCondition RewritingVariableName
+    -> claim
+    -> m claim
+simplifyRightHandSide lensClaimPattern sideCondition =
+    Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
+        OrPattern.observeAllT
+        $ Logic.scatter dest
+        >>= Pattern.simplify sideCondition . Pattern.requireDefined
+        >>= SMT.Evaluator.filterMultiOr
+        >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted

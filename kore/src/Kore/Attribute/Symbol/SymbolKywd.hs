@@ -22,21 +22,15 @@ import Kore.Debug
 
 -- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
 newtype SymbolKywd = SymbolKywd { isSymbolKywd :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via Any
 
 instance Default SymbolKywd where
     def = mempty
-
-instance NFData SymbolKywd
-
-instance SOP.Generic SymbolKywd
-
-instance SOP.HasDatatypeInfo SymbolKywd
-
-instance Debug SymbolKywd
-
-instance Diff SymbolKywd
 
 -- | Kore identifier representing the @symbolKywd@ attribute symbol.
 symbolKywdId :: Id

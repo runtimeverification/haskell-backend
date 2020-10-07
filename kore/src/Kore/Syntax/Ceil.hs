@@ -38,20 +38,12 @@ data Ceil sort child = Ceil
     , ceilResultSort  :: !sort
     , ceilChild       :: child
     }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
-
-instance (Hashable sort, Hashable child) => Hashable (Ceil sort child)
-
-instance (NFData sort, NFData child) => NFData (Ceil sort child)
-
-instance SOP.Generic (Ceil sort child)
-
-instance SOP.HasDatatypeInfo (Ceil sort child)
-
-instance (Debug sort, Debug child) => Debug (Ceil sort child)
-
-instance
-    (Debug sort, Debug child, Diff sort, Diff child) => Diff (Ceil sort child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Ceil Sort child) where
     unparse Ceil { ceilOperandSort, ceilResultSort, ceilChild } =

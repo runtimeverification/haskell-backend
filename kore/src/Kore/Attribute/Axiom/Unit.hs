@@ -22,17 +22,11 @@ import Kore.Debug
 {- | @Unit@ represents the @unit@ attribute for axioms.
  -}
 newtype Unit = Unit { isUnit :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Unit
-
-instance SOP.HasDatatypeInfo Unit
-
-instance Debug Unit
-
-instance Diff Unit
-
-instance NFData Unit
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Default Unit where
     def = Unit False

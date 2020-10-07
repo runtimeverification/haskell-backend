@@ -108,21 +108,11 @@ data Assignment variable =
         { assignedVariable :: !(SomeVariable variable)
         , assignedTerm :: !(TermLike variable)
         }
-    deriving (Show, Eq, Ord, GHC.Generic)
-
-instance SOP.Generic (Assignment variable)
-
-instance SOP.HasDatatypeInfo (Assignment variable)
-
-instance Debug variable => Debug (Assignment variable)
-
-instance
-    ( Debug variable, Diff variable, Ord variable )
-    => Diff (Assignment variable)
-
-instance NFData variable => NFData (Assignment variable)
-
-instance Hashable variable => Hashable (Assignment variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance (Ord variable, Unparse variable) => Pretty (Assignment variable) where
     pretty Assignment_ { assignedVariable, assignedTerm } =
@@ -192,7 +182,11 @@ data Substitution variable
     = Substitution ![Assignment variable]
     | NormalizedSubstitution
         !(Map (SomeVariable variable) (TermLike variable))
-    deriving GHC.Generic
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
 instance
@@ -206,13 +200,8 @@ instance
   where
     compare = on compare unwrap
 
-instance SOP.Generic (Substitution variable)
-
-instance SOP.HasDatatypeInfo (Substitution variable)
-
-instance Debug variable => Debug (Substitution variable)
-
-instance (InternalVariable variable, Diff variable)
+instance
+    (Debug variable, Diff variable, Ord variable, SubstitutionOrd variable)
     => Diff (Substitution variable)
   where
     diffPrec a b =
@@ -221,10 +210,6 @@ instance (InternalVariable variable, Diff variable)
         wrapDiffPrec diff' = \precOut ->
             (if precOut >= 10 then Pretty.parens else id)
             ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
-
-deriving instance Show variable => Show (Substitution variable)
-
-instance NFData variable => NFData (Substitution variable)
 
 instance Hashable variable => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
@@ -675,15 +660,11 @@ because it contained simplifiable cycles.
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
-    deriving (Eq, Ord, Show, GHC.Generic)
-
-instance SOP.Generic (Normalization variable)
-
-instance SOP.HasDatatypeInfo (Normalization variable)
-
-instance Debug variable => Debug (Normalization variable)
-
-instance (Ord variable, Debug variable, Diff variable) => Diff (Normalization variable)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup (Normalization variable) where
     (<>) a b =

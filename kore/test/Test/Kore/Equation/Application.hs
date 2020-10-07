@@ -1,6 +1,7 @@
 module Test.Kore.Equation.Application
     ( test_attemptEquation
     , test_attemptEquationUnification
+    , test_applySubstitutionAndSimplify
     , concrete
     , symbolic
     , axiom
@@ -17,9 +18,13 @@ import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
 import Data.Generics.Product
     ( field
     )
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
@@ -45,6 +50,10 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import Kore.Step.Axiom.Registry
+    ( mkEvaluatorRegistry
+    )
 import qualified Kore.Variables.Target as Target
 import qualified Pretty
 
@@ -194,14 +203,14 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate sortR
-                    (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.x))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
                 makeEqualsPredicate sortR
-                    (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
+                    (Mock.functional11 Mock.a)
             expect1 =
                 WhileCheckRequires CheckRequiresError
                 { matchPredicate = makeTruePredicate_
@@ -212,8 +221,8 @@ test_attemptEquation =
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
                 makeEqualsPredicate sortR
-                    (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
+                    (Mock.functional11 Mock.a)
             sideCondition2 =
                 SideCondition.fromCondition . Condition.fromPredicate
                 $ requires2
@@ -507,6 +516,46 @@ test_attemptEquationUnification =
         SideCondition.top
         (f a)
     ]
+
+test_applySubstitutionAndSimplify :: [TestTree]
+test_applySubstitutionAndSimplify =
+    [ testCase "Function application in argument doesn't get evaluated" $ do
+        let mockArgument :: Predicate (Target.Target VariableName)
+            mockArgument =
+                var1Term `makeInPredicate_` Mock.f var2Term
+            expected =
+                ( makeCeilPredicate_ (Mock.f var2Term)
+                , variableName someVar1 `subst` Mock.f var2Term
+                )
+        (Right [actual]) <-
+            applySubstitutionAndSimplify
+                mockArgument
+                Nothing
+                mempty
+            & runExceptT
+            & runSimplifier env
+        assertEqual "" expected actual
+    ]
+  where
+    subst var term =
+        Map.fromList [(var, term)]
+    env = Mock.env { simplifierAxioms }
+    simplifierAxioms =
+        mkEvaluatorRegistry
+        $ Map.fromList
+        [ (AxiomIdentifier.Application Mock.fId
+          , [ functionAxiomUnification_
+                Mock.fSymbol
+                [mkElemVar Mock.z]
+                Mock.a
+            ]
+          )
+        ]
+    var1 = mapElementVariable Target.mkUnifiedTarget Mock.x
+    someVar1 = mapElementVariable Target.mkUnifiedTarget Mock.x & inject
+    var1Term = mkElemVar var1
+    var2 = mapElementVariable Target.mkUnifiedTarget Mock.y
+    var2Term = mkElemVar var2
 
 -- * Test data
 
