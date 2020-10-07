@@ -64,7 +64,8 @@ simplifyTopConfiguration patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable

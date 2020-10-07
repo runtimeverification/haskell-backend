@@ -146,8 +146,10 @@ top = fromCondition Condition.top
 topTODO :: InternalVariable variable => SideCondition variable
 topTODO = top
 
+-- TODO (thomas.tuegel): Deprecate andCondition
 andCondition
-    :: InternalVariable variable
+    :: HasCallStack
+    => InternalVariable variable
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
