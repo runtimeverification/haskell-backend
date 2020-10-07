@@ -42,6 +42,7 @@ module Kore.Internal.TermLike
     , refreshElementBinder
     , refreshSetBinder
     , depth
+    , makeSortsAgree
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort

@@ -76,9 +76,6 @@ module Kore.Internal.Predicate
 
 import Prelude.Kore
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
-    ( tailF
-    )
 import qualified Control.Comonad.Trans.Env as Env
 import Control.DeepSeq
     ( NFData (rnf)
@@ -424,31 +421,6 @@ instance TopBottom (Predicate variable) where
     isBottom PredicateFalse = True
     isBottom _ = False
 
-{- | Return the 'TermLike' corresponding to the given 'Predicate'. -}
-fromPredicate
-    :: InternalVariable variable
-    => Sort
-    -- ^ Sort of resulting pattern
-    -> Predicate variable
-    -> TermLike variable
-fromPredicate sort =
-    Recursive.fold $ synthesize . (\case
-        AndF      x -> TermLike.AndF x {andSort = sort}
-        BottomF   x -> TermLike.BottomF x {bottomSort = sort}
-        CeilF     x -> TermLike.CeilF x {ceilOperandSort = sort, ceilResultSort = sort}
-        EqualsF   x -> TermLike.EqualsF x {equalsOperandSort = sort, equalsResultSort = sort}
-        ExistsF   x -> TermLike.ExistsF x {existsSort = sort}
-        FloorF    x -> TermLike.FloorF x {floorOperandSort = sort, floorResultSort = sort}
-        ForallF   x -> TermLike.ForallF x {forallSort = sort}
-        IffF      x -> TermLike.IffF x {iffSort = sort}
-        ImpliesF  x -> TermLike.ImpliesF x {impliesSort = sort}
-        InF       x -> TermLike.InF x {inOperandSort = sort, inResultSort = sort}
-        NotF      x -> TermLike.NotF x {notSort = sort}
-        OrF       x -> TermLike.OrF x {orSort = sort}
-        TopF      x -> TermLike.TopF x {topSort = sort}
-    ) . Cofree.tailF
-
-
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
 pattern PredicateFalse :: Predicate variable
@@ -491,6 +463,31 @@ pattern PredicateExists var p <- (Recursive.project -> _ :< ExistsF (Exists () v
 
 pattern PredicateForall :: ElementVariable variable -> Predicate variable -> Predicate variable
 pattern PredicateForall var p <- (Recursive.project -> _ :< ForallF (Forall () var p))
+
+
+{- | Return the 'TermLike' corresponding to the given 'Predicate'. -}
+fromPredicate
+    :: InternalVariable variable
+    => Sort
+    -- ^ Sort of resulting pattern
+    -> Predicate variable
+    -> TermLike variable
+fromPredicate sort =
+    Recursive.fold $ \case
+        _ :< AndF     (And () t1 t2)       -> TermLike.mkAnd t1 t2
+        _ :< BottomF  _                    -> TermLike.mkBottom sort
+        _ :< CeilF    (Ceil () () t)       -> TermLike.mkCeil sort t
+        _ :< EqualsF  (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
+        _ :< ExistsF  (Exists () v t)      -> TermLike.mkExists v t
+        _ :< FloorF   (Floor () () t)      -> TermLike.mkFloor sort t
+        _ :< ForallF  (Forall () v t)      -> TermLike.mkForall v t
+        _ :< IffF     (Iff () t1 t2)       -> TermLike.mkIff t1 t2
+        _ :< ImpliesF (Implies () t1 t2)   -> TermLike.mkImplies t1 t2
+        _ :< InF      (In () () t1 t2)     -> TermLike.mkIn sort t1 t2
+        _ :< NotF     (Not () t)           -> TermLike.mkNot t
+        _ :< OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
+        _ :< TopF      _                   -> TermLike.mkTop sort
+
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
@@ -587,24 +584,18 @@ makeInPredicate
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
-makeInPredicate t1 t2 = synthesize $ InF In
-    { inOperandSort = ()
-    , inResultSort = ()
-    , inContainedChild = t1
-    , inContainingChild = t2
-    }
+makeInPredicate = TermLike.makeSortsAgree makeInWorker
+  where
+    makeInWorker t1 t2 _ = synthesize $ InF $ In () () t1 t2
 
 makeEqualsPredicate
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
-makeEqualsPredicate t1 t2 = synthesize $ EqualsF Equals
-    { equalsOperandSort = ()
-    , equalsResultSort = ()
-    , equalsFirst = t1
-    , equalsSecond = t2
-    }
+makeEqualsPredicate = TermLike.makeSortsAgree makeEqualsWorker
+  where
+    makeEqualsWorker t1 t2 _ = synthesize $ EqualsF $ Equals () () t1 t2
 
 makeExistsPredicate
     :: InternalVariable variable
