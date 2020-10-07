@@ -19,6 +19,7 @@ module Kore.Attribute.Pattern.FreeVariables
     , traverseFreeVariables
     , getFreeElementVariables
     , HasFreeVariables (..)
+    , isFreeOf
     ) where
 
 import Prelude.Kore
@@ -167,3 +168,13 @@ class HasFreeVariables pat variable where
 
 instance HasFreeVariables () variable where
     freeVariables = const emptyFreeVariables
+
+-- | Is the pattern free of the given variables?
+isFreeOf
+    :: Ord variable
+    => HasFreeVariables pattern' variable
+    => pattern'
+    -> Set (SomeVariable variable)
+    -> Bool
+isFreeOf pattern' =
+    Set.disjoint (toSet $ freeVariables pattern')

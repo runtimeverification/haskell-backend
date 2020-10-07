@@ -46,7 +46,7 @@ module Kore.Internal.Predicate
     , setSimplified
     , Kore.Internal.Predicate.forgetSimplified
     , simplifiedAttribute
-    , isFreeOf
+    , FreeVariables.isFreeOf
     , freeElementVariables
     , hasFreeVariable
     , mapVariables
@@ -79,11 +79,6 @@ import Data.List
 import Data.Map.Strict
     ( Map
     )
-import Data.Set
-    ( Set
-    )
-
-import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -773,15 +768,6 @@ forgetSimplified
     => Predicate variable -> Predicate variable
 forgetSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.forgetSimplified termLike)
-
--- |Is the predicate free of the given variables?
-isFreeOf
-    :: Ord variable
-    => Predicate variable
-    -> Set (SomeVariable variable)
-    -> Bool
-isFreeOf predicate =
-    Set.disjoint (FreeVariables.toSet $ freeVariables predicate)
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]
 freeElementVariables = getFreeElementVariables . freeVariables
