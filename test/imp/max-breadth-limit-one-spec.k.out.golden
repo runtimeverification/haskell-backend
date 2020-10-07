@@ -12,6 +12,14 @@
     </T>
   #And
     {
+      _DotVar0
+    #Equals
+      <generatedCounter>
+        _DotVar1
+      </generatedCounter>
+    }
+  #And
+    {
       false
     #Equals
       A <=Int B
@@ -29,6 +37,14 @@
         max |-> _0
       </state>
     </T>
+  #And
+    {
+      _DotVar0
+    #Equals
+      <generatedCounter>
+        _DotVar1
+      </generatedCounter>
+    }
   #And
     {
       true
