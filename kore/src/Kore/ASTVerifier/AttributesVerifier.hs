@@ -42,6 +42,9 @@ import Kore.Attribute.Sort
 import Kore.Attribute.Sort.HasDomainValues
 import Kore.Attribute.Subsort as Subsort
 
+import Kore.AST.AstWithLocation
+    ( locationFromAst
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
@@ -55,6 +58,9 @@ import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Definition
+import Kore.Syntax.Id
+    ( prettyPrintAstLocation
+    )
 import Kore.Syntax.Pattern
 import Kore.Syntax.Variable
     ( VariableName (..)
@@ -165,7 +171,10 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
                 , show . unparse $ Subsort.supersort s
                 , "its subsort:"
                 , show . unparse $ Subsort.subsort s
-                , "Location: "
+                , "Location in the Kore file:"
+                , show . prettyPrintAstLocation
+                    $ locationFromAst (Subsort.supersort s)
+                , "Location in the original K file: "
                 , show . pretty $ Attribute.sourceLocation axiom
                 ]
 
