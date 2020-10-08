@@ -48,7 +48,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Internal.Predicate
     ( Predicate
-    , fromPredicate
+    , fromPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
@@ -58,7 +58,6 @@ import Kore.Internal.TermLike
     ( Id (..)
     , InternalVariable
     , TermLike
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Step
@@ -166,8 +165,8 @@ instance
       | Just argument' <- argument
       , Just antiLeft' <- antiLeft
       =
-        let antiLeftTerm = fromPredicate sort antiLeft'
-            argumentTerm = fromPredicate sort argument'
+        let antiLeftTerm = fromPredicate_ antiLeft'
+            argumentTerm = fromPredicate_ argument'
          in
             TermLike.mkImplies
                 (TermLike.mkAnd
@@ -178,28 +177,28 @@ instance
                     )
                 )
                 (TermLike.mkAnd
-                    (TermLike.mkEquals sort left right)
+                    (TermLike.mkEquals_ left right)
                     ensures'
                 )
 
       -- function rule without priority
       | Just argument' <- argument
       =
-        let argumentTerm = fromPredicate sort argument'
+        let argumentTerm = fromPredicate_ argument'
          in TermLike.mkImplies
             (TermLike.mkAnd
                 requires'
-                (TermLike.mkAnd argumentTerm (TermLike.mkTop sort))
+                (TermLike.mkAnd argumentTerm TermLike.mkTop_)
             )
             (TermLike.mkAnd
-                (TermLike.mkEquals sort left right)
+                (TermLike.mkEquals_ left right)
                 ensures'
             )
 
       -- unconditional equation
       | isTop requires
       , isTop ensures
-      = TermLike.mkEquals sort left right
+      = TermLike.mkEquals_ left right
 
       -- conditional equation
       | otherwise
@@ -207,14 +206,13 @@ instance
         TermLike.mkImplies
             requires'
             (TermLike.mkAnd
-                (TermLike.mkEquals sort left right)
+                (TermLike.mkEquals_ left right)
                 ensures'
             )
 
       where
-        requires' = fromPredicate sort requires
-        ensures' = fromPredicate sort ensures
-        sort = termLikeSort requires'
+        requires' = fromPredicate_ requires
+        ensures' = fromPredicate_ ensures
         Equation
             { requires
             , argument

@@ -22,6 +22,7 @@ module Kore.Internal.Predicate
         , TopF
         )
     , fromPredicate
+    , fromPredicate_
     , makePredicate
     , isFalse
     , isTrue
@@ -171,6 +172,9 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike.Renaming
+import Kore.Sort
+    ( predicateSort
+    )
 
 import Kore.TopBottom
     ( TopBottom (..)
@@ -488,6 +492,11 @@ fromPredicate sort =
         _ :< OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
         _ :< TopF      _                   -> TermLike.mkTop sort
 
+fromPredicate_
+    :: InternalVariable variable
+    => Predicate variable
+    -> TermLike variable
+fromPredicate_ = fromPredicate predicateSort
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}

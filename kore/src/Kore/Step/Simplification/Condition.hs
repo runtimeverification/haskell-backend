@@ -37,9 +37,6 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Sort
-    ( predicateSort
-    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -129,7 +126,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ Predicate.fromPredicate predicateSort predicate
+        $ Predicate.fromPredicate_ predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (OrPattern.map eraseTerm patternOr)

@@ -332,14 +332,12 @@ lhsToTerm
     -> Maybe (AntiLeft variable)
     -> Predicate variable
     -> TermLike variable
-lhsToTerm left mAntiLeft requires = maybe
-    (TermLike.mkAnd (Predicate.fromPredicate sort requires) left)
-    (\ antiLeft -> TermLike.mkAnd
+lhsToTerm left Nothing requires =
+    TermLike.mkAnd (Predicate.fromPredicate_ requires) left
+lhsToTerm left (Just antiLeft) requires =
+    TermLike.mkAnd
         (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
-        (TermLike.mkAnd (Predicate.fromPredicate sort requires) left))
-    mAntiLeft
-  where
-    sort = TermLike.termLikeSort left
+        (TermLike.mkAnd (Predicate.fromPredicate_ requires) left)
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS

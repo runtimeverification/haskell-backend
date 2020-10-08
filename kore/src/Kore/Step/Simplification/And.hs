@@ -381,8 +381,8 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
           | otherwise = assumptions
 
         restrictAssumptions Variable { variableName } =
-            (HashMap.filterWithKey
-                $ \termLike _ -> wouldNotCapture termLike)
+            HashMap.filterWithKey
+                (\termLike _ -> wouldNotCapture termLike)
                 assumptions
           where
             wouldNotCapture = not . TermLike.hasFreeVariable variableName
