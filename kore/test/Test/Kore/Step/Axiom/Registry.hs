@@ -203,20 +203,6 @@ testDef =
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes = Attributes []
-            , sentenceAxiomPattern =
-                Builtin.externalize $ mkImplies
-                    (mkTop sortVarS)
-                    (mkAnd
-                        (mkEquals sortVarS
-                            (mkTop sortS)
-                            (mkApplySymbol fHead [])
-                        )
-                        (mkTop sortVarS)
-                    )
-            }
-        , SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes =
                 Attributes [Attribute.priorityAttribute 2]
             , sentenceAxiomPattern =

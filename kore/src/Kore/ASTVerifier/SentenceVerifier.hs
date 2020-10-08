@@ -35,6 +35,7 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -86,10 +87,16 @@ import Kore.Equation.Sentence
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
+import Kore.Internal.Predicate
+    ( unwrapPredicate
+    )
 import qualified Kore.Internal.Symbol as Internal.Symbol
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern Ceil_
+    )
 import Kore.Internal.TermLike.TermLike
-    ( extractAttributes
-    , freeVariables
+    ( freeVariables
     )
 import Kore.Reachability
     ( SomeClaim
@@ -397,15 +404,9 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ Equation {left, attributes} -> koreFailWithLocationsWhen
-                ( Attribute.simplification attributes
-                  == NotSimplification
-                  &&
-                  ( left
-                  & extractAttributes
-                  & Pattern.function
-                  & Pattern.isFunction
-                  & not)
+            (\ Equation {argument, left, attributes} -> koreFailWithLocationsWhen
+                ( isNotSimplification attributes
+                  && (checkLHS left || checkArgument argument)
                 )
                 [sentenceAxiomPattern verified]
                 "Left hand side of NotSimplification equation axiom is\
@@ -417,6 +418,23 @@ verifyAxiomSentence sentence =
         Lens.over
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
+
+    isNotSimplification attributes =
+        Attribute.simplification attributes ==
+        NotSimplification
+
+    checkLHS = \case
+        App_ _ terms -> any containsFunction terms
+        Ceil_ _ _ term -> containsFunction term
+        _ -> True
+
+    containsFunction term =
+        Pattern.isFunction (Pattern.function attrs)
+        || any containsFunction termF
+      where
+        attrs :< termF = Recursive.project term
+
+    checkArgument = maybe False (containsFunction . unwrapPredicate)
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
