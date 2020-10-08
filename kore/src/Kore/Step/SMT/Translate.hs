@@ -139,7 +139,9 @@ translatePredicateWith translateTerm predicate =
                 translatePredicateExists exists'
                 <|> translateUninterpreted SMT.tBool pat
             FloorF _ -> translateUninterpreted SMT.tBool pat
-            ForallF _ -> translateUninterpreted SMT.tBool pat
+            ForallF forall' ->
+                translatePredicateForall forall'
+                <|> translateUninterpreted SMT.tBool pat
             InF _ -> translateUninterpreted SMT.tBool pat
 
             -- Invalid: no translation, should not occur in predicates
@@ -263,14 +265,51 @@ translatePredicateWith translateTerm predicate =
         existsBuiltinSort = case getHook of
             Just builtinSort
               | builtinSort == Builtin.Bool.sort
-              -> translateQuantifier SMT.existsQ SMT.tBool existsVariable existsChild
+              -> translateQuantifier
+                    SMT.existsQ
+                    SMT.tBool
+                    existsVariable
+                    existsChild
               | builtinSort == Builtin.Int.sort
-              -> translateQuantifier SMT.existsQ SMT.tInt existsVariable existsChild
+              -> translateQuantifier
+                    SMT.existsQ
+                    SMT.tInt
+                    existsVariable
+                    existsChild
             _ -> empty
         existsConstructorSort = do
             smtSort <- hoistMaybe $ translateSort varSort
             translateQuantifier SMT.existsQ smtSort existsVariable existsChild
         varSort = variableSort existsVariable
+        tools :: SmtMetadataTools Attribute.Symbol
+        tools = given
+        Attribute.Sort { hook = Hook { getHook } } =
+            sortAttributes tools varSort
+
+    translatePredicateForall
+        :: Forall Sort variable p -> Translator m variable SExpr
+    translatePredicateForall Forall { forallVariable, forallChild } =
+        forallBuiltinSort <|> forallConstructorSort
+      where
+        forallBuiltinSort = case getHook of
+            Just builtinSort
+              | builtinSort == Builtin.Bool.sort
+              -> translateQuantifier
+                    SMT.forallQ
+                    SMT.tBool
+                    forallVariable
+                    forallChild
+              | builtinSort == Builtin.Int.sort
+              -> translateQuantifier
+                    SMT.forallQ
+                    SMT.tInt
+                    forallVariable
+                    forallChild
+            _ -> empty
+        forallConstructorSort = do
+            smtSort <- hoistMaybe $ translateSort varSort
+            translateQuantifier SMT.forallQ smtSort forallVariable forallChild
+        varSort = variableSort forallVariable
         tools :: SmtMetadataTools Attribute.Symbol
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
