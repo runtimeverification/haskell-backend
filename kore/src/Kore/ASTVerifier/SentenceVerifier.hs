@@ -61,10 +61,10 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.ConstructorLike
     ( isConstructorLike
     )
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -96,7 +96,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern Ceil_
     )
 import Kore.Internal.TermLike.TermLike
     ( freeVariables
@@ -407,12 +406,12 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ Equation {argument, left, attributes} -> koreFailWithLocationsWhen
+            (\ Equation {argument, attributes} -> koreFailWithLocationsWhen
                 ( isNotSimplification attributes
-                  && (checkLHS left || checkArgument argument)
+                  && checkArgument argument
                 )
                 [sentenceAxiomPattern verified]
-                "Left hand side of NotSimplification equation axiom\
+                "Argument of NotSimplification equation axiom\
                 \ contains non-constructor function symbols"
             )
             $ fromSentenceAxiom (attrs, verified)
@@ -426,19 +425,19 @@ verifyAxiomSentence sentence =
         Attribute.simplification attributes ==
         NotSimplification
 
-    checkLHS = \case
-        App_ _ terms -> any containsFunction terms
-        Ceil_ _ _ term -> containsFunction term
-        _ -> False
-
-    containsFunction term =
-        (Pattern.isFunction (Pattern.function attrs)
-            && not (isConstructorLike (Pattern.constructorLikeAttribute attrs))
-        ) || any containsFunction termF
+    containsNonconstructorFunctionSymbol term =
+            topIsNonconstructorFunctionSymbol
+            || any containsNonconstructorFunctionSymbol termF
       where
         attrs :< termF = Recursive.project term
 
-    checkArgument = maybe False (containsFunction . unwrapPredicate)
+        topIsNonconstructorFunctionSymbol
+            | App_ _ _ <- term =
+                Pattern.isFunction (Pattern.function attrs)
+                && not (isConstructorLike (Pattern.constructorLikeAttribute attrs))
+            | otherwise = False
+
+    checkArgument = maybe False (containsNonconstructorFunctionSymbol . unwrapPredicate)
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
