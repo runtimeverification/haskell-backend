@@ -263,29 +263,33 @@ translatePredicateWith translateTerm predicate =
         existsBuiltinSort = case getHook of
             Just builtinSort
               | builtinSort == Builtin.Bool.sort
-              -> translateExists SMT.tBool existsVariable existsChild
+              -> translateQuantifier SMT.existsQ SMT.tBool existsVariable existsChild
               | builtinSort == Builtin.Int.sort
-              -> translateExists SMT.tInt existsVariable existsChild
+              -> translateQuantifier SMT.existsQ SMT.tInt existsVariable existsChild
             _ -> empty
         existsConstructorSort = do
             smtSort <- hoistMaybe $ translateSort varSort
-            translateExists smtSort existsVariable existsChild
+            translateQuantifier SMT.existsQ smtSort existsVariable existsChild
         varSort = variableSort existsVariable
         tools :: SmtMetadataTools Attribute.Symbol
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools varSort
 
-    translateExists
-        :: SExpr -> ElementVariable variable -> p -> Translator m variable SExpr
-    translateExists varSort var predTerm
+    translateQuantifier
+        :: ([SExpr] -> SExpr -> SExpr)
+        -> SExpr
+        -> ElementVariable variable
+        -> p
+        -> Translator m variable SExpr
+    translateQuantifier quantifier varSort var predTerm
       = do
         oldVar <- State.gets (Map.lookup var . quantifiedVars)
         smtVar <- translateTerm varSort (QuantifiedVariable var)
         smtPred <- translatePredicatePattern predTerm
         field @"quantifiedVars" Lens.%=
             maybe (Map.delete var) (Map.insert var) oldVar
-        return $ SMT.existsQ [SMT.List [smtVar, varSort]] smtPred
+        return $ quantifier [SMT.List [smtVar, varSort]] smtPred
 
     translatePattern :: Sort -> p -> Translator m variable SExpr
     translatePattern sort pat =
