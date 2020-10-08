@@ -62,6 +62,9 @@ import Kore.Attribute.Parser
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Pattern
+import Kore.Attribute.Pattern.ConstructorLike
+    ( isConstructorLike
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -409,8 +412,8 @@ verifyAxiomSentence sentence =
                   && (checkLHS left || checkArgument argument)
                 )
                 [sentenceAxiomPattern verified]
-                "Left hand side of NotSimplification equation axiom is\
-                \ not a function"
+                "Left hand side of NotSimplification equation axiom\
+                \ contains non-constructor function symbols"
             )
             $ fromSentenceAxiom (attrs, verified)
   where
@@ -426,11 +429,12 @@ verifyAxiomSentence sentence =
     checkLHS = \case
         App_ _ terms -> any containsFunction terms
         Ceil_ _ _ term -> containsFunction term
-        _ -> True
+        _ -> False
 
     containsFunction term =
-        Pattern.isFunction (Pattern.function attrs)
-        || any containsFunction termF
+        (Pattern.isFunction (Pattern.function attrs)
+            && not (isConstructorLike (Pattern.constructorLikeAttribute attrs))
+        ) || any containsFunction termF
       where
         attrs :< termF = Recursive.project term
 

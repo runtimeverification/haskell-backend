@@ -171,7 +171,7 @@ testDef =
             (simpleSymbolSentence (SymbolName "q") (SortName "S"))
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
