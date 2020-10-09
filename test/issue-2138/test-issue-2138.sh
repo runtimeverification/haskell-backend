@@ -1,5 +1,5 @@
 #!/bin/sh
-exec kore-exec \
+$KORE_EXEC \
     definition.kore \
     --pattern pgm.kore \
     --module TEST \
