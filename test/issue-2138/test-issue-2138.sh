@@ -9,8 +9,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --solver-transcript \
-    smt-transcript \
     --search searchFile.kore \
      \
     --searchType FINAL \
