@@ -20,6 +20,9 @@ module Kore.Internal.MultiAnd
     , singleton
     , map
     , traverse
+    , topPredicate
+    , topPredicate_
+    , fromPredicates
     ) where
 
 import Prelude.Kore hiding
@@ -44,10 +47,12 @@ import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
     ( pattern And_
+    , Sort
     , TermLike
     , TermLikeF (..)
     )
@@ -232,3 +237,21 @@ traverse
     -> f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . getMultiAnd
 {-# INLINE traverse #-}
+
+topPredicate_
+    :: InternalVariable variable
+    => MultiAnd (Predicate variable)
+topPredicate_ = singleton makeTruePredicate_
+
+topPredicate
+    :: InternalVariable variable
+    => Sort
+    -> MultiAnd (Predicate variable)
+topPredicate sort = singleton (makeTruePredicate sort)
+
+fromPredicates
+    :: InternalVariable variable
+    => [Predicate variable]
+    -> MultiAnd (Predicate variable)
+fromPredicates [] = topPredicate_
+fromPredicates (predicate : rest) = make (predicate :| rest)

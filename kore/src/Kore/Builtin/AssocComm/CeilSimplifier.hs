@@ -275,15 +275,13 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 (tail $ List.tails abstractKeys)
         let conditions :: MultiAnd (OrCondition variable)
             conditions =
-                mconcat
-                    [ MultiAnd.make definedKeys
-                    , MultiAnd.make definedOpaque
-                    , mconcat definedValues
-                    , mconcat distinctConcreteKeys
-                    , mconcat distinctAbstractKeys
-                    , Foldable.foldMap (notMembers normalizedAc) opaque
-                    , definedOpaquePairs
-                    ]
+                MultiAnd.make definedKeys
+                <> MultiAnd.make definedOpaque
+                <> mconcat definedValues
+                <> mconcat distinctConcreteKeys
+                <> mconcat distinctAbstractKeys
+                <> Foldable.foldMap (notMembers normalizedAc) opaque
+                <> definedOpaquePairs
 
         And.simplifyEvaluatedMultiPredicate sideCondition conditions
   where

@@ -128,12 +128,13 @@ distributeEvaluateImplies
     -> Pattern variable
     -> simplifier (OrPattern variable)
 distributeEvaluateImplies sideCondition firsts second =
-    And.simplify
-        Not.notSimplifier
-        sideCondition
-        (MultiAnd.make implications)
-  where
-    implications = map (\first -> makeEvaluateImplies first second) firsts
+    undefined
+--     And.simplify
+--         Not.notSimplifier
+--         sideCondition
+--         (MultiAnd.make implications)
+--   where
+--     implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies
     :: InternalVariable variable

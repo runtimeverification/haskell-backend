@@ -230,15 +230,15 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse (Not.simplifyEvaluated sideCondition) secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        And.simplify  Not.notSimplifier sideCondition
-            (MultiAnd.make (firstNotCeil : secondNotCeils))
+        And.simplify Not.notSimplifier sideCondition
+            (MultiAnd.make (firstNotCeil :| secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         And.simplify Not.notSimplifier sideCondition
-            (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
+            (MultiAnd.make (firstCeil :| oneNotBottom : firstEqualsSeconds))
     return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
@@ -298,10 +298,10 @@ makeEvaluate
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
     negationAnd <-
         And.simplify Not.notSimplifier sideCondition
-            (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+            (MultiAnd.make (firstCeilNegation :| [secondCeilNegation]))
     equalityAnd <-
         And.simplify Not.notSimplifier sideCondition
-            (MultiAnd.make [termEquality, firstCeil, secondCeil])
+            (MultiAnd.make (termEquality :| [firstCeil, secondCeil]))
     return $ Or.simplifyEvaluated equalityAnd negationAnd
   where
     termsAreEqual = firstTerm == secondTerm
@@ -374,7 +374,7 @@ makeEvaluateTermsToPredicate first second sideCondition
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
                 sideCondition
-                (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+                (MultiAnd.make (firstCeilNegation :| [secondCeilNegation]))
 
             return $ MultiOr.merge predicatedOr ceilNegationAnd
 

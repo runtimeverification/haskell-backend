@@ -214,9 +214,10 @@ distributeNot
     => Not sort (MultiOr child)
     -> MultiAnd (Not sort child)
 distributeNot notOr@Not { notChild } =
-    MultiAnd.make $ worker <$> Foldable.toList notChild
-  where
-    worker child = notOr { notChild = child }
+    undefined
+--     MultiAnd.make $ worker <$> Foldable.toList notChild
+--   where
+--     worker child = notOr { notChild = child }
 
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
  -}

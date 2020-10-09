@@ -202,11 +202,10 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
     let substitution = Pattern.substitution normalized
         predicates :: Changed (MultiAnd (Predicate variable))
         predicates =
-            mconcat
-                [ MultiAnd.fromPredicate (predicate unified)
-                , MultiAnd.fromPredicate (predicate normalized)
-                , foldMap (from @(Predicate _) . predicate) patterns
-                ]
+            MultiAnd.fromPredicate (predicate unified)
+            <> MultiAnd.fromPredicate (predicate normalized)
+            -- TODO: is this right?
+            <> MultiAnd.map predicate patterns
             & simplifyConjunctionByAssumption
         term =
             applyAndIdempotenceAndFindContradictions
@@ -241,7 +240,7 @@ simplifyConjunctionByAssumption
     => MultiAnd (Predicate variable)
     -> Changed (MultiAnd (Predicate variable))
 simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
-    fmap MultiAnd.make
+    fmap MultiAnd.fromPredicates
     $ flip evalStateT HashMap.empty
     $ for (sortBySize andPredicates)
     $ \predicate' -> do

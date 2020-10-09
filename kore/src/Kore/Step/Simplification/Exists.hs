@@ -337,10 +337,11 @@ makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <- lift $ And.simplifyEvaluatedMultiPredicate
         sideCondition
         (MultiAnd.make
-            [   OrCondition.fromCondition quantifyCondition
-            ,   OrCondition.fromCondition
-                    (Condition.fromSubstitution freeSubstitution)
-            ]
+            ( OrCondition.fromCondition quantifyCondition
+            :| [ OrCondition.fromCondition
+                (Condition.fromSubstitution freeSubstitution)
+               ]
+            )
         )
     predicate <- Logic.scatter orCondition
     let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate

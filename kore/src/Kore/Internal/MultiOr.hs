@@ -183,10 +183,11 @@ distributeAnd
     => MultiAnd (MultiOr term)
     -> MultiOr (MultiAnd term)
 distributeAnd =
-    foldr (crossProductGeneric and') (singleton MultiAnd.top)
-  where
-    and' term ma =
-        MultiAnd.singleton term <> ma
+    undefined
+--     foldr (crossProductGeneric and') (singleton MultiAnd.top)
+--   where
+--     and' term ma =
+--         MultiAnd.singleton term <> ma
 
 distributeApplication
     :: Ord head

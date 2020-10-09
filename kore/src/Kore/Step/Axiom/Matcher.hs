@@ -197,7 +197,7 @@ matchIncremental termLike1 termLike2 =
         MatcherState
             { queued = Set.singleton (Constraint (Pair termLike1 termLike2))
             , deferred = empty
-            , predicate = mempty
+            , predicate = MultiAnd.topPredicate_
             , substitution = mempty
             , bound = mempty
             , targets = free1
@@ -625,7 +625,7 @@ definedTerm termLike
   | isDefinedPattern termLike = return ()
   | otherwise = field @"predicate" <>= definedTermLike
   where
-    definedTermLike = MultiAnd.make [makeCeilPredicate_ termLike]
+    definedTermLike = MultiAnd.singleton (makeCeilPredicate_ termLike)
 
 {- | Ensure that the given variable is a target variable.
 
