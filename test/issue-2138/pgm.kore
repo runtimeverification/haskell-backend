@@ -1,0 +1,27 @@
+\and {SortGeneratedTopCell{}}
+     ( \forall {SortGeneratedTopCell{}} ( ConfigVar'Ques'I:SortInt{}
+                                        , \equals{SortBool{}, SortGeneratedTopCell{}} (
+                                               Lbl'UndsEqlsEqls'Int'Unds'{}( Lbli'LParUndsCommUndsRParUnds'TEST'Unds'Int'Unds'Int'Unds'Int{}( ConfigVar'Ques'I:SortInt{}, \dv{SortInt{}}("0") ) , \dv{SortInt{}}("0") )
+                                             , \dv{SortBool{}}("true")
+                                             )
+                                        )
+     ,  Lbl'-LT-'generatedTop'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(
+                    kseq{}(
+                        Lblassert{}(
+                             inj{SortBool{}, SortExp{}}(
+                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                    Lbli'LParUndsCommUndsRParUnds'TEST'Unds'Int'Unds'Int'Unds'Int{}(
+                                         \dv{SortInt{}}("1"),
+                                         \dv{SortInt{}}("0")
+                                    ),
+                                     \dv{SortInt{}}("0")
+                                )
+                            )
+                        ),
+                         dotk{}()
+                    )
+            ),
+            Lbl'-LT-'generatedCounter'-GT-'{}( \dv{SortInt{}}("0") )
+        )
+    )    

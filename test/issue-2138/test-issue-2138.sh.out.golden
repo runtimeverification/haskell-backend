@@ -1,0 +1,47 @@
+/* Created: Kore.Internal.Conditional.makeAndPredicate */
+/* Spa */
+\and{SortGeneratedTopCell{}}(
+    /* Created: Kore.Internal.Predicate.makeAndPredicate */
+    /* Sfa */
+    \and{SortGeneratedTopCell{}}(
+        /* Sfa */
+        \equals{SortBool{}, SortGeneratedTopCell{}}(
+            /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true"),
+            /* Fl Fn D Sfa */
+            Lbl'UndsEqlsEqls'Int'Unds'{}(
+                /* Fl Fn D Sfa */
+                Lbli'LParUndsCommUndsRParUnds'TEST'Unds'Int'Unds'Int'Unds'Int{}(
+                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1"),
+                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                ),
+                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+            )
+        ),
+        /* Sfa */
+        \forall{SortGeneratedTopCell{}}(
+            ConfigVar'Ques'I:SortInt{},
+            /* Sfa */
+            \equals{SortInt{}, SortGeneratedTopCell{}}(
+                /* Fl Fn D Sfa */
+                Lbli'LParUndsCommUndsRParUnds'TEST'Unds'Int'Unds'Int'Unds'Int{}(
+                    /* Fl Fn D Sfa */ ConfigVar'Ques'I:SortInt{},
+                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                ),
+                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+            )
+        )
+    ),
+    /* Spa */
+    \equals{SortGeneratedTopCell{}, SortGeneratedTopCell{}}(
+        /* Fl Fn D Sfa */ VarResult:SortGeneratedTopCell{},
+        /* Fl Fn D Sfa Cl */
+        Lbl'-LT-'generatedTop'-GT-'{}(
+            /* Fl Fn D Sfa Cl */
+            Lbl'-LT-'k'-GT-'{}(/* Fl Fn D Sfa Cl */ dotk{}()),
+            /* Fl Fn D Sfa Cl */
+            Lbl'-LT-'generatedCounter'-GT-'{}(
+                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+            )
+        )
+    )
+)
