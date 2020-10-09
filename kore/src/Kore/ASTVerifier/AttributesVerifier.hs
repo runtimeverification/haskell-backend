@@ -163,20 +163,19 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
             . getSortAttributes indexedModule
             . Subsort.supersort
         hookedSubsort = find isHooked subsorts
-    for_ hookedSubsort
-        $ \s -> koreFail
-            $ unlines
-                [ "Hooked sorts may not have subsorts."
-                , "hooked sort:"
-                , show . unparse $ Subsort.supersort s
-                , "its subsort:"
-                , show . unparse $ Subsort.subsort s
-                , "Location in the Kore file:"
-                , show . prettyPrintAstLocation
-                    $ locationFromAst (Subsort.supersort s)
-                , "Location in the original K file: "
-                , show . pretty $ Attribute.sourceLocation axiom
-                ]
+    for_ hookedSubsort $ \sort ->
+        koreFail . unlines $
+            [ "Hooked sorts may not have subsorts."
+            , "Hooked sort:"
+            , show . unparse $ Subsort.supersort sort
+            , "Its subsort:"
+            , show . unparse $ Subsort.subsort sort
+            , "Location in the Kore file:"
+            , show . prettyPrintAstLocation
+                $ locationFromAst (Subsort.supersort sort)
+            , "Location in the original K file: "
+            , show . pretty $ Attribute.sourceLocation axiom
+            ]
 
 verifyAxiomAttributes
     :: forall error attrs
