@@ -38,14 +38,16 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
 
+ARG HLINT=3.1
 RUN    cd /home/user \
-    && curl https://github.com/ndmitchell/hlint/releases/download/v3.1/hlint-3.1-x86_64-linux.tar.gz -sSfL | tar xzf - \
-    && mv hlint-3.1 hlint
+    && curl https://github.com/ndmitchell/hlint/releases/download/v$HLINT/hlint-$HLINT-x86_64-linux.tar.gz -sSfL | tar xzf - \
+    && mv hlint-$HLINT hlint
 ENV PATH=/home/user/hlint:$PATH
 
+ARG STYLISH_HASKELL=0.11.0.0
 RUN    cd /home/user \
-    && curl https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz -sSfL | tar xzf - \
-    && mv stylish-haskell-v0.11.0.0-linux-x86_64 stylish-haskell
+    && curl https://github.com/jaspervdj/stylish-haskell/releases/download/v$STYLISH_HASKELL/stylish-haskell-v$STYLISH_HASKELL-linux-x86_64.tar.gz -sSfL | tar xzf - \
+    && mv stylish-haskell-v$STYLISH_HASKELL-linux-x86_64 stylish-haskell
 ENV PATH=/home/user/stylish-haskell:$PATH
 
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
