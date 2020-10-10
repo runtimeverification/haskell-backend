@@ -61,10 +61,6 @@ import Kore.Attribute.Parser
     ( ParseAttributes
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import Kore.Attribute.Pattern.ConstructorLike
-    ( isConstructorLike
-    )
-import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -93,7 +89,7 @@ import Kore.IndexedModule.Resolvers as Resolvers
 import Kore.Internal.Predicate
     ( unwrapPredicate
     )
-import qualified Kore.Internal.Symbol as Internal.Symbol
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     )
@@ -429,12 +425,12 @@ verifyAxiomSentence sentence =
             topIsNonconstructorFunctionSymbol
             || any containsNonconstructorFunctionSymbol termF
       where
-        attrs :< termF = Recursive.project term
+        _ :< termF = Recursive.project term
 
         topIsNonconstructorFunctionSymbol
-            | App_ _ _ <- term =
-                Pattern.isFunction (Pattern.function attrs)
-                && not (isConstructorLike (Pattern.constructorLikeAttribute attrs))
+            | App_ sym _ <- term =
+                Symbol.isFunction sym
+                && not (Symbol.isConstructorLike sym)
             | otherwise = False
 
     checkArgument = maybe False (containsNonconstructorFunctionSymbol . unwrapPredicate)
@@ -557,7 +553,7 @@ parseAndVerifyAxiomAttributes
     => IndexedModule Verified.Pattern Attribute.Symbol attrs
     -> FreeVariables VariableName
     -> Attributes
-    -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
+    -> error (Attribute.Axiom Symbol.Symbol VariableName)
 parseAndVerifyAxiomAttributes indexModule freeVars attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
   where
