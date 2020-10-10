@@ -44,7 +44,7 @@ RUN    cd /home/user \
     && mv hlint-$HLINT hlint
 ENV PATH=/home/user/hlint:$PATH
 
-ARG STYLISH_HASKELL=0.11.0.0
+ARG STYLISH_HASKELL=0.12.2.0
 RUN    cd /home/user \
     && curl https://github.com/jaspervdj/stylish-haskell/releases/download/v$STYLISH_HASKELL/stylish-haskell-v$STYLISH_HASKELL-linux-x86_64.tar.gz -sSfL | tar xzf - \
     && mv stylish-haskell-v$STYLISH_HASKELL-linux-x86_64 stylish-haskell
