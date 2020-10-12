@@ -414,15 +414,15 @@ data CheckImplicationResult a
     deriving anyclass (Debug, Diff)
 
 instance Pretty a => Pretty (CheckImplicationResult a) where
-    pretty Implied = "Implied"
+    pretty Implied = "implied"
     pretty (NotImplied a) =
         Pretty.vsep
-            [ "NotImplied:"
+            [ "not implied:"
             , Pretty.indent 4 $ pretty a
             ]
     pretty (NotImpliedStuck a) =
         Pretty.vsep
-            [ "NotImpliedStuck:"
+            [ "stuck:"
             , Pretty.indent 4 $ pretty a
             ]
 
