@@ -1,0 +1,12 @@
+module VERIFICATION
+  import TEST
+endmodule
+
+module ISSUE-2138-SPEC
+  import VERIFICATION
+
+  rule
+    <k> #assert i ( 1 , 0 ) ==Int 0 => . </k>
+      requires #assert i ( X, 0 ) ==Int 0
+
+endmodule
