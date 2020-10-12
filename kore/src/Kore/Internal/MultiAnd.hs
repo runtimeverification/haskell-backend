@@ -22,7 +22,6 @@ module Kore.Internal.MultiAnd
     , singleton
     , map
     , traverse
-    , lensPredicateSorted
     ) where
 
 import Prelude.Kore hiding
@@ -33,7 +32,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
@@ -255,14 +253,3 @@ traverse
     -> f (MultiAnd child2)
 traverse f = fmap make . Traversable.traverse f . Foldable.toList
 {-# INLINE traverse #-}
-
-lensPredicateSorted
-    :: InternalVariable variable
-    => Functor f
-    => Sort
-    -> (MultiAnd (Predicate variable)
-    -> f (MultiAnd (Predicate variable)))
-    -> Predicate variable
-    -> f (Predicate variable)
-lensPredicateSorted sort =
-    Lens.iso fromPredicate (toPredicateSorted sort)
