@@ -25,8 +25,6 @@ RUN /home/user/.install-stack/install-stack.sh
 
 USER $USER_ID:$GROUP_ID
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
-
 ENV LC_ALL=C.UTF-8
 
 ARG Z3=4.8.8
