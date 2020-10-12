@@ -19,6 +19,10 @@ module Kore.ASTVerifier.AttributesVerifier
     ) where
 
 import qualified Control.Lens as Lens
+import Data.Foldable
+    ( find
+    , for_
+    )
 import Data.Generics.Product
 import Prelude.Kore
 
@@ -28,6 +32,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
+    , sourceLocation
     )
 import Kore.Attribute.Hook
 import Kore.Attribute.Overload
@@ -37,6 +42,9 @@ import Kore.Attribute.Sort
 import Kore.Attribute.Sort.HasDomainValues
 import Kore.Attribute.Subsort as Subsort
 
+import Kore.AST.AstWithLocation
+    ( locationFromAst
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Error
@@ -50,11 +58,18 @@ import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
 import Kore.Syntax.Definition
+import Kore.Syntax.Id
+    ( prettyPrintAstLocation
+    )
 import Kore.Syntax.Pattern
 import Kore.Syntax.Variable
     ( VariableName (..)
     )
+import Kore.Unparser
+    ( unparse
+    )
 import qualified Kore.Verified as Verified
+import Pretty
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -138,11 +153,29 @@ verifyNoHookAttribute attributes = do
 
 verifyNoHookedSupersort
     :: MonadError (Error VerifyError) error
-    => [Kore.Attribute.Sort.Sort]
+    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    -> Attribute.Axiom SymbolOrAlias VariableName
+    -> [Subsort.Subsort]
     -> error ()
-verifyNoHookedSupersort supersortsAtts = do
-    let isHooked = getHasDomainValues . hasDomainValues <$> supersortsAtts
-    when (or isHooked) $ koreFail "Hooked sorts may not have subsorts."
+verifyNoHookedSupersort indexedModule axiom subsorts = do
+    let isHooked =
+            getHasDomainValues . hasDomainValues
+            . getSortAttributes indexedModule
+            . Subsort.supersort
+        hookedSubsort = find isHooked subsorts
+    for_ hookedSubsort $ \sort ->
+        koreFail . unlines $
+            [ "Hooked sorts may not have subsorts."
+            , "Hooked sort:"
+            , show . unparse $ Subsort.supersort sort
+            , "Its subsort:"
+            , show . unparse $ Subsort.subsort sort
+            , "Location in the Kore file:"
+            , show . prettyPrintAstLocation
+                $ locationFromAst (Subsort.supersort sort)
+            , "Location in the original K file: "
+            , show . pretty $ Attribute.sourceLocation axiom
+            ]
 
 verifyAxiomAttributes
     :: forall error attrs
@@ -152,9 +185,8 @@ verifyAxiomAttributes
     -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 verifyAxiomAttributes indexedModule axiom = do
     let overload = axiom Lens.^. field @"overload"
-        supersorts = Subsort.supersort <$> getSubsorts (axiom Lens.^. field @"subsorts")
-        supersortsAtts = getSortAttributes indexedModule <$> supersorts
-    verifyNoHookedSupersort supersortsAtts
+        subsorts = getSubsorts (axiom Lens.^. field @"subsorts")
+    verifyNoHookedSupersort indexedModule axiom subsorts
     case getOverload overload of
             Nothing -> do
                 let newOverload = Overload Nothing
