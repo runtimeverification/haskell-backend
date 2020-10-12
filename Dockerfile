@@ -9,6 +9,7 @@ RUN    apt update                                                               
     && apt install --yes                                                         \
            bison curl flex gcc git jq                                            \
            make openjdk-8-jdk pandoc                                             \
+           libtinfo-dev                                                          \
            python3 python-pygments python-recommonmark python-sphinx             \
            time unzip wget
 
