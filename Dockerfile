@@ -38,7 +38,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
 
-ARG HLINT=3.1
+ARG HLINT=3.2
 RUN    cd /home/user \
     && curl https://github.com/ndmitchell/hlint/releases/download/v$HLINT/hlint-$HLINT-x86_64-linux.tar.gz -sSfL | tar xzf - \
     && mv hlint-$HLINT hlint
