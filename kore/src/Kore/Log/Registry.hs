@@ -71,6 +71,9 @@ import Kore.Log.ErrorDecidePredicateUnknown
 import Kore.Log.ErrorException
     ( ErrorException
     )
+import Kore.Log.ErrorParse
+    ( ErrorParse
+    )
 import Kore.Log.ErrorRewriteLoop
     ( ErrorRewriteLoop
     )
@@ -151,6 +154,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @DebugSubstitutionSimplifier
     , mk $ Proxy @ErrorBottomTotalFunction
     , mk $ Proxy @ErrorDecidePredicateUnknown
+    , mk $ Proxy @ErrorParse
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckClaimState
