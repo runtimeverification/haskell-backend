@@ -9,18 +9,9 @@ RUN    apt update                                                               
     && apt install --yes                                                         \
            autoconf bison clang-6.0 cmake curl flex gcc git jq libboost-test-dev \
            libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool             \
-           libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk pandoc        \
+           libyaml-cpp-dev make maven opam openjdk-8-jdk pandoc                  \
            pkg-config python3 python-pygments python-recommonmark python-sphinx  \
-           time zlib1g-dev
-
-RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.6.0 \
-    && cd z3                                                        \
-    && python scripts/mk_make.py                                    \
-    && cd build                                                     \
-    && make -j8                                                     \
-    && make install                                                 \
-    && cd ../..                                                     \
-    && rm -rf z3
+           time unzip wget zlib1g-dev
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
@@ -37,6 +28,14 @@ USER $USER_ID:$GROUP_ID
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 
 ENV LC_ALL=C.UTF-8
+
+ARG Z3=4.8.8
+RUN    cd /home/user \
+    && wget https://github.com/Z3Prover/z3/releases/download/z3-$Z3/z3-$Z3-x64-ubuntu-16.04.zip \
+    && unzip z3-$Z3-x64-ubuntu-16.04.zip \
+    && rm z3-$Z3-x64-ubuntu-16.04.zip \
+    && mv z3-$Z3-x64-ubuntu-16.04 z3
+ENV PATH=/home/user/z3/bin:$PATH
 
 ARG HLINT=3.2
 RUN    cd /home/user \
