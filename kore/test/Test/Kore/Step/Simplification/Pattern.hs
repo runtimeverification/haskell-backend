@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Pattern
     ( test_Pattern_simplify
     , test_Pattern_simplifyAndRemoveTopExists
+    , test_Pattern_simplify_equalityterm
     ) where
 
 import Prelude.Kore
@@ -14,7 +15,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
+    ( Conditional (..)
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -31,6 +33,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.TopBottom
@@ -233,6 +236,139 @@ test_Pattern_simplify =
             actual <- simplify original
             assertEqual "" expect actual
 
+test_Pattern_simplify_equalityterm :: [TestTree]
+test_Pattern_simplify_equalityterm =
+    [ testCase "f vs g or h" $ do
+        let expected =
+                OrPattern.fromPatterns
+                    [ Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeCeilPredicate Mock.testSort Mock.cf
+                        , makeCeilPredicate Mock.testSort Mock.cg
+                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                        , makeImpliesPredicate
+                            (makeCeilPredicate Mock.testSort Mock.ch)
+                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                        ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeCeilPredicate Mock.testSort Mock.cf
+                        , makeCeilPredicate Mock.testSort Mock.ch
+                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                        , makeImpliesPredicate
+                            (makeCeilPredicate Mock.testSort Mock.cg)
+                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                        ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
+                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
+                        ]
+                        )
+                    ]
+            first = Mock.cf
+            second = mkOr Mock.cg Mock.ch
+        assertBidirectionalEqualityResult first second expected
+    , testCase "f vs g or h where f /= g" $ do
+        let expected =
+                OrPattern.fromPatterns
+                    [ Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeCeilPredicate Mock.testSort Mock.cf
+                        , makeCeilPredicate Mock.testSort Mock.ch
+                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                        ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
+                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
+                        ]
+                        )
+                    ]
+            first = Mock.functionalConstr10 Mock.cf
+            second =
+                mkOr
+                    (Mock.functionalConstr11 Mock.cg)
+                    (Mock.functionalConstr10 Mock.ch)
+        assertBidirectionalEqualityResult first second expected
+    , testCase "f vs g[x = a] or h" $ do
+        let definedF = makeCeilPredicate Mock.testSort Mock.cf
+            definedG = makeCeilPredicate Mock.testSort Mock.cg
+            predicateSubstitution =
+                makeEqualsPredicate Mock.testSort (mkElemVar Mock.x) Mock.a
+            definedGWithSubstitution =
+                makeAndPredicate
+                    definedG
+                    predicateSubstitution
+            definedH = makeCeilPredicate Mock.testSort Mock.ch
+            expected =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop Mock.testSort
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ definedF
+                            , definedG
+                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                            , makeImpliesPredicate
+                                definedH
+                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                            ]
+                        , substitution = Substitution.unsafeWrap
+                            [(inject Mock.x, Mock.a)]
+                        }
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ definedF
+                        , definedH
+                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                        , makeImpliesPredicate
+                            definedGWithSubstitution
+                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                        ]
+                        )
+                    , Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        (MultiAnd.toPredicate . MultiAnd.make $
+                        [ makeNotPredicate definedGWithSubstitution
+                        , makeNotPredicate definedF
+                        , makeNotPredicate definedH
+                        ]
+                        )
+                    ]
+            first = Mock.cf
+            second =
+                OrPattern.toTermLike
+                . OrPattern.fromPatterns $
+                    [ Conditional
+                        { term = Mock.cg
+                        , predicate = Predicate.makeTruePredicate Mock.testSort
+                        , substitution =
+                            Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
+                            [(inject Mock.x, Mock.a)]
+                        }
+                    , Conditional
+                        { term = Mock.ch
+                        , predicate = Predicate.makeTruePredicate Mock.testSort
+                        , substitution = mempty
+                        }
+                    ]
+        assertBidirectionalEqualityResult first second expected
+    ]
+
 test_Pattern_simplifyAndRemoveTopExists :: [TestTree]
 test_Pattern_simplifyAndRemoveTopExists =
     [ notTop      `becomes` OrPattern.bottom
@@ -284,3 +420,16 @@ simplifyAndRemoveTopExists :: Pattern VariableName -> IO (OrPattern VariableName
 simplifyAndRemoveTopExists =
     runSimplifier Mock.env
     . Pattern.simplifyTopConfiguration
+
+assertBidirectionalEqualityResult
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> OrPattern VariableName
+    -> IO ()
+assertBidirectionalEqualityResult child1 child2 expected = do
+    testOneDirection (mkEquals Mock.testSort child1 child2)
+    testOneDirection (mkEquals Mock.testSort child2 child1)
+  where
+    testOneDirection term = do
+        actual <- simplify (Pattern.fromTermLike term)
+        assertEqual "" expected actual

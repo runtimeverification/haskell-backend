@@ -132,7 +132,11 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
-        let simplifiedPattern = simplifyConjunctions normalized { term }
+        let simplifiedPattern =
+                Lens.traverseOf
+                    (field @"predicate")
+                    simplifyConjunctions
+                    normalized { term }
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
             else worker (extract simplifiedPattern)
@@ -191,19 +195,11 @@ simplifyPredicate sideCondition predicate = do
 
 simplifyConjunctions
     :: InternalVariable variable
-    => Conditional variable any
-    -> Changed (Conditional variable any)
-simplifyConjunctions cond =
-    Lens.traverseOf
-        (field @"predicate")
-        simplifyConjunctionByAssumption'
-        cond
-  where
-    sort = predicateSort . predicate $ cond
-    simplifyConjunctionByAssumption'
-        original@(MultiAnd.fromPredicate -> predicates)
-      =
-        case simplifyConjunctionByAssumption predicates of
+    => Predicate variable
+    -> Changed (Predicate variable)
+simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
+    let sort = predicateSort original
+     in case simplifyConjunctionByAssumption predicates of
             Unchanged _ -> Unchanged original
             Changed changed ->
                 Changed (MultiAnd.toPredicateSorted sort changed)
