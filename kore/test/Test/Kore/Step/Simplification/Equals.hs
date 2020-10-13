@@ -30,7 +30,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate
     ( pattern PredicateFalse
-    , forgetSort
     , makeAndPredicate
     , makeCeilPredicate
     , makeCeilPredicate_
@@ -335,10 +334,10 @@ test_equalsSimplification_Or_Pattern =
                                 definedGWithSubstitution
                                 (makeEqualsPredicate_ Mock.cf Mock.cg)
                             , makeImpliesPredicate
-                                (forgetSort definedGWithSubstitution)
+                                definedGWithSubstitution
                                 (makeEqualsPredicate_ Mock.cf Mock.cg)
                             , makeImpliesPredicate
-                                (forgetSort definedH)
+                                definedH
                                 (makeEqualsPredicate_ Mock.cf Mock.ch)
                             ]
                         , substitution = Substitution.unsafeWrap
@@ -351,7 +350,7 @@ test_equalsSimplification_Or_Pattern =
                             [ definedF
                             , definedH
                             , makeImpliesPredicate
-                                (forgetSort definedGWithSubstitution)
+                                definedGWithSubstitution
                                 (makeEqualsPredicate_ Mock.cf Mock.cg)
                             , makeImpliesPredicate
                                 definedH
@@ -363,9 +362,9 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeNotPredicate (forgetSort definedGWithSubstitution)
-                            , makeNotPredicate (forgetSort definedF)
-                            , makeNotPredicate (forgetSort definedH)
+                            [ makeNotPredicate definedGWithSubstitution
+                            , makeNotPredicate definedF
+                            , makeNotPredicate definedH
                             ]
                         , substitution = mempty
                         }
