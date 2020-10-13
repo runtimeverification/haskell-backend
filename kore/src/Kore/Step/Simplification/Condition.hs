@@ -11,15 +11,6 @@ module Kore.Step.Simplification.Condition
     ) where
 
 import Prelude.Kore
-    ( Category ((.))
-    , HasCallStack
-    , Monoid (mempty)
-    , Semigroup ((<>))
-    , Show (show)
-    , error
-    , otherwise
-    , ($)
-    )
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional

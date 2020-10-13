@@ -241,7 +241,7 @@ test_attemptEquation =
     , testCase "rule a => b ensures \\bottom" $ do
         let expect =
                 Pattern.withCondition Mock.b
-                Condition.bottomOf
+                Condition.bottom
             initial = Mock.a
         attemptEquation SideCondition.top initial equationEnsuresBottom
             >>= expectRight >>= assertEqual "" expect
