@@ -22,7 +22,9 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
-    ( bimap
+    ( first
+    , second
+    , bimap
     )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -41,10 +43,6 @@ import qualified Data.Set as Set
 import Data.Traversable
     ( for
     )
-import Data.Tuple.Extra
-    ( (***)
-    )
-import qualified Data.Tuple.Extra as Tuple
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -289,15 +287,15 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
             case predicate of
                 PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    Tuple.second $ HashMap.insert notChild makeFalsePredicate
+                    second $ HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    Tuple.second $ HashMap.insert predicate makeTruePredicate
+                    second $ HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
                     case retractLocalFunction (mkEquals_ t1 t2) of
-                        Just (Pair t1' t2') -> Tuple.first $ HashMap.insert t1' t2'
+                        Just (Pair t1' t2') -> first $ HashMap.insert t1' t2'
                         _ -> id
                 _ -> id
 
@@ -347,8 +345,9 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
           | otherwise = assumptions
 
         restrictAssumptions Variable { variableName } =
-            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term) ***
-            HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
+            bimap
+            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
+            (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
             assumptions
           where
             wouldNotCapture = not . Predicate.hasFreeVariable variableName
@@ -486,9 +485,9 @@ termAnd notSimplifier p1 p2 =
         :: TermLike variable
         -> TermLike variable
         -> UnifierT simplifier (Pattern variable)
-    termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
+    termAndWorker pr1 pr2 = do
+        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker pr1 pr2
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where
-        andPattern = Pattern.fromTermLike (mkAnd first second)
+        andPattern = Pattern.fromTermLike (mkAnd pr1 pr2)

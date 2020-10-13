@@ -1333,11 +1333,11 @@ test_Defined =
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
             , testCase "\\equals(partial, defined)" $ do
-                let expect = Just [Condition.topOf]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty partial defined
                 assertEqual "" expect actual
             , testCase "\\equals(defined, partial)" $ do
-                let expect = Just [Condition.topOf]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty defined partial
                 assertEqual "" expect actual
             ]

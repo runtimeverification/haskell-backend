@@ -121,12 +121,7 @@ import Test.Tasty.HUnit.Ext
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
     [ testCase "Simple evaluation" $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -140,12 +135,7 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Simple evaluation (builtin branch)" $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -160,12 +150,7 @@ test_functionIntegration =
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
       $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -186,12 +171,7 @@ test_functionIntegration =
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
       $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -210,12 +190,7 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates inside functions" $ do
-        let expect =
-                Conditional
-                    { term = Mock.functional11 (Mock.functional11 Mock.c)
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike $ Mock.functional11 (Mock.functional11 Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -229,15 +204,9 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates 'or'" $ do
-        let expect =
-                Conditional
-                    { term =
-                        mkOr
+        let expect = Pattern.fromTermLike $ mkOr
                             (Mock.functional11 (Mock.functional11 Mock.c))
                             (Mock.functional11 (Mock.functional11 Mock.d))
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
         actual <-
             evaluate
                 (Map.singleton
@@ -256,17 +225,11 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates on multiple branches" $ do
-        let expect =
-                Conditional
-                    { term =
-                        Mock.functional11
+        let expect = Pattern.fromTermLike $ Mock.functional11
                             (Mock.functional20
                                 (Mock.functional11 Mock.c)
                                 (Mock.functional11 Mock.c)
                             )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
         actual <-
             evaluate
                 (Map.singleton

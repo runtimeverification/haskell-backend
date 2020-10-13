@@ -233,7 +233,7 @@ test_attemptEquation =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                Condition.topOf
+                Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
@@ -418,7 +418,7 @@ test_attemptEquationUnification =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                Condition.topOf
+                Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect

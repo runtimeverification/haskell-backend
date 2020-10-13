@@ -339,7 +339,7 @@ evalInKeys resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf
+      | TermLike.isDefinedPattern termLike = Condition.top
       | otherwise =
         Condition.fromPredicate (makeCeilPredicate termLike)
 
