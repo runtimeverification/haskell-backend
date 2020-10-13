@@ -162,6 +162,9 @@ import Logic
     , MonadLogic
     )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 class Claim claim where
@@ -410,6 +413,19 @@ data CheckImplicationResult a
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance Pretty a => Pretty (CheckImplicationResult a) where
+    pretty Implied = "implied"
+    pretty (NotImplied a) =
+        Pretty.vsep
+            [ "not implied:"
+            , Pretty.indent 4 $ pretty a
+            ]
+    pretty (NotImpliedStuck a) =
+        Pretty.vsep
+            [ "stuck:"
+            , Pretty.indent 4 $ pretty a
+            ]
+
 -- | Remove the destination of the claim.
 checkImplication'
     :: forall claim m
@@ -512,6 +528,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
             simplifyConditionsWithSmt sideCondition configs'
+            >>= Logic.scatter
+            >>= Pattern.simplify sideCondition
             >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied

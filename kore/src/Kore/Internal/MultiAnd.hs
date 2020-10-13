@@ -16,6 +16,7 @@ module Kore.Internal.MultiAnd
     , top
     , make
     , toPredicate
+    , toPredicateSorted
     , fromPredicate
     , fromTermLike
     , singleton
@@ -44,10 +45,12 @@ import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Sort
+    , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
@@ -205,6 +208,16 @@ toPredicate
 toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate_
+        _  -> foldr1 makeAndPredicate predicates
+
+toPredicateSorted
+    :: InternalVariable variable
+    => Sort
+    -> MultiAnd (Predicate variable)
+    -> Predicate variable
+toPredicateSorted sort (MultiAnd predicates) =
+    case predicates of
+        [] -> makeTruePredicate sort
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
