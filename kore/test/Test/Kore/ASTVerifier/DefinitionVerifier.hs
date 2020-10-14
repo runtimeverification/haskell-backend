@@ -29,10 +29,10 @@ module Test.Kore.ASTVerifier.DefinitionVerifier
     , symbolSentenceWithParametersAndArguments
     , symbolSentenceWithSortParametersAux
     , sentenceSymbolWithAttributes
+    , symbolSentenceWithParamsArgsAndAttrs
     , importSentence
     , SymbolName (..)
     , objectSymbolSentenceWithArguments
-    , symbolSentenceWithResultSort
     , symbolSentenceWithSortParameters
     , AliasName (..)
     , simpleAliasSentence
@@ -511,22 +511,6 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
         , sentenceAliasAttributes = Attributes []
         }
 
-symbolSentenceWithResultSort
-    :: SymbolName -> Sort -> [SortVariable] -> ParsedSentence
-symbolSentenceWithResultSort
-    (SymbolName name) sort parameters
-  = SentenceSymbolSentence
-        SentenceSymbol
-            { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = testId name
-                , symbolParams = parameters
-                }
-            , sentenceSymbolSorts = []
-            , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes =
-                Attributes [] :: Attributes
-            }
-
 objectSymbolSentenceWithArguments
     :: SymbolName -> Sort -> [Sort] -> ParsedSentence
 objectSymbolSentenceWithArguments = symbolSentenceWithArguments
@@ -554,6 +538,27 @@ symbolSentenceWithParametersAndArguments
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes =
                 Attributes [] :: Attributes
+            }
+
+symbolSentenceWithParamsArgsAndAttrs
+    :: SymbolName
+    -> [SortVariable]
+    -> Sort
+    -> [Sort]
+    -> [ParsedPattern]
+    -> Sentence patternType
+symbolSentenceWithParamsArgsAndAttrs
+    (SymbolName name) params sort operandSorts attrs
+  = SentenceSymbolSentence
+        SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = testId name
+                , symbolParams = params
+                }
+            , sentenceSymbolSorts = operandSorts
+            , sentenceSymbolResultSort = sort
+            , sentenceSymbolAttributes =
+                Attributes attrs
             }
 
 objectAliasSentenceWithArguments
