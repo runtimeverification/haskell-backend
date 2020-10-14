@@ -583,11 +583,11 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => c | f(b) >= 0
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual ] <- runOnePathSteps
+        _actual <- runOnePathSteps
             Unlimited
             (Limit 1)
             (makeOnePathGoalFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
                         (Mock.lessInt
@@ -597,7 +597,7 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
+
                 (fromTermLike Mock.a)
             )
             []
@@ -622,11 +622,11 @@ test_onePathStrategy =
                     (Mock.builtinBool False)
                 )
             ]
-        [ _actualReach ] <- runOnePathSteps
+        _actualReach <- runOnePathSteps
             Unlimited
             (Limit 1)
             (OnePath $ makeOnePathGoalFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
                         (Mock.lessInt
@@ -636,7 +636,6 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             )
             []
@@ -676,21 +675,20 @@ test_onePathStrategy =
                     }
                 (fromTermLike Mock.a)
             ]
-            [ _actual
-            ]
+            _actual
         assertEqual "onepath == reachability onepath"
-            (fmap OnePath _actual)
+            ((fmap . fmap) OnePath _actual)
             _actualReach
     , testCase "Stuck with SMT pruning" $ do
         -- Goal: constr10(b) | f(b) < 0  =>  a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual ] <- runOnePathSteps
+        _actual <- runOnePathSteps
             Unlimited
             (Limit 1)
             (makeOnePathGoalFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
                         (Mock.lessInt
@@ -700,7 +698,6 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             )
             []
@@ -715,11 +712,11 @@ test_onePathStrategy =
                     (Mock.builtinBool True)
                 )
             ]
-        [ _actualReach ] <- runOnePathSteps
+        _actualReach <- runOnePathSteps
             Unlimited
             (Limit 1)
             (OnePath $ makeOnePathGoalFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate_
                         (Mock.lessInt
@@ -729,7 +726,6 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             )
             []
@@ -759,9 +755,9 @@ test_onePathStrategy =
                     }
                 (fromTermLike Mock.a)
             ]
-            [ _actual ]
+            _actual
         assertEqual "onepath == reachability onepath"
-            (fmap OnePath _actual)
+            ((fmap . fmap) OnePath _actual)
             _actualReach
     , testCase "Goal stuck after remove destination" $ do
         -- Goal: X && X = a => X && X != a
