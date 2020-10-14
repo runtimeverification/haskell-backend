@@ -7,6 +7,6 @@ module ISSUE-2138-SPEC
 
   rule
     <k> #assert i ( 1 , 0 ) ==Int 0 => . </k>
-      requires #assert i ( X, 0 ) ==Int 0
+      requires ( true #And #Forall X. { i ( X, 0 ) #Equals 0 } )
 
 endmodule
