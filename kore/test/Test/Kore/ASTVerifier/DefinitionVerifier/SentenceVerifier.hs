@@ -23,15 +23,15 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-    ( mkElemVar
+    ( mkAnd
+    , mkApplySymbol
+    , mkElemVar
+    , mkEquals
+    , mkImplies
+    , mkIn
     , mkSetVar
     , mkTop
     , weakExistsFinally
-    , mkAnd
-    , mkImplies
-    , mkIn
-    , mkEquals
-    , mkApplySymbol
     )
 import Kore.Reachability
     ( OnePathClaim (..)
