@@ -4,10 +4,20 @@ module Test.Kore.Step.Simplification.Pattern
     , test_Pattern_simplify_equalityterm
     ) where
 
+import qualified Data.Foldable as Foldable
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Test.Tasty
 
+import Kore.Attribute.Pattern.Simplified
+    ( Condition (..)
+    , Simplified (..)
+    , SimplifiedData (..)
+    , Type (..)
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
@@ -30,12 +40,19 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( assumeTruePredicate
+    , toRepresentation
+    , top
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.TopBottom
     ( isBottom
     )
@@ -223,6 +240,67 @@ test_Pattern_simplify =
                         )
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
+    , testCase "TESTING" $ do
+        let cond1, cond2 :: SideCondition VariableName
+            miniCond =
+                    makeEqualsPredicate Mock.testSort
+                        functionApplication
+                        (Mock.constr10 (mkElemVar Mock.y)
+                        & TermLike.markSimplified
+                        )
+                    & SideCondition.assumeTruePredicate
+
+            cond1 =
+                Predicate.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Partly
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation miniCond)
+                            }
+                    )
+                    (makeCeilPredicate Mock.testSort (Mock.f (mkElemVar Mock.x)))
+                & SideCondition.assumeTruePredicate
+            cond2 =
+                makeAndPredicate
+                    (makeCeilPredicate Mock.testSort (Mock.f (mkElemVar Mock.x))
+                    & Predicate.markSimplified
+                    )
+                    (makeEqualsPredicate Mock.testSort
+                        functionApplication
+                        (Mock.constr10 (mkElemVar Mock.y)
+                        & TermLike.markSimplified
+                        )
+                    )
+                & SideCondition.assumeTruePredicate
+            fullySimplifiedCondition1 =
+                Simplified
+                    SimplifiedData
+                        { sType = Fully
+                        , condition =
+                            Condition (SideCondition.toRepresentation cond1)
+                        }
+            partlySimplifiedCondition2 =
+                Simplified
+                    SimplifiedData
+                        { sType = Partly
+                        , condition =
+                            Condition (SideCondition.toRepresentation cond2)
+                        }
+            functionApplication =
+                Mock.f (mkElemVar Mock.x)
+                & TermLike.setSimplified fullySimplifiedCondition1
+            constructorApplication =
+                Mock.constr10 (mkElemVar Mock.y)
+                & TermLike.setSimplified partlySimplifiedCondition2
+        actual <-
+            runSimplifier Mock.env . TermLike.simplify SideCondition.top $
+                mkEquals Mock.testSort
+                    functionApplication
+                    constructorApplication
+        traceM
+            $ unlines (unparseToString <$> Foldable.toList actual)
     ]
   where
     fOfX = Mock.f (mkElemVar Mock.x)

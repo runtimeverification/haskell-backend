@@ -177,6 +177,7 @@ simplify
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplify sideCondition = \termLike ->
+    trace "\n\nstart simplify\n\n" $
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
@@ -191,7 +192,8 @@ simplify sideCondition = \termLike ->
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-      | TermLike.isSimplified sideConditionRepresentation termLike =
+      | TermLike.isSimplified sideConditionRepresentation termLike = do
+        traceM "\n\nisSimplified\n\n"
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -204,7 +206,8 @@ simplify sideCondition = \termLike ->
                     & Pattern.fromCondition (termLikeSort termLike)
                     & OrPattern.fromPattern
                     & pure
-      | otherwise =
+      | otherwise = do
+        traceM "\n\nnot isSimplified\n\n"
         assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike
             let termOr = OrPattern.coerceSort
@@ -248,6 +251,7 @@ simplify sideCondition = \termLike ->
                 }
 
         assertTermNotPredicate getResults = do
+            traceM "\n\nstart assertTermNotPredicate\n\n"
             results <- getResults
             let
                 -- The term of a result should never be any predicate other than

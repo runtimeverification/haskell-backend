@@ -9,6 +9,9 @@ module Kore.Internal.SideCondition.SideCondition
     , implies
     ) where
 
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import Prelude.Kore
 
 import Control.DeepSeq
@@ -38,7 +41,7 @@ import Kore.TopBottom
 
 data Representation where
     Representation
-        :: (Ord a, TopBottom a)
+        :: (Ord a, TopBottom a, Unparse a)
         => !(TypeRep a)
         -> !(Hashed a)
         -> Representation
@@ -76,7 +79,7 @@ instance NFData Representation where
     {-# INLINE rnf #-}
 
 mkRepresentation
-    :: (Ord a, Hashable a, Typeable a, TopBottom a)
+    :: (Ord a, Hashable a, Typeable a, TopBottom a, Unparse a)
     => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 
@@ -87,6 +90,10 @@ instance Debug Representation where
 instance Diff Representation where
     diffPrec _ _ = Nothing
     {-# INLINE diffPrec #-}
+
+instance Unparse Representation where
+    unparse (Representation _ h) = unparse (unhashed h)
+    unparse2 (Representation _ h) = unparse2 (unhashed h)
 
 implies :: Representation -> Representation -> Bool
 implies r1 r2@(Representation _ hashed2) =

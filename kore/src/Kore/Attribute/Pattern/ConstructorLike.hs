@@ -261,7 +261,7 @@ class HasConstructorLike a where
 
     isConstructorLike :: a -> Bool
     isConstructorLike a = case extractConstructorLike a of
-        (ConstructorLike constructorLike) -> isJust constructorLike
+        (ConstructorLike constructorLike) -> trace "\n\nisConstructorLike\n\n" $ isJust constructorLike
 
 instance HasConstructorLike ConstructorLike where
     extractConstructorLike = id

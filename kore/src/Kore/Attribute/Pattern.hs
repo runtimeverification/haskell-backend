@@ -137,9 +137,9 @@ condition.
 isSimplified
     :: HasCallStack
     => SideCondition.Representation -> Pattern variable -> Bool
-isSimplified sideCondition patt@Pattern {simplified} =
-    assertSimplifiedConsistency patt
-    $ Simplified.isSimplified sideCondition simplified
+isSimplified sideCondition !patt@Pattern {simplified} =
+    trace "\n\nassertSimplifiedConsisitency\n\n" (assertSimplifiedConsistency patt)
+    $ trace "\n\nSimplified.isSimplified\n\n" (Simplified.isSimplified sideCondition simplified)
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
@@ -153,7 +153,7 @@ assertSimplifiedConsistency Pattern {constructorLike, simplified}
   | isConstructorLike constructorLike
   , not (Simplified.isFullySimplified simplified) =
     error "Inconsistent attributes, constructorLike implies fully simplified."
-  | otherwise = id
+  | otherwise = trace "\n\nINSIDE assertSimplifiedConsisitency\n\n" id
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
 setSimplified simplified patt = patt { simplified }
