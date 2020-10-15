@@ -125,8 +125,9 @@ instance HasConstructorLike (Pattern variable) where
       = constructorLike
 
 simplifiedAttribute :: HasCallStack => Pattern variable -> Simplified
-simplifiedAttribute patt@Pattern {simplified} =
-    assertSimplifiedConsistency patt simplified
+simplifiedAttribute patt@Pattern { simplified } =
+    traceStack "simplifiedAttribute"
+    $ assertSimplifiedConsistency patt simplified
 
 constructorLikeAttribute :: Pattern variable -> ConstructorLike
 constructorLikeAttribute Pattern {constructorLike} = constructorLike
@@ -138,25 +139,30 @@ isSimplified
     :: HasCallStack
     => SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition !patt@Pattern {simplified} =
-    trace "\n\nassertSimplifiedConsisitency\n\n" (assertSimplifiedConsistency patt)
-    $ trace "\n\nSimplified.isSimplified\n\n" (Simplified.isSimplified sideCondition simplified)
+    traceStack "isSimplified"
+    $ assertSimplifiedConsistency patt
+    $ Simplified.isSimplified sideCondition simplified
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
 isFullySimplified :: HasCallStack => Pattern variable -> Bool
 isFullySimplified patt@Pattern {simplified} =
-    assertSimplifiedConsistency patt
+    traceStack "isFullySimplified"
+    $ assertSimplifiedConsistency patt
     $ Simplified.isFullySimplified simplified
 
 assertSimplifiedConsistency :: HasCallStack => Pattern variable -> a -> a
-assertSimplifiedConsistency Pattern {constructorLike, simplified}
-  | isConstructorLike constructorLike
-  , not (Simplified.isFullySimplified simplified) =
-    error "Inconsistent attributes, constructorLike implies fully simplified."
-  | otherwise = trace "\n\nINSIDE assertSimplifiedConsisitency\n\n" id
+assertSimplifiedConsistency Pattern {constructorLike, simplified} =
+    traceStack "assertSimplifiedConsistency" worker
+  where
+    worker
+        | isConstructorLike constructorLike
+        , not (Simplified.isFullySimplified simplified) =
+          error "Inconsistent attributes, constructorLike implies fully simplified."
+        | otherwise = trace "assertSimplifiedConsistency: OK" id
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
-setSimplified simplified patt = patt { simplified }
+setSimplified simplified patt = trace "setSimplified" patt { simplified }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 

@@ -19,9 +19,6 @@ module Kore.Attribute.Pattern.Simplified
     , SimplifiedData (..)
     ) where
 
-import Kore.Unparser
-    ( unparseToText
-    )
 import Prelude.Kore
 
 import Control.DeepSeq
@@ -281,7 +278,7 @@ unparseTag (Simplified_ ty condition) =
     typeRepresentation Partly = "p"
 
     conditionRepresentation Any = "a"
-    conditionRepresentation (Condition cond) = "c"
+    conditionRepresentation (Condition _cond) = "c"
         -- "\n\nSTART SIDE CONDITION: {\n"
         -- <> unparseToText cond
         -- <> "\nEND SIDE CONDITION: }\n\n"
