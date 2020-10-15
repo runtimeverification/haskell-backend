@@ -849,27 +849,23 @@ traverseVariablesF
     -> f (PredicateF variable2 child)
 traverseVariablesF adj =
     \case
-        ExistsF any0 -> ExistsF <$> traverseVariablesExists any0
-        ForallF all0 -> ForallF <$> traverseVariablesForall all0
-        AndF andP -> pure (AndF andP)
-        BottomF botP -> pure (BottomF botP)
-        CeilF ceilP -> do
-            termLike <- sequence (TermLike.traverseVariables adj <$> ceilP)
-            return $ CeilF termLike
-        EqualsF eqP -> do
-            termLike <- sequence (TermLike.traverseVariables adj <$> eqP)
-            return $ EqualsF termLike
-        FloorF flrP -> do
-            termLike <- sequence (TermLike.traverseVariables adj <$> flrP)
-            return $ FloorF termLike
-        IffF iffP -> pure (IffF iffP)
+        ExistsF any0  -> ExistsF <$> traverseVariablesExists any0
+        ForallF all0  -> ForallF <$> traverseVariablesForall all0
+        AndF andP     -> pure (AndF andP)
+        BottomF botP  -> pure (BottomF botP)
+        CeilF ceilP   -> CeilF <$> traverse
+            (TermLike.traverseVariables adj) ceilP
+        EqualsF eqP   -> EqualsF <$> traverse
+            (TermLike.traverseVariables adj) eqP
+        FloorF flrP   -> FloorF <$> traverse
+            (TermLike.traverseVariables adj) flrP
+        IffF iffP     -> pure (IffF iffP)
         ImpliesF impP -> pure (ImpliesF impP)
-        InF inP -> do
-            termLike <- sequence (TermLike.traverseVariables adj <$> inP)
-            return $ InF termLike
-        NotF notP -> pure (NotF notP)
-        OrF orP -> pure (OrF orP)
-        TopF topP -> pure (TopF topP)
+        InF inP       -> InF <$> traverse
+            (TermLike.traverseVariables adj) inP
+        NotF notP     -> pure (NotF notP)
+        OrF orP       -> pure (OrF orP)
+        TopF topP     -> pure (TopF topP)
   where
     trElemVar = traverse $ traverseElementVariableName adj
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
