@@ -210,17 +210,10 @@ proveClaims
         proveClaimsWorker breadthLimit searchOrder claims axioms unproven
         & runExceptT
         & flip runStateT (MultiAnd.make stillProven)
-    case result of
-        Left stuckClaim ->
-            pure ProveClaimsResult
-                { stuckClaim = Just stuckClaim
-                , provenClaims
-                }
-        Right () ->
-            pure ProveClaimsResult
-                { stuckClaim = Nothing
-                , provenClaims
-                }
+    pure ProveClaimsResult
+        { stuckClaim = either Just (const Nothing) result
+        , provenClaims
+        }
   where
     unproven :: ToProve SomeClaim
     stillProven :: [SomeClaim]
