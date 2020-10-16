@@ -4,6 +4,10 @@ module Test.Kore.Step.Simplification.Pattern
     , test_Pattern_simplify_equalityterm
     ) where
 
+import qualified Data.Foldable as Foldable
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Test.Tasty
@@ -237,43 +241,53 @@ test_Pattern_simplify =
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
     , testCase "TESTING" $ do
-        let f_x = Mock.f (mkElemVar Mock.x)
-            miniCond =
-                makeEqualsPredicate Mock.testSort
-                    f_x
-                    (Mock.constr10 (mkElemVar Mock.y)
-                    & TermLike.markSimplified
-                    )
-                & SideCondition.assumeTruePredicate
-                & trace "miniCond"
+        let mockLookup =
+                Mock.mockLookup
+                    (mkElemVar Mock.xMap)
+                    Mock.a
+                    (mkElemVar Mock.xInt)
+                    Mock.a
+            mockSome =
+                Mock.mockSome (mkElemVar Mock.yInt)
+            mockInKeys =
+                Mock.mockInKeys (mkElemVar Mock.xInt) (mkElemVar Mock.xMap)
+            -- miniCond =
+            --     makeEqualsPredicate Mock.testSort
+            --         f_x
+            --         (Mock.constr10 (mkElemVar Mock.y)
+            --         & TermLike.markSimplified
+            --         )
+            --     & SideCondition.assumeTruePredicate
+                -- & trace "miniCond"
 
         let cond1, cond2 :: SideCondition VariableName
             !cond1 =
-                Predicate.setSimplified
-                    (Simplified
-                        SimplifiedData
-                            { sType = Partly
-                            , condition =
-                                -- Any
-                                Condition (SideCondition.toRepresentation miniCond)
-                            }
-                    )
-                    (makeCeilPredicate Mock.testSort (Mock.f (mkElemVar Mock.x)))
+                -- Predicate.setSimplified
+                --     (Simplified
+                --         SimplifiedData
+                --             { sType = Partly
+                --             , condition =
+                --                 Any
+                --                 -- Condition (SideCondition.toRepresentation miniCond)
+                --             }
+                --     )
+                makeAndPredicate
+                    (makeCeilPredicate Mock.intSort mockLookup)
+                    (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
                 & SideCondition.assumeTruePredicate
-                & trace "cond1"
+                -- & trace "cond1"
             !cond2 =
                 makeAndPredicate
-                    (makeCeilPredicate Mock.testSort (Mock.f (mkElemVar Mock.x))
-                    & Predicate.markSimplified
+                    (makeAndPredicate
+                        (makeCeilPredicate Mock.intSort mockLookup)
+                        (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
                     )
-                    (makeEqualsPredicate Mock.testSort
-                        functionApplication
-                        (Mock.constr10 (mkElemVar Mock.y)
-                        & TermLike.markSimplified
-                        )
+                    (makeEqualsPredicate_
+                        mockLookup
+                        (Mock.mockSome (mkElemVar Mock.zInt))
                     )
                 & SideCondition.assumeTruePredicate
-                & trace "cond2"
+                -- & trace "cond2"
             fullySimplifiedCondition1 =
                 Simplified
                     SimplifiedData
@@ -289,18 +303,23 @@ test_Pattern_simplify =
                             Condition (SideCondition.toRepresentation cond2)
                         }
             !functionApplication =
-                f_x
+                mockLookup
                 & TermLike.setSimplified fullySimplifiedCondition1
             !constructorApplication =
-                Mock.constr10 (mkElemVar Mock.y)
+                mockSome
                 & TermLike.setSimplified partlySimplifiedCondition2
-        traceM "BEGIN"
-        _actual <-
-            runSimplifier Mock.env . TermLike.simplify SideCondition.top $
-                mkEquals Mock.testSort
+            !termToSimplify =
+                mkEquals Mock.intSort
                     functionApplication
                     constructorApplication
-        assertFailure "END"
+        -- traceM "BEGIN"
+        _actual <-
+            runSimplifier Mock.env . TermLike.simplify SideCondition.top $
+                termToSimplify
+        traceM
+            $ "\n\nTerm:\n" <> unparseToString termToSimplify
+            <> "\n\nResult:\n" <> unlines (unparseToString <$> Foldable.toList _actual)
+        -- assertFailure "END"
     ]
   where
     fOfX = Mock.f (mkElemVar Mock.x)

@@ -404,6 +404,19 @@ constr00Symbol = symbol constr00Id [] testSort & constructor
 constr10Symbol :: Symbol
 constr10Symbol = symbol constr10Id [testSort] testSort & constructor
 
+mockSomeSymbol :: Symbol
+mockSomeSymbol = symbol mockSomeId [intSort] intSort & constructor
+
+mockSomeId :: Id
+mockSomeId = testId "mockSome"
+
+mockSome
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+mockSome arg = Internal.mkApplySymbol mockSomeSymbol [arg]
+
 constr11Symbol :: Symbol
 constr11Symbol = symbol constr11Id [testSort] testSort & constructor
 
@@ -418,6 +431,39 @@ constrFunct20TestMapSymbol =
 function20MapTestSymbol :: Symbol
 function20MapTestSymbol =
     symbol function20MapTestId [mapSort, testSort] testSort & function
+
+mockLookupSymbol :: Symbol
+mockLookupSymbol =
+    symbol mockLookupId [mapSort, testSort, intSort, testSort] intSort & function
+
+mockLookupId :: Id
+mockLookupId = testId "mockLookup"
+
+mockLookup
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+mockLookup arg1 arg2 arg3 arg4 =
+    Internal.mkApplySymbol mockLookupSymbol [arg1, arg2, arg3, arg4]
+
+mockInKeysSymbol :: Symbol
+mockInKeysSymbol = symbol mockInKeysId [intSort, mapSort] boolSort & function & functional
+
+mockInKeysId :: Id
+mockInKeysId = testId "mockInKeys"
+
+mockInKeys
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+mockInKeys arg1 arg2 =
+    Internal.mkApplySymbol mockInKeysSymbol [arg1, arg2]
 
 functional00Symbol :: Symbol
 functional00Symbol = symbol functional00Id [] testSort & functional
@@ -704,6 +750,8 @@ xInt :: MockElementVariable
 xInt = MockElementVariable (testId "xInt") mempty intSort
 yInt :: MockElementVariable
 yInt = MockElementVariable (testId "yInt") mempty intSort
+zInt :: MockElementVariable
+zInt = MockElementVariable (testId "zInt") mempty intSort
 xBool :: MockElementVariable
 xBool = MockElementVariable (testId "xBool") mempty boolSort
 xString :: MockElementVariable
