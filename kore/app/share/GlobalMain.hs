@@ -24,6 +24,7 @@ module GlobalMain
     , LoadedModule
     , loadDefinitions
     , loadModule
+    , sortClaims
     ) where
 
 import Prelude.Kore
@@ -34,9 +35,20 @@ import Control.Exception
 import qualified Control.Monad as Monad
 import Data.List
     ( intercalate
+    , sortBy
+    )
+import Data.Functor
+    ( (<&>)
     )
 import Data.Map.Strict
     ( Map
+    )
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
+import Control.Lens
+    ( (%~)
     )
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -105,6 +117,7 @@ import System.Clock
     )
 import qualified System.Environment as Env
 
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinitionWithBase
     )
@@ -518,8 +531,23 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM verifyDefinitionWithBase mempty
-    =<< traverse parseDefinition filePaths
+    loadedDefinitions <&> sortClaims
+  where
+    loadedDefinitions =
+        Monad.foldM verifyDefinitionWithBase mempty
+        =<< traverse parseDefinition filePaths
+    
+sortClaims :: LoadedDefinition -> LoadedDefinition  
+sortClaims modulePair =
+        modulePair & Lens._1 . Lens.traversed %~ sortModuleClaims
+  where
+    sortModuleClaims
+        :: VerifiedModule declAtts
+        -> VerifiedModule declAtts
+    sortModuleClaims verifiedModule =
+        verifiedModule
+        & field @"indexedModuleClaims"
+            %~ sortBy (on compare (Attribute.sourceLocation . fst))
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . fst
