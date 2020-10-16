@@ -8,7 +8,6 @@ This should be imported qualified.
 
 module Kore.Reachability.Prove
     ( CommonClaimState
-    , ProofStuck (..)
     , ProveClaimsResult (..)
     , StuckClaim (..)
     , AllClaims (..)
@@ -29,9 +28,6 @@ import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
-import qualified Control.Monad as Monad
-    ( foldM_
-    )
 import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
@@ -45,6 +41,11 @@ import Control.Monad.Except
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
@@ -56,8 +57,6 @@ import Data.List.Extra
 import Data.Text
     ( Text
     )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 import Numeric.Natural
     ( Natural
     )
@@ -169,25 +168,6 @@ The action may throw an exception if the proof fails; the exception is a single
  -}
 type Verifier m = ExceptT (OrPattern VariableName) m
 
-{- | Verifies a set of claims. When it verifies a certain claim, after the
-first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
-
-If the verification fails, returns an error containing a pattern that could
-not be rewritten (either because no axiom could be applied or because we
-didn't manage to verify a claim within the its maximum number of steps).
-
-If the verification succeeds, it returns ().
--}
-data ProofStuck =
-    ProofStuck
-    { stuckPatterns :: !(OrPattern VariableName)
-    , provenClaims :: ![SomeClaim]
-    }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
 newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
@@ -201,6 +181,8 @@ data ProveClaimsResult =
     { stuckClaim :: !(Maybe StuckClaim)
     , provenClaims :: !(MultiAnd SomeClaim)
     }
+
+type ProvenClaims = MultiAnd SomeClaim
 
 proveClaims
     :: forall simplifier
@@ -224,21 +206,20 @@ proveClaims
     (AlreadyProven alreadyProven)
     (ToProve toProve)
   = do
-    result <-
+    (result, provenClaims) <-
         proveClaimsWorker breadthLimit searchOrder claims axioms unproven
         & runExceptT
+        & flip runStateT (MultiAnd.make stillProven)
     case result of
-        Left proofStuck ->
+        Left stuckClaim ->
             pure ProveClaimsResult
-                { stuckClaim = (Just . StuckClaim) stuckPatterns
-                , provenClaims = MultiAnd.make (stillProven ++ provenClaims)
+                { stuckClaim = Just stuckClaim
+                , provenClaims
                 }
-          where
-            ProofStuck { stuckPatterns, provenClaims } = proofStuck
         Right () ->
             pure ProveClaimsResult
                 { stuckClaim = Nothing
-                , provenClaims = MultiAnd.top
+                , provenClaims
                 }
   where
     unproven :: ToProve SomeClaim
@@ -268,22 +249,20 @@ proveClaimsWorker
     -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT ProofStuck simplifier ()
+    -> ExceptT StuckClaim (StateT ProvenClaims simplifier) ()
 proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
-    Monad.foldM_ verifyWorker [] toProve
+    Foldable.traverse_ verifyWorker toProve
   where
     verifyWorker
-        :: [SomeClaim]
-        -> (SomeClaim, Limit Natural)
-        -> ExceptT ProofStuck simplifier [SomeClaim]
-    verifyWorker provenClaims unprovenClaim@(claim, _) =
-        withExceptT wrapStuckPattern $ do
+        :: (SomeClaim, Limit Natural)
+        -> ExceptT StuckClaim (StateT ProvenClaims simplifier) ()
+    verifyWorker unprovenClaim@(claim, _) =
+        withExceptT StuckClaim $ do
             proveClaim breadthLimit searchOrder claims axioms unprovenClaim
-            return (claim : provenClaims)
-      where
-        wrapStuckPattern :: OrPattern VariableName -> ProofStuck
-        wrapStuckPattern stuckPatterns =
-            ProofStuck { stuckPatterns, provenClaims }
+            addProvenClaim claim
+
+    addProvenClaim claim =
+        State.modify' (mappend (MultiAnd.singleton claim))
 
 proveClaim
     :: forall simplifier
