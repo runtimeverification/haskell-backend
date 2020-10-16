@@ -220,10 +220,11 @@ attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation'
         :: simplifier (AttemptEquationResult variable)
         -> simplifier (AttemptEquationResult variable)
-    whileDebugAttemptEquation' action = do
-        result <- whileDebugAttemptEquation termLike equationRenamed action
-        debugAttemptEquationResult equation result
-        return result
+    whileDebugAttemptEquation' action =
+        whileDebugAttemptEquation termLike equationRenamed $ do
+            result <- action
+            debugAttemptEquationResult equation result
+            return result
 
 -- | Simplify the argument of a function definition equation with the
 -- match substitution and the priority predicate. This will avoid
