@@ -1,15 +1,1 @@
-  <k>
-    #fail ~> .
-  </k>
-#And
-  {
-    false
-  #Equals
-    i ( 1 , 0 ) ==Int 0
-  }
-#And
-  {
-    true
-  #Equals
-    #assert i ( X , 0 ) ==Int 0
-  }
+#Top
