@@ -133,8 +133,9 @@ import Kore.Parser
     , parseKorePattern
     )
 import Kore.Reachability
-    ( ProofStuck (..)
+    ( ProveClaimsResult (..)
     , SomeClaim
+    , StuckClaim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
@@ -689,17 +690,19 @@ koreProve execOptions proveOptions = do
             specModule
             maybeAlreadyProvenModule
 
-    (exitCode, final) <- case proveResult of
-        Left ProofStuck { stuckPatterns, provenClaims } -> do
+    let ProveClaimsResult { stuckClaim } = proveResult
+    (exitCode, final) <- case stuckClaim of
+        Nothing -> return success
+        Just (StuckClaim stuckPatterns) -> do
+            let ProveClaimsResult { provenClaims } = proveResult
             maybe
                 (return ())
-                (lift . saveProven specModule provenClaims)
+                (lift . saveProven specModule (Foldable.toList provenClaims))
                 saveProofs
             stuckPatterns
                 & OrPattern.toTermLike
                 & failure
                 & return
-        Right () -> return success
 
     lift $ renderResult execOptions (unparse final)
     return exitCode

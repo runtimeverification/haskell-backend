@@ -9,6 +9,8 @@ This should be imported qualified.
 module Kore.Reachability.Prove
     ( CommonClaimState
     , ProofStuck (..)
+    , ProveClaimsResult (..)
+    , StuckClaim (..)
     , AllClaims (..)
     , Axioms (..)
     , ToProve (..)
@@ -39,6 +41,7 @@ import Control.Monad.Catch
     )
 import Control.Monad.Except
     ( ExceptT
+    , runExceptT
     , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
@@ -68,6 +71,10 @@ import Kore.Debug
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -186,6 +193,15 @@ newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
 newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
+newtype StuckClaim =
+    StuckClaim { getStuckClaim :: OrPattern VariableName }
+
+data ProveClaimsResult =
+    ProveClaimsResult
+    { stuckClaim :: !(Maybe StuckClaim)
+    , provenClaims :: !(MultiAnd SomeClaim)
+    }
+
 proveClaims
     :: forall simplifier
     .  MonadMask simplifier
@@ -199,7 +215,7 @@ proveClaims
     -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT ProofStuck simplifier ()
+    -> simplifier ProveClaimsResult
 proveClaims
     breadthLimit
     searchOrder
@@ -207,9 +223,23 @@ proveClaims
     axioms
     (AlreadyProven alreadyProven)
     (ToProve toProve)
-  =
-    proveClaimsWorker breadthLimit searchOrder claims axioms unproven
-    & withExceptT addStillProven
+  = do
+    result <-
+        proveClaimsWorker breadthLimit searchOrder claims axioms unproven
+        & runExceptT
+    case result of
+        Left proofStuck ->
+            pure ProveClaimsResult
+                { stuckClaim = (Just . StuckClaim) stuckPatterns
+                , provenClaims = MultiAnd.make (stillProven ++ provenClaims)
+                }
+          where
+            ProofStuck { stuckPatterns, provenClaims } = proofStuck
+        Right () ->
+            pure ProveClaimsResult
+                { stuckClaim = Nothing
+                , provenClaims = MultiAnd.top
+                }
   where
     unproven :: ToProve SomeClaim
     stillProven :: [SomeClaim]
@@ -225,10 +255,6 @@ proveClaims
             if unparseToText2 rule `elem` alreadyProven
                 then Right rule
                 else Left claim
-
-    addStillProven :: ProofStuck -> ProofStuck
-    addStillProven stuck@ProofStuck { provenClaims } =
-        stuck { provenClaims = stillProven ++ provenClaims }
 
 proveClaimsWorker
     :: forall simplifier

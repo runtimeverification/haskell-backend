@@ -7,10 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Control.Lens as Lens
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
-import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
     )
@@ -1904,7 +1900,7 @@ proveClaims
     -> [Rule SomeClaim]
     -> [SomeClaim]
     -> [SomeClaim]
-    -> IO (Either ProofStuck ())
+    -> IO ProveClaimsResult
 proveClaims breadthLimit depthLimit axioms claims alreadyProven =
     Kore.Reachability.proveClaims
         breadthLimit
@@ -1913,7 +1909,6 @@ proveClaims breadthLimit depthLimit axioms claims alreadyProven =
         (Axioms axioms)
         (AlreadyProven (map unparseToText2 alreadyProven))
         (ToProve (map applyDepthLimit . selectUntrusted $ claims))
-    & runExceptT
     & runSimplifier mockEnv
   where
     mockEnv = Mock.env
@@ -1929,13 +1924,11 @@ proveClaims_
     -> IO (Either (OrPattern VariableName) ())
 proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
     do
-        stuck <- Test.Kore.Reachability.Prove.proveClaims
-            breadthLimit
-            depthLimit
-            axioms
-            claims
-            alreadyProven
-        return (toPattern stuck)
-  where
-    toPattern :: Either ProofStuck a -> Either (OrPattern VariableName) a
-    toPattern = Bifunctor.first stuckPatterns
+        ProveClaimsResult { stuckClaim } <-
+            Test.Kore.Reachability.Prove.proveClaims
+                breadthLimit
+                depthLimit
+                axioms
+                claims
+                alreadyProven
+        pure $ maybe (Right ()) (Left . getStuckClaim) stuckClaim
