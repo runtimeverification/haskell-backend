@@ -141,19 +141,19 @@ instance Claim AllPathClaim where
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
 
     applyAxioms axiomss = \claim ->
-        foldM applyAxioms1 (Remaining claim) axiomss
+        foldM applyAxioms1 (ApplyRemainder claim) axiomss
       where
-        applyAxioms1 claimState axioms
-          | Just claim <- retractRewritable claimState =
+        applyAxioms1 todoRename axioms
+          | Just claim <- retractApplyRemainder todoRename =
             deriveParAxiomAllPath axioms claim
             >>= simplifyRemainder
           | otherwise =
-            pure claimState
+            pure todoRename
 
-        simplifyRemainder claimState =
-            case claimState of
-                Remaining claim -> Remaining <$> simplify claim
-                _ -> return claimState
+        simplifyRemainder todoRename =
+            case todoRename of
+                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                _ -> return todoRename
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -195,7 +195,7 @@ deriveParAxiomAllPath
     =>  [Rule AllPathClaim]
     ->  AllPathClaim
     ->  TransitionT (AppliedRule AllPathClaim) simplifier
-            (ClaimState AllPathClaim)
+            (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where

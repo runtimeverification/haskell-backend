@@ -214,7 +214,7 @@ deriveSeqAxiomOnePath
     =>  [Rule OnePathClaim]
     ->  OnePathClaim
     ->  TransitionT (AppliedRule OnePathClaim) simplifier
-            (ClaimState OnePathClaim)
+            (ApplyResult OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where

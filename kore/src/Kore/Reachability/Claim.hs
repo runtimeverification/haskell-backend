@@ -4,7 +4,9 @@ License     : NCSA
 -}
 module Kore.Reachability.Claim
     ( Claim (..)
+    , ApplyResult (..)
     , AppliedRule (..)
+    , retractApplyRemainder
     , strategy
     , TransitionRule
     , Prim
@@ -167,6 +169,12 @@ import Pretty
     )
 import qualified Pretty
 
+data ApplyResult claim
+    = ApplyRewritten !claim
+    | ApplyRemainder !claim
+    deriving (Show, Eq)
+    deriving (Functor)
+
 class Claim claim where
     {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
     -}
@@ -198,13 +206,13 @@ class Claim claim where
         :: MonadSimplify m
         => [claim]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule claim]]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
@@ -271,7 +279,7 @@ deriveSeqClaim
     -> (ClaimPattern -> claim)
     -> [claim]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -347,13 +355,19 @@ transitionRule claims axiomGroups = transitionRuleWorker
     -- opaque way. I think that there's no good reason for wrapping the
     -- results in `derivePar` as opposed to here.
 
-    transitionRuleWorker ApplyClaims (Claimed claim) =
-        applyClaims claims claim
+    transitionRuleWorker ApplyClaims (Claimed claim) = do
+        x <- applyClaims claims claim
+        case x of
+            ApplyRewritten c -> pure $ Rewritten c
+            ApplyRemainder c -> pure $ Remaining c
     transitionRuleWorker ApplyClaims claimState = pure claimState
 
     transitionRuleWorker ApplyAxioms claimState
-      | Just claim <- retractRewritable claimState =
-        applyAxioms axiomGroups claim
+      | Just claim <- retractRewritable claimState = do
+        x <- applyAxioms axiomGroups claim
+        case x of
+            ApplyRewritten c -> pure $ Rewritten c
+            ApplyRemainder c -> pure $ Remaining c
       | otherwise = pure claimState
 
 retractSimplifiable :: ClaimState a -> Maybe a
@@ -361,6 +375,10 @@ retractSimplifiable (Claimed a) = Just a
 retractSimplifiable (Rewritten a) = Just a
 retractSimplifiable (Remaining a) = Just a
 retractSimplifiable _ = Nothing
+
+retractApplyRemainder :: ApplyResult a -> Maybe a
+retractApplyRemainder (ApplyRemainder a) = Just a
+retractApplyRemainder _ = Nothing
 
 isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
@@ -650,7 +668,7 @@ derivePar'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -669,7 +687,7 @@ deriveWith
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -694,7 +712,7 @@ deriveSeq'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
@@ -704,7 +722,7 @@ deriveResults
     => (Step.UnifiedRule representation -> AppliedRule claim)
     -> Step.Results representation
     -> Strategy.TransitionT (AppliedRule claim) simplifier
-        (ClaimState.ClaimState (Pattern RewritingVariableName))
+        (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
 deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
@@ -718,10 +736,10 @@ deriveResults fromAppliedRule Results { results, remainders } =
             []      ->
                 -- If the rule returns \bottom, the claim is proven on the
                 -- current branch.
-                pure Proven
+                pure . ApplyRewritten $ Pattern.bottom
             configs -> Foldable.asum (addRewritten <$> configs)
 
-    addRewritten = pure . Rewritten
-    addRemainder = pure . Remaining
+    addRewritten = pure . ApplyRewritten
+    addRemainder = pure . ApplyRemainder
 
     addRule = Transition.addRule . fromAppliedRule

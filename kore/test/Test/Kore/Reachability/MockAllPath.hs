@@ -372,10 +372,12 @@ instance Claim MockClaim where
     simplify = return
 
     applyClaims claims =
-        derivePar AppliedClaim (map (Rule . unMockClaim) claims)
+        undefined
+        -- derivePar AppliedClaim (map (Rule . unMockClaim) claims)
 
     applyAxioms axiomGroups =
-        derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
+        undefined
+        -- derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
 
 derivePar
     :: (MockClaim -> MockAppliedRule)
