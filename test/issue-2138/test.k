@@ -16,5 +16,4 @@ module TEST
 
 // Uninterpreted functions
     syntax Int ::= i(Int, Int)   [function, functional, no-evaluators, smtlib(fi), klabel(i)]
-    syntax Int ::= p(Exp, Int)   [function, functional, no-evaluators, smtlib(fp), klabel(p)]
 endmodule
