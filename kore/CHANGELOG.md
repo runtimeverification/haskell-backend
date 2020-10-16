@@ -14,6 +14,17 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.32.0.0] - 2020-10-15
+
+### Changed
+
+- `\equals` clauses are normalized by ordering their child terms. (#2137)
+- The SMT solver is reset at fixed intervals. (#2125)
+
+### Fixed
+
+- The warning about trivial claims shows the original source location. (#2155)
+
 ## [0.31.0.0] - 2020-09-30
 
 ### Added
