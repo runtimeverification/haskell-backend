@@ -204,7 +204,7 @@ toRepresentationCondition
     => Condition variable
     -> SideCondition.Representation
 toRepresentationCondition =
-    trace "toRepresentationCondition" $
+    -- trace "toRepresentationCondition" $
     mkRepresentation
     . Condition.mapVariables @_ @VariableName (pure toVariableName)
 

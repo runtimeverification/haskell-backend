@@ -126,8 +126,8 @@ instance HasConstructorLike (Pattern variable) where
 
 simplifiedAttribute :: HasCallStack => Pattern variable -> Simplified
 simplifiedAttribute patt@Pattern { simplified } =
-    traceStack "simplifiedAttribute"
-    $ assertSimplifiedConsistency patt simplified
+    -- traceStack "simplifiedAttribute"
+    assertSimplifiedConsistency patt simplified
 
 constructorLikeAttribute :: Pattern variable -> ConstructorLike
 constructorLikeAttribute Pattern {constructorLike} = constructorLike
@@ -139,30 +139,30 @@ isSimplified
     :: HasCallStack
     => SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition !patt@Pattern {simplified} =
-    traceStack "isSimplified"
-    $ assertSimplifiedConsistency patt
+    -- traceStack "isSimplified"
+    assertSimplifiedConsistency patt
     $ Simplified.isSimplified sideCondition simplified
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
 isFullySimplified :: HasCallStack => Pattern variable -> Bool
 isFullySimplified patt@Pattern {simplified} =
-    traceStack "isFullySimplified"
-    $ assertSimplifiedConsistency patt
+    -- traceStack "isFullySimplified"
+    assertSimplifiedConsistency patt
     $ Simplified.isFullySimplified simplified
 
 assertSimplifiedConsistency :: HasCallStack => Pattern variable -> a -> a
 assertSimplifiedConsistency Pattern {constructorLike, simplified} =
-    traceStack "assertSimplifiedConsistency" worker
+   worker  -- traceStack "assertSimplifiedConsistency" worker
   where
     worker
         | isConstructorLike constructorLike
         , not (Simplified.isFullySimplified simplified) =
           error "Inconsistent attributes, constructorLike implies fully simplified."
-        | otherwise = trace "assertSimplifiedConsistency: OK" id
+        | otherwise = id -- trace "assertSimplifiedConsistency: OK" id
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
-setSimplified simplified patt = trace "setSimplified" patt { simplified }
+setSimplified simplified patt = patt { simplified } -- trace "setSimplified" patt { simplified }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 

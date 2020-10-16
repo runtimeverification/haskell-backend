@@ -227,20 +227,20 @@ Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
 s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
-isSimplified _ (Simplified_ Fully Any) = trace "\n\ns\n\n" True
+isSimplified _ (Simplified_ Fully Any) = True -- trace "\n\ns\n\n" True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
-    trace "\n\nsc\n\n" $ condition == currentCondition
-    -- SideCondition.implies condition currentCondition
-isSimplified _ (Simplified_ Fully Unknown) = trace "\n\nns\n\n" False
-isSimplified _ (Simplified_ Partly _) = trace "\n\nns\n\n" False
-isSimplified _ NotSimplified = trace "\n\nns\n\n" False
+    -- trace "\n\nsc\n\n" $ condition == currentCondition
+    SideCondition.implies condition currentCondition
+isSimplified _ (Simplified_ Fully Unknown) = False -- trace "\n\nns\n\n" False
+isSimplified _ (Simplified_ Partly _) = False -- trace "\n\nns\n\n" False
+isSimplified _ NotSimplified = False -- trace "\n\nns\n\n" False
 
 isFullySimplified :: Simplified -> Bool
-isFullySimplified (Simplified_ Fully Any) = trace "\n\nfs\n\n" True
-isFullySimplified (Simplified_ Fully (Condition _)) = trace "\n\nnfs\n\n" False
-isFullySimplified (Simplified_ Fully Unknown) = trace "\n\nnfs\n\n" False
-isFullySimplified (Simplified_ Partly _) = trace "\n\nnfs\n\n" False
-isFullySimplified NotSimplified = trace "\n\nnfs\n\n" False
+isFullySimplified (Simplified_ Fully Any) = True -- trace "\n\nfs\n\n" True
+isFullySimplified (Simplified_ Fully (Condition _)) = False -- trace "\n\nnfs\n\n" False
+isFullySimplified (Simplified_ Fully Unknown) = False -- trace "\n\nnfs\n\n" False
+isFullySimplified (Simplified_ Partly _) = False -- trace "\n\nnfs\n\n" False
+isFullySimplified NotSimplified = False -- trace "\n\nnfs\n\n" False
 
 fullySimplified :: Simplified
 fullySimplified = Simplified_ Fully Any

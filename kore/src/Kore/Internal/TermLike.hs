@@ -431,7 +431,8 @@ fromConcrete = mapVariables (pure $ from @Concrete)
 
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
-    trace "\n\nattribute.isSimplified\n\n" (Attribute.isSimplified sideCondition) . trace "\n\nextractAttributes\n\n" extractAttributes
+    -- trace "\n\nattribute.isSimplified\n\n"
+    (Attribute.isSimplified sideCondition) . extractAttributes -- trace "\n\nextractAttributes\n\n" extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 

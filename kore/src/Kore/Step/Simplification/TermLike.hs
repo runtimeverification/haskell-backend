@@ -177,7 +177,7 @@ simplify
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplify sideCondition = \termLike ->
-    trace "\n\nstart simplify\n\n" $
+    -- trace "\n\nstart simplify\n\n" $
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
@@ -193,7 +193,7 @@ simplify sideCondition = \termLike ->
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
       | TermLike.isSimplified sideConditionRepresentation termLike = do
-        traceM "\n\nisSimplified\n\n"
+        -- traceM "\n\nisSimplified\n\n"
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -207,7 +207,7 @@ simplify sideCondition = \termLike ->
                     & OrPattern.fromPattern
                     & pure
       | otherwise = do
-        traceM "\n\nnot isSimplified\n\n"
+        -- traceM "\n\nnot isSimplified\n\n"
         assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike
             let termOr = OrPattern.coerceSort
@@ -251,7 +251,7 @@ simplify sideCondition = \termLike ->
                 }
 
         assertTermNotPredicate getResults = do
-            traceM "\n\nstart assertTermNotPredicate\n\n"
+            -- traceM "\n\nstart assertTermNotPredicate\n\n"
             results <- getResults
             let
                 -- The term of a result should never be any predicate other than
@@ -457,6 +457,8 @@ ensureSimplifiedResult repr termLike results
             (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
+        , Pretty.indent 2 "with side condition:"
+        , Pretty.indent 4 (unparse repr)
         ]
   where
     hasSimplifiedChildren = OrPattern.hasSimplifiedChildren repr
