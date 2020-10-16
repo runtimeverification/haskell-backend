@@ -90,6 +90,9 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -690,20 +693,15 @@ koreProve execOptions proveOptions = do
             specModule
             maybeAlreadyProvenModule
 
-    let ProveClaimsResult { stuckClaim } = proveResult
-    (exitCode, final) <- case stuckClaim of
-        Nothing -> return success
-        Just (StuckClaim stuckPatterns) -> do
-            let ProveClaimsResult { provenClaims } = proveResult
-            maybe
-                (return ())
-                (lift . saveProven specModule (Foldable.toList provenClaims))
-                saveProofs
-            stuckPatterns
-                & OrPattern.toTermLike
-                & failure
-                & return
-
+    let ProveClaimsResult { stuckClaim, provenClaims } = proveResult
+    let (exitCode, final) =
+            case stuckClaim of
+                Nothing -> success
+                Just (StuckClaim stuckPatterns) ->
+                    stuckPatterns
+                    & OrPattern.toTermLike
+                    & failure
+    lift $ Foldable.for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -729,10 +727,10 @@ koreProve execOptions proveOptions = do
 
     saveProven
         :: VerifiedModule StepperAttributes
-        -> [SomeClaim]
+        -> MultiAnd SomeClaim
         -> FilePath
         -> IO ()
-    saveProven specModule provenClaims outputFile =
+    saveProven specModule (Foldable.toList -> provenClaims) outputFile =
         withFile outputFile WriteMode
             (`hPutDoc` unparse provenDefinition)
       where
