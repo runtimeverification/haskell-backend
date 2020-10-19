@@ -15,7 +15,13 @@ import Prelude.Kore
 import Control.Error
     ( hush
     )
+import Control.Lens
+    ( (%~)
+    )
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
 import Data.List
     ( partition
     , sortOn
@@ -32,6 +38,9 @@ import Kore.Attribute.Axiom
     , Unit (Unit)
     )
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom.Concrete
+    ( Concrete (..)
+    )
 import Kore.Attribute.Overload
 import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Symbol
@@ -126,7 +135,16 @@ partitionEquations equations =
         partition Equation.isSimplificationRule
         . sortOn Equation.equationPriority
         $ equations'
-    functionRules = filter (not . ignoreDefinition) unProcessedFunctionRules
+
+    functionRules =
+        filter (not . ignoreDefinition) unProcessedFunctionRules
+        & fmap setConcrete
+      where
+        setConcrete :: Equation VariableName -> Equation VariableName
+        setConcrete rule =
+            rule
+            & field @"attributes" . field @"concrete"
+                %~ (<> maybe mempty (Concrete . freeVariables) (argument rule))
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
