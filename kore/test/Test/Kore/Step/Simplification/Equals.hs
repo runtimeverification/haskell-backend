@@ -10,40 +10,26 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
-import Kore.Internal.Condition
-    ( Condition
-    , Conditional (..)
-    )
+import Kore.Internal.Condition ( Condition, Conditional (..) )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrCondition ( OrCondition )
+import Kore.Internal.OrPattern ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern ( Pattern )
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate
-    ( pattern PredicateFalse
-    , makeAndPredicate
+    ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
     , makeEqualsPredicate
     , makeIffPredicate
     , makeImpliesPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate
+    , pattern PredicateFalse
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import qualified Kore.Internal.SideCondition as SideCondition ( top )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Equals
@@ -145,7 +131,7 @@ test_equalsSimplification_Or_Pattern =
         assertEqual "" expect actual
 
     , testCase "f vs g or h" $ do
-        let expect =
+        let expectEvaluateEquals =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
@@ -153,7 +139,9 @@ test_equalsSimplification_Or_Pattern =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.cg
-                            , makeEqualsPredicate Mock.cf Mock.cg
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate Mock.cf Mock.cg)
                             , makeImpliesPredicate
                                 (makeCeilPredicate Mock.ch)
                                 (makeEqualsPredicate Mock.cf Mock.ch)
@@ -166,10 +154,12 @@ test_equalsSimplification_Or_Pattern =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.ch
                             , makeImpliesPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.ch)
+                                (makeEqualsPredicate Mock.cf Mock.ch)
                             ]
                         , substitution = mempty
                         }
@@ -206,7 +196,7 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
         assertBidirectionalEqualityResult "f" "g or h"
-            expect
+            expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -215,15 +205,30 @@ test_equalsSimplification_Or_Pattern =
                 }
 
     , testCase "f vs g or h where f /= g" $ do
-        let expect =
+        let expectEvaluateEquals =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ makeCeilPredicate Mock.cf
+                            , makeCeilPredicate Mock.cg
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.ch)
+                                (makeEqualsPredicate Mock.cf Mock.ch)
+                            , makeNotPredicate (makeCeilPredicate Mock.cg)
+                            ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeCeilPredicate Mock.cf
                             , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.ch
+                            , makeImpliesPredicate
+                                (makeCeilPredicate Mock.ch)
+                                (makeEqualsPredicate Mock.cf Mock.ch)
                             , makeNotPredicate $ makeCeilPredicate Mock.cg
                             ]
                         , substitution = mempty
@@ -261,7 +266,7 @@ test_equalsSimplification_Or_Pattern =
                         }
                     ]
         assertBidirectionalEqualityResult "f" "g or h"
-            expect
+            expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -270,56 +275,15 @@ test_equalsSimplification_Or_Pattern =
                 }
 
     , testCase "f vs g[x = a] or h" $ do
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedG
-                            , makeEqualsPredicate Mock.cf Mock.cg
-                            , makeImpliesPredicate
-                                definedH
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            ]
-                        , substitution = Substitution.unsafeWrap
-                            [(inject Mock.x, Mock.a)]
-                        }
-                    , Conditional
-                        { term = mkTop_
-                        , predicate =
-                            (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedH
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeImpliesPredicate
-                                definedGWithSubstitution
-                                (makeEqualsPredicate Mock.cf Mock.cg)
-                            ]
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = mkTop_
-                        , predicate =
-                            (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeNotPredicate definedGWithSubstitution
-                            , makeNotPredicate definedF
-                            , makeNotPredicate definedH
-                            ]
-                        , substitution = mempty
-                        }
-                    ]
-              where
-                definedF = makeCeilPredicate Mock.cf
-                definedG = makeCeilPredicate Mock.cg
-                predicateSubstitution =
-                    makeEqualsPredicate (mkElemVar Mock.x) Mock.a
-                definedGWithSubstitution =
-                    makeAndPredicate
-                        definedG
-                        predicateSubstitution
-                definedH = makeCeilPredicate Mock.ch
+        let definedF = makeCeilPredicate Mock.cf
+            definedG = makeCeilPredicate Mock.cg
+            predicateSubstitution =
+                makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+            definedGWithSubstitution =
+                makeAndPredicate
+                    definedG
+                    predicateSubstitution
+            definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -344,8 +308,52 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
+            expectEvaluateEquals =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ definedF
+                            , definedG
+                            , makeImpliesPredicate
+                                definedGWithSubstitution
+                                (makeEqualsPredicate Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                definedH
+                                (makeEqualsPredicate Mock.cf Mock.ch)
+                            ]
+                        , substitution = Substitution.unsafeWrap
+                            [(inject Mock.x, Mock.a)]
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ definedF
+                            , definedH
+                            , makeImpliesPredicate
+                                definedGWithSubstitution
+                                (makeEqualsPredicate Mock.cf Mock.cg)
+                            , makeImpliesPredicate
+                                definedH
+                                (makeEqualsPredicate Mock.cf Mock.ch)
+                            ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            (MultiAnd.toPredicate . MultiAnd.make)
+                            [ makeNotPredicate definedGWithSubstitution
+                            , makeNotPredicate definedF
+                            , makeNotPredicate definedH
+                            ]
+                        , substitution = mempty
+                        }
+                    ]
         assertBidirectionalEqualityResult "f" "g[x = a] or h"
-            expect
+            expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
                 , equalsResultSort = testSort
@@ -958,7 +966,7 @@ assertBidirectionalEqualityResult
 assertBidirectionalEqualityResult
     firstName
     secondName
-    expect
+    expectEvaluateEquals
     equality@Equals{equalsFirst, equalsSecond}
   = do
     testOneDirection equality
@@ -969,18 +977,22 @@ assertBidirectionalEqualityResult
     testOneDirection reverseEquality
   where
     testOneDirection orderedEquality = do
-        actual <- evaluateOr orderedEquality
-        let message =
-                unlines
-                    [ firstName ++ " vs " ++ secondName ++ ":"
-                    , "Expected"
-                    , unparseToString (OrPattern.toPattern <$> orderedEquality)
-                    , "would simplify to:"
-                    , unlines (unparseToString <$> Foldable.toList expect)
-                    , "but instead found:"
-                    , unlines (unparseToString <$> Foldable.toList actual)
-                    ]
-        assertEqual message expect actual
+        actualEvaluateEquals <- evaluateOr orderedEquality
+        let assertEqual' name expect actual =
+                let message =
+                        unlines
+                        [ firstName ++ " vs " ++ secondName ++ ":"
+                        , "Expected " <> name
+                        , unparseToString (OrPattern.toPattern <$> orderedEquality)
+                        , "would simplify to:"
+                        , unlines (unparseToString <$> Foldable.toList expect)
+                        , "but instead found:"
+                        , unlines (unparseToString <$> Foldable.toList actual)
+                        ]
+                 in assertEqual message expect actual
+        assertEqual' "evaluate equals"
+            expectEvaluateEquals
+            actualEvaluateEquals
 
 assertTermEquals
     :: HasCallStack

@@ -10,6 +10,7 @@ module Kore.Step.Simplification.Pattern
 
 import Prelude.Kore
 
+
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -77,6 +78,6 @@ simplify sideCondition pattern' =
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition
         simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
-        simplifyCondition
-            sideCondition
-            (Conditional.andCondition simplifiedTerm simplifiedCondition)
+        let simplifiedPattern =
+                Conditional.andCondition simplifiedTerm simplifiedCondition
+        simplifyCondition sideCondition simplifiedPattern

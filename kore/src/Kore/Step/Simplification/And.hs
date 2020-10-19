@@ -1,7 +1,6 @@
 {-|
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
 
 module Kore.Step.Simplification.And
@@ -16,43 +15,22 @@ import Prelude.Kore
 import Control.Error
     ( runMaybeT
     )
-import qualified Control.Lens as Lens
-import Control.Monad.State.Strict
-    ( StateT
-    , evalStateT
-    )
-import qualified Control.Monad.State.Strict as State
 import Data.Bifunctor
     ( bimap
     )
 import qualified Data.Foldable as Foldable
-import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Product
-import Data.HashMap.Strict
-    ( HashMap
-    )
-import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( foldl1'
-    , sortOn
     )
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Traversable
-    ( for
-    )
-import qualified GHC.Generics as GHC
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 
-import Changed
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -61,38 +39,18 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , pattern PredicateEquals
-    , pattern PredicateExists
-    , pattern PredicateForall
-    , pattern PredicateNot
-    , makeFalsePredicate
-    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Internal.Symbol
-    ( isConstructor
-    , isFunction
-    )
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
-    , pattern App_
-    , pattern Builtin_
-    , pattern Equals_
-    , pattern Exists_
-    , pattern Forall_
-    , pattern Inj_
-    , pattern Mu_
     , pattern Not_
-    , pattern Nu_
     , TermLike
-    , Variable (..)
     , mkAnd
     , mkBottom_
-    , mkEquals_
     , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -107,21 +65,16 @@ import Kore.Unification.UnifierT
     , runUnifierT
     )
 import Logic
-import Pair
 
 {- | Simplify a conjunction of 'OrPattern'.
-
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
 those.
-
 Since an Pattern is of the form term /\ predicate /\ substitution,
 making an and between two Patterns roughly means and-ing each of their
 components separately.
-
 This means that a bottom component anywhere makes the result bottom, while
 top can always be ignored.
-
 When we 'and' two terms:
 by Proposition 5.24 from (1),
     x and functional-pattern = functional-pattern and [x=phi]
@@ -158,9 +111,7 @@ simplify notSimplifier sideCondition orPatterns =
         makeEvaluate notSimplifier sideCondition patterns
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
-
 See the comment for 'simplify' to find more details.
-
 -}
 makeEvaluate
     :: forall variable simplifier
@@ -202,232 +153,22 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         from @_ @(Condition _) substitutions
         & Substitution.normalize sideCondition
     let substitution = Pattern.substitution normalized
-        predicates :: Changed (MultiAnd (Predicate variable))
+        predicates :: MultiAnd (Predicate variable)
         predicates =
             mconcat
                 [ MultiAnd.fromPredicate (predicate unified)
                 , MultiAnd.fromPredicate (predicate normalized)
                 , foldMap (from @(Predicate _) . predicate) patterns
                 ]
-            & simplifyConjunctionByAssumption
         term =
             applyAndIdempotenceAndFindContradictions
                 (Conditional.term unified)
-    case predicates of
-        Unchanged unchanged ->
-            Pattern.withCondition term (from substitution <> from predicate)
+    let predicate =
+            MultiAnd.toPredicate predicates
+            & Predicate.setSimplified simplified
+        simplified = foldMap Predicate.simplifiedAttribute predicates
+     in Pattern.withCondition term (from substitution <> from predicate)
             & return
-          where
-            predicate =
-                MultiAnd.toPredicate unchanged
-                & Predicate.setSimplified simplified
-            simplified = foldMap Predicate.simplifiedAttribute unchanged
-        Changed changed ->
-            Pattern.withCondition term (from substitution <> from predicate)
-            & simplifyCondition sideCondition
-          where
-            predicate = MultiAnd.toPredicate changed
-
-
-data DoubleMap variable = DoubleMap
-    { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
-    , predMap :: HashMap (Predicate variable) (Predicate variable)
-    }
-    deriving (Eq, GHC.Generic, Show)
-
-{- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
-
-The conjunction is simplified by the identity:
-
-@
-A ∧ P(A) = A ∧ P(⊤)
-@
-
- -}
-simplifyConjunctionByAssumption
-    :: forall variable
-    .  InternalVariable variable
-    => MultiAnd (Predicate variable)
-    -> Changed (MultiAnd (Predicate variable))
-simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
-    fmap MultiAnd.make
-    $ flip evalStateT (DoubleMap HashMap.empty HashMap.empty)
-    $ for (sortBySize andPredicates)
-    $ \original -> do
-        result <- applyAssumptions original
-        assume result
-        return result
-  where
-    -- Sorting by size ensures that every clause is considered before any clause
-    -- which could contain it, because the containing clause is necessarily
-    -- larger.
-    sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortOn predSize
-
-    size :: TermLike variable -> Int
-    size =
-        Recursive.fold $ \(_ :< termLikeF) ->
-            case termLikeF of
-                TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
-                TermLike.DefinedF defined -> TermLike.getDefined defined
-                _ -> 1 + Foldable.sum termLikeF
-
-    predSize :: Predicate variable -> Int
-    predSize =
-        Recursive.fold $ \(_ :< predF) ->
-            case predF of
-                Predicate.CeilF ceil_ -> 1 + Foldable.sum (size <$> ceil_)
-                Predicate.EqualsF equals_ -> 1 + Foldable.sum (size <$> equals_)
-                Predicate.FloorF floor_ -> 1 + Foldable.sum (size <$> floor_)
-                Predicate.InF in_ -> 1 + Foldable.sum (size <$> in_)
-                _ -> 1 + Foldable.sum predF
-
-    assume
-        :: Predicate variable ->
-        StateT (DoubleMap variable) Changed ()
-    assume predicate =
-        State.modify' (assumeEqualTerms . assumePredicate)
-      where
-        assumePredicate =
-            case predicate of
-                PredicateNot notChild ->
-                    -- Infer that the predicate is \bottom.
-                    Lens.over (field @"predMap") $
-                        HashMap.insert notChild makeFalsePredicate
-                _ ->
-                    -- Infer that the predicate is \top.
-                    Lens.over (field @"predMap") $
-                        HashMap.insert predicate makeTruePredicate
-        assumeEqualTerms =
-            case predicate of
-                PredicateEquals t1 t2 ->
-                    case retractLocalFunction (mkEquals_ t1 t2) of
-                        Just (Pair t1' t2') ->
-                            Lens.over (field @"termLikeMap") $
-                                HashMap.insert t1' t2'
-                        _ -> id
-                _ -> id
-
-    applyAssumptions
-        ::  Predicate variable
-        ->  StateT (DoubleMap variable) Changed (Predicate variable)
-    applyAssumptions replaceIn = do
-        assumptions <- State.get
-        lift (applyAssumptionsWorker assumptions replaceIn)
-
-    applyAssumptionsWorker
-        :: DoubleMap variable
-        -> Predicate variable
-        -> Changed (Predicate variable)
-    applyAssumptionsWorker assumptions original
-      | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
-
-      | HashMap.null (termLikeMap assumptions') &&
-        HashMap.null (predMap assumptions') = Unchanged original
-
-      | otherwise = (case replaceIn of
-          Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
-          Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
-          Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
-          Predicate.InF in_ -> Predicate.InF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
-          _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
-        )
-        & getChanged
-        -- The next line ensures that if the result is Unchanged, any allocation
-        -- performed while computing that result is collected.
-        & maybe (Unchanged original) (Changed . synthesize)
-
-      where
-        _ :< replaceIn = Recursive.project original
-
-        assumptions'
-          | PredicateExists var _ <- original = restrictAssumptions (inject var)
-          | PredicateForall var _ <- original = restrictAssumptions (inject var)
-          | otherwise = assumptions
-
-        restrictAssumptions Variable { variableName } =
-            Lens.over (field @"termLikeMap")
-            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
-            $
-            Lens.over (field @"predMap")
-            (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
-            assumptions
-          where
-            wouldNotCapture = not . Predicate.hasFreeVariable variableName
-            wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
-
-    applyAssumptionsWorkerTerm
-        :: HashMap (TermLike variable) (TermLike variable)
-        -> TermLike variable
-        -> Changed (TermLike variable)
-    applyAssumptionsWorkerTerm assumptions original
-      | Just result <- HashMap.lookup original assumptions = Changed result
-
-      | HashMap.null assumptions' = Unchanged original
-
-      | otherwise =
-        traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
-        & getChanged
-        -- The next line ensures that if the result is Unchanged, any allocation
-        -- performed while computing that result is collected.
-        & maybe (Unchanged original) (Changed . synthesize)
-
-      where
-        _ :< replaceIn = Recursive.project original
-
-        assumptions'
-          | Exists_ _ var _ <- original = restrictAssumptions (inject var)
-          | Forall_ _ var _ <- original = restrictAssumptions (inject var)
-          | Mu_       var _ <- original = restrictAssumptions (inject var)
-          | Nu_       var _ <- original = restrictAssumptions (inject var)
-          | otherwise = assumptions
-
-        restrictAssumptions Variable { variableName } =
-            HashMap.filterWithKey
-                (\termLike _ -> wouldNotCapture termLike)
-                assumptions
-          where
-            wouldNotCapture = not . TermLike.hasFreeVariable variableName
-
-
-
-{- | Get a local function definition from a 'TermLike'.
-
-A local function definition is a predicate that we can use to evaluate a
-function locally (based on the side conditions) when none of the functions
-global definitions (axioms) apply. We are looking for a 'TermLike' of the form
-
-@
-\equals(f(...), C(...))
-@
-
-where @f@ is a function and @C@ is a constructor, sort injection or builtin.
-@retractLocalFunction@ will match an @\equals@ predicate with its arguments
-in either order, but the function pattern is always returned first in the
-'Pair'.
-
- -}
-retractLocalFunction
-    :: TermLike variable
-    -> Maybe (Pair (TermLike variable))
-retractLocalFunction =
-    \case
-        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
-        _ -> Nothing
-  where
-    go term1@(App_ symbol1 _) term2
-      | isFunction symbol1 =
-        case term2 of
-            App_ symbol2 _
-              | isConstructor symbol2 -> Just (Pair term1 term2)
-            Inj_ _     -> Just (Pair term1 term2)
-            Builtin_ _ -> Just (Pair term1 term2)
-            _          -> Nothing
-    go _ _ = Nothing
 
 applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
@@ -471,9 +212,7 @@ partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith f = partitionEithers . fmap f
 
 {- | Simplify the conjunction (@\\and@) of two terms.
-
 The comment for 'simplify' describes all the special cases handled by this.
-
 -}
 termAnd
     :: forall variable simplifier
@@ -492,9 +231,9 @@ termAnd notSimplifier p1 p2 =
         :: TermLike variable
         -> TermLike variable
         -> UnifierT simplifier (Pattern variable)
-    termAndWorker pr1 pr2 = do
-        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker pr1 pr2
+    termAndWorker first second = do
+        let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where
-        andPattern = Pattern.fromTermLike (mkAnd pr1 pr2)
+        andPattern = Pattern.fromTermLike (mkAnd first second)

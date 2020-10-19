@@ -536,10 +536,10 @@ makeAndPredicate
     -> Predicate variable
     -> Predicate variable
 makeAndPredicate p1 p2
-  | isTop p1 = p2
-  | isTop p2 = p1
   | isBottom p1 = p1
   | isBottom p2 = p2
+  | isTop p1 = p2
+  | isTop p2 = p1
   | p1 == p2 = p1
   | otherwise = synthesize $ AndF And
     { andSort = ()
@@ -569,7 +569,13 @@ makeImpliesPredicate
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeImpliesPredicate p1 p2 = synthesize $ ImpliesF Implies
+makeImpliesPredicate p1 p2
+  | isBottom p1 = makeTruePredicate
+  | isTop p2 = p2
+  | isTop p1 = p2
+  | isBottom p2 = makeNotPredicate p1
+--  | p1 == p2 = makeTruePredicate
+  | otherwise = synthesize $ ImpliesF Implies
     { impliesSort = ()
     , impliesFirst = p1
     , impliesSecond = p2
@@ -580,7 +586,13 @@ makeIffPredicate
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeIffPredicate p1 p2 = synthesize $ IffF Iff
+makeIffPredicate p1 p2
+  | isBottom p1 = makeNotPredicate p2
+  | isTop p1 = p2
+  | isBottom p2 = makeNotPredicate p1
+  | isTop p2 = p1
+--  | p1 == p2 = makeTruePredicate
+  | otherwise = synthesize $ IffF Iff
     { iffSort = ()
     , iffFirst = p1
     , iffSecond = p2
@@ -629,7 +641,10 @@ makeExistsPredicate
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
-makeExistsPredicate v p = synthesize $ ExistsF Exists
+makeExistsPredicate v p
+  | isTop p = p
+  | isBottom p = p
+  | otherwise = synthesize $ ExistsF Exists
     { existsSort = ()
     , existsVariable = v
     , existsChild = p
@@ -640,7 +655,10 @@ makeForallPredicate
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
-makeForallPredicate v p = synthesize $ ForallF Forall
+makeForallPredicate v p
+  | isTop p = p
+  | isBottom p = p
+  | otherwise = synthesize $ ForallF Forall
     { forallSort = ()
     , forallVariable = v
     , forallChild = p

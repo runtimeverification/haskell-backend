@@ -118,7 +118,7 @@ test_definitionEvaluation =
     Uncomment this if we ever go back to having remainders for functions.
 
     , testCase "Evaluation with remainder" $ do
-        let requirement = makeEqualsPredicate Mock.testSort
+        let requirement = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             expect =
@@ -172,7 +172,7 @@ test_definitionEvaluation =
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
-            requirement1 = makeEqualsPredicate Mock.testSort
+            requirement1 = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             requirement2 = makeNotPredicate requirement1
@@ -478,7 +478,7 @@ test_simplifierWithFallback =
     Uncomment this if we ever go back to having remainders for equality axioms.
 
     , testCase "Uses first with remainder" $ do
-        let requirement = makeEqualsPredicate Mock.testSort
+        let requirement = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             expect =

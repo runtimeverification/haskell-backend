@@ -9,35 +9,23 @@ import Test.Tasty
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate
-    , makeExistsPredicate
     , makeFalsePredicate
-    , makeImpliesPredicate
-    , makeNotPredicate
-    , makeTruePredicate
     , makeTruePredicate
     )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import qualified Kore.Internal.SideCondition as SideCondition ( top )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.And
 import qualified Kore.Step.Simplification.Not as Not
 
-import Test.Kore.Step.MockSymbols
-    ( testSort
-    )
+import Test.Kore.Step.MockSymbols ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -394,201 +382,6 @@ test_andSimplification =
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Contradictions result in bottom" $ do
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeNotPredicate $ makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-        assertEqual "" mempty actual
-    , testCase "Simplifies Implies - Positive" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        (MultiAnd.toPredicate . MultiAnd.make)
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
-                        ]
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate = makeImpliesPredicate
-                        (makeCeilPredicate fOfX)
-                        (makeCeilPredicate gOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Simplifies Implies - Negative" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeEqualsPredicate fOfX gOfX)
-                            (makeNotPredicate $ makeCeilPredicate fOfX)
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeNotPredicate $ makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate =
-                        makeImpliesPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Simplifies multiple Implies" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        (MultiAnd.toPredicate . MultiAnd.make)
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate fOfY
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
-                        ]
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 gOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeImpliesPredicate
-                                (makeCeilPredicate fOfX)
-                                (makeCeilPredicate gOfX)
-                            )
-                            (makeImpliesPredicate
-                                (makeCeilPredicate gOfX)
-                                (makeCeilPredicate fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Does not replace and terms under intersecting quantifiers" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeExistsPredicate Mock.x
-                                (makeCeilPredicate fOfX)
-                            )
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testCase "Replaces and terms under independent quantifiers" $ do
-        let expect =
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeExistsPredicate Mock.y
-                                (makeCeilPredicate fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        actual <-
-            evaluatePatterns
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
-                    }
-                Conditional
-                    { term = Mock.constr10 fOfX
-                    , predicate =
-                        makeExistsPredicate Mock.y
-                            (makeAndPredicate
-                                (makeCeilPredicate fOfX)
-                                (makeCeilPredicate fOfY)
-                            )
-                    , substitution = mempty
-                    }
-        assertEqual "" (MultiOr.make [expect]) actual
-    , testGroup "Local function evaluation" $
-        let f = Mock.f (mkElemVar Mock.x)
-            fInt = Mock.fInt (mkElemVar Mock.xInt)
-            defined = makeCeilPredicate f & Condition.fromPredicate
-            a = Mock.a
-            b = Mock.b
-            injA = Mock.sortInjection10 Mock.a
-            injB = Mock.sortInjection10 Mock.b
-            int2 = Mock.builtinInt 2
-            int3 = Mock.builtinInt 3
-            mkLocalDefn func (Left t)  = makeEqualsPredicate t func
-            mkLocalDefn func (Right t) = makeEqualsPredicate func t
-            test name func eitherC1 eitherC2 =
-                testCase name $ do
-                    let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
-                        equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
-                        pattern1 = Pattern.fromCondition_ (defined <> equals1)
-                        pattern2 = Pattern.fromCondition_ (defined <> equals2)
-                    actual <- evaluatePatterns pattern1 pattern2
-                    assertBool "Expected \\bottom" $ isBottom actual
-        in
-            [ -- Constructor at top
-              test "contradiction: f(x) = a ∧ f(x) = b" f (Right a) (Right b)
-            , test "contradiction: a = f(x) ∧ f(x) = b" f (Left  a) (Right b)
-            , test "contradiction: a = f(x) ∧ b = f(x)" f (Left  a) (Left  b)
-            , test "contradiction: f(x) = a ∧ b = f(x)" f (Right a) (Left  b)
-            -- Sort injection at top
-            , test "contradiction: f(x) = injA ∧ f(x) = injB" f (Right injA) (Right injB)
-            , test "contradiction: injA = f(x) ∧ f(x) = injB" f (Left  injA) (Right injB)
-            , test "contradiction: injA = f(x) ∧ injB = f(x)" f (Left  injA) (Left  injB)
-            , test "contradiction: f(x) = injA ∧ injB = f(x)" f (Right injA) (Left  injB)
-            -- Builtin at top
-            , test "contradiction: f(x) = 2 ∧ f(x) = 3" fInt (Right int2) (Right int3)
-            , test "contradiction: 2 = f(x) ∧ f(x) = 3" fInt (Left  int2) (Right int3)
-            , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
-            , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
-            ]
     ]
   where
     yExpanded = Conditional
@@ -598,7 +391,6 @@ test_andSimplification =
         }
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXExpanded = Pattern.fromTermLike fOfX
-    fOfY = Mock.f (mkElemVar Mock.y)
     gOfX = Mock.g (mkElemVar Mock.x)
     gOfXExpanded = Conditional
         { term = gOfX
