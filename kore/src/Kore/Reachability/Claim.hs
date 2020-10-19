@@ -112,7 +112,6 @@ import Kore.Log.WarnStuckClaimState
 import Kore.Reachability.ClaimState hiding
     ( claimState
     )
-import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
@@ -172,6 +171,7 @@ import qualified Pretty
 data ApplyResult claim
     = ApplyRewritten !claim
     | ApplyRemainder !claim
+    | ReachedBottom
     deriving (Show, Eq)
     deriving (Functor)
 
@@ -190,18 +190,6 @@ class Claim claim where
         => claim
         -> Strategy.TransitionT (AppliedRule claim) m claim
 
-    {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
-
-    > data ApplyResult claim
-    >     = ApplyRewritten !claim
-    >     | ApplyRemainder !claim
-
-    Rationale: ClaimState is part of the implementation of transitionRule, that
-    is: these functions have hidden knowledge of how transitionRule works
-    because they tell it what to do next. Instead, they should report their
-    result and leave the decision up to transitionRule.
-
-    -}
     applyClaims
         :: MonadSimplify m
         => [claim]
@@ -344,30 +332,29 @@ transitionRule claims axiomGroups = transitionRuleWorker
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState
 
-    -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-    --
-    -- thomas.tuegel: "Here" is in ApplyClaims and ApplyAxioms.
-    --
-    -- Note that in most transitions it is obvious what is being transformed
-    -- into what, e.g. that a `ResetGoal` transition transforms
-    -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
-    -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
-    -- opaque way. I think that there's no good reason for wrapping the
-    -- results in `derivePar` as opposed to here.
-
     transitionRuleWorker ApplyClaims (Claimed claim) = do
-        x <- applyClaims claims claim
-        case x of
-            ApplyRewritten c -> pure $ Rewritten c
-            ApplyRemainder c -> pure $ Remaining c
+        applied <- applyClaims claims claim
+        case applied of
+            -- If the rule returns \bottom, the claim is proven on the
+            -- current branch.
+            ReachedBottom -> return Proven
+            ApplyRewritten appliedClaim ->
+                return (Rewritten appliedClaim)
+            ApplyRemainder appliedClaim ->
+                return (Remaining appliedClaim)
     transitionRuleWorker ApplyClaims claimState = pure claimState
 
     transitionRuleWorker ApplyAxioms claimState
       | Just claim <- retractRewritable claimState = do
-        x <- applyAxioms axiomGroups claim
-        case x of
-            ApplyRewritten c -> pure $ Rewritten c
-            ApplyRemainder c -> pure $ Remaining c
+        applied <- applyAxioms axiomGroups claim
+        case applied of
+            -- If the rule returns \bottom, the claim is proven on the
+            -- current branch.
+            ReachedBottom -> return Proven
+            ApplyRewritten appliedAxiom ->
+                return (Rewritten appliedAxiom)
+            ApplyRemainder appliedAxiom ->
+                return (Remaining appliedAxiom)
       | otherwise = pure claimState
 
 retractSimplifiable :: ClaimState a -> Maybe a
@@ -733,10 +720,7 @@ deriveResults fromAppliedRule Results { results, remainders } =
     addResult Result { appliedRule, result } = do
         addRule appliedRule
         case Foldable.toList result of
-            []      ->
-                -- If the rule returns \bottom, the claim is proven on the
-                -- current branch.
-                pure . ApplyRewritten $ Pattern.bottom
+            []      -> pure ReachedBottom
             configs -> Foldable.asum (addRewritten <$> configs)
 
     addRewritten = pure . ApplyRewritten

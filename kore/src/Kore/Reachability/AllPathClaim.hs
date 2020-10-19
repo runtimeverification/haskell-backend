@@ -39,10 +39,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState (..)
-    , retractRewritable
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
@@ -143,12 +139,12 @@ instance Claim AllPathClaim where
     applyAxioms axiomss = \claim ->
         foldM applyAxioms1 (ApplyRemainder claim) axiomss
       where
-        applyAxioms1 todoRename axioms
-          | Just claim <- retractApplyRemainder todoRename =
+        applyAxioms1 applied axioms
+          | Just claim <- retractApplyRemainder applied =
             deriveParAxiomAllPath axioms claim
             >>= simplifyRemainder
           | otherwise =
-            pure todoRename
+            pure applied
 
         simplifyRemainder todoRename =
             case todoRename of

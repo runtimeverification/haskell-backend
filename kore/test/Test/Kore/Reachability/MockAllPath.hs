@@ -32,6 +32,7 @@ import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim
     ( AppliedRule (..)
+    , ApplyResult (..)
     , Claim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
@@ -372,27 +373,25 @@ instance Claim MockClaim where
     simplify = return
 
     applyClaims claims =
-        undefined
-        -- derivePar AppliedClaim (map (Rule . unMockClaim) claims)
+        derivePar AppliedClaim (map (Rule . unMockClaim) claims)
 
-    applyAxioms axiomGroups =
-        undefined
-        -- derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
+    applyAxioms axiomGroups = do
+        derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
 
 derivePar
     :: (MockClaim -> MockAppliedRule)
     -> [MockRule]
     -> MockClaim
-    -> Transition.TransitionT MockAppliedRule m MockClaimState
+    -> Transition.TransitionT MockAppliedRule m (Claim.ApplyResult MockClaim)
 derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
   where
     goal (Rule rule@(_, to)) = do
         Transition.addRule (mkAppliedRule (MockClaim rule))
-        (pure . ClaimState.Rewritten . MockClaim) (to, dst)
+        (pure . ApplyRewritten . MockClaim) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ClaimState.Remaining . MockClaim) (r, dst)
+        (pure . ApplyRemainder . MockClaim) (r, dst)
     applyRule rule@(Rule (fromMockClaim, _))
         | fromMockClaim `matches` src = Just rule
         | otherwise = Nothing

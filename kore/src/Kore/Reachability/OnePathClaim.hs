@@ -36,9 +36,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
