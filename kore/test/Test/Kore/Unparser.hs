@@ -6,12 +6,6 @@ module Test.Kore.Unparser
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-import qualified Data.Map.Strict as Map
-import Data.List
-    ( concat
-    )
-
 import Hedgehog
     ( Gen
     , Property
@@ -31,13 +25,6 @@ import Kore.Internal.Predicate
     , makeMultipleAndPredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.IndexedModule.IndexedModule
-    ( IndexedModule (..)
-    )
-import Kore.ASTVerifier.DefinitionVerifier
-    ( verifyAndIndexDefinition
-    )
-import qualified Kore.Builtin as Builtin
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
@@ -317,27 +304,6 @@ test_parse =
             roundtrip
                 (standaloneGen $ definitionGen koreSentenceGen)
                 (definitionParser koreSentenceParser)
-        , testProperty "qqSorted claims" $
-            Hedgehog.property $ do
-                let koreClaimGen =
-                        SentenceClaimSentence . SentenceClaim
-                        <$> sentenceAxiomGen korePatternUnifiedGen
-                generatedDefinition <-
-                    Hedgehog.forAll
-                        (standaloneGen $ definitionGen koreClaimGen)
-                let verifiedModule =
-                        verifyAndIndexDefinition
-                            Builtin.koreVerifiers
-                            generatedDefinition
-                Foldable.for_ verifiedModule (\m ->
-                    (traceM . show)
-                        $ m
-                            & Map.elems
-                            & fmap indexedModuleClaims
-                            & concat
-                            & length
-                    )
-                pure ()
         ]
 
 parse :: Parser a -> String -> Either String a
