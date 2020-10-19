@@ -100,6 +100,9 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.List
     ( foldl'
     )
+import Data.List.Extra
+    ( nubOrd
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -516,7 +519,10 @@ makeNotPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
-makeNotPredicate p = synthesize $ NotF Not
+makeNotPredicate p
+  | isTop p = makeFalsePredicate
+  | isBottom p = makeTruePredicate
+  | otherwise = synthesize $ NotF Not
     { notSort = ()
     , notChild = p
     }
@@ -529,7 +535,13 @@ makeAndPredicate
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeAndPredicate p1 p2 = synthesize $ AndF And
+makeAndPredicate p1 p2
+  | isTop p1 = p2
+  | isTop p2 = p1
+  | isBottom p1 = p1
+  | isBottom p2 = p2
+  | p1 == p2 = p1
+  | otherwise = synthesize $ AndF And
     { andSort = ()
     , andFirst = p1
     , andSecond = p2
@@ -540,7 +552,13 @@ makeOrPredicate
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeOrPredicate p1 p2 = synthesize $ OrF Or
+makeOrPredicate p1 p2
+  | isTop p1 = p1
+  | isTop p2 = p2
+  | isBottom p1 = p2
+  | isBottom p2 = p1
+  | p1 == p2 = p1
+  | otherwise = synthesize $ OrF Or
     { orSort = ()
     , orFirst = p1
     , orSecond = p2
@@ -632,15 +650,15 @@ makeMultipleAndPredicate
     :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
-makeMultipleAndPredicate [] = makeTruePredicate
-makeMultipleAndPredicate (p : ps) = foldl' makeAndPredicate p ps
+makeMultipleAndPredicate =
+    foldl' makeAndPredicate makeTruePredicate . nubOrd
 
 makeMultipleOrPredicate
     :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
-makeMultipleOrPredicate [] = makeFalsePredicate
-makeMultipleOrPredicate (p : ps) = foldl' makeOrPredicate p ps
+makeMultipleOrPredicate =
+    foldl' makeOrPredicate makeFalsePredicate . nubOrd
 
 makeMultipleExists
     :: (Foldable f, InternalVariable variable)
