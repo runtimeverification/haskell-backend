@@ -247,45 +247,99 @@ test_Pattern_simplify =
                     Mock.a
                     (mkElemVar Mock.xInt)
                     Mock.a
+            trySide :: Predicate.Predicate VariableName
+            trySide = makeCeilPredicate_ Mock.b
             mockSome =
-                Mock.mockSome (mkElemVar Mock.yInt)
+                Mock.mockSome
+                $ TermLike.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Fully
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation (trySide & SideCondition.assumeTruePredicate))
+                            }
+                    )
+                $ mkElemVar Mock.yInt
             mockInKeys =
                 Mock.mockInKeys (mkElemVar Mock.xInt) (mkElemVar Mock.xMap)
-            -- miniCond =
-            --     makeEqualsPredicate Mock.testSort
-            --         f_x
-            --         (Mock.constr10 (mkElemVar Mock.y)
-            --         & TermLike.markSimplified
-            --         )
-            --     & SideCondition.assumeTruePredicate
+            miniCond1 =
+                Predicate.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Partly
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation (SideCondition.top :: SideCondition VariableName))
+                            }
+                    )
+                (
+                    makeEqualsPredicate Mock.testSort
+                        (mkElemVar Mock.x)
+                        (Mock.constr10 (mkElemVar Mock.y)
+                        & TermLike.markSimplified
+                        )
+                )
+                & SideCondition.assumeTruePredicate
+            miniCond2 =
+                Predicate.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Partly
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation (SideCondition.top :: SideCondition VariableName))
+                            }
+                    )
+                (
+                    makeEqualsPredicate Mock.testSort
+                        (Mock.f (mkElemVar Mock.z))
+                        (Mock.constr10 (mkElemVar Mock.y)
+                        & TermLike.markSimplified
+                        )
+                )
+                & SideCondition.assumeTruePredicate
                 -- & trace "miniCond"
 
         let cond1, cond2 :: SideCondition VariableName
             !cond1 =
-                -- Predicate.setSimplified
-                --     (Simplified
-                --         SimplifiedData
-                --             { sType = Partly
-                --             , condition =
-                --                 Any
-                --                 -- Condition (SideCondition.toRepresentation miniCond)
-                --             }
-                --     )
-                makeAndPredicate
-                    (makeCeilPredicate Mock.intSort mockLookup)
-                    (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
+                Predicate.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Partly
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation miniCond1)
+                            }
+                    )
+                (
+                    makeAndPredicate
+                        (makeCeilPredicate Mock.intSort mockLookup)
+                        (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
+                )
                 & SideCondition.assumeTruePredicate
                 -- & trace "cond1"
             !cond2 =
-                makeAndPredicate
-                    (makeAndPredicate
-                        (makeCeilPredicate Mock.intSort mockLookup)
-                        (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
+                Predicate.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Partly
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation miniCond2)
+                            }
                     )
-                    (makeEqualsPredicate_
-                        mockLookup
-                        (Mock.mockSome (mkElemVar Mock.zInt))
-                    )
+                (
+                    makeAndPredicate
+                        (makeAndPredicate
+                            (makeCeilPredicate Mock.intSort mockLookup)
+                            (makeEqualsPredicate_ (Mock.builtinBool True) mockInKeys)
+                        )
+                        (makeEqualsPredicate_
+                            mockLookup
+                            (Mock.mockSome (mkElemVar Mock.zInt))
+                        )
+                )
                 & SideCondition.assumeTruePredicate
                 -- & trace "cond2"
             fullySimplifiedCondition1 =
@@ -307,7 +361,7 @@ test_Pattern_simplify =
                 & TermLike.setSimplified fullySimplifiedCondition1
             !constructorApplication =
                 mockSome
-                & TermLike.setSimplified partlySimplifiedCondition2
+                -- & TermLike.setSimplified partlySimplifiedCondition2
             !termToSimplify =
                 mkEquals Mock.intSort
                     functionApplication
