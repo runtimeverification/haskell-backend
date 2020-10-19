@@ -1,5 +1,6 @@
 module Test.Kore.Builtin
     ( test_internalize
+    , test_SortClaims
     ) where
 
 import Prelude.Kore hiding
@@ -9,14 +10,36 @@ import Prelude.Kore hiding
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Lens
+    ( ix
+    , (%~)
+    , (.~)
+    )
+import qualified Control.Lens as Lens
+import Data.Generics.Product
+    ( field
+    )
 import qualified Data.Set
 
+import Kore.ASTVerifier.DefinitionVerifier
+    ( sortModuleClaims
+    )
+import Kore.Attribute.Axiom
+    ( SourceLocation
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (..)
+    , VerifiedModule
+    )
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import Kore.Internal.TermLike
+import Test.Kore.Step.SMT.Builders
+    ( indexModule
+    )
 
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
@@ -151,3 +174,25 @@ notInternalizes name origin =
 
 metadata :: SmtMetadataTools Attribute.Symbol
 metadata = Builtin.testMetadataTools
+
+test_SortClaims :: TestTree
+test_SortClaims =
+    testCase "sort claims" $ do
+        let verifiedModule =
+                indexModule Builtin.testModuleWithTwoClaims
+                & ixSetLocation 0 (from $ FileLocation "file" 5 3)
+                & ixSetLocation 1 (from $ FileLocation "file" 1 1)
+            withSortedClaims = sortModuleClaims verifiedModule
+        assertEqual ""
+            (indexedModuleClaims withSortedClaims)
+            (indexedModuleClaims verifiedModule & reverse)
+  where
+    ixSetLocation
+        :: Int
+        -> SourceLocation
+        -> VerifiedModule declAtts
+        -> VerifiedModule declAtts
+    ixSetLocation index sourceLocation verifiedModule =
+        verifiedModule
+        & field @"indexedModuleClaims"
+            %~ (ix index . Lens._1 . field @"sourceLocation" .~ sourceLocation)

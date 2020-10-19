@@ -11,14 +11,24 @@ module Kore.ASTVerifier.DefinitionVerifier
     ( verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
+    , sortModuleClaims
     ) where
 
 import Prelude.Kore
 
+import Control.Lens
+    ( (%~)
+    )
 import Control.Monad
     ( foldM
     )
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
+import Data.List
+    ( sortBy
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -138,3 +148,11 @@ verifyAndIndexDefinitionWithBase
     return (index, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+
+sortModuleClaims
+    :: VerifiedModule declAtts
+    -> VerifiedModule declAtts
+sortModuleClaims verifiedModule =
+    verifiedModule
+    & field @"indexedModuleClaims"
+        %~ sortBy (on compare (Attribute.sourceLocation . fst))
