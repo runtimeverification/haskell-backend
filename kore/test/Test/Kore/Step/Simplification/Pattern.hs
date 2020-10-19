@@ -374,6 +374,41 @@ test_Pattern_simplify =
             $ "\n\nTerm:\n" <> unparseToString termToSimplify
             <> "\n\nResult:\n" <> unlines (unparseToString <$> Foldable.toList _actual)
         -- assertFailure "END"
+    , testCase "2TESTING" $ do
+        let child1 =
+                Mock.f (mkElemVar Mock.z)
+                & TermLike.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Fully
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation condition1)
+                            }
+                    )
+            condition1, condition2 :: SideCondition VariableName
+            condition1 =
+                makeCeilPredicate_ (Mock.f (mkElemVar Mock.z))
+                & SideCondition.assumeTruePredicate
+            condition2 =
+                makeEqualsPredicate_ (mkElemVar Mock.x) (mkElemVar Mock.y)
+                & SideCondition.assumeTruePredicate
+            x =
+                mkElemVar Mock.x
+                & TermLike.setSimplified
+                    (Simplified
+                        SimplifiedData
+                            { sType = Fully
+                            , condition =
+                                -- Any
+                                Condition (SideCondition.toRepresentation condition2)
+                            }
+                    )
+            child2 = Mock.functionalConstr10 x
+        runSimplifier Mock.env . TermLike.simplify SideCondition.top $
+            mkEquals_ child1 child2
+        return ()
+
     ]
   where
     fOfX = Mock.f (mkElemVar Mock.x)
