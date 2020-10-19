@@ -335,7 +335,7 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker ApplyClaims (Claimed claim) = do
         applied <- applyClaims claims claim
         case applied of
-            -- If the rule returns \bottom, the claim is proven on the
+            -- If the result is \\bottom, the claim is proven on the
             -- current branch.
             ReachedBottom -> return Proven
             ApplyRewritten appliedClaim ->
@@ -348,7 +348,7 @@ transitionRule claims axiomGroups = transitionRuleWorker
       | Just claim <- retractRewritable claimState = do
         applied <- applyAxioms axiomGroups claim
         case applied of
-            -- If the rule returns \bottom, the claim is proven on the
+            -- If the result is \\bottom, the claim is proven on the
             -- current branch.
             ReachedBottom -> return Proven
             ApplyRewritten appliedAxiom ->

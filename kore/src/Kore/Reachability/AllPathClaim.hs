@@ -146,10 +146,10 @@ instance Claim AllPathClaim where
           | otherwise =
             pure applied
 
-        simplifyRemainder todoRename =
-            case todoRename of
+        simplifyRemainder applied =
+            case applied of
                 ApplyRemainder claim -> ApplyRemainder <$> simplify claim
-                _ -> return todoRename
+                _ -> return applied
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath

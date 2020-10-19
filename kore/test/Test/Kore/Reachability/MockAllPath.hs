@@ -375,14 +375,14 @@ instance Claim MockClaim where
     applyClaims claims =
         derivePar AppliedClaim (map (Rule . unMockClaim) claims)
 
-    applyAxioms axiomGroups = do
+    applyAxioms axiomGroups =
         derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
 
 derivePar
     :: (MockClaim -> MockAppliedRule)
     -> [MockRule]
     -> MockClaim
-    -> Transition.TransitionT MockAppliedRule m (Claim.ApplyResult MockClaim)
+    -> Transition.TransitionT MockAppliedRule m (ApplyResult MockClaim)
 derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
   where
