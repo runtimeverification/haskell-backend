@@ -72,17 +72,19 @@ test_simplifyCondition =
                 Condition.fromPredicate
                 $ Predicate.makeNotPredicate existsPredicate
         assertNormalized expect
-    , testCase "x = f(x)" $ do
-        let x = inject Mock.x
-            expect =
+    , testCase "THETEST x = f(x)" $ do
+        let !x = inject Mock.x
+            !expect =
                 Predicate.makeEqualsPredicate (mkVar x) (Mock.f (mkVar x))
                 & OrCondition.fromPredicate
-            denormalized =
+            !denormalized =
                 Substitution.mkUnwrappedSubstitution
                 [(x, Mock.f (mkVar x))]
-            input =
+            !input =
                 (Condition.fromSubstitution . Substitution.wrap) denormalized
+        traceM "BEGIN"
         actual <- normalizeExcept input
+        traceM "END"
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
         let x = inject Mock.x
