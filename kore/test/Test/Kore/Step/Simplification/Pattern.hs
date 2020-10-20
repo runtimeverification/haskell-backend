@@ -405,9 +405,10 @@ test_Pattern_simplify =
                             }
                     )
             child2 = Mock.functionalConstr10 x
-        runSimplifier Mock.env . TermLike.simplify SideCondition.top $
-            mkEquals_ child1 child2
-        return ()
+        a <-
+            runSimplifier Mock.env . TermLike.simplify SideCondition.top $
+                mkEquals_ child1 child2
+        traceM $ unlines (unparseToString <$> Foldable.toList a)
 
     ]
   where

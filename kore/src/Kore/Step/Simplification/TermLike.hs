@@ -150,6 +150,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( unparse
+    , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
@@ -177,7 +178,7 @@ simplify
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplify sideCondition = \termLike ->
-    -- trace "\n\nstart simplify\n\n" $
+    trace "\n\nstart simplify\n\n" $
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
@@ -193,7 +194,10 @@ simplify sideCondition = \termLike ->
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
       | TermLike.isSimplified sideConditionRepresentation termLike = do
-        -- traceM "\n\nisSimplified\n\n"
+        traceM
+            $ "\n\nisSimplified:"
+            <> "\nterm:\n" <> unparseToString termLike
+            <> "\nside cond:\n" <> unparseToString sideConditionRepresentation
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -207,7 +211,10 @@ simplify sideCondition = \termLike ->
                     & OrPattern.fromPattern
                     & pure
       | otherwise = do
-        -- traceM "\n\nnot isSimplified\n\n"
+        traceM
+            $ "\n\nnot isSimplified\n\n"
+            <> "\nterm:\n" <> unparseToString termLike
+            <> "\nside cond:\n" <> unparseToString sideConditionRepresentation
         assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike
             let termOr = OrPattern.coerceSort
@@ -221,13 +228,15 @@ simplify sideCondition = \termLike ->
                         termOrElement <- Logic.scatter termOr
                         simplified <-
                             simplifyCondition sideCondition termOrElement
+                        traceM "\n\nfirst rifsoc\n\n"
                         return (applyTermSubstitution simplified)
 
                     returnIfSimplifiedOrContinue
                         termLike
                         termPredicateList
-                        (do
+                        (trace "\n\nbefore second rifsoc\n\n" $ do
                             resultsList <- mapM resimplify termPredicateList
+                            traceM "\n\nsecond rifsoc after resimplify\n\n"
                             return (MultiOr.mergeAll resultsList)
                         )
                 )
@@ -298,7 +307,7 @@ simplify sideCondition = \termLike ->
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultPredicate
-          = return (OrPattern.fromPattern result)
+          = trace ("\n\nreturnIfResultSimplifiedOrContinue:\n" <> unparseToString originalTerm <> unparseToString result) $ return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
           = return
                 (OrPattern.fromTermLike
