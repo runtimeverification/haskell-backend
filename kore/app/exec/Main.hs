@@ -376,8 +376,6 @@ parseKoreExecOptions startTime =
         strategies =
             [ ("any", priorityAnyStrategy)
             , ("all", priorityAllStrategy)
-            , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
-            , ("all-heating-cooling", heatingCooling priorityAllStrategy)
             ]
     breadth =
         option auto
