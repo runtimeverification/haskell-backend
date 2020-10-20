@@ -79,6 +79,7 @@
 - ignore: {name: "Use infix"}
 - ignore: {name: "Use section"}
 - ignore: {name: "Use <$>"}
+- ignore: {name: "Use <&>"}
 - ignore: {name: "Redundant flip"}
 - ignore: {name: "Monad law, left identity"}
 - ignore: {name: "Monoid law, left identity"}

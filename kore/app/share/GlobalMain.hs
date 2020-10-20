@@ -118,6 +118,9 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
 import Kore.Log as Log
+import Kore.Log.ErrorParse
+    ( errorParse
+    )
 import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
@@ -506,7 +509,7 @@ mainParse parser fileName = do
     parseResult <-
         clockSomething "Parsing the file" (parser fileName contents)
     case parseResult of
-        Left err         -> error err
+        Left err         -> errorParse err
         Right definition -> return definition
 
 type LoadedModule = VerifiedModule Attribute.Symbol

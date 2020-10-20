@@ -137,8 +137,13 @@ test_checkImplication =
                 & OrPattern.fromPattern
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
+            stuckConfig =
+                Pattern.withCondition Mock.a
+                    (Condition.assign (inject Mock.x) Mock.a)
+            stuckGoal =
+                mkGoal stuckConfig dest existentials
         actual <- checkImplication goal
-        assertEqual "" [NotImpliedStuck goal] actual
+        assertEqual "" [NotImpliedStuck stuckGoal] actual
     , testCase "Function unification, definedness condition and remainder" $ do
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
