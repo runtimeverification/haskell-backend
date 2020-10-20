@@ -369,7 +369,7 @@ parseKoreExecOptions startTime =
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
             -- works correctly.
-            <> value ("any", priorityAnyStrategy)
+            <> value ("all", priorityAllStrategy)
             <> help "Select rewrites using STRATEGY."
             )
       where
