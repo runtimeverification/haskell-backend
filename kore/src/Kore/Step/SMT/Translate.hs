@@ -139,7 +139,9 @@ translatePredicateWith translateTerm predicate =
                 translatePredicateExists exists'
                 <|> translateUninterpreted SMT.tBool pat
             FloorF _ -> translateUninterpreted SMT.tBool pat
-            ForallF _ -> translateUninterpreted SMT.tBool pat
+            ForallF forall' ->
+                translatePredicateForall forall'
+                <|> translateUninterpreted SMT.tBool pat
             InF _ -> translateUninterpreted SMT.tBool pat
 
             -- Invalid: no translation, should not occur in predicates
@@ -258,34 +260,38 @@ translatePredicateWith translateTerm predicate =
     translatePredicateExists
         :: Exists Sort variable p -> Translator m variable SExpr
     translatePredicateExists Exists { existsVariable, existsChild } =
-        existsBuiltinSort <|> existsConstructorSort
-      where
-        existsBuiltinSort = case getHook of
-            Just builtinSort
-              | builtinSort == Builtin.Bool.sort
-              -> translateExists SMT.tBool existsVariable existsChild
-              | builtinSort == Builtin.Int.sort
-              -> translateExists SMT.tInt existsVariable existsChild
-            _ -> empty
-        existsConstructorSort = do
-            smtSort <- hoistMaybe $ translateSort varSort
-            translateExists smtSort existsVariable existsChild
-        varSort = variableSort existsVariable
-        tools :: SmtMetadataTools Attribute.Symbol
-        tools = given
-        Attribute.Sort { hook = Hook { getHook } } =
-            sortAttributes tools varSort
+        translateQuantifier SMT.existsQ existsVariable existsChild
 
-    translateExists
-        :: SExpr -> ElementVariable variable -> p -> Translator m variable SExpr
-    translateExists varSort var predTerm
-      = do
+    translatePredicateForall
+        :: Forall Sort variable p -> Translator m variable SExpr
+    translatePredicateForall Forall { forallVariable, forallChild } =
+        translateQuantifier SMT.forallQ forallVariable forallChild
+
+    translateQuantifier
+        :: ([SExpr] -> SExpr -> SExpr)
+        -> ElementVariable variable
+        -> p
+        -> Translator m variable SExpr
+    translateQuantifier quantifier var predTerm = do
+        smtSort <- translateVariableSort
         oldVar <- State.gets (Map.lookup var . quantifiedVars)
-        smtVar <- translateTerm varSort (QuantifiedVariable var)
+        smtVar <- translateTerm smtSort (QuantifiedVariable var)
         smtPred <- translatePredicatePattern predTerm
         field @"quantifiedVars" Lens.%=
             maybe (Map.delete var) (Map.insert var) oldVar
-        return $ SMT.existsQ [SMT.List [smtVar, varSort]] smtPred
+        return $ quantifier [SMT.List [smtVar, smtSort]] smtPred
+      where
+        Variable { variableSort } = var
+        translateVariableSort =
+            case getHook of
+              Just builtinSort
+                | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
+                | builtinSort == Builtin.Int.sort  -> pure SMT.tInt
+              _ -> translateSort variableSort & hoistMaybe
+        tools :: SmtMetadataTools Attribute.Symbol
+        tools = given
+        Attribute.Sort { hook = Hook { getHook } } =
+            sortAttributes tools variableSort
 
     translatePattern :: Sort -> p -> Translator m variable SExpr
     translatePattern sort pat =
