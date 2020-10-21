@@ -1761,9 +1761,7 @@ testModuleWithTwoClaims =
                 (SentenceAxiom
                     { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
-                        asParsedPattern
-                            $ PatternF.StringLiteralF
-                            $ Const (StringLiteral "a")
+                        Builtin.externalize (mkStringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
@@ -1776,9 +1774,7 @@ testModuleWithTwoClaims =
                 (SentenceAxiom
                     { sentenceAxiomParameters = [SortVariable (testId "sv2")]
                     , sentenceAxiomPattern =
-                        asParsedPattern
-                            $ PatternF.StringLiteralF
-                            $ Const (StringLiteral "c")
+                        Builtin.externalize (mkStringLiteral "c")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern

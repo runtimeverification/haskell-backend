@@ -1,6 +1,6 @@
 module Test.Kore.Builtin
     ( test_internalize
-    , test_SortClaims
+    , test_sortModuleClaims
     ) where
 
 import Prelude.Kore hiding
@@ -175,8 +175,8 @@ notInternalizes name origin =
 metadata :: SmtMetadataTools Attribute.Symbol
 metadata = Builtin.testMetadataTools
 
-test_SortClaims :: TestTree
-test_SortClaims =
+test_sortModuleClaims :: TestTree
+test_sortModuleClaims =
     testCase "sort claims" $ do
         let verifiedModule =
                 indexModule Builtin.testModuleWithTwoClaims

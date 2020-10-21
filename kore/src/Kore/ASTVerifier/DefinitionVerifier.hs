@@ -33,6 +33,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Ord
+    ( comparing
+    )
 import Data.Text
     ( Text
     )
@@ -155,4 +158,4 @@ sortModuleClaims
 sortModuleClaims verifiedModule =
     verifiedModule
     & field @"indexedModuleClaims"
-        %~ sortBy (on compare (Attribute.sourceLocation . fst))
+        %~ sortBy (comparing (Attribute.sourceLocation . fst))

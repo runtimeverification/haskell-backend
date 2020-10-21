@@ -533,8 +533,7 @@ loadDefinitions filePaths =
         =<< traverse parseDefinition filePaths
 
     sortClaims :: LoadedDefinition -> LoadedDefinition
-    sortClaims modulePair =
-        modulePair & Lens._1 . Lens.traversed %~ sortModuleClaims
+    sortClaims = Lens._1 . Lens.traversed %~ sortModuleClaims
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . fst
