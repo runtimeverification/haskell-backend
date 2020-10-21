@@ -9,7 +9,6 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 module Kore.Attribute.Axiom
     ( Axiom (..)
-    , HeatCool (..)
     , ProductionID (..)
     , Priority (..)
     , Owise (..)
@@ -61,7 +60,6 @@ import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
 import Kore.Attribute.Functional
-import Kore.Attribute.HeatCool
 import Kore.Attribute.Idem
 import Kore.Attribute.Label
 import Kore.Attribute.Overload
@@ -95,9 +93,7 @@ import qualified SQL
  -}
 data Axiom symbol variable =
     Axiom
-    { heatCool :: !HeatCool
-    -- ^ An axiom may be denoted as a heating or cooling rule.
-    , productionID :: !ProductionID
+    { productionID :: !ProductionID
     -- ^ The identifier from the front-end identifying a rule or group of rules.
     , priority :: !Priority
     -- ^ A number associated to each rule,
@@ -148,8 +144,7 @@ data Axiom symbol variable =
 instance Default (Axiom symbol variable) where
     def =
         Axiom
-            { heatCool = def
-            , productionID = def
+            { productionID = def
             , priority = def
             , assoc = def
             , comm = def
@@ -177,8 +172,7 @@ instance
   where
     from =
         mconcat . sequence
-            [ from . heatCool
-            , from . productionID
+            [ from . productionID
             , from . priority
             , from . assoc
             , from . comm
@@ -207,9 +201,6 @@ instance From (Axiom symbol variable) PriorityAttributes where
             , simplificationAttr = simplification
             }
 
-instance From (Axiom symbol variable) HeatCool where
-    from Axiom { heatCool } = heatCool
-
 instance SQL.Column (Axiom SymbolOrAlias VariableName) where
     -- TODO (thomas.tuegel): Use a foreign key.
     defineColumn tableName _ =
@@ -234,8 +225,7 @@ parseAxiomAttribute
     -> Axiom SymbolOrAlias VariableName
     -> Parser (Axiom SymbolOrAlias VariableName)
 parseAxiomAttribute freeVariables attr =
-        typed @HeatCool (parseAttribute attr)
-        Monad.>=> typed @ProductionID (parseAttribute attr)
+        typed @ProductionID (parseAttribute attr)
         Monad.>=> typed @Priority (parseAttribute attr)
         Monad.>=> typed @Assoc (parseAttribute attr)
         Monad.>=> typed @Comm (parseAttribute attr)

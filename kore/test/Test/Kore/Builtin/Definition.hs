@@ -55,7 +55,11 @@ import Kore.Internal.TermLike hiding
     ( Symbol
     , bytesSort
     )
+import Kore.Syntax
+    ( Const (..)
+    )
 import Kore.Syntax.Definition as Syntax
+import qualified Kore.Syntax.PatternF as PatternF
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -1746,6 +1750,42 @@ testModule =
             , subsortDecl kItemSort kSort
             ]
         }
+
+testModuleWithTwoClaims :: ParsedModule
+testModuleWithTwoClaims =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            , SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv2")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "c")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            ]
+        }
+
 
 -- -------------------------------------------------------------
 -- * Definition

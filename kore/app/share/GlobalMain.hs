@@ -31,7 +31,14 @@ import Prelude.Kore
 import Control.Exception
     ( evaluate
     )
+import Control.Lens
+    ( (%~)
+    )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Data.Functor
+    ( (<&>)
+    )
 import Data.List
     ( intercalate
     )
@@ -106,7 +113,8 @@ import System.Clock
 import qualified System.Environment as Env
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( verifyAndIndexDefinitionWithBase
+    ( sortModuleClaims
+    , verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Symbol as Attribute
@@ -518,8 +526,14 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM verifyDefinitionWithBase mempty
-    =<< traverse parseDefinition filePaths
+    loadedDefinitions <&> sortClaims
+  where
+    loadedDefinitions =
+        Monad.foldM verifyDefinitionWithBase mempty
+        =<< traverse parseDefinition filePaths
+
+    sortClaims :: LoadedDefinition -> LoadedDefinition
+    sortClaims = Lens._1 . Lens.traversed %~ sortModuleClaims
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . fst
