@@ -164,8 +164,8 @@ import qualified Pretty
 -- instances of that.
 
 {- | Simplify 'TermLike' pattern to a disjunction of function-like 'Pattern's.
-    All the resulting terms and conditions will be simplified, because during
-    the term simplification procedure, the condition simplifier will be called as well.
+    All the resulting terms and conditions will be simplified, because after the
+    term simplification procedure, the condition simplifier will be called as well.
  -}
 simplify
     :: forall variable simplifier
