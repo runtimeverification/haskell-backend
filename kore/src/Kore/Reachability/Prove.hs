@@ -176,13 +176,16 @@ newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 newtype StuckClaim =
     StuckClaim { getStuckClaim :: OrPattern VariableName }
 
+type ProvenClaims = MultiAnd SomeClaim
+
+-- | The result of proving some claims.
 data ProveClaimsResult =
     ProveClaimsResult
     { stuckClaim :: !(Maybe StuckClaim)
-    , provenClaims :: !(MultiAnd SomeClaim)
+    -- ^ The first claim which was stuck, if any.
+    , provenClaims :: !ProvenClaims
+    -- ^ The conjunction of all claims which were proven.
     }
-
-type ProvenClaims = MultiAnd SomeClaim
 
 proveClaims
     :: forall simplifier
