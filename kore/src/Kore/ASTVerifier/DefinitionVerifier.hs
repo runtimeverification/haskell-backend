@@ -27,15 +27,12 @@ import Data.Generics.Product
     ( field
     )
 import Data.List
-    ( sortBy
+    ( sortOn
     )
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Ord
-    ( comparing
-    )
 import Data.Text
     ( Text
     )
@@ -158,4 +155,4 @@ sortModuleClaims
 sortModuleClaims verifiedModule =
     verifiedModule
     & field @"indexedModuleClaims"
-        %~ sortBy (comparing (Attribute.sourceLocation . fst))
+        %~ sortOn (Attribute.sourceLocation . fst)
