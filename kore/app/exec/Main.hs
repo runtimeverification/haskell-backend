@@ -367,8 +367,6 @@ parseKoreExecOptions startTime =
         option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
             <> long "strategy"
-            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
-            -- works correctly.
             <> value ("all", priorityAllStrategy)
             <> help "Select rewrites using STRATEGY."
             )
