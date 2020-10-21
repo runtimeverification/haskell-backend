@@ -146,9 +146,6 @@ instance TopBottom ClaimPattern where
 instance From ClaimPattern Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance From ClaimPattern Attribute.HeatCool where
-    from = from @(Attribute.Axiom _ _) . attributes
-
 freeVariablesRight
     :: ClaimPattern
     -> FreeVariables RewritingVariableName

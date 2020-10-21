@@ -367,17 +367,13 @@ parseKoreExecOptions startTime =
         option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
             <> long "strategy"
-            -- TODO (thomas.tuegel): Make defaultStrategy the default when it
-            -- works correctly.
-            <> value ("any", priorityAnyStrategy)
+            <> value ("all", priorityAllStrategy)
             <> help "Select rewrites using STRATEGY."
             )
       where
         strategies =
             [ ("any", priorityAnyStrategy)
             , ("all", priorityAllStrategy)
-            , ("any-heating-cooling", heatingCooling priorityAnyStrategy)
-            , ("all-heating-cooling", heatingCooling priorityAllStrategy)
             ]
     breadth =
         option auto
