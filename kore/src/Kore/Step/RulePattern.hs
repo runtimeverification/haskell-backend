@@ -14,9 +14,6 @@ module Kore.Step.RulePattern
     , UnifyingRule (..)
     , rulePattern
     , leftPattern
-    , isHeatingRule
-    , isCoolingRule
-    , isNormalRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -238,9 +235,6 @@ instance TopBottom (RulePattern variable) where
 instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance From (RulePattern variable) Attribute.HeatCool where
-    from = from @(Attribute.Axiom _ _) . attributes
-
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
     :: InternalVariable variable
@@ -270,30 +264,6 @@ leftPattern =
         rule { left, requires = Condition.toPredicate condition }
       where
         (left, condition) = Pattern.splitTerm pattern'
-
-{- | Does the axiom pattern represent a heating rule?
- -}
-isHeatingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isHeatingRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Heat -> True
-        _ -> False
-
-{- | Does the axiom pattern represent a cooling rule?
- -}
-isCoolingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isCoolingRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Cool -> True
-        _ -> False
-
-{- | Does the axiom pattern represent a normal rule?
- -}
-isNormalRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isNormalRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Normal -> True
-        _ -> False
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
@@ -520,9 +490,6 @@ instance
     {-# INLINE freeVariables #-}
 
 instance From (RewriteRule variable) Attribute.PriorityAttributes where
-    from = from @(RulePattern _) . getRewriteRule
-
-instance From (RewriteRule variable) Attribute.HeatCool where
     from = from @(RulePattern _) . getRewriteRule
 
 instance TopBottom (RewriteRule variable) where
