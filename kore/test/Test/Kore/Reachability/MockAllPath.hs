@@ -32,6 +32,7 @@ import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim
     ( AppliedRule (..)
+    , ApplyResult (..)
     , Claim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
@@ -381,16 +382,16 @@ derivePar
     :: (MockClaim -> MockAppliedRule)
     -> [MockRule]
     -> MockClaim
-    -> Transition.TransitionT MockAppliedRule m MockClaimState
+    -> Transition.TransitionT MockAppliedRule m (ApplyResult MockClaim)
 derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
   where
     goal (Rule rule@(_, to)) = do
         Transition.addRule (mkAppliedRule (MockClaim rule))
-        (pure . ClaimState.Rewritten . MockClaim) (to, dst)
+        (pure . ApplyRewritten . MockClaim) (to, dst)
     goalRemainder = do
         let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ClaimState.Remaining . MockClaim) (r, dst)
+        (pure . ApplyRemainder . MockClaim) (r, dst)
     applyRule rule@(Rule (fromMockClaim, _))
         | fromMockClaim `matches` src = Just rule
         | otherwise = Nothing
