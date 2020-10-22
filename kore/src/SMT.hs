@@ -352,7 +352,6 @@ incrementQueryCounter (ResetInterval resetInterval) = do
     -- Due to an issue with the SMT solver, we need to reinitialise it after a
     -- number of runs, specified here. This number can be adjusted based on
     -- experimentation.
-    traceShowM resetInterval
     pure (toInteger counter >= resetInterval)
 
 instance MonadSMT SMT where
