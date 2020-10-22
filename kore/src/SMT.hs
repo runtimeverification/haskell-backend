@@ -435,17 +435,17 @@ newtype ResetInterval =
 -- | Solver configuration
 data Config =
     Config
-        { executable :: FilePath
+        { executable :: !FilePath
         -- ^ solver executable file name
-        , arguments :: [String]
+        , arguments :: ![String]
         -- ^ default command-line arguments to solver
-        , preludeFile :: Maybe FilePath
+        , preludeFile :: !(Maybe FilePath)
         -- ^ prelude of definitions to initialize solver
-        , logFile :: Maybe FilePath
+        , logFile :: !(Maybe FilePath)
         -- ^ optional log file name
-        , timeOut :: TimeOut
+        , timeOut :: !TimeOut
         -- ^ query time limit
-        , resetInterval :: ResetInterval
+        , resetInterval :: !ResetInterval
         -- ^ reset solver after this number of queries
         }
 
