@@ -97,7 +97,7 @@ test_ArgOfNotSimp =
         (Error
             ["module 'ISSUE2100'", "axiom declaration", "(<test data>)"]
             "Argument of NotSimplification equation axiom\
-            \ contains non-constructor function symbols"
+            \ contains non-constructor function symbol:\nf{}"
         )
         ( simpleDefinitionFromSentences (ModuleName "ISSUE2100")
             [ simpleSortSentence (SortName (getId Mock.testSortId))

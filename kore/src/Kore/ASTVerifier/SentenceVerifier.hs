@@ -38,11 +38,11 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
+import Data.Monoid
+    ( First (..)
+    )
 import Data.Set
     ( Set
-    )
-import Data.Monoid
-    ( First(..)
     )
 import qualified Data.Set as Set
 import Data.Text
