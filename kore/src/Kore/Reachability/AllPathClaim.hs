@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Reachability.AllPathClaim
     ( AllPathClaim (..)
+    , mkAllPathClaim
     , allPathRuleToTerm
     , Rule (..)
     ) where
@@ -29,10 +30,17 @@ import Kore.Debug
 import Kore.Internal.Alias
     ( Alias (aliasConstructor)
     )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( Id (getId)
+    ( ElementVariable
+    , Id (getId)
     , TermLike
     , VariableName
     , weakAlwaysFinally
@@ -70,6 +78,14 @@ newtype AllPathClaim =
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+mkAllPathClaim
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> AllPathClaim
+mkAllPathClaim left right existentials =
+    AllPathClaim (mkClaimPattern left right existentials)
 
 instance Unparse AllPathClaim where
     unparse claimPattern' =
