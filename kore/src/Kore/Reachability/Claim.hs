@@ -339,24 +339,19 @@ transitionRule claims axiomGroups = transitionRuleWorker
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState
 
-    transitionRuleWorker ApplyClaims (Claimed claim) = do
-        applied <- applyClaims claims claim
-        case applied of
-            ApplyRewritten appliedClaim ->
-                return (Rewritten appliedClaim)
-            ApplyRemainder appliedClaim ->
-                return (Remaining appliedClaim)
+    transitionRuleWorker ApplyClaims (Claimed claim) =
+        applyClaims claims claim
+        >>= return . applyResultToClaimState
     transitionRuleWorker ApplyClaims claimState = pure claimState
 
     transitionRuleWorker ApplyAxioms claimState
-      | Just claim <- retractRewritable claimState = do
-        applied <- applyAxioms axiomGroups claim
-        case applied of
-            ApplyRewritten appliedAxiom ->
-                return (Rewritten appliedAxiom)
-            ApplyRemainder appliedAxiom ->
-                return (Remaining appliedAxiom)
+      | Just claim <- retractRewritable claimState =
+        applyAxioms axiomGroups claim
+        >>= return . applyResultToClaimState
       | otherwise = pure claimState
+
+    applyResultToClaimState (ApplyRewritten a) = Rewritten a
+    applyResultToClaimState (ApplyRemainder a) = Remaining a
 
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
@@ -718,9 +713,9 @@ deriveResults fromAppliedRule Results { results, remainders } =
     addResults = Foldable.asum (addResult <$> results)
     addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
 
-    addResult Result { appliedRule, result } = do
+    addResult Result { appliedRule, result } =
         addRule appliedRule
-        Foldable.asum (addRewritten <$> Foldable.toList result)
+        >> Foldable.asum (addRewritten <$> Foldable.toList result)
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder
