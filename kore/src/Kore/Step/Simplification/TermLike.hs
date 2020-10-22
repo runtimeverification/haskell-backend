@@ -164,8 +164,8 @@ import qualified Pretty
 -- instances of that.
 
 {- | Simplify 'TermLike' pattern to a disjunction of function-like 'Pattern's.
-    All the terms will be simplified, but the predicates may only be conjunctions
-    of simplified clauses.
+    All the resulting terms and conditions will be fully simplified, because after
+    the term simplification procedure, the condition simplifier will be called as well.
  -}
 simplify
     :: forall variable simplifier
@@ -445,7 +445,7 @@ ensureSimplifiedResult
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
-  | hasSimplifiedChildren results = pure results
+  | OrPattern.isSimplified repr results = pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -454,8 +454,6 @@ ensureSimplifiedResult repr termLike results
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]
-  where
-    hasSimplifiedChildren = OrPattern.hasSimplifiedChildren repr
 
 ensureSimplifiedCondition
     :: InternalVariable variable
