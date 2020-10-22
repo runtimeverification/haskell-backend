@@ -171,7 +171,6 @@ import qualified Pretty
 data ApplyResult claim
     = ApplyRewritten !claim
     | ApplyRemainder !claim
-    | ReachedBottom
     deriving (Show, Eq)
     deriving (Functor)
 
@@ -335,9 +334,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
     transitionRuleWorker ApplyClaims (Claimed claim) = do
         applied <- applyClaims claims claim
         case applied of
-            -- If the result is \\bottom, the claim is proven on the
-            -- current branch.
-            ReachedBottom -> return Proven
             ApplyRewritten appliedClaim ->
                 return (Rewritten appliedClaim)
             ApplyRemainder appliedClaim ->
@@ -348,9 +344,6 @@ transitionRule claims axiomGroups = transitionRuleWorker
       | Just claim <- retractRewritable claimState = do
         applied <- applyAxioms axiomGroups claim
         case applied of
-            -- If the result is \\bottom, the claim is proven on the
-            -- current branch.
-            ReachedBottom -> return Proven
             ApplyRewritten appliedAxiom ->
                 return (Rewritten appliedAxiom)
             ApplyRemainder appliedAxiom ->
@@ -719,9 +712,7 @@ deriveResults fromAppliedRule Results { results, remainders } =
 
     addResult Result { appliedRule, result } = do
         addRule appliedRule
-        case Foldable.toList result of
-            []      -> pure ReachedBottom
-            configs -> Foldable.asum (addRewritten <$> configs)
+        Foldable.asum (addRewritten <$> Foldable.toList result)
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder
