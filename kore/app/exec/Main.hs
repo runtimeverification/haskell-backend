@@ -93,6 +93,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -139,6 +140,7 @@ import Kore.Reachability
     ( ProveClaimsResult (..)
     , SomeClaim
     , StuckClaim (..)
+    , getConfiguration
     )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
@@ -161,6 +163,9 @@ import Kore.Syntax.Definition
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.TopBottom
+    ( isTop
+    )
 import Kore.Unparser
     ( unparse
     )
@@ -694,13 +699,17 @@ koreProve execOptions proveOptions = do
             maybeAlreadyProvenModule
 
     let ProveClaimsResult { stuckClaim, provenClaims } = proveResult
-    let (exitCode, final) =
-            case stuckClaim of
-                Nothing -> success
-                Just (StuckClaim stuckPatterns) ->
-                    stuckPatterns
-                    & OrPattern.toTermLike
-                    & failure
+    let (exitCode, final)
+          | isTop stuckClaim = success
+          | otherwise =
+            stuckPatterns
+            & OrPattern.toTermLike
+            & failure
+          where
+            stuckPatterns =
+                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaim)
+            getStuckConfig =
+                getRewritingPattern . getConfiguration . getStuckClaim
     lift $ Foldable.for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return exitCode
