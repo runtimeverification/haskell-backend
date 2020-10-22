@@ -76,10 +76,10 @@ data KoreModule = KoreModule
 -- | SMT Timeout and (optionally) a custom prelude path.
 data SmtOptions = SmtOptions
     { timeOut :: !SMT.TimeOut
+    , resetInterval :: !SMT.ResetInterval
     , prelude :: !(Maybe FilePath)
     }
 
--- TODO: add solver-reset-interval
 -- | Options for the kore repl.
 data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
@@ -126,6 +126,12 @@ parseKoreReplOptions startTime =
             <> help "Timeout for calls to the SMT solver, in miliseconds"
             <> value defaultTimeOut
             )
+        <*> option readSMTResetInterval
+            ( metavar "SMT_RESET_INTERVAL"
+            <> long "smt-reset-interval"
+            <> help "Reset the solver after this number of queries"
+            <> value defaultResetInterval
+            )
         <*> optional
             ( strOption
                 (  metavar "SMT_PRELUDE"
@@ -165,12 +171,21 @@ parseKoreReplOptions startTime =
             )
 
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
+    SMT.Config { resetInterval = defaultResetInterval } = SMT.defaultConfig
 
-    readSMTTimeOut = do
-        i <- auto
-        if i <= 0
-            then readerError "smt-timeout must be a positive integer."
-            else return $ SMT.TimeOut $ Limit i
+    readPositiveInteger ctor optionName = do
+        readInt <- auto
+        when (readInt <= 0) err
+        return . ctor $ readInt
+      where
+        err =
+            readerError
+            . unwords
+            $ [optionName, "must be a positive integer."]
+
+    readSMTTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
+    readSMTResetInterval =
+        readPositiveInteger SMT.ResetInterval "smt-reset-interval"
 
     parseOutputFile :: Parser OutputFile
     parseOutputFile =
@@ -231,6 +246,7 @@ mainWithOptions
                     smtConfig =
                         SMT.defaultConfig
                             { SMT.timeOut = smtTimeOut
+                            , SMT.resetInterval = smtResetInterval
                             , SMT.preludeFile = smtPrelude
                             }
 
@@ -290,6 +306,9 @@ mainWithOptions
 
     smtTimeOut :: SMT.TimeOut
     smtTimeOut = timeOut smtOptions
+
+    smtResetInterval :: SMT.ResetInterval
+    smtResetInterval = resetInterval smtOptions
 
     smtPrelude :: Maybe FilePath
     smtPrelude = prelude smtOptions
