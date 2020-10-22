@@ -168,12 +168,6 @@ import Pretty
     )
 import qualified Pretty
 
-data ApplyResult claim
-    = ApplyRewritten !claim
-    | ApplyRemainder !claim
-    deriving (Show, Eq)
-    deriving (Functor)
-
 class Claim claim where
     {- | @Rule claim@ is the type of rule to take a single step toward @claim@.
     -}
@@ -200,6 +194,18 @@ class Claim claim where
         => [[Rule claim]]
         -> claim
         -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+
+{- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
+
+    Both 'ApplyRewritten' and 'ApplyRemainder' wrap a newly formed claim.
+    Its left hand side is constructed from either the application of rewrite rules,
+    or, respectively, from the remainder resulting after this procedure.
+-}
+data ApplyResult claim
+    = ApplyRewritten !claim
+    | ApplyRemainder !claim
+    deriving (Show, Eq)
+    deriving (Functor)
 
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
