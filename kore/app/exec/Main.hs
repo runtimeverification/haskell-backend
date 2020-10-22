@@ -460,8 +460,7 @@ koreExecSh
         outputFileName
         mainModuleName
         (TimeOut timeout)
-        -- TODO: what is this?
-        (SMT.ResetInterval _)
+        (SMT.ResetInterval resetInterval)
         smtPrelude
         smtSolver
         breadthLimit
@@ -491,6 +490,7 @@ koreExecSh
             , pure $ "--module " <> unpack (getModuleName mainModuleName)
             , (\limit -> unwords ["--smt-timeout", show limit])
                 <$> maybeLimit Nothing Just timeout
+            , pure $ unwords ["--smt-reset-interval", show resetInterval]
             , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
             , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
             , (\limit -> unwords ["--breadth", show limit])
