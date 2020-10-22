@@ -207,6 +207,8 @@ data ApplyResult claim
     deriving (Show, Eq)
     deriving (Functor)
 
+{- | 'AppliedRule' represents the rule applied during a rewriting step.
+-}
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
