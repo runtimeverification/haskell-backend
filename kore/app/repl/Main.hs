@@ -79,6 +79,7 @@ data SmtOptions = SmtOptions
     , prelude :: !(Maybe FilePath)
     }
 
+-- TODO: add solver-reset-interval
 -- | Options for the kore repl.
 data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule

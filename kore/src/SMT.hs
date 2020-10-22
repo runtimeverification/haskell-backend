@@ -344,14 +344,16 @@ unshareSolverHandle action = do
 
 {- | Increase the 'queryCounter' and indicate if the solver should be reset.
  -}
-incrementQueryCounter :: Monad monad => StateT SolverHandle monad Bool
-incrementQueryCounter = do
+incrementQueryCounter
+    :: Monad monad => ResetInterval -> StateT SolverHandle monad Bool
+incrementQueryCounter (ResetInterval resetInterval) = do
     Lens.modifying (field @"queryCounter") (+ 1)
     counter <- Lens.use (field @"queryCounter")
     -- Due to an issue with the SMT solver, we need to reinitialise it after a
     -- number of runs, specified here. This number can be adjusted based on
     -- experimentation.
-    pure (counter >= 100)
+    traceShowM resetInterval
+    pure (toInteger counter >= resetInterval)
 
 instance MonadSMT SMT where
     withSolver action =
@@ -360,7 +362,10 @@ instance MonadSMT SMT where
             Exception.finally action
                 (do
                     withSolver' pop
-                    needReset <- modifySolverHandle incrementQueryCounter
+                    resetInterval' <- extractResetInterval
+                    needReset <-
+                        modifySolverHandle
+                            (incrementQueryCounter resetInterval')
                     when needReset reinit
                 )
 
@@ -547,3 +552,9 @@ setTimeOut TimeOut { getTimeOut } =
             setOption ":timeout" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
+
+-- | Extract the reset interval value from the configuration.
+extractResetInterval :: SMT ResetInterval
+extractResetInterval =
+    SMT (Reader.asks config)
+    >>= return . resetInterval
