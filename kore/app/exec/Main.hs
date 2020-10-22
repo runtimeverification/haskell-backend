@@ -362,18 +362,24 @@ parseKoreExecOptions startTime =
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
         <*> parseBugReport
+
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     SMT.Config { resetInterval = defaultResetInterval } = SMT.defaultConfig
-    readSMTTimeOut = do
-        i <- auto
-        if i <= 0
-            then readerError "smt-timeout must be a positive integer."
-            else return $ SMT.TimeOut $ Limit i
-    readSMTResetInterval = do
-        i <- auto
-        if i <= 0
-            then readerError "smt-reset-interval must be a positive integer."
-            else return $ SMT.ResetInterval i
+
+    readPositiveInteger ctor optionName = do
+        readInt <- auto
+        when (readInt <= 0) err
+        return . ctor $ readInt
+      where
+        err =
+            readerError
+            . unwords
+            $ [optionName, "must be a positive integer."]
+
+    readSMTTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
+    readSMTResetInterval =
+        readPositiveInteger SMT.ResetInterval "smt-reset-interval"
+
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
@@ -388,6 +394,7 @@ parseKoreExecOptions startTime =
             [ ("any", priorityAnyStrategy)
             , ("all", priorityAllStrategy)
             ]
+
     breadth =
         option auto
             (  metavar "BREADTH"
@@ -400,6 +407,7 @@ parseKoreExecOptions startTime =
             <> long "depth"
             <> help "Execute up to DEPTH steps."
             )
+
     parseMainModuleName =
         GlobalMain.parseModuleName
             "MODULE"
