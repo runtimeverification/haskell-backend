@@ -41,9 +41,13 @@ import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )
+import Data.Monoid
+    ( First(..)
+    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
+    , pack
     )
 
 import Kore.AST.Error
@@ -109,6 +113,9 @@ import Kore.Step.ClaimPattern
     )
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
+import Kore.Unparser
+    ( unparse
+    )
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -402,13 +409,9 @@ verifyAxiomSentence sentence =
                 ConstructorAxiom -> return ()
                 SubsortAxiom -> return ()
             )
-            (\ Equation {argument, attributes} -> koreFailWithLocationsWhen
-                ( isNotSimplification attributes
-                  && checkArgument argument
-                )
-                [sentenceAxiomPattern verified]
-                "Argument of NotSimplification equation axiom\
-                \ contains non-constructor function symbols"
+            (\ Equation {argument, attributes} ->
+                when (isNotSimplification attributes)
+                    (checkArg argument)
             )
             $ fromSentenceAxiom (attrs, verified)
   where
@@ -422,18 +425,29 @@ verifyAxiomSentence sentence =
         NotSimplification
 
     containsNonconstructorFunctionSymbol term =
-            topIsNonconstructorFunctionSymbol
-            || any containsNonconstructorFunctionSymbol termF
+            headIsNonconstructorFunctionSymbol
+            <|> getFirst
+            (foldMap (First . containsNonconstructorFunctionSymbol) termF)
       where
         _ :< termF = Recursive.project term
 
-        topIsNonconstructorFunctionSymbol
-            | App_ sym _ <- term =
-                Symbol.isFunction sym
-                && not (Symbol.isConstructorLike sym)
-            | otherwise = False
+        headIsNonconstructorFunctionSymbol
+            | App_ sym _ <- term
+                , Symbol.isFunction sym
+                , not (Symbol.isConstructorLike sym) = Just sym
+            | otherwise = Nothing
 
-    checkArgument = maybe False (containsNonconstructorFunctionSymbol . unwrapPredicate)
+    badSymbol arg = arg >>=
+        (containsNonconstructorFunctionSymbol . unwrapPredicate)
+
+    checkArg = (\case
+        Just sym' -> koreFailWithLocations
+            [sym']
+            (pack $ "Argument of NotSimplification equation axiom\
+                \ contains non-constructor function symbol:\n"
+                ++ show (unparse sym'))
+        Nothing -> return ()
+        ) . badSymbol
 
 verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
