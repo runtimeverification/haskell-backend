@@ -22,12 +22,10 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
     ( OnePathClaim (..)
+    , mkOnePathClaim
     )
 import Kore.Rewriting.RewritingVariable
     ( mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( claimPattern
     )
 import Kore.Step.RulePattern
     ( RHS (RHS)
@@ -44,8 +42,7 @@ class RuleBase base rule where
 
 instance RuleBase Pair OnePathClaim where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
-        OnePathClaim
-        $ claimPattern
+        mkOnePathClaim
             (Pattern.fromTermAndPredicate t1' p1')
             (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
             []

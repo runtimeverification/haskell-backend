@@ -71,7 +71,7 @@ import Kore.Sort
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , claimPattern
+    , mkClaimPattern
     )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
@@ -418,13 +418,13 @@ test_simplifyClaimRule =
   where
     rule1, rule2, rule2' :: ClaimPattern
     rule1 =
-        claimPattern
+        mkClaimPattern
             (Pattern.fromTermLike (Mock.f Mock.a))
             (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
     rule1' = rule1 & requireDefined
     rule2 =
-        claimPattern
+        mkClaimPattern
             (Pattern.fromTermLike (Mock.g Mock.a))
             (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
