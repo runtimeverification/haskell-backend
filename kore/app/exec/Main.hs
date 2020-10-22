@@ -2,6 +2,7 @@ module Main (main) where
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Control.Monad.Catch
     ( MonadMask
     , SomeException
@@ -15,6 +16,9 @@ import Data.Default
     ( def
     )
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
 import Data.Limit
     ( Limit (..)
     , maybeLimit
@@ -53,6 +57,7 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import qualified GHC.Generics as GHC
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
@@ -160,6 +165,12 @@ import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
     ( unparse
     )
+import Options.SMT
+    ( KoreSolverOptions (..)
+    , Prelude (..)
+    , Solver (..)
+    , parseKoreSolverOptions
+    )
 import Pretty
     ( Doc
     , Pretty (..)
@@ -192,7 +203,7 @@ data KoreSearchOptions =
         -- ^ The maximum bound on the number of search matches
         , searchType :: !SearchType
         -- ^ The type of search to perform
-        }
+        } (GHC.Generic)
 
 parseKoreSearchOptions :: Parser KoreSearchOptions
 parseKoreSearchOptions =
@@ -262,23 +273,6 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
             ONE -> Limit 1
             _ -> Unlimited
 
--- | Available SMT solvers
-data Solver = Z3 | None
-    deriving (Eq, Ord, Show)
-    deriving (Enum, Bounded)
-
-parseSolver :: Parser Solver
-parseSolver =
-    option (snd <$> readSum longName options)
-    $  metavar "SOLVER"
-    <> long longName
-    <> help ("SMT solver for checking constraints: " <> knownOptions)
-    <> value Z3
-  where
-    longName = "smt"
-    knownOptions = intercalate ", " (map fst options)
-    options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
-
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
     { definitionFileName  :: !FilePath
@@ -289,13 +283,10 @@ data KoreExecOptions = KoreExecOptions
     -- ^ Name for file to contain the output pattern
     , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
-    , smtTimeOut          :: !SMT.TimeOut
-    , smtResetInterval    :: !SMT.ResetInterval
-    , smtPrelude          :: !(Maybe FilePath)
-    , smtSolver           :: !Solver
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
     , strategy            :: !(String, [RewriteRule RewritingVariableName] -> Strategy (Prim (RewriteRule RewritingVariableName)))
+    , koreSolverOptions   :: !KoreSolverOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
@@ -333,29 +324,10 @@ parseKoreExecOptions startTime =
                 )
             )
         <*> parseMainModuleName
-        <*> option readSMTTimeOut
-            ( metavar "SMT_TIMEOUT"
-            <> long "smt-timeout"
-            <> help "Timeout for calls to the SMT solver, in milliseconds"
-            <> value defaultTimeOut
-            )
-        <*> option readSMTResetInterval
-            ( metavar "SMT_RESET_INTERVAL"
-            <> long "smt-reset-interval"
-            <> help "Reset the solver after this number of queries"
-            <> value defaultResetInterval
-            )
-        <*> optional
-            ( strOption
-                ( metavar "SMT_PRELUDE"
-                <> long "smt-prelude"
-                <> help "Path to the SMT prelude file"
-                )
-            )
-        <*> parseSolver
         <*> parseBreadthLimit
         <*> parseDepthLimit
         <*> parseStrategy
+        <*> parseKoreSolverOptions
         <*> parseKoreLogOptions (ExeName "kore-exec") startTime
         <*> pure Nothing
         <*> optional parseKoreProveOptions
@@ -467,13 +439,10 @@ koreExecSh
         patternFileName
         outputFileName
         mainModuleName
-        (TimeOut timeout)
-        (SMT.ResetInterval resetInterval)
-        smtPrelude
-        smtSolver
         breadthLimit
         depthLimit
         strategy
+        koreSolverOptions
         koreLogOptions
         koreSearchOptions
         koreProveOptions
@@ -496,11 +465,11 @@ koreExecSh
             , patternFileName $> "--pattern pgm.kore"
             , outputFileName $> "--output result.kore"
             , pure $ "--module " <> unpack (getModuleName mainModuleName)
-            , (\limit -> unwords ["--smt-timeout", show limit])
-                <$> maybeLimit Nothing Just timeout
-            , pure $ unwords ["--smt-reset-interval", show resetInterval]
-            , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
-            , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
+            -- , (\limit -> unwords ["--smt-timeout", show limit])
+            --     <$> maybeLimit Nothing Just timeout
+            -- , pure $ unwords ["--smt-reset-interval", show resetInterval]
+            -- , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
+            -- , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
             , (\limit -> unwords ["--breadth", show limit])
                 <$> maybeLimit Nothing Just breadthLimit
             , (\limit -> unwords ["--depth", show limit])
@@ -526,6 +495,14 @@ defaultSmtPreludeFilePath = "prelude.smt2"
 defaultRtsStatisticsFilePath :: FilePath
 defaultRtsStatisticsFilePath = "rts-statistics.json"
 
+writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
+writeKoreSolverFiles
+    KoreSolverOptions { prelude = Prelude smtPrelude }
+    reportFile
+  =
+    Foldable.for_ smtPrelude
+    $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
+
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
     copyFile searchFileName $ reportFile <> "/searchFile.kore"
@@ -550,7 +527,7 @@ writeOptionsAndKoreFiles
     opts@KoreExecOptions
         { definitionFileName
         , patternFileName
-        , smtPrelude
+        , koreSolverOptions
         , koreSearchOptions
         , koreProveOptions
         , koreMergeOptions
@@ -568,8 +545,9 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    Foldable.for_ smtPrelude
-        $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
+    -- Foldable.for_ smtPrelude
+    --     $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
+    writeKoreSolverFiles koreSolverOptions reportDirectory
     Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
     Foldable.for_ koreMergeOptions
@@ -593,17 +571,20 @@ main = do
     Foldable.for_ (localOptions options) mainWithOptions
 
 -- | Ensure that the SMT prelude file exists, if specified.
-ensureSmtPreludeExists :: Maybe FilePath -> IO ()
-ensureSmtPreludeExists =
-    Foldable.traverse_ $ \filePath ->
-        Monad.whenM
-            (not <$> doesFileExist filePath)
-            (error $ "SMT prelude file does not exist: " <> filePath)
+ensureSmtPreludeExists :: KoreSolverOptions -> IO ()
+ensureSmtPreludeExists KoreSolverOptions { prelude = Prelude smtPrelude } =
+    Foldable.traverse_
+        (\filePath ->
+            Monad.whenM
+                (not <$> doesFileExist filePath)
+                (error $ "SMT prelude file does not exist: " <> filePath)
+        )
+        smtPrelude
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, bugReport, smtPrelude } = execOptions
-    ensureSmtPreludeExists smtPrelude
+    let KoreExecOptions { koreLogOptions, koreSolverOptions, bugReport } = execOptions
+    ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
@@ -864,7 +845,7 @@ execute
     -> Main r
 execute options mainModule worker =
     clockSomethingIO "Executing"
-        $ case smtSolver of
+        $ case solver of
             Z3   -> withZ3
             None -> withoutSMT
   where
@@ -877,8 +858,8 @@ execute options mainModule worker =
             )
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreExecOptions { smtTimeOut, smtResetInterval, smtPrelude, smtSolver } =
-        options
+    KoreSolverOptions { timeOut, resetInterval, prelude, solver } =
+        Lens.view (field @"koreSolverOptions") options
     config =
         SMT.defaultConfig
             { SMT.timeOut = smtTimeOut
