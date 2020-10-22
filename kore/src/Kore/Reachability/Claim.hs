@@ -713,9 +713,11 @@ deriveResults fromAppliedRule Results { results, remainders } =
     addResults = Foldable.asum (addResult <$> results)
     addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
 
-    addResult Result { appliedRule, result } =
+    addResult Result { appliedRule, result } = do
         addRule appliedRule
-        >> Foldable.asum (addRewritten <$> Foldable.toList result)
+        case Foldable.toList result of
+            [] -> addRewritten Pattern.bottom
+            configs -> Foldable.asum (addRewritten <$> configs)
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder
