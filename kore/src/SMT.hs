@@ -15,6 +15,7 @@ module SMT
     , Config (..)
     , defaultConfig
     , TimeOut (..)
+    , ResetInterval (..)
     , Result (..)
     , Constructor (..)
     , ConstructorArgument (..)
@@ -422,6 +423,11 @@ instance MonadSMT m => MonadSMT (ExceptT e m)
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
     deriving (Eq, Ord, Read, Show)
 
+-- | Reset interval for solver.
+newtype ResetInterval =
+    ResetInterval { getResetInterval :: Integer }
+    deriving (Eq, Ord, Read, Show)
+
 -- | Solver configuration
 data Config =
     Config
@@ -435,6 +441,8 @@ data Config =
         -- ^ optional log file name
         , timeOut :: TimeOut
         -- ^ query time limit
+        , resetInterval :: ResetInterval
+        -- ^ reset solver after this number of queries
         }
 
 -- | Default configuration using the Z3 solver.
@@ -449,6 +457,7 @@ defaultConfig =
         , preludeFile = Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
+        , resetInterval = ResetInterval 100
         }
 
 initSolver :: Config -> SMT ()

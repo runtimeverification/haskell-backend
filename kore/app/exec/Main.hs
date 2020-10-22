@@ -290,6 +290,7 @@ data KoreExecOptions = KoreExecOptions
     , mainModuleName      :: !ModuleName
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMT.TimeOut
+    , smtResetInterval    :: !SMT.ResetInterval
     , smtPrelude          :: !(Maybe FilePath)
     , smtSolver           :: !Solver
     , breadthLimit        :: !(Limit Natural)
@@ -338,6 +339,12 @@ parseKoreExecOptions startTime =
             <> help "Timeout for calls to the SMT solver, in milliseconds"
             <> value defaultTimeOut
             )
+        <*> option readSMTResetInterval
+            ( metavar "SMT_RESET_INTERVAL"
+            <> long "smt-reset-interval"
+            <> help "Reset the solver after this number of queries"
+            <> value defaultResetInterval
+            )
         <*> optional
             ( strOption
                 ( metavar "SMT_PRELUDE"
@@ -356,11 +363,17 @@ parseKoreExecOptions startTime =
         <*> optional parseRtsStatistics
         <*> parseBugReport
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
+    SMT.Config { resetInterval = defaultResetInterval } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
         if i <= 0
             then readerError "smt-timeout must be a positive integer."
             else return $ SMT.TimeOut $ Limit i
+    readSMTResetInterval = do
+        i <- auto
+        if i <= 0
+            then readerError "smt-reset-interval must be a positive integer."
+            else return $ SMT.ResetInterval i
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
@@ -447,6 +460,8 @@ koreExecSh
         outputFileName
         mainModuleName
         (TimeOut timeout)
+        -- TODO: what is this?
+        (SMT.ResetInterval _)
         smtPrelude
         smtSolver
         breadthLimit
@@ -854,10 +869,12 @@ execute options mainModule worker =
             )
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
+    KoreExecOptions { smtTimeOut, smtResetInterval, smtPrelude, smtSolver } =
+        options
     config =
         SMT.defaultConfig
             { SMT.timeOut = smtTimeOut
+            , SMT.resetInterval = smtResetInterval
             , SMT.preludeFile = smtPrelude
             }
 
