@@ -101,6 +101,9 @@ import Kore.Log.WarnFunctionWithoutEvaluators
 import Kore.Log.WarnIfLowProductivity
     ( WarnIfLowProductivity
     )
+import Kore.Log.WarnRetrySolverQuery
+    ( WarnRetrySolverQuery
+    )
 import Kore.Log.WarnStuckClaimState
     ( WarnStuckClaimState
     )
@@ -160,6 +163,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @WarnStuckClaimState
     , mk $ Proxy @WarnIfLowProductivity
     , mk $ Proxy @WarnTrivialClaim
+    , mk $ Proxy @WarnRetrySolverQuery
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop

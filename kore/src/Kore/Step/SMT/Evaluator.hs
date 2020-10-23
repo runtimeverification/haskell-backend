@@ -65,6 +65,9 @@ import Kore.Log.DebugEvaluateCondition
 import Kore.Log.ErrorDecidePredicateUnknown
     ( errorDecidePredicateUnknown
     )
+import Kore.Log.WarnRetrySolverQuery
+    ( warnRetrySolverQuery
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
 import Kore.TopBottom
@@ -174,12 +177,27 @@ decidePredicate
 decidePredicate predicates =
     whileDebugEvaluateCondition predicates
     $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
+        result <- checkPredicate
+        -- for testing:
+        -- retryCheckPredicateOnce
+        case result of
+            Unsat -> return False
+            Sat -> empty
+            Unknown -> retryCheckPredicateOnce
+  where
+    checkPredicate = do
         tools <- Simplifier.askMetadataTools
         predicates' <- traverse (translatePredicate tools) predicates
         Foldable.traverse_ SMT.assert predicates'
         result <- SMT.check
         debugEvaluateConditionResult result
-        case result of
+        return result
+
+    retryCheckPredicateOnce = do
+        SMT.reinit
+        warnRetrySolverQuery predicates
+        retriedResult <- checkPredicate
+        case retriedResult of
             Unsat -> return False
             Sat -> empty
             Unknown -> do
