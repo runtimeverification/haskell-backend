@@ -11,7 +11,6 @@ import Control.Monad.Catch
     , throwM
     )
 import Control.Monad.Extra as Monad
-import qualified Data.Char as Char
 import Data.Default
     ( def
     )
@@ -39,6 +38,7 @@ import qualified Data.Text.IO as Text
     ( putStrLn
     , readFile
     )
+import qualified GHC.Generics as GHC
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -57,7 +57,6 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
-import qualified GHC.Generics as GHC
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
@@ -167,9 +166,10 @@ import Kore.Unparser
     )
 import Options.SMT
     ( KoreSolverOptions (..)
-    , Prelude (..)
     , Solver (..)
+    , defaultSmtPreludeFilePath
     , parseKoreSolverOptions
+    , unparseKoreSolverOptions
     )
 import Pretty
     ( Doc
@@ -183,7 +183,6 @@ import Prof
     )
 import SMT
     ( MonadSMT
-    , TimeOut (..)
     )
 import qualified SMT
 import Stats
@@ -203,7 +202,7 @@ data KoreSearchOptions =
         -- ^ The maximum bound on the number of search matches
         , searchType :: !SearchType
         -- ^ The type of search to perform
-        } (GHC.Generic)
+        } deriving (GHC.Generic)
 
 parseKoreSearchOptions :: Parser KoreSearchOptions
 parseKoreSearchOptions =
@@ -293,7 +292,7 @@ data KoreExecOptions = KoreExecOptions
     , koreMergeOptions    :: !(Maybe KoreMergeOptions)
     , rtsStatistics       :: !(Maybe FilePath)
     , bugReport           :: !BugReport
-    }
+    } deriving (GHC.Generic)
 
 -- | Command Line Argument Parser
 parseKoreExecOptions :: TimeSpec -> Parser KoreExecOptions
@@ -334,23 +333,6 @@ parseKoreExecOptions startTime =
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
         <*> parseBugReport
-
-    SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
-    SMT.Config { resetInterval = defaultResetInterval } = SMT.defaultConfig
-
-    readPositiveInteger ctor optionName = do
-        readInt <- auto
-        when (readInt <= 0) err
-        return . ctor $ readInt
-      where
-        err =
-            readerError
-            . unwords
-            $ [optionName, "must be a positive integer."]
-
-    readSMTTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
-    readSMTResetInterval =
-        readPositiveInteger SMT.ResetInterval "smt-reset-interval"
 
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
@@ -465,11 +447,6 @@ koreExecSh
             , patternFileName $> "--pattern pgm.kore"
             , outputFileName $> "--output result.kore"
             , pure $ "--module " <> unpack (getModuleName mainModuleName)
-            -- , (\limit -> unwords ["--smt-timeout", show limit])
-            --     <$> maybeLimit Nothing Just timeout
-            -- , pure $ unwords ["--smt-reset-interval", show resetInterval]
-            -- , smtPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
-            -- , pure $ "--smt " <> fmap Char.toLower (show smtSolver)
             , (\limit -> unwords ["--breadth", show limit])
                 <$> maybeLimit Nothing Just breadthLimit
             , (\limit -> unwords ["--depth", show limit])
@@ -478,6 +455,7 @@ koreExecSh
             , rtsStatistics $>
                 unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
             ]
+        , unparseKoreSolverOptions koreSolverOptions
         , unparseKoreLogOptions koreLogOptions
         , maybe mempty unparseKoreSearchOptions koreSearchOptions
         , maybe mempty unparseKoreProveOptions koreProveOptions
@@ -489,15 +467,12 @@ defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
   | isJust koreProveOptions = "vdefinition.kore"
   | otherwise               = "definition.kore"
 
-defaultSmtPreludeFilePath :: FilePath
-defaultSmtPreludeFilePath = "prelude.smt2"
-
 defaultRtsStatisticsFilePath :: FilePath
 defaultRtsStatisticsFilePath = "rts-statistics.json"
 
 writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
 writeKoreSolverFiles
-    KoreSolverOptions { prelude = Prelude smtPrelude }
+    KoreSolverOptions { prelude = SMT.Prelude smtPrelude }
     reportFile
   =
     Foldable.for_ smtPrelude
@@ -545,8 +520,8 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    -- Foldable.for_ smtPrelude
-    --     $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
+    Foldable.for_ unwrappedPrelude
+        $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
     writeKoreSolverFiles koreSolverOptions reportDirectory
     Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
@@ -554,6 +529,8 @@ writeOptionsAndKoreFiles
         (writeKoreMergeFiles reportDirectory)
     Foldable.for_ koreProveOptions
         (writeKoreProveFiles reportDirectory)
+  where
+    KoreSolverOptions { prelude = SMT.Prelude unwrappedPrelude } = koreSolverOptions
 
 exeName :: ExeName
 exeName = ExeName "kore-exec"
@@ -572,7 +549,7 @@ main = do
 
 -- | Ensure that the SMT prelude file exists, if specified.
 ensureSmtPreludeExists :: KoreSolverOptions -> IO ()
-ensureSmtPreludeExists KoreSolverOptions { prelude = Prelude smtPrelude } =
+ensureSmtPreludeExists KoreSolverOptions { prelude = SMT.Prelude smtPrelude } =
     Foldable.traverse_
         (\filePath ->
             Monad.whenM
@@ -862,9 +839,9 @@ execute options mainModule worker =
         Lens.view (field @"koreSolverOptions") options
     config =
         SMT.defaultConfig
-            { SMT.timeOut = smtTimeOut
-            , SMT.resetInterval = smtResetInterval
-            , SMT.preludeFile = smtPrelude
+            { SMT.timeOut = timeOut
+            , SMT.resetInterval = resetInterval
+            , SMT.prelude = prelude
             }
 
 loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)

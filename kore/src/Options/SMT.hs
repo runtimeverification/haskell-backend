@@ -5,10 +5,10 @@ License     : NCSA
 
 module Options.SMT
     ( KoreSolverOptions (..)
-    , Prelude (..)
     , Solver (..)
     , parseKoreSolverOptions
-    , unparseKoreLogOptions
+    , unparseKoreSolverOptions
+    , defaultSmtPreludeFilePath
     ) where
 
 import Prelude.Kore
@@ -18,17 +18,12 @@ import Data.List
     ( intercalate
     )
 import Options.Applicative
-    ( InfoMod
-    , Parser
-    , argument
+    ( Parser
     , auto
-    , fullDesc
-    , header
     , help
     , long
     , metavar
     , option
-    , progDesc
     , readerError
     , str
     , strOption
@@ -50,8 +45,6 @@ data KoreSolverOptions = KoreSolverOptions
     , prelude :: !Prelude
     , solver :: !Solver
     }
-
-newtype Prelude = Prelude { getPrelude :: Maybe FilePath }
 
 parseKoreSolverOptions :: Parser KoreSolverOptions
 parseKoreSolverOptions =
@@ -97,7 +90,22 @@ parseKoreSolverOptions =
     readSMTResetInterval =
         readPositiveInteger SMT.ResetInterval "smt-reset-interval"
 
-unparseKoreLogOptions = undefined
+unparseKoreSolverOptions :: KoreSolverOptions -> [String]
+unparseKoreSolverOptions
+    KoreSolverOptions
+        { timeOut = TimeOut unwrappedTimeOut
+        , resetInterval
+        , prelude = Prelude unwrappedPrelude
+        , solver
+        }
+  =
+    catMaybes
+        [ (\limit -> unwords ["--smt-timeout", show limit])
+            <$> maybeLimit Nothing Just unwrappedTimeOut
+        , pure $ unwords ["--smt-reset-interval", show resetInterval]
+        , unwrappedPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
+        , pure $ "--smt " <> fmap Char.toLower (show solver)
+        ]
 
 -- | Available SMT solvers
 data Solver = Z3 | None
@@ -126,3 +134,7 @@ readSum longName options = do
     knownOptions = intercalate ", " (map fst options)
     unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
     known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
+
+
+defaultSmtPreludeFilePath :: FilePath
+defaultSmtPreludeFilePath = "prelude.smt2"

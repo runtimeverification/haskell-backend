@@ -16,6 +16,7 @@ module SMT
     , defaultConfig
     , TimeOut (..)
     , ResetInterval (..)
+    , Prelude (..)
     , Result (..)
     , Constructor (..)
     , ConstructorArgument (..)
@@ -432,6 +433,9 @@ newtype ResetInterval =
     ResetInterval { getResetInterval :: Integer }
     deriving (Eq, Ord, Read, Show)
 
+-- | TODO: docs
+newtype Prelude = Prelude { getPrelude :: Maybe FilePath }
+
 -- | Solver configuration
 data Config =
     Config
@@ -439,7 +443,7 @@ data Config =
         -- ^ solver executable file name
         , arguments :: ![String]
         -- ^ default command-line arguments to solver
-        , preludeFile :: !(Maybe FilePath)
+        , prelude :: !Prelude
         -- ^ prelude of definitions to initialize solver
         , logFile :: !(Maybe FilePath)
         -- ^ optional log file name
@@ -458,17 +462,19 @@ defaultConfig =
             [ "-smt2"  -- use SMT-LIB2 format
             , "-in"    -- read from standard input
             ]
-        , preludeFile = Nothing
+        , prelude = Prelude Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
         , resetInterval = ResetInterval 100
         }
 
 initSolver :: Config -> SMT ()
-initSolver Config { timeOut, preludeFile } = do
+initSolver Config { timeOut, prelude } = do
     setTimeOut timeOut
     Foldable.traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
+  where
+      preludeFile = getPrelude prelude
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
