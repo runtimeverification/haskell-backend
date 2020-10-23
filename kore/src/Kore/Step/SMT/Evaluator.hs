@@ -177,18 +177,18 @@ decidePredicate
 decidePredicate predicates =
     whileDebugEvaluateCondition predicates
     $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
+        tools <- Simplifier.askMetadataTools
+        predicates' <- traverse (translatePredicate tools) predicates
+        Foldable.traverse_ SMT.assert predicates'
         result <- checkPredicate
-        -- for testing:
-        -- retryCheckPredicateOnce
+        -- TODO: for testing, remember to remove
+        let result = Unknown
         case result of
             Unsat -> return False
             Sat -> empty
             Unknown -> retryCheckPredicateOnce
   where
     checkPredicate = do
-        tools <- Simplifier.askMetadataTools
-        predicates' <- traverse (translatePredicate tools) predicates
-        Foldable.traverse_ SMT.assert predicates'
         result <- SMT.check
         debugEvaluateConditionResult result
         return result
