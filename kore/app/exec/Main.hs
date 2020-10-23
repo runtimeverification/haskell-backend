@@ -167,6 +167,7 @@ import Kore.Unparser
 import Options.SMT
     ( KoreSolverOptions (..)
     , Solver (..)
+    , ensureSmtPreludeExists
     , parseKoreSolverOptions
     , unparseKoreSolverOptions
     , writeKoreSolverFiles
@@ -534,17 +535,6 @@ main = do
             (parseKoreExecOptions startTime)
             parserInfoModifiers
     Foldable.for_ (localOptions options) mainWithOptions
-
--- | Ensure that the SMT prelude file exists, if specified.
-ensureSmtPreludeExists :: KoreSolverOptions -> IO ()
-ensureSmtPreludeExists KoreSolverOptions { prelude = SMT.Prelude smtPrelude } =
-    Foldable.traverse_
-        (\filePath ->
-            Monad.whenM
-                (not <$> doesFileExist filePath)
-                (error $ "SMT prelude file does not exist: " <> filePath)
-        )
-        smtPrelude
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do

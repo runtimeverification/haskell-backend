@@ -10,10 +10,12 @@ module Options.SMT
     , unparseKoreSolverOptions
     , defaultSmtPreludeFilePath
     , writeKoreSolverFiles
+    , ensureSmtPreludeExists
     ) where
 
 import Prelude.Kore
 
+import Control.Monad.Extra as Monad
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import Data.List
@@ -34,6 +36,7 @@ import Options.Applicative
 import qualified Options.Applicative as Options
 import System.Directory
     ( copyFile
+    , doesFileExist
     )
 import System.FilePath
     ( (</>)
@@ -45,6 +48,7 @@ import Data.Limit
     )
 import SMT hiding
     ( Solver
+    , not
     )
 
 -- | Command line options for the SMT solver.
@@ -161,3 +165,14 @@ writeKoreSolverFiles
   =
     Foldable.for_ unwrappedPrelude
     $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
+
+-- | Ensure that the SMT prelude file exists, if specified.
+ensureSmtPreludeExists :: KoreSolverOptions -> IO ()
+ensureSmtPreludeExists KoreSolverOptions { prelude = SMT.Prelude smtPrelude } =
+    Foldable.traverse_
+        (\filePath ->
+            Monad.whenM
+                (not <$> doesFileExist filePath)
+                (error $ "SMT prelude file does not exist: " <> filePath)
+        )
+        smtPrelude
