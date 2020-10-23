@@ -123,7 +123,8 @@ unparseKoreSolverOptions
         [ (\limit -> unwords ["--smt-timeout", show limit])
             <$> maybeLimit Nothing Just unwrappedTimeOut
         , pure $ unwords ["--smt-reset-interval", show resetInterval]
-        , unwrappedPrelude $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
+        , unwrappedPrelude
+            $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
         , pure $ "--smt " <> fmap Char.toLower (show solver)
         ]
 
@@ -168,11 +169,14 @@ writeKoreSolverFiles
 
 -- | Ensure that the SMT prelude file exists, if specified.
 ensureSmtPreludeExists :: KoreSolverOptions -> IO ()
-ensureSmtPreludeExists KoreSolverOptions { prelude = SMT.Prelude smtPrelude } =
+ensureSmtPreludeExists
+    KoreSolverOptions
+        { prelude = SMT.Prelude unwrappedPrelude }
+  =
     Foldable.traverse_
         (\filePath ->
             Monad.whenM
                 (not <$> doesFileExist filePath)
                 (error $ "SMT prelude file does not exist: " <> filePath)
         )
-        smtPrelude
+        unwrappedPrelude
