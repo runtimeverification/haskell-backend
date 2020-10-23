@@ -11,29 +11,22 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , argument
-    , auto
     , flag
     , fullDesc
     , header
     , help
     , long
     , metavar
-    , option
     , progDesc
-    , readerError
     , short
     , str
     , strOption
-    , value
     )
 import System.Exit
     ( exitFailure
     , exitWith
     )
 
-import Data.Limit
-    ( Limit (..)
-    )
 import Kore.BugReport
 import Kore.Exec
     ( proveWithRepl
@@ -58,6 +51,10 @@ import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
+import Options.SMT
+    ( KoreSolverOptions (..)
+    , parseKoreSolverOptions
+    )
 import qualified SMT
 import System.Clock
     ( Clock (Monotonic)
@@ -73,17 +70,11 @@ data KoreModule = KoreModule
     , moduleName :: !ModuleName
     }
 
--- | SMT Timeout and (optionally) a custom prelude path.
-data SmtOptions = SmtOptions
-    { timeOut :: !SMT.TimeOut
-    , prelude :: !(Maybe FilePath)
-    }
-
 -- | Options for the kore repl.
 data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions     :: !KoreProveOptions
-    , smtOptions       :: !SmtOptions
+    , smtOptions       :: !KoreSolverOptions
     , replMode         :: !ReplMode
     , scriptModeOutput :: !ScriptModeOutput
     , replScript       :: !ReplScript
@@ -97,7 +88,7 @@ parseKoreReplOptions startTime =
     KoreReplOptions
     <$> parseMainModule
     <*> parseKoreProveOptions
-    <*> parseSmtOptions
+    <*> parseKoreSolverOptions
     <*> parseReplMode
     <*> parseScriptModeOutput
     <*> parseReplScript
@@ -115,23 +106,6 @@ parseKoreReplOptions startTime =
                 "MAIN_MODULE"
                 "module"
                 "Kore main module name."
-
-    parseSmtOptions :: Parser SmtOptions
-    parseSmtOptions =
-        SmtOptions
-        <$> option readSMTTimeOut
-            (  metavar "SMT_TIMEOUT"
-            <> long "smt-timeout"
-            <> help "Timeout for calls to the SMT solver, in miliseconds"
-            <> value defaultTimeOut
-            )
-        <*> optional
-            ( strOption
-                (  metavar "SMT_PRELUDE"
-                <> long "smt-prelude"
-                <> help "Path to the SMT prelude file"
-                )
-            )
 
     parseReplMode :: Parser ReplMode
     parseReplMode =
@@ -162,14 +136,6 @@ parseKoreReplOptions startTime =
                 <> help "Path to the repl script file"
                 )
             )
-
-    SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
-
-    readSMTTimeOut = do
-        i <- auto
-        if i <= 0
-            then readerError "smt-timeout must be a positive integer."
-            else return $ SMT.TimeOut $ Limit i
 
     parseOutputFile :: Parser OutputFile
     parseOutputFile =
@@ -230,7 +196,8 @@ mainWithOptions
                     smtConfig =
                         SMT.defaultConfig
                             { SMT.timeOut = smtTimeOut
-                            , SMT.preludeFile = smtPrelude
+                            , SMT.resetInterval = smtResetInterval
+                            , SMT.prelude = smtPrelude
                             }
 
                 when
@@ -290,5 +257,8 @@ mainWithOptions
     smtTimeOut :: SMT.TimeOut
     smtTimeOut = timeOut smtOptions
 
-    smtPrelude :: Maybe FilePath
+    smtResetInterval :: SMT.ResetInterval
+    smtResetInterval = resetInterval smtOptions
+
+    smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
