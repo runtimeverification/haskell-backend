@@ -698,16 +698,17 @@ koreProve execOptions proveOptions = do
             specModule
             maybeAlreadyProvenModule
 
-    let ProveClaimsResult { stuckClaim, provenClaims } = proveResult
+    let ProveClaimsResult { stuckClaims, provenClaims } = proveResult
     let (exitCode, final)
-          | isTop stuckClaim = success
+          | noStuckClaims = success
           | otherwise =
             stuckPatterns
             & OrPattern.toTermLike
             & failure
           where
+            noStuckClaims = isTop stuckClaims
             stuckPatterns =
-                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaim)
+                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
     lift $ Foldable.for_ saveProofs $ saveProven specModule provenClaims

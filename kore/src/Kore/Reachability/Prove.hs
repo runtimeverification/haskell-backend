@@ -189,8 +189,9 @@ type ProvenClaims = MultiAnd SomeClaim
 -- | The result of proving some claims.
 data ProveClaimsResult =
     ProveClaimsResult
-    { stuckClaim :: !StuckClaims
-    -- ^ The claims which were stuck, if any.
+    { stuckClaims :: !StuckClaims
+    -- ^ The conjuction of stuck claims, that is: of claims which must still be
+    -- proven. If all claims were proved, then the remaining claims are @\\top@.
     , provenClaims :: !ProvenClaims
     -- ^ The conjunction of all claims which were proven.
     }
@@ -222,7 +223,7 @@ proveClaims
         & runExceptT
         & flip runStateT (MultiAnd.make stillProven)
     pure ProveClaimsResult
-        { stuckClaim = either id (const MultiAnd.top) result
+        { stuckClaims = either id (const MultiAnd.top) result
         , provenClaims
         }
   where

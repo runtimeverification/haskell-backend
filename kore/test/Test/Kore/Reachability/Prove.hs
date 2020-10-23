@@ -951,11 +951,11 @@ proveClaims_
     -> IO StuckClaims
 proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
     do
-        ProveClaimsResult { stuckClaim } <-
+        ProveClaimsResult { stuckClaims } <-
             Test.Kore.Reachability.Prove.proveClaims
                 breadthLimit
                 depthLimit
                 axioms
                 claims
                 alreadyProven
-        pure stuckClaim
+        pure stuckClaims
