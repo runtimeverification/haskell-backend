@@ -13,6 +13,7 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_constructorLike
     , hprop_unparse
     , test_size
     --
@@ -417,6 +418,21 @@ test_size =
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
     ]
+
+test_constructorLike :: TestTree
+test_constructorLike =
+    testCase "qqconstructor-like elements" $
+        asInternal [Mock.a, Mock.b] `shouldBe` isConstructorLike
+  where
+    shouldBe
+        :: HasCallStack
+        => TermLike VariableName
+        -> (TermLike VariableName -> Bool)
+        -> IO ()
+    shouldBe term predicate = do
+        let actual = predicate term
+        assertEqual "" actual True
+
 
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal

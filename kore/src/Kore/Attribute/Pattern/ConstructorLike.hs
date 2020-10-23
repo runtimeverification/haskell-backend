@@ -18,6 +18,7 @@ import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Data.Sequence
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
@@ -195,7 +196,8 @@ instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
             (BuiltinSet InternalAc
                     {builtinAcChild = NormalizedSet builtinSetChild}
                 ) -> normalizedAcConstructorLike builtinSetChild
-            _               -> ConstructorLike Nothing
+            (BuiltinList InternalList { builtinListChild }
+                ) -> normalizedListConstructorLike builtinListChild
     {-# INLINE synthetic #-}
 
 normalizedAcConstructorLike
@@ -217,6 +219,13 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
                 pairIsConstructorLike (key, value) =
                     assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
+
+normalizedListConstructorLike
+    :: Seq ConstructorLike -> ConstructorLike
+normalizedListConstructorLike children
+  | all isConstructorLike children =
+      ConstructorLike . Just $ ConstructorLikeHead
+  | otherwise = ConstructorLike Nothing
 
 instance Synthetic ConstructorLike Inhabitant where
     synthetic = const (ConstructorLike Nothing)
