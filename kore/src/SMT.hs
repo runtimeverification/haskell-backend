@@ -433,7 +433,7 @@ newtype ResetInterval =
     ResetInterval { getResetInterval :: Integer }
     deriving (Eq, Ord, Read, Show)
 
--- | TODO: docs
+-- | Optional filepath for the SMT prelude.
 newtype Prelude = Prelude { getPrelude :: Maybe FilePath }
 
 -- | Solver configuration

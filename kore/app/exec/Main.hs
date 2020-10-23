@@ -167,9 +167,9 @@ import Kore.Unparser
 import Options.SMT
     ( KoreSolverOptions (..)
     , Solver (..)
-    , defaultSmtPreludeFilePath
     , parseKoreSolverOptions
     , unparseKoreSolverOptions
+    , writeKoreSolverFiles
     )
 import Pretty
     ( Doc
@@ -470,14 +470,6 @@ defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
 defaultRtsStatisticsFilePath :: FilePath
 defaultRtsStatisticsFilePath = "rts-statistics.json"
 
-writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
-writeKoreSolverFiles
-    KoreSolverOptions { prelude = SMT.Prelude smtPrelude }
-    reportFile
-  =
-    Foldable.for_ smtPrelude
-    $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
-
 writeKoreSearchFiles :: FilePath -> KoreSearchOptions -> IO ()
 writeKoreSearchFiles reportFile KoreSearchOptions { searchFileName } =
     copyFile searchFileName $ reportFile <> "/searchFile.kore"
@@ -520,8 +512,6 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     Foldable.for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    Foldable.for_ unwrappedPrelude
-        $ flip copyFile (reportDirectory </> defaultSmtPreludeFilePath)
     writeKoreSolverFiles koreSolverOptions reportDirectory
     Foldable.for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
@@ -529,8 +519,6 @@ writeOptionsAndKoreFiles
         (writeKoreMergeFiles reportDirectory)
     Foldable.for_ koreProveOptions
         (writeKoreProveFiles reportDirectory)
-  where
-    KoreSolverOptions { prelude = SMT.Prelude unwrappedPrelude } = koreSolverOptions
 
 exeName :: ExeName
 exeName = ExeName "kore-exec"

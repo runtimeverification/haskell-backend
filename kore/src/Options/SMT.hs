@@ -9,11 +9,13 @@ module Options.SMT
     , parseKoreSolverOptions
     , unparseKoreSolverOptions
     , defaultSmtPreludeFilePath
+    , writeKoreSolverFiles
     ) where
 
 import Prelude.Kore
 
 import qualified Data.Char as Char
+import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
@@ -30,6 +32,12 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Directory
+    ( copyFile
+    )
+import System.FilePath
+    ( (</>)
+    )
 
 import Data.Limit
     ( Limit (..)
@@ -39,6 +47,7 @@ import SMT hiding
     ( Solver
     )
 
+-- | Command line options for the SMT solver.
 data KoreSolverOptions = KoreSolverOptions
     { timeOut :: !TimeOut
     , resetInterval :: !ResetInterval
@@ -49,30 +58,37 @@ data KoreSolverOptions = KoreSolverOptions
 parseKoreSolverOptions :: Parser KoreSolverOptions
 parseKoreSolverOptions =
     KoreSolverOptions
-    <$> option readSMTTimeOut
-        ( metavar "SMT_TIMEOUT"
-        <> long "smt-timeout"
-        <> help "Timeout for calls to the SMT solver, in milliseconds"
-        <> value defaultTimeOut
-        )
-    <*> option readSMTResetInterval
-        ( metavar "SMT_RESET_INTERVAL"
-        <> long "smt-reset-interval"
-        <> help "Reset the solver after this number of queries"
-        <> value defaultResetInterval
-        )
-    <*>
-        (Prelude <$>
-            optional
+    <$> parseTimeOut
+    <*> parseResetInterval
+    <*> parsePrelude
+    <*> parseSolver
+  where
+    parseTimeOut =
+        option readTimeOut
+            ( metavar "SMT_TIMEOUT"
+            <> long "smt-timeout"
+            <> help "Timeout for calls to the SMT solver, in milliseconds"
+            <> value defaultTimeOut
+            )
+
+    parseResetInterval =
+        option readResetInterval
+            ( metavar "SMT_RESET_INTERVAL"
+            <> long "smt-reset-interval"
+            <> help "Reset the solver after this number of queries"
+            <> value defaultResetInterval
+            )
+
+    parsePrelude =
+        Prelude
+        <$> optional
             ( strOption
                 ( metavar "SMT_PRELUDE"
                 <> long "smt-prelude"
                 <> help "Path to the SMT prelude file"
                 )
             )
-        )
-    <*> parseSolver
-  where
+
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     SMT.Config { resetInterval = defaultResetInterval } = SMT.defaultConfig
 
@@ -86,8 +102,8 @@ parseKoreSolverOptions =
             . unwords
             $ [optionName, "must be a positive integer."]
 
-    readSMTTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
-    readSMTResetInterval =
+    readTimeOut = readPositiveInteger (SMT.TimeOut . Limit) "smt-timeout"
+    readResetInterval =
         readPositiveInteger SMT.ResetInterval "smt-reset-interval"
 
 unparseKoreSolverOptions :: KoreSolverOptions -> [String]
@@ -107,7 +123,7 @@ unparseKoreSolverOptions
         , pure $ "--smt " <> fmap Char.toLower (show solver)
         ]
 
--- | Available SMT solvers
+-- | Available SMT solvers.
 data Solver = Z3 | None
     deriving (Eq, Ord, Show)
     deriving (Enum, Bounded)
@@ -135,6 +151,13 @@ readSum longName options = do
     unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
     known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
 
-
 defaultSmtPreludeFilePath :: FilePath
 defaultSmtPreludeFilePath = "prelude.smt2"
+
+writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
+writeKoreSolverFiles
+    KoreSolverOptions { prelude = Prelude unwrappedPrelude }
+    reportFile
+  =
+    Foldable.for_ unwrappedPrelude
+    $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
