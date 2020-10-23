@@ -39,10 +39,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState (..)
-    , retractRewritable
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
@@ -141,19 +137,19 @@ instance Claim AllPathClaim where
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
 
     applyAxioms axiomss = \claim ->
-        foldM applyAxioms1 (Remaining claim) axiomss
+        foldM applyAxioms1 (ApplyRemainder claim) axiomss
       where
-        applyAxioms1 claimState axioms
-          | Just claim <- retractRewritable claimState =
+        applyAxioms1 applied axioms
+          | Just claim <- retractApplyRemainder applied =
             deriveParAxiomAllPath axioms claim
             >>= simplifyRemainder
           | otherwise =
-            pure claimState
+            pure applied
 
-        simplifyRemainder claimState =
-            case claimState of
-                Remaining claim -> Remaining <$> simplify claim
-                _ -> return claimState
+        simplifyRemainder applied =
+            case applied of
+                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                _ -> return applied
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -195,7 +191,7 @@ deriveParAxiomAllPath
     =>  [Rule AllPathClaim]
     ->  AllPathClaim
     ->  TransitionT (AppliedRule AllPathClaim) simplifier
-            (ClaimState AllPathClaim)
+            (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
