@@ -94,6 +94,10 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -137,8 +141,10 @@ import Kore.Parser
     , parseKorePattern
     )
 import Kore.Reachability
-    ( ProofStuck (..)
+    ( ProveClaimsResult (..)
     , SomeClaim
+    , StuckClaim (..)
+    , getConfiguration
     )
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
@@ -161,6 +167,9 @@ import Kore.Syntax.Definition
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.TopBottom
+    ( isTop
+    )
 import Kore.Unparser
     ( unparse
     )
@@ -648,18 +657,20 @@ koreProve execOptions proveOptions = do
             specModule
             maybeAlreadyProvenModule
 
-    (exitCode, final) <- case proveResult of
-        Left ProofStuck { stuckPatterns, provenClaims } -> do
-            maybe
-                (return ())
-                (lift . saveProven specModule provenClaims)
-                saveProofs
+    let ProveClaimsResult { stuckClaims, provenClaims } = proveResult
+    let (exitCode, final)
+          | noStuckClaims = success
+          | otherwise =
             stuckPatterns
-                & OrPattern.toTermLike
-                & failure
-                & return
-        Right () -> return success
-
+            & OrPattern.toTermLike
+            & failure
+          where
+            noStuckClaims = isTop stuckClaims
+            stuckPatterns =
+                OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
+            getStuckConfig =
+                getRewritingPattern . getConfiguration . getStuckClaim
+    lift $ Foldable.for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -685,10 +696,10 @@ koreProve execOptions proveOptions = do
 
     saveProven
         :: VerifiedModule StepperAttributes
-        -> [SomeClaim]
+        -> MultiAnd SomeClaim
         -> FilePath
         -> IO ()
-    saveProven specModule provenClaims outputFile =
+    saveProven specModule (Foldable.toList -> provenClaims) outputFile =
         withFile outputFile WriteMode
             (`hPutDoc` unparse provenDefinition)
       where

@@ -38,9 +38,6 @@ import Control.Monad
 import Control.Monad.Catch
     ( MonadMask
     )
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
 import Data.Coerce
     ( coerce
     )
@@ -106,7 +103,7 @@ import Kore.Reachability
     ( AllClaims (AllClaims)
     , AlreadyProven (AlreadyProven)
     , Axioms (Axioms)
-    , ProofStuck (..)
+    , ProveClaimsResult (..)
     , Rule (ReachabilityRewriteRule)
     , SomeClaim (..)
     , ToProve (ToProve)
@@ -383,7 +380,7 @@ prove
     -- ^ The spec module
     -> Maybe (VerifiedModule StepperAttributes)
     -- ^ The module containing the claims that were proven in a previous run.
-    -> smt (Either ProofStuck ())
+    -> smt ProveClaimsResult
 prove
     searchOrder
     breadthLimit
@@ -410,7 +407,6 @@ prove
                     (extractUntrustedClaims' claims)
                 )
             )
-            & runExceptT
   where
     extractUntrustedClaims' :: [SomeClaim] -> [SomeClaim]
     extractUntrustedClaims' = filter (not . isTrusted)

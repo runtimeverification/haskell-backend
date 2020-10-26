@@ -48,7 +48,7 @@ import Kore.Reachability
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , claimPattern
+    , mkClaimPattern
     , refreshExistentials
     )
 import qualified Kore.Step.RewriteStep as Step
@@ -160,7 +160,7 @@ claimPatternFromPatterns
     -> Pattern VariableName
     -> ClaimPattern
 claimPatternFromPatterns patt1 patt2 =
-    claimPattern
+    mkClaimPattern
         ( patt1
         & Pattern.mapVariables (pure mkRuleVariable)
         )
@@ -176,7 +176,7 @@ claimPatternFromTerms
     -> [ElementVariable VariableName]
     -> ClaimPattern
 claimPatternFromTerms term1 term2 existentials' =
-    claimPattern
+    mkClaimPattern
         ( term1
         & Pattern.fromTermLike
         & Pattern.mapVariables (pure mkRuleVariable)
