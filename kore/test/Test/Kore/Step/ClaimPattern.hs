@@ -1,6 +1,7 @@
 module Test.Kore.Step.ClaimPattern
     ( test_freeVariables
     , test_refreshRule
+    , test_substituteRightIsntCapturingFreeVars
     ) where
 
 import Prelude.Kore
@@ -14,10 +15,15 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Conditional
+    ( fromPredicate
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding
+    ( substitute
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import Kore.Step.ClaimPattern
@@ -83,6 +89,22 @@ test_refreshRule =
             assertions $ refreshRule mempty input
         ]
     ]
+
+test_substituteRightIsntCapturingFreeVars :: TestTree
+test_substituteRightIsntCapturingFreeVars =
+    testCase "Try to capture variables in the RHS of a substitution" $ do
+        let dummy = Pattern.fromCondition_
+                (fromPredicate Predicate.makeTruePredicate_)
+            right = OrPattern.fromTermLike (mkForall x (mkElemVar y))
+            claim = claimPattern dummy right []
+            ClaimPattern {right = newRight} = substitute
+                (Map.singleton (inject $ variableName y) (mkElemVar x))
+                claim
+            [pat] = OrPattern.toPatterns newRight
+            freeVars = freeVariables pat
+                :: FreeVariables RewritingVariableName
+        assertBool "Variable was captured" (not $ nullFreeVariables freeVars)
+
 
 testRulePattern :: ClaimPattern
 testRulePattern =

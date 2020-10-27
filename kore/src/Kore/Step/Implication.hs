@@ -5,17 +5,16 @@ License     : NCSA
 -}
 
 module Kore.Step.Implication
-    ( OneAllPath (..)
-    , Implication (..)
+    ( Implication (..)
     , freeVariablesLeft
     , freeVariablesRight
-    , implication
+    , mkImplication
     , substitute
     , assertRefreshed
     , refreshExistentials
     , applySubstitution
     , termToExistentials
-    , mkGoal
+    , resetConfigVariables
     , forgetSimplified
     , parseRightHandSide
     , implicationToTerm
@@ -74,9 +73,6 @@ import Kore.Variables.Fresh ( refreshVariables )
 import Pretty ( Pretty (..) )
 import qualified Pretty
 
--- Modalities
-data OneAllPath = OnePath | AllPath 
-
 -- | Representation of reachability claim types as well as rules
 data Implication modality =
     Implication
@@ -102,7 +98,7 @@ instance From (Implication modality) Attribute.RuleIndex where
     from = Attribute.identifier . attributes
 
 instance Pretty (Implication modality) where
-    pretty implication' =
+    pretty implication'@(Implication _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -131,7 +127,7 @@ instance From (Implication modality) Attribute.HeatCool where
 freeVariablesRight
     :: Implication modality
     -> FreeVariables RewritingVariableName
-freeVariablesRight implication' =
+freeVariablesRight implication'@(Implication _ _ _ _ _) =
     freeVariables
         ( TermLike.mkExistsN existentials
             (OrPattern.toTermLike right)
@@ -142,13 +138,13 @@ freeVariablesRight implication' =
 freeVariablesLeft
     :: Implication modality
     -> FreeVariables RewritingVariableName
-freeVariablesLeft implication' =
+freeVariablesLeft implication'@(Implication _ _ _ _ _) =
     freeVariables left
   where
     Implication { left } = implication'
 
 instance HasFreeVariables (Implication modality) RewritingVariableName where
-    freeVariables implication' =
+    freeVariables implication'@(Implication _ _ _ _ _) =
         freeVariablesLeft implication'
         <> freeVariablesRight implication'
 
@@ -156,13 +152,13 @@ instance HasFreeVariables (Implication modality) RewritingVariableName where
 -- and an 'OrPattern', representing the right hand side pattern.
 -- The list of element variables are existentially quantified
 -- in the right hand side.
-implication
+mkImplication
     :: modality
     -> Pattern RewritingVariableName
     -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
     -> Implication modality
-implication modality left right existentials =
+mkImplication modality left right existentials =
     Implication
         { left
         , right
@@ -190,7 +186,7 @@ implicationToTerm
     :: Modality
     -> Implication modality
     -> TermLike VariableName
-implicationToTerm modality representation =
+implicationToTerm modality representation@(Implication _ _ _ _ _) =
     TermLike.mkImplies
         (TermLike.mkAnd leftCondition leftTerm)
         (TermLike.applyModality modality rightPattern)
@@ -258,7 +254,7 @@ substitute
         (TermLike RewritingVariableName)
     -> Implication modality
     -> Implication modality
-substitute subst implication' =
+substitute subst implication'@(Implication _ _ _ _ _) =
     substituteRight subst
     $ implication'
         { left = Pattern.substitute subst left
@@ -306,7 +302,7 @@ termToExistentials (TermLike.Exists_ _ v term) =
 termToExistentials term = (term, [])
 
 forgetSimplified :: Implication modality -> Implication modality
-forgetSimplified implication' =
+forgetSimplified implication'@(Implication _ _ _ _ _) =
     implication'
         { left = Pattern.forgetSimplified left
         , right = OrPattern.forgetSimplified right
@@ -334,17 +330,17 @@ refreshExistentials = snd . refreshRule mempty
 instance UnifyingRule (Implication modality) where
     type UnifyingRuleVariable (Implication modality) = RewritingVariableName
 
-    matchingPattern implication' =
+    matchingPattern implication'@(Implication _ _ _ _ _) =
         Pattern.term left
       where
         Implication { left } = implication'
 
-    precondition implication' =
+    precondition implication'@(Implication _ _ _ _ _) =
         Condition.toPredicate . Pattern.withoutTerm $ left
       where
         Implication { left } = implication'
 
-    refreshRule stale implication' =
+    refreshRule stale implication'@(Implication _ _ _ _ _) =
         do
             let variables = freeVariables implication' & FreeVariables.toSet
             renaming <- refreshVariables' variables
@@ -372,8 +368,8 @@ instance UnifyingRule (Implication modality) where
             pure renaming
         Implication { existentials } = implication'
 
-mkGoal :: Implication modality  -> Implication modality 
-mkGoal implication' =
+resetConfigVariables :: Implication modality  -> Implication modality 
+resetConfigVariables implication'@(Implication _ _ _ _ _) =
     implication'
         { left =
             Pattern.mapVariables resetConfigVariable left
