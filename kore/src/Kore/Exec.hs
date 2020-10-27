@@ -29,7 +29,6 @@ import Control.DeepSeq
     )
 import Control.Error
     ( note
-    , runMaybeT
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -77,6 +76,10 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.MultiOr
+    ( make
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -147,6 +150,7 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
     ( MonadProf
+    , SimplifierT
     , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -172,6 +176,7 @@ import Log
 import qualified Log
 import Logic
     ( LogicT
+    , observeAllT
     )
 import qualified Logic
 import SMT
@@ -190,7 +195,8 @@ newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 
 -- | Symbolic execution
 exec
-    ::  ( MonadIO smt
+    :: forall smt
+    .   ( MonadIO smt
         , MonadLog smt
         , MonadSMT smt
         , MonadMask smt
@@ -208,8 +214,8 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        (execDepth, finalConfig) <-
-            getFinalConfigOf $ do
+        finals <-
+            getFinalConfigsOf $ do
                 initialConfig <-
                     Pattern.simplify SideCondition.top
                         (Pattern.fromTermLike initialTerm)
@@ -235,21 +241,22 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     ( strategy rewriteRules
                     , (ExecDepth 0, mkRewritingPattern initialConfig)
                     )
-        infoExecDepth execDepth
-        let finalConfig' = getRewritingPattern finalConfig
-        exitCode <- getExitCode verifiedModule finalConfig'
-        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig'
+        let (depths, finalConfigs) = unzip finals
+        infoExecDepth (maximum depths)
+        let finalConfigs' = make $ getRewritingPattern <$> finalConfigs
+        exitCode <- getExitCode verifiedModule (head $ from finalConfigs')
+        let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
-    -- Get the first final configuration of an execution graph.
-    getFinalConfigOf = takeFirstResult >=> orElseBottom
-      where
-        takeResult = snd
-        takeFirstResult act =
-            Logic.observeT (takeResult <$> lift act) & runMaybeT
-        orElseBottom =
-            pure . fromMaybe (ExecDepth 0, mkRewritingPattern (Pattern.bottomOf initialSort))
+    getFinalConfigsOf
+        :: LogicT
+            (SimplifierT smt)
+            ( [Strategy (Prim (RewriteRule RewritingVariableName))]
+            , (ExecDepth, Pattern RewritingVariableName)
+            )
+        -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
+    getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
