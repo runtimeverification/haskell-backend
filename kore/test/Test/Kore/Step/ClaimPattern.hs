@@ -95,15 +95,14 @@ test_substituteRightIsntCapturingFreeVars =
     testCase "Try to capture variables in the RHS of a substitution" $ do
         let dummy = Pattern.fromCondition_
                 (fromPredicate Predicate.makeTruePredicate_)
-            right = OrPattern.fromTermLike (mkForall x (mkElemVar y))
-            claim = claimPattern dummy right []
+            right = OrPattern.fromTermLike (mkElemVar y)
+            claim = claimPattern dummy right [x]
             ClaimPattern {right = newRight} = substitute
                 (Map.singleton (inject $ variableName y) (mkElemVar x))
                 claim
-            [pat] = OrPattern.toPatterns newRight
-            freeVars = freeVariables pat
+            freeVars = foldMap freeVariables (OrPattern.toPatterns newRight)
                 :: FreeVariables RewritingVariableName
-        assertBool "Variable was captured" (not $ nullFreeVariables freeVars)
+        assertBool "Variable was captured" (not $ isFreeVariable (inject $ variableName x) freeVars)
 
 
 testRulePattern :: ClaimPattern
