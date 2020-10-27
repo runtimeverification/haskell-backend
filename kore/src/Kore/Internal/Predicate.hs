@@ -95,7 +95,9 @@ import qualified Kore.Attribute.Pattern as Attribute
     , Simplified
     )
 import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables hiding
+    ( binaryOperator
+    )
 import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation

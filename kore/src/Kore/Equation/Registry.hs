@@ -16,7 +16,7 @@ import Control.Error
     ( hush
     )
 import Control.Lens
-    ( (%~)
+    ( (<>~)
     )
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
@@ -38,11 +38,13 @@ import Kore.Attribute.Axiom
     , Unit (Unit)
     )
 import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Axiom.Concrete
-    ( Concrete (..)
-    )
+import qualified Kore.Attribute.Axiom.Concrete as Concrete
 import Kore.Attribute.Overload
 import qualified Kore.Attribute.Pattern as Pattern
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , binaryOperator
+    )
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -52,6 +54,12 @@ import Kore.Equation.Equation
 import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
+import Kore.Internal.Predicate
+    ( unwrapPredicate
+    )
+import Kore.Internal.Symbol
+    ( isDeclaredFunction
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
@@ -144,7 +152,45 @@ partitionEquations equations =
         setConcrete rule =
             rule
             & field @"attributes" . field @"concrete"
-                %~ (<> maybe mempty (Concrete . freeVariables) (argument rule))
+                <>~ filterVariables rule
+
+        filterVariables
+            :: Equation VariableName
+            -> Concrete.Concrete VariableName
+        filterVariables rule@Equation { argument } =
+            maybe mempty
+                ( Concrete.Concrete
+                . binaryOperator Map.intersection (mustBeConcrete rule)
+                . freeVariables
+                )
+                argument
+
+        mustBeConcrete :: Equation VariableName -> FreeVariables VariableName
+        mustBeConcrete Equation { right, ensures, requires } =
+            Foldable.fold
+                [ freeVarsInFunctions right
+                , freeVarsInFunctions (unwrapPredicate ensures)
+                , freeVarsInFunctions (unwrapPredicate requires)
+                ]
+
+        freeVarsInFunctions
+            :: TermLike VariableName
+            -> FreeVariables VariableName
+        freeVarsInFunctions (TermLike (_ :< termLikeF)) =
+            case termLikeF of
+                -- AndF (And _ child1 child2)
+                --     -> freeVarsInFunctions child1 <> freeVarsInFunctions child2
+                ApplySymbolF (Application symbol children)
+                  | isDeclaredFunction symbol
+                    -> Foldable.fold (fmap freeVariables children)
+                -- ApplyAliasF (Application _ children) ->
+                --     Foldable.fold (fmap freeVarsInFunctions children)
+                -- CeilF (Ceil _ _ child) -> freeVarsInFunctions child
+                -- EqualsF (Equals _ _ child1 child2)
+                --     -> freeVarsInFunctions child1 <> freeVarsInFunctions child2
+                -- ExistsF (Exists _ _ child) -> freeVarsInFunctions child
+                -- _ -> mempty
+                _ -> Foldable.foldMap freeVarsInFunctions termLikeF
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 

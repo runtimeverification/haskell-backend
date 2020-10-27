@@ -18,6 +18,7 @@ module Kore.Attribute.Pattern.FreeVariables
     , mapFreeVariables
     , traverseFreeVariables
     , getFreeElementVariables
+    , binaryOperator
     , HasFreeVariables (..)
     ) where
 
@@ -157,6 +158,17 @@ traverseFreeVariables adj =
 -}
 getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
 getFreeElementVariables = mapMaybe retractElementVariable . toList
+
+binaryOperator
+    ::  (  Map (SomeVariableName variable) Sort
+        -> Map (SomeVariableName variable) Sort
+        -> Map (SomeVariableName variable) Sort
+        )
+    -> FreeVariables variable
+    -> FreeVariables variable
+    -> FreeVariables variable
+binaryOperator op (FreeVariables map1) (FreeVariables map2) =
+    FreeVariables $ map1 `op` map2
 
 -- TODO (thomas.tuegel): Use an associated type family with HasFreeVariables to
 -- fix type inference.
