@@ -18,7 +18,8 @@ module Kore.Step.SMT.Evaluator
 import Prelude.Kore
 
 import Control.Error
-    ( hoistMaybe
+    ( MaybeT (MaybeT)
+    , hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
@@ -175,34 +176,40 @@ decidePredicate
     => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
 decidePredicate predicates =
-    whileDebugEvaluateCondition predicates
-    $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        tools <- Simplifier.askMetadataTools
-        predicates' <- traverse (translatePredicate tools) predicates
-        Foldable.traverse_ SMT.assert predicates'
-        result <- checkPredicate
-        -- TODO: for testing, remember to remove
-        let result = Unknown
-        case result of
-            Unsat -> return False
-            Sat -> empty
-            Unknown -> retryCheckPredicateOnce
+    whileDebugEvaluateCondition predicates go
   where
-    checkPredicate = do
-        result <- SMT.check
-        debugEvaluateConditionResult result
-        return result
+    go =
+        do
+            result <- query >>= whenUnknown retry
+            debugEvaluateConditionResult result
+            case result of
+                Unsat -> return False
+                Sat -> empty
+                Unknown -> do
+                    -- TODO: Remove empty
+                    errorDecidePredicateUnknown predicates
+                    empty
+        & runMaybeT
 
-    retryCheckPredicateOnce = do
+    whenUnknown f Unknown = f
+    whenUnknown _ result  = return result
+
+    -- | Run the SMT query once.
+    query :: MaybeT simplifier Result
+    query =
+        -- TODO: instance MonadSMT smt => MonadSMT (MaybeT smt)
+        MaybeT $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
+            tools <- Simplifier.askMetadataTools
+            predicates' <- traverse (translatePredicate tools) predicates
+            Foldable.traverse_ SMT.assert predicates'
+            SMT.check
+
+    -- | Re-run the SMT query.
+    retry = do
         SMT.reinit
+        result <- query
         warnRetrySolverQuery predicates
-        retriedResult <- checkPredicate
-        case retriedResult of
-            Unsat -> return False
-            Sat -> empty
-            Unknown -> do
-                errorDecidePredicateUnknown predicates
-                empty
+        return result
 
 translatePredicate
     :: forall variable m.
