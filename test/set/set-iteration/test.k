@@ -11,7 +11,7 @@ module TEST
   rule g(b) => c
   rule g(c) => a
   
-  syntax Set ::= f(Set) [function, functional] 
+  syntax Set ::= f(Set) [function, functional, symbolic] 
 
   rule f(.Set) => .Set
   rule f(SetItem(E:Element) S:Set) => SetItem(g(E)) f(S)
