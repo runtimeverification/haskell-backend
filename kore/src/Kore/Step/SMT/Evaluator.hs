@@ -185,10 +185,8 @@ decidePredicate predicates =
             case result of
                 Unsat -> return False
                 Sat -> empty
-                Unknown -> do
-                    -- TODO: Remove empty
+                Unknown ->
                     errorDecidePredicateUnknown predicates
-                    empty
         & runMaybeT
 
     whenUnknown f Unknown = f
