@@ -176,10 +176,13 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
 -- in the right hand side.
 mkClaimPattern
     :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
+    -- ^ left-hand side
     -> [ElementVariable RewritingVariableName]
+    -- ^ variables quantified over the right-hand side
+    -> OrPattern RewritingVariableName
+    -- ^ right-hand side
     -> ClaimPattern
-mkClaimPattern left right existentials =
+mkClaimPattern left existentials right =
     ClaimPattern
         { left
         , right

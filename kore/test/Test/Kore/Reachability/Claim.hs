@@ -268,7 +268,7 @@ mkGoal
         existentialVars
     )
   =
-    mkClaimPattern leftPatt rightPatts existentialVars
+    mkClaimPattern leftPatt existentialVars rightPatts
 
 aToB :: ClaimPattern
 aToB =

@@ -90,19 +90,19 @@ data SomeClaim
 
 mkSomeClaimAllPath
     :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
     -> SomeClaim
-mkSomeClaimAllPath left right existentials =
-    AllPath (mkAllPathClaim left right existentials)
+mkSomeClaimAllPath left existentials right =
+    AllPath (mkAllPathClaim left existentials right)
 
 mkSomeClaimOnePath
     :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
     -> SomeClaim
-mkSomeClaimOnePath left right existentials =
-    OnePath (mkOnePathClaim left right existentials)
+mkSomeClaimOnePath left existentials right =
+    OnePath (mkOnePathClaim left existentials right)
 
 instance Unparse SomeClaim where
     unparse (OnePath rule) = unparse rule

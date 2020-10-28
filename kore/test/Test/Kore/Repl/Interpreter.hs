@@ -688,7 +688,7 @@ claimWithName leftTerm rightTerm name =
         right =
             Pattern.fromTermLike rightTerm
             & OrPattern.fromPattern
-     in mkClaimPattern left right []
+     in mkClaimPattern left [] right
         & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name

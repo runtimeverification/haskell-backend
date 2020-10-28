@@ -81,11 +81,11 @@ newtype AllPathClaim =
 
 mkAllPathClaim
     :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
     -> AllPathClaim
-mkAllPathClaim left right existentials =
-    AllPathClaim (mkClaimPattern left right existentials)
+mkAllPathClaim left existentials right =
+    AllPathClaim (mkClaimPattern left existentials right)
 
 instance Unparse AllPathClaim where
     unparse claimPattern' =

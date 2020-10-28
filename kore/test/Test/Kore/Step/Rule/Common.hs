@@ -44,8 +44,8 @@ instance RuleBase Pair OnePathClaim where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
         mkOnePathClaim
             (Pattern.fromTermAndPredicate t1' p1')
-            (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
             []
+            (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
       where
         t1' = TermLike.mapVariables (pure mkRuleVariable) t1
         t2' = TermLike.mapVariables (pure mkRuleVariable) t2

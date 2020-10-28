@@ -151,12 +151,12 @@ test_proveClaims =
                         [ simpleAxiom Mock.a Mock.b ]
                         [ mkSomeClaim
                             (Pattern.fromTermLike Mock.a)
+                            []
                             (OrPattern.fromPatterns $ map Pattern.fromTermLike
                                 [ Mock.b
                                 , Mock.c
                                 ]
                             )
-                            []
                         ]
                         []
                     assertEqual "" MultiAnd.top actual
@@ -337,9 +337,9 @@ test_proveClaims =
                         Unlimited
                         (Limit 3)
                         axioms
-                        [mkSomeClaim initialConfig finalConfigs []]
+                        [mkSomeClaim initialConfig [] finalConfigs]
                         []
-                    let stuck = mkSomeClaim stuckConfig finalConfigs []
+                    let stuck = mkSomeClaim stuckConfig [] finalConfigs
                         expect = MultiAnd.singleton (StuckClaim stuck)
                     assertEqual "" expect actual
         in
@@ -380,11 +380,11 @@ test_proveClaims =
                         (Limit 1)
                         Unlimited
                         axioms
-                        [mkSomeClaim initialPattern finalPatterns []]
+                        [mkSomeClaim initialPattern [] finalPatterns]
                         []
                     let stuckClaims =
                             map
-                                (\left -> mkSomeClaim left finalPatterns [])
+                                (\left -> mkSomeClaim left [] finalPatterns)
                                 stuckConfigs
                         expect = MultiAnd.make (StuckClaim <$> stuckClaims)
                     assertEqual "" expect actual
@@ -428,10 +428,10 @@ test_proveClaims =
                     assertEqual "" expect actual
               where
                 claims =
-                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
-                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) right []
+                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) [] right
+                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) [] right
                     ]
-                stuck = mkSomeClaim1 (Pattern.fromTermLike Mock.c) right []
+                stuck = mkSomeClaim1 (Pattern.fromTermLike Mock.c) [] right
                 expect = MultiAnd.singleton (StuckClaim stuck)
         in
         [ mkTest "OnePath" mkSomeClaimOnePath mkSomeClaimOnePath
@@ -452,10 +452,10 @@ test_proveClaims =
                     assertEqual "" expect actual
               where
                 claims =
-                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
-                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) right []
+                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) [] right
+                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) [] right
                     ]
-                stuck = mkSomeClaim2 (Pattern.fromTermLike Mock.e) right []
+                stuck = mkSomeClaim2 (Pattern.fromTermLike Mock.e) [] right
                 expect = MultiAnd.singleton (StuckClaim stuck)
         in
         [ mkTest "OnePath" mkSomeClaimOnePath mkSomeClaimOnePath
@@ -490,13 +490,13 @@ test_proveClaims =
                 proven =
                     mkSomeClaim
                         (Pattern.fromTermLike Mock.a)
-                        (OrPattern.fromTermLike Mock.d)
                         []
+                        (OrPattern.fromTermLike Mock.d)
                 circularity =
                     mkSomeClaim
                         (Pattern.fromTermLike Mock.b)
-                        (OrPattern.fromTermLike Mock.c)
                         []
+                        (OrPattern.fromTermLike Mock.c)
                 claims = [proven, circularity]
                 stuck = circularity
                 expect = MultiAnd.singleton (StuckClaim stuck)
@@ -515,8 +515,8 @@ test_proveClaims =
             let stuck =
                     mkSomeClaimOnePath
                         (Pattern.fromTermLike Mock.b)
-                        (OrPattern.fromTermLike Mock.d)
                         []
+                        (OrPattern.fromTermLike Mock.d)
                 expect = MultiAnd.singleton (StuckClaim stuck)
             assertEqual "" expect actual
         ]
@@ -528,13 +528,13 @@ test_proveClaims =
             proven mkSomeClaim =
                 mkSomeClaim
                     (Pattern.fromTermLike Mock.a)
-                    (OrPattern.fromTermLike Mock.d)
                     []
+                    (OrPattern.fromTermLike Mock.d)
             trusted mkSomeClaim =
                 mkSomeClaim
                     (Pattern.fromTermLike Mock.b)
-                    (OrPattern.fromTermLike Mock.c)
                     []
+                    (OrPattern.fromTermLike Mock.c)
                 & makeTrusted
             mkTest name mkSomeClaim =
                 testCase name $ do
@@ -556,8 +556,8 @@ test_proveClaims =
             let stuck =
                     mkSomeClaimOnePath
                         (Pattern.fromTermLike Mock.b)
-                        (OrPattern.fromTermLike Mock.d)
                         []
+                        (OrPattern.fromTermLike Mock.d)
                 expect = MultiAnd.singleton (StuckClaim stuck)
             assertEqual "" expect actual
         ]
@@ -570,13 +570,13 @@ test_proveClaims =
             proveable mkSomeClaim =
                 mkSomeClaim
                     (Pattern.fromTermLike Mock.a)
-                    (OrPattern.fromTermLike Mock.d)
                     []
+                    (OrPattern.fromTermLike Mock.d)
             misdirection mkSomeClaim =
                 mkSomeClaim
                     (Pattern.fromTermLike Mock.b)
-                    (OrPattern.fromTermLike Mock.e)
                     []
+                    (OrPattern.fromTermLike Mock.e)
             mkTest name mkSomeClaim =
                 testCase name $ do
                     actual <- proveClaims_
@@ -591,8 +591,8 @@ test_proveClaims =
                 stuck =
                     mkSomeClaim
                         (Pattern.fromTermLike Mock.e)
-                        (OrPattern.fromTermLike Mock.d)
                         []
+                        (OrPattern.fromTermLike Mock.d)
                 expect = MultiAnd.singleton (StuckClaim stuck)
         in
         [ mkTest "OnePath" mkSomeClaimOnePath
@@ -606,8 +606,8 @@ test_proveClaims =
             claims mkSomeClaim =
                 [ mkSomeClaim
                     (Pattern.fromTermLike Mock.a)
-                    (OrPattern.fromTermLike Mock.b)
                     []
+                    (OrPattern.fromTermLike Mock.b)
                 ]
             claimsOnePath = claims mkSomeClaimOnePath
             claimsAllPath = claims mkSomeClaimAllPath
@@ -620,8 +620,8 @@ test_proveClaims =
             let stuck =
                     mkSomeClaimAllPath
                         (Pattern.fromTermLike Mock.c)
-                        (OrPattern.fromTermLike Mock.b)
                         []
+                        (OrPattern.fromTermLike Mock.b)
                 expect = MultiAnd.singleton (StuckClaim stuck)
             assertEqual "" expect actual
         ]

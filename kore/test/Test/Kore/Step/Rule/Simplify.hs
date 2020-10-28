@@ -420,14 +420,14 @@ test_simplifyClaimRule =
     rule1 =
         mkClaimPattern
             (Pattern.fromTermLike (Mock.f Mock.a))
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
+            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
     rule1' = rule1 & requireDefined
     rule2 =
         mkClaimPattern
             (Pattern.fromTermLike (Mock.g Mock.a))
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
+            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
         & require aEqualsb
     rule2' =
         rule2

@@ -161,14 +161,12 @@ claimPatternFromPatterns
     -> ClaimPattern
 claimPatternFromPatterns patt1 patt2 =
     mkClaimPattern
-        ( patt1
-        & Pattern.mapVariables (pure mkRuleVariable)
-        )
-        ( patt2
-        & Pattern.mapVariables (pure mkRuleVariable)
-        & OrPattern.fromPattern
-        )
+        (patt1 & Pattern.mapVariables (pure mkRuleVariable))
         []
+        (patt2
+            & Pattern.mapVariables (pure mkRuleVariable)
+            & OrPattern.fromPattern
+        )
 
 claimPatternFromTerms
     :: TermLike VariableName
@@ -181,12 +179,12 @@ claimPatternFromTerms term1 term2 existentials' =
         & Pattern.fromTermLike
         & Pattern.mapVariables (pure mkRuleVariable)
         )
+        (mapElementVariable (pure mkRuleVariable) <$> existentials')
         ( term2
         & Pattern.fromTermLike
         & Pattern.mapVariables (pure mkRuleVariable)
         & OrPattern.fromPattern
         )
-        (mapElementVariable (pure mkRuleVariable) <$> existentials')
 
 test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =

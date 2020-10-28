@@ -86,11 +86,11 @@ onePathRuleToTerm (OnePathClaim claimPattern') =
 
 mkOnePathClaim
     :: Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
+    -> OrPattern RewritingVariableName
     -> OnePathClaim
-mkOnePathClaim left right existentials =
-    OnePathClaim (mkClaimPattern left right existentials)
+mkOnePathClaim left existentials right =
+    OnePathClaim (mkClaimPattern left existentials right)
 
 instance Unparse OnePathClaim where
     unparse claimPattern' =

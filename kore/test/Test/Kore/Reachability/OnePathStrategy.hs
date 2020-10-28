@@ -777,6 +777,7 @@ test_onePathStrategy =
                 Pattern.withCondition
                     Mock.a
                     (Condition.assign (inject Mock.x) Mock.a)
+                & Pattern.mapVariables (pure mkConfigVariable)
             right =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
@@ -787,7 +788,8 @@ test_onePathStrategy =
                         )
                     )
             original = makeOnePathGoalFromPatterns left right
-            expect = makeOnePathGoalFromPatterns left' right
+            right' = right & Pattern.mapVariables (pure mkConfigVariable)
+            expect = mkOnePathClaim left' [] (OrPattern.fromPattern right')
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)
