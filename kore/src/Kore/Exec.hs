@@ -28,8 +28,7 @@ import Control.DeepSeq
     ( deepseq
     )
 import Control.Error
-    ( note
-    , runMaybeT
+    ( runMaybeT
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -38,10 +37,21 @@ import Control.Monad
 import Control.Monad.Catch
     ( MonadMask
     )
+import Control.Monad.Trans.Except
+    ( ExceptT
+    , runExceptT
+    , throwE
+    )
 import Data.Coerce
     ( coerce
     )
 import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
+import Data.Generics.Wrapped
+    ( _Unwrapped
+    )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -545,85 +555,55 @@ mergeRules
     -- ^ The list of rules to merge
     -> smt (Either Text [RewriteRule VariableName])
 mergeRules ruleMerger verifiedModule ruleNames =
-    evalSimplifier verifiedModule $ do
+    evalSimplifier verifiedModule $ runExceptT $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
+            rewriteRules' = unRewritingRule <$> rewriteRules
+        rules <- extractRules rewriteRules' ruleNames
+        lift $ ruleMerger rules
 
-        let nonEmptyRules :: Either Text (NonEmpty (RewriteRule VariableName))
-            nonEmptyRules = do
-                let rewriteRules' = unRewritingRule <$> rewriteRules
-                rules <- extractRules rewriteRules' ruleNames
-                case rules of
-                    [] -> Left "Empty rule list."
-                    (r : rs) -> Right (r :| rs)
-
-        case nonEmptyRules of
-            (Left left) -> return (Left left)
-            (Right rules) -> Right <$> ruleMerger rules
-
+-- TODO: what if a label name and an id name coincide?
 extractRules
-    :: [RewriteRule VariableName]
+    :: forall m
+    .  Monad m
+    => [RewriteRule VariableName]
     -> [Text]
-    -> Either Text [RewriteRule VariableName]
-extractRules rules = foldr addExtractRule (Right [])
-  where
-    addExtractRule
-        :: Text
-        -> Either Text [RewriteRule VariableName]
-        -> Either Text [RewriteRule VariableName]
-    addExtractRule ruleName processedRules =
-        (:) <$> extractRule ruleName <*> processedRules
+    -> ExceptT Text m (NonEmpty (RewriteRule VariableName))
+extractRules rules names = do
+    -- TODO: assert unique names
+    let rulesById = mapMaybe ruleById rules
+        rulesByLabel = mapMaybe ruleByLabel rules
+        ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
+    extractedRules <- traverse (extractRule ruleRegistry) names
+    case extractedRules of
+        [] -> throwE "Empty rule list."
+        (r : rs) -> return (r :| rs)
 
+  where
+    -- TODO: more clean-up
     maybeRuleUniqueId :: RewriteRule VariableName -> Maybe Text
-    maybeRuleUniqueId
-        (RewriteRule RulePattern
-            { attributes = Attribute.Axiom
-                { uniqueId = Attribute.UniqueId maybeName }
-            }
-        )
-      =
-        maybeName
+    maybeRuleUniqueId =
+        Lens.view
+            (_Unwrapped . field @"attributes" . field @"uniqueId" . _Unwrapped)
 
     maybeRuleLabel :: RewriteRule VariableName -> Maybe Text
-    maybeRuleLabel
-        (RewriteRule RulePattern
-            { attributes = Attribute.Axiom
-                { label = Attribute.Label maybeName }
-            }
-        )
-      =
-        maybeName
+    maybeRuleLabel =
+        Lens.view
+            (_Unwrapped . field @"attributes" . field @"label" . _Unwrapped)
 
-    idRules :: [RewriteRule VariableName] -> [(Text, RewriteRule VariableName)]
-    idRules = mapMaybe namedRule
-      where
-        namedRule rule = do
-            name <- maybeRuleUniqueId rule
-            return (name, rule)
+    ruleById rule = do
+        name <- maybeRuleUniqueId rule
+        return (name, rule)
 
-    labelRules :: [RewriteRule VariableName] -> [(Text, RewriteRule VariableName)]
-    labelRules = mapMaybe namedRule
-      where
-        namedRule rule = do
-            name <- maybeRuleLabel rule
-            return (name, rule)
+    ruleByLabel rule = do
+        name <- maybeRuleLabel rule
+        return (name, rule)
 
-    rulesByName :: Map.Map Text (RewriteRule VariableName)
-    rulesByName = Map.union
-        (Map.fromListWith
-            (const $ const $ error "duplicate rule")
-            (idRules rules)
-        )
-        (Map.fromListWith
-            (const $ const $ error "duplicate rule")
-            (labelRules rules)
-        )
-
-    extractRule :: Text -> Either Text (RewriteRule VariableName)
-    extractRule ruleName =
-        note
-            ("Rule not found: '" <> ruleName <> "'.")
-            (Map.lookup ruleName rulesByName)
+    extractRule registry ruleName =
+        maybe
+            (throwE $ "Rule not found: '" <> ruleName <> "'.")
+            return
+            (Map.lookup ruleName registry)
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
