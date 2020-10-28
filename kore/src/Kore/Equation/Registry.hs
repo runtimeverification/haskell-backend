@@ -166,11 +166,10 @@ partitionEquations equations =
                 argument
 
         mustBeConcrete :: Equation VariableName -> FreeVariables VariableName
-        mustBeConcrete Equation { right, ensures, requires } =
+        mustBeConcrete Equation { right, ensures } =
             Foldable.fold
                 [ freeVarsInFunctions right
                 , freeVarsInFunctions (unwrapPredicate ensures)
-                , freeVarsInFunctions (unwrapPredicate requires)
                 ]
 
         freeVarsInFunctions
@@ -178,18 +177,9 @@ partitionEquations equations =
             -> FreeVariables VariableName
         freeVarsInFunctions (TermLike (_ :< termLikeF)) =
             case termLikeF of
-                -- AndF (And _ child1 child2)
-                --     -> freeVarsInFunctions child1 <> freeVarsInFunctions child2
                 ApplySymbolF (Application symbol children)
                   | isDeclaredFunction symbol
                     -> Foldable.fold (fmap freeVariables children)
-                -- ApplyAliasF (Application _ children) ->
-                --     Foldable.fold (fmap freeVarsInFunctions children)
-                -- CeilF (Ceil _ _ child) -> freeVarsInFunctions child
-                -- EqualsF (Equals _ _ child1 child2)
-                --     -> freeVarsInFunctions child1 <> freeVarsInFunctions child2
-                -- ExistsF (Exists _ _ child) -> freeVarsInFunctions child
-                -- _ -> mempty
                 _ -> Foldable.foldMap freeVarsInFunctions termLikeF
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
