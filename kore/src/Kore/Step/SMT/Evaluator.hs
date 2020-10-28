@@ -18,7 +18,7 @@ module Kore.Step.SMT.Evaluator
 import Prelude.Kore
 
 import Control.Error
-    ( MaybeT (MaybeT)
+    ( MaybeT
     , hoistMaybe
     , runMaybeT
     )
@@ -195,8 +195,7 @@ decidePredicate predicates =
     -- | Run the SMT query once.
     query :: MaybeT simplifier Result
     query =
-        -- TODO: instance MonadSMT smt => MonadSMT (MaybeT smt)
-        MaybeT $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
+        SMT.withSolver $ evalTranslator $ do
             tools <- Simplifier.askMetadataTools
             predicates' <- traverse (translatePredicate tools) predicates
             Foldable.traverse_ SMT.assert predicates'
