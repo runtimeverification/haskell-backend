@@ -183,6 +183,8 @@ import SMT
     ( MonadSMT
     , SMT
     )
+import qualified Kore.Internal.MultiOr as MultiOr
+import Data.Containers.ListUtils (nubOrd)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -244,7 +246,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
         let finalConfigs' = make $ getRewritingPattern <$> finalConfigs
-        exitCode <- getExitCode verifiedModule (head $ from finalConfigs')
+        exitCode <- getExitCode verifiedModule finalConfigs'
         let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
   where
@@ -288,22 +290,32 @@ getExitCode
     :: (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> Pattern VariableName
+    -> OrPattern.OrPattern VariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
 getExitCode indexedModule finalConfig =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
-        exitCodePattern <-
-            Pattern.simplifyTopConfiguration (mkGetExitCode <$> finalConfig)
-            >>= Logic.scatter
-        case Pattern.term exitCodePattern of
-            Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
-              | exit == 0 -> return ExitSuccess
-              | otherwise -> return $ ExitFailure $ fromInteger exit
-            _ -> return $ ExitFailure 111
-  where
+        exitCodePatterns <- do
+            pat <- Logic.scatter $ fmap mkGetExitCode `MultiOr.map` finalConfig
+            Pattern.simplifyTopConfiguration pat
+        let exitList =
+                extractExit . Pattern.term
+                    <$> Foldable.toList exitCodePatterns
+            exitCode =
+                case nubOrd exitList of
+                    [exit] -> exit
+                    _      -> ExitFailure 111
+        return exitCode
+  where    
+    extractExit = \case
+        Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+          | exit == 0 -> ExitSuccess
+          | otherwise -> ExitFailure (fromInteger exit)
+        _ -> ExitFailure 111
+    
     resolve = resolveInternalSymbol indexedModule . noLocationId
+    
     takeExitCode act =
         case resolve "LblgetExitCode" of
             Nothing -> pure ExitSuccess
