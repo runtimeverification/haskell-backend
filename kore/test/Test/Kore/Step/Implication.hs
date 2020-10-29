@@ -1,7 +1,7 @@
 module Test.Kore.Step.Implication
     ( test_freeVariables
     , test_refreshRule
-    , test_substituteRightIsntCapturingFreeVars
+    , test_substitute
     ) where
 
 import Prelude.Kore
@@ -86,24 +86,19 @@ test_refreshRule =
         ]
     ]
 
-test_substituteRightIsntCapturingFreeVars :: TestTree
-test_substituteRightIsntCapturingFreeVars =
-    testCase "Try to capture variables in the RHS of a substitution" $ do
+test_substitute :: [TestTree]
+test_substitute =
+    [ testCase "does not capture free variables from the substitution" $ do
         let dummy = Pattern.fromCondition_
                 (fromPredicate Predicate.makeTruePredicate_)
             right = OrPattern.fromTermLike (mkElemVar y)
-            claim = mkImplication () dummy right [x]
-            Implication {right = newRight, existentials = newExistentials} =
-                substitute
-                    (Map.singleton (inject $ variableName y) (mkElemVar x))
-                    claim
-            freeVars = foldMap freeVariables (OrPattern.toPatterns newRight)
-                :: FreeVariables RewritingVariableName
+            imp = mkImplication () dummy right [x]
+            newImp = substitute
+                (Map.singleton (inject $ variableName y) (mkElemVar x))
+                imp
         assertBool "Variable was captured"
-            $ not $ Set.isSubsetOf
-                (toSet freeVars)
-                (Set.fromList (inject <$> newExistentials))
-
+            $ not $ nullFreeVariables $ freeVariablesRight newImp
+    ]
 
 testRulePattern :: Implication ()
 testRulePattern =

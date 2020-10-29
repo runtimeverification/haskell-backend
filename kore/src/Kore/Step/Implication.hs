@@ -186,23 +186,22 @@ left ∧ requires → alias(right)
 
  -}
 implicationToTerm
-    :: Modality
-    -> Implication modality
+    :: Implication Modality
     -> TermLike VariableName
-implicationToTerm modality representation@(Implication _ _ _ _ _) =
+implicationToTerm representation@(Implication _ _ _ _ _) =
     TermLike.mkImplies
         (TermLike.mkAnd leftCondition leftTerm)
         (TermLike.applyModality modality rightPattern)
   where
-    Implication { left, right, existentials } = representation
+    Implication { left, modality, right, existentials } = representation
     leftTerm =
         Pattern.term left
         & getRewritingTerm
     sort = TermLike.termLikeSort leftTerm
     leftCondition =
         Pattern.withoutTerm left
-        & Pattern.fromCondition sort
-        & Pattern.toTermLike
+        & Condition.toPredicate
+        & Predicate.fromPredicate sort
         & getRewritingTerm
     rightPattern =
         TermLike.mkExistsN existentials (OrPattern.toTermLike right)
@@ -225,11 +224,12 @@ substituteRight rename implication'@Implication{ right, existentials } =
     targetVars = Foldable.foldl' Set.union Set.empty
         (FreeVariables.toNames . freeVariables @_ @RewritingVariableName
         <$> subst)
-    freeVars = FreeVariables.toNames
-        (foldMap freeVariables (OrPattern.toPatterns right))
-        Set.\\ Map.keysSet subst
-        Set.\\ Set.fromList existentials'
-    avoid = Set.union targetVars freeVars
+    -- ^ targetVars is the set of free variables in all
+    -- the RHSs of substitutions
+    freeVars = FreeVariables.toNames $ freeVariablesRight implication'
+    -- ^ freeVars is the set of free variables of the RHS of
+    -- the implication
+    avoid = Set.union targetVars (freeVars Set.\\ Map.keysSet subst) 
     subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
     newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
@@ -237,8 +237,8 @@ substituteRight rename implication'@Implication{ right, existentials } =
         :: ElementVariable RewritingVariableName
         -> ElementVariable RewritingVariableName
     renameVariable var =
-        let name = SomeVariableNameElement . variableName $ var
-         in maybe var TermLike.expectElementVariable
+        let name = SomeVariableNameElement $ variableName var
+        in maybe var TermLike.expectElementVariable
             $ Map.lookup name subst'
 
 renameExistentials
@@ -289,10 +289,7 @@ applySubstitution
 applySubstitution substitution implication' =
     if finalImplication `isFreeOf` substitutedVariables
         then finalImplication
-        else error
-            (  "Substituted variables not removed from the rule, cannot throw "
-            ++ "substitution away."
-            )
+        else error "Internal error: substitution not fully applied to Implication"
   where
     subst = Substitution.toMap substitution
     finalImplication = substitute subst implication'

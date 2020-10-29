@@ -278,8 +278,7 @@ test_substitute =
             , testCase "Forall" (renaming mkForall)
             ]
 
-    , testCase "Free variables occuring in substitutions can\
-    \ identify with free variables already present" $ do
+    , testCase "Preserves the identity of free variables" $ do
         let actual = substitute (mkSubst Mock.x Mock.y)
                 $ mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
         let expect = mkAnd (mkElemVar Mock.y) (mkElemVar Mock.y)
