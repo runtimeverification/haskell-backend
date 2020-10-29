@@ -53,7 +53,6 @@ import Data.Generics.Wrapped
     ( _Unwrapped
     )
 import qualified Data.List as List
-import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
@@ -102,6 +101,12 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
+    )
+import Kore.Log.ErrorRuleMergeDuplicateId
+    ( errorRuleMergeDuplicateId
+    )
+import Kore.Log.ErrorRuleMergeDuplicateLabel
+    ( errorRuleMergeDuplicateLabel
     )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
@@ -562,7 +567,6 @@ mergeRules ruleMerger verifiedModule ruleNames =
         rules <- extractRules rewriteRules' ruleNames
         lift $ ruleMerger rules
 
--- TODO: what if a label name and an id name coincide?
 extractRules
     :: forall m
     .  Monad m
@@ -570,40 +574,60 @@ extractRules
     -> [Text]
     -> ExceptT Text m (NonEmpty (RewriteRule VariableName))
 extractRules rules names = do
-    -- TODO: assert unique names
-    let rulesById = mapMaybe ruleById rules
-        rulesByLabel = mapMaybe ruleByLabel rules
-        ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
-    extractedRules <- traverse (extractRule ruleRegistry) names
+    extractedRules <- traverse extractRule names
     case extractedRules of
         [] -> throwE "Empty rule list."
         (r : rs) -> return (r :| rs)
-
   where
-    -- TODO: more clean-up
-    maybeRuleUniqueId :: RewriteRule VariableName -> Maybe Text
-    maybeRuleUniqueId =
+    extractRule name = do
+        let rulesWithId =
+                filter (\rule -> lensUniqueId rule == Just name) rules
+            rulesWithLabel =
+                filter (\rule -> lensLabel rule == Just name) rules
+        case getRuleExtractionResult rulesWithId rulesWithLabel of
+            ErrorRuleNotFound -> throwE ("Rule not found: '" <> name <> "'.")
+            FoundRule rule -> return rule
+            ErrorDuplicateId rules' ->
+                errorRuleMergeDuplicateId rules' name
+            ErrorDuplicateLabel rules' ->
+                errorRuleMergeDuplicateLabel rules' name
+            ErrorIdAndLabelNamesCoincide ->
+                throwE ("Rule name: '" <> name <> "' is both an id and a label.")
+
+    lensUniqueId =
         Lens.view
-            (_Unwrapped . field @"attributes" . field @"uniqueId" . _Unwrapped)
-
-    maybeRuleLabel :: RewriteRule VariableName -> Maybe Text
-    maybeRuleLabel =
+            ( _Unwrapped
+            . field @"attributes"
+            . field @"uniqueId"
+            . _Unwrapped
+            )
+    lensLabel =
         Lens.view
-            (_Unwrapped . field @"attributes" . field @"label" . _Unwrapped)
+            ( _Unwrapped
+            . field @"attributes"
+            . field @"label"
+            . _Unwrapped
+            )
 
-    ruleById rule = do
-        name <- maybeRuleUniqueId rule
-        return (name, rule)
+data RuleExtractionResult
+    = FoundRule (RewriteRule VariableName)
+    | ErrorRuleNotFound
+    | ErrorDuplicateId [RewriteRule VariableName]
+    | ErrorDuplicateLabel [RewriteRule VariableName]
+    | ErrorIdAndLabelNamesCoincide
 
-    ruleByLabel rule = do
-        name <- maybeRuleLabel rule
-        return (name, rule)
-
-    extractRule registry ruleName =
-        maybe
-            (throwE $ "Rule not found: '" <> ruleName <> "'.")
-            return
-            (Map.lookup ruleName registry)
+getRuleExtractionResult
+    :: [RewriteRule VariableName]
+    -> [RewriteRule VariableName]
+    -> RuleExtractionResult
+getRuleExtractionResult rulesWithId rulesWithLabel =
+    case (rulesWithId, rulesWithLabel) of
+        ([], []) -> ErrorRuleNotFound
+        ([rule], []) -> FoundRule rule
+        ([], [rule]) -> FoundRule rule
+        (rules, []) -> ErrorDuplicateId rules
+        ([], rules) -> ErrorDuplicateLabel rules
+        _ -> ErrorIdAndLabelNamesCoincide
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
