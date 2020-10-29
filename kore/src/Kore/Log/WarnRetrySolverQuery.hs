@@ -37,14 +37,14 @@ newtype WarnRetrySolverQuery =
 instance Pretty WarnRetrySolverQuery where
     pretty WarnRetrySolverQuery { predicates } =
         Pretty.vsep $
-        [ "The SMT solver failed to solve the following query:"
+        [ "The SMT solver initially failed to solve the following query:"
         , Pretty.indent 2 "Decide predicate:"
         , Pretty.indent 4 (unparse predicate)
         , Pretty.indent 2 "with side conditions:"
         ]
         <> fmap (Pretty.indent 4 . unparse) sideConditions
-        <> ["The SMT solver will be reset and the query\
-            \ will be tried one more time."
+        <> ["The SMT solver was reset and the query\
+            \ was tried one more time."
            ]
       where
         predicate :| sideConditions = predicates
@@ -54,7 +54,7 @@ instance Entry WarnRetrySolverQuery where
     helpDoc _ =
         "warning raised when the solver failed to decide\
         \ the satisfiability of a formula, indicating that\
-        \ the solver will be reset and the formula retried"
+        \ the solver was reset and the formula retried"
 
 warnRetrySolverQuery
     :: InternalVariable variable
