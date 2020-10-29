@@ -5,8 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Log.ErrorRuleMergeDuplicateId
-    ( ErrorRuleMergeDuplicateIds
-    , errorRuleMergeDuplicateIds
+    ( ErrorRuleMergeDuplicateId
+    , errorRuleMergeDuplicateId
     ) where
 
 import Prelude.Kore
@@ -22,10 +22,6 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
-import Data.Map.Strict
-    ( Map
-    )
-import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
@@ -47,48 +43,43 @@ import Pretty
     )
 import qualified Pretty
 
-newtype ErrorRuleMergeDuplicateIds =
-    ErrorRuleMergeDuplicateIds
-        { unErrorRuleMergeDuplicateIds :: Map Text [SourceLocation]
+data ErrorRuleMergeDuplicateId =
+    ErrorRuleMergeDuplicateId
+        { locations :: [SourceLocation]
+        , ruleId :: Text
         }
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-instance Exception ErrorRuleMergeDuplicateIds where
+instance Exception ErrorRuleMergeDuplicateId where
     toException = toException . SomeEntry
     fromException exn =
         fromException exn >>= fromEntry
 
-instance Entry ErrorRuleMergeDuplicateIds where
+instance Entry ErrorRuleMergeDuplicateId where
     entrySeverity _ = Error
     helpDoc _ =
         "error thrown during rule merging when\
         \ multiple rules have the same id"
 
-instance Pretty ErrorRuleMergeDuplicateIds where
-    pretty (ErrorRuleMergeDuplicateIds duplicateIds) =
-        Map.foldMapWithKey accum duplicateIds
-      where
-        accum ruleId locations =
-            Pretty.vsep
-                $ ["The rules at the following locations:"]
-                <> fmap (Pretty.indent 4 . pretty) locations
-                <> [ Pretty.indent 2 "all have the following id:"
-                   , Pretty.indent 4 (pretty ruleId)
-                   ]
+instance Pretty ErrorRuleMergeDuplicateId where
+    pretty ErrorRuleMergeDuplicateId { locations , ruleId } =
+        Pretty.vsep
+            $ ["The rules at the following locations:"]
+            <> fmap (Pretty.indent 4 . pretty) locations
+            <> [ Pretty.indent 2 "all have the following id:"
+               , Pretty.indent 4 (pretty ruleId)
+               ]
 
-errorRuleMergeDuplicateIds :: Map Text [RewriteRule VariableName] -> a
-errorRuleMergeDuplicateIds duplicateIds =
-    throw (ErrorRuleMergeDuplicateIds idsWithlocations)
+errorRuleMergeDuplicateId :: [RewriteRule VariableName] -> Text -> a
+errorRuleMergeDuplicateId rules ruleId =
+    throw ErrorRuleMergeDuplicateId { locations, ruleId }
   where
-    idsWithlocations =
-        (fmap . fmap)
-        (
-            Lens.view
-                ( _Unwrapped
-                . field @"attributes"
-                . field @"sourceLocation"
-                )
-        )
-        duplicateIds
+    locations =
+        Lens.view
+            ( _Unwrapped
+            . field @"attributes"
+            . field @"sourceLocation"
+            )
+        <$> rules
