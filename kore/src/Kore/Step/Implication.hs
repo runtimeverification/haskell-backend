@@ -27,6 +27,7 @@ import Control.Error.Util ( hush )
 import Control.Monad.State.Strict ( evalState )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import Data.Map.Strict ( Map )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -68,7 +69,10 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule ( UnifyingRule (..) )
 import Kore.TopBottom ( TopBottom (..) )
 import Kore.Unparser ( Unparse (..) )
-import Kore.Variables.Fresh ( refreshVariables )
+import Kore.Variables.Fresh
+    ( refreshVariables
+    , refreshElementVariable
+    )
 
 import Pretty ( Pretty (..) )
 import qualified Pretty
@@ -213,17 +217,36 @@ substituteRight
     -> Implication modality
 substituteRight rename implication'@Implication{ right, existentials } =
     implication'
-        { right = OrPattern.substitute subst right
+        { right = OrPattern.substitute newSubst right
+        , existentials = reverse newExistentials
         }
   where
-    subst =
-        foldr
-            ( Map.delete
-            . inject
-            . TermLike.variableName
-            )
-            rename
-            existentials
+    existentials' = inject . TermLike.variableName <$> existentials
+    subst = foldr Map.delete rename existentials'
+    targetVars = Foldable.foldl' Set.union Set.empty
+        (FreeVariables.toNames . freeVariables @_ @RewritingVariableName
+        <$> subst)
+    freeVars = FreeVariables.toNames
+        (foldMap freeVariables (OrPattern.toPatterns right))
+        Set.\\ Map.keysSet subst
+        Set.\\ Set.fromList existentials'
+    avoid = Set.union targetVars freeVars
+
+    (_, newSubst, newExistentials) =
+        foldl worker (avoid, subst, []) existentials
+      where
+        worker (avoid', subst', ex') v =
+            case refreshElementVariable avoid' v of
+                Nothing -> (Set.insert var avoid',
+                            subst',
+                            v : ex')
+                Just v' -> (Set.insert
+                                (inject $ TermLike.variableName v')
+                                avoid',
+                            Map.insert var (TermLike.mkElemVar v') subst',
+                            v' : ex')
+          where
+            var = inject $ TermLike.variableName v
 
 renameExistentials
     :: HasCallStack
