@@ -218,7 +218,7 @@ substituteRight
 substituteRight rename implication'@Implication{ right, existentials } =
     implication'
         { right = OrPattern.substitute newSubst right
-        , existentials = reverse newExistentials
+        , existentials = newExistentials
         }
   where
     existentials' = inject . TermLike.variableName <$> existentials
@@ -233,9 +233,9 @@ substituteRight rename implication'@Implication{ right, existentials } =
     avoid = Set.union targetVars freeVars
 
     (_, newSubst, newExistentials) =
-        foldl worker (avoid, subst, []) existentials
+        foldr worker (avoid, subst, []) existentials
       where
-        worker (avoid', subst', ex') v =
+        worker v (avoid', subst', ex') =
             case refreshElementVariable avoid' v of
                 Nothing -> (Set.insert var avoid',
                             subst',
