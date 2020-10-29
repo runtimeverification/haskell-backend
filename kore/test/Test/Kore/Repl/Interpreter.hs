@@ -66,7 +66,7 @@ import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , claimPattern
+    , mkClaimPattern
     )
 import Kore.Step.RulePattern
     ( mkRewritingRule
@@ -688,7 +688,7 @@ claimWithName leftTerm rightTerm name =
         right =
             Pattern.fromTermLike rightTerm
             & OrPattern.fromPattern
-     in claimPattern left right []
+     in mkClaimPattern left right []
         & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
