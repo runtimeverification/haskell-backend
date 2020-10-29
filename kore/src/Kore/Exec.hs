@@ -103,6 +103,9 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
+import Kore.Log.ErrorRuleMergeDuplicateId
+    ( errorRuleMergeDuplicateIds
+    )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
@@ -570,10 +573,11 @@ extractRules
     -> [Text]
     -> ExceptT Text m (NonEmpty (RewriteRule VariableName))
 extractRules rules names = do
-    -- TODO: assert unique names
     let rulesById = mapMaybe ruleById rules
         rulesByLabel = mapMaybe ruleByLabel rules
-        ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
+    whenDuplicate errorRuleMergeDuplicateIds rulesById
+    -- whenDuplicate errorRuleMergeDuplicateLabel rulesByLabel
+    let ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
     extractedRules <- traverse (extractRule ruleRegistry) names
     case extractedRules of
         [] -> throwE "Empty rule list."
@@ -604,6 +608,24 @@ extractRules rules names = do
             (throwE $ "Rule not found: '" <> ruleName <> "'.")
             return
             (Map.lookup ruleName registry)
+
+    whenDuplicate logError withNames = do
+        let duplicateNames = findCollisions . mkMapWithCollisions $ withNames
+        unless (null duplicateNames) (logError duplicateNames)
+
+mkMapWithCollisions
+    :: Ord key
+    => [(key, val)]
+    -> Map.Map key [val]
+mkMapWithCollisions pairs =
+    Map.fromListWith (<>)
+    $ (fmap . fmap) pure pairs
+
+findCollisions :: Map.Map key [val] -> Map.Map key [val]
+findCollisions = filter (not . isSingleton)
+  where
+    isSingleton [_] = True
+    isSingleton _ = False
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
