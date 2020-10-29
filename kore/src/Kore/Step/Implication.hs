@@ -22,17 +22,25 @@ module Kore.Step.Implication
 
 import Prelude.Kore
 
-import Control.DeepSeq ( NFData )
-import Control.Error.Util ( hush )
-import Control.Monad.State.Strict ( evalState )
+import Control.DeepSeq
+    ( NFData
+    )
+import Control.Error.Util
+    ( hush
+    )
+import Control.Monad.State.Strict
+    ( evalState
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Map.Strict ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
@@ -42,14 +50,22 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrPattern ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.Substitution ( Substitution )
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.Symbol ( Symbol )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
@@ -66,14 +82,22 @@ import Kore.Rewriting.RewritingVariable
     , getRewritingTerm
     , resetConfigVariable
     )
-import Kore.Rewriting.UnifyingRule ( UnifyingRule (..) )
-import Kore.TopBottom ( TopBottom (..) )
-import Kore.Unparser ( Unparse (..) )
+import Kore.Rewriting.UnifyingRule
+    ( UnifyingRule (..)
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import Kore.Variables.Fresh
     ( refreshVariables
     )
 
-import Pretty ( Pretty (..) )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- | Representation of reachability claim types as well as rules
@@ -229,7 +253,7 @@ substituteRight rename implication'@Implication{ right, existentials } =
     freeVars = FreeVariables.toNames $ freeVariablesRight implication'
     -- ^ freeVars is the set of free variables of the RHS of
     -- the implication
-    avoid = Set.union targetVars (freeVars Set.\\ Map.keysSet subst) 
+    avoid = Set.union targetVars (freeVars Set.\\ Map.keysSet subst)
     subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
     newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
@@ -381,7 +405,7 @@ instance UnifyingRule (Implication modality) where
             pure renaming
         Implication { existentials } = implication'
 
-resetConfigVariables :: Implication modality  -> Implication modality 
+resetConfigVariables :: Implication modality  -> Implication modality
 resetConfigVariables implication'@(Implication _ _ _ _ _) =
     implication'
         { left =
