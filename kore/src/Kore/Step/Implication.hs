@@ -71,7 +71,6 @@ import Kore.TopBottom ( TopBottom (..) )
 import Kore.Unparser ( Unparse (..) )
 import Kore.Variables.Fresh
     ( refreshVariables
-    , refreshElementVariable
     )
 
 import Pretty ( Pretty (..) )
@@ -218,7 +217,7 @@ substituteRight
 substituteRight rename implication'@Implication{ right, existentials } =
     implication'
         { right = OrPattern.substitute newSubst right
-        , existentials = newExistentials
+        , existentials = renameVariable <$> existentials
         }
   where
     existentials' = inject . TermLike.variableName <$> existentials
@@ -231,8 +230,18 @@ substituteRight rename implication'@Implication{ right, existentials } =
         Set.\\ Map.keysSet subst
         Set.\\ Set.fromList existentials'
     avoid = Set.union targetVars freeVars
+    subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
+    newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
-    (_, newSubst, newExistentials) =
+    renameVariable
+        :: ElementVariable RewritingVariableName
+        -> ElementVariable RewritingVariableName
+    renameVariable var =
+        let name = SomeVariableNameElement . variableName $ var
+         in maybe var TermLike.expectElementVariable
+            $ Map.lookup name subst'
+
+    {- (_, newSubst, newExistentials) =
         foldr worker (avoid, subst, []) existentials
       where
         worker v (avoid', subst', ex') =
@@ -246,7 +255,7 @@ substituteRight rename implication'@Implication{ right, existentials } =
                             Map.insert var (TermLike.mkElemVar v') subst',
                             v' : ex')
           where
-            var = inject $ TermLike.variableName v
+            var = inject $ TermLike.variableName v -}
 
 renameExistentials
     :: HasCallStack
