@@ -50,6 +50,9 @@ import System.Exit
     ( ExitCode (..)
     )
 
+import Data.Containers.ListUtils
+    ( nubOrd
+    )
 import Data.Limit
     ( Limit (..)
     )
@@ -79,6 +82,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( make
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -183,8 +187,6 @@ import SMT
     ( MonadSMT
     , SMT
     )
-import qualified Kore.Internal.MultiOr as MultiOr
-import Data.Containers.ListUtils (nubOrd)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -307,15 +309,15 @@ getExitCode indexedModule finalConfig =
                     [exit] -> exit
                     _      -> ExitFailure 111
         return exitCode
-  where    
+  where
     extractExit = \case
         Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
           | exit == 0 -> ExitSuccess
           | otherwise -> ExitFailure (fromInteger exit)
         _ -> ExitFailure 111
-    
+
     resolve = resolveInternalSymbol indexedModule . noLocationId
-    
+
     takeExitCode act =
         case resolve "LblgetExitCode" of
             Nothing -> pure ExitSuccess
