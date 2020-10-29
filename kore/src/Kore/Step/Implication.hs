@@ -241,22 +241,6 @@ substituteRight rename implication'@Implication{ right, existentials } =
          in maybe var TermLike.expectElementVariable
             $ Map.lookup name subst'
 
-    {- (_, newSubst, newExistentials) =
-        foldr worker (avoid, subst, []) existentials
-      where
-        worker v (avoid', subst', ex') =
-            case refreshElementVariable avoid' v of
-                Nothing -> (Set.insert var avoid',
-                            subst',
-                            v : ex')
-                Just v' -> (Set.insert
-                                (inject $ TermLike.variableName v')
-                                avoid',
-                            Map.insert var (TermLike.mkElemVar v') subst',
-                            v' : ex')
-          where
-            var = inject $ TermLike.variableName v -}
-
 renameExistentials
     :: HasCallStack
     => Map
