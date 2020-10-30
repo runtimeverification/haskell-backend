@@ -50,6 +50,7 @@ symbolAttributeGen =
         <*> klabelAttributeGen
         <*> symbolKywdAttributeGen
         <*> noEvaluatorsAttributeGen
+        <*> symbolicAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -89,3 +90,6 @@ symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
 
 noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
 noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
+
+symbolicAttributeGen :: Gen Attribute.Symbolic
+symbolicAttributeGen = Attribute.Symbolic <$> Gen.bool

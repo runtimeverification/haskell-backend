@@ -5,6 +5,7 @@ module Test.Kore.Attribute.Symbol
     , test_Klabel
     , test_SymbolKywd
     , test_NoEvaluators
+    , test_Symbolic
     ) where
 
 import Prelude.Kore
@@ -170,4 +171,14 @@ test_NoEvaluators =
     , testCase "defaultSymbolAttributes" $ assertEqual "[]"
         (Right def)
         (noEvaluators <$> parse [])
+    ]
+
+test_Symbolic :: [TestTree]
+test_Symbolic =
+    [ testCase "parseAttribute" $ assertEqual "[symbolic{}[]]"
+        (Right Symbolic { isSymbolic = True })
+        (symbolic <$> parse [ symbolicAttribute ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (symbolic <$> parse [])
     ]

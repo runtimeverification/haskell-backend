@@ -421,7 +421,7 @@ test_size =
 
 test_constructorLike :: TestTree
 test_constructorLike =
-    testCase "qqconstructor-like elements" $
+    testCase "constructor-like elements" $
         asInternal [Mock.a, Mock.b] `shouldBe` isConstructorLike
   where
     shouldBe

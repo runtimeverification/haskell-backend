@@ -52,6 +52,9 @@ module Kore.Attribute.Symbol
     -- * Functions with no evaluators
     , NoEvaluators (..)
     , noEvaluatorsAttribute
+    -- * Symbolic
+    , Symbolic (..)
+    , symbolicAttribute
     -- * Derived attributes
     , isConstructorLike
     , isFunctional
@@ -90,6 +93,7 @@ import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
+import Kore.Attribute.Symbol.Symbolic
 import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Debug
 
@@ -122,6 +126,7 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
+    , symbolic      :: !Symbolic
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -148,6 +153,7 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
+        >=> typed @Symbolic (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -165,6 +171,7 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
+            , from . symbolic
             ]
 
 type StepperAttributes = Symbol
@@ -185,6 +192,7 @@ defaultSymbolAttributes =
         , klabel        = def
         , symbolKywd    = def
         , noEvaluators  = def
+        , symbolic      = def
         }
 
 -- | See also: 'defaultSymbolAttributes'
