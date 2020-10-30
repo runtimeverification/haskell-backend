@@ -70,7 +70,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
-import Kore.Unparser
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
