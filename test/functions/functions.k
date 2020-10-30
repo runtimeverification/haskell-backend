@@ -12,7 +12,7 @@ module FUNCTIONS
   rule positive(M) => true
     requires M >Int 0
 
-  syntax ConsList ::= ".ConsList" | KItem ":" ConsList
+  syntax ConsList ::= ".ConsList" | KItem ":" ConsList [symbolic]
 
   // `length` is inductively defined.
   syntax Int ::= length(ConsList) [function, functional, inductive(1)]

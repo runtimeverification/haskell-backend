@@ -55,10 +55,12 @@ import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Predicate
-    ( unwrapPredicate
+    ( Predicate
+    , unwrapPredicate
     )
 import Kore.Internal.Symbol
     ( isDeclaredFunction
+    , symbolic
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Identifier
@@ -68,6 +70,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
+import Kore.Unparser
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
@@ -152,18 +155,18 @@ partitionEquations equations =
         setConcrete rule =
             rule
             & field @"attributes" . field @"concrete"
-                <>~ filterVariables rule
+                <>~ takeVariables rule
 
-        filterVariables
+        takeVariables
             :: Equation VariableName
             -> Concrete.Concrete VariableName
-        filterVariables rule@Equation { argument } =
+        takeVariables rule@Equation { argument } =
             maybe mempty
                 ( Concrete.Concrete
                 . binaryOperator Map.intersection (mustBeConcrete rule)
                 . freeVariables
                 )
-                argument
+                (notSymbolic argument)
 
         mustBeConcrete :: Equation VariableName -> FreeVariables VariableName
         mustBeConcrete Equation { right, ensures } =
@@ -181,6 +184,18 @@ partitionEquations equations =
                   | isDeclaredFunction symbol
                     -> Foldable.fold (fmap freeVariables children)
                 _ -> Foldable.foldMap freeVarsInFunctions termLikeF
+
+        notSymbolic
+            :: Maybe (Predicate VariableName)
+            -> Maybe (Predicate VariableName)
+        notSymbolic
+            (fmap unwrapPredicate ->
+                Just ( TermLike (_ :< InF (In _ _ _ parameter) ) )
+            )
+          | TermLike (_ :< ApplySymbolF (Application symbol _ )) <- parameter
+          , symbolic symbol =
+            Nothing
+        notSymbolic arg = arg
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
