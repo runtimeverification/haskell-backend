@@ -1032,15 +1032,14 @@ test_simplificationIntegrationUnification =
                 )
                 initial
         assertEqual "" expect actual
-    , testCase "qqfunction application with top predicate" $ do
+    , testCase "function application with top predicate" $ do
         let requirement =
                 makeEqualsPredicate Mock.testSort
                     (Mock.f (mkElemVar Mock.x))
                     (Mock.g Mock.b)
             expect =
                 OrPattern.fromTermLike
-                $ Mock.functionalConstr11
-                $ Mock.functionalConstr10 (mkElemVar Mock.x)
+                $ Mock.functionalConstr11 $ Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( mkEvaluatorRegistry
