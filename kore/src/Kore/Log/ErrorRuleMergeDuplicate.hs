@@ -70,15 +70,7 @@ instance Entry ErrorRuleMergeDuplicateIds where
 
 instance Pretty ErrorRuleMergeDuplicateIds where
     pretty (ErrorRuleMergeDuplicateIds duplicateIds) =
-        Map.foldMapWithKey accum duplicateIds
-      where
-        accum ruleId locations =
-            Pretty.vsep
-                $ ["The rules at the following locations:"]
-                <> fmap (Pretty.indent 4 . pretty) locations
-                <> [ Pretty.indent 2 "all have the following id:"
-                   , Pretty.indent 4 (pretty ruleId)
-                   ]
+        prettyErrorText "id" duplicateIds
 
 newtype ErrorRuleMergeDuplicateLabels =
     ErrorRuleMergeDuplicateLabels
@@ -97,44 +89,39 @@ instance Entry ErrorRuleMergeDuplicateLabels where
     entrySeverity _ = Error
     helpDoc _ =
         "error thrown during rule merging when\
-        \ multiple rules have the same id"
+        \ multiple rules have the same label"
 
 instance Pretty ErrorRuleMergeDuplicateLabels where
     pretty (ErrorRuleMergeDuplicateLabels duplicateLabels) =
-        Map.foldMapWithKey accum duplicateLabels
-      where
-        accum ruleId locations =
-            Pretty.vsep
-                $ ["The rules at the following locations:"]
-                <> fmap (Pretty.indent 4 . pretty) locations
-                <> [ Pretty.indent 2 "all have the following label:"
-                   , Pretty.indent 4 (pretty ruleId)
-                   ]
+        prettyErrorText "label" duplicateLabels
 
 errorRuleMergeDuplicateIds :: Map Text [RewriteRule VariableName] -> a
-errorRuleMergeDuplicateIds duplicateIds =
-    throw (ErrorRuleMergeDuplicateIds idsWithlocations)
-  where
-    idsWithlocations =
-        (fmap . fmap)
-        ( Lens.view
-            ( _Unwrapped
-            . field @"attributes"
-            . field @"sourceLocation"
-            )
-        )
-        duplicateIds
+errorRuleMergeDuplicateIds (getLocations -> duplicateIds) =
+    throw (ErrorRuleMergeDuplicateIds duplicateIds)
 
 errorRuleMergeDuplicateLabels :: Map Text [RewriteRule VariableName] -> a
-errorRuleMergeDuplicateLabels duplicateLabels =
-    throw (ErrorRuleMergeDuplicateLabels labelsWithlocations)
+errorRuleMergeDuplicateLabels (getLocations -> duplicateLabels) =
+    throw (ErrorRuleMergeDuplicateLabels duplicateLabels)
+
+prettyErrorText :: Text -> Map Text [SourceLocation] -> Pretty.Doc ann
+prettyErrorText type' = Map.foldMapWithKey accum
   where
-    labelsWithlocations =
-        (fmap . fmap)
+    accum name locations =
+        Pretty.vsep
+            $ ["The rules at the following locations:"]
+            <> fmap (Pretty.indent 4 . pretty) locations
+            <> [ Pretty.indent 2 duplicateNameType
+               , Pretty.indent 4 (pretty name)
+               ]
+    duplicateNameType =
+        Pretty.hsep ["all have the following", pretty type', ":"]
+
+getLocations :: Map Text [RewriteRule VariableName] -> Map Text [SourceLocation]
+getLocations =
+    (fmap . fmap)
         ( Lens.view
             ( _Unwrapped
             . field @"attributes"
             . field @"sourceLocation"
             )
         )
-        duplicateLabels

@@ -565,7 +565,6 @@ mergeRules ruleMerger verifiedModule ruleNames =
         rules <- extractAndSimplifyRules rewriteRules' ruleNames
         lift $ ruleMerger rules
 
--- TODO: what if a label name and an id name coincide?
 extractAndSimplifyRules
     :: forall m
     .  MonadSimplify m
@@ -586,23 +585,15 @@ extractAndSimplifyRules rules names = do
         (r : rs) -> return (r :| rs)
 
   where
-    -- TODO: more clean-up
-    maybeRuleUniqueId :: RewriteRule VariableName -> Maybe Text
-    maybeRuleUniqueId =
-        Lens.view
-            (_Unwrapped . field @"attributes" . field @"uniqueId" . _Unwrapped)
+    ruleById = ruleByName (field @"uniqueId")
 
-    maybeRuleLabel :: RewriteRule VariableName -> Maybe Text
-    maybeRuleLabel =
-        Lens.view
-            (_Unwrapped . field @"attributes" . field @"label" . _Unwrapped)
+    ruleByLabel = ruleByName (field @"label")
 
-    ruleById rule = do
-        name <- maybeRuleUniqueId rule
-        return (name, rule)
-
-    ruleByLabel rule = do
-        name <- maybeRuleLabel rule
+    ruleByName lens rule = do
+        name <-
+            Lens.view
+                (_Unwrapped . field @"attributes" . lens . _Unwrapped)
+                rule
         return (name, rule)
 
     extractRule registry ruleName =
@@ -612,7 +603,8 @@ extractAndSimplifyRules rules names = do
             (Map.lookup ruleName registry)
 
     whenDuplicate logError withNames = do
-        let duplicateNames = findCollisions . mkMapWithCollisions $ withNames
+        let duplicateNames =
+                findCollisions . mkMapWithCollisions $ withNames
         unless (null duplicateNames) (logError duplicateNames)
 
 mkMapWithCollisions
