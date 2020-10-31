@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Log.ErrorRuleMergeDuplicateId
+module Kore.Log.ErrorRuleMergeDuplicateIds
     ( ErrorRuleMergeDuplicateIds
     , errorRuleMergeDuplicateIds
     ) where

@@ -10,7 +10,6 @@ Expose concrete execution as a library
 -}
 module Kore.Exec
     ( exec
-    , extractRules
     , mergeAllRules
     , mergeRulesConsecutiveBatches
     , search
@@ -103,7 +102,7 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
-import Kore.Log.ErrorRuleMergeDuplicateId
+import Kore.Log.ErrorRuleMergeDuplicateIds
     ( errorRuleMergeDuplicateIds
     )
 import Kore.Log.InfoExecDepth
@@ -219,7 +218,7 @@ exec
     -> smt (ExitCode, TermLike VariableName)
 exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
-        initialized <- initialize verifiedModule
+        initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         (execDepth, finalConfig) <-
             getFinalConfigOf $ do
@@ -342,7 +341,7 @@ search
 search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
-        initialized <- initialize verifiedModule
+        initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
             Pattern.simplify SideCondition.top
@@ -493,7 +492,7 @@ boundedModelCheck
     -> smt (Bounded.CheckResult (TermLike VariableName))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
-        initialized <- initialize definitionModule
+        initialized <- initializeAndSimplify definitionModule
         let Initialized { rewriteRules } = initialized
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
@@ -559,26 +558,28 @@ mergeRules
     -> smt (Either Text [RewriteRule VariableName])
 mergeRules ruleMerger verifiedModule ruleNames =
     evalSimplifier verifiedModule $ runExceptT $ do
-        initialized <- initialize verifiedModule
+        initialized <- initializeWithoutSimplification verifiedModule
         let Initialized { rewriteRules } = initialized
             rewriteRules' = unRewritingRule <$> rewriteRules
-        rules <- extractRules rewriteRules' ruleNames
+        rules <- extractAndSimplifyRules rewriteRules' ruleNames
         lift $ ruleMerger rules
 
 -- TODO: what if a label name and an id name coincide?
-extractRules
+extractAndSimplifyRules
     :: forall m
-    .  Monad m
+    .  MonadSimplify m
     => [RewriteRule VariableName]
     -> [Text]
     -> ExceptT Text m (NonEmpty (RewriteRule VariableName))
-extractRules rules names = do
+extractAndSimplifyRules rules names = do
     let rulesById = mapMaybe ruleById rules
         rulesByLabel = mapMaybe ruleByLabel rules
     whenDuplicate errorRuleMergeDuplicateIds rulesById
     -- whenDuplicate errorRuleMergeDuplicateLabel rulesByLabel
     let ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
-    extractedRules <- traverse (extractRule ruleRegistry) names
+    extractedRules <-
+        traverse (extractRule ruleRegistry >=> simplifyRuleLhs) names
+        & fmap (>>= Foldable.toList)
     case extractedRules of
         [] -> throwE "Empty rule list."
         (r : rs) -> return (r :| rs)
@@ -654,13 +655,28 @@ simplifySomeClaim rule = do
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
 
+initializeAndSimplify
+    :: MonadSimplify simplifier
+    => VerifiedModule StepperAttributes
+    -> simplifier Initialized
+initializeAndSimplify verifiedModule =
+    initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
+
+initializeWithoutSimplification
+    :: MonadSimplify simplifier
+    => VerifiedModule StepperAttributes
+    -> simplifier Initialized
+initializeWithoutSimplification verifiedModule =
+    initialize return verifiedModule
+
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: forall simplifier
     .  MonadSimplify simplifier
-    => VerifiedModule StepperAttributes
+    => (RewriteRule VariableName -> LogicT simplifier (RewriteRule VariableName))
+    -> VerifiedModule StepperAttributes
     -> simplifier Initialized
-initialize verifiedModule = do
+initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
             rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
@@ -671,7 +687,7 @@ initialize verifiedModule = do
         :: RewriteRule VariableName
         -> LogicT simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
-        simplRule <- simplifyRuleLhs rule >>= Logic.scatter
+        simplRule <- simplificationProcedure rule
         when (lhsEqualsRhs $ getRewriteRule simplRule)
             (errorRewriteLoop simplRule)
         let renamedRule = mkRewritingRule simplRule
@@ -699,7 +715,7 @@ initializeProver
     -> Maybe (VerifiedModule StepperAttributes)
     -> simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
-    initialized <- initialize definitionModule
+    initialized <- initializeAndSimplify definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized { rewriteRules } = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]

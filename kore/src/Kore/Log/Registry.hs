@@ -80,7 +80,7 @@ import Kore.Log.ErrorRewriteLoop
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
-import Kore.Log.ErrorRuleMergeDuplicateId
+import Kore.Log.ErrorRuleMergeDuplicateIds
     ( ErrorRuleMergeDuplicateIds
     )
 import Kore.Log.ErrorRuleMergeDuplicateLabel
