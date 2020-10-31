@@ -102,8 +102,9 @@ import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
-import Kore.Log.ErrorRuleMergeDuplicateIds
+import Kore.Log.ErrorRuleMergeDuplicate
     ( errorRuleMergeDuplicateIds
+    , errorRuleMergeDuplicateLabels
     )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
@@ -575,7 +576,7 @@ extractAndSimplifyRules rules names = do
     let rulesById = mapMaybe ruleById rules
         rulesByLabel = mapMaybe ruleByLabel rules
     whenDuplicate errorRuleMergeDuplicateIds rulesById
-    -- whenDuplicate errorRuleMergeDuplicateLabel rulesByLabel
+    whenDuplicate errorRuleMergeDuplicateLabels rulesByLabel
     let ruleRegistry = Map.fromList (rulesById <> rulesByLabel)
     extractedRules <-
         traverse (extractRule ruleRegistry >=> simplifyRuleLhs) names

@@ -4,9 +4,11 @@ License     : NCSA
 
 -}
 
-module Kore.Log.ErrorRuleMergeDuplicateIds
+module Kore.Log.ErrorRuleMergeDuplicate
     ( ErrorRuleMergeDuplicateIds
     , errorRuleMergeDuplicateIds
+    , ErrorRuleMergeDuplicateLabels
+    , errorRuleMergeDuplicateLabels
     ) where
 
 import Prelude.Kore
@@ -78,17 +80,61 @@ instance Pretty ErrorRuleMergeDuplicateIds where
                    , Pretty.indent 4 (pretty ruleId)
                    ]
 
+newtype ErrorRuleMergeDuplicateLabels =
+    ErrorRuleMergeDuplicateLabels
+        { unErrorRuleMergeDuplicateLabels :: Map Text [SourceLocation]
+        }
+    deriving (Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Exception ErrorRuleMergeDuplicateLabels where
+    toException = toException . SomeEntry
+    fromException exn =
+        fromException exn >>= fromEntry
+
+instance Entry ErrorRuleMergeDuplicateLabels where
+    entrySeverity _ = Error
+    helpDoc _ =
+        "error thrown during rule merging when\
+        \ multiple rules have the same id"
+
+instance Pretty ErrorRuleMergeDuplicateLabels where
+    pretty (ErrorRuleMergeDuplicateLabels duplicateLabels) =
+        Map.foldMapWithKey accum duplicateLabels
+      where
+        accum ruleId locations =
+            Pretty.vsep
+                $ ["The rules at the following locations:"]
+                <> fmap (Pretty.indent 4 . pretty) locations
+                <> [ Pretty.indent 2 "all have the following label:"
+                   , Pretty.indent 4 (pretty ruleId)
+                   ]
+
 errorRuleMergeDuplicateIds :: Map Text [RewriteRule VariableName] -> a
 errorRuleMergeDuplicateIds duplicateIds =
     throw (ErrorRuleMergeDuplicateIds idsWithlocations)
   where
     idsWithlocations =
         (fmap . fmap)
-        (
-            Lens.view
-                ( _Unwrapped
-                . field @"attributes"
-                . field @"sourceLocation"
-                )
+        ( Lens.view
+            ( _Unwrapped
+            . field @"attributes"
+            . field @"sourceLocation"
+            )
         )
         duplicateIds
+
+errorRuleMergeDuplicateLabels :: Map Text [RewriteRule VariableName] -> a
+errorRuleMergeDuplicateLabels duplicateLabels =
+    throw (ErrorRuleMergeDuplicateLabels labelsWithlocations)
+  where
+    labelsWithlocations =
+        (fmap . fmap)
+        ( Lens.view
+            ( _Unwrapped
+            . field @"attributes"
+            . field @"sourceLocation"
+            )
+        )
+        duplicateLabels
