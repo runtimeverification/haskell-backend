@@ -157,12 +157,17 @@ parserInfoModifiers =
 exeName :: ExeName
 exeName = ExeName "kore-repl"
 
+-- | Environment variable name for extra arguments
+envName :: String
+envName = "KORE_REPL_OPTS"
+
 main :: IO ()
 main = do
     startTime <- getTime Monotonic
     options <-
         mainGlobal
             Main.exeName
+            (Just envName)
             (parseKoreReplOptions startTime)
             parserInfoModifiers
     case localOptions options of
