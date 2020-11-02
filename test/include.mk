@@ -47,6 +47,7 @@ KPROVE_SPEC = $<
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K) $(KORE_PARSER)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
+	which kore-parser
 	$(KOMPILE) $(KOMPILE_OPTS) $<
 
 # From make 3.82 news: http://cvs.savannah.gnu.org/viewvc/*checkout*/make/make/NEWS?revision=2.120
