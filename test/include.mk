@@ -19,7 +19,7 @@ KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 export KOMPILED
 DEF_KORE_DEFAULT = $(KOMPILED)/definition.kore
 DEF_KORE ?= $(DEF_KORE_DEFAULT)
-TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
+TEST_DEPS = $(K) $(KORE_PARSER) $(DEF_KORE) $(KORE_EXEC)
 
 TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
@@ -44,7 +44,7 @@ KORE_EXEC_OPTS += \
 KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
 
-$(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
+$(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K) $(KORE_PARSER)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<
