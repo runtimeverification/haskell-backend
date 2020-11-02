@@ -10,7 +10,6 @@ module GlobalMain
     , parseKoreProveOptions
     , parseKoreMergeOptions
     , mainGlobal
-    , defaultMainGlobal
     , enableDisableFlag
     , clockSomething
     , clockSomethingIO
@@ -74,9 +73,7 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , ParserHelp (..)
-    , argument
     , defaultPrefs
-    , disabled
     , execParserPure
     , flag
     , flag'
@@ -297,15 +294,6 @@ mainGlobal exeName maybeEnv localOptionsParser modifiers = do
     options <- commandLineParse exeName maybeEnv localOptionsParser modifiers
     when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
     return options
-
-defaultMainGlobal :: IO (MainOptions options)
-defaultMainGlobal =
-    mainGlobal
-        (ExeName "kore-exec")
-        (Just "KORE_EXEC_OPTS")
-        (argument disabled mempty)
-        mempty
-
 
 -- | main function to print version information
 mainVersion :: ZonedTime -> IO ()
