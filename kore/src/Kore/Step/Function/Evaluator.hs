@@ -105,7 +105,14 @@ evaluateApplication
     finishT :: ExceptT r simplifier r -> simplifier r
     finishT = exceptT return return
 
-    Application { applicationSymbolOrAlias = symbol } = application
+    Application { applicationSymbolOrAlias = symbol0 } = application
+
+    symbol :: Symbol
+    symbol
+      | Symbol.noEvaluators symbol0
+      , Symbol.isFunction symbol0 =
+        Symbol.constructor symbol
+      | otherwise = symbol0
 
     termLike = synthesize (ApplySymbolF application)
 
