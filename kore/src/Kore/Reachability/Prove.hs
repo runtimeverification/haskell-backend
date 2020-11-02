@@ -78,9 +78,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , getMultiAndPredicate
-    , pattern PredicateNot
     , pattern PredicateCeil
+    , pattern PredicateNot
+    , getMultiAndPredicate
     )
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven

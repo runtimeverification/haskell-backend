@@ -9,7 +9,9 @@ import Test.Tasty
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -19,13 +21,17 @@ import Kore.Internal.Predicate
     , makeFalsePredicate
     , makeTruePredicate
     )
-import qualified Kore.Internal.SideCondition as SideCondition ( top )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.And
 import qualified Kore.Step.Simplification.Not as Not
 
-import Test.Kore.Step.MockSymbols ( testSort )
+import Test.Kore.Step.MockSymbols
+    ( testSort
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext

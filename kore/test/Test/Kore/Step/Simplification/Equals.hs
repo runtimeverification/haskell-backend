@@ -10,26 +10,37 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
-import Kore.Internal.Condition ( Condition, Conditional (..) )
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition ( OrCondition )
-import Kore.Internal.OrPattern ( OrPattern )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( pattern PredicateFalse
+    , makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeIffPredicate
     , makeImpliesPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , pattern PredicateFalse
     )
-import qualified Kore.Internal.SideCondition as SideCondition ( top )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Equals

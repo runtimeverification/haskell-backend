@@ -13,25 +13,43 @@ module Kore.Step.Simplification.Condition
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import Control.Monad.State.Strict ( StateT, evalStateT )
+import Control.Monad.State.Strict
+    ( StateT
+    , evalStateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import qualified GHC.Generics as GHC
-import Data.Generics.Product ( field )
-import Data.HashMap.Strict ( HashMap )
+import Data.Generics.Product
+    ( field
+    )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import Data.List ( sortOn )
-import Data.Traversable ( for )
+import Data.List
+    ( sortOn
+    )
+import Data.Traversable
+    ( for
+    )
+import qualified GHC.Generics as GHC
 
 import Changed
-import Kore.Attribute.Synthetic ( synthesize )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.MultiAnd ( MultiAnd )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern ( Condition, Conditional (..) )
+import Kore.Internal.Pattern
+    ( Condition
+    , Conditional (..)
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -43,13 +61,16 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition ( SideCondition )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.Symbol ( isConstructor, isFunction )
+import Kore.Internal.Symbol
+    ( isConstructor
+    , isFunction
+    )
 import Kore.Internal.TermLike
-    ( TermLike
-    , Variable (..)
-    , pattern App_
+    ( pattern App_
     , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
@@ -57,6 +78,8 @@ import Kore.Internal.TermLike
     , pattern Inj_
     , pattern Mu_
     , pattern Nu_
+    , TermLike
+    , Variable (..)
     , mkEquals_
     )
 import qualified Kore.Internal.TermLike as TermLike

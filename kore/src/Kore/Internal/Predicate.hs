@@ -121,6 +121,7 @@ import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Pattern as APattern
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
     ( FreeVariables
     , HasFreeVariables (..)
@@ -479,21 +480,33 @@ fromPredicate
     -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
-fromPredicate sort =
-    Recursive.fold $ \case
-        _ :< AndF     (And () t1 t2)       -> TermLike.mkAnd t1 t2
-        _ :< BottomF  _                    -> TermLike.mkBottom sort
-        _ :< CeilF    (Ceil () () t)       -> TermLike.mkCeil sort t
-        _ :< EqualsF  (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
-        _ :< ExistsF  (Exists () v t)      -> TermLike.mkExists v t
-        _ :< FloorF   (Floor () () t)      -> TermLike.mkFloor sort t
-        _ :< ForallF  (Forall () v t)      -> TermLike.mkForall v t
-        _ :< IffF     (Iff () t1 t2)       -> TermLike.mkIff t1 t2
-        _ :< ImpliesF (Implies () t1 t2)   -> TermLike.mkImplies t1 t2
-        _ :< InF      (In () () t1 t2)     -> TermLike.mkIn sort t1 t2
-        _ :< NotF     (Not () t)           -> TermLike.mkNot t
-        _ :< OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
-        _ :< TopF      _                   -> TermLike.mkTop sort
+fromPredicate sort = Recursive.fold worker
+  where
+    worker (pat :< predF) = hardCodeSimplified
+        (Attribute.simplifiedAttribute pat)
+        $ case predF of
+            AndF     (And () t1 t2)       -> TermLike.mkAnd t1 t2
+            BottomF  _                    -> TermLike.mkBottom sort
+            CeilF    (Ceil () () t)       -> TermLike.mkCeil sort t
+            EqualsF  (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
+            ExistsF  (Exists () v t)      -> TermLike.mkExists v t
+            FloorF   (Floor () () t)      -> TermLike.mkFloor sort t
+            ForallF  (Forall () v t)      -> TermLike.mkForall v t
+            IffF     (Iff () t1 t2)       -> TermLike.mkIff t1 t2
+            ImpliesF (Implies () t1 t2)   -> TermLike.mkImplies t1 t2
+            InF      (In () () t1 t2)     -> TermLike.mkIn sort t1 t2
+            NotF     (Not () t)           -> TermLike.mkNot t
+            OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
+            TopF      _                   -> TermLike.mkTop sort
+
+    hardCodeSimplified
+        simplified
+        (Recursive.project -> attrs :< termLikeF)
+        =
+        Recursive.embed
+            (  APattern.setSimplified simplified attrs
+            :< termLikeF
+            )
 
 fromPredicate_
     :: InternalVariable variable
@@ -715,13 +728,13 @@ newtype NotPredicate variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance (Unparse (Predicate variable), InternalVariable variable) => Pretty (NotPredicate variable) where
+instance (Unparse (Predicate variable), InternalVariable variable)
+    => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
         [ "Expected a predicate, but found:"
         , Pretty.indent 4 (unparse termLikeF)
         ]
-
 
 makePredicate
     :: forall variable
@@ -736,20 +749,24 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
             (Either (NotPredicate variable) (Predicate variable))
         -> Either (NotPredicate variable) (Predicate variable)
     makePredicateBottomUp termE = do
-        _ :< term <- sequence termE
+        att :< term <- sequence termE
+        let setSmp = hardCodeSimplified (APattern.simplifiedAttribute att)
         case term of
-            TermLike.TopF _ -> return makeTruePredicate
-            TermLike.BottomF _ -> return makeFalsePredicate
-            TermLike.AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
-            TermLike.OrF p -> return $ makeOrPredicate (orFirst p) (orSecond p)
-            TermLike.IffF p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
-            TermLike.ImpliesF p -> return $
-                makeImpliesPredicate (impliesFirst p) (impliesSecond p)
-            TermLike.NotF p -> return $ makeNotPredicate (notChild p)
-            TermLike.ExistsF p -> return $
-                makeExistsPredicate (existsVariable p) (existsChild p)
-            TermLike.ForallF p -> return $
-                makeForallPredicate (forallVariable p) (forallChild p)
+            TermLike.TopF _ -> return $ setSmp makeTruePredicate
+            TermLike.BottomF _ -> return $ setSmp makeFalsePredicate
+            TermLike.AndF p -> return $ setSmp
+                $ makeAndPredicate (andFirst p) (andSecond p)
+            TermLike.OrF p -> return $ setSmp
+                $ makeOrPredicate (orFirst p) (orSecond p)
+            TermLike.IffF p -> return $ setSmp
+                $ makeIffPredicate (iffFirst p) (iffSecond p)
+            TermLike.ImpliesF p -> return $ setSmp
+                $ makeImpliesPredicate (impliesFirst p) (impliesSecond p)
+            TermLike.NotF p -> return $ setSmp $ makeNotPredicate (notChild p)
+            TermLike.ExistsF p -> return $ setSmp
+                $ makeExistsPredicate (existsVariable p) (existsChild p)
+            TermLike.ForallF p -> return $ setSmp
+                $ makeForallPredicate (forallVariable p) (forallChild p)
             p -> Left (NotPredicate p)
 
     makePredicateTopDown
@@ -757,17 +774,32 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
         -> Either
             (Either (NotPredicate variable) (Predicate variable))
             (Base (TermLike variable) (TermLike variable))
-    makePredicateTopDown (Recursive.project -> projected@(_ :< pat)) =
+    makePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
         case pat of
             TermLike.CeilF Ceil { ceilChild } ->
-                (Left . pure) (makeCeilPredicate ceilChild)
+                (Left . pure . setSmp)
+                    $ makeCeilPredicate ceilChild
             TermLike.FloorF Floor { floorChild } ->
-                (Left . pure) (makeFloorPredicate floorChild)
+                (Left . pure . setSmp)
+                    $ makeFloorPredicate floorChild
             TermLike.EqualsF Equals { equalsFirst, equalsSecond } ->
-                (Left . pure) (makeEqualsPredicate equalsFirst equalsSecond)
+                (Left . pure . setSmp)
+                    $ makeEqualsPredicate equalsFirst equalsSecond
             TermLike.InF In { inContainedChild, inContainingChild } ->
-                (Left . pure) (makeInPredicate inContainedChild inContainingChild)
+                (Left . pure . setSmp)
+                    $ makeInPredicate inContainedChild inContainingChild
             _ -> Right projected
+      where
+        setSmp = hardCodeSimplified (APattern.simplifiedAttribute att)
+
+    hardCodeSimplified
+        simplified
+        (Recursive.project -> attrs :< predF)
+        =
+        Recursive.embed
+            (  Attribute.setSimplified simplified attrs
+            :< predF
+            )
 
 isPredicate :: InternalVariable variable => TermLike variable -> Bool
 isPredicate = Either.isRight . makePredicate

@@ -23,16 +23,21 @@ module Kore.Internal.MultiAnd
     , traverse
     ) where
 
-import Prelude.Kore hiding ( map, traverse )
+import Prelude.Kore hiding
+    ( map
+    , traverse
+    )
 
-import Control.DeepSeq ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
+import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
 
 import Debug
 import Kore.Internal.Predicate
@@ -41,9 +46,14 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeTruePredicate
     )
-import Kore.Internal.TermLike ( TermLike, TermLikeF (..) )
+import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    )
 import Kore.Internal.Variable
-import Kore.TopBottom ( TopBottom (..) )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 

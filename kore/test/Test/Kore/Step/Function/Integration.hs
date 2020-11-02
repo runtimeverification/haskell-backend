@@ -1516,14 +1516,13 @@ test_updateList =
             (mkInt 0)
             (mkInt 2)
         )
-    -- TODO: Re-enable when this does not loop.
-    -- , notApplies "different abstract keys; evaluates requires with SMT"
-    --     [updateListSimplifier]
-    --     (updateList
-    --         (updateList varL (mkElemVar xInt) (mkInt 1))
-    --         (addInt (mkElemVar xInt) (mkInt 1))
-    --         (mkInt 2)
-    --     )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateListSimplifier]
+        (updateList
+            (updateList varL (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
     , notApplies "different keys; evaluates requires with function rule"
         [updateListSimplifier]
         (updateList
@@ -1627,14 +1626,13 @@ test_updateMap =
             (mkInt 0)
             (mkInt 2)
         )
-    -- TODO: Re-enable this when it does not loop.
-    -- , notApplies "different abstract keys; evaluates requires with SMT"
-    --     [updateMapSimplifier]
-    --     (updateMap
-    --         (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
-    --         (addInt (mkElemVar xInt) (mkInt 1))
-    --         (mkInt 2)
-    --     )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
     , notApplies "different keys; evaluates requires with function rule"
         [updateMapSimplifier]
         (updateMap
