@@ -41,7 +41,7 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeTruePredicate
     )
-import Kore.Internal.TermLike ( Sort, TermLike, TermLikeF (..) )
+import Kore.Internal.TermLike ( TermLike, TermLikeF (..) )
 import Kore.Internal.Variable
 import Kore.TopBottom ( TopBottom (..) )
 
