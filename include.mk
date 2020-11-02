@@ -31,7 +31,7 @@ KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KRUN_OPTS
 KPROVE_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KPROVE_OPTS
-KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_REPL_OPTS)"
+KPROVE_REPL_OPTS = --haskell-backend-command $(KORE_REPL)
 export KPROVE_REPL_OPTS
 
 HS_TOP = $(TOP)/kore
