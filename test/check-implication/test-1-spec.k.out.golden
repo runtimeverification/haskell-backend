@@ -40,15 +40,15 @@
   </k>
 #And
   {
-    false
-  #Equals
-    K:Int in_keys ( M )
-  }
-#And
-  {
     _DotVar0
   #Equals
     <generatedCounter>
       _DotVar2
     </generatedCounter>
+  }
+#And
+  {
+    false
+  #Equals
+    K:Int in_keys ( M )
   }
