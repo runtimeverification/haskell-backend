@@ -55,8 +55,7 @@ import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Predicate
-    ( Predicate
-    , unwrapPredicate
+    ( unwrapPredicate
     )
 import Kore.Internal.Symbol
     ( isDeclaredFunction

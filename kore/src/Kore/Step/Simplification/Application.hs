@@ -32,11 +32,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Internal.Symbol
-    ( constructor
-    , isFunction
-    , noEvaluators
-    )
 import Kore.Internal.TermLike
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
@@ -110,11 +105,8 @@ makeAndEvaluateSymbolApplications
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
-    let symbol'
-          | noEvaluators symbol && isFunction symbol = constructor symbol
-          | otherwise = symbol
     expandedApplications <-
-        makeExpandedApplication sideCondition symbol' children
+        makeExpandedApplication sideCondition symbol children
         & Logic.observeAllT
     orResults <-
         traverse
