@@ -482,7 +482,7 @@ fromPredicate
     -> TermLike variable
 fromPredicate sort = Recursive.fold worker
   where
-    worker (pat :< predF) = hardCodeSimplified
+    worker (pat :< predF) = TermLike.setSimplified
         (Attribute.simplifiedAttribute pat)
         $ case predF of
             AndF     (And () t1 t2)       -> TermLike.mkAnd t1 t2
@@ -499,20 +499,21 @@ fromPredicate sort = Recursive.fold worker
             OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
             TopF      _                   -> TermLike.mkTop sort
 
-    hardCodeSimplified
-        simplified
-        (Recursive.project -> attrs :< termLikeF)
-        =
-        Recursive.embed
-            (  APattern.setSimplified simplified attrs
-            :< termLikeF
-            )
-
 fromPredicate_
     :: InternalVariable variable
     => Predicate variable
     -> TermLike variable
 fromPredicate_ = fromPredicate predicateSort
+
+data HasChanged = Changed | NotChanged
+    deriving (Show, Eq)
+
+instance Semigroup HasChanged where
+    NotChanged <> x = x
+    Changed <> _ = Changed
+
+instance Monoid HasChanged where
+    mempty = NotChanged
 
 {-|'isFalse' checks whether a predicate is obviously bottom.
 -}
@@ -522,160 +523,257 @@ isFalse = isBottom
 isTrue :: TopBottom patt => patt -> Bool
 isTrue = not . isBottom
 
+makeTruePredicate' ::
+    InternalVariable variable
+    => (Predicate variable, HasChanged)
+makeTruePredicate' = (synthesize (TopF Top {topSort = ()})
+    , NotChanged)
+
 makeTruePredicate :: InternalVariable variable => Predicate variable
-makeTruePredicate = synthesize (TopF Top {topSort = ()})
+makeTruePredicate = fst makeTruePredicate'
+
+makeFalsePredicate' ::
+    InternalVariable variable
+    => (Predicate variable, HasChanged)
+makeFalsePredicate' = (synthesize $ BottomF Bottom {bottomSort = ()}
+    , NotChanged)
 
 makeFalsePredicate :: InternalVariable variable => Predicate variable
-makeFalsePredicate = synthesize $ BottomF Bottom {bottomSort = ()}
+makeFalsePredicate = fst makeFalsePredicate'
+
+makeNotPredicate'
+    :: InternalVariable variable
+    => Predicate variable
+    -> (Predicate variable, HasChanged)
+makeNotPredicate' p
+  | isTop p = (makeFalsePredicate, Changed)
+  | isBottom p = (makeTruePredicate, Changed)
+  | otherwise = (synthesize $ NotF Not
+    { notSort = ()
+    , notChild = p
+    }
+    , NotChanged)
 
 makeNotPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
-makeNotPredicate p
-  | isTop p = makeFalsePredicate
-  | isBottom p = makeTruePredicate
-  | otherwise = synthesize $ NotF Not
-    { notSort = ()
-    , notChild = p
-    }
+makeNotPredicate = fst . makeNotPredicate'
 
 {-| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
 -}
+makeAndPredicate'
+    :: InternalVariable variable
+    => Predicate variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeAndPredicate' p1 p2
+  | isBottom p1 = (p1, Changed)
+  | isBottom p2 = (p2, Changed)
+  | isTop p1 = (p2, Changed)
+  | isTop p2 = (p1, Changed)
+  | p1 == p2 = (p1, Changed)
+  | otherwise = (synthesize $ AndF And
+    { andSort = ()
+    , andFirst = p1
+    , andSecond = p2
+    }
+    , NotChanged)
+
 makeAndPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeAndPredicate p1 p2
-  | isBottom p1 = p1
-  | isBottom p2 = p2
-  | isTop p1 = p2
-  | isTop p2 = p1
-  | p1 == p2 = p1
-  | otherwise = synthesize $ AndF And
-    { andSort = ()
-    , andFirst = p1
-    , andSecond = p2
+makeAndPredicate p1 p2 = fst (makeAndPredicate' p1 p2)
+
+makeOrPredicate'
+    :: InternalVariable variable
+    => Predicate variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeOrPredicate' p1 p2
+  | isTop p1 = (p1, Changed)
+  | isTop p2 = (p2, Changed)
+  | isBottom p1 = (p2, Changed)
+  | isBottom p2 = (p1, Changed)
+  | p1 == p2 = (p1, Changed)
+  | otherwise = (synthesize $ OrF Or
+    { orSort = ()
+    , orFirst = p1
+    , orSecond = p2
     }
+    , NotChanged)
 
 makeOrPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeOrPredicate p1 p2
-  | isTop p1 = p1
-  | isTop p2 = p2
-  | isBottom p1 = p2
-  | isBottom p2 = p1
-  | p1 == p2 = p1
-  | otherwise = synthesize $ OrF Or
-    { orSort = ()
-    , orFirst = p1
-    , orSecond = p2
+makeOrPredicate p1 p2 = fst (makeOrPredicate' p1 p2)
+
+makeImpliesPredicate'
+    :: InternalVariable variable
+    => Predicate variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeImpliesPredicate' p1 p2
+  | isBottom p1 = (makeTruePredicate, Changed)
+  | isTop p2 = (p2, Changed)
+  | isTop p1 = (p2, Changed)
+  | isBottom p2 = (makeNotPredicate p1, Changed)
+--  | p1 == p2 = (makeTruePredicate, Changed)
+  | otherwise = (synthesize $ ImpliesF Implies
+    { impliesSort = ()
+    , impliesFirst = p1
+    , impliesSecond = p2
     }
+    , NotChanged)
 
 makeImpliesPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeImpliesPredicate p1 p2
-  | isBottom p1 = makeTruePredicate
-  | isTop p2 = p2
-  | isTop p1 = p2
-  | isBottom p2 = makeNotPredicate p1
---  | p1 == p2 = makeTruePredicate
-  | otherwise = synthesize $ ImpliesF Implies
-    { impliesSort = ()
-    , impliesFirst = p1
-    , impliesSecond = p2
+makeImpliesPredicate p1 p2 = fst (makeImpliesPredicate' p1 p2)
+
+makeIffPredicate'
+    :: InternalVariable variable
+    => Predicate variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeIffPredicate' p1 p2
+  | isBottom p1 = (makeNotPredicate p2, Changed)
+  | isTop p1 = (p2, Changed)
+  | isBottom p2 = (makeNotPredicate p1, Changed)
+  | isTop p2 = (p1, Changed)
+--  | p1 == p2 = (makeTruePredicate, Changed)
+  | otherwise = (synthesize $ IffF Iff
+    { iffSort = ()
+    , iffFirst = p1
+    , iffSecond = p2
     }
+    , NotChanged)
 
 makeIffPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
-makeIffPredicate p1 p2
-  | isBottom p1 = makeNotPredicate p2
-  | isTop p1 = p2
-  | isBottom p2 = makeNotPredicate p1
-  | isTop p2 = p1
---  | p1 == p2 = makeTruePredicate
-  | otherwise = synthesize $ IffF Iff
-    { iffSort = ()
-    , iffFirst = p1
-    , iffSecond = p2
+makeIffPredicate p1 p2 = fst (makeIffPredicate' p1 p2)
+
+makeCeilPredicate'
+    :: InternalVariable variable
+    => TermLike variable
+    -> (Predicate variable, HasChanged)
+makeCeilPredicate' t = (synthesize $ CeilF Ceil
+    { ceilOperandSort = ()
+    , ceilResultSort = ()
+    , ceilChild = t
     }
+    , NotChanged)
 
 makeCeilPredicate
     :: InternalVariable variable
     => TermLike variable
     -> Predicate variable
-makeCeilPredicate t = synthesize $ CeilF Ceil
-    { ceilOperandSort = ()
-    , ceilResultSort = ()
-    , ceilChild = t
+makeCeilPredicate = fst . makeCeilPredicate'
+
+makeFloorPredicate'
+    :: InternalVariable variable
+    => TermLike variable
+    -> (Predicate variable, HasChanged)
+makeFloorPredicate' t = (synthesize $ FloorF Floor
+    { floorOperandSort = ()
+    , floorResultSort = ()
+    , floorChild = t
     }
+    , NotChanged)
 
 makeFloorPredicate
     :: InternalVariable variable
     => TermLike variable
     -> Predicate variable
-makeFloorPredicate t = synthesize $ FloorF Floor
-    { floorOperandSort = ()
-    , floorResultSort = ()
-    , floorChild = t
-    }
+makeFloorPredicate = fst . makeFloorPredicate'
+
+makeInPredicate'
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> (Predicate variable, HasChanged)
+makeInPredicate' t1 t2 =
+    (TermLike.makeSortsAgree makeInWorker t1 t2, NotChanged)
+  where
+    makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
 
 makeInPredicate
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
-makeInPredicate = TermLike.makeSortsAgree makeInWorker
+makeInPredicate t1 t2 = fst (makeInPredicate' t1 t2)
+
+makeEqualsPredicate'
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> (Predicate variable, HasChanged)
+makeEqualsPredicate' t1 t2 =
+    (TermLike.makeSortsAgree makeEqualsWorker t1 t2, NotChanged)
   where
-    makeInWorker t1 t2 _ = synthesize $ InF $ In () () t1 t2
+    makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
 
 makeEqualsPredicate
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
-makeEqualsPredicate = TermLike.makeSortsAgree makeEqualsWorker
-  where
-    makeEqualsWorker t1 t2 _ = synthesize $ EqualsF $ Equals () () t1 t2
+makeEqualsPredicate t1 t2 = fst (makeEqualsPredicate' t1 t2)
+
+makeExistsPredicate'
+    :: InternalVariable variable
+    => ElementVariable variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeExistsPredicate' v p
+  | isTop p = (p, Changed)
+  | isBottom p = (p, Changed)
+  | otherwise = (synthesize $ ExistsF Exists
+    { existsSort = ()
+    , existsVariable = v
+    , existsChild = p
+    }
+    , NotChanged)
 
 makeExistsPredicate
     :: InternalVariable variable
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
-makeExistsPredicate v p
-  | isTop p = p
-  | isBottom p = p
-  | otherwise = synthesize $ ExistsF Exists
-    { existsSort = ()
-    , existsVariable = v
-    , existsChild = p
+makeExistsPredicate v p = fst (makeExistsPredicate' v p)
+
+makeForallPredicate'
+    :: InternalVariable variable
+    => ElementVariable variable
+    -> Predicate variable
+    -> (Predicate variable, HasChanged)
+makeForallPredicate' v p
+  | isTop p = (p, Changed)
+  | isBottom p = (p, Changed)
+  | otherwise = (synthesize $ ForallF Forall
+    { forallSort = ()
+    , forallVariable = v
+    , forallChild = p
     }
+    , NotChanged)
 
 makeForallPredicate
     :: InternalVariable variable
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
-makeForallPredicate v p
-  | isTop p = p
-  | isBottom p = p
-  | otherwise = synthesize $ ForallF Forall
-    { forallSort = ()
-    , forallVariable = v
-    , forallChild = p
-    }
+makeForallPredicate v p = fst (makeForallPredicate' v p)
 
 makeMultipleAndPredicate
     :: InternalVariable variable
@@ -741,65 +839,81 @@ makePredicate
     .  InternalVariable variable
     => TermLike variable
     -> Either (NotPredicate variable) (Predicate variable)
-makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
+makePredicate t = fst <$> makePredicateWorker t
   where
+    makePredicateWorker
+        :: TermLike variable
+        -> Either (NotPredicate variable) (Predicate variable, HasChanged)
+    makePredicateWorker =
+        Recursive.elgot makePredicateBottomUp makePredicateTopDown
+
     makePredicateBottomUp
         :: Base
             (TermLike variable)
-            (Either (NotPredicate variable) (Predicate variable))
-        -> Either (NotPredicate variable) (Predicate variable)
+            (Either (NotPredicate variable) (Predicate variable, HasChanged))
+        -> Either (NotPredicate variable) (Predicate variable, HasChanged)
     makePredicateBottomUp termE = do
-        att :< term <- sequence termE
-        let setSmp = hardCodeSimplified (APattern.simplifiedAttribute att)
-        case term of
-            TermLike.TopF _ -> return $ setSmp makeTruePredicate
-            TermLike.BottomF _ -> return $ setSmp makeFalsePredicate
-            TermLike.AndF p -> return $ setSmp
-                $ makeAndPredicate (andFirst p) (andSecond p)
-            TermLike.OrF p -> return $ setSmp
-                $ makeOrPredicate (orFirst p) (orSecond p)
-            TermLike.IffF p -> return $ setSmp
-                $ makeIffPredicate (iffFirst p) (iffSecond p)
-            TermLike.ImpliesF p -> return $ setSmp
-                $ makeImpliesPredicate (impliesFirst p) (impliesSecond p)
-            TermLike.NotF p -> return $ setSmp $ makeNotPredicate (notChild p)
-            TermLike.ExistsF p -> return $ setSmp
-                $ makeExistsPredicate (existsVariable p) (existsChild p)
-            TermLike.ForallF p -> return $ setSmp
-                $ makeForallPredicate (forallVariable p) (forallChild p)
+        termWithChanged <- sequence termE
+        let dropChanged
+                :: (Predicate variable, HasChanged) -> Predicate variable
+            dropChanged = fst
+
+            dropPredicate :: (Predicate variable, HasChanged) -> HasChanged
+            dropPredicate = snd
+
+            att :< patE = dropChanged <$> termWithChanged
+
+            childChanged :: HasChanged
+            childChanged = Foldable.fold (dropPredicate <$> termWithChanged)
+
+            oldSimplified = APattern.simplifiedAttribute att
+        (predicate, topChanged) <- case patE of
+            TermLike.TopF _ -> return makeTruePredicate'
+            TermLike.BottomF _ -> return makeFalsePredicate'
+            TermLike.AndF p -> return
+                $ makeAndPredicate' (andFirst p) (andSecond p)
+            TermLike.OrF p -> return
+                $ makeOrPredicate' (orFirst p) (orSecond p)
+            TermLike.IffF p -> return
+                $ makeIffPredicate' (iffFirst p) (iffSecond p)
+            TermLike.ImpliesF p -> return
+                $ makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
+            TermLike.NotF p -> return $ makeNotPredicate' (notChild p)
+            TermLike.ExistsF p -> return
+                $ makeExistsPredicate' (existsVariable p) (existsChild p)
+            TermLike.ForallF p -> return
+                $ makeForallPredicate' (forallVariable p) (forallChild p)
             p -> Left (NotPredicate p)
+        return $ case topChanged <> childChanged of
+            Changed -> (predicate, Changed)
+            NotChanged ->
+                (setSimplified oldSimplified predicate, NotChanged)
 
     makePredicateTopDown
         :: TermLike variable
         -> Either
-            (Either (NotPredicate variable) (Predicate variable))
+            (Either (NotPredicate variable) (Predicate variable, HasChanged))
             (Base (TermLike variable) (TermLike variable))
     makePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
         case pat of
-            TermLike.CeilF Ceil { ceilChild } ->
-                (Left . pure . setSmp)
-                    $ makeCeilPredicate ceilChild
-            TermLike.FloorF Floor { floorChild } ->
-                (Left . pure . setSmp)
-                    $ makeFloorPredicate floorChild
-            TermLike.EqualsF Equals { equalsFirst, equalsSecond } ->
-                (Left . pure . setSmp)
-                    $ makeEqualsPredicate equalsFirst equalsSecond
-            TermLike.InF In { inContainedChild, inContainingChild } ->
-                (Left . pure . setSmp)
-                    $ makeInPredicate inContainedChild inContainingChild
+            TermLike.CeilF Ceil { ceilChild } -> setSmp
+                    $ makeCeilPredicate' ceilChild
+            TermLike.FloorF Floor { floorChild } -> setSmp
+                    $ makeFloorPredicate' floorChild
+            TermLike.EqualsF Equals { equalsFirst, equalsSecond } -> setSmp
+                    $ makeEqualsPredicate' equalsFirst equalsSecond
+            TermLike.InF In { inContainedChild, inContainingChild } -> setSmp
+                    $ makeInPredicate' inContainedChild inContainingChild
             _ -> Right projected
       where
-        setSmp = hardCodeSimplified (APattern.simplifiedAttribute att)
+        {-| Set the simplified attribute of the old TermLike if the term has
+            not changed nontrivially
+        -}
+        setSmp (p, Changed) = Left $ pure (p, Changed)
+        setSmp (p, NotChanged) = Left $ pure
+            (setSimplified oldSimplified p, NotChanged)
 
-    hardCodeSimplified
-        simplified
-        (Recursive.project -> attrs :< predF)
-        =
-        Recursive.embed
-            (  Attribute.setSimplified simplified attrs
-            :< predF
-            )
+        oldSimplified = APattern.simplifiedAttribute att
 
 isPredicate :: InternalVariable variable => TermLike variable -> Bool
 isPredicate = Either.isRight . makePredicate
