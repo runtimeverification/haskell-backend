@@ -130,42 +130,39 @@ main = do
             Nothing  -- environment variable name for extra arguments
             commandLineParser
             parserInfoModifiers
-    case localOptions options of
-        Nothing ->  -- global options parsed, but local failed; exit gracefully
-            return ()
-        Just KoreParserOptions
-            { fileName
-            , patternFileName
-            , mainModuleName
-            , willPrintDefinition
-            , willPrintPattern
-            , willVerify
-            , appKore
-            }
-            -> flip runLoggerT Log.emptyLogger $ do
-                parsedDefinition <- mainDefinitionParse fileName
-                indexedModules <- if willVerify
-                    then lift $ mainVerify parsedDefinition
-                    else return Map.empty
-                lift $ when willPrintDefinition
-                    $ if appKore
-                        then putStrLn
-                            $ unparseToString2
-                            $ completeDefinition
-                            $ toVerifiedDefinition indexedModules
-                    else putDoc (debug parsedDefinition)
+    for_ (localOptions options) $ \koreParserOptions ->
+        flip runLoggerT Log.emptyLogger $ do
+            let KoreParserOptions { fileName } = koreParserOptions
+            parsedDefinition <- mainDefinitionParse fileName
+            let KoreParserOptions { willVerify } = koreParserOptions
+            indexedModules <- if willVerify
+                then lift $ mainVerify parsedDefinition
+                else return Map.empty
+            let KoreParserOptions { willPrintDefinition } = koreParserOptions
+            let KoreParserOptions { appKore } = koreParserOptions
+            lift $ when willPrintDefinition
+                $ if appKore
+                    then putStrLn
+                        $ unparseToString2
+                        $ completeDefinition
+                        $ toVerifiedDefinition indexedModules
+                else putDoc (debug parsedDefinition)
 
-                when (patternFileName /= "") $ do
-                    parsedPattern <- mainPatternParse patternFileName
-                    when willVerify $ do
-                        indexedModule <-
-                            lift $ lookupMainModule
-                                (ModuleName mainModuleName)
-                                indexedModules
-                        _ <- mainPatternVerify indexedModule parsedPattern
-                        return ()
-                    when willPrintPattern $
-                        lift $ putDoc (debug parsedPattern)
+            let KoreParserOptions { patternFileName } = koreParserOptions
+            unless (null patternFileName) $ do
+                parsedPattern <- mainPatternParse patternFileName
+                when willVerify $ do
+                    let KoreParserOptions { mainModuleName } = koreParserOptions
+                    indexedModule <-
+                        lookupMainModule
+                            (ModuleName mainModuleName)
+                            indexedModules
+                        & lift
+                    _ <- mainPatternVerify indexedModule parsedPattern
+                    return ()
+                let KoreParserOptions { willPrintPattern } = koreParserOptions
+                when willPrintPattern $
+                    lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
