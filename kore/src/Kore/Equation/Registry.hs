@@ -153,19 +153,24 @@ partitionEquations equations =
         setConcrete :: Equation VariableName -> Equation VariableName
         setConcrete rule =
             rule
-            & field @"attributes" . field @"concrete"
-                <>~ takeVariables rule
+            & field @"attributes" . field @"concrete" <>~ takeVariables rule
 
         takeVariables
             :: Equation VariableName
             -> Concrete.Concrete VariableName
-        takeVariables rule@Equation { argument } =
+        takeVariables
+            Equation
+                { left = TermLike (_ :< ApplySymbolF (Application symbol _ )) }
+              | symbolic symbol = mempty
+        takeVariables
+            rule@Equation { argument }
+          =
             maybe mempty
                 ( Concrete.Concrete
                 . binaryOperator Map.intersection (mustBeConcrete rule)
                 . freeVariables
                 )
-                (notSymbolic argument)
+                argument
 
         mustBeConcrete :: Equation VariableName -> FreeVariables VariableName
         mustBeConcrete Equation { right, ensures } =
@@ -183,18 +188,6 @@ partitionEquations equations =
                   | isDeclaredFunction symbol
                     -> Foldable.fold (fmap freeVariables children)
                 _ -> Foldable.foldMap freeVarsInFunctions termLikeF
-
-        notSymbolic
-            :: Maybe (Predicate VariableName)
-            -> Maybe (Predicate VariableName)
-        notSymbolic
-            (fmap unwrapPredicate ->
-                Just ( TermLike (_ :< InF (In _ _ _ parameter) ) )
-            )
-          | TermLike (_ :< ApplySymbolF (Application symbol _ )) <- parameter
-          , symbolic symbol =
-            Nothing
-        notSymbolic arg = arg
 
 {- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
