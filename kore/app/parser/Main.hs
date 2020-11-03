@@ -2,6 +2,11 @@ module Main (main) where
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( Exception (..)
+    , SomeException
+    , handle
+    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -119,11 +124,22 @@ parserInfoModifiers =
                 \Verifies well-formedness"
     <> header "kore-parser - a parser for Kore definitions"
 
+{- | Top-level exception handler.
+
+Renders exceptions for the user with 'displayException' and exits
+unsuccessfully.
+
+ -}
+handleTop :: IO () -> IO ()
+handleTop =
+    handle handler
+  where
+    handler = die . displayException @SomeException
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Parses a kore file and Check wellformedness
 main :: IO ()
-main = do
+main = handleTop $ do
     options <-
         mainGlobal
             (ExeName "kore-parser")
