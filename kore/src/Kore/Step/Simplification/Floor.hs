@@ -14,8 +14,6 @@ module Kore.Step.Simplification.Floor
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -66,7 +64,7 @@ simplifyEvaluatedFloor
     => OrPattern variable
     -> OrPattern variable
 simplifyEvaluatedFloor child =
-    case Foldable.toList child of
+    case toList child of
         [childP] -> makeEvaluateFloor childP
         _ -> makeEvaluateFloor (OrPattern.toPattern child)
 

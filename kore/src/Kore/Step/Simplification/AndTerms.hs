@@ -26,7 +26,6 @@ import Control.Error
     ( MaybeT (..)
     )
 import qualified Control.Error as Error
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.String
     ( fromString
@@ -288,7 +287,7 @@ maybeTransformTerm
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 maybeTransformTerm topTransformers childTransformers first second =
-    Foldable.asum
+    asum
         (map
             (\f -> f
                 childTransformers
@@ -352,7 +351,7 @@ bottomTermEquals
     second
   = lift $ do -- MonadUnify
     secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
-    case Foldable.toList secondCeil of
+    case toList secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
           | substitution == mempty -> do
@@ -423,7 +422,7 @@ variableFunctionAndEquals
             SimplificationType.Equals -> do
                 let sort = termLikeSort first
                 resultOr <- makeEvaluateTermCeil sideCondition sort second
-                case Foldable.toList resultOr of
+                case toList resultOr of
                     [] -> do
                         explainBottom
                            "Unification of variable and bottom \

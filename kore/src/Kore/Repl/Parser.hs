@@ -15,7 +15,6 @@ import Prelude.Kore hiding
     ( many
     )
 
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
     )
@@ -92,7 +91,7 @@ commandParserExceptAlias endParser = do
 
 nonRecursiveCommand :: Parser ReplCommand
 nonRecursiveCommand =
-    Foldable.asum
+    asum
         [ help
         , showClaim
         , showAxiom

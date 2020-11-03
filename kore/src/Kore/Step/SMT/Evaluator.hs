@@ -24,7 +24,6 @@ import Control.Error
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
@@ -152,7 +151,7 @@ filterMultiOr
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
-    elements <- mapM refute (Foldable.toList multiOr)
+    elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
     refute
@@ -198,7 +197,7 @@ decidePredicate predicates =
         SMT.withSolver $ evalTranslator $ do
             tools <- Simplifier.askMetadataTools
             predicates' <- traverse (translatePredicate tools) predicates
-            Foldable.traverse_ SMT.assert predicates'
+            traverse_ SMT.assert predicates'
             SMT.check
 
     -- | Re-run the SMT query.

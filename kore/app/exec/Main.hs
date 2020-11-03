@@ -14,7 +14,6 @@ import Control.Monad.Extra as Monad
 import Data.Default
     ( def
     )
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -493,7 +492,7 @@ writeKoreProveFiles reportFile koreProveOptions = do
     let KoreProveOptions { specFileName } = koreProveOptions
     copyFile specFileName (reportFile </> "spec.kore")
     let KoreProveOptions { saveProofs } = koreProveOptions
-    Foldable.for_ saveProofs $ \filePath ->
+    for_ saveProofs $ \filePath ->
         Monad.whenM
             (doesFileExist filePath)
             (copyFile filePath (reportFile </> "save-proofs.kore"))
@@ -520,14 +519,14 @@ writeOptionsAndKoreFiles
     setPermissions shellScript $ allPermissions emptyPermissions
     copyFile definitionFileName
         (reportDirectory </> defaultDefinitionFilePath opts)
-    Foldable.for_ patternFileName
+    for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
     writeKoreSolverFiles koreSolverOptions reportDirectory
-    Foldable.for_ koreSearchOptions
+    for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
-    Foldable.for_ koreMergeOptions
+    for_ koreMergeOptions
         (writeKoreMergeFiles reportDirectory)
-    Foldable.for_ koreProveOptions
+    for_ koreProveOptions
         (writeKoreProveFiles reportDirectory)
 
 exeName :: ExeName
@@ -548,7 +547,7 @@ main = do
             (Just envName)
             (parseKoreExecOptions startTime)
             parserInfoModifiers
-    Foldable.for_ (localOptions options) mainWithOptions
+    for_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -562,7 +561,7 @@ mainWithOptions execOptions = do
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
     let KoreExecOptions { rtsStatistics } = execOptions
-    Foldable.for_ rtsStatistics $ \filePath ->
+    for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
   where
@@ -675,7 +674,7 @@ koreProve execOptions proveOptions = do
                 OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
             getStuckConfig =
                 getRewritingPattern . getConfiguration . getStuckClaim
-    lift $ Foldable.for_ saveProofs $ saveProven specModule provenClaims
+    lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -704,7 +703,7 @@ koreProve execOptions proveOptions = do
         -> MultiAnd SomeClaim
         -> FilePath
         -> IO ()
-    saveProven specModule (Foldable.toList -> provenClaims) outputFile =
+    saveProven specModule (toList -> provenClaims) outputFile =
         withFile outputFile WriteMode
             (`hPutDoc` unparse provenDefinition)
       where

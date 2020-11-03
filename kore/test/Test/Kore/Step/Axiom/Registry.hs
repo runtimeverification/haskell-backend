@@ -14,7 +14,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -452,9 +451,7 @@ test_functionRegistry =
             runSimplifier testEnv
             $ Pattern.simplify SideCondition.top
             $ makePattern $ mkApplySymbol gHead []
-        let actual =
-                Pattern.term $ head
-                $ Foldable.toList simplified
+        let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApplySymbol tHead []
@@ -462,9 +459,7 @@ test_functionRegistry =
             runSimplifier testEnv
             $ Pattern.simplify SideCondition.top
             $ makePattern $ mkApplySymbol pHead []
-        let actual =
-                Pattern.term $ head
-                $ Foldable.toList simplified
+        let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual
     , testCase "Function rules sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")

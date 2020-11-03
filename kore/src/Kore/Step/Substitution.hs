@@ -14,8 +14,6 @@ module Kore.Step.Substitution
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
@@ -82,5 +80,5 @@ mergePredicatesAndSubstitutions topCondition predicates substitutions =
         Conditional
             { term = ()
             , predicate = Predicate.makeMultipleAndPredicate predicates
-            , substitution = Foldable.fold substitutions
+            , substitution = fold substitutions
             }
