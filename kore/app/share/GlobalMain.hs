@@ -10,7 +10,6 @@ module GlobalMain
     , parseKoreProveOptions
     , parseKoreMergeOptions
     , mainGlobal
-    , defaultMainGlobal
     , enableDisableFlag
     , clockSomething
     , clockSomethingIO
@@ -74,9 +73,7 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , ParserHelp (..)
-    , argument
     , defaultPrefs
-    , disabled
     , execParserPure
     , flag
     , flag'
@@ -288,18 +285,15 @@ and returns the parsed options
 -}
 mainGlobal
     :: ExeName
+    -> Maybe String
+    -- ^ environment variable name for extra arguments
     -> Parser options                -- ^ local options parser
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
-mainGlobal exeName localOptionsParser modifiers = do
-    options <- commandLineParse exeName localOptionsParser modifiers
+mainGlobal exeName maybeEnv localOptionsParser modifiers = do
+    options <- commandLineParse exeName maybeEnv localOptionsParser modifiers
     when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
     return options
-
-defaultMainGlobal :: IO (MainOptions options)
-defaultMainGlobal =
-    mainGlobal (ExeName "kore-exec") (argument disabled mempty) mempty
-
 
 -- | main function to print version information
 mainVersion :: ZonedTime -> IO ()
@@ -331,37 +325,48 @@ globalCommandLineParser =
         (  long "version"
         <> help "Print version information" )
 
+getArgs
+    :: Maybe String  -- ^ environment variable name for extra arguments
+    -> IO ([String], [String])
+getArgs maybeEnv = do
+    args0 <- Env.getArgs
+    args1 <-
+        case maybeEnv of
+            Nothing -> pure []
+            Just env -> words . fromMaybe "" <$> Env.lookupEnv env
+    pure (args0, args1)
+
 -- | Run argument parser for local executable
 commandLineParse
     :: ExeName
-    -> Parser a                -- ^ local options parser
-    -> InfoMod (MainOptions a) -- ^ local parser info modifiers
+    -> Maybe String
+    -- ^ environment variable name for extra arguments
+    -> Parser a
+    -- ^ local options parser
+    -> InfoMod (MainOptions a)
+    -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
-    args' <- Env.getArgs
-    env <- Env.lookupEnv "KORE_EXEC_OPTS"
-    let opts' = fromMaybe "" env
-        args = case env of
-            Nothing -> args'
-            Just opts -> args' <> words opts
-        parseResult = execParserPure
-            defaultPrefs
-            ( info
-                ( MainOptions
-                    <$> globalCommandLineParser
-                    <*> optional localCommandLineParser
-                <**> helper
-                )
-                modifiers
-            )
-            args
+commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
+    (args, argsEnv) <- getArgs maybeEnv
+    let allArgs = args <> argsEnv
+        parseResult =
+            execParserPure
+                defaultPrefs
+                (info parseMainOptions infoMod)
+                allArgs
         changeHelpOverFailure
-          | exeName == "kore-exec" = overFailure (changeHelp args opts')
+          | Just env <- maybeEnv = overFailure (changeHelp args env argsEnv)
           | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
   where
-    changeHelp :: [String] -> String -> ParserHelp -> ParserHelp
-    changeHelp commandLine koreExecOpts parserHelp@ParserHelp { helpError } =
+    parseMainOptions =
+        MainOptions
+            <$> globalCommandLineParser
+            <*> optional parser
+        <**> helper
+
+    changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp
+    changeHelp args env argsEnv parserHelp@ParserHelp { helpError } =
         parserHelp
             { helpError =
                 vsepChunks [Chunk . Just $ commandWithOpts, helpError]
@@ -370,8 +375,8 @@ commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
         commandWithOpts =
             Pretty.vsep
                 [ Pretty.linebreak
-                , Pretty.pretty ("kore-exec " <> unwords commandLine)
-                , Pretty.pretty ("KORE_EXEC_OPTS = " <> koreExecOpts)
+                , Pretty.pretty (unwords (exeName : args))
+                , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
                 ]
 
 

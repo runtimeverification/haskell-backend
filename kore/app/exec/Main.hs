@@ -533,6 +533,10 @@ writeOptionsAndKoreFiles
 exeName :: ExeName
 exeName = ExeName "kore-exec"
 
+-- | Environment variable name for extra arguments
+envName :: String
+envName = "KORE_EXEC_OPTS"
+
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Loads a kore definition file and uses it to execute kore programs
 main :: IO ()
@@ -541,6 +545,7 @@ main = do
     options <-
         mainGlobal
             Main.exeName
+            (Just envName)
             (parseKoreExecOptions startTime)
             parserInfoModifiers
     Foldable.for_ (localOptions options) mainWithOptions
