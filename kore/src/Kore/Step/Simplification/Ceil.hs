@@ -25,7 +25,6 @@ import Control.Monad.Reader
     ( MonadReader
     )
 import qualified Control.Monad.Reader as Reader
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
@@ -338,7 +337,7 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
   where
     Domain.InternalAc { builtinAcSort } = internalAc
 makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
-    children <- mapM (makeEvaluateTerm sideCondition) (Foldable.toList l)
+    children <- mapM (makeEvaluateTerm sideCondition) (toList l)
     let
         ceils :: [OrCondition variable]
         ceils = children
@@ -374,7 +373,7 @@ makeSimplifiedCeil
     termLike@(Recursive.project -> _ :< termLikeF)
   = do
     childCeils <- if needsChildCeils
-        then mapM (makeEvaluateTerm sideCondition) (Foldable.toList termLikeF)
+        then mapM (makeEvaluateTerm sideCondition) (toList termLikeF)
         else return []
     And.simplifyEvaluatedMultiPredicate
         sideCondition

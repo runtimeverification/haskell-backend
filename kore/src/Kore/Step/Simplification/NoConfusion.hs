@@ -16,7 +16,6 @@ import Control.Error
     )
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Pattern
     ( Pattern
@@ -52,7 +51,7 @@ equalInjectiveHeadsAndEquals
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let merged = Foldable.foldMap Pattern.withoutTerm children
+        let merged = foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
             -- Unifying the symbol's children may have produced new patterns
             -- which allow evaluating the symbol. It is possible this pattern

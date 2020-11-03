@@ -21,7 +21,6 @@ import Control.Monad.State.Strict
     ( StateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
@@ -169,9 +168,9 @@ transitionRule
             if null filteredConfigs
                 then return Proven
                 else
-                    Foldable.asum
+                    asum
                     $ pure . wrapper
-                    <$> Foldable.toList filteredConfigs
+                    <$> toList filteredConfigs
 
     transitionUnroll
         :: CommonModalPattern

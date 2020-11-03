@@ -20,7 +20,6 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -133,7 +132,7 @@ The named modules are verified and imported into the current 'VerifiedModule'.
 
  -}
 verifyImports :: [ParsedSentence] -> SentenceVerifier ()
-verifyImports = Foldable.traverse_ verifyImport . mapMaybe projectSentenceImport
+verifyImports = traverse_ verifyImport . mapMaybe projectSentenceImport
 
 verifyImport :: SentenceImport ParsedPattern -> SentenceVerifier ()
 verifyImport sentence =

@@ -11,7 +11,6 @@ module Kore.Attribute.Pattern.Defined
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import qualified Data.Map.Strict as Map
 import Data.Monoid
@@ -54,7 +53,7 @@ instance Synthetic Defined (Bottom sort) where
 -- arguments are 'Defined'.
 instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
-        totalSymbol <> Foldable.fold children
+        totalSymbol <> fold children
       where
         totalSymbol = Defined (Internal.isTotal symbol)
         children = applicationChildren application
@@ -120,7 +119,7 @@ instance Synthetic Defined (Nu sort) where
 
 -- | An 'Or' pattern is 'Defined' if any of its subterms is 'Defined'.
 instance Synthetic Defined (Or sort) where
-    synthetic = Defined . getAny . Foldable.foldMap (Any . isDefined)
+    synthetic = Defined . getAny . foldMap (Any . isDefined)
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined (Rewrites sort) where
@@ -139,7 +138,7 @@ instance Synthetic Defined (Builtin key) where
             {builtinAcChild = NormalizedMap builtinMapChild}
         )
       = normalizedAcDefined builtinMapChild
-    synthetic builtin = Foldable.fold builtin
+    synthetic builtin = fold builtin
     {-# INLINE synthetic #-}
 
 normalizedAcDefined
@@ -165,7 +164,7 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
           | Map.null concreteElements -> sameAsChildren
         _ -> Defined False
   where
-    sameAsChildren = Foldable.fold ac
+    sameAsChildren = fold ac
 
 
 -- | A 'Top' pattern is always 'Defined'.
