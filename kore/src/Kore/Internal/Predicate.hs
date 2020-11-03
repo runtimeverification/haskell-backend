@@ -335,7 +335,7 @@ type instance Base (Predicate variable) =
     CofreeF (PredicateF variable) (PredicatePattern variable)
 
 
--- This instance implements all class functions for the TermLike newtype
+-- This instance implements all class functions for the Predicate newtype
 -- because the their implementations for the inner type may be specialized.
 instance Recursive (Predicate variable) where
     project = \(Predicate embedded) ->
@@ -432,12 +432,11 @@ instance TopBottom (Predicate variable) where
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
 pattern PredicateFalse :: Predicate variable
+pattern PredicateFalse <- (Recursive.project -> _ :< BottomF _)
 
 {-|'PredicateTrue' is a pattern for matching 'top' predicates.
 -}
 pattern PredicateTrue :: Predicate variable
-
-pattern PredicateFalse <- (Recursive.project -> _ :< BottomF _)
 pattern PredicateTrue  <- (Recursive.project -> _ :< TopF _)
 
 pattern PredicateAnd
@@ -950,7 +949,12 @@ simplifiedFromChildren predF =
         NotSimplified -> NotSimplified
         _ -> mergedSimplified `Simplified.simplifiedTo` Simplified.fullySimplified
   where
-    mergedSimplified = foldMap simplifiedAttribute predF
+    mergedSimplified = case predF of
+        CeilF ceil'     -> foldMap TermLike.simplifiedAttribute ceil'
+        FloorF floor'   -> foldMap TermLike.simplifiedAttribute floor'
+        EqualsF equals' -> foldMap TermLike.simplifiedAttribute equals'
+        InF in'         -> foldMap TermLike.simplifiedAttribute in'
+        _               -> foldMap simplifiedAttribute predF
 
 checkedSimplifiedFromChildren
     :: (HasCallStack, InternalVariable variable)
@@ -1123,17 +1127,14 @@ contain none of the targeted variables.
 
 
 
- -- !!  The following is just a temporary solution and      !!
- -- !!  the code using wrapPredicate should be refactored   !!
+ -- !!  TODO The following is just a temporary solution and  !!
+ -- !!  the code using wrapPredicate should be refactored    !!
 
 wrapPredicate ::
     InternalVariable variable
     => TermLike variable -> Predicate variable
 wrapPredicate = either
-    (error "Term cannot be wrapped.\n\
-            \Input TermLike is not a Predicate \
-            \despite being supposed to be\n"
-    )
+    (error "Term cannot be wrapped.\nInput TermLike is not a Predicate despite being supposed to be\n")
     id
     . makePredicate
 
