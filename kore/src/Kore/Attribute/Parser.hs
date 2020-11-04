@@ -85,7 +85,6 @@ import Data.Default
     ( Default (..)
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import Data.Text
@@ -162,7 +161,7 @@ parseAttributesWith
     -> attrs
     -> Parser attrs
 parseAttributesWith (Attributes attrs) def' =
-    Foldable.foldlM (flip parseAttribute) def' attrs
+    foldlM (flip parseAttribute) def' attrs
 
 parseAttributes :: ParseAttributes attrs => Attributes -> Parser attrs
 parseAttributes attrs = parseAttributesWith attrs Default.def

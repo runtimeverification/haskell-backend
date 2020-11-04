@@ -48,7 +48,6 @@ import Prelude.Kore
 import qualified Control.Monad as Monad
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char
-import qualified Data.Foldable as Foldable
 import Data.HashSet
     ( HashSet
     )
@@ -559,7 +558,7 @@ escapeUnicodeParser
     -> Parser Char
 escapeUnicodeParser n = do
     hs <- Monad.replicateM n hexDigitParser
-    let i = Foldable.foldl' (\r h -> 0x10 * r + Char.digitToInt h) 0 hs
+    let i = foldl' (\r h -> 0x10 * r + Char.digitToInt h) 0 hs
     when (i > Char.ord (maxBound :: Char)) $ fail (unrepresentableCode hs)
     let c = Char.chr i
     when (isSurrogate c) $ fail (illegalSurrogate hs)

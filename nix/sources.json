@@ -49,15 +49,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-unstable",
-        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
-        "homepage": "https://github.com/NixOS/nixpkgs",
-        "owner": "NixOS",
-        "repo": "nixpkgs-channels",
-        "rev": "5717d9d2f7ca0662291910c52f1d7b95b568fec2",
-        "sha256": "17gxd2f622pyss3r6cjngdav6wzdbr31d7bqx9z2lawxg47mmk1l",
+        "branch": "master",
+        "description": "Nix Packages collection",
+        "homepage": "",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "fc37cc679f168159a234f45a3861b1b7a414e304",
+        "sha256": "0a57rmfn332dnwk6smlcarp3m7gvifq9y872cmcxj1800fjnjnns",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/5717d9d2f7ca0662291910c52f1d7b95b568fec2.tar.gz",
+        "url": "https://github.com/nixos/nixpkgs/archive/fc37cc679f168159a234f45a3861b1b7a414e304.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "stylish-haskell": {

@@ -43,7 +43,6 @@ import Control.Error
     ( MaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import Data.Kind
     ( Type
     )
@@ -449,7 +448,7 @@ updateConcreteElements
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
-    Foldable.foldrM (uncurry insertMissing) elems newElems
+    foldrM (uncurry insertMissing) elems newElems
     & TermLike.assertConstructorLikeKeys (Map.keys elems)
     & TermLike.assertConstructorLikeKeys (fst <$> newElems)
 
@@ -464,7 +463,7 @@ updateAbstractElements
     -> Maybe [Domain.Element collection child]
 updateAbstractElements elements =
     fmap (map Domain.wrapElement . Map.toList)
-    $ Foldable.foldrM (uncurry insertMissing) Map.empty
+    $ foldrM (uncurry insertMissing) Map.empty
     $ map Domain.unwrapElement elements
 
 {- | Make any abstract elements into concrete elements if possible.
@@ -518,7 +517,7 @@ flattenOpaque (Domain.unwrapAc -> normalized) = do
     let opaque = Domain.opaque normalized
         (builtin, opaque') = partitionEithers (extractBuiltin <$> opaque)
         transparent = Domain.wrapAc normalized { Domain.opaque = opaque' }
-    Foldable.foldrM concatNormalized transparent builtin
+    foldrM concatNormalized transparent builtin
   where
     extractBuiltin termLike =
         maybe (Right termLike) Left (matchBuiltin termLike)
@@ -775,11 +774,11 @@ unifyEqualsNormalized
 
         markSimplified =
             TermLike.setSimplified
-                (  Foldable.foldMap TermLike.simplifiedAttribute opaque
-                <> Foldable.foldMap TermLike.simplifiedAttribute abstractKeys
-                <> Foldable.foldMap simplifiedAttributeValue abstractValues
-                <> Foldable.foldMap TermLike.simplifiedAttribute concreteKeys
-                <> Foldable.foldMap simplifiedAttributeValue concreteValues
+                (  foldMap TermLike.simplifiedAttribute opaque
+                <> foldMap TermLike.simplifiedAttribute abstractKeys
+                <> foldMap simplifiedAttributeValue abstractValues
+                <> foldMap TermLike.simplifiedAttribute concreteKeys
+                <> foldMap simplifiedAttributeValue concreteValues
                 )
           where
             unwrapped = Domain.unwrapAc renormalized
@@ -1085,7 +1084,7 @@ buildResultFromUnifiers
         (opaquesTerms, opaquesConditions) =
             unzip (map Conditional.splitTerm opaquesSimplified)
         opaquesNormalized :: NormalizedOrBottom normalized variable
-        opaquesNormalized = Foldable.foldMap toNormalized opaquesTerms
+        opaquesNormalized = foldMap toNormalized opaquesTerms
 
     Domain.NormalizedAc
         { elementsWithVariables = preOpaquesElementsWithVariables

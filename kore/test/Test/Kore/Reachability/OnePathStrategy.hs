@@ -12,7 +12,6 @@ import Data.Coerce
 import Data.Default
     ( def
     )
-import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
     , nub
@@ -899,7 +898,7 @@ runOnePathSteps
         coinductiveRewrites
         (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
         claim
-        (Limit.takeWithin depthLimit (Foldable.toList strategy))
+        (Limit.takeWithin depthLimit (toList strategy))
     return (sort $ nub result)
 
 assertStuck

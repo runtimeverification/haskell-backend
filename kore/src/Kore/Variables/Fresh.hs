@@ -18,7 +18,6 @@ import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -262,7 +261,7 @@ refreshVariables
     -> Set (Variable variable)  -- ^ variables to rename
     -> Map variable (Variable variable)
 refreshVariables avoid0 =
-    snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
+    snd <$> foldl' refreshVariablesWorker (avoid0, Map.empty)
   where
     refreshVariablesWorker (avoid, rename) var
       | Just var' <- refreshVariable avoid var =

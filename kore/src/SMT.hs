@@ -96,7 +96,6 @@ import qualified GHC.Generics as GHC
 import Control.Monad
     ( join
     )
-import qualified Data.Foldable as Foldable
 import Log
     ( LogAction
     , LoggerT
@@ -471,7 +470,7 @@ defaultConfig =
 initSolver :: Config -> SMT ()
 initSolver Config { timeOut, prelude } = do
     setTimeOut timeOut
-    Foldable.traverse_ loadFile preludeFile
+    traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
   where
       preludeFile = getPrelude prelude

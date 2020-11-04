@@ -18,8 +18,6 @@ module Kore.Step.Simplification.Not
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     )
@@ -214,7 +212,7 @@ distributeNot
     => Not sort (MultiOr child)
     -> MultiAnd (Not sort child)
 distributeNot notOr@Not { notChild } =
-    MultiAnd.make $ worker <$> Foldable.toList notChild
+    MultiAnd.make $ worker <$> toList notChild
   where
     worker child = notOr { notChild = child }
 
@@ -243,9 +241,9 @@ mkMultiAndPredicate
     => MultiAnd (Condition variable)
     -> LogicT simplifier (Condition variable)
 mkMultiAndPredicate predicates =
-    -- Using Foldable.fold because the Monoid instance of Condition
+    -- Using fold because the Monoid instance of Condition
     -- implements And semantics.
-    return $ Foldable.fold predicates
+    return $ fold predicates
 
 notSimplifier
     :: MonadSimplify simplifier

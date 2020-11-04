@@ -14,7 +14,6 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -1563,7 +1562,7 @@ simplifyEquals
     -> TermLike VariableName
     -> IO (Maybe [Condition VariableName])
 simplifyEquals simplifierAxioms first second =
-    (fmap . fmap) Foldable.toList
+    (fmap . fmap) toList
     $ runSimplifier mockEnv
     $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where

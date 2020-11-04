@@ -16,7 +16,6 @@ import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
     )
-import qualified Data.Foldable as Foldable
 import Data.Maybe
     ( fromJust
     )
@@ -310,7 +309,7 @@ applyRewriteRules_
     -> IO [OrPattern RewritingVariableName]
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
-    return (Foldable.toList . discardRemainders $ result)
+    return (toList . discardRemainders $ result)
   where
     discardRemainders = fmap Step.result . Step.results
 
@@ -336,7 +335,7 @@ applyClaims_
     -> IO [OrPattern RewritingVariableName]
 applyClaims_ applyClaims initial claims = do
     result <- applyClaims initial claims
-    return (Foldable.toList . discardRemainders $ result)
+    return (toList . discardRemainders $ result)
   where
     discardRemainders = fmap Step.result . Step.results
 

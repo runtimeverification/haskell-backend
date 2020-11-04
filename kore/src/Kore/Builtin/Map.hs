@@ -36,7 +36,6 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -637,9 +636,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
             (OrPattern.fromPatterns unificationSolutions)
         >>= Unify.scatter
 
-    collectConditions terms =
-        Foldable.fold terms
-        & Pattern.fromCondition_
+    collectConditions terms = fold terms & Pattern.fromCondition_
 
     worker
         :: TermLike variable
