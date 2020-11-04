@@ -52,6 +52,7 @@ import System.Exit
 import Data.Containers.ListUtils
     ( nubOrd
     )
+import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
     )
