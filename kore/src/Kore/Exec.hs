@@ -40,8 +40,6 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -50,9 +48,6 @@ import System.Exit
     ( ExitCode (..)
     )
 
-import Data.Containers.ListUtils
-    ( nubOrd
-    )
 import Data.Limit
     ( Limit (..)
     )
@@ -325,11 +320,11 @@ getExitCode indexedModule finalConfig =
     takeExitCode act =
         case resolve "LblgetExitCode" of
             Nothing -> pure ExitSuccess
-            Just mkGetExitCodeSymbol -> do
-                exitCodes <- Logic.observeAllT (act mkGetExitCodeSymbol)
-                case List.nub exitCodes of
-                    [exit] -> pure exit
-                    _      -> pure $ ExitFailure 111
+            Just mkGetExitCodeSymbol ->
+                Logic.runLogicT
+                    (act mkGetExitCodeSymbol)
+                    (\a _ -> pure a)
+                    (pure $ ExitFailure 111)
 
 -- | Symbolic search
 search
