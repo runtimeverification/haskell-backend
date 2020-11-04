@@ -48,9 +48,6 @@ import Data.Functor.Identity
     ( Identity (..)
     )
 import qualified Data.Generics.Product as Lens.Product
-import Data.List
-    ( foldl'
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC

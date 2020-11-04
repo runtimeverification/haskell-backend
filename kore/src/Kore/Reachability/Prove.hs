@@ -50,7 +50,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
@@ -256,7 +255,7 @@ proveClaimsWorker
     -- for each.
     -> ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
-    Foldable.traverse_ verifyWorker toProve
+    traverse_ verifyWorker toProve
   where
     verifyWorker
         :: (SomeClaim, Limit Natural)
@@ -291,7 +290,7 @@ proveClaim
         startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
         limitedStrategy =
             strategy
-            & Foldable.toList
+            & toList
             & Limit.takeWithin depthLimit
     proofDepths <-
         Strategy.leavesM
@@ -313,7 +312,7 @@ proveClaim
     handleLimitExceeded (Strategy.LimitExceeded states) = do
         let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
             stuckClaims = mapMaybe extractStuckClaim states
-        Monad.Except.throwError (MultiAnd.make $ Foldable.toList stuckClaims)
+        Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -332,7 +331,7 @@ proveClaim
         do
             (proofDepth, proofState) <- acts
             let maybeUnproven = extractUnproven proofState
-            Foldable.for_ maybeUnproven $ \unproven -> do
+            for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
                 throwStuckClaim unproven
             pure proofDepth
@@ -454,7 +453,7 @@ checkStuckConfiguration
     -> CommonTransitionRule m
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
-    Foldable.for_ (extractStuck proofState) $ \rule' -> do
+    for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
         when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $

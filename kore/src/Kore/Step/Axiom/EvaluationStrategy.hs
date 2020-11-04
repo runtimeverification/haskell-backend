@@ -27,7 +27,6 @@ import Control.Monad.Except
 import Data.EitherR
     ( ExceptRT (..)
     )
-import qualified Data.Foldable as Foldable
 import Data.Semigroup
     ( Min (..)
     , Option (..)
@@ -128,7 +127,7 @@ attemptEquations
     -> [Equation variable]
     -> simplifier (Either error result)
 attemptEquations accumulator equations =
-    Foldable.foldlM
+    foldlM
         (\err equation -> mappend err <$> accumulator equation)
         mempty
         equations
@@ -295,7 +294,7 @@ applyFirstSimplifierThatWorksWorker
             }
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
-          | length (Foldable.toList orResults) > 1 ->
+          | length orResults > 1 ->
             -- We should only allow multiple simplification results
             -- when they are created by unification splitting the
             -- configuration.
@@ -308,10 +307,10 @@ applyFirstSimplifierThatWorksWorker
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orResults)
+                    (unparse <$> toList orResults)
                 , Pretty.indent 2 "remainders:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orRemainders)
+                    (unparse <$> toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->
             tryNextSimplifier Conditional

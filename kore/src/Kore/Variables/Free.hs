@@ -19,7 +19,6 @@ import Prelude.Kore
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.Extra as Monad
 import qualified Control.Monad.RWS.Strict as Monad.RWS
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Set
     ( Set
@@ -92,7 +91,7 @@ pureMergeVariables base =
             Set.insert (mkSomeVariable muVariable) muChild
         NuF Nu { nuVariable, nuChild } ->
             Set.insert (mkSomeVariable nuVariable) nuChild
-        p -> Foldable.foldl' Set.union Set.empty p
+        p -> foldl' Set.union Set.empty p
 
 {-| 'pureAllVariables' extracts all variables of a given level in a pattern as a
 set, regardless of whether they are quantified or not.

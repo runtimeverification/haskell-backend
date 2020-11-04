@@ -11,7 +11,9 @@ let
 
   sources = import ./nix/sources.nix;
   pkgs = import sources."nixpkgs" {};
-  inherit (pkgs) cabal-install stack;
+
+  inherit (pkgs) cabal-install ghcid stack;
+  inherit (pkgs) gnumake yq z3;
 
   ghcide-project = default.pkgs.haskell-nix.project {
     src = sources."ghcide";
@@ -38,7 +40,6 @@ in
 
 shellFor {
   buildInputs =
-    with pkgs;
     [
       gnumake yq z3
       ghcide hie-bios

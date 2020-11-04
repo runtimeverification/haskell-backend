@@ -49,9 +49,6 @@ import Data.Reflection
 import Data.Text
     ( Text
     )
-import Data.Traversable
-    ( for
-    )
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Hook

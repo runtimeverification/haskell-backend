@@ -52,7 +52,12 @@ infoMod =
 main :: IO ()
 main =
     do
-        options <- mainGlobal (ExeName "kore-format") commandLine infoMod
+        options <-
+            mainGlobal
+                (ExeName "kore-format")
+                Nothing  -- environment variable name for extra arguments
+                commandLine
+                infoMod
         case localOptions options of
             Nothing ->
                 {-  Global options were parsed, but local options were not.

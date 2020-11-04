@@ -32,7 +32,9 @@ module Kore.Repl.State
     , getNodeState
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( toList
+    )
 
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
@@ -54,9 +56,6 @@ import Data.Coerce
     ( coerce
     )
 import qualified Data.Default as Default
-import Data.Foldable
-    ( find
-    )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree

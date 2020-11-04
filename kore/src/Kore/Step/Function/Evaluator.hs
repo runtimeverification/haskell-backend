@@ -24,7 +24,6 @@ import Control.Error
 import Control.Monad.Catch
     ( MonadThrow
     )
-import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
@@ -88,7 +87,7 @@ evaluateApplication
     childrenCondition
     (evaluateSortInjection -> application)
   = finishT $ do
-    Foldable.for_ canMemoize recallOrPattern
+    for_ canMemoize recallOrPattern
     results <-
         maybeEvaluatePattern
             childrenCondition
@@ -97,7 +96,7 @@ evaluateApplication
             sideCondition
         & maybeT (unevaluated Nothing) return
         & lift
-    Foldable.for_ canMemoize (recordOrPattern results)
+    for_ canMemoize (recordOrPattern results)
     when (Symbol.isFunctional symbol && isBottom results) $
         lift $ errorBottomTotalFunction termLike
     return results
@@ -124,9 +123,9 @@ evaluateApplication
         -> TermLike variable
         -> TermLike variable
     markSimplifiedIfChildren Nothing = TermLike.setSimplified
-        (Foldable.foldMap TermLike.simplifiedAttribute application)
+        (foldMap TermLike.simplifiedAttribute application)
     markSimplifiedIfChildren (Just condition) = TermLike.setSimplified
-        (  Foldable.foldMap TermLike.simplifiedAttribute application
+        (  foldMap TermLike.simplifiedAttribute application
         <> Attribute.Simplified.simplifiedConditionally condition
         )
 
@@ -143,7 +142,7 @@ evaluateApplication
         maybeTermLike <- recall key
         let maybeOrPattern =
                 OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
-        Foldable.for_ maybeOrPattern throwE
+        for_ maybeOrPattern throwE
 
     recordOrPattern orPattern key
       | [result] <- OrPattern.toPatterns orPattern

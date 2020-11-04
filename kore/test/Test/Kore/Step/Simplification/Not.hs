@@ -8,8 +8,6 @@ import Test.Tasty
     ( TestTree
     )
 
-import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -82,7 +80,7 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
           where
-            actuals = Foldable.toList actual
+            actuals = toList actual
     patternBecomes
         :: HasCallStack
         => TestPattern
@@ -90,7 +88,7 @@ test_simplifyEvaluated =
         -> TestTree
     patternBecomes original expecteds =
         testCase "patternBecomes" $ do
-            let actuals = Foldable.toList $ Not.makeEvaluate original
+            let actuals = toList $ Not.makeEvaluate original
             assertEqual (message actuals) expecteds actuals
       where
         message actuals =

@@ -7,7 +7,6 @@ import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
@@ -1205,7 +1204,7 @@ builtinSet elements opaque =
         (,) <$> Builtin.toKey key <*> pure Domain.SetValue
         & maybe (Left (key, Domain.SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asKey <$> Foldable.toList elements
+        asKey <$> toList elements
         & partitionEithers
 
 builtinSet_

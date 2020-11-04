@@ -27,7 +27,6 @@ module Kore.Step
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
     , sortOn
@@ -108,7 +107,7 @@ transitionRule =
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        Foldable.asum (pure <$> Foldable.toList filteredConfigs)
+        asum (pure <$> toList filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         results <-
@@ -117,8 +116,7 @@ transitionRule =
                 [rule]
                 config
             & lift
-        Foldable.asum
-            (pure <$> Foldable.toList (Step.gatherResults results))
+        asum (pure <$> toList (Step.gatherResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.

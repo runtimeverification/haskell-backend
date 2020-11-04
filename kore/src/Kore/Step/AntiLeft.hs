@@ -18,13 +18,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
-import Data.Foldable
-    ( fold
-    , toList
-    )
-import Data.List
-    ( foldl'
-    )
 import Data.Map.Strict
     ( Map
     )

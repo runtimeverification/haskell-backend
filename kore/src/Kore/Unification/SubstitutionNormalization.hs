@@ -17,7 +17,6 @@ import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( (<&>)
     )
@@ -99,7 +98,7 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             \variable-only cycles!"
 
     setCtorCycle variables = do
-        let substitution' = Foldable.foldl' assignBottom substitutionMap variables
+        let substitution' = foldl' assignBottom substitutionMap variables
         normalize substitution'
 
     mixedCtorCycle _ = empty
