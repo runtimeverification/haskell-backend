@@ -289,7 +289,8 @@ trackExecDepth transit prim (execDepth, execState) = do
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
-    :: (MonadIO simplifier, MonadSimplify simplifier)
+    :: forall simplifier
+    .  (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
     -> OrPattern.OrPattern VariableName
@@ -298,15 +299,15 @@ getExitCode
 getExitCode indexedModule finalConfig =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
-        exitCodePatterns <- do
-            pat <- Logic.scatter $ fmap mkGetExitCode `MultiOr.map` finalConfig
-            Pattern.simplifyTopConfiguration pat
-        let exitList =
-                extractExit . Pattern.term
-                    <$> Foldable.toList exitCodePatterns
+        exitCodePatterns <-
+            do
+                pat <- Logic.scatter $ fmap mkGetExitCode `MultiOr.map` finalConfig
+                Pattern.simplifyTopConfiguration pat
+            & MultiOr.gather
+        let flatExitCodePatterns = MultiOr.flatten exitCodePatterns
             exitCode =
-                case nubOrd exitList of
-                    [exit] -> exit
+                case toList (MultiOr.map Pattern.term flatExitCodePatterns) of
+                    [exitTerm] -> extractExit exitTerm
                     _      -> ExitFailure 111
         return exitCode
   where
@@ -318,6 +319,9 @@ getExitCode indexedModule finalConfig =
 
     resolve = resolveInternalSymbol indexedModule . noLocationId
 
+    takeExitCode
+        :: (([Sort] -> Symbol) -> LogicT simplifier ExitCode)
+        -> simplifier ExitCode
     takeExitCode act =
         case resolve "LblgetExitCode" of
             Nothing -> pure ExitSuccess
