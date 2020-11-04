@@ -40,6 +40,7 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -52,7 +53,6 @@ import System.Exit
 import Data.Containers.ListUtils
     ( nubOrd
     )
-import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
     )
