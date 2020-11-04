@@ -36,7 +36,6 @@ import Prelude.Kore
 
 import Control.DeepSeq
 import qualified Control.Lens as Lens
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import Data.Text
     ( Text
@@ -101,7 +100,7 @@ instance
     Ord variable
     => Synthetic (FreeVariables variable) (Application Symbol)
   where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Application Symbol) where

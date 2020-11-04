@@ -41,7 +41,6 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
@@ -336,7 +335,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
-                case Foldable.toList simplifiedPatterns of
+                case toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
@@ -350,7 +349,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 (match SideCondition.topTODO (mkRewritingPattern searchPattern))
                 executionGraph
         let
-            solutions = concatMap Foldable.toList solutionsLists
+            solutions = concatMap toList solutionsLists
             orPredicate =
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return
@@ -705,7 +704,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
-            let result = Foldable.toList simplified
+            let result = toList simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 

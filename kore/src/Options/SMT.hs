@@ -17,7 +17,6 @@ import Prelude.Kore
 
 import Control.Monad.Extra as Monad
 import qualified Data.Char as Char
-import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
@@ -164,7 +163,7 @@ writeKoreSolverFiles
     KoreSolverOptions { prelude = Prelude unwrappedPrelude }
     reportFile
   =
-    Foldable.for_ unwrappedPrelude
+    for_ unwrappedPrelude
     $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
 
 -- | Ensure that the SMT prelude file exists, if specified.
@@ -173,7 +172,7 @@ ensureSmtPreludeExists
     KoreSolverOptions
         { prelude = SMT.Prelude unwrappedPrelude }
   =
-    Foldable.traverse_
+    traverse_
         (\filePath ->
             Monad.whenM
                 (not <$> doesFileExist filePath)

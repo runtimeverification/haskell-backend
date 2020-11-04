@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Iff
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -90,8 +88,8 @@ simplifyEvaluated
                 (OrPattern.toPattern first)
                 (OrPattern.toPattern second)
   where
-    firstPatterns = Foldable.toList first
-    secondPatterns = Foldable.toList second
+    firstPatterns = toList first
+    secondPatterns = toList second
 
 {-| evaluates an 'Iff' given its two 'Pattern' children.
 

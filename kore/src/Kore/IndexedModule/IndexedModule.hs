@@ -65,7 +65,6 @@ import Control.Monad.State.Strict
     )
 import qualified Control.Monad.State.Strict as Monad.State
 import Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -175,8 +174,7 @@ recursiveIndexedModuleStuff
     -> IndexedModule pat declAtts axiomAtts
     -> stuff
 recursiveIndexedModuleStuff stuffExtractor m =
-    Foldable.fold
-        (stuffExtractor m : subModuleStuffs)
+    fold (stuffExtractor m : subModuleStuffs)
   where
     subModuleStuffs :: [stuff]
     subModuleStuffs =
@@ -369,7 +367,7 @@ toVerifiedDefinition idx =
         { definitionAttributes = Default.def
         , definitionModules =
             toVerifiedModule
-            <$> filter notImplicitKoreModule (Foldable.toList idx)
+            <$> filter notImplicitKoreModule (toList idx)
         }
   where
     notImplicitKoreModule verifiedModule =
@@ -495,7 +493,7 @@ internalIndexedModuleSubsorts imod = do
             ]
     Subsorts subsorts <-
         Attribute.Parser.liftParser
-        $ Foldable.foldrM Attribute.Parser.parseAttributesWith def attributes
+        $ foldrM Attribute.Parser.parseAttributesWith def attributes
     return subsorts
 
 {- | Determine all indexed modules in scope from the given module.
