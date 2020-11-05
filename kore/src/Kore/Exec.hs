@@ -299,7 +299,7 @@ getExitCode indexedModule configs =
                 config <- Logic.scatter configs
                 Pattern.simplifyTopConfiguration (mkGetExitCode <$> config)
                     >>= Logic.scatter
-            & MultiOr.gather
+            & MultiOr.observeAllT
         let exitCode =
                 case toList (MultiOr.map Pattern.term exitCodePatterns) of
                     [exitTerm] -> extractExit exitTerm
