@@ -100,7 +100,7 @@ test_substitute =
             newImp = substitute
                 (Map.singleton (inject $ variableName y) (mkElemVar x))
                 imp
-        assertBool "Variable was captured"
+        assertBool "Expected variable is not captured"
             $ not $ nullFreeVariables $ freeVariablesRight newImp
     ]
 

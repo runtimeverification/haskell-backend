@@ -245,15 +245,15 @@ substituteRight rename implication'@Implication{ right, existentials } =
   where
     existentials' = inject . TermLike.variableName <$> existentials
     subst = foldr Map.delete rename existentials'
-    targetVars = Foldable.foldl' Set.union Set.empty
+    newFreeVars = Foldable.foldl' Set.union Set.empty
         (FreeVariables.toNames . freeVariables @_ @RewritingVariableName
         <$> subst)
-    -- ^ targetVars is the set of free variables in all
+    -- ^ newFreeVars is the set of free variables in all
     -- the RHSs of substitutions
     freeVars = FreeVariables.toNames $ freeVariablesRight implication'
     -- ^ freeVars is the set of free variables of the RHS of
     -- the implication
-    avoid = Set.union targetVars (freeVars Set.\\ Map.keysSet subst)
+    avoid = Set.union newFreeVars (freeVars Set.\\ Map.keysSet subst)
     subst' = refreshVariables avoid (Set.fromList $ inject <$> existentials)
     newSubst = Map.union subst (TermLike.mkVar <$> subst')
 
