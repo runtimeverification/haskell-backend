@@ -291,17 +291,17 @@ getExitCode
     -> OrPattern.OrPattern VariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
-getExitCode indexedModule finalConfig =
+getExitCode indexedModule configs =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
         exitCodePatterns <-
             do
-                pat <- Logic.scatter $ fmap mkGetExitCode `MultiOr.map` finalConfig
-                Pattern.simplifyTopConfiguration pat
+                config <- Logic.scatter configs
+                Pattern.simplifyTopConfiguration (mkGetExitCode <$> config)
+                    >>= Logic.scatter
             & MultiOr.gather
-        let flatExitCodePatterns = MultiOr.flatten exitCodePatterns
-            exitCode =
-                case toList (MultiOr.map Pattern.term flatExitCodePatterns) of
+        let exitCode =
+                case toList (MultiOr.map Pattern.term exitCodePatterns) of
                     [exitTerm] -> extractExit exitTerm
                     _      -> ExitFailure 111
         return exitCode
@@ -315,16 +315,11 @@ getExitCode indexedModule finalConfig =
     resolve = resolveInternalSymbol indexedModule . noLocationId
 
     takeExitCode
-        :: (([Sort] -> Symbol) -> LogicT simplifier ExitCode)
+        :: (([Sort] -> Symbol) -> simplifier ExitCode)
         -> simplifier ExitCode
     takeExitCode act =
-        case resolve "LblgetExitCode" of
-            Nothing -> pure ExitSuccess
-            Just mkGetExitCodeSymbol ->
-                Logic.runLogicT
-                    (act mkGetExitCodeSymbol)
-                    (\a _ -> pure a)
-                    (pure $ ExitFailure 111)
+        resolve "LblgetExitCode"
+        & maybe (pure ExitSuccess) act
 
 -- | Symbolic search
 search
