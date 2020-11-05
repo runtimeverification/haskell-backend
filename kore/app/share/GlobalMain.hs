@@ -118,13 +118,15 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
 import Kore.Log as Log
 import Kore.Log.ErrorParse
     ( errorParse
+    )
+import Kore.Log.ErrorVerify
+    ( errorVerify
     )
 import Kore.Parser
     ( ParsedPattern
@@ -451,7 +453,7 @@ mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
-    either (error . printError) return verifyResult
+    either errorVerify return verifyResult
   where
     context =
         PatternVerifier.verifiedModuleContext verifiedModule
@@ -500,9 +502,7 @@ verifyDefinitionWithBase
             Builtin.koreVerifiers
             definition
         )
-    case verifyResult of
-        Left err1               -> error (printError err1)
-        Right indexedDefinition -> return indexedDefinition
+    either errorVerify return verifyResult
 
 {- | Parse a Kore definition from a filename.
 

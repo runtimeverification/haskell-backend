@@ -35,9 +35,6 @@ import Kore.Attribute.Symbol
     )
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
-import Kore.Error
-    ( printError
-    )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , toVerifiedDefinition
@@ -46,6 +43,9 @@ import Kore.Log
     ( runLoggerT
     )
 import qualified Kore.Log as Log
+import Kore.Log.ErrorVerify
+    ( errorVerify
+    )
 import Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
@@ -195,11 +195,7 @@ mainPatternParse = mainParse parseKorePattern
 mainVerify
     :: ParsedDefinition
     -- ^ Parsed definition to check well-formedness
-    -> IO
-        (Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes)
-        )
+    -> IO (Map.Map ModuleName (VerifiedModule StepperAttributes))
 mainVerify definition = flip runLoggerT Log.emptyLogger $ do
     verifyResult <-
         clockSomething "Verifying the definition"
@@ -207,6 +203,4 @@ mainVerify definition = flip runLoggerT Log.emptyLogger $ do
                 Builtin.koreVerifiers
                 definition
             )
-    case verifyResult of
-        Left err1            -> liftIO $ die $ printError err1
-        Right indexedModules -> return indexedModules
+    either errorVerify return verifyResult

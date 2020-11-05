@@ -80,6 +80,9 @@ import Kore.Log.ErrorRewriteLoop
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
+import Kore.Log.ErrorVerify
+    ( ErrorVerify
+    )
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
@@ -158,6 +161,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorBottomTotalFunction
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @ErrorParse
+    , mk $ Proxy @ErrorVerify
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckClaimState
