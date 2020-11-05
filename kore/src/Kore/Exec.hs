@@ -29,7 +29,6 @@ import Control.DeepSeq
     )
 import Control.Error
     ( note
-    , runMaybeT
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -41,7 +40,6 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -76,6 +74,11 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.MultiOr
+    ( make
+    )
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -146,6 +149,7 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
     ( MonadProf
+    , SimplifierT
     , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -171,6 +175,7 @@ import Log
 import qualified Log
 import Logic
     ( LogicT
+    , observeAllT
     )
 import qualified Logic
 import SMT
@@ -189,7 +194,8 @@ newtype Initialized = Initialized { rewriteRules :: [Rewrite] }
 
 -- | Symbolic execution
 exec
-    ::  ( MonadIO smt
+    :: forall smt
+    .   ( MonadIO smt
         , MonadLog smt
         , MonadSMT smt
         , MonadMask smt
@@ -207,8 +213,8 @@ exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
-        (execDepth, finalConfig) <-
-            getFinalConfigOf $ do
+        finals <-
+            getFinalConfigsOf $ do
                 initialConfig <-
                     Pattern.simplify SideCondition.top
                         (Pattern.fromTermLike initialTerm)
@@ -234,21 +240,22 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     ( strategy rewriteRules
                     , (ExecDepth 0, mkRewritingPattern initialConfig)
                     )
-        infoExecDepth execDepth
-        let finalConfig' = getRewritingPattern finalConfig
-        exitCode <- getExitCode verifiedModule finalConfig'
-        let finalTerm = forceSort initialSort $ Pattern.toTermLike finalConfig'
+        let (depths, finalConfigs) = unzip finals
+        infoExecDepth (maximum depths)
+        let finalConfigs' = make $ getRewritingPattern <$> finalConfigs
+        exitCode <- getExitCode verifiedModule finalConfigs'
+        let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
-    -- Get the first final configuration of an execution graph.
-    getFinalConfigOf = takeFirstResult >=> orElseBottom
-      where
-        takeResult = snd
-        takeFirstResult act =
-            Logic.observeT (takeResult <$> lift act) & runMaybeT
-        orElseBottom =
-            pure . fromMaybe (ExecDepth 0, mkRewritingPattern (Pattern.bottomOf initialSort))
+    getFinalConfigsOf
+        :: LogicT
+            (SimplifierT smt)
+            ( [Strategy (Prim (RewriteRule RewritingVariableName))]
+            , (ExecDepth, Pattern RewritingVariableName)
+            )
+        -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
+    getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
             -- TODO (thomas.tuegel): Move this into Kore.Builtin
@@ -277,33 +284,42 @@ trackExecDepth transit prim (execDepth, execState) = do
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
-    :: (MonadIO simplifier, MonadSimplify simplifier)
+    :: forall simplifier
+    .  (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> Pattern VariableName
+    -> OrPattern.OrPattern VariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
-getExitCode indexedModule finalConfig =
+getExitCode indexedModule configs =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
-        exitCodePattern <-
-            Pattern.simplifyTopConfiguration (mkGetExitCode <$> finalConfig)
-            >>= Logic.scatter
-        case Pattern.term exitCodePattern of
-            Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
-              | exit == 0 -> return ExitSuccess
-              | otherwise -> return $ ExitFailure $ fromInteger exit
-            _ -> return $ ExitFailure 111
+        exitCodePatterns <-
+            do
+                config <- Logic.scatter configs
+                Pattern.simplifyTopConfiguration (mkGetExitCode <$> config)
+                    >>= Logic.scatter
+            & MultiOr.observeAllT
+        let exitCode =
+                case toList (MultiOr.map Pattern.term exitCodePatterns) of
+                    [exitTerm] -> extractExit exitTerm
+                    _      -> ExitFailure 111
+        return exitCode
   where
+    extractExit = \case
+        Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+          | exit == 0 -> ExitSuccess
+          | otherwise -> ExitFailure (fromInteger exit)
+        _ -> ExitFailure 111
+
     resolve = resolveInternalSymbol indexedModule . noLocationId
+
+    takeExitCode
+        :: (([Sort] -> Symbol) -> simplifier ExitCode)
+        -> simplifier ExitCode
     takeExitCode act =
-        case resolve "LblgetExitCode" of
-            Nothing -> pure ExitSuccess
-            Just mkGetExitCodeSymbol -> do
-                exitCodes <- Logic.observeAllT (act mkGetExitCodeSymbol)
-                case List.nub exitCodes of
-                    [exit] -> pure exit
-                    _      -> pure $ ExitFailure 111
+        resolve "LblgetExitCode"
+        & maybe (pure ExitSuccess) act
 
 -- | Symbolic search
 search
