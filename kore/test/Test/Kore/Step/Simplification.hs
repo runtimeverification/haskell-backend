@@ -68,7 +68,9 @@ import Kore.Step.Simplification.Data
     , SimplifierT
     )
 import qualified Kore.Step.Simplification.Data as Kore
-import Kore.Step.SMT.Declaration.All as SMT.AST ( declare )
+import Kore.Step.SMT.Declaration.All as SMT.AST
+    ( declare
+    )
 import Logic
     ( LogicT
     )
