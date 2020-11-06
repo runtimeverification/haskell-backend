@@ -32,7 +32,7 @@ module Test.Kore
     , korePatternUnifiedGen
       -- * Re-exports
     , ParsedPattern
-    , asParsedPattern
+    , embedParsedPattern
     , Log.emptyLogger
     ) where
 
@@ -75,7 +75,7 @@ import qualified Kore.Log as Log
     ( emptyLogger
     )
 import Kore.Parser
-    ( asParsedPattern
+    ( embedParsedPattern
     )
 import Kore.Parser.Parser
     ( parseVariableCounter
@@ -503,31 +503,31 @@ korePatternChildGen patternSort' =
 
     korePatternGenLevel :: Gen ParsedPattern
     korePatternGenLevel =
-        asParsedPattern <$> patternGen korePatternChildGen patternSort'
+        embedParsedPattern <$> patternGen korePatternChildGen patternSort'
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralF . Const
+        embedParsedPattern . Syntax.StringLiteralF . Const
         <$> stringLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Syntax.DomainValueF
+        embedParsedPattern . Syntax.DomainValueF
             <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Syntax.NextF
+        embedParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Syntax.RewritesF
+        embedParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariableF . Const
+        embedParsedPattern . Syntax.VariableF . Const
         <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern

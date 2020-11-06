@@ -26,9 +26,9 @@ module Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
     , koreParser
-    , korePatternParser
+    , Parser.parsePattern
     , ParsedPattern
-    , Parser.asParsedPattern
+    , Parser.embedParsedPattern
     , ParsedDefinition
     ) where
 
@@ -46,13 +46,6 @@ The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
 koreParser = skipWhitespace *> Parser.koreDefinitionParser <* endOfInput
-
-{-|'korePatternParser' is a parser for Kore patterns.
-
-The input must contain a full valid Kore pattern and nothing else.
--}
-korePatternParser :: Parser ParsedPattern
-korePatternParser = Parser.korePatternParser
 
 {- | Parse a string representing a Kore definition.
 
@@ -77,4 +70,4 @@ parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore pattern
     -> Either String ParsedPattern
-parseKorePattern = parseOnly (skipWhitespace *> korePatternParser)
+parseKorePattern = parseOnly (skipWhitespace *> Parser.parsePattern)

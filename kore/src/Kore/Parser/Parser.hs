@@ -16,38 +16,40 @@ Conventions used:
 -}
 module Kore.Parser.Parser
     ( koreDefinitionParser
-    , korePatternParser
-    , asParsedPattern
-    , symbolParser
-    , aliasParser
-    , sortVariableParser
-    , sortParser
+    , parsePattern
+    , embedParsedPattern
+    , parseAliasHead, parseSymbolHead
+    , parseSortVariable
+    , parseSort
     , attributesParser
     , koreSentenceParser
     , moduleParser
     , definitionParser
-    , inParenthesesListParser
-    , inCurlyBracesListParser
-    , elementVariableParser
-    , setVariableParser
+    , parseArguments
+    , parseParameters
+    , parseElementVariable
+    , parseSetVariable
     , parseVariableCounter
     ) where
 
 import Prelude.Kore hiding
-    ( Alternative (..)
+    ( many
+    , some
     )
 
-import Control.Arrow
-    ( (&&&)
-    )
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Text.Megaparsec
     ( some
+    , (<?>)
     )
+import qualified Text.Megaparsec as Parse
 
 import Data.Sup
-import Kore.AST.Common
 import Kore.Parser.Lexeme
 import Kore.Parser.ParserUtils
     ( Parser
@@ -57,10 +59,10 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Numeric.Natural
 
-asParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
-asParsedPattern patternBase = asPattern (mempty :< patternBase)
+embedParsedPattern :: (PatternF VariableName) ParsedPattern -> ParsedPattern
+embedParsedPattern patternBase = asPattern (mempty :< patternBase)
 
-{-| Parses a @sort-variable@.
+{- | Parses a @sort-variable@.
 
 BNF definition:
 
@@ -68,10 +70,10 @@ BNF definition:
 <sort-variable> ::= <sort-id>
 @
 -}
-sortVariableParser :: Parser SortVariable
-sortVariableParser = SortVariable <$> sortIdParser
+parseSortVariable :: Parser SortVariable
+parseSortVariable = SortVariable <$> parseSortId
 
-{-| Parses a @sort@.
+{- | Parses a @sort@.
 
 BNF definition:
 
@@ -81,22 +83,24 @@ BNF definition:
     | <sort-id> "{" <sorts> "}"
 @
 -}
-sortParser :: Parser Sort
-sortParser = do
-    identifier <- sortIdParser
-    c <- ParserUtils.peekChar
-    case c of
-        Just '{' -> actualSortParser identifier
-        _        -> return (SortVariableSort $ SortVariable identifier)
+parseSort :: Parser Sort
+parseSort = do
+    identifier <- parseSortId
+    parseRemainder <*> pure identifier
   where
-    actualSortParser identifier = do
-        sorts <- inCurlyBracesListParser sortParser
-        return $ SortActualSort SortActual
-            { sortActualName = identifier
-            , sortActualSorts = sorts
-            }
+    parseRemainder =
+        ((SortActualSort .) <$> parseSortActualRemainder)
+        <|> ((SortVariableSort .) <$> parseSortVariableRemainder)
 
-{-| Parses a head and constructs it using the provided constructor.
+parseSortActualRemainder :: Parser (Id -> SortActual)
+parseSortActualRemainder = do
+    sortActualSorts <- parseParameters parseSort
+    pure $ \sortActualName -> SortActual { sortActualName, sortActualSorts }
+
+parseSortVariableRemainder :: Parser (Id -> SortVariable)
+parseSortVariableRemainder = pure SortVariable
+
+{- | Parses the head of a symbol or alias declaration.
 
 BNF definitions:
 
@@ -104,31 +108,14 @@ BNF definitions:
 ... ::= ... <symbol-id> "{" <sort-variables> "}" ...
 @
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-symbolOrAliasParser
-    :: (Id -> [SortVariable] -> result)  -- ^ Element constructor.
-    -> Parser result
-symbolOrAliasParser constructor = do
-    headConstructor <- symbolIdParser
-    symbolOrAliasRemainderRawParser (constructor headConstructor)
-
-{-| Parses the sort variables list that occurs alias and symbol declaration
-heads and constructs the appropriate using the provided constructor.
-
-BNF fragments:
-
-@
-... ::= ... "{" <sort-variables> "}" ...
-@
-
-Always starts with @{@.
--}
-symbolOrAliasRemainderRawParser
-    :: ([SortVariable] -> result)  -- ^ Element constructor.
-    -> Parser result
-symbolOrAliasRemainderRawParser constructor =
-    constructor <$> inCurlyBracesListParser sortVariableParser
+parseSymbolOrAliasDeclarationHead
+    :: (Id -> [SortVariable] -> head)  -- ^ head constructor
+    -> Parser head
+parseSymbolOrAliasDeclarationHead mkHead = do
+    identifier <- parseSymbolId
+    parameters <- parseParameters parseSortVariable
+    pure (mkHead identifier parameters)
 
 {-| Parses @symbol-or-alias@ and interprets it as an 'Alias'.
 
@@ -139,8 +126,8 @@ BNF definitions:
 @
 
 -}
-aliasParser :: Parser Alias
-aliasParser = symbolOrAliasParser Alias
+parseAliasHead :: Parser Alias
+parseAliasHead = parseSymbolOrAliasDeclarationHead Alias
 
 
 {-| Parses @symbol-or-alias@ and interprets it as a 'Symbol'.
@@ -149,360 +136,130 @@ aliasParser = symbolOrAliasParser Alias
 <symbol> ::= <symbol-or-alias>
 @
 -}
-symbolParser :: Parser Symbol
-symbolParser = symbolOrAliasParser Symbol
+parseSymbolHead :: Parser Symbol
+parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 
-{-| Parses the part after an unary operator's name and the first open
-curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
+{-| Parses an pattern.
 
 @
-... ::= ... ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
-@
-
--}
-unaryOperatorRemainderParser
-    :: Parser child
-    -> (Sort -> child -> result)
-    -- ^ Element constructor.
-    -> Parser result
-unaryOperatorRemainderParser childParser constructor =
-    constructor
-    <$> inCurlyBracesRemainderParser sortParser
-    <*> inParenthesesParser childParser
-
-{-| Parses the part after a binary operator's name and
-the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-... ::= ... ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
-@
-
--}
-binaryOperatorRemainderParser
-    :: Parser child
-    -> (Sort -> child -> child -> m child)
-    -- ^ Element constructor.
-    -> Parser (m child)
-binaryOperatorRemainderParser childParser constructor = do
-    sort <- inCurlyBracesRemainderParser sortParser
-    (child1, child2) <- parenPairParser childParser childParser
-    return (constructor sort child1 child2)
-
-{-| Parses the part after an @exists@ or @forall@ operator's name
-and the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-... ::= ... ⟨sort⟩ "}" "(" ⟨element-variable⟩ "," ⟨pattern⟩ ")"
-@
-
--}
-existsForallRemainderParser
-    :: Parser child
-    -> (Sort -> ElementVariable VariableName -> child -> m child)
-    -- ^ Element constructor.
-    -> Parser (m child)
-existsForallRemainderParser childParser constructor = do
-    sort <- inCurlyBracesRemainderParser sortParser
-    (variable, qChild) <- parenPairParser elementVariableParser childParser
-    return (constructor sort variable qChild)
-
-{-| Parses the part after a @mu@ or @nu@ operator's name and
-the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragment:
-
-@
-... ::= ... "}" "(" ⟨set-variable⟩ "," ⟨pattern⟩ ")"
-@
-
--}
-muNuRemainderParser
-    :: Parser child
-    -> (SetVariable VariableName -> child -> m child)
-    -- ^ Element constructor.
-    -> Parser (m child)
-muNuRemainderParser childParser constructor = do
-    closedCurlyBraceParser
-    (variable, qChild) <- parenPairParser setVariableParser childParser
-    return (constructor variable qChild)
-
-{-| Parses the part after a ceil or floor operator's name and
-the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-... ::= ... ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
-@
-
--}
-ceilFloorRemainderParser
-    :: Parser child
-    -> (Sort -> Sort -> child -> m child)
-    -- ^ Element constructor.
-    -> Parser (m child)
-ceilFloorRemainderParser childParser constructor = do
-    (sort1, sort2) <- curlyPairRemainderParser sortParser
-    cfChild <- inParenthesesParser childParser
-    return (constructor sort1 sort2 cfChild)
-
-{-| Parses the part after an @equals@ or @in@ operator's name and
-the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-... ::= ... ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
-@
-
--}
-equalsInRemainderParser
-    :: Parser child
-    -> (Sort -> Sort -> child -> child -> m child)
-    -- ^ Element constructor.
-    -> Parser (m child)
-equalsInRemainderParser childParser constructor = do
-    (sort1, sort2) <- curlyPairRemainderParser sortParser
-    (child1, child2) <- parenPairParser childParser childParser
-    return (constructor sort1 sort2 child1 child2)
-
-{-| Parses the part after a @top@ or @bottom@ operator's name and
-the first open curly brace and constructs it using the provided constructor.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-... ::= ... ⟨sort⟩ "}" "(" ")"
-@
-
--}
-topBottomRemainderParser
-    :: (Sort -> m child)  -- ^ Element constructor.
-    -> Parser (m child)
-topBottomRemainderParser constructor = do
-    sort <- inCurlyBracesRemainderParser sortParser
-    inParenthesesParser (return ())
-    return (constructor sort)
-
-{-| Parses the part after a the first identifier in an application pattern
-and constructs it.
-
-It uses an open recursion scheme for the children.
-
-BNF fragments:
-
-@
-<application-pattern> ::=
-    ... "{" <sorts> "}" "(" <patterns> ")"
-@
-
-Always starts with @{@.
--}
-symbolOrAliasPatternRemainderParser
-    :: Parser child
-    -> Id  -- ^ The already parsed prefix.
-    -> Parser (PatternF VariableName child)
-symbolOrAliasPatternRemainderParser childParser identifier =
-    ApplicationF
-    <$> (   Application
-        <$> (   SymbolOrAlias identifier
-            <$> inCurlyBracesListParser sortParser
-            )
-        <*> inParenthesesListParser childParser
-        )
-
-{- | Parses an 'Application' pattern.
-
-BNF fragments:
-
-@
-<application-pattern> ::=
-    <symbol-id> "{" <sorts> "}" "(" <patterns> ")"
-@
--}
-applicationParser
-    :: Parser child
-    -> Parser (Application SymbolOrAlias child)
-applicationParser childParser =
-    Application
-        <$> headParser
-        <*> inParenthesesListParser childParser
-
-{-| Parses the part after a variable's name and constructs it.
-
-BNF fragments:
-
-@
-⟨...-variable⟩ ::= ... ‘:’ ⟨sort⟩
-@
-
-Always starts with @:@.
--}
-variableRemainderParser
-    :: Id  -- ^ The already parsed prefix.
-    -> Parser (Variable VariableName)
-variableRemainderParser identifier = do
-    let (base, counter) = parseVariableCounter identifier
-    colonParser
-    variableSort <- sortParser
-    pure Variable
-        { variableName = VariableName { base, counter }
-        , variableSort
-        }
-
-parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
-parseVariableCounter identifier@Id { getId, idLocation }
-  -- Cases:
-  -- suffix is empty: no counter, Id is not changed
-  | Text.null suffix = (identifier, Nothing)
-  -- suffix is all zeros: counter is zero, Id has final zero stripped
-  | Text.null nonZeros =
-    ( Id { idLocation, getId = base <> Text.init zeros }
-    , Just (Element 0)
-    )
-  -- suffix is some zeros followed by non-zeros:
-  --   read the counter from the non-zeros, Id is base + zeros
-  | otherwise =
-    ( Id { idLocation, getId = base <> zeros }
-    , (Just . Element) (read $ Text.unpack nonZeros)
-    )
-  where
-    base = Text.dropWhileEnd Char.isDigit getId
-    suffix = Text.drop (Text.length base) getId
-    zeros = Text.takeWhile (== '0') suffix
-    nonZeros = Text.drop (Text.length zeros) suffix
-
-{- | Parses an element variable
-
-@
-<element-variable>
-  ::= <element-variable-id> ":" <sort>
-@
--}
-elementVariableParser :: Parser (ElementVariable VariableName)
-elementVariableParser =
-    (fmap . fmap) ElementVariableName
-    $ elementVariableIdParser >>= variableRemainderParser
-
-
-{- | Parses an set variable
-
-@
-<set-variable>
-  ::= <set-variable-id> ":" <sort>
-@
--}
-setVariableParser :: Parser (SetVariable VariableName)
-setVariableParser =
-    (fmap . fmap) SetVariableName
-    $ setVariableIdParser >>= variableRemainderParser
-
-{- | Parses a variable.
-
-@
-<variable>
+<pattern>
   ::= <element-variable>
     | <set-variable>
+    | <ML-pattern>
+    | <application-pattern>
+    | <string-literal>
+@
+-}
+parsePattern :: Parser ParsedPattern
+parsePattern = embedParsedPattern <$> parsePatternF
+
+parsePatternF :: Parser (PatternF VariableName ParsedPattern)
+parsePatternF =
+    parseLiteral <|> (parseAnyId >>= parseRemainder)
+  where
+    parseRemainder identifier =
+        parseVariableRemainder identifier
+        <|> parseKoreRemainder identifier
+        <|> parseApplicationRemainder parsePattern identifier
+
+parseLiteral :: Parser (PatternF VariableName ParsedPattern)
+parseLiteral =
+    (StringLiteralF . Const <$> parseStringLiteral)
+    <?> "string literal"
+
+parseVariable :: Parser (SomeVariable VariableName)
+parseVariable = do
+    variableName <- parseAnyId >>= getSomeVariableName
+    colon
+    variableSort <- parseSort
+    pure Variable { variableName, variableSort }
+
+{- | Parse a variable, given that the identifier is already parsed.
+
+@
+<variable> ::= <element-variable> | <set-variable>
 @
 
 Set variables always start with @\@@, while element variables do not.
 -}
-variableParser :: Parser (SomeVariable VariableName)
-variableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '@'
-        then mkSomeVariable <$> setVariableParser
-        else mkSomeVariable <$> elementVariableParser
+parseVariableRemainder :: Id -> Parser (PatternF VariableName child)
+parseVariableRemainder identifier = do
+    variableName <- getSomeVariableName identifier
+    colon
+    variableSort <- parseSort
+    (pure . VariableF . Const) Variable { variableName, variableSort }
 
-{-| Parses an element variable pattern or application pattern,
-using an open recursion scheme for its children.
+getSomeVariableName :: Id -> Parser (SomeVariableName VariableName)
+getSomeVariableName identifier =
+    (inject <$> getSetVariableName identifier)
+    <|> (inject <$> getElementVariableName identifier)
 
-BNF definitions:
+getSetVariableName :: Id -> Parser (SetVariableName VariableName)
+getSetVariableName identifier
+  | isSetVariableId identifier =
+    pure (SetVariableName (getVariableName identifier))
+  | otherwise = empty
+
+{- | Parse a set variable.
 
 @
-<pattern>
-  ::= <element-variable>
-    | <application-pattern>
-
-⟨pattern⟩ ::=
-    | ⟨element-variable⟩
-    | ⟨application-pattern⟩
+<set-variable> ::= <set-variable-id> ":" <sort>
 @
 -}
-elemVarOrTermPatternParser
+parseSetVariable :: Parser (SetVariable VariableName)
+parseSetVariable = do
+    variableName <- parseSetId >>= getSetVariableName
+    colon
+    variableSort <- parseSort
+    pure Variable { variableName, variableSort }
+
+getElementVariableName :: Id -> Parser (ElementVariableName VariableName)
+getElementVariableName identifier
+  | isElementVariableId identifier =
+    pure (ElementVariableName (getVariableName identifier))
+  | otherwise = empty
+
+{- | Parse an element variable.
+
+@
+<element-variable> ::= <element-variable-id> ":" <sort>
+@
+-}
+parseElementVariable :: Parser (ElementVariable VariableName)
+parseElementVariable = do
+    variableName <- parseId >>= getElementVariableName
+    colon
+    variableSort <- parseSort
+    pure Variable { variableName, variableSort }
+
+parseSymbolOrAlias :: Parser SymbolOrAlias
+parseSymbolOrAlias = parseSymbolId >>= parseSymbolOrAliasRemainder
+
+parseApplication
     :: Parser child
+    -> Parser (Application SymbolOrAlias child)
+parseApplication parseChild = do
+    applicationSymbolOrAlias <- parseSymbolOrAlias
+    applicationChildren <- parseArguments parseChild
+    pure Application { applicationSymbolOrAlias, applicationChildren }
+
+parseApplicationRemainder
+    :: Parser child
+    -> Id
     -> Parser (PatternF VariableName child)
-elemVarOrTermPatternParser childParser = do
-    identifier <- idParser
-    c <- ParserUtils.peekChar'
-    if c == ':'
-        then do
-            var <- variableRemainderParser identifier
-            return
-                $ VariableF $ Const
-                $ mkSomeVariable $ ElementVariableName <$> var
-        else symbolOrAliasPatternRemainderParser childParser identifier
+parseApplicationRemainder parseChild identifier = do
+    applicationSymbolOrAlias <- parseSymbolOrAliasRemainder identifier
+    applicationChildren <- parseArguments parseChild
+    (pure . ApplicationF)
+        Application { applicationSymbolOrAlias, applicationChildren }
 
+parseSymbolOrAliasRemainder :: Id -> Parser SymbolOrAlias
+parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
+    Monad.guard (isSymbolId symbolOrAliasConstructor)
+    symbolOrAliasParams <- parseParameters parseSort
+    pure SymbolOrAlias { symbolOrAliasConstructor, symbolOrAliasParams }
 
-{-| Parses a symbol or alias constructor and sort list
-@
-<application-pattern> ::=
-    <symbol-id> "{" <sorts> "}" ...
-@
--}
-headParser :: Parser SymbolOrAlias
-headParser =
-    SymbolOrAlias
-        <$> symbolIdParser
-        <*> inCurlyBracesListParser sortParser
-
-{-| Parses a variable pattern or an application one.
-
-BNF definitions:
-
-@
-<pattern>
-  ::= <element-variable>
-    | <set-variable>
-    | <application-pattern>
-@
--}
-koreVariableOrTermPatternParser :: Parser ParsedPattern
-koreVariableOrTermPatternParser = do
-    c <- ParserUtils.peekChar'
-    asParsedPattern <$>
-        case c of
-        '@' -> do
-            var <- setVariableParser
-            return $ VariableF $ Const $ mkSomeVariable var
-        '\\' -> do
-            identifier <- symbolIdParser
-            symbolOrAliasPatternRemainderParser korePatternParser identifier
-        _ -> elemVarOrTermPatternParser korePatternParser
-
-{-|'koreMLConstructorParser' parses an @ML-pattern@.
-
-BNF definitions:
+{- | Parse a built-in Kore (matching logic) pattern.
 
 @
 <ML-pattern>
@@ -552,124 +309,187 @@ BNF definitions:
 
 Always starts with @\@.
 -}
-koreMLConstructorParser :: Parser ParsedPattern
-koreMLConstructorParser = do
-    skipChar '\\'
-    mlPatternParser
-  where
-    mlPatternParser = keywordBasedParsers
-        (map
-            (patternString &&& koreMLConstructorRemainderParser)
-            allPatternTypes
-        )
-    koreMLConstructorRemainderParser patternType = do
-        openCurlyBraceParser
-        asParsedPattern <$>
-            mlConstructorRemainderParser
-                korePatternParser
-                domainValueParser
-                patternType
+parseKoreRemainder :: Id -> Parser (PatternF VariableName ParsedPattern)
+parseKoreRemainder identifier = do
+    keyword <- getSpecialId identifier
+    case keyword of
+        -- Connectives
+        "top" -> TopF <$> parseConnective0 Top
+        "bottom" -> BottomF <$> parseConnective0 Bottom
+        "not" -> NotF <$> parseConnective1 Not
+        "and" -> AndF <$> parseConnective2 And
+        "or" -> OrF <$> parseConnective2 Or
+        "implies" -> ImpliesF <$> parseConnective2 Implies
+        "iff" -> IffF <$> parseConnective2 Iff
+        -- Quantifiers
+        "exists" -> ExistsF <$> parseQuantifier Exists
+        "forall" -> ForallF <$> parseQuantifier Forall
+        -- Fixpoints
+        "mu" -> MuF <$> parseFixpoint Mu
+        "nu" -> NuF <$> parseFixpoint Nu
+        -- Predicates
+        "ceil" -> CeilF <$> parsePredicate1 Ceil
+        "floor" -> FloorF <$> parsePredicate1 Floor
+        "equals" -> EqualsF <$> parsePredicate2 Equals
+        "in" -> InF <$> parsePredicate2 In
+        -- Rewriting
+        "next" -> NextF <$> parseConnective1 Next
+        "rewrites" -> RewritesF <$> parseConnective2 Rewrites
+        -- Values
+        "dv" -> DomainValueF <$> parseDomainValue
 
-{-| A continuation parser for 'koreMLConstructorParser', called after
-the constructor and the open curly brace were parsed.
--}
-mlConstructorRemainderParser
-    :: Parser child
-    -> Parser (DomainValue Sort child)
-    -> MLPatternType
-    -> Parser (PatternF VariableName child)
-mlConstructorRemainderParser childParser domainValueParser' patternType =
-    case patternType of
-        AndPatternType -> AndF <$>
-            binaryOperatorRemainderParser childParser And
-        BottomPatternType -> BottomF <$>
-            topBottomRemainderParser Bottom
-        CeilPatternType -> CeilF <$>
-            ceilFloorRemainderParser childParser Ceil
-        EqualsPatternType -> EqualsF <$>
-            equalsInRemainderParser childParser Equals
-        ExistsPatternType -> ExistsF <$>
-            existsForallRemainderParser childParser Exists
-        FloorPatternType -> FloorF <$>
-            ceilFloorRemainderParser childParser Floor
-        ForallPatternType -> ForallF <$>
-            existsForallRemainderParser childParser Forall
-        IffPatternType -> IffF <$>
-            binaryOperatorRemainderParser childParser Iff
-        ImpliesPatternType -> ImpliesF <$>
-            binaryOperatorRemainderParser childParser Implies
-        InPatternType -> InF <$>
-            equalsInRemainderParser childParser In
-        MuPatternType -> MuF <$>
-            muNuRemainderParser childParser Mu
-        NotPatternType -> NotF <$>
-            unaryOperatorRemainderParser childParser Not
-        NuPatternType -> NuF <$>
-            muNuRemainderParser childParser Nu
-        OrPatternType -> OrF <$>
-            binaryOperatorRemainderParser childParser Or
-        TopPatternType -> TopF <$>
-            topBottomRemainderParser Top
-        DomainValuePatternType ->
-            DomainValueF <$> domainValueParser'
-        NextPatternType ->
-            NextF <$> unaryOperatorRemainderParser childParser Next
-        RewritesPatternType ->
-            RewritesF
-            <$> binaryOperatorRemainderParser childParser Rewrites
+        _ -> empty
 
-domainValueParser :: Parser (DomainValue Sort ParsedPattern)
-domainValueParser =
-    DomainValue
-        <$> inCurlyBracesRemainderParser sortParser
-        <*> inParenthesesParser childParser
-  where
-    childParser =
-        asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
+getSpecialId :: Id -> Parser Text
+getSpecialId Id { getId } = do
+    Monad.guard (Text.head getId == '\\')
+    pure (Text.tail getId)
 
-{-| Parses an pattern.
-
-BNF definitions:
+{- | Parse a 0-argument connective.
 
 @
-<pattern>
-  ::= <element-variable>
-    | <set-variable>
-    | <ML-pattern>
-    | <application-pattern>
-    | <string-literal>
+_ ::= _ "{" ⟨sort⟩ "}" "(" ")"
 @
--}
-korePatternParser :: Parser ParsedPattern
-korePatternParser = do
-    c <- ParserUtils.peekChar'
-    case c of
-        '\\' -> koreMLConstructorParser
-        '"'  -> asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
-        _    -> koreVariableOrTermPatternParser
+ -}
+parseConnective0 :: (Sort -> result) -> Parser result
+parseConnective0 mkResult =
+    mkResult' <$> braces parseSort <*> parens (pure ())
+  where
+    mkResult' sort () = mkResult sort
 
-{-|'inSquareBracketsListParser' parses a @list@ of items delimited by
-square brackets and separated by commas.
+{- | Parse a 1-argument connective.
 
-Always starts with @[@,
--}
-inSquareBracketsListParser :: Parser item -> Parser [item]
-inSquareBracketsListParser =
-    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '[' ']' ','
+@
+_ ::= _ "{" ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
+@
+ -}
+parseConnective1 :: (Sort -> ParsedPattern -> result) -> Parser result
+parseConnective1 mkResult =
+    mkResult <$> braces parseSort <*> parens parsePattern
+
+{- | Parse a 2-argument connective.
+
+@
+_ ::= _ "{" ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
+@
+ -}
+parseConnective2
+    :: (Sort -> ParsedPattern -> ParsedPattern -> result)
+    -> Parser result
+parseConnective2 mkResult =
+    mkResult' <$> braces parseSort <*> parensPair parsePattern
+  where
+    mkResult' sort (child1, child2) = mkResult sort child1 child2
+
+{- | Parse a quantifier.
+
+@
+_ ::= _ "{" ⟨sort⟩ "}" "(" ⟨element-variable⟩ "," ⟨pattern⟩ ")"
+@
+ -}
+parseQuantifier
+    :: (Sort -> ElementVariable VariableName -> ParsedPattern -> result)
+    -> Parser result
+parseQuantifier mkResult =
+    mkResult'
+        <$> braces parseSort
+        <*> parensTuple parseElementVariable parsePattern
+  where
+    mkResult' sort (variable, child) = mkResult sort variable child
+
+{- | Parse a fixpoint.
+
+@
+_ ::= _ "{" ⟨sort⟩ "}" "(" ⟨set-variable⟩ "," ⟨pattern⟩ ")"
+@
+ -}
+parseFixpoint
+    :: (SetVariable VariableName -> ParsedPattern -> result)
+    -> Parser result
+parseFixpoint mkResult =
+    mkResult'
+        <$> braces (pure ())
+        <*> parensTuple parseSetVariable parsePattern
+  where
+    mkResult' () (variable, child) = mkResult variable child
+
+{- | Parse a 1-argument predicate.
+
+@
+_ ::= _ "{" ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
+@
+ -}
+parsePredicate1
+    :: (Sort -> Sort -> ParsedPattern -> result)
+    -> Parser result
+parsePredicate1 mkResult =
+    mkResult' <$> bracesPair parseSort <*> parens parsePattern
+  where
+    mkResult' (sort1, sort2) child = mkResult sort1 sort2 child
+
+{- | Parse a 2-argument predicate.
+
+@
+_ ::= _ "{" ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
+@
+ -}
+parsePredicate2
+    :: (Sort -> Sort -> ParsedPattern -> ParsedPattern -> result)
+    -> Parser result
+parsePredicate2 mkResult =
+    mkResult' <$> bracesPair parseSort <*> parensPair parsePattern
+  where
+    mkResult' (sort1, sort2) (child1, child2) =
+        mkResult sort1 sort2 child1 child2
+
+getVariableName :: Id -> VariableName
+getVariableName identifier =
+    let (base, counter) = parseVariableCounter identifier
+    in VariableName { base, counter }
+
+parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
+parseVariableCounter identifier@Id { getId, idLocation }
+  -- Cases:
+  -- suffix is empty: no counter, Id is not changed
+  | Text.null suffix = (identifier, Nothing)
+  -- suffix is all zeros: counter is zero, Id has final zero stripped
+  | Text.null nonZeros =
+    ( Id { idLocation, getId = base <> Text.init zeros }
+    , Just (Element 0)
+    )
+  -- suffix is some zeros followed by non-zeros:
+  --   read the counter from the non-zeros, Id is base + zeros
+  | otherwise =
+    ( Id { idLocation, getId = base <> zeros }
+    , (Just . Element) (read $ Text.unpack nonZeros)
+    )
+  where
+    base = Text.dropWhileEnd Char.isDigit getId
+    suffix = Text.drop (Text.length base) getId
+    zeros = Text.takeWhile (== '0') suffix
+    nonZeros = Text.drop (Text.length zeros) suffix
+
+parseDomainValue :: Parser (DomainValue Sort ParsedPattern)
+parseDomainValue =
+    DomainValue <$> braces parseSort <*> parens parseChild
+  where
+    parseChild =
+        embedParsedPattern . StringLiteralF . Const <$> parseStringLiteral
 
 {-|'inParenthesesListParser' is the same as 'inSquareBracketsListParser'
 except that it uses parentheses instead of square brackets.
 -}
-inParenthesesListParser :: Parser item -> Parser [item]
-inParenthesesListParser =
-    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '(' ')' ','
+parseArguments :: Parser item -> Parser [item]
+parseArguments parseItem = parens (Parse.sepBy parseItem comma)
 
-{-|'inCurlyBracesListParser' is the same as 'inSquareBracketsListParser'
-except that it uses curly braces instead of square brackets.
+{- | Parse a list of parameters to a term head or sort.
+
+Parameter lists are comma-separated and surrounded by braces.
+
 -}
-inCurlyBracesListParser :: Parser item -> Parser [item]
-inCurlyBracesListParser =
-    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
+parseParameters :: Parser item -> Parser [item]
+parseParameters parseItem =
+    Parse.between lbrace rbrace (Parse.sepBy parseItem comma)
 
 {-| Parser a (possibly empty) comma separated list of attributes enclosed in
 square brackets.
@@ -682,10 +502,9 @@ BNF definition:
 
 Always starts with @[@.
 -}
-attributesParser
-    :: Parser Attributes
+attributesParser :: Parser Attributes
 attributesParser =
-    Attributes <$> inSquareBracketsListParser korePatternParser
+    Attributes <$> brackets (Parse.sepBy parsePattern comma)
 
 {- | Parses a Kore @definition@
 
@@ -797,10 +616,10 @@ symbolSentenceRemainderParser
     -> Parser (Sentence ParsedPattern)
 symbolSentenceRemainderParser ctor
   = do
-    aliasSymbol <- symbolParser
-    sorts <- inParenthesesListParser sortParser
+    aliasSymbol <- parseSymbolHead
+    sorts <- parseArguments parseSort
     colonParser
-    resultSort <- sortParser
+    resultSort <- parseSort
     attributes <- attributesParser
     return (ctor $ SentenceSymbol aliasSymbol sorts resultSort attributes)
 
@@ -820,15 +639,15 @@ BNF fragment example:
 -}
 aliasSentenceRemainderParser :: Parser (Sentence ParsedPattern)
 aliasSentenceRemainderParser = do
-    aliasSymbol <- aliasParser
-    sorts <- inParenthesesListParser sortParser
+    aliasSymbol <- parseAliasHead
+    sorts <- parseArguments parseSort
     colonParser
-    resultSort <- sortParser
+    resultSort <- parseSort
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser variableParser
+    leftPattern <- parseApplication parseVariable
     mlLexemeParser ":="
-    rightPattern <- korePatternParser
+    rightPattern <- parsePattern
     attributes <- attributesParser
     return
         (SentenceAliasSentence $ SentenceAlias
@@ -877,8 +696,8 @@ axiomSentenceRemainderParser
 axiomSentenceRemainderParser ctor =
     ctor <$>
         ( SentenceAxiom
-            <$> inCurlyBracesListParser sortVariableParser
-            <*> korePatternParser
+            <$> parseParameters parseSortVariable
+            <*> parsePattern
             <*> attributesParser
         )
 
@@ -903,7 +722,7 @@ sortSentenceRemainderParser
 sortSentenceRemainderParser ctor =
     ctor <$>
         (SentenceSort
-            <$> sortIdParser
-            <*> inCurlyBracesListParser sortVariableParser
+            <$> parseSortId
+            <*> parseParameters parseSortVariable
             <*> attributesParser
         )

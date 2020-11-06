@@ -57,11 +57,11 @@ test_unparse =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asParsedPattern (TopF Top
+                    [ embedParsedPattern (TopF Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" }
                         })
-                    , asParsedPattern (InF In
+                    , embedParsedPattern (InF In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B"
                             , sortActualSorts = []
@@ -71,14 +71,14 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF $ Const $ inject
+                            embedParsedPattern $ VariableF $ Const $ inject
                             $ mkElementVariable
                                 (testId "T")
                                 (SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 )
                         , inContainingChild =
-                            asParsedPattern
+                            embedParsedPattern
                             $ StringLiteralF $ Const
                                 StringLiteral { getStringLiteral = "" }
                         })
@@ -150,7 +150,7 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asParsedPattern
+                    [ embedParsedPattern
                         ( TopF Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList"
@@ -273,25 +273,24 @@ test_unparse =
 test_parse :: TestTree
 test_parse =
     testGroup "Parse"
-        [ testProperty "Generic testId" $ roundtrip idGen idParser
+        [ testProperty "Generic testId" $ roundtrip idGen parseId
         , testProperty "StringLiteral" $
-            roundtrip stringLiteralGen stringLiteralParser
+            roundtrip stringLiteralGen parseStringLiteral
         , testProperty "ElementVariable" $ do
             let gen = standaloneGen (elementVariableGen =<< sortGen)
-            roundtrip gen elementVariableParser
+            roundtrip gen parseElementVariable
         , testProperty "SetVariable" $ do
             let gen = standaloneGen (setVariableGen =<< sortGen)
-            roundtrip gen setVariableParser
+            roundtrip gen parseSetVariable
         , testProperty "Symbol" $
-            roundtrip symbolGen symbolParser
+            roundtrip symbolGen parseSymbolHead
         , testProperty "Alias" $
-            roundtrip aliasGen aliasParser
+            roundtrip aliasGen parseAliasHead
         , testProperty "SortVariable" $
-            roundtrip sortVariableGen sortVariableParser
+            roundtrip sortVariableGen parseSortVariable
         , testProperty "Sort" $
-            roundtrip (standaloneGen sortGen) sortParser
-        , testProperty "ParsedPattern" $
-            roundtrip korePatternGen korePatternParser
+            roundtrip (standaloneGen sortGen) parseSort
+        , testProperty "ParsedPattern" $ roundtrip korePatternGen parsePattern
         , testProperty "Attributes" $
             roundtrip (standaloneGen attributesGen) attributesParser
         , testProperty "Sentence" $
