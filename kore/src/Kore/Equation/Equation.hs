@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Equation.Equation
     ( Equation (..)
     , mkEquation
+    , toTermLike
     , mapVariables
     , refreshVariables
     , isSimplificationRule
@@ -48,18 +49,18 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Internal.Predicate
     ( Predicate
-    , fromPredicate_
+    , fromPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
     ( Symbol (..)
     )
 import Kore.Internal.TermLike
-    ( Id (..)
-    , InternalVariable
+    ( InternalVariable
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Sort
 import Kore.Step.Step
     ( Renaming
     )
@@ -148,79 +149,80 @@ instance SQL.Column (Equation VariableName) where
     defineColumn = SQL.defineForeignKeyColumn
     toColumn = SQL.toForeignKeyColumn
 
-instance
-    InternalVariable variable
-    => From (Equation variable) (TermLike variable)
-  where
-    from equation
-      -- \ceil axiom
-      | isTop requires
-      , isTop ensures
-      , TermLike.Ceil_ _ sort1 _ <- left
-      , TermLike.Top_ sort2 <- right
-      , sort1 == sort2
-      = left
+toTermLike
+    :: InternalVariable variable
+    => Sort
+    -> Equation variable
+    -> TermLike variable
+toTermLike sort equation
+  -- \ceil axiom
+  | isTop requires
+  , isTop ensures
+  , TermLike.Ceil_ _ sort1 _ <- left
+  , TermLike.Top_ sort2 <- right
+  , sort1 == sort2
+  = left
 
-      -- function rule
-      | Just argument' <- argument
-      , Just antiLeft' <- antiLeft
-      =
-        let antiLeftTerm = fromPredicate_ antiLeft'
-            argumentTerm = fromPredicate_ argument'
-         in
-            TermLike.mkImplies
-                (TermLike.mkAnd
-                    antiLeftTerm
-                    (TermLike.mkAnd
-                        requires'
-                        argumentTerm
-                    )
-                )
-                (TermLike.mkAnd
-                    (TermLike.mkEquals_ left right)
-                    ensures'
-                )
-
-      -- function rule without priority
-      | Just argument' <- argument
-      =
-        let argumentTerm = fromPredicate_ argument'
-         in TermLike.mkImplies
-            (TermLike.mkAnd
-                requires'
-                (TermLike.mkAnd argumentTerm TermLike.mkTop_)
-            )
-            (TermLike.mkAnd
-                (TermLike.mkEquals_ left right)
-                ensures'
-            )
-
-      -- unconditional equation
-      | isTop requires
-      , isTop ensures
-      = TermLike.mkEquals_ left right
-
-      -- conditional equation
-      | otherwise
-      =
+  -- function rule
+  | Just argument' <- argument
+  , Just antiLeft' <- antiLeft
+  =
+    let antiLeftTerm = fromPredicate sort antiLeft'
+        argumentTerm = fromPredicate sort argument'
+     in
         TermLike.mkImplies
-            requires'
             (TermLike.mkAnd
-                (TermLike.mkEquals_ left right)
+                antiLeftTerm
+                (TermLike.mkAnd
+                    requires'
+                    argumentTerm
+                )
+            )
+            (TermLike.mkAnd
+                (TermLike.mkEquals sort left right)
                 ensures'
             )
 
-      where
-        requires' = fromPredicate_ requires
-        ensures' = fromPredicate_ ensures
-        Equation
-            { requires
-            , argument
-            , antiLeft
-            , left
-            , right
-            , ensures
-            } = equation
+  -- function rule without priority
+  | Just argument' <- argument
+  =
+    let argumentTerm = fromPredicate sort argument'
+     in TermLike.mkImplies
+        (TermLike.mkAnd
+            requires'
+            (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
+        )
+        (TermLike.mkAnd
+            (TermLike.mkEquals sort left right)
+            ensures'
+        )
+
+  -- unconditional equation
+  | isTop requires
+  , isTop ensures
+  = TermLike.mkEquals sort left right
+
+  -- conditional equation
+  | otherwise
+  =
+    TermLike.mkImplies
+        requires'
+        (TermLike.mkAnd
+            (TermLike.mkEquals sort left right)
+            ensures'
+        )
+
+  where
+    requires' = fromPredicate sort requires
+    ensures' = fromPredicate sort ensures
+    Equation
+        { requires
+        , argument
+        , antiLeft
+        , left
+        , right
+        , ensures
+        } = equation
 
 instance
     InternalVariable variable
