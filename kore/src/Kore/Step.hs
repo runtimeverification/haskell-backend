@@ -9,6 +9,8 @@ Strategy-based interface to rule application (step-wise execution).
 module Kore.Step
     ( -- * Primitive strategies
       Prim (..)
+    , ExecutionState (..)
+    , extractExecutionState
     , rewrite
     , simplify
     , rewriteStep
@@ -16,6 +18,7 @@ module Kore.Step
     , priorityAnyStrategy
     , TransitionRule
     , transitionRule
+    , transitionRuleSearch
       -- * Re-exports
     , RulePattern
     , Natural
@@ -50,19 +53,35 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
+import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
+
+{- TODO: docs
+-}
+data ExecutionState a = Rewritten !a | Remaining !a
+    deriving (Show)
+
+extractExecutionState :: ExecutionState a -> a
+extractExecutionState (Rewritten a) = a
+extractExecutionState (Remaining a) = a
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
-data Prim rewrite = Simplify | Rewrite !rewrite
+data Prim rewrite = Begin | Simplify | Rewrite !rewrite
     deriving (Show)
+
+-- | Begin the strategy step.
+begin :: Prim rewrite
+begin = Begin
 
 -- | Apply the rewrite.
 rewrite :: rewrite -> Prim rewrite
@@ -80,12 +99,42 @@ evaluator are applied (see 'Pattern.simplify' for details).
  -}
 rewriteStep :: rewrite -> Strategy (Prim rewrite)
 rewriteStep a =
-    Strategy.sequence [Strategy.apply (rewrite a), Strategy.apply simplify]
+    Strategy.sequence
+        [ Strategy.apply begin
+        , Strategy.apply (rewrite a)
+        , Strategy.apply simplify
+        ]
 
 {- | @TransitionRule@ is the general type of transition rules over 'Prim'.
  -}
 type TransitionRule monad rule state =
     Prim rule -> state -> Strategy.TransitionT rule monad state
+
+transitionRuleSearch
+    ::  forall simplifier
+    .   MonadSimplify simplifier
+    =>  TransitionRule simplifier
+            (RewriteRule RewritingVariableName)
+            (Pattern RewritingVariableName)
+transitionRuleSearch =
+    \case
+        Simplify -> transitionSimplify
+        Rewrite a -> transitionRewrite a
+        _ -> pure
+  where
+    transitionSimplify config = do
+        configs <- lift $ Pattern.simplifyTopConfiguration config
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        asum (pure <$> toList filteredConfigs)
+    transitionRewrite rule config = do
+        Transition.addRule rule
+        results <-
+            Step.applyRewriteRulesParallel
+                Unification.unificationProcedure
+                [rule]
+                config
+            & lift
+        asum (pure <$> toList (Step.gatherResults results))
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -97,12 +146,22 @@ transitionRule
     .   MonadSimplify simplifier
     =>  TransitionRule simplifier
             (RewriteRule RewritingVariableName)
-            (Pattern RewritingVariableName)
-transitionRule =
-    \case
-        Simplify -> transitionSimplify
-        Rewrite a -> transitionRewrite a
+            (ExecutionState (Pattern RewritingVariableName))
+transitionRule = transitionRuleWorker
   where
+    transitionRuleWorker Begin (Remaining _) = empty
+    transitionRuleWorker Begin state = pure state
+
+    transitionRuleWorker Simplify (Rewritten patt) =
+        Rewritten <$> transitionSimplify patt
+    transitionRuleWorker Simplify (Remaining patt) =
+        Remaining <$> transitionSimplify patt
+
+    transitionRuleWorker (Rewrite rule) (Rewritten patt) =
+        transitionRewrite rule patt
+    transitionRuleWorker (Rewrite rule) (Remaining patt) =
+        transitionRewrite rule patt
+
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
@@ -114,7 +173,7 @@ transitionRule =
         -> TransitionT
             (RewriteRule RewritingVariableName)
             simplifier
-            (Pattern RewritingVariableName)
+            (ExecutionState (Pattern RewritingVariableName))
     transitionRewrite rule config = do
         Result.Results { results, remainders } <-
             Step.applyRewriteRulesParallel
@@ -127,9 +186,9 @@ transitionRule =
         addResults results = asum (addResult <$> results)
         addResult Result.Result { appliedRule, result } = do
             addRule (RewriteRule $ extract appliedRule)
-            asum (pure <$> toList result)
+            asum (pure . Rewritten <$> toList result)
         addRemainders remainders =
-            asum (pure <$> toList remainders)
+            asum (pure . Remaining <$> toList remainders)
 
 {- | A strategy that applies all the rewrites in parallel.
 

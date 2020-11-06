@@ -238,23 +238,23 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     ( strategy rewriteRules
-                    , (ExecDepth 0, mkRewritingPattern initialConfig)
+                    , (ExecDepth 0, Rewritten (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
-        let finalConfigs' = make $ getRewritingPattern <$> finalConfigs
+        let finalConfigs' = make $ getRewritingPattern . extractExecutionState <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
         let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
-    getFinalConfigsOf
-        :: LogicT
-            (SimplifierT smt)
-            ( [Strategy (Prim (RewriteRule RewritingVariableName))]
-            , (ExecDepth, Pattern RewritingVariableName)
-            )
-        -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
+    -- getFinalConfigsOf
+    --     :: LogicT
+    --         (SimplifierT smt)
+    --         ( [Strategy (Prim (RewriteRule RewritingVariableName))]
+    --         , (ExecDepth, Pattern RewritingVariableName)
+    --         )
+    --     -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
     getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
@@ -279,8 +279,8 @@ trackExecDepth transit prim (execDepth, execState) = do
   where
     didRewrite _ = isRewrite prim
 
-    isRewrite Simplify = False
     isRewrite (Rewrite _) = True
+    isRewrite _ = False
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
@@ -355,7 +355,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules)
+                runStrategy breadthLimit transitionRuleSearch (strategy rewriteRules)
         executionGraph <- runStrategy' (mkRewritingPattern initialPattern)
         let
             match target config = Search.matchWith target config

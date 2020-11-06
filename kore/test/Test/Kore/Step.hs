@@ -99,7 +99,7 @@ test_constructorRewriting =
         [ Axiom $ cons c1 ["x1"] `rewritesTo` cons c2 ["x1"]
         , Axiom $ cons c2 ["x2"] `rewritesTo` cons c3 ["x2"]
         ]
-        ( Expect $                            cons c3 ["var"])
+        ( Expect $                            Rewritten (cons c3 ["var"]))
       where
         cons = applyConstructorToVariables
 
@@ -119,7 +119,7 @@ test_ruleThatDoesn'tApply =
         [ Axiom $ cons c1     ["x1"] `rewritesTo`  cons c2 ["x1"]
         , Axiom $ cons unused ["x2"] `rewritesTo`  var "x2"
         ]
-        ( Expect $                                 cons c2 ["var"])
+        ( Expect $                                 Rewritten (cons c2 ["var"]))
       where
         cons = applyConstructorToVariables
 
@@ -138,28 +138,30 @@ applyStrategy testName start axioms expected =
 
 takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
-    (<$>) pickLongest
-    $ runSimplifier mockEnv
-    $ makeExecutionGraph
-        (makeRewritingTerm start)
-        (mkRewritingRule . unAxiom <$> wrappedAxioms)
-  where
-    makeExecutionGraph configuration axioms =
-        Strategy.runStrategy
-            Unlimited
-            transitionRule
-            (repeat $ priorityAllStrategy axioms)
-            (pure configuration)
-    makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
+    undefined
+--     (<$>) pickLongest
+--     $ runSimplifier mockEnv
+--     $ makeExecutionGraph
+--         (makeRewritingTerm start)
+--         (mkRewritingRule . unAxiom <$> wrappedAxioms)
+--   where
+--     makeExecutionGraph configuration axioms =
+--         Strategy.runStrategy
+--             Unlimited
+--             transitionRule
+--             (repeat $ priorityAllStrategy axioms)
+--             (pure configuration)
+--     makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
 compareTo (Expect expected) actual =
-    assertEqual
-        ""
-        (mkRewritingPattern . Pattern.fromTermLike $ expected)
-        actual
+    undefined
+--     assertEqual
+--         ""
+--         (mkRewritingPattern . Pattern.fromTermLike $ expected)
+--         actual
 
 
     {- Types used in this file -}
@@ -170,9 +172,9 @@ type CommonTermLike = TermLike VariableName
 type TestPattern = CommonTermLike
 newtype Start = Start TestPattern
 newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
-newtype Expect = Expect TestPattern
+newtype Expect = Expect (ExecutionState TestPattern)
 
-type Actual = Pattern RewritingVariableName
+type Actual = ExecutionState (Pattern RewritingVariableName)
 
 -- Builders -- should these find a better home?
 
@@ -536,9 +538,10 @@ runStep
     -> [RewriteRule RewritingVariableName]
     -> IO [Pattern RewritingVariableName]
 runStep configuration axioms =
-    (<$>) pickFinal
-    $ runSimplifier mockEnv
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
+    undefined
+--     (<$>) pickFinal
+--     $ runSimplifier mockEnv
+--     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
 
 runStepMockEnv
     :: Pattern VariableName
@@ -546,6 +549,7 @@ runStepMockEnv
     -> [RewriteRule RewritingVariableName]
     -> IO [Pattern RewritingVariableName]
 runStepMockEnv configuration axioms =
-    (<$>) pickFinal
-    $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
+    undefined
+--     (<$>) pickFinal
+--     $ runSimplifier Mock.env
+--     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
