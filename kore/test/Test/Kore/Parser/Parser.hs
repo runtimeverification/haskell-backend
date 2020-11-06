@@ -353,7 +353,60 @@ applicationPatternParserTests =
                     ]
                 }
             )
-        , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
+        , success "\\left-assoc{}(c{}(\"a\"))"
+            ( StringLiteral "a"
+                & Const & StringLiteralF
+                & embedParsedPattern
+            )
+        , success "\\left-assoc{}(c{}(\"a\", \"b\"))"
+            ( embedParsedPattern $ ApplicationF Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId "c"
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren =
+                    [ StringLiteral "a"
+                        & Const & StringLiteralF
+                        & embedParsedPattern
+                    , StringLiteral "b"
+                        & Const & StringLiteralF
+                        & embedParsedPattern
+                    ]
+                }
+            )
+        , success "\\left-assoc{}(c{}(\"a\", \"b\", \"c\"))"
+            ( embedParsedPattern $ ApplicationF Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId "c"
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren =
+                    map embedParsedPattern
+                    [ ApplicationF Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = testId "c"
+                                , symbolOrAliasParams = []
+                                }
+                        , applicationChildren =
+                            [ StringLiteral "a"
+                                & Const & StringLiteralF
+                                & embedParsedPattern
+                            , StringLiteral "b"
+                                & Const & StringLiteralF
+                                & embedParsedPattern
+                            ]
+                        }
+                    , StringLiteral "c" & Const & StringLiteralF
+                    ]
+                }
+            )
+        , FailureWithoutMessage
+            [ "", "var", "v:", ":s", "c(s)", "c{s}"
+            , "\\left-assoc{}(c{}())"
+            ]
         ]
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =

@@ -151,16 +151,13 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 @
 -}
 parsePattern :: Parser ParsedPattern
-parsePattern = embedParsedPattern <$> parsePatternF
-
-parsePatternF :: Parser (PatternF VariableName ParsedPattern)
-parsePatternF =
-    parseLiteral <|> (parseAnyId >>= parseRemainder)
+parsePattern =
+    (embedParsedPattern <$> parseLiteral) <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
-        parseVariableRemainder identifier
+        (embedParsedPattern <$> parseVariableRemainder identifier)
         <|> parseKoreRemainder identifier
-        <|> parseApplicationRemainder parsePattern identifier
+        <|> (embedParsedPattern <$> parseApplicationRemainder parsePattern identifier)
 
 parseLiteral :: Parser (PatternF VariableName ParsedPattern)
 parseLiteral =
@@ -253,6 +250,18 @@ parseApplicationRemainder parseChild identifier = do
     (pure . ApplicationF)
         Application { applicationSymbolOrAlias, applicationChildren }
 
+parseLeftAssoc :: Parser ParsedPattern
+parseLeftAssoc = do
+    braces (pure ())
+    application <- parens (parseApplication parsePattern)
+    let mkApplication child1 child2 =
+            application { applicationChildren = [child1, child2] }
+            & ApplicationF
+            & embedParsedPattern
+    case applicationChildren application of
+        [] -> fail "expected one or more arguments"
+        children -> pure (foldl1 mkApplication children)
+
 parseSymbolOrAliasRemainder :: Id -> Parser SymbolOrAlias
 parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
     Monad.guard (isSymbolId symbolOrAliasConstructor)
@@ -264,79 +273,72 @@ parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
 @
 <ML-pattern>
   ::=
-    // Predicate Logic Connectives
+    // Connectives
       "\top" "{" <sort> "}" "(" ")"
     | "\bottom" "{" <sort> "}" "(" ")"
-    | "\not" "{" <sort> "}"
-        "(" <pattern> ")"
-    | "\and" "{" <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    | "\or" "{" <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    | "\implies" "{" <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    | "\iff" "{" <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    // FOL quantifiers
-    | "\exists" "{" <sort> "}"
-        "(" <element-variable> "," <pattern> ")"
-    | "\forall" "{" <sort> "}"
-        "(" <element-variable> "," <pattern> ")"
-    // Fixpoint operators
-    | "\mu" "{" <sort> "}"
-        "(" <set-variable> "," <pattern> ")"
-    | "\nu" "{" <sort> "}"
-        "(" <set-variable> "," <pattern> ")"
-    // Definedness and totality
-    | "\ceil" "{" <sort> "," <sort> "}"
-        "(" <pattern> ")"
-    | "\floor" "{" <sort> "," <sort> "}"
-        "(" <pattern> ")"
-    // Equality and membership
-    | "\equals" "{" <sort> "," <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    | "\in" "{" <sort> "," <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    // Transition systems
-    | "\next" "{" <sort> "}"
-        "(" <pattern> ")"
-    | "\rewrites" "{" <sort> "}"
-        "(" <pattern> "," <pattern> ")"
-    // Domain values
-    | "\dv" "{" <sort> "}"
-        "(" <string-literal> ")"
+    | "\not" "{" <sort> "}" "(" <pattern> ")"
+    | "\and" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+    | "\or" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+    | "\implies" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+    | "\iff" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+
+    // Quantifiers
+    | "\exists" "{" <sort> "}" "(" <element-variable> "," <pattern> ")"
+    | "\forall" "{" <sort> "}" "(" <element-variable> "," <pattern> ")"
+
+    // Fixpoints
+    | "\mu" "(" <set-variable> "," <pattern> ")"
+    | "\nu" "(" <set-variable> "," <pattern> ")"
+
+    // Predicates
+    | "\ceil" "{" <sort> "," <sort> "}" "(" <pattern> ")"
+    | "\floor" "{" <sort> "," <sort> "}" "(" <pattern> ")"
+    | "\equals" "{" <sort> "," <sort> "}" "(" <pattern> "," <pattern> ")"
+    | "\in" "{" <sort> "," <sort> "}" "(" <pattern> "," <pattern> ")"
+
+    // Rewriting
+    | "\next" "{" <sort> "}" "(" <pattern> ")"
+    | "\rewrites" "{" <sort> "}" "(" <pattern> "," <pattern> ")"
+
+    // Values
+    | "\dv" "{" <sort> "}" "(" <string-literal> ")"
+
+    // Syntax sugar
+    | "\left-assoc" "{" "}" "(" <application-pattern> ")"
 @
 
 Always starts with @\@.
 -}
-parseKoreRemainder :: Id -> Parser (PatternF VariableName ParsedPattern)
+parseKoreRemainder :: Id -> Parser ParsedPattern
 parseKoreRemainder identifier = do
     keyword <- getSpecialId identifier
     case keyword of
         -- Connectives
-        "top" -> TopF <$> parseConnective0 Top
-        "bottom" -> BottomF <$> parseConnective0 Bottom
-        "not" -> NotF <$> parseConnective1 Not
-        "and" -> AndF <$> parseConnective2 And
-        "or" -> OrF <$> parseConnective2 Or
-        "implies" -> ImpliesF <$> parseConnective2 Implies
-        "iff" -> IffF <$> parseConnective2 Iff
+        "top" -> embedParsedPattern . TopF <$> parseConnective0 Top
+        "bottom" -> embedParsedPattern . BottomF <$> parseConnective0 Bottom
+        "not" -> embedParsedPattern . NotF <$> parseConnective1 Not
+        "and" -> embedParsedPattern . AndF <$> parseConnective2 And
+        "or" -> embedParsedPattern . OrF <$> parseConnective2 Or
+        "implies" -> embedParsedPattern . ImpliesF <$> parseConnective2 Implies
+        "iff" -> embedParsedPattern . IffF <$> parseConnective2 Iff
         -- Quantifiers
-        "exists" -> ExistsF <$> parseQuantifier Exists
-        "forall" -> ForallF <$> parseQuantifier Forall
+        "exists" -> embedParsedPattern . ExistsF <$> parseQuantifier Exists
+        "forall" -> embedParsedPattern . ForallF <$> parseQuantifier Forall
         -- Fixpoints
-        "mu" -> MuF <$> parseFixpoint Mu
-        "nu" -> NuF <$> parseFixpoint Nu
+        "mu" -> embedParsedPattern . MuF <$> parseFixpoint Mu
+        "nu" -> embedParsedPattern . NuF <$> parseFixpoint Nu
         -- Predicates
-        "ceil" -> CeilF <$> parsePredicate1 Ceil
-        "floor" -> FloorF <$> parsePredicate1 Floor
-        "equals" -> EqualsF <$> parsePredicate2 Equals
-        "in" -> InF <$> parsePredicate2 In
+        "ceil" -> embedParsedPattern . CeilF <$> parsePredicate1 Ceil
+        "floor" -> embedParsedPattern . FloorF <$> parsePredicate1 Floor
+        "equals" -> embedParsedPattern . EqualsF <$> parsePredicate2 Equals
+        "in" -> embedParsedPattern . InF <$> parsePredicate2 In
         -- Rewriting
-        "next" -> NextF <$> parseConnective1 Next
-        "rewrites" -> RewritesF <$> parseConnective2 Rewrites
+        "next" -> embedParsedPattern . NextF <$> parseConnective1 Next
+        "rewrites" -> embedParsedPattern . RewritesF <$> parseConnective2 Rewrites
         -- Values
-        "dv" -> DomainValueF <$> parseDomainValue
+        "dv" -> embedParsedPattern . DomainValueF <$> parseDomainValue
+        -- Syntax sugar
+        "left-assoc" -> parseLeftAssoc
 
         _ -> empty
 
