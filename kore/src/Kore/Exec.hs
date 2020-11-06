@@ -40,8 +40,6 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -50,9 +48,6 @@ import System.Exit
     ( ExitCode (..)
     )
 
-import Data.Containers.ListUtils
-    ( nubOrd
-    )
 import Data.Limit
     ( Limit (..)
     )
@@ -289,24 +284,25 @@ trackExecDepth transit prim (execDepth, execState) = do
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
-    :: (MonadIO simplifier, MonadSimplify simplifier)
+    :: forall simplifier
+    .  (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
     -> OrPattern.OrPattern VariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
-getExitCode indexedModule finalConfig =
+getExitCode indexedModule configs =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
-        exitCodePatterns <- do
-            pat <- Logic.scatter $ fmap mkGetExitCode `MultiOr.map` finalConfig
-            Pattern.simplifyTopConfiguration pat
-        let exitList =
-                extractExit . Pattern.term
-                    <$> Foldable.toList exitCodePatterns
-            exitCode =
-                case nubOrd exitList of
-                    [exit] -> exit
+        exitCodePatterns <-
+            do
+                config <- Logic.scatter configs
+                Pattern.simplifyTopConfiguration (mkGetExitCode <$> config)
+                    >>= Logic.scatter
+            & MultiOr.observeAllT
+        let exitCode =
+                case toList (MultiOr.map Pattern.term exitCodePatterns) of
+                    [exitTerm] -> extractExit exitTerm
                     _      -> ExitFailure 111
         return exitCode
   where
@@ -318,14 +314,12 @@ getExitCode indexedModule finalConfig =
 
     resolve = resolveInternalSymbol indexedModule . noLocationId
 
+    takeExitCode
+        :: (([Sort] -> Symbol) -> simplifier ExitCode)
+        -> simplifier ExitCode
     takeExitCode act =
-        case resolve "LblgetExitCode" of
-            Nothing -> pure ExitSuccess
-            Just mkGetExitCodeSymbol -> do
-                exitCodes <- Logic.observeAllT (act mkGetExitCodeSymbol)
-                case List.nub exitCodes of
-                    [exit] -> pure exit
-                    _      -> pure $ ExitFailure 111
+        resolve "LblgetExitCode"
+        & maybe (pure ExitSuccess) act
 
 -- | Symbolic search
 search
@@ -357,7 +351,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
-                case Foldable.toList simplifiedPatterns of
+                case toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             runStrategy' =
@@ -371,7 +365,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 (match SideCondition.topTODO (mkRewritingPattern searchPattern))
                 executionGraph
         let
-            solutions = concatMap Foldable.toList solutionsLists
+            solutions = concatMap toList solutionsLists
             orPredicate =
                 makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return
@@ -726,7 +720,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
         simplifyToList :: SomeClaim -> simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
-            let result = Foldable.toList simplified
+            let result = toList simplified
             when (null result) $ warnTrivialClaimRemoved rule
             return result
 

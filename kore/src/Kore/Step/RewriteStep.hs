@@ -17,7 +17,6 @@ import Prelude.Kore
 
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -231,7 +230,7 @@ finalizeRulesParallel
 finalizeRulesParallel toRule finalizeApplied initialVariables initial unifiedRules = do
     results <-
         traverse (finalizeRule toRule finalizeApplied initialVariables initial) unifiedRules
-        & fmap Foldable.fold
+        & fmap fold
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
     remainders <-
@@ -261,7 +260,7 @@ finalizeSequence toRule finalizeApplied initialVariables initial unifiedRules = 
         & (fmap . fmap) assertRemainderPattern
         & fmap OrPattern.fromPatterns
     return Step.Results
-        { results = Seq.fromList $ Foldable.fold results
+        { results = Seq.fromList $ fold results
         , remainders
         }
   where

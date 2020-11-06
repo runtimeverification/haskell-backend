@@ -21,7 +21,6 @@ module Kore.Attribute.Pattern.Simplified
 import Prelude.Kore
 
 import Control.DeepSeq
-import Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
@@ -254,8 +253,8 @@ alwaysSimplified = const fullySimplified
 
 notSimplified :: Foldable a => a Simplified -> Simplified
 notSimplified a
-  | Foldable.null a = NotSimplified
-  | otherwise = Foldable.fold a <> Simplified_ Partly Any
+  | null a = NotSimplified
+  | otherwise = fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
 
 {- | Provides a short and incomplete textual description of a 'Simplified'

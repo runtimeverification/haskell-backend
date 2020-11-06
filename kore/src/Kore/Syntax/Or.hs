@@ -13,7 +13,6 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -57,7 +56,7 @@ instance Unparse child => Unparse (Or Sort child) where
             ])
 
 instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Or Sort) where

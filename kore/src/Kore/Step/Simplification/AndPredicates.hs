@@ -13,8 +13,6 @@ module Kore.Step.Simplification.AndPredicates
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -47,8 +45,8 @@ simplifyEvaluatedMultiPredicate sideCondition predicates = do
   where
     andConditions predicates' =
         fmap markSimplified
-        $ Substitution.normalize sideCondition (Foldable.fold predicates')
+        $ Substitution.normalize sideCondition (fold predicates')
       where
         markSimplified =
             Condition.setPredicateSimplified
-                (Foldable.foldMap Condition.simplifiedAttribute predicates')
+                (foldMap Condition.simplifiedAttribute predicates')

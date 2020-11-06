@@ -62,9 +62,6 @@ import Control.Exception
     , catch
     , evaluate
     )
-import Data.Foldable
-    ( traverse_
-    )
 
 import Test.Tasty
     ( TestTree
