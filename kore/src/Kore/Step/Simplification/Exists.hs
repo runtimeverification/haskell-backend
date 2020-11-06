@@ -18,7 +18,6 @@ import Prelude.Kore
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
 import Data.List
     ( sortBy
     )
@@ -226,7 +225,7 @@ makeEvaluate sideCondition variables original = do
     substVariables =
         mapMaybe
             retractElementVariable
-            $ Foldable.toList
+            $ toList
             $ Substitution.variables
                 (Conditional.substitution original)
 
@@ -311,7 +310,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                     }
         orPattern <-
             lift $ Pattern.simplify sideCondition substituted
-        Logic.scatter (Foldable.toList orPattern)
+        Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
 

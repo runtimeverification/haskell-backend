@@ -48,7 +48,6 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Generics.Product
     ( field
@@ -617,7 +616,7 @@ simplify' lensClaimPattern claim = do
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
-            Foldable.asum (pure <$> Foldable.toList configs)
+            asum (pure <$> toList configs)
 
 simplifyRightHandSide
     :: MonadSimplify m
@@ -710,14 +709,14 @@ deriveResults
 deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
   where
-    addResults = Foldable.asum (addResult <$> results)
-    addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
+    addResults = asum (addResult <$> results)
+    addRemainders = asum (addRemainder <$> toList remainders)
 
     addResult Result { appliedRule, result } = do
         addRule appliedRule
-        case Foldable.toList result of
+        case toList result of
             [] -> addRewritten Pattern.bottom
-            configs -> Foldable.asum (addRewritten <$> configs)
+            configs -> asum (addRewritten <$> configs)
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder

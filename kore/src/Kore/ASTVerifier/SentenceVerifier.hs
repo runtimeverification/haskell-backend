@@ -34,7 +34,6 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -195,7 +194,7 @@ runSentenceVerifier sentenceVerifier verifiedModule =
 
 verifyHookedSorts :: [ParsedSentence] -> SentenceVerifier ()
 verifyHookedSorts =
-    Foldable.traverse_ verifyHookedSortSentence
+    traverse_ verifyHookedSortSentence
     . mapMaybe projectSentenceHookedSort
 
 verifyHookedSortSentence :: SentenceSort ParsedPattern -> SentenceVerifier ()
@@ -222,7 +221,7 @@ verifyHookedSymbols
     :: [ParsedSentence]
     -> SentenceVerifier ()
 verifyHookedSymbols =
-    Foldable.traverse_ verifyHookedSymbolSentence
+    traverse_ verifyHookedSymbolSentence
     . mapMaybe projectSentenceHookedSymbol
 
 verifyHookedSymbolSentence
@@ -257,7 +256,7 @@ addIndexedModuleHook name hook =
       | otherwise           = id
 
 verifySymbols :: [ParsedSentence] -> SentenceVerifier ()
-verifySymbols = Foldable.traverse_ verifySymbolSentence . mapMaybe project
+verifySymbols = traverse_ verifySymbolSentence . mapMaybe project
   where
     project sentence =
         projectSentenceSymbol sentence <|> projectSentenceHookedSymbol sentence
@@ -349,7 +348,7 @@ verifyAliasSentence sentence = do
 
 verifyAxioms :: [ParsedSentence] -> SentenceVerifier ()
 verifyAxioms =
-    Foldable.traverse_ verifyAxiomSentence
+    traverse_ verifyAxiomSentence
     . mapMaybe projectSentenceAxiom
 
 verifyAxiomSentence :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
@@ -383,7 +382,7 @@ verifyClaims
     :: [ParsedSentence]
     -> SentenceVerifier ()
 verifyClaims =
-    Foldable.traverse_ verifyClaimSentence
+    traverse_ verifyClaimSentence
     . mapMaybe projectSentenceClaim
 
 verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
@@ -420,7 +419,7 @@ verifyClaimSentence sentence =
                 freeVariablesLeft claimPattern & FreeVariables.toSet
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
-verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
+verifySorts = traverse_ verifySortSentence . mapMaybe project
   where
     project sentence =
         projectSentenceSort sentence <|> projectSentenceHookedSort sentence
@@ -445,7 +444,7 @@ verifyNonHooks
     :: [ParsedSentence]
     -> SentenceVerifier ()
 verifyNonHooks sentences=
-    Foldable.traverse_ verifyNonHookSentence nonHookSentences
+    traverse_ verifyNonHookSentence nonHookSentences
   where
     nonHookSentences = mapMaybe project sentences
     project (SentenceHookSentence _) = Nothing

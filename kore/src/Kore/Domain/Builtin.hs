@@ -56,7 +56,6 @@ import Control.Lens.Iso
     ( Iso'
     )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import Data.Kind
     ( Type
     )
@@ -73,7 +72,9 @@ import Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables hiding
+    ( toList
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Symbol
@@ -122,7 +123,7 @@ data InternalList child =
 
 instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt builtin =
-        hashWithSalt salt (Foldable.toList builtinListChild)
+        hashWithSalt salt (toList builtinListChild)
       where
         InternalList { builtinListChild } = builtin
 
@@ -133,7 +134,7 @@ instance Unparse child => Unparse (InternalList child) where
         unparseConcat
             builtinListUnit
             builtinListConcat
-            (element <$> Foldable.toList builtinListChild)
+            (element <$> toList builtinListChild)
       where
         element x = unparse builtinListElement <> arguments [x]
         InternalList { builtinListChild } = builtinList
@@ -145,7 +146,7 @@ instance Unparse child => Unparse (InternalList child) where
         unparseConcat
             builtinListUnit
             builtinListConcat
-            (element <$> Foldable.toList builtinListChild)
+            (element <$> toList builtinListChild)
       where
         element x = unparse2 builtinListElement <> arguments2 [x]
         InternalList { builtinListChild } = builtinList
@@ -220,7 +221,7 @@ lookupSymbolicKeyOfAc
     child
     NormalizedAc { elementsWithVariables }
   =
-    snd <$> Foldable.find (\(key, _) -> child == key) elements
+    snd <$> find (\(key, _) -> child == key) elements
   where
     elements = unwrapElement <$> elementsWithVariables
 
@@ -760,5 +761,5 @@ instance Synthetic Sort (Builtin key) where
     {-# INLINE synthetic #-}
 
 instance Ord variable => Synthetic (FreeVariables variable) (Builtin key) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}

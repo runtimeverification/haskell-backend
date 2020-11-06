@@ -7,7 +7,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Equation as Equation
@@ -429,7 +428,7 @@ normalizeExcept predicated =
 assertNormalizedPredicatesMulti
     :: Foldable f => f (Condition VariableName) -> Assertion
 assertNormalizedPredicatesMulti =
-    Foldable.traverse_ assertNormalizedPredicatesSingle
+    traverse_ assertNormalizedPredicatesSingle
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
 assertNormalizedPredicatesSingle :: Condition VariableName -> Assertion

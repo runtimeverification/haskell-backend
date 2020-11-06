@@ -46,7 +46,6 @@ import Data.Default
     ( Default (..)
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import Data.Proxy
 import qualified Generics.SOP as SOP
@@ -254,7 +253,7 @@ parseAxiomAttributes
     -> Attributes
     -> Parser (Axiom SymbolOrAlias VariableName)
 parseAxiomAttributes freeVariables (Attributes attrs) =
-    Foldable.foldlM (flip $ parseAxiomAttribute freeVariables) Default.def attrs
+    foldlM (flip $ parseAxiomAttribute freeVariables) Default.def attrs
 
 mapAxiomVariables
     :: Ord variable2

@@ -22,7 +22,6 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Wrapped
     ( _Wrapped
@@ -395,8 +394,8 @@ identifiers Equation { left, attributes } =
     symbols =
         flip Recursive.fold left $ \case
             _ :< TermLike.ApplySymbolF application ->
-                applySymbolIdentifiers application <> Foldable.fold application
-            termLikeF -> Foldable.fold termLikeF
+                applySymbolIdentifiers application <> fold application
+            termLikeF -> fold termLikeF
     rule = maybe [] pure $ Attribute.unLabel $ Attribute.label attributes
 
     applySymbolIdentifiers application =

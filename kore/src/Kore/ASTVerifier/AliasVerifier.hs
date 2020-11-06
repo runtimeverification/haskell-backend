@@ -15,7 +15,6 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Class as State
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.Map.Strict
@@ -63,7 +62,7 @@ verifyAliases sentences = do
             $ mapMaybe projectSentenceAlias sentences
         aliasIds = Map.keysSet aliases
     runReaderT
-        (Foldable.traverse_ verifyAlias aliasIds)
+        (traverse_ verifyAlias aliasIds)
         AliasContext { aliases, verifying = Set.empty }
 
 aliasName :: SentenceAlias patternType -> Id
@@ -123,7 +122,7 @@ verifyUncachedAlias :: Id -> AliasVerifier ()
 verifyUncachedAlias name = do
     sentence <- lookupParsedAlias name
     dependencies <- aliasDependencies sentence
-    Foldable.traverse_ verifyAlias dependencies
+    traverse_ verifyAlias dependencies
     verified <- SentenceVerifier.verifyAliasSentence sentence & lift
     attrs <- parseAttributes (sentenceAliasAttributes verified) & liftParser
     State.modify' $ addAlias verified attrs
@@ -145,7 +144,7 @@ collectAliasIds
     -> AliasVerifier (Set Id)
 collectAliasIds base = do
     _ :< patternF <- sequence base
-    let names = Foldable.fold patternF
+    let names = fold patternF
     AliasContext { aliases } <- Reader.ask
     case patternF of
         ApplicationF application | Map.member name aliases ->

@@ -40,9 +40,6 @@ import Control.Error
     , runMaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
-    ( toList
-    )
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -447,7 +444,7 @@ evalList2set resultSort [_list] = do
     _list <- List.expectConcreteBuiltinList Set.list2setKey _list
     let _set =
             fmap (\x -> (x, Domain.SetValue)) _list
-            & Foldable.toList
+            & toList
             & Map.fromList
             & TermLike.assertConstructorLikeKeys _list
     returnConcreteSet resultSort _set
