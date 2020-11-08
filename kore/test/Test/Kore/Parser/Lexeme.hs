@@ -78,7 +78,7 @@ test_parseSymbolId =
                 \1 | [\n\
                 \  | ^\n\
                 \unexpected '['\n\
-                \expecting first identifier character\n"
+                \expecting symbol or alias identifier\n"
             }
         , Failure FailureTest
             { failureInput = "module"

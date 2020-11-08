@@ -468,7 +468,8 @@ parseSetId =
 @
 -}
 parseSymbolId :: Parser Id
-parseSymbolId = stringParserToIdParser symbolIdRawParser
+parseSymbolId =
+    stringParserToIdParser symbolIdRawParser <?> "symbol or alias identifier"
 
 symbolIdRawParser :: Parser String
 symbolIdRawParser = do
