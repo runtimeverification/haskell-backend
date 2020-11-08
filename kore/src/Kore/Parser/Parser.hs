@@ -78,27 +78,25 @@ parseSortVariable = SortVariable <$> parseSortId
 BNF definition:
 
 @
-<sort>
-  ::= <sort-variable>
-    | <sort-id> "{" <sorts> "}"
+<sort> ::= <sort-variable> | <sort-id> "{" <sorts> "}"
 @
 -}
 parseSort :: Parser Sort
 parseSort = do
     identifier <- parseSortId
-    parseRemainder <*> pure identifier
+    parseRemainder identifier
   where
-    parseRemainder =
-        ((SortActualSort .) <$> parseSortActualRemainder)
-        <|> ((SortVariableSort .) <$> parseSortVariableRemainder)
+    parseRemainder ident =
+        (SortActualSort <$> parseSortActualRemainder ident)
+        <|> (SortVariableSort <$> parseSortVariableRemainder ident)
 
-parseSortActualRemainder :: Parser (Id -> SortActual)
-parseSortActualRemainder = do
+parseSortActualRemainder :: Id -> Parser SortActual
+parseSortActualRemainder sortActualName = do
     sortActualSorts <- parseParameters parseSort
-    pure $ \sortActualName -> SortActual { sortActualName, sortActualSorts }
+    pure SortActual { sortActualName, sortActualSorts }
 
-parseSortVariableRemainder :: Parser (Id -> SortVariable)
-parseSortVariableRemainder = pure SortVariable
+parseSortVariableRemainder :: Id -> Parser SortVariable
+parseSortVariableRemainder = pure . SortVariable
 
 {- | Parses the head of a symbol or alias declaration.
 
