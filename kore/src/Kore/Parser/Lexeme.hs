@@ -429,7 +429,7 @@ moduleNameRawParser =
 @
 -}
 parseSortId :: Parser Id
-parseSortId = parseId
+parseSortId = parseId <?> "sort identifier"
 
 parseAnyId :: Parser Id
 parseAnyId = (parseSpecialId <|> parseSetId <|> parseId) <?> "identifier"
