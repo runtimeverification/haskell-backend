@@ -613,7 +613,7 @@ parseSentence =
 parseSentenceSymbol :: Parser ParsedSentence
 parseSentenceSymbol = do
     keyword "symbol"
-    SentenceSymbolSentence <$> parseSentenceSymbolRemainder
+    inject <$> parseSentenceSymbolRemainder
 
 {- | Parse a hooked symbol declaration.
 
@@ -627,7 +627,7 @@ parseSentenceSymbol = do
 parseSentenceHookedSymbol :: Parser ParsedSentence
 parseSentenceHookedSymbol = do
     keyword "hooked-symbol"
-    SentenceHookSentence . SentenceHookedSymbol
+    inject . SentenceHookedSymbol
         <$> parseSentenceSymbolRemainder
 
 {- | Parse a @symbol@ or @hooked-symbol@ sentence after the initial keyword.
@@ -677,7 +677,7 @@ parseSentenceAlias = do
     keyword ":="
     sentenceAliasRightPattern <- parsePattern
     sentenceAliasAttributes <- parseAttributes
-    (pure . SentenceAliasSentence) SentenceAlias
+    (pure . inject) SentenceAlias
         { sentenceAliasAlias
         , sentenceAliasSorts
         , sentenceAliasResultSort
@@ -717,7 +717,7 @@ parseSentenceImport = do
 parseSentenceAxiom :: Parser ParsedSentence
 parseSentenceAxiom = do
     keyword "axiom"
-    SentenceAxiomSentence <$> parseSentenceAxiomRemainder
+    inject <$> parseSentenceAxiomRemainder
 
 {- | Parse an claim sentence.
 
@@ -732,7 +732,7 @@ parseSentenceAxiom = do
 parseSentenceClaim :: Parser ParsedSentence
 parseSentenceClaim = do
     keyword "claim"
-    SentenceClaimSentence . SentenceClaim <$> parseSentenceAxiomRemainder
+    inject . SentenceClaim <$> parseSentenceAxiomRemainder
 
 {- | Parses the part of @axiom@ or @claim@ after its introductory
 keyword using the given constructor to construct the appropriate object.
@@ -764,7 +764,7 @@ parseSentenceAxiomRemainder = do
 parseSentenceSort :: Parser ParsedSentence
 parseSentenceSort = do
     keyword "sort"
-    SentenceSortSentence <$> parseSentenceSortRemainder
+    inject <$> parseSentenceSortRemainder
 
 {- | Parse a hooked sort sentence.
 
@@ -777,7 +777,7 @@ parseSentenceSort = do
 parseSentenceHookedSort :: Parser ParsedSentence
 parseSentenceHookedSort = do
     keyword "hooked-sort"
-    SentenceHookSentence . SentenceHookedSort <$> parseSentenceSortRemainder
+    inject . SentenceHookedSort <$> parseSentenceSortRemainder
 
 {- | Parse the part of @sort@ or @hooked-sort@ after the initial keyword.
 
