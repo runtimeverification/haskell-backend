@@ -32,12 +32,13 @@ module Kore.Parser.Lexeme
     , inCurlyBracesParser, braces
     , inCurlyBracesRemainderParser
     , tuple, pair
+    , list
     , parens, parensPair, parensTuple
     , bracesPair
     , inSquareBracketsParser, brackets
     , keywordBasedParsers
     , mlLexemeParser
-    , moduleNameIdParser
+    , parseModuleName
     , parenPairParser
     , skipChar
     , skipWhitespace
@@ -150,10 +151,11 @@ lparen = tokenCharParser '('
 rparen :: Parser ()
 rparen = tokenCharParser ')'
 
-{-|'inParenthesesParser' parses an element surrounded by parentheses.
+{- | Parse an element surrounded by parentheses.
 
 Always starts with @(@.
--}
+
+ -}
 parens :: Parser a -> Parser a
 parens = Parser.between lparen rparen
 
@@ -166,6 +168,9 @@ tuple parseA parseB = do
 
 pair :: Parser a -> Parser (a, a)
 pair parseItem = tuple parseItem parseItem
+
+list :: Parser a -> Parser [a]
+list item = Parser.sepBy item comma
 
 parensPair :: Parser a -> Parser (a, a)
 parensPair parseItem = parens (pair parseItem)
@@ -409,14 +414,14 @@ parseId = stringParserToIdParser (parseIdRaw KeywordsForbidden)
 parseIdRaw :: IdKeywordParsing -> Parser String
 parseIdRaw = genericIdRawParser isIdFirstChar isIdChar
 
-{- | Parses a module name.
+{- | Parse a module name.
 
 @
 <module-name-id> ::= <id>
 @
 -}
-moduleNameIdParser :: Parser ModuleName
-moduleNameIdParser = lexeme moduleNameRawParser
+parseModuleName :: Parser ModuleName
+parseModuleName = lexeme moduleNameRawParser
 
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =

@@ -45,7 +45,7 @@ import Kore.Syntax.Definition
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
-koreParser = skipWhitespace *> Parser.koreDefinitionParser <* endOfInput
+koreParser = skipWhitespace *> Parser.parseDefinition <* endOfInput
 
 {- | Parse a string representing a Kore definition.
 

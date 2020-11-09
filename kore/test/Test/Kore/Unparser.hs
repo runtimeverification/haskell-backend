@@ -97,7 +97,7 @@ test_unparse =
             \endmodule\n\
             \[]"
         , unparseParseTest
-            koreDefinitionParser
+            parseDefinition
             Definition
                 { definitionAttributes = Attributes {getAttributes = []}
                 , definitionModules =
@@ -292,17 +292,17 @@ test_parse =
             roundtrip (standaloneGen sortGen) parseSort
         , testProperty "ParsedPattern" $ roundtrip korePatternGen parsePattern
         , testProperty "Attributes" $
-            roundtrip (standaloneGen attributesGen) attributesParser
+            roundtrip (standaloneGen attributesGen) parseAttributes
         , testProperty "Sentence" $
-            roundtrip (standaloneGen koreSentenceGen) koreSentenceParser
+            roundtrip (standaloneGen koreSentenceGen) parseSentence
         , testProperty "Module" $
             roundtrip
                 (standaloneGen $ moduleGen koreSentenceGen)
-                (moduleParser koreSentenceParser)
+                parseModule
         , testProperty "Definition" $
             roundtrip
                 (standaloneGen $ definitionGen koreSentenceGen)
-                (definitionParser koreSentenceParser)
+                parseDefinition
         ]
 
 parse :: Parser a -> String -> Either String a

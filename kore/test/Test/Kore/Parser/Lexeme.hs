@@ -7,6 +7,7 @@ module Test.Kore.Parser.Lexeme
     , test_braces
     , test_parens
     , test_brackets
+    , test_parseModuleName
     , test_parensTuple
     , test_parseStringLiteral
     ) where
@@ -28,7 +29,6 @@ import Test.Kore.Parser
 test_koreLexeme :: [TestTree]
 test_koreLexeme =
     [ testGroup "mlLexemeParser" mlLexemeParserTests
-    , testGroup "moduleNameIdParser" moduleNameIdParserTests
     , testGroup "skipWhitespace" skipWhitespaceTests
     ]
 
@@ -134,9 +134,9 @@ mlLexemeParserTests =
     , FailureWithoutMessage ["", "Hello", " hello"]
     ]
 
-moduleNameIdParserTests :: [TestTree]
-moduleNameIdParserTests =
-    parseTree moduleNameIdParser
+test_parseModuleName :: [TestTree]
+test_parseModuleName =
+    parseTree parseModuleName
         [ success "A" (ModuleName "A")
         , success "A-" (ModuleName "A-")
         , success "A2" (ModuleName "A2")
@@ -150,7 +150,7 @@ moduleNameIdParserTests =
 
 test_parensTuple :: [TestTree]
 test_parensTuple =
-    parseTree (parensTuple parseId moduleNameIdParser)
+    parseTree (parensTuple parseId parseModuleName)
         [ success "(a,B)" (testId "a", ModuleName "B")
         , success "( a , B ) " (testId "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")

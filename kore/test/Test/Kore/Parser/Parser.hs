@@ -1,5 +1,7 @@
 module Test.Kore.Parser.Parser
     ( test_koreParser
+    , test_parseSortVariable
+    , test_parseSort
     ) where
 
 import Prelude.Kore
@@ -20,6 +22,7 @@ import Data.Text
 import Data.Sup
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
+import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition
@@ -33,11 +36,7 @@ import Test.Kore.Parser
 test_koreParser :: [TestTree]
 test_koreParser =
     [ testGroup "objectSortParser" objectSortParserTests
-    , testGroup "objectSortListParser" objectSortListParserTests
     , testGroup "objectSortVariableParser" objectSortVariableParserTests
-    , testGroup
-        "objectInCurlyBracesSortVariableListParser"
-        objectInCurlyBracesSortVariableListParserTest
     , testGroup "objectAliasParser" objectAliasParserTests
     , testGroup "objectSymbolParser" objectSymbolParserTests
     , testGroup "variableParser" variableParserTests
@@ -114,9 +113,9 @@ objectSortParserTests =
         , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
         ]
 
-objectSortListParserTests :: [TestTree]
-objectSortListParserTests =
-    parseTree (parseArguments parseSort)
+test_parseSort :: [TestTree]
+test_parseSort =
+    parseTree (parens . list $ parseSort)
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -142,9 +141,9 @@ objectSortVariableParserTests =
         , FailureWithoutMessage ["", "#"]
         ]
 
-objectInCurlyBracesSortVariableListParserTest :: [TestTree]
-objectInCurlyBracesSortVariableListParserTest =
-    parseTree (parseParameters parseSortVariable)
+test_parseSortVariable :: [TestTree]
+test_parseSortVariable =
+    parseTree (braces . list $ parseSortVariable)
         [ success "{}" []
         , success "{var}"
             [ SortVariable (testId "var") ]
@@ -809,7 +808,7 @@ variablePatternParserTests =
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [
           success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
             (SentenceAliasSentence
@@ -1066,7 +1065,7 @@ sentenceAliasParserTests =
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "axiom{sv1}\"a\"[\"b\"]"
             (SentenceAxiomSentence
                 (SentenceAxiom
@@ -1130,7 +1129,7 @@ sentenceAxiomParserTests =
 
 sentenceClaimParserTests :: [TestTree]
 sentenceClaimParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "claim{sv1}\"a\"[\"b\"]"
             (SentenceClaimSentence . SentenceClaim $
                 (SentenceAxiom
@@ -1193,7 +1192,7 @@ sentenceClaimParserTests =
 
 sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "import M[\"b\"]"
             (SentenceImportSentence
                 (SentenceImport
@@ -1216,7 +1215,7 @@ sentenceImportParserTests =
 
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "sort s1 { sv1 } [ \"a\" ]"
             (SentenceSortSentence
                 (SentenceSort
@@ -1258,7 +1257,7 @@ sentenceSortParserTests =
 
 sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             (SentenceSymbolSentence
                 (SentenceSymbol
@@ -1303,7 +1302,7 @@ sentenceSymbolParserTests =
 
 sentenceHookedSortParserTests :: [TestTree]
 sentenceHookedSortParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "hooked-sort s1 { sv1 } [ \"a\" ]"
             (SentenceHookSentence
                 (SentenceHookedSort
@@ -1349,7 +1348,7 @@ sentenceHookedSortParserTests =
 
 sentenceHookedSymbolParserTests :: [TestTree]
 sentenceHookedSymbolParserTests =
-    parseTree koreSentenceParser
+    parseTree parseSentence
         [ success "hooked-symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             (SentenceHookSentence
                 (SentenceHookedSymbol
@@ -1398,7 +1397,7 @@ sentenceHookedSymbolParserTests =
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
-    parseTree attributesParser
+    parseTree parseAttributes
         [ success "[\"a\"]"
             (Attributes
                 [embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a")])
@@ -1414,7 +1413,7 @@ attributesParserTests =
 
 moduleParserTests :: [TestTree]
 moduleParserTests =
-    parseTree (moduleParser koreSentenceParser)
+    parseTree parseModule
         [ success "module MN sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
@@ -1469,7 +1468,7 @@ moduleParserTests =
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
-    parseTree (definitionParser koreSentenceParser)
+    parseTree parseDefinition
         [ success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =
