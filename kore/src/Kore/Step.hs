@@ -237,15 +237,17 @@ transitionRule rewriteGroups = transitionRuleWorker
         foldM transitionRewrite' (Remaining config) xs
       where
         transitionRewrite' applied rewrites
-          | Just conf <- retractApplyRemainder applied = do
-            results <-
-                Step.applyRewriteRulesParallel
-                    Unification.unificationProcedure
-                    rewrites
-                    conf
+          | Just conf <- retractApplyRemainder applied =
+            Step.applyRewriteRulesParallel
+                Unification.unificationProcedure
+                rewrites
+                conf
                 & lift
-            deriveResults results
+            >>= deriveResults
+            >>= simplifyRemainder
           | otherwise = pure applied
+        simplifyRemainder (Remaining p) = Remaining <$> transitionSimplify p
+        simplifyRemainder p = return p
 
 deriveResults
     :: Comonad w
