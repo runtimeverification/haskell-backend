@@ -266,8 +266,8 @@ The result is simplified with the 'filterOr' function.
 
 -}
 mergeAll
-    :: (Ord term, TopBottom term)
-    => [MultiOr term]
+    :: (Ord term, TopBottom term, Foldable f)
+    => f (MultiOr term)
     -> MultiOr term
 mergeAll ors =
     filterOr (foldl' mergeGeneric (make []) ors)
