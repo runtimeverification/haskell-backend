@@ -248,9 +248,8 @@ test_patternToAxiomPatternAndBack =
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
-leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
+leftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
-antiLeftP = mkElemVar Mock.u
 rightP = mkExists Mock.y (mkElemVar Mock.y)
 initialRhs = mkAnd (Predicate.fromPredicate sort ensuresP) rightP
   where
@@ -259,10 +258,6 @@ initialRhs = mkAnd (Predicate.fromPredicate sort ensuresP) rightP
 requiresP, ensuresP :: Predicate.Predicate VariableName
 requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
 ensuresP = Predicate.makeCeilPredicate (mkElemVar Mock.t)
-
-attributesWithPriority :: Attribute.Axiom symbol variable
-attributesWithPriority =
-    def & setField @"priority" (Attribute.Priority (Just 0))
 
 varI1, varI2, varKRemainder, varStateCell :: TermLike VariableName
 varI1 = mkElemVar $ mkElementVariable (testId "VarI1") sortAInt
