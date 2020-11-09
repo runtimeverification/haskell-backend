@@ -238,7 +238,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     ( strategy rewriteRules
-                    , (ExecDepth 0, Rewritten (mkRewritingPattern initialConfig))
+                    , (ExecDepth 0, StartExec (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)

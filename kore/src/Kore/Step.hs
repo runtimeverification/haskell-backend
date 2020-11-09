@@ -28,7 +28,9 @@ module Kore.Step
     , runStrategy
     ) where
 
-import qualified Kore.Step.Result as Result
+-- import Kore.Unparser
+--     ( unparseToString
+--     )
 import Prelude.Kore
 
 import Data.List.Extra
@@ -44,6 +46,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Rewriting.RewritingVariable
+import qualified Kore.Step.Result as Result
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -67,12 +70,13 @@ import qualified Kore.Unification.Procedure as Unification
 
 {- TODO: docs
 -}
-data ExecutionState a = Rewritten !a | Remaining !a
-    deriving (Show)
+data ExecutionState a = StartExec !a | Rewritten !a | Remaining !a
+    deriving (Show, Functor)
 
 extractExecutionState :: ExecutionState a -> a
 extractExecutionState (Rewritten a) = a
 extractExecutionState (Remaining a) = a
+extractExecutionState (StartExec a) = a
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
@@ -149,6 +153,7 @@ transitionRule
             (ExecutionState (Pattern RewritingVariableName))
 transitionRule = transitionRuleWorker
   where
+    transitionRuleWorker Begin (Rewritten a) = pure $ StartExec a
     transitionRuleWorker Begin (Remaining _) = empty
     transitionRuleWorker Begin state = pure state
 
@@ -156,11 +161,16 @@ transitionRule = transitionRuleWorker
         Rewritten <$> transitionSimplify patt
     transitionRuleWorker Simplify (Remaining patt) =
         Remaining <$> transitionSimplify patt
+    transitionRuleWorker Simplify (StartExec patt) =
+        StartExec <$> transitionSimplify patt
 
-    transitionRuleWorker (Rewrite rule) (Rewritten patt) =
-        transitionRewrite rule patt
+    -- transitionRuleWorker (Rewrite rule) (Rewritten patt) =
+    --     transitionRewrite rule patt
     transitionRuleWorker (Rewrite rule) (Remaining patt) =
         transitionRewrite rule patt
+    transitionRuleWorker (Rewrite rule) (StartExec patt) =
+        transitionRewrite rule patt
+    transitionRuleWorker (Rewrite _) state = pure state
 
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
@@ -181,14 +191,22 @@ transitionRule = transitionRuleWorker
                 [rule]
                 config
             & lift
-        addResults results <|> addRemainders remainders
+        res <- addResults results <|> addRemainders remainders
+        -- traceM
+        --     $ "\n\nWhen trying to apply rule:" <> unparseToString rule
+        --     <> "\nThe result was:\n" <> show (fmap unparseToString res)
+        pure res
       where
         addResults results = asum (addResult <$> results)
         addResult Result.Result { appliedRule, result } = do
             addRule (RewriteRule $ extract appliedRule)
-            asum (pure . Rewritten <$> toList result)
-        addRemainders remainders =
-            asum (pure . Remaining <$> toList remainders)
+            x <- asum (pure . Rewritten <$> toList result)
+            -- traceM $ show (fmap unparseToString x) <> "\n\n"
+            pure x
+        addRemainders remainders = do
+            x <- asum (pure . Remaining <$> toList remainders)
+            -- traceM $ show (fmap unparseToString x) <> "\n\n"
+            pure x
 
 {- | A strategy that applies all the rewrites in parallel.
 
@@ -224,7 +242,6 @@ priorityAllStrategy
     => [rewrite]
     -> Strategy (Prim rewrite)
 priorityAllStrategy rewrites =
-    -- TODO: should this be Strategy.all?
     Strategy.first (fmap allRewrites priorityGroups)
   where
     priorityGroups = groupSortOn Attribute.getPriorityOfAxiom rewrites
