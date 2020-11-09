@@ -38,7 +38,7 @@ import Text.Megaparsec
     ( eof
     )
 
-import qualified Kore.Parser.Lexeme as Lexer
+import qualified Kore.Parser.Lexer as Lexer
 import qualified Kore.Parser.Parser as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition

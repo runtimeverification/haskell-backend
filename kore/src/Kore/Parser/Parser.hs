@@ -46,7 +46,7 @@ import Text.Megaparsec
 import qualified Text.Megaparsec as Parse
 
 import Data.Sup
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Parser.ParserUtils
     ( Parser
     )

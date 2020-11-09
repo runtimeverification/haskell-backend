@@ -1,4 +1,4 @@
-module Test.Kore.Parser.Lexeme
+module Test.Kore.Parser.Lexer
     ( test_keyword
     , test_colon
     , test_comma
@@ -19,7 +19,7 @@ import Test.Tasty
     ( TestTree
     )
 
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
 

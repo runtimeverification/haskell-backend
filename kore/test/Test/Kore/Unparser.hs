@@ -25,7 +25,7 @@ import Kore.Internal.Predicate
     , makeMultipleAndPredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax

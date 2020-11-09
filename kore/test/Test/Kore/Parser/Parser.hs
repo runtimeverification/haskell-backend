@@ -22,7 +22,7 @@ import Data.Text
 import Data.Sup
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition
