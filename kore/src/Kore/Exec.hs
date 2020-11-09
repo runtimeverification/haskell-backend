@@ -40,6 +40,9 @@ import Control.Monad.Catch
 import Data.Coerce
     ( coerce
     )
+import Data.List.Extra
+    ( groupSortOn
+    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -51,6 +54,7 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
+import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
     ( StepperAttributes
@@ -201,7 +205,8 @@ exec
         , MonadMask smt
         , MonadProf smt
         )
-    => Limit Natural
+   => Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
@@ -209,7 +214,7 @@ exec
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)
-exec breadthLimit verifiedModule strategy initialTerm =
+exec depthLimit breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initialize verifiedModule
         let Initialized { rewriteRules } = initialized
@@ -226,9 +231,11 @@ exec breadthLimit verifiedModule strategy initialTerm =
                             . Strategy.applyBreadthLimit
                                 breadthLimit
                                 dropStrategy
+                    rewriteGroups =
+                        groupSortOn Attribute.getPriorityOfAxiom rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule & trackExecDepth)
+                            (transitionRule rewriteGroups & trackExecDepth)
                             instr
                             config
                         & runTransitionT
@@ -237,7 +244,7 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    ( strategy rewriteRules
+                    ( limitedStrategy
                     , (ExecDepth 0, StartExec (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
@@ -248,6 +255,10 @@ exec breadthLimit verifiedModule strategy initialTerm =
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
+    limitedStrategy =
+        executionStrategy
+        & toList
+        & Limit.takeWithin depthLimit
     -- getFinalConfigsOf
     --     :: LogicT
     --         (SimplifierT smt)
@@ -270,8 +281,8 @@ exec breadthLimit verifiedModule strategy initialTerm =
 {- | Modify a 'TransitionRule' to track the depth of the execution graph.
  -}
 trackExecDepth
-    :: TransitionRule monad rule state
-    -> TransitionRule monad rule (ExecDepth, state)
+    :: ExecutionTransitionRule monad rule state
+    -> ExecutionTransitionRule monad rule (ExecDepth, state)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
@@ -279,7 +290,7 @@ trackExecDepth transit prim (execDepth, execState) = do
   where
     didRewrite _ = isRewrite prim
 
-    isRewrite (Rewrite _) = True
+    isRewrite ApplyRewrites = True
     isRewrite _ = False
 
 -- | Project the value of the exit cell, if it is present.

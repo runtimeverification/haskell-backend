@@ -632,7 +632,7 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule
-        $ exec breadthLimit mainModule strategy' initial
+        $ exec depthLimit breadthLimit mainModule strategy' initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

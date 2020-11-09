@@ -96,6 +96,7 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
     actual =
         exec
             Unlimited
+            Unlimited
             verifiedModule
             (Limit.replicate unlimited . priorityAnyStrategy)
             inputPattern
@@ -133,6 +134,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
     unlimited = Unlimited
     actual =
         exec
+            Unlimited
             Unlimited
             verifiedModule
             (Limit.replicate unlimited . priorityAnyStrategy)
@@ -519,6 +521,7 @@ test_execGetExitCode =
 
     actual testModule exitCode =
         exec
+            Unlimited
             Unlimited
             (verifiedMyModule testModule)
             (Limit.replicate unlimited . priorityAnyStrategy)
