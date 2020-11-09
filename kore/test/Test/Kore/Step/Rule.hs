@@ -214,24 +214,6 @@ test_rewritePatternToRewriteRuleAndBack =
             let leftPSort = termLikeSort leftP
                 initialLhs =
                     mkAnd
-                        (mkNot antiLeftP)
-                        (mkAnd (Predicate.fromPredicate leftPSort requiresP)
-                            leftP)
-                initialPattern =
-                    Rewrites Mock.testSort initialLhs initialRhs
-                finalTerm = mkRewrites initialLhs initialRhs
-            in
-                testCase "RewriteRule with antileft" $
-                    assertEqual ""
-                        finalTerm
-                        (perhapsFinalPattern
-                            attributesWithPriority
-                            initialPattern
-                        )
-        ,
-            let leftPSort = termLikeSort leftP
-                initialLhs =
-                    mkAnd
                         (Predicate.fromPredicate leftPSort requiresP)
                         leftP
                 initialPattern =
