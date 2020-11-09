@@ -27,7 +27,6 @@ import Prelude.Kore
 
 import qualified Data.Char as Char
 import Data.Default
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
     )
@@ -425,7 +424,7 @@ unparseKoreLogOptions
       | Set.null entries = []
       | otherwise
       = [ "--log-entries"
-        , intercalate "," (fmap show (Foldable.toList entries))
+        , intercalate "," (fmap show (toList entries))
         ]
 
     debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
@@ -438,12 +437,12 @@ unparseKoreLogOptions
 
     debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) = concat $
         ("--debug-apply-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set
 
     debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) = concat $
         ("--debug-attempt-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set
 
     debugEquationOptionsFlag (DebugEquationOptions set) = concat $
         ("--debug-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set

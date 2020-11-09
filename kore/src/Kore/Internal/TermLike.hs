@@ -195,7 +195,6 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
     ( Const (..)
     )
@@ -462,7 +461,8 @@ assertConstructorLikeKeys
 assertConstructorLikeKeys keys a
     | any (not . Pattern.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
+                filter (not . Pattern.isConstructorLike)
+                $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected constructor-like patterns,\
@@ -473,7 +473,7 @@ assertConstructorLikeKeys keys a
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isFullySimplified) keys =
         let simplifiableKeys =
-                filter (not . isFullySimplified) $ Foldable.toList keys
+                filter (not . isFullySimplified) $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected fully simplified patterns,\

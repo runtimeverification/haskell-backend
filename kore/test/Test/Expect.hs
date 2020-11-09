@@ -15,7 +15,6 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
-import qualified Data.Foldable as Foldable
 
 import Debug
 import Kore.Domain.Builtin
@@ -35,13 +34,13 @@ expectJust = maybe (assertFailure "expected Just _, found Nothing") return
 
 expectOne :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO a
 expectOne as =
-    case Foldable.toList as of
+    case toList as of
         [a] -> return a
         as' -> (assertFailure . show) (debug as')
 
 assertNull :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO ()
 assertNull as =
-    case Foldable.toList as of
+    case toList as of
         [] -> return ()
         as' -> (assertFailure . show) (debug as')
 

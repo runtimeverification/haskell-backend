@@ -78,7 +78,7 @@ extractEquations
     :: VerifiedModule StepperAttributes
     -> Map AxiomIdentifier [Equation VariableName]
 extractEquations =
-    Foldable.foldl' moduleWorker Map.empty
+    foldl' moduleWorker Map.empty
     . indexedModulesInScope
   where
     -- | Update the map of function axioms with all the axioms in one module.
@@ -87,7 +87,7 @@ extractEquations =
         -> VerifiedModule StepperAttributes
         -> Map AxiomIdentifier [Equation VariableName]
     moduleWorker axioms imod =
-        Foldable.foldl' sentenceWorker axioms sentences
+        foldl' sentenceWorker axioms sentences
       where
         sentences = indexedModuleAxioms imod
 
@@ -99,7 +99,7 @@ extractEquations =
         -> (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom)
         -> Map AxiomIdentifier [Equation VariableName]
     sentenceWorker axioms sentence =
-        Foldable.foldl' insertAxiom axioms (identifyEquation sentence)
+        foldl' insertAxiom axioms (identifyEquation sentence)
 
     -- | Update the map of function axioms by inserting the axiom at the key.
     insertAxiom

@@ -22,7 +22,6 @@ import Control.Lens
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -133,7 +132,7 @@ verifyAndIndexDefinitionWithBase
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
-        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
+        verifyModules = traverse_ verifyModule definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-

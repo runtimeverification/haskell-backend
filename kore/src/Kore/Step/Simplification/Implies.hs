@@ -14,8 +14,6 @@ module Kore.Step.Simplification.Implies
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -115,7 +113,7 @@ simplifyEvaluateHalfImplies
       Not.simplifyEvaluated sideCondition first
       >>= Logic.scatter
   | otherwise =
-    case Foldable.toList first of
+    case toList first of
         [firstP] -> Logic.scatter $ makeEvaluateImplies firstP second
         firstPatterns ->
             distributeEvaluateImplies sideCondition firstPatterns second

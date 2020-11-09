@@ -41,7 +41,6 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -259,8 +258,7 @@ uniqueDeclaredVariables
     :: Foldable f
     => f (SomeVariable VariableName)
     -> PatternVerifier DeclaredVariables
-uniqueDeclaredVariables =
-    Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
+uniqueDeclaredVariables = foldlM newDeclaredVariable emptyDeclaredVariables
 
 {- | Run a 'PatternVerifier' in a particular variable context.
 

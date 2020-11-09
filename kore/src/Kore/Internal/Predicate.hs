@@ -68,14 +68,10 @@ import Data.Containers.ListUtils
     ( nubOrd
     )
 import qualified Data.Either as Either
-import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.List
-    ( foldl'
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -592,7 +588,7 @@ makePredicate t = fst <$> makePredicateWorker t
             dropPredicate = snd
 
             childChanged :: HasChanged
-            childChanged = Foldable.fold (dropPredicate <$> termWithChanged)
+            childChanged = foldMap dropPredicate termWithChanged
         predicate <- case patE of
             TopF _ -> return (makeTruePredicate termSort)
             BottomF _ -> return (makeFalsePredicate termSort)

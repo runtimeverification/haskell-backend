@@ -75,7 +75,6 @@ import Control.Error
     ( runMaybeT
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -555,7 +554,7 @@ test_list2set =
         someSeq <- forAll Test.List.genSeqInteger
         let
             set = Set.map Test.Int.asInternal $ Set.fromList
-                $ Foldable.toList someSeq
+                $ toList someSeq
             termLike = builtinSet_ set & fromConcrete
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
             original = list2setSet input

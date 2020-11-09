@@ -30,7 +30,6 @@ import qualified Hedgehog.Range as Range
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -445,7 +444,7 @@ asTermLike
 asTermLike =
     Reflection.give testMetadataTools List.asTermLike
     . builtinList
-    . Foldable.toList
+    . toList
 
 -- | Specialize 'List.asInternal' to the builtin sort 'listSort'.
 asInternal
@@ -455,7 +454,7 @@ asInternal
 asInternal =
     List.asInternal testMetadataTools listSort
     . Seq.fromList
-    . Foldable.toList
+    . toList
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asPattern
@@ -465,7 +464,7 @@ asPattern
 asPattern =
     Reflection.give testMetadataTools List.asPattern listSort
     . Seq.fromList
-    . Foldable.toList
+    . toList
 
 hprop_unparse :: Property
 hprop_unparse =

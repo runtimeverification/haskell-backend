@@ -38,7 +38,6 @@ import Control.Monad.Except
     ( catchError
     )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -212,7 +211,7 @@ attemptEquation sideCondition termLike equation =
     applyAndSelectMatchResult [] =
         throwE (WhileMatch matchError)
     applyAndSelectMatchResult results =
-        whileApplyMatchResult $ Foldable.foldr1
+        whileApplyMatchResult $ foldr1
             takeFirstSuccess
             (applyMatchResult equationRenamed <$> results)
     takeFirstSuccess first second = catchError first (const second)
@@ -538,7 +537,7 @@ instance
         Pretty.vsep
         [ "could not apply match result:"
         , (Pretty.indent 4 . Pretty.vsep)
-            (pretty <$> Foldable.toList applyMatchErrors)
+            (pretty <$> toList applyMatchErrors)
         ]
 
 mapApplyMatchResultErrorsVariables

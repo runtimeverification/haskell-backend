@@ -18,7 +18,6 @@ import Control.Monad.State.Strict
     , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
     ( field
@@ -29,9 +28,6 @@ import Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( sortOn
-    )
-import Data.Traversable
-    ( for
     )
 
 import Changed
@@ -215,7 +211,7 @@ simplifyConjunctionByAssumption
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Changed (MultiAnd (Predicate variable))
-simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
+simplifyConjunctionByAssumption (toList -> andPredicates) =
     fmap MultiAnd.make
     $ flip evalStateT HashMap.empty
     $ for (sortBySize andPredicates)
@@ -237,7 +233,7 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
             case termLikeF of
                 TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
                 TermLike.DefinedF defined -> TermLike.getDefined defined
-                _ -> 1 + Foldable.sum termLikeF
+                _ -> 1 + sum termLikeF
 
     assume
         :: Predicate variable
