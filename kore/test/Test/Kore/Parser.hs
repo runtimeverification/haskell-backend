@@ -7,6 +7,7 @@ module Test.Kore.Parser
     , SuccessfulTest (..)
     , parsesTo_
     , fails
+    , parse'
     ) where
 
 import Prelude.Kore
@@ -129,7 +130,7 @@ parseSkipTest parser test = parseTest parser test
 
 parse' :: ShowErrorComponent e => Parsec e String a -> String -> Either String a
 parse' parser input =
-    parse parser "<test-string>" input
+    parse (parser <* eof) "<test-string>" input
     & Bifunctor.first errorBundlePretty
 
 parseSuccess
@@ -138,16 +139,16 @@ parseSuccess
     => ShowErrorComponent e
     => a -> Parsec e String a -> String -> Assertion
 parseSuccess expected parser input =
-    assertEqual "" (Right expected) (parse' (parser <* eof) input)
+    assertEqual "" (Right expected) (parse' parser input)
 
 parseSkip :: ShowErrorComponent e => Parsec e String () -> String -> Assertion
 parseSkip parser input =
-    assertEqual "" (Right ()) (parse' (parser <* eof) input)
+    assertEqual "" (Right ()) (parse' parser input)
 
 parseFailureWithoutMessage
     :: ShowErrorComponent e => Parsec e String a -> String -> Assertion
 parseFailureWithoutMessage parser input =
-    assertBool "" (isLeft (parse' (parser <* eof) input))
+    assertBool "" (isLeft (parse' parser input))
 
 parseFailureWithMessage
     :: HasCallStack
@@ -155,4 +156,4 @@ parseFailureWithMessage
     => ShowErrorComponent e
     => String -> Parsec e String a -> String -> Assertion
 parseFailureWithMessage expected parser input =
-    assertEqual "" (Left expected) (parse' (parser <* eof) input)
+    assertEqual "" (Left expected) (parse' parser input)

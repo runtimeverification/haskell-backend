@@ -34,6 +34,10 @@ module Kore.Parser
 
 import Prelude.Kore
 
+import Text.Megaparsec
+    ( eof
+    )
+
 import Kore.Parser.Lexeme
     ( skipWhitespace
     )
@@ -45,7 +49,7 @@ import Kore.Syntax.Definition
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
-koreParser = skipWhitespace *> Parser.parseDefinition <* endOfInput
+koreParser = skipWhitespace *> Parser.parseDefinition <* eof
 
 {- | Parse a string representing a Kore definition.
 

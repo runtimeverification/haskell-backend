@@ -13,7 +13,6 @@ Helper tools for parsing Kore. Meant for internal use only.
 module Kore.Parser.ParserUtils
     ( Parser
     , parseOnly
-    , endOfInput
     , peekChar
     , peekChar'
     ) where
@@ -28,7 +27,6 @@ import Data.Void
 import Text.Megaparsec
     ( Parsec
     , anySingle
-    , eof
     , lookAhead
     , parse
     )
@@ -52,12 +50,6 @@ does not have any available characters.
 -}
 peekChar' :: Parser Char
 peekChar' = lookAhead anySingle
-
-{-|'endOfInput' is similar to Attoparsec's 'endOfInput'. It matches only the
-end-of-input position.
--}
-endOfInput :: Parser ()
-endOfInput = eof
 
 {-|'parseOnly' is similar to Attoparsec's 'parseOnly'. It takes a parser,
 a FilePath that is used for generating error messages and an input string
