@@ -36,7 +36,6 @@ module Kore.Parser.Lexeme
     , parens, parensPair, parensTuple
     , bracesPair
     , inSquareBracketsParser, brackets
-    , keywordBasedParsers
     , mlLexemeParser
     , parseModuleName
     , parenPairParser
@@ -72,7 +71,6 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import qualified Kore.Parser.CharDict as CharDict
 import Kore.Parser.ParserUtils as ParserUtils
 import Kore.Sort
 import Kore.Syntax.Definition
@@ -86,8 +84,8 @@ lexeme = L.lexeme skipWhitespace
 
 {-|'skipWhitespace' skips whitespace and C-style comments:
 
-- @//@ line comment
-- @/*@ block comment (non-nested) @*/@
+- @\/\/@ line comment
+- @\/*@ block comment (non-nested) @*\/@
 -}
 skipWhitespace ::  Parser ()
 skipWhitespace =
@@ -250,37 +248,6 @@ mlLexemeParser s =
 -}
 keywordEndParser :: Parser ()
 keywordEndParser = Parser.notFollowedBy $ Parser.satisfy isIdChar
-
-{-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
-then parses an element using the corresponding parser. Checks that the consumed
-string is not followed by a character which could be part of an
-@object-identifier@.
-
-Fails if one of the strings is a prefix of another one.
--}
-keywordBasedParsers :: [(String, Parser a)] -> Parser a
-keywordBasedParsers = prefixBasedParsers mlLexemeParser
-
-{-|'prefixBasedParsers' consumes one of the strings in the provided pairs,
-then parses an element using the corresponding parser.
-
-Fails if one of the strings is a prefix of another one.
--}
-prefixBasedParsers ::  (String -> Parser ()) ->[(String, Parser a)] -> Parser a
-prefixBasedParsers _ [] = error "Keyword Based Parsers - no parsers"
-prefixBasedParsers prefixParser [(k, p)] = prefixParser k *> p
-prefixBasedParsers prefixParser stringParsers = do
-    c <- peekChar'
-    dict CharDict.! c
-  where
-    tails c =
-        [(tail prefix, p) | (prefix, p) <- stringParsers, head prefix == c]
-    tailParser c =
-        let ts = tails c
-        in if null ts
-            then fail "Keyword Based Parsers - unexpected character."
-            else Parser.char c *> prefixBasedParsers prefixParser ts
-    dict = CharDict.memoize tailParser
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation
