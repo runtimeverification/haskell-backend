@@ -401,9 +401,7 @@ resetConfigVariables implication'@(Implication _ _ _ _ _) =
         { left =
             Pattern.mapVariables resetConfigVariable left
         , right =
-            OrPattern.map
-                (Pattern.mapVariables resetConfigVariable)
-                right
+            OrPattern.mapVariables resetConfigVariable right
         , existentials =
             TermLike.mapElementVariable resetConfigVariable
             <$> existentials
