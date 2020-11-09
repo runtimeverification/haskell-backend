@@ -1,25 +1,27 @@
-{-|
-Module      : Kore.Parser.Lexeme
-Description : Lexical unit definitions for Kore and simple ways of composing
-              parsers. Meant for internal use only.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : POSIX
-
-Conventions used:
 
 All exported parsers consume the whitespace after the parsed element and expect
 no whitespace before.
--}
+ -}
 module Kore.Parser.Lexeme
     (
-    -- * Parsers
-      colonParser, comma
-    , commaParser, colon
-    , curlyPairParser
-    , curlyPairRemainderParser
+    -- * Lexemes
+      lexeme
+    , symbol
+    , comma
+    , colon
+    , skipChar
+    , lbrace, rbrace, braces
+    , lparen, rparen, parens
+    , lbracket, rbracket, brackets
+    , space
+    , keyword
+    , pair, tuple, list
+    , parensPair, parensTuple
+    , bracesPair
+    -- * Primitive parsers
     , parseId
     , parseAnyId, parseSetId, isSymbolId
     , isElementVariableId, isSetVariableId
@@ -27,20 +29,7 @@ module Kore.Parser.Lexeme
     , setVariableIdParser
     , parseSortId
     , parseSymbolId
-    , openCurlyBraceParser, lbrace
-    , closedCurlyBraceParser, rbrace
-    , inCurlyBracesParser, braces
-    , inCurlyBracesRemainderParser
-    , tuple, pair
-    , list
-    , parens, parensPair, parensTuple
-    , bracesPair
-    , inSquareBracketsParser, brackets
-    , mlLexemeParser
     , parseModuleName
-    , parenPairParser
-    , skipChar
-    , skipWhitespace
     , parseStringLiteral
     -- * Error messages
     , unrepresentableCode
@@ -80,16 +69,18 @@ import Kore.Syntax.StringLiteral
 comments after the parsed element.
 -}
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme skipWhitespace
+lexeme = L.lexeme space
 
-{-|'skipWhitespace' skips whitespace and C-style comments:
+{- | Skip whitespace and C-style comments
 
-- @\/\/@ line comment
-- @\/*@ block comment (non-nested) @*\/@
+* @\/\/@ line comment
+* @\/*@ block comment (non-nested) @*\/@
+
+See also: 'L.space'
+
 -}
-skipWhitespace ::  Parser ()
-skipWhitespace =
-    L.space Parser.space1 lineComment blockComment
+space ::  Parser ()
+space = L.space Parser.space1 lineComment blockComment
   where
     lineComment = L.skipLineComment "//"
     blockComment = L.skipBlockComment "/*" "*/"
@@ -99,61 +90,34 @@ skipWhitespace =
 skipChar :: Char -> Parser ()
 skipChar = Monad.void . Parser.char
 
-{- | Parse the string, but skip its result.
+{- | Skip a literal string (symbol) and any trailing whitespace.
+
+@symbol@ does not enforce that there is whitespace after the symbol.
+
+See also: 'L.symbol', 'space'
+
  -}
-skipString :: String -> Parser ()
-skipString = Monad.void . Parser.string
+symbol :: String -> Parser ()
+symbol = Monad.void . L.symbol space
 
-{-|'tokenCharParser' parses a character, skipping any whitespace after.
+colon :: Parser ()
+colon = symbol ":"
 
-Note that it does not enforce the existence of whitespace after the character.
--}
-tokenCharParser :: Char -> Parser ()
-tokenCharParser c = Monad.void $ L.symbol skipWhitespace [c]
+lbrace :: Parser ()
+lbrace = symbol "{"
 
-{-|'colonParser' parses a @:@ character.-}
-colonParser, colon :: Parser ()
-colonParser = colon
-colon = tokenCharParser ':'
-
-{-|'openCurlyBraceParser' parses a @{@ character.-}
-openCurlyBraceParser, lbrace :: Parser ()
-openCurlyBraceParser = lbrace
-lbrace = tokenCharParser '{'
-
-{-|'closedCurlyBraceParser' parses a @}@ character.-}
-closedCurlyBraceParser, rbrace :: Parser ()
-closedCurlyBraceParser = rbrace
-rbrace = tokenCharParser '}'
+rbrace :: Parser ()
+rbrace = symbol "}"
 
 braces :: Parser a -> Parser a
 braces = Parser.between lbrace rbrace
 
-{-|'inCurlyBracesParser' parses an element surrounded by curly braces.
-
-Always starts with @{@.
--}
-inCurlyBracesParser :: Parser a -> Parser a
-inCurlyBracesParser p =
-    openCurlyBraceParser *> inCurlyBracesRemainderParser p
-
-inCurlyBracesRemainderParser :: Parser a -> Parser a
-inCurlyBracesRemainderParser p =
-    p <* closedCurlyBraceParser
-
-{-|'openParenthesisParser' parses a @(@ character.-}
 lparen :: Parser ()
-lparen = tokenCharParser '('
+lparen = symbol "("
 
-{-|'closedParenthesisParser' parses a @)@ character.-}
 rparen :: Parser ()
-rparen = tokenCharParser ')'
+rparen = symbol ")"
 
-{- | Parse an element surrounded by parentheses.
-
-Always starts with @(@.
-
- -}
 parens :: Parser a -> Parser a
 parens = Parser.between lparen rparen
 
@@ -179,75 +143,32 @@ parensTuple parseA parseB = parens (tuple parseA parseB)
 bracesPair :: Parser a -> Parser (a, a)
 bracesPair parseItem = braces (pair parseItem)
 
-{-|'commaSeparatedPairParser' parses two elements separated by a comma.-}
-commaSeparatedPairParser :: Parser a -> Parser b -> Parser (a,b)
-commaSeparatedPairParser pa pb = do
-    a <- pa
-    commaParser
-    b <- pb
-    return (a, b)
+lbracket :: Parser ()
+lbracket = symbol "["
 
-{-|'parenPairParser' parses two elements between parentheses, separated by
-a comma.
-
-Always starts with @(@.
--}
-parenPairParser :: Parser a -> Parser b -> Parser (a,b)
-parenPairParser pa pb = parens (commaSeparatedPairParser pa pb)
-
-{-|'curlyPairParser' parses two elements between curly braces, separated by
-a comma.
-
-Always starts with @{@.
--}
-curlyPairParser :: Parser a -> Parser b -> Parser (a,b)
-curlyPairParser pa pb = inCurlyBracesParser (commaSeparatedPairParser pa pb)
-
-{-|'curlyPairRemainderParser' parses two elements between curly braces,
-separated by a comma, assumming that the leading @{@ was already consumed.
--}
-curlyPairRemainderParser :: Parser a -> Parser (a,a)
-curlyPairRemainderParser pa =
-    inCurlyBracesRemainderParser (commaSeparatedPairParser pa pa)
-
-{-|'openSquareBracketParser' parses a @[@ character.-}
-openSquareBracketParser, lbracket :: Parser ()
-openSquareBracketParser = lbracket
-lbracket = tokenCharParser '['
-
-{-|'closedSquareBracketParser' parses a @]@ character.-}
-closedSquareBracketParser, rbracket :: Parser ()
-closedSquareBracketParser = rbracket
-rbracket = tokenCharParser ']'
+rbracket :: Parser ()
+rbracket = symbol "]"
 
 brackets :: Parser a -> Parser a
 brackets = Parser.between lbracket rbracket
 
-{-|'inSquareBracketsParser' parses an element surrounded by square brackets.
+comma :: Parser ()
+comma = symbol ","
 
-Always starts with @[@.
--}
-inSquareBracketsParser :: Parser a -> Parser a
-inSquareBracketsParser p =
-    openSquareBracketParser *> p <* closedSquareBracketParser
+{- | Parse a literal keyword.
 
-{-|'closedSquareBracketParser' parses a @,@ character.-}
-commaParser, comma :: Parser ()
-commaParser = comma
-comma = tokenCharParser ','
+@keyword@ checks that the keyword is not actually part of an identifier and
+consumes any trailing whitespace.
 
-{-|'mlLexemeParser' consumes the provided string, checking that it is not
-followed by a character which could be part of an @object-identifier@.
--}
-mlLexemeParser :: String -> Parser ()
-mlLexemeParser s =
-    lexeme (skipString s <* keywordEndParser)
+See also: 'space'
 
-{-|'keywordEndParser' checks that the next character cannot be part of an
-@object-identifier@.
--}
-keywordEndParser :: Parser ()
-keywordEndParser = Parser.notFollowedBy $ Parser.satisfy isIdChar
+ -}
+keyword :: String -> Parser ()
+keyword s = lexeme $ do
+    _ <- Parser.chunk s
+    -- Check that the next character cannot be part of an @id@, i.e.  check that
+    -- we have just parsed a keyword and not the first part of an identifier.
+    Parser.notFollowedBy $ Parser.satisfy isIdChar
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation

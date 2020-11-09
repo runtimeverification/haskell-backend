@@ -38,9 +38,7 @@ import Text.Megaparsec
     ( eof
     )
 
-import Kore.Parser.Lexeme
-    ( skipWhitespace
-    )
+import qualified Kore.Parser.Lexeme as Lexer
 import qualified Kore.Parser.Parser as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
@@ -49,7 +47,7 @@ import Kore.Syntax.Definition
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
-koreParser = skipWhitespace *> Parser.parseDefinition <* eof
+koreParser = Lexer.space *> Parser.parseDefinition <* eof
 
 {- | Parse a string representing a Kore definition.
 
@@ -62,7 +60,7 @@ parseKoreDefinition
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore definition
     -> Either String ParsedDefinition
-parseKoreDefinition = parseOnly (skipWhitespace *> koreParser)
+parseKoreDefinition = parseOnly (Lexer.space *> koreParser)
 
 {- | Parse a string representing a Kore pattern.
 
@@ -74,4 +72,4 @@ parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
     -> String  -- ^ The concrete syntax of a valid Kore pattern
     -> Either String ParsedPattern
-parseKorePattern = parseOnly (skipWhitespace *> Parser.parsePattern)
+parseKorePattern = parseOnly (Lexer.space *> Parser.parsePattern)

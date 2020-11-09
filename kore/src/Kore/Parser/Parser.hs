@@ -333,9 +333,8 @@ parseLeftAssoc = do
 Always starts with @\@.
 -}
 parseKoreRemainder :: Id -> Parser ParsedPattern
-parseKoreRemainder identifier = do
-    keyword <- getSpecialId identifier
-    case keyword of
+parseKoreRemainder identifier =
+    getSpecialId identifier >>= \case
         -- Connectives
         "top" -> embedParsedPattern . TopF <$> parseConnective0 Top
         "bottom" -> embedParsedPattern . BottomF <$> parseConnective0 Bottom
@@ -556,10 +555,10 @@ parseModuleAux
     :: Parser sentence
     -> Parser (Module sentence)
 parseModuleAux parseSentence' = do
-    mlLexemeParser "module"
+    keyword "module"
     moduleName <- parseModuleName
     moduleSentences <- many parseSentence'
-    mlLexemeParser "endmodule"
+    keyword "endmodule"
     moduleAttributes <- parseAttributes
     return Module
            { moduleName
@@ -613,7 +612,7 @@ parseSentence =
  -}
 parseSentenceSymbol :: Parser ParsedSentence
 parseSentenceSymbol = do
-    mlLexemeParser "symbol"
+    keyword "symbol"
     SentenceSymbolSentence <$> parseSentenceSymbolRemainder
 
 {- | Parse a hooked symbol declaration.
@@ -627,7 +626,7 @@ parseSentenceSymbol = do
  -}
 parseSentenceHookedSymbol :: Parser ParsedSentence
 parseSentenceHookedSymbol = do
-    mlLexemeParser "hooked-symbol"
+    keyword "hooked-symbol"
     SentenceHookSentence . SentenceHookedSymbol
         <$> parseSentenceSymbolRemainder
 
@@ -667,15 +666,15 @@ parseSentenceSymbolRemainder = do
 -}
 parseSentenceAlias :: Parser ParsedSentence
 parseSentenceAlias = do
-    mlLexemeParser "alias"
+    keyword "alias"
     sentenceAliasAlias <- parseAliasHead
     sentenceAliasSorts <- parens . list $ parseSort
-    colonParser
+    colon
     sentenceAliasResultSort <- parseSort
-    mlLexemeParser "where"
+    keyword "where"
     -- Note: constraints for left pattern checked in verifySentence
     sentenceAliasLeftPattern <- parseApplication parseVariable
-    mlLexemeParser ":="
+    keyword ":="
     sentenceAliasRightPattern <- parsePattern
     sentenceAliasAttributes <- parseAttributes
     (pure . SentenceAliasSentence) SentenceAlias
@@ -697,7 +696,7 @@ parseSentenceAlias = do
 -}
 parseSentenceImport :: Parser ParsedSentence
 parseSentenceImport = do
-    mlLexemeParser "import"
+    keyword "import"
     sentenceImportModuleName <- parseModuleName
     sentenceImportAttributes <- parseAttributes
     (pure . SentenceImportSentence) SentenceImport
@@ -717,7 +716,7 @@ parseSentenceImport = do
  -}
 parseSentenceAxiom :: Parser ParsedSentence
 parseSentenceAxiom = do
-    mlLexemeParser "axiom"
+    keyword "axiom"
     SentenceAxiomSentence <$> parseSentenceAxiomRemainder
 
 {- | Parse an claim sentence.
@@ -732,7 +731,7 @@ parseSentenceAxiom = do
  -}
 parseSentenceClaim :: Parser ParsedSentence
 parseSentenceClaim = do
-    mlLexemeParser "claim"
+    keyword "claim"
     SentenceClaimSentence . SentenceClaim <$> parseSentenceAxiomRemainder
 
 {- | Parses the part of @axiom@ or @claim@ after its introductory
@@ -764,7 +763,7 @@ parseSentenceAxiomRemainder = do
 -}
 parseSentenceSort :: Parser ParsedSentence
 parseSentenceSort = do
-    mlLexemeParser "sort"
+    keyword "sort"
     SentenceSortSentence <$> parseSentenceSortRemainder
 
 {- | Parse a hooked sort sentence.
@@ -777,7 +776,7 @@ parseSentenceSort = do
 -}
 parseSentenceHookedSort :: Parser ParsedSentence
 parseSentenceHookedSort = do
-    mlLexemeParser "hooked-sort"
+    keyword "hooked-sort"
     SentenceHookSentence . SentenceHookedSort <$> parseSentenceSortRemainder
 
 {- | Parse the part of @sort@ or @hooked-sort@ after the initial keyword.

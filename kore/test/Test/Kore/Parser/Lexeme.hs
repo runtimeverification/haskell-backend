@@ -1,5 +1,5 @@
 module Test.Kore.Parser.Lexeme
-    ( test_koreLexeme
+    ( test_keyword
     , test_colon
     , test_comma
     , test_bracesPair
@@ -10,13 +10,13 @@ module Test.Kore.Parser.Lexeme
     , test_parseModuleName
     , test_parensTuple
     , test_parseStringLiteral
+    , test_space
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
     ( TestTree
-    , testGroup
     )
 
 import Kore.Parser.Lexeme
@@ -25,12 +25,6 @@ import Kore.Syntax.StringLiteral
 
 import Test.Kore
 import Test.Kore.Parser
-
-test_koreLexeme :: [TestTree]
-test_koreLexeme =
-    [ testGroup "mlLexemeParser" mlLexemeParserTests
-    , testGroup "skipWhitespace" skipWhitespaceTests
-    ]
 
 test_colon :: [TestTree]
 test_colon =
@@ -119,7 +113,7 @@ test_parens =
 
 test_brackets :: [TestTree]
 test_brackets =
-    parseTree (inSquareBracketsParser parseId)
+    parseTree (brackets parseId)
         [ success "[a]" (testId "a")
         , success "[ a ] " (testId "a")
         , success "[/**/a/**/]/**/" (testId "a")
@@ -127,12 +121,12 @@ test_brackets =
             [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
 
-mlLexemeParserTests :: [TestTree]
-mlLexemeParserTests =
-    parseSkipTree (mlLexemeParser "hello")
-    [ Skip ["hello", "hello ", "hello/**/ "]
-    , FailureWithoutMessage ["", "Hello", " hello"]
-    ]
+test_keyword :: [TestTree]
+test_keyword =
+    parseSkipTree (keyword "hello")
+        [ Skip ["hello", "hello ", "hello/**/ "]
+        , FailureWithoutMessage ["", "Hello", " hello", "hello-world"]
+        ]
 
 test_parseModuleName :: [TestTree]
 test_parseModuleName =
@@ -159,9 +153,9 @@ test_parensTuple =
             , "(a,B,c)", "{a,B}"]
         ]
 
-skipWhitespaceTests :: [TestTree]
-skipWhitespaceTests =
-    parseSkipTree skipWhitespace
+test_space :: [TestTree]
+test_space =
+    parseSkipTree space
         [ Skip
             [ "", " ", "\n", "\r", "\t", "/**/", "//\n"
             , "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/"
