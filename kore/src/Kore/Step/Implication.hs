@@ -199,13 +199,13 @@ mkImplication modality left right existentials =
 The 'TermLike' has the following form:
 
 @
-\\implies{S}(\\and{S}(left, requires), alias{S}(right))
+\\implies{S}(\\and{S}(left, requires), modality{S}(\\exists{S}({Xₙ:Sₙ}, right))
 @
 
 that is,
 
 @
-left ∧ requires → alias(right)
+left ∧ requires → modality(∃ {Xₙ:Sₙ}. right)
 @
 
  -}
