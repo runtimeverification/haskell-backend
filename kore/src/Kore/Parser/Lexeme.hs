@@ -249,11 +249,7 @@ mlLexemeParser s =
 @object-identifier@.
 -}
 keywordEndParser :: Parser ()
-keywordEndParser = do
-    mc <- peekChar
-    case mc of
-        Just c | isIdChar c -> fail "Expecting keyword to end."
-        _ -> return ()
+keywordEndParser = Parser.notFollowedBy $ Parser.satisfy isIdChar
 
 {-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
 then parses an element using the corresponding parser. Checks that the consumed
