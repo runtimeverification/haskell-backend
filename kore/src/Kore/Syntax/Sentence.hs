@@ -555,25 +555,67 @@ instance Unparse patternType => Unparse (Sentence patternType) where
      unparse = unparseGeneric
      unparse2 = unparse2Generic
 
+instance Injection (Sentence patternType) (SentenceAlias patternType) where
+    inject = SentenceAliasSentence
+
+    retract (SentenceAliasSentence sentenceAlias) = Just sentenceAlias
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceSymbol patternType) where
+    inject = SentenceSymbolSentence
+
+    retract (SentenceSymbolSentence sentenceSymbol) = Just sentenceSymbol
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceImport patternType) where
+    inject = SentenceImportSentence
+
+    retract (SentenceImportSentence sentenceImport) = Just sentenceImport
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceAxiom patternType) where
+    inject = SentenceAxiomSentence
+
+    retract (SentenceAxiomSentence sentenceAxiom) = Just sentenceAxiom
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceClaim patternType) where
+    inject = SentenceClaimSentence
+
+    retract (SentenceClaimSentence sentenceClaim) = Just sentenceClaim
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceSort patternType) where
+    inject = SentenceSortSentence
+
+    retract (SentenceSortSentence sentenceSort) = Just sentenceSort
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceHook patternType) where
+    inject = SentenceHookSentence
+
+    retract (SentenceHookSentence sentenceHook) = Just sentenceHook
+    retract _ = Nothing
+
 projectSentenceImport
     :: Sentence ParsedPattern
     -> Maybe (SentenceImport ParsedPattern)
-projectSentenceImport = projectTyped
+projectSentenceImport = retract
 
 projectSentenceSort
     :: Sentence ParsedPattern
     -> Maybe (SentenceSort ParsedPattern)
-projectSentenceSort = projectTyped
+projectSentenceSort = retract
 
 projectSentenceSymbol
     :: Sentence ParsedPattern
     -> Maybe (SentenceSymbol ParsedPattern)
-projectSentenceSymbol = projectTyped
+projectSentenceSymbol = retract
 
 projectSentenceHook
     :: Sentence ParsedPattern
     -> Maybe (SentenceHook ParsedPattern)
-projectSentenceHook = projectTyped
+projectSentenceHook = retract
 
 projectSentenceHookedSort
     :: Sentence ParsedPattern
@@ -588,17 +630,17 @@ projectSentenceHookedSymbol = projectSentenceHook Monad.>=> projectTyped
 projectSentenceAlias
     :: Sentence ParsedPattern
     -> Maybe (SentenceAlias ParsedPattern)
-projectSentenceAlias = projectTyped
+projectSentenceAlias = retract
 
 projectSentenceAxiom
     :: Sentence ParsedPattern
     -> Maybe (SentenceAxiom ParsedPattern)
-projectSentenceAxiom = projectTyped
+projectSentenceAxiom = retract
 
 projectSentenceClaim
     :: Sentence ParsedPattern
     -> Maybe (SentenceClaim ParsedPattern)
-projectSentenceClaim = projectTyped
+projectSentenceClaim = retract
 
 {- | The attributes associated with a sentence.
 
