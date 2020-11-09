@@ -265,28 +265,6 @@ substituteRight rename implication'@Implication{ right, existentials } =
         in maybe var TermLike.expectElementVariable
             $ Map.lookup name subst'
 
-renameExistentials
-    :: HasCallStack
-    => Map
-        (SomeVariableName RewritingVariableName)
-        (SomeVariable RewritingVariableName)
-    -> Implication modality
-    -> Implication modality
-renameExistentials rename implication'@Implication { right, existentials } =
-    implication'
-        { right = OrPattern.substitute subst right
-        , existentials = renameVariable <$> existentials
-        }
-  where
-    renameVariable
-        :: ElementVariable RewritingVariableName
-        -> ElementVariable RewritingVariableName
-    renameVariable var =
-        let name = SomeVariableNameElement . variableName $ var
-         in maybe var TermLike.expectElementVariable
-            $ Map.lookup name rename
-    subst = TermLike.mkVar <$> rename
-
 -- | Apply the substitution to the implication.
 substitute
     :: Map
@@ -381,16 +359,13 @@ instance UnifyingRule (Implication modality) where
         do
             let variables = freeVariables implication' & FreeVariables.toSet
             renaming <- refreshVariables' variables
-            let existentials' = Set.fromList (inject <$> existentials)
-            renamingExists <- refreshVariables' existentials'
-            let subst = TermLike.mkVar <$> renaming
-                refreshedImplication =
-                    implication'
-                    & renameExistentials renamingExists
-                    & substitute subst
+            refreshedImplication <- renameExistentials
+            let fullyRefreshedImplication = substitute
+                    (TermLike.mkVar <$> renaming)
+                    refreshedImplication
             -- Only return the renaming of free variables.
             -- Renaming the bound variables is invisible from outside.
-            pure (renaming, refreshedImplication)
+            pure (renaming, fullyRefreshedImplication)
         & flip evalState (FreeVariables.toNames stale)
       where
         refreshVariables' variables = do
@@ -403,7 +378,22 @@ instance UnifyingRule (Implication modality) where
                     & FreeVariables.toNames
             State.put (staleNames <> staleNames' <> staleNames'')
             pure renaming
-        Implication { existentials } = implication'
+
+        Implication { right, existentials } = implication'
+
+        renameExistentials = do
+            let existentials' = Set.fromList (inject <$> existentials)
+            rename <- refreshVariables' existentials'
+            let renameVariable var =
+                    maybe var TermLike.expectElementVariable
+                    $ Map.lookup
+                        (SomeVariableNameElement (variableName var))
+                        rename
+                subst = TermLike.mkVar <$> rename
+            pure $ implication'
+                { right = OrPattern.substitute subst right
+                , existentials = renameVariable <$> existentials
+                }
 
 resetConfigVariables :: Implication modality  -> Implication modality
 resetConfigVariables implication'@(Implication _ _ _ _ _) =
