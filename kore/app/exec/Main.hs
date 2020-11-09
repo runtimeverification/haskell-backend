@@ -270,7 +270,7 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , strategy =
             -- Search relies on exploring the entire space of states.
-            ("all", priorityAllStrategy)
+            ("all", All)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -293,7 +293,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !(String, [RewriteRule RewritingVariableName] -> Strategy (Prim (RewriteRule RewritingVariableName)))
+    , strategy            :: !(String, ExecutionStrategy)
     , koreSolverOptions   :: !KoreSolverOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
@@ -349,13 +349,13 @@ parseKoreExecOptions startTime =
         option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
             <> long "strategy"
-            <> value ("all", priorityAllStrategy)
+            <> value ("all", All)
             <> help "Select rewrites using STRATEGY."
             )
       where
         strategies =
-            [ ("any", priorityAnyStrategy)
-            , ("all", priorityAllStrategy)
+            [ ("any", Any)
+            , ("all", All)
             ]
 
     breadth =
@@ -613,14 +613,15 @@ koreSearch execOptions searchOptions = do
     initial <- loadPattern mainModule patternFileName
     final <-
         execute execOptions mainModule
-        $ search breadthLimit mainModule strategy' initial target config
+        $ search breadthLimit mainModule (strategy' strategy) initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . snd strategy
+    strategy' (_, All) = Limit.replicate depthLimit . priorityAllStrategy
+    strategy' (_, Any) = Limit.replicate depthLimit . priorityAnyStrategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -632,12 +633,11 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule
-        $ exec depthLimit breadthLimit mainModule strategy' initial
+        $ exec depthLimit breadthLimit mainModule (snd strategy) initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do

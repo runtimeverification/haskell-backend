@@ -53,7 +53,8 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
-    ( priorityAllStrategy
+    ( ExecutionStrategy (..)
+    , priorityAllStrategy
     , priorityAnyStrategy
     )
 import Kore.Step.AntiLeft
@@ -98,7 +99,7 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
             Unlimited
             Unlimited
             verifiedModule
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             inputPattern
         & runNoSMT
     verifiedModule = verifiedMyModule Module
@@ -137,7 +138,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
             Unlimited
             Unlimited
             verifiedModule
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             inputPattern
         & runNoSMT
     verifiedModule = verifiedMyModule Module
@@ -524,7 +525,7 @@ test_execGetExitCode =
             Unlimited
             Unlimited
             (verifiedMyModule testModule)
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             (Int.asInternal myIntSort exitCode)
         & runNoSMT
         & fmap takeExitCode

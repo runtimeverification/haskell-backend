@@ -8,7 +8,8 @@ Strategy-based interface to rule application (step-wise execution).
 
 module Kore.Step
     ( -- * Primitive strategies
-      Prim (..)
+      ExecutionStrategy (..)
+    , Prim (..)
     , ExecutionState (..)
     , ExecutionPrim (..)
     , ExecutionTransitionRule
@@ -122,6 +123,11 @@ data ExecutionPrim
     | ApplyRewrites
     deriving (Show)
 
+{- TODO: docs
+-}
+data ExecutionStrategy = All | Any
+    deriving (Show)
+
 {- | A single-step strategy which applies the given rewrite rule.
 
 If the rewrite is successful, the built-in simplification rules and function
@@ -179,70 +185,81 @@ transitionRule
     :: forall simplifier
     .  MonadSimplify simplifier
     => [[RewriteRule RewritingVariableName]]
+    -> ExecutionStrategy
     -> ExecutionTransitionRule simplifier
             (RewriteRule RewritingVariableName)
             (ExecutionState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
-    transitionRuleWorker BeginExec (Rewritten a) = pure $ StartExec a
-    transitionRuleWorker BeginExec (Remaining _) = empty
-    transitionRuleWorker BeginExec state = pure state
+    transitionRuleWorker _ BeginExec (Rewritten a) = pure $ StartExec a
+    transitionRuleWorker _ BeginExec (Remaining _) = empty
+    transitionRuleWorker _ BeginExec state = pure state
 
-    transitionRuleWorker SimplifyExec (Rewritten patt) =
+    transitionRuleWorker _ SimplifyExec (Rewritten patt) =
         Rewritten <$> transitionSimplify patt
-    transitionRuleWorker SimplifyExec (Remaining patt) =
+    transitionRuleWorker _ SimplifyExec (Remaining patt) =
         Remaining <$> transitionSimplify patt
-    transitionRuleWorker SimplifyExec (StartExec patt) =
+    transitionRuleWorker _ SimplifyExec (StartExec patt) =
         StartExec <$> transitionSimplify patt
 
-    -- transitionRuleWorker (Rewrite rule) (Rewritten patt) =
-    --     transitionRewrite rule patt
-    transitionRuleWorker ApplyRewrites (Remaining patt) =
-        transitionRewrite rewriteGroups patt
-    transitionRuleWorker ApplyRewrites (StartExec patt) =
-        transitionRewrite rewriteGroups patt
-    transitionRuleWorker ApplyRewrites state = pure state
+    transitionRuleWorker All ApplyRewrites (Remaining patt) =
+        transitionAllRewrite rewriteGroups patt
+    transitionRuleWorker All ApplyRewrites (StartExec patt) =
+        transitionAllRewrite rewriteGroups patt
+    transitionRuleWorker Any ApplyRewrites (Remaining patt) =
+        transitionAnyRewrite rewriteGroups patt
+    transitionRuleWorker Any ApplyRewrites (StartExec patt) =
+        transitionAnyRewrite rewriteGroups patt
+    transitionRuleWorker _ ApplyRewrites state = pure state
 
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
         asum (pure <$> toList filteredConfigs)
 
-    transitionRewrite
+    transitionAnyRewrite xs config = do
+        let rules = concat xs
+        results <-
+            Step.applyRewriteRulesSequence
+                Unification.unificationProcedure
+                config
+                rules
+        deriveResults results
+
+    transitionAllRewrite
         :: [[RewriteRule RewritingVariableName]]
         -> Pattern RewritingVariableName
         -> TransitionT
             (RewriteRule RewritingVariableName)
             simplifier
             (ExecutionState (Pattern RewritingVariableName))
-    transitionRewrite xs config =
+    transitionAllRewrite xs config =
         foldM transitionRewrite' (Remaining config) xs
       where
         transitionRewrite' applied rewrites
           | Just conf <- retractApplyRemainder applied = do
-            Result.Results { results, remainders } <-
+            results <-
                 Step.applyRewriteRulesParallel
                     Unification.unificationProcedure
                     rewrites
                     conf
                 & lift
-            res <- addResults results <|> addRemainders remainders
-            -- traceM
-            --     $ "\n\nWhen trying to apply rule:" <> unparseToString rule
-            --     <> "\nThe result was:\n" <> show (fmap unparseToString res)
-            pure res
+            deriveResults results
           | otherwise = pure applied
-          where
-            addResults results = asum (addResult <$> results)
-            addResult Result.Result { appliedRule, result } = do
-                addRule (RewriteRule $ extract appliedRule)
-                x <- asum (pure . Rewritten <$> toList result)
-                -- traceM $ show (fmap unparseToString x) <> "\n\n"
-                pure x
-            addRemainders remainders = do
-                x <- asum (pure . Remaining <$> toList remainders)
-                -- traceM $ show (fmap unparseToString x) <> "\n\n"
-                pure x
+
+deriveResults
+    :: Comonad w
+    => Result.Results (w (RulePattern variable)) a
+    -> TransitionT (RewriteRule variable) m (ExecutionState a)
+deriveResults Result.Results { results, remainders } =
+    addResults results <|> addRemainders remainders
+  where
+    addResults results' = asum (addResult <$> results')
+    addResult Result.Result { appliedRule, result } = do
+        addRule (RewriteRule $ extract appliedRule)
+        asum (pure . Rewritten <$> toList result)
+    addRemainders remainders' =
+        asum (pure . Remaining <$> toList remainders')
 
 retractApplyRemainder :: ExecutionState a -> Maybe a
 retractApplyRemainder (Remaining a) = Just a

@@ -209,7 +209,7 @@ exec
     -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
+    -> ExecutionStrategy
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
@@ -235,7 +235,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                         groupSortOn Attribute.getPriorityOfAxiom rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule rewriteGroups & trackExecDepth)
+                            (transitionRule rewriteGroups strategy & trackExecDepth)
                             instr
                             config
                         & runTransitionT
