@@ -140,17 +140,15 @@ parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 -}
 parsePattern :: Parser ParsedPattern
 parsePattern =
-    (embedParsedPattern <$> parseLiteral) <|> (parseAnyId >>= parseRemainder)
+    parseLiteral <|> (parseAnyId >>= parseRemainder)
   where
     parseRemainder identifier =
         parseVariableRemainder identifier
         <|> parseKoreRemainder identifier
-        <|> (parseApplicationRemainder identifier)
+        <|> parseApplicationRemainder identifier
 
-parseLiteral :: Parser (PatternF VariableName ParsedPattern)
-parseLiteral =
-    (StringLiteralF . Const <$> parseStringLiteral)
-    <?> "string literal"
+parseLiteral :: Parser ParsedPattern
+parseLiteral = (from <$> parseStringLiteral) <?> "string literal"
 
 parseVariable :: Parser (SomeVariable VariableName)
 parseVariable = do
@@ -176,8 +174,7 @@ parseVariableRemainder identifier = do
     -- variable, not a symbol, and now we will validate it as a variable name.
     variableName <- getSomeVariableName identifier
     variableSort <- parseSort
-    (pure . embedParsedPattern . VariableF . Const)
-        Variable { variableName, variableSort }
+    (pure . from) Variable { variableName, variableSort }
 
 getSomeVariableName :: Id -> Parser (SomeVariableName VariableName)
 getSomeVariableName identifier =
@@ -258,8 +255,7 @@ parseApplicationRemainder :: Id -> Parser ParsedPattern
 parseApplicationRemainder identifier = do
     applicationSymbolOrAlias <- parseSymbolOrAliasRemainder identifier
     applicationChildren <- parens . list $ parsePattern
-    (pure . embedParsedPattern . ApplicationF)
-        Application { applicationSymbolOrAlias, applicationChildren }
+    (pure . from) Application { applicationSymbolOrAlias, applicationChildren }
 
 {- | Parse the tail of a 'SymbolOrAlias', after the @Id@.
 
@@ -311,9 +307,7 @@ parseAssoc foldAssoc = do
     braces $ pure ()
     application <- parens $ parseApplication parsePattern
     let mkApplication child1 child2 =
-            application { applicationChildren = [child1, child2] }
-            & ApplicationF
-            & embedParsedPattern
+            from application { applicationChildren = [child1, child2] }
     case applicationChildren application of
         [] -> fail "expected one or more arguments"
         children -> pure (foldAssoc mkApplication children)
@@ -363,29 +357,29 @@ parseKoreRemainder :: Id -> Parser ParsedPattern
 parseKoreRemainder identifier =
     getSpecialId identifier >>= \case
         -- Connectives
-        "top" -> embedParsedPattern . TopF <$> parseConnective0 Top
-        "bottom" -> embedParsedPattern . BottomF <$> parseConnective0 Bottom
-        "not" -> embedParsedPattern . NotF <$> parseConnective1 Not
-        "and" -> embedParsedPattern . AndF <$> parseConnective2 And
-        "or" -> embedParsedPattern . OrF <$> parseConnective2 Or
-        "implies" -> embedParsedPattern . ImpliesF <$> parseConnective2 Implies
-        "iff" -> embedParsedPattern . IffF <$> parseConnective2 Iff
+        "top" -> from <$> parseConnective0 Top
+        "bottom" -> from <$> parseConnective0 Bottom
+        "not" -> from <$> parseConnective1 Not
+        "and" -> from <$> parseConnective2 And
+        "or" -> from <$> parseConnective2 Or
+        "implies" -> from <$> parseConnective2 Implies
+        "iff" -> from <$> parseConnective2 Iff
         -- Quantifiers
-        "exists" -> embedParsedPattern . ExistsF <$> parseQuantifier Exists
-        "forall" -> embedParsedPattern . ForallF <$> parseQuantifier Forall
+        "exists" -> from <$> parseQuantifier Exists
+        "forall" -> from <$> parseQuantifier Forall
         -- Fixpoints
-        "mu" -> embedParsedPattern . MuF <$> parseFixpoint Mu
-        "nu" -> embedParsedPattern . NuF <$> parseFixpoint Nu
+        "mu" -> from <$> parseFixpoint Mu
+        "nu" -> from <$> parseFixpoint Nu
         -- Predicates
-        "ceil" -> embedParsedPattern . CeilF <$> parsePredicate1 Ceil
-        "floor" -> embedParsedPattern . FloorF <$> parsePredicate1 Floor
-        "equals" -> embedParsedPattern . EqualsF <$> parsePredicate2 Equals
-        "in" -> embedParsedPattern . InF <$> parsePredicate2 In
+        "ceil" -> from <$> parsePredicate1 Ceil
+        "floor" -> from <$> parsePredicate1 Floor
+        "equals" -> from <$> parsePredicate2 Equals
+        "in" -> from <$> parsePredicate2 In
         -- Rewriting
-        "next" -> embedParsedPattern . NextF <$> parseConnective1 Next
-        "rewrites" -> embedParsedPattern . RewritesF <$> parseConnective2 Rewrites
+        "next" -> from <$> parseConnective1 Next
+        "rewrites" -> from <$> parseConnective2 Rewrites
         -- Values
-        "dv" -> embedParsedPattern . DomainValueF <$> parseDomainValue
+        "dv" -> from <$> parseDomainValue
         -- Syntax sugar
         "left-assoc" -> parseLeftAssoc
         "right-assoc" -> parseRightAssoc
@@ -403,7 +397,7 @@ getSpecialId Id { getId } = do
 _ ::= _ "{" ⟨sort⟩ "}" "(" ")"
 @
  -}
-parseConnective0 :: (Sort -> result) -> Parser result
+parseConnective0 :: (Sort -> f ParsedPattern) -> Parser (f ParsedPattern)
 parseConnective0 mkResult = do
     sort <- braces parseSort
     () <- parens $ pure ()
