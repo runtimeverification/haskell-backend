@@ -80,6 +80,10 @@ import Kore.Log.ErrorRewriteLoop
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
+import Kore.Log.ErrorRuleMergeDuplicate
+    ( ErrorRuleMergeDuplicateIds
+    , ErrorRuleMergeDuplicateLabels
+    )
 import Kore.Log.ErrorVerify
     ( ErrorVerify
     )
@@ -162,6 +166,8 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @ErrorParse
     , mk $ Proxy @ErrorVerify
+    , mk $ Proxy @ErrorRuleMergeDuplicateIds
+    , mk $ Proxy @ErrorRuleMergeDuplicateLabels
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckClaimState
