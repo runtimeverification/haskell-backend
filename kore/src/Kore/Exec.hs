@@ -376,14 +376,14 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
             match target config1 config2 =
                 Search.matchWith
                     target
-                    (extractExecutionState config1)
+                    config1
                     (extractExecutionState config2)
         solutionsLists <-
             searchGraph
                 searchConfig
                 (match
                     SideCondition.topTODO
-                    (StartExec $ mkRewritingPattern searchPattern)
+                    (mkRewritingPattern searchPattern)
                 )
                 executionGraph
         let
