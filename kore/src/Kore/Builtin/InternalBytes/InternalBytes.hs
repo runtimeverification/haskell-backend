@@ -96,7 +96,7 @@ asTermLike
 asTermLike InternalBytes { bytesSort, bytesValue }  =
     mkDomainValue DomainValue
         { domainValueSort = bytesSort
-        , domainValueChild = mkStringLiteral $ Encoding.toBase16 bytesValue
+        , domainValueChild = mkStringLiteral $ Encoding.decode8Bit bytesValue
         }
 
 internalize
