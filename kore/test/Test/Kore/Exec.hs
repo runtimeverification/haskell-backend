@@ -55,7 +55,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
     ( ExecutionStrategy (..)
     , priorityAllStrategy
-    , priorityAnyStrategy
     )
 import Kore.Step.AntiLeft
     ( AntiLeft (AntiLeft)
@@ -92,8 +91,6 @@ import Test.Tasty.HUnit.Ext
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     actual =
         exec
             Unlimited
@@ -131,8 +128,6 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     actual =
         exec
             Unlimited
@@ -513,9 +508,6 @@ test_execGetExitCode =
               testModuleSuccessfulSimplification 42 $ ExitFailure 42
         ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
-
     makeTestCase name testModule inputInteger expectedCode =
         testCase name
             $ actual testModule inputInteger >>= assertEqual "" expectedCode
