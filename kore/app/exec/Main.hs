@@ -148,9 +148,6 @@ import Kore.Reachability
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.RulePattern
-    ( RewriteRule
-    )
 import Kore.Step.Search
     ( SearchType (..)
     )

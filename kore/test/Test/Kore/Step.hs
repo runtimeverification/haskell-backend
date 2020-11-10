@@ -20,9 +20,13 @@ import Data.Generics.Product
 import Data.Limit
     ( Limit (..)
     )
+import Data.List.Extra
+    ( groupSortOn
+    )
 import Data.Text
     ( Text
     )
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
@@ -56,7 +60,6 @@ import Kore.Internal.TermLike
     ( TermLike
     , mkApplySymbol
     , mkElemVar
-    , mkImplies
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
@@ -99,7 +102,7 @@ test_constructorRewriting =
         [ Axiom $ cons c1 ["x1"] `rewritesTo` cons c2 ["x1"]
         , Axiom $ cons c2 ["x2"] `rewritesTo` cons c3 ["x2"]
         ]
-        ( Expect $                            Rewritten (cons c3 ["var"]))
+        ( Expect $                            cons c3 ["var"])
       where
         cons = applyConstructorToVariables
 
@@ -119,7 +122,7 @@ test_ruleThatDoesn'tApply =
         [ Axiom $ cons c1     ["x1"] `rewritesTo`  cons c2 ["x1"]
         , Axiom $ cons unused ["x2"] `rewritesTo`  var "x2"
         ]
-        ( Expect $                                 Rewritten (cons c2 ["var"]))
+        ( Expect $                                 cons c2 ["var"])
       where
         cons = applyConstructorToVariables
 
@@ -137,32 +140,41 @@ applyStrategy testName start axioms expected =
         {- API Helpers -}
 
 takeSteps :: (Start, [Axiom]) -> IO Actual
-takeSteps (Start start, wrappedAxioms) =
-    undefined
---     (<$>) pickLongest
---     $ runSimplifier mockEnv
---     $ makeExecutionGraph
---         (makeRewritingTerm start)
---         (mkRewritingRule . unAxiom <$> wrappedAxioms)
---   where
---     makeExecutionGraph configuration axioms =
---         Strategy.runStrategy
---             Unlimited
---             transitionRule
---             (repeat $ priorityAllStrategy axioms)
---             (pure configuration)
---     makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
+takeSteps (Start start, wrappedAxioms) = do
+    x <- runSimplifier mockEnv
+            $ makeExecutionGraph
+                (pure $ makeRewritingTerm start)
+                ((fmap . fmap) mkRewritingRule groupedRewrites)
+    let y = pickLongest x
+    return (extractExecutionState y)
+  where
+    makeExecutionGraph
+        :: Pattern RewritingVariableName
+        -> [[RewriteRule RewritingVariableName]]
+        -> Simplifier (Strategy.ExecutionGraph
+                (ExecutionState (Pattern RewritingVariableName))
+                (RewriteRule RewritingVariableName)
+              )
+    makeExecutionGraph configuration axioms =
+        Strategy.runStrategy
+            Unlimited
+            (transitionRule axioms All)
+            (toList executionStrategy)
+            (StartExec configuration)
+    makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
+    groupedRewrites =
+        groupSortOn Attribute.getPriorityOfAxiom
+        $ unAxiom
+        <$> wrappedAxioms
 
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
 compareTo (Expect expected) actual =
-    undefined
---     assertEqual
---         ""
---         (mkRewritingPattern . Pattern.fromTermLike $ expected)
---         actual
-
+    assertEqual
+        ""
+        (mkRewritingPattern . Pattern.fromTermLike $ expected)
+        actual
 
     {- Types used in this file -}
 
@@ -172,9 +184,9 @@ type CommonTermLike = TermLike VariableName
 type TestPattern = CommonTermLike
 newtype Start = Start TestPattern
 newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
-newtype Expect = Expect (ExecutionState TestPattern)
+newtype Expect = Expect TestPattern
 
-type Actual = ExecutionState (Pattern RewritingVariableName)
+type Actual = Pattern RewritingVariableName
 
 -- Builders -- should these find a better home?
 
@@ -200,48 +212,10 @@ rewritesTo = (RewriteRule .) . rulePattern
     like `rewriteStep`.
 -}
 
-v1, a1, b1, x1 :: Sort -> ElementVariable VariableName
-v1 = mkElementVariable (testId "v1")
+a1, b1, x1 :: Sort -> ElementVariable VariableName
 a1 = mkElementVariable (testId "a1")
 b1 = mkElementVariable (testId "b1")
 x1 = mkElementVariable (testId "x1")
-
-rewriteIdentity :: RewriteRule VariableName
-rewriteIdentity =
-    RewriteRule $ rulePattern
-        (mkElemVar (x1 Mock.testSort))
-        (mkElemVar (x1 Mock.testSort))
-
-rewriteImplies :: RewriteRule VariableName
-rewriteImplies =
-    RewriteRule $ rulePattern
-        (mkElemVar (x1 Mock.testSort))
-        (mkImplies
-                (mkElemVar $ x1 Mock.testSort)
-                (mkElemVar $ x1 Mock.testSort)
-        )
-
-expectTwoAxioms :: [Pattern RewritingVariableName]
-expectTwoAxioms =
-    [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
-    , Pattern.fromTermLike
-        $ mkImplies
-            (mkElemVar $ v1 Mock.testSort)
-            (mkElemVar $ v1 Mock.testSort)
-    ]
-    & fmap mkRewritingPattern
-
-actualTwoAxioms :: IO [Pattern RewritingVariableName]
-actualTwoAxioms =
-    runStep
-        Conditional
-            { term = mkElemVar (v1 Mock.testSort)
-            , predicate = makeTruePredicate_
-            , substitution = mempty
-            }
-        [ mkRewritingRule rewriteIdentity
-        , mkRewritingRule rewriteImplies
-        ]
 
 initialFailSimple :: Pattern VariableName
 initialFailSimple =
@@ -250,7 +224,7 @@ initialFailSimple =
             metaSigma
                 (metaG (mkElemVar $ a1 Mock.testSort))
                 (metaF (mkElemVar $ b1 Mock.testSort))
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 
@@ -276,7 +250,7 @@ initialFailCycle =
             metaSigma
                 (mkElemVar $ a1 Mock.testSort)
                 (mkElemVar $ a1 Mock.testSort)
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 
@@ -295,38 +269,23 @@ actualFailCycle =
             (mkElemVar (x1 Mock.testSort))
         ]
 
-initialIdentity :: Pattern VariableName
-initialIdentity =
-    Conditional
-        { term = mkElemVar (v1 Mock.testSort)
-        , predicate = makeTruePredicate Mock.testSort
-        , substitution = mempty
-        }
-
-expectIdentity :: [Pattern RewritingVariableName]
-expectIdentity = [initialIdentity & mkRewritingPattern]
-
-actualIdentity :: IO [Pattern RewritingVariableName]
-actualIdentity =
-    runStep
-        initialIdentity
-        [ mkRewritingRule rewriteIdentity ]
-
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
-    [ testCase "Applies a simple axiom"
-        -- Axiom: X1 => X1
-        -- Start pattern: V1
-        -- Expected: V1
-        (assertEqual "" expectIdentity =<< actualIdentity)
-    , testCase "Applies two simple axioms"
-        -- Axiom: X1 => X1
-        -- Axiom: X1 => implies(X1, X1)
-        -- Start pattern: V1
-        -- Expected: V1
-        -- Expected: implies(V1, V1)
-        (assertEqual "" expectTwoAxioms =<< actualTwoAxioms)
-    , testCase "Fails to apply a simple axiom"      --- unification failure
+    [ -- TODO: remove, creates cycle
+      -- testCase "Applies a simple axiom"
+      --   -- Axiom: X1 => X1
+      --   -- Start pattern: V1
+      --   -- Expected: V1
+      --   (assertEqual "" expectIdentity =<< actualIdentity)
+    -- TODO: remove, implies is not function-like
+    -- , testCase "Applies two simple axioms"
+    --     -- Axiom: X1 => X1
+    --     -- Axiom: X1 => implies(X1, X1)
+    --     -- Start pattern: V1
+    --     -- Expected: V1
+    --     -- Expected: implies(V1, V1)
+    --     (assertEqual "" expectTwoAxioms =<< actualTwoAxioms)
+    testCase "Fails to apply a simple axiom"      --- unification failure
         -- Axiom: sigma(X1, X1) => X1
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
@@ -376,7 +335,7 @@ test_SMT =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1 ] <- runStepMockEnv
+        [ _actual1 ] <- runStep
             (smtPattern Mock.b PredicatePositive)
             [ mkRewritingRule $ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
@@ -407,7 +366,7 @@ test_SMT =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1 ] <- runStepMockEnv
+        [ _actual1 ] <- runStep
             Conditional
                 { term = Mock.functionalConstr10 Mock.b
                 , predicate = makeEqualsPredicate_
@@ -537,19 +496,15 @@ runStep
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
     -> IO [Pattern RewritingVariableName]
-runStep configuration axioms =
-    undefined
---     (<$>) pickFinal
---     $ runSimplifier mockEnv
---     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
-
-runStepMockEnv
-    :: Pattern VariableName
-    -- ^left-hand-side of unification
-    -> [RewriteRule RewritingVariableName]
-    -> IO [Pattern RewritingVariableName]
-runStepMockEnv configuration axioms =
-    undefined
---     (<$>) pickFinal
---     $ runSimplifier Mock.env
---     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
+runStep configuration axioms = do
+    x <-
+        runSimplifier Mock.env
+        $ runStrategy
+            Unlimited
+            (transitionRule groupedRewrites All)
+            (toList executionStrategy)
+            (StartExec $ mkRewritingPattern configuration)
+    let y = pickFinal x
+    return (extractExecutionState <$> y)
+  where
+    groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom axioms

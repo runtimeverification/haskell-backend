@@ -153,7 +153,6 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
     ( MonadProf
-    , SimplifierT
     , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -205,7 +204,7 @@ exec
         , MonadMask smt
         , MonadProf smt
         )
-   => Limit Natural
+    => Limit Natural
     -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
