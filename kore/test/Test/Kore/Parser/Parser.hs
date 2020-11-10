@@ -365,12 +365,11 @@ applicationPatternParserTests =
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren =
+                    map embedParsedPattern
                     [ StringLiteral "a"
                         & Const & StringLiteralF
-                        & embedParsedPattern
                     , StringLiteral "b"
                         & Const & StringLiteralF
-                        & embedParsedPattern
                     ]
                 }
             )
@@ -390,21 +389,62 @@ applicationPatternParserTests =
                                 , symbolOrAliasParams = []
                                 }
                         , applicationChildren =
-                            [ StringLiteral "a"
-                                & Const & StringLiteralF
-                                & embedParsedPattern
-                            , StringLiteral "b"
-                                & Const & StringLiteralF
-                                & embedParsedPattern
+                            map embedParsedPattern
+                            [ StringLiteral "a" & Const & StringLiteralF
+                            , StringLiteral "b" & Const & StringLiteralF
                             ]
                         }
                     , StringLiteral "c" & Const & StringLiteralF
                     ]
                 }
             )
+        , success "\\right-assoc{}(c{}(\"a\"))"
+            ( StringLiteral "a"
+                & Const & StringLiteralF
+                & embedParsedPattern
+            )
+        , success "\\right-assoc{}(c{}(\"a\", \"b\"))"
+            ( embedParsedPattern $ ApplicationF Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId "c"
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren =
+                    map embedParsedPattern
+                    [ StringLiteral "a" & Const & StringLiteralF
+                    , StringLiteral "b" & Const & StringLiteralF
+                    ]
+                }
+            )
+        , success "\\right-assoc{}(c{}(\"a\", \"b\", \"c\"))"
+            ( embedParsedPattern $ ApplicationF Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = testId "c"
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren =
+                    map embedParsedPattern
+                    [ StringLiteral "a" & Const & StringLiteralF
+                    , ApplicationF Application
+                        { applicationSymbolOrAlias =
+                            SymbolOrAlias
+                                { symbolOrAliasConstructor = testId "c"
+                                , symbolOrAliasParams = []
+                                }
+                        , applicationChildren =
+                            map embedParsedPattern
+                            [ StringLiteral "b" & Const & StringLiteralF
+                            , StringLiteral "c" & Const & StringLiteralF
+                            ]
+                        }
+                    ]
+                }
+            )
         , FailureWithoutMessage
             [ "", "var", "v:", ":s", "c(s)", "c{s}"
-            , "\\left-assoc{}(c{}())"
+            , "\\left-assoc{}(c{}())", "\\right-assoc{}(c{}())"
             ]
         ]
 bottomPatternParserTests :: [TestTree]

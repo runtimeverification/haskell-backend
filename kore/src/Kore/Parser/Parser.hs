@@ -275,12 +275,39 @@ parseSymbolOrAliasRemainder symbolOrAliasConstructor = do
 
 {- | Parse the @\\left-assoc@ syntactic sugar.
 
+@parseLeftAssoc@ assumes that the initial identifier has already been parsed.
+
 @
-"\\left-assoc" '{' '}' '(' <application-pattern> ')'
+_ '{' '}' '(' <application-pattern> ')'
 @
  -}
 parseLeftAssoc :: Parser ParsedPattern
-parseLeftAssoc = do
+parseLeftAssoc = parseAssoc foldl1
+
+{- | Parse the @\\right-assoc@ syntactic sugar.
+
+@parseRightAssoc@ assumes that the initial identifier has already been parsed.
+
+@
+_ '{' '}' '(' <application-pattern> ')'
+@
+ -}
+parseRightAssoc :: Parser ParsedPattern
+parseRightAssoc = parseAssoc foldr1
+
+{- | Parse the @\\left-assoc@ or @\\right-assoc@ syntactic sugar.
+
+@parseAssoc@ assumes that the initial identifier has already been parsed.
+
+@
+_ '{' '}' '(' <application-pattern> ')'
+@
+ -}
+parseAssoc
+    :: (forall r. (r -> r -> r) -> [r] -> r)
+    -- ^ folding function: 'foldl1' or 'foldr1'
+    -> Parser ParsedPattern
+parseAssoc foldAssoc = do
     braces $ pure ()
     application <- parens $ parseApplication parsePattern
     let mkApplication child1 child2 =
@@ -289,7 +316,7 @@ parseLeftAssoc = do
             & embedParsedPattern
     case applicationChildren application of
         [] -> fail "expected one or more arguments"
-        children -> pure (foldl1 mkApplication children)
+        children -> pure (foldAssoc mkApplication children)
 
 {- | Parse a built-in Kore (matching logic) pattern.
 
@@ -361,6 +388,7 @@ parseKoreRemainder identifier =
         "dv" -> embedParsedPattern . DomainValueF <$> parseDomainValue
         -- Syntax sugar
         "left-assoc" -> parseLeftAssoc
+        "right-assoc" -> parseRightAssoc
 
         _ -> empty
 
