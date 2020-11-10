@@ -318,7 +318,7 @@ findIndexedSort
     -- ^ indexed module
     -> Id
     -- ^ sort identifier
-    -> error (SentenceSort)
+    -> error SentenceSort
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 
