@@ -340,10 +340,9 @@ search
         , MonadProf smt
         )
     => Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
     -> Pattern VariableName
@@ -351,7 +350,7 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike VariableName)
-search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
+search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
         initialized <- initialize verifiedModule
@@ -364,15 +363,28 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 case toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
+            rewriteGroups =
+                groupSortOn Attribute.getPriorityOfAxiom rewriteRules
             runStrategy' =
-                runStrategy breadthLimit transitionRuleSearch (strategy rewriteRules)
-        executionGraph <- runStrategy' (mkRewritingPattern initialPattern)
+                runStrategy
+                    breadthLimit
+                    (transitionRule rewriteGroups All)
+                    limitedStrategy
+        executionGraph <-
+            runStrategy' (StartExec $ mkRewritingPattern initialPattern)
         let
-            match target config = Search.matchWith target config
+            match target config1 config2 =
+                Search.matchWith
+                    target
+                    (extractExecutionState config1)
+                    (extractExecutionState config2)
         solutionsLists <-
             searchGraph
                 searchConfig
-                (match SideCondition.topTODO (mkRewritingPattern searchPattern))
+                (match
+                    SideCondition.topTODO
+                    (StartExec $ mkRewritingPattern searchPattern)
+                )
                 executionGraph
         let
             solutions = concatMap toList solutionsLists
@@ -385,6 +397,10 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ orPredicate
   where
     patternSort = termLikeSort termLike
+    limitedStrategy =
+        executionStrategy
+        & toList
+        & Limit.takeWithin depthLimit
 
 
 -- | Proving a spec given as a module containing rules to be proven

@@ -30,7 +30,6 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
-import qualified Data.Limit as Limit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
@@ -54,7 +53,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
     ( ExecutionStrategy (..)
-    , priorityAllStrategy
     )
 import Kore.Step.AntiLeft
     ( AntiLeft (AntiLeft)
@@ -161,8 +159,6 @@ test_searchPriority :: [TestTree]
 test_searchPriority =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     makeTestCase searchType =
         testCase ("searchPriority " <> show searchType) (assertion searchType)
     assertion searchType =
@@ -171,8 +167,8 @@ test_searchPriority =
         finalPattern <-
             search
                 Unlimited
+                Unlimited
                 verifiedModule
-                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
@@ -225,8 +221,6 @@ test_searchExceedingBreadthLimit :: [TestTree]
 test_searchExceedingBreadthLimit =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     makeTestCase searchType =
         testCase
             ("Exceed breadth limit: " <> show searchType)
@@ -246,9 +240,9 @@ test_searchExceedingBreadthLimit =
     actual searchType = do
         finalPattern <-
             search
+                Unlimited
                 (Limit 0)
                 verifiedModule
-                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }

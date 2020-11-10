@@ -22,7 +22,6 @@ module Kore.Step
     , priorityAnyStrategy
     , TransitionRule
     , transitionRule
-    , transitionRuleSearch
       -- * Re-exports
     , RulePattern
     , Natural
@@ -71,12 +70,10 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
 
 {- TODO: docs
@@ -149,29 +146,6 @@ type TransitionRule monad rule state =
 
 type ExecutionTransitionRule monad rule state =
     ExecutionPrim -> state -> Strategy.TransitionT rule monad state
-
-transitionRuleSearch
-    ::  forall simplifier
-    .   MonadSimplify simplifier
-    =>  TransitionRule simplifier
-            (RewriteRule RewritingVariableName)
-            (Pattern RewritingVariableName)
-transitionRuleSearch =
-    \case
-        Simplify -> transitionSimplify
-        Rewrite a -> transitionRewrite a
-        _ -> pure
-  where
-    transitionSimplify = simplify'
-    transitionRewrite rule config = do
-        Transition.addRule rule
-        results <-
-            Step.applyRewriteRulesParallel
-                Unification.unificationProcedure
-                [rule]
-                config
-            & lift
-        asum (pure <$> toList (Step.gatherResults results))
 
 {- | Transition rule for primitive strategies in 'Prim'.
 

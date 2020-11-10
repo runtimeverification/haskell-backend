@@ -82,7 +82,6 @@ import System.IO
     , withFile
     )
 
-import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -610,15 +609,13 @@ koreSearch execOptions searchOptions = do
     initial <- loadPattern mainModule patternFileName
     final <-
         execute execOptions mainModule
-        $ search breadthLimit mainModule (strategy' strategy) initial target config
+        $ search depthLimit breadthLimit mainModule initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
-    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' (_, All) = Limit.replicate depthLimit . priorityAllStrategy
-    strategy' (_, Any) = Limit.replicate depthLimit . priorityAnyStrategy
+    KoreExecOptions { breadthLimit, depthLimit } = execOptions
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
