@@ -48,7 +48,7 @@ pattern from the given sort parameters.
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias sentence, MonadError (Error e) m)
     => [Sort]
-    -> sentence pat
+    -> sentence
     -> m ApplicationSorts
 symbolOrAliasSorts params sentence = do
     variableToSort <-

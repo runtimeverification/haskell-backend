@@ -53,8 +53,8 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                    :: ParsedSentenceSort
                 )
+                :: ParsedSentence
             )
             "sort x{} []"
         , unparseTest

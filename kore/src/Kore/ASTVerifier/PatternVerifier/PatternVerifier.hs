@@ -275,7 +275,7 @@ withDeclaredVariables declaredVariables' =
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence
     => SymbolOrAlias
-    -> sentence pat
+    -> sentence
     -> PatternVerifier ApplicationSorts
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask

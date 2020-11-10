@@ -152,7 +152,7 @@ type SentenceVerifier = StateT VerifiedModule' Verifier
 
 {- | Look up a sort declaration.
  -}
-findSort :: Id -> SentenceVerifier (SentenceSort Verified.Pattern)
+findSort :: Id -> SentenceVerifier SentenceSort
 findSort identifier = do
     verifiedModule <- State.get
     findIndexedSort verifiedModule identifier
@@ -197,7 +197,7 @@ verifyHookedSorts =
     traverse_ verifyHookedSortSentence
     . mapMaybe projectSentenceHookedSort
 
-verifyHookedSortSentence :: SentenceSort ParsedPattern -> SentenceVerifier ()
+verifyHookedSortSentence :: SentenceSort -> SentenceVerifier ()
 verifyHookedSortSentence sentence =
     withSentenceHookContext (SentenceHookedSort sentence) $ do
         let SentenceSort { sentenceSortAttributes } = sentence
@@ -224,9 +224,7 @@ verifyHookedSymbols =
     traverse_ verifyHookedSymbolSentence
     . mapMaybe projectSentenceHookedSymbol
 
-verifyHookedSymbolSentence
-    :: SentenceSymbol ParsedPattern
-    -> SentenceVerifier ()
+verifyHookedSymbolSentence :: SentenceSymbol -> SentenceVerifier ()
 verifyHookedSymbolSentence sentence =
     withSentenceHookContext (SentenceHookedSymbol sentence) $ do
         let SentenceSymbol { sentenceSymbolAttributes } = sentence
@@ -262,7 +260,7 @@ verifySymbols = traverse_ verifySymbolSentence . mapMaybe project
         projectSentenceSymbol sentence <|> projectSentenceHookedSymbol sentence
 
 verifySymbolSentence
-    :: SentenceSymbol ParsedPattern
+    :: SentenceSymbol
     -> SentenceVerifier Verified.SentenceSymbol
 verifySymbolSentence sentence =
     withSentenceSymbolContext sentence $ do
@@ -272,15 +270,14 @@ verifySymbolSentence sentence =
         mapM_ (verifySort findSort variables) sorts
         let resultSort = sentenceSymbolResultSort sentence
         verifySort findSort variables resultSort
-        verified <- traverse verifyNoPatterns sentence
         attrs <- parseAttributes' $ sentenceSymbolAttributes sentence
         let isConstructor =
                 Attribute.Symbol.isConstructor
                 . Attribute.Symbol.constructor
                 $ attrs
-        when isConstructor (verifyConstructor verified)
-        State.modify' $ addSymbol verified attrs
-        return verified
+        when isConstructor (verifyConstructor sentence)
+        State.modify' $ addSymbol sentence attrs
+        return sentence
   where
     addSymbol verified attrs =
         Lens.over
@@ -425,15 +422,14 @@ verifySorts = traverse_ verifySortSentence . mapMaybe project
         projectSentenceSort sentence <|> projectSentenceHookedSort sentence
 
 verifySortSentence
-    :: SentenceSort ParsedPattern
+    :: SentenceSort
     -> SentenceVerifier Verified.SentenceSort
 verifySortSentence sentence =
     withSentenceSortContext sentence $ do
         _ <- buildDeclaredSortVariables $ sentenceSortParameters sentence
-        verified <- traverse verifyNoPatterns sentence
-        attrs <- parseAttributes' $ sentenceSortAttributes verified
-        State.modify' $ addSort verified attrs
-        return verified
+        attrs <- parseAttributes' $ sentenceSortAttributes sentence
+        State.modify' $ addSort sentence attrs
+        return sentence
   where
     addSort verified attrs =
         Lens.over

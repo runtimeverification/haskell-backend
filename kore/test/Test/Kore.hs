@@ -648,7 +648,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol patternType)
+sentenceSymbolGen :: Gen SentenceSymbol
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol
@@ -663,7 +663,7 @@ sentenceSymbolGen = do
             , sentenceSymbolAttributes
             }
 
-sentenceImportGen :: Gen (SentenceImport patternType)
+sentenceImportGen :: Gen SentenceImport
 sentenceImportGen =
     SentenceImport
         <$> moduleNameGen
@@ -683,9 +683,7 @@ sentenceAxiomGen patGen = do
             , sentenceAxiomAttributes
             }
 
-sentenceSortGen
-    :: forall patternType
-    .  Gen (SentenceSort patternType)
+sentenceSortGen :: Gen SentenceSort
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen

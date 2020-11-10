@@ -640,7 +640,7 @@ _
 @
 
 -}
-parseSentenceSymbolRemainder :: Parser (SentenceSymbol ParsedPattern)
+parseSentenceSymbolRemainder :: Parser SentenceSymbol
 parseSentenceSymbolRemainder = do
     sentenceSymbolSymbol <- parseSymbolHead
     sentenceSymbolSorts <- parens . list $ parseSort
