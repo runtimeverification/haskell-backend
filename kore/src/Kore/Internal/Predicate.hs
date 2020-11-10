@@ -213,12 +213,6 @@ data PredicateF variable child
     deriving anyclass (Debug, Diff)
 
 instance
-    (Ord variable, Unparse variable, Unparse child) => Unparse (PredicateF variable child)
-  where
-    unparse = unparseGeneric
-    unparse2 = unparse2Generic
-
-instance
     Ord variable => Synthetic (FreeVariables variable) (PredicateF variable)
   where
     synthetic = \case
@@ -305,31 +299,12 @@ instance NFData variable => NFData (Predicate variable) where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat
 
-instance (Unparse variable, Ord variable) => Unparse (Predicate variable) where
-    unparse term =
-        case Recursive.project term of
-            (attrs :< predF) -> Pretty.sep [attributeRepresentation, unparse predF]
-              where
-                attributeRepresentation = Pretty.surround
-                            (Pretty.hsep $ map Pretty.pretty representation)
-                            "/* "
-                            " */"
-                  where
-                    representation =
-                        case
-                            Simplified.unparseTag
-                            (Attribute.simplifiedAttribute attrs)
-                        of
-                            Just result -> [result]
-                            Nothing -> []
+instance InternalVariable variable => Pretty (Predicate variable) where
+    pretty = unparse . fromPredicate_
 
-    unparse2 term =
-        case Recursive.project term of
-          (_ :< pat) -> unparse2 pat
-
-instance Unparse (Predicate variable) => SQL.Column (Predicate variable) where
+instance InternalVariable variable => SQL.Column (Predicate variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 type instance Base (Predicate variable) =
     CofreeF (PredicateF variable) (PredicatePattern variable)
@@ -496,7 +471,7 @@ fromPredicate sort = Recursive.fold worker
             InF      (In () () t1 t2)     -> TermLike.mkIn sort t1 t2
             NotF     (Not () t)           -> TermLike.mkNot t
             OrF      (Or () t1 t2)        -> TermLike.mkOr t1 t2
-            TopF      _                   -> TermLike.mkTop sort
+            TopF     _                    -> TermLike.mkTop sort
 
 fromPredicate_
     :: InternalVariable variable
@@ -825,12 +800,12 @@ newtype NotPredicate variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance (Unparse (Predicate variable), InternalVariable variable)
+instance InternalVariable variable
     => Pretty (NotPredicate variable) where
     pretty (NotPredicate termLikeF) =
         Pretty.vsep
         [ "Expected a predicate, but found:"
-        , Pretty.indent 4 (unparse termLikeF)
+        , Pretty.indent 4 (unparse $ fromPredicate_ <$> termLikeF)
         ]
 
 makePredicate
@@ -934,12 +909,13 @@ cannotSimplifyNotSimplifiedError
     => PredicateF variable (Predicate variable) -> a
 cannotSimplifyNotSimplifiedError predF =
     error
-        (  "Unexpectedly marking term with NotSimplified children as \
-            \simplified:\n"
+        (  "Unexpectedly marking term with NotSimplified children as simplified:\n"
         ++ show predF
         ++ "\n"
-        ++ unparseToString predF
+        ++ unparseToString term
         )
+  where
+    term = fromPredicate_ (synthesize predF)
 
 simplifiedFromChildren
     :: HasCallStack

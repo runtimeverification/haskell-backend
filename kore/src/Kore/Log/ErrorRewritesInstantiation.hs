@@ -59,7 +59,7 @@ import Kore.Unparser
     )
 import Log
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -105,14 +105,14 @@ instance Pretty ErrorRewritesInstantiation where
       =
         Pretty.vsep $
             [ "While rewriting the configuration:"
-            , Pretty.indent 4 (unparse configuration)
+            , Pretty.indent 4 (pretty configuration)
             , "Unable to instantiate semantic rule at "
                 <> Pretty.pretty location
             , "Unification did not find a solution for the variables:"
             , (Pretty.indent 4 . Pretty.sep)
                 (unparse <$> Set.toAscList missingVariables)
             , "The unification solution was:"
-            , unparse (fmap getAxiomPattern solution)
+            , pretty (fmap getAxiomPattern solution)
             , "Error! Please report this."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)

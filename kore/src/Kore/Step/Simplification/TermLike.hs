@@ -158,6 +158,9 @@ import Kore.Variables.Target
     , unTarget
     )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -265,7 +268,7 @@ simplify sideCondition = \termLike ->
                     , Pretty.indent 4 (unparse termLike)
                     , Pretty.indent 2 "unsimplified results:"
                     , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> unsimplified)
+                        (pretty <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
 
@@ -450,7 +453,7 @@ ensureSimplifiedResult repr termLike results
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
         , (Pretty.indent 4 . Pretty.vsep)
-            (unparse <$> OrPattern.toPatterns results)
+            (pretty <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]
@@ -469,7 +472,7 @@ ensureSimplifiedCondition repr termLike condition
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified condition, but found:"
-        , Pretty.indent 4 (unparse condition)
+        , Pretty.indent 4 (pretty condition)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]

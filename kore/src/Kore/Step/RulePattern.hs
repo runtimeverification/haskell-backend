@@ -138,7 +138,7 @@ import Kore.Unparser
     )
 import Kore.Variables.Fresh
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -216,13 +216,13 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
             [ "left:"
             , Pretty.indent 4 (unparse left)
             , "requires:"
-            , Pretty.indent 4 (unparse requires)
+            , Pretty.indent 4 (pretty requires)
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
             , Pretty.indent 4 (unparse right)
             , "ensures:"
-            , Pretty.indent 4 (unparse ensures)
+            , Pretty.indent 4 (pretty ensures)
             ]
       where
         RulePattern

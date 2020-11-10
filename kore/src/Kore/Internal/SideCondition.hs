@@ -50,8 +50,8 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Unparser
-    ( Unparse (..)
+import Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 import qualified SQL
@@ -80,7 +80,7 @@ instance
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _ _) =
@@ -100,14 +100,9 @@ instance InternalVariable variable
       where
         SideCondition {assumedTrue} = sideCondition
 
-instance InternalVariable variable => Unparse (SideCondition variable) where
-    unparse sideCondition@(SideCondition _ _) =
-        unparse assumedTrue
-      where
-        SideCondition {assumedTrue} = sideCondition
-
-    unparse2 sideCondition@(SideCondition _ _) =
-        unparse2 assumedTrue
+instance InternalVariable variable => Pretty (SideCondition variable) where
+    pretty sideCondition@(SideCondition _ _) =
+        pretty assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
 

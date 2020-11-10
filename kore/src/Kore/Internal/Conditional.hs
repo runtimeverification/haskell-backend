@@ -71,6 +71,7 @@ import Kore.TopBottom
 import Kore.Unparser
 import Pretty
     ( Doc
+    , Pretty (..)
     )
 import qualified Pretty
 import qualified SQL
@@ -232,13 +233,13 @@ instance
             @(Map (SomeVariable variable) (TermLike variable))
             @(Substitution variable)
 
-unparseConditional
+prettyConditional
     :: Sort
     -> Doc ann    -- ^ term
     -> Doc ann    -- ^ predicate
     -> [Doc ann]  -- ^ substitution
     -> Doc ann
-unparseConditional sort termDoc predicateDoc substitutionDocs =
+prettyConditional sort termDoc predicateDoc substitutionDocs =
     unparseAssoc' andHead andIdent
         [ below "/* term: */" termDoc
         , below "/* predicate: */" predicateDoc
@@ -250,12 +251,12 @@ unparseConditional sort termDoc predicateDoc substitutionDocs =
     andIdent = "\\top" <> parameters' [unparse sort] <> noArguments
     below first second = (Pretty.align . Pretty.vsep) [first, second]
 
-unparseConditional'
+prettyConditional'
     :: Doc ann    -- ^ term
     -> Doc ann    -- ^ predicate
     -> [Doc ann]  -- ^ substitution
     -> Doc ann
-unparseConditional' termDoc predicateDoc substitutionDocs =
+prettyConditional' termDoc predicateDoc substitutionDocs =
     unparseAssoc' andHead andIdent
         [ below "/* term: */" termDoc
         , below "/* predicate: */" predicateDoc
@@ -267,35 +268,20 @@ unparseConditional' termDoc predicateDoc substitutionDocs =
     andIdent = "\\top" <> noArguments
     below first second = (Pretty.align . Pretty.vsep) [first, second]
 
-instance InternalVariable variable => Unparse (Conditional variable ()) where
-    unparse conditional =
-        unparse conditional { term = Predicate.makeTruePredicate :: Predicate variable }
-
-    unparse2 conditional =
-        unparse2 conditional { term = Predicate.makeTruePredicate  :: Predicate variable }
+instance InternalVariable variable => Pretty (Conditional variable ()) where
+    pretty conditional =
+        pretty conditional { term = Predicate.makeTruePredicate :: Predicate variable }
 
 instance
     InternalVariable variable
-    => Unparse (Conditional variable (TermLike variable))
+    => Pretty (Conditional variable (TermLike variable))
   where
-    unparse Conditional { term, predicate, substitution } =
-        unparseConditional
+    pretty Conditional { term, predicate, substitution } =
+        prettyConditional
             sort
             (unparse term)
-            (unparse predicate)
-            (unparse <$> termLikeSubstitution)
-      where
-        sort = termLikeSort term
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-            <$> Substitution.unwrap substitution
-
-    unparse2 Conditional { term, predicate, substitution } =
-        unparseConditional
-            sort
-            (unparse2 term)
-            (unparse2 predicate)
-            (unparse2 <$> termLikeSubstitution)
+            (pretty predicate)
+            (pretty <$> termLikeSubstitution)
       where
         sort = termLikeSort term
         termLikeSubstitution =
@@ -304,23 +290,13 @@ instance
 
 instance
     InternalVariable variable
-    => Unparse (Conditional variable (Predicate variable))
+    => Pretty (Conditional variable (Predicate variable))
   where
-    unparse Conditional { term, predicate, substitution } =
-        unparseConditional'
-            (unparse term)
-            (unparse predicate)
-            (unparse <$> termLikeSubstitution)
-      where
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-            <$> Substitution.unwrap substitution
-
-    unparse2 Conditional { term, predicate, substitution } =
-        unparseConditional'
-            (unparse2 term)
-            (unparse2 predicate)
-            (unparse2 <$> termLikeSubstitution)
+    pretty Conditional { term, predicate, substitution } =
+        prettyConditional'
+            (pretty term)
+            (pretty predicate)
+            (pretty <$> termLikeSubstitution)
       where
         termLikeSubstitution =
             Substitution.singleSubstitutionToPredicate

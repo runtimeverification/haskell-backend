@@ -16,7 +16,6 @@ import Control.Exception
     ( evaluate
     )
 import Data.Default
-import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -24,7 +23,6 @@ import Data.Text
 import qualified Data.Text as Text
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin

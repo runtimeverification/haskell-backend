@@ -22,6 +22,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
@@ -43,6 +46,12 @@ data Or sort child = Or
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance Pretty child => Pretty (Or Sort child) where
+    pretty Or { orSort, orFirst, orSecond } =
+        "\\or"
+        <> parameters [orSort]
+        <> arguments' (pretty <$> [orFirst, orSecond])
+
 instance Unparse child => Unparse (Or Sort child) where
     unparse Or { orSort, orFirst, orSecond } =
         "\\or"
@@ -56,6 +65,10 @@ instance Unparse child => Unparse (Or Sort child) where
             , unparse2 orSecond
             ])
 
+instance Pretty child => Pretty (Or () child) where
+    pretty Or { orFirst, orSecond } =
+        "\\or"
+        <> arguments' (pretty <$> [orFirst, orSecond])
 instance Unparse child => Unparse (Or () child) where
     unparse Or { orFirst, orSecond } =
         "\\or"

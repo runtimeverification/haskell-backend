@@ -40,6 +40,9 @@ import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 import Test.Kore
@@ -199,9 +202,9 @@ andSimplify term1 term2 results = do
             , "with term:"
             , Pretty.indent 4 (unparse term2)
             , "expected="
-            , Pretty.indent 4 (Foldable.fold (map unparse expected))
+            , Pretty.indent 4 (Foldable.fold (map pretty expected))
             , "actual="
-            , Pretty.indent 4 (Foldable.fold (map unparse actual))
+            , Pretty.indent 4 (Foldable.fold (map pretty actual))
             ]
 
 andSimplifyException

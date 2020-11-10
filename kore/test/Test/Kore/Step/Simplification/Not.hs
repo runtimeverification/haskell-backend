@@ -20,7 +20,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
@@ -75,11 +77,11 @@ test_simplifyEvaluated =
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
+                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> originals
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> expecteds
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> actuals
                 ]
           where
             actuals = Foldable.toList actual
@@ -96,11 +98,11 @@ test_simplifyEvaluated =
         message actuals =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
-                , Pretty.indent 4 $ unparse original
+                , Pretty.indent 4 $ pretty original
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> expecteds
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> actuals
                 ]
 
 termX :: TestPattern

@@ -18,13 +18,6 @@ import Test.Tasty.Hedgehog
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeMultipleAndPredicate
-    )
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
@@ -35,7 +28,6 @@ import Kore.Unparser
 import Test.Kore hiding
     ( Gen
     )
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 
@@ -162,112 +154,6 @@ test_unparse =
                 }::Attributes
             )
             "[\\top{#CharList{}}()]"
-        , unparseTest
-            (makeMultipleAndPredicate @VariableName
-                [ makeCeilPredicate Mock.a
-                , makeCeilPredicate Mock.b
-                , makeCeilPredicate Mock.c
-                ]
-            )
-            "\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ a{}()),\n\
-            \\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ b{}()),\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ c{}())\n\
-            \))"
-        , unparseTest @(Pattern.Pattern VariableName)
-            (Pattern.andCondition
-                (Pattern.topOf Mock.topSort)
-                (Condition.fromSubstitution $ Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                    [ (inject Mock.x, Mock.a)
-                    , (inject Mock.y, Mock.b)
-                    , (inject Mock.z, Mock.c)
-                    ]
-                )
-            )
-            "\\and{topSort{}}(\n\
-            \    /* term: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \\\and{topSort{}}(\n\
-            \    /* predicate: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \    /* substitution: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ x:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ a{}()\n\
-            \        ),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ y:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ b{}()\n\
-            \        ),\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ z:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ c{}()\n\
-            \        )\n\
-            \    ))\n\
-            \))"
-        , unparseTest @(Pattern.Pattern VariableName)
-            (Pattern.andCondition
-                (Pattern.topOf Mock.topSort)
-                (Condition.andCondition
-                    (Condition.fromPredicate $ makeMultipleAndPredicate
-                        [ makeCeilPredicate Mock.a
-                        , makeCeilPredicate Mock.b
-                        , makeCeilPredicate Mock.c
-                        ]
-                    )
-                    (Condition.fromSubstitution $ Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
-                        , (inject Mock.z, Mock.c)
-                        ]
-                    )
-                )
-            )
-            "\\and{topSort{}}(\n\
-            \    /* term: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \\\and{topSort{}}(\n\
-            \    /* predicate: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ a{}()),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ b{}()),\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ c{}())\n\
-            \    )),\n\
-            \    /* substitution: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ x:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ a{}()\n\
-            \        ),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ y:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ b{}()\n\
-            \        ),\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ z:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ c{}()\n\
-            \        )\n\
-            \    ))\n\
-            \))"
         ]
 
 test_parse :: TestTree

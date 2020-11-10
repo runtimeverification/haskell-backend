@@ -21,7 +21,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
 import Log
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -79,7 +79,7 @@ instance Pretty UnificationSolved where
     pretty UnificationSolved { solution } =
         Pretty.vsep
         [ "Unification solution:"
-        , Pretty.indent 4 (unparse solution)
+        , Pretty.indent 4 (pretty solution)
         ]
 
 whileDebugUnification

@@ -206,8 +206,12 @@ import qualified Kore.Syntax.Id as Id
 import Kore.Syntax.Variable
 import Kore.Unparser
     ( Unparse
+    , renderDefault
     , unparse
     , unparseToString
+    )
+import Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -597,7 +601,7 @@ showClaimStateComponent name transformer maybeNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
             putStrLn' $ name <> " at node " <> show node <> " is:"
-            unparseClaimStateComponent
+            prettyClaimStateComponent
                 transformer
                 omit
                 config
@@ -1320,31 +1324,32 @@ showRewriteRule rule =
     makeKoreReplOutput (unparseToString rule)
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
--- | Unparses a strategy node, using an omit list to hide specified children.
-unparseClaimStateComponent
+-- | Pretty prints a strategy node, using an omit list to hide specified children.
+prettyClaimStateComponent
     :: (SomeClaim -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonClaimState
     -- ^ pattern
     -> ReplOutput
-unparseClaimStateComponent transformation omitList =
+prettyClaimStateComponent transformation omitList =
     claimState ClaimStateTransformer
         { claimedTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , remainingTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
+            <> makeKoreReplOutput (prettyComponent goal)
         , rewrittenTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
+            <> makeKoreReplOutput (prettyComponent goal)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
-    unparseComponent =
-        unparseToString . fmap hide . getRewritingPattern . transformation
+    prettyComponent =
+        renderDefault . pretty . fmap hide . getRewritingPattern
+            . transformation
     hide
         :: TermLike VariableName
         -> TermLike VariableName

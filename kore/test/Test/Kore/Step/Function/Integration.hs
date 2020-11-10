@@ -85,6 +85,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
+    ( InjSimplifier
+    , mkInjSimplifier
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -94,7 +97,9 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
-import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 import Test.Kore
@@ -427,9 +432,9 @@ test_functionIntegration =
         let message =
                 (show . Pretty.vsep)
                     [ "Expected:"
-                    , Pretty.indent 4 (unparse expect)
+                    , Pretty.indent 4 (pretty expect)
                     , "but found:"
-                    , Pretty.indent 4 (unparse actual)
+                    , Pretty.indent 4 (pretty actual)
                     ]
         assertEqual message expect actual
 

@@ -23,9 +23,6 @@ import Kore.Internal.Variable
     , toVariableName
     )
 import Kore.Rewriting.RewritingVariable
-import Kore.Unparser
-    ( unparse
-    )
 import Log
 import Pretty
     ( Pretty (..)
@@ -44,7 +41,7 @@ instance Pretty DebugAppliedRewriteRules where
         Pretty.vsep $
             (<>) prettyUnifiedRules
                 [ "On configuration:"
-                , Pretty.indent 2 . unparse $ configuration
+                , Pretty.indent 2 . pretty $ configuration
                 ]
       where
         prettyUnifiedRules =

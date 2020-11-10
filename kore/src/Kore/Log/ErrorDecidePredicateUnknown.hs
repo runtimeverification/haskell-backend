@@ -21,7 +21,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Variable
-import Kore.Unparser
 import Log
 import Pretty
     ( Pretty (..)
@@ -42,10 +41,12 @@ instance Exception ErrorDecidePredicateUnknown where
 instance Pretty ErrorDecidePredicateUnknown where
     pretty ErrorDecidePredicateUnknown { predicates } =
         Pretty.vsep
-        ( ["Failed to decide predicate:", Pretty.indent 4 (unparse predicate)]
+        ( ["Failed to decide predicate:",
+            Pretty.indent 4 (pretty predicate) ]
         ++ do
             sideCondition <- sideConditions
-            ["with side condition:", Pretty.indent 4 (unparse sideCondition)]
+            ["with side condition:",
+                Pretty.indent 4 (pretty sideCondition) ]
         )
       where
        predicate :| sideConditions = predicates

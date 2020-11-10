@@ -61,6 +61,9 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
@@ -308,10 +311,10 @@ applyFirstSimplifierThatWorksWorker
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orResults)
+                    (pretty <$> Foldable.toList orResults)
                 , Pretty.indent 2 "remainders:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orRemainders)
+                    (pretty <$> Foldable.toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->
             tryNextSimplifier Conditional

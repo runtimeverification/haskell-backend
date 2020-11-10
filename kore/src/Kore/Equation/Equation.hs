@@ -117,17 +117,17 @@ instance InternalVariable variable => Pretty (Equation variable) where
     pretty equation@(Equation _ _ _ _ _ _ _) =
         Pretty.vsep
             [ "requires:"
-            , Pretty.indent 4 (unparse requires)
+            , Pretty.indent 4 (pretty requires)
             , "argument:"
-            , Pretty.indent 4 (maybe "" unparse argument)
+            , Pretty.indent 4 (maybe "" pretty argument)
             , "antiLeft:"
-            , Pretty.indent 4 (maybe "" unparse antiLeft)
+            , Pretty.indent 4 (maybe "" pretty antiLeft)
             , "left:"
             , Pretty.indent 4 (unparse left)
             , "right:"
             , Pretty.indent 4 (unparse right)
             , "ensures:"
-            , Pretty.indent 4 (unparse ensures)
+            , Pretty.indent 4 (pretty ensures)
             ]
       where
         Equation
