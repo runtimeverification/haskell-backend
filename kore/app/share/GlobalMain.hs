@@ -108,6 +108,7 @@ import System.Clock
     , getTime
     )
 import qualified System.Environment as Env
+import qualified Text.Megaparsec as Parser
 
 import Kore.ASTVerifier.DefinitionVerifier
     ( sortModuleClaims
@@ -132,12 +133,9 @@ import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
     )
-import Kore.Parser.Lexeme
-    ( moduleNameIdParser
-    )
+import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils
-    ( endOfInput
-    , parseOnly
+    ( parseOnly
     )
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
@@ -184,7 +182,7 @@ parseModuleName metaName longName helpMsg =
 readModuleName :: Options.ReadM ModuleName
 readModuleName = do
     opt <- str
-    case parseOnly (moduleNameIdParser <* endOfInput) "<command-line>" opt of
+    case parseOnly (Lexer.parseModuleName <* Parser.eof) "<command-line>" opt of
         Left err        -> readerError err
         Right something -> pure something
 
