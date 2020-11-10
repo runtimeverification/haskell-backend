@@ -69,7 +69,9 @@ data SomeEntry where
 
 instance Show SomeEntry where
     show (SomeEntry entry) = show entry
-instance Exception SomeEntry
+
+instance Exception SomeEntry where
+    displayException = show . longDoc
 
 instance Entry SomeEntry where
     toEntry = id
