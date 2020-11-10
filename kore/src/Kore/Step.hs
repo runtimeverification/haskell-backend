@@ -162,10 +162,7 @@ transitionRuleSearch =
         Rewrite a -> transitionRewrite a
         _ -> pure
   where
-    transitionSimplify config = do
-        configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        asum (pure <$> toList filteredConfigs)
+    transitionSimplify = simplify'
     transitionRewrite rule config = do
         Transition.addRule rule
         results <-
@@ -212,10 +209,7 @@ transitionRule rewriteGroups = transitionRuleWorker
         transitionAnyRewrite rewriteGroups patt
     transitionRuleWorker _ ApplyRewrites state = pure state
 
-    transitionSimplify config = do
-        configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        asum (pure <$> toList filteredConfigs)
+    transitionSimplify = simplify'
 
     transitionAnyRewrite xs config = do
         let rules = concat xs
@@ -266,6 +260,18 @@ deriveResults Result.Results { results, remainders } =
 retractApplyRemainder :: ExecutionState a -> Maybe a
 retractApplyRemainder (Remaining a) = Just a
 retractApplyRemainder _ = Nothing
+
+simplify'
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> TransitionT
+            (RewriteRule RewritingVariableName)
+            simplifier
+            (Pattern RewritingVariableName)
+simplify' config = do
+    configs <- lift $ Pattern.simplifyTopConfiguration config
+    filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+    asum (pure <$> toList filteredConfigs)
 
 {- | A strategy that applies all the rewrites in parallel.
 
