@@ -1,3 +1,19 @@
+    #Not ( #Exists I . {
+      Some I
+    #Equals
+      f ( )
+    } )
+  #And
+    #Not ( {
+      None
+    #Equals
+      f ( )
+    } )
+  #And
+    <k>
+      f ( ) ~> .
+    </k>
+#Or
     <k>
       I:Int ~> .
     </k>
