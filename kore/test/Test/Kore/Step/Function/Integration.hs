@@ -1061,7 +1061,7 @@ evaluateWith
     -> TermLike VariableName
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
-    runSimplifier testEnv
+    runSimplifierSMT testEnv
     $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 evaluateWithUnification
@@ -1921,7 +1921,7 @@ testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
 
-testEnv :: Env Simplifier
+testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
@@ -1939,7 +1939,7 @@ testEnv =
         , overloadSimplifier = Mock.overloadSimplifier
         }
 
-testEnvUnification :: Env Simplifier
+testEnvUnification :: Env (SimplifierT NoSMT)
 testEnvUnification =
     testEnv
         { simplifierAxioms =

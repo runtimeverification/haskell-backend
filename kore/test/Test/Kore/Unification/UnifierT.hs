@@ -373,7 +373,7 @@ merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2)
   =
-    Test.runSimplifierNoSMT mockEnv
+    Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT Not.notSimplifier
     $ mergeSubstitutionsExcept
     $ Substitution.wrap
@@ -405,7 +405,7 @@ normalizeExcept
     -> IO (MultiOr (Conditional VariableName ()))
 normalizeExcept predicated =
     fmap MultiOr.make
-    $ Test.runSimplifierNoSMT mockEnv
+    $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT Not.notSimplifier
     $ Logic.lowerLogicT
     $ Simplifier.simplifyCondition SideCondition.top predicated
