@@ -84,6 +84,9 @@ import Kore.Log.ErrorRuleMergeDuplicate
     ( ErrorRuleMergeDuplicateIds
     , ErrorRuleMergeDuplicateLabels
     )
+import Kore.Log.ErrorVerify
+    ( ErrorVerify
+    )
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
@@ -162,6 +165,7 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorBottomTotalFunction
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @ErrorParse
+    , mk $ Proxy @ErrorVerify
     , mk $ Proxy @ErrorRuleMergeDuplicateIds
     , mk $ Proxy @ErrorRuleMergeDuplicateLabels
     , mk $ Proxy @WarnFunctionWithoutEvaluators
