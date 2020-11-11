@@ -27,7 +27,6 @@ import Control.Monad.Catch
     , handleAll
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
-import qualified Data.Foldable as Foldable
 import Options.Applicative
 import System.Directory
     ( listDirectory
@@ -125,6 +124,4 @@ withBugReport exeName bugReport act =
         writeBugReportArchive tmpDir
             (fromMaybe (getExeName exeName) (toReport bugReport))
     optionalWriteBugReport tmpDir =
-        Foldable.traverse_
-            (writeBugReportArchive tmpDir)
-            (toReport bugReport)
+        traverse_ (writeBugReportArchive tmpDir) (toReport bugReport)

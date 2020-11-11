@@ -7,8 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     , andCondition
@@ -83,7 +81,7 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
           where
-            actuals = Foldable.toList actual
+            actuals = toList actual
 
 termA :: TestPattern
 termA = Pattern.fromTermLike Mock.a

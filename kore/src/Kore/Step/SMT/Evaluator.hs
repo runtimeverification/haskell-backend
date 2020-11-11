@@ -18,12 +18,12 @@ module Kore.Step.SMT.Evaluator
 import Prelude.Kore
 
 import Control.Error
-    ( hoistMaybe
+    ( MaybeT
+    , hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
@@ -64,6 +64,9 @@ import Kore.Log.DebugEvaluateCondition
     )
 import Kore.Log.ErrorDecidePredicateUnknown
     ( errorDecidePredicateUnknown
+    )
+import Kore.Log.WarnRetrySolverQuery
+    ( warnRetrySolverQuery
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
@@ -148,7 +151,7 @@ filterMultiOr
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
-    elements <- mapM refute (Foldable.toList multiOr)
+    elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
     refute
@@ -172,19 +175,37 @@ decidePredicate
     => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
 decidePredicate predicates =
-    whileDebugEvaluateCondition predicates
-    $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        tools <- Simplifier.askMetadataTools
-        predicates' <- traverse (translatePredicate tools) predicates
-        Foldable.traverse_ SMT.assert predicates'
-        result <- SMT.check
-        debugEvaluateConditionResult result
-        case result of
-            Unsat -> return False
-            Sat -> empty
-            Unknown -> do
-                errorDecidePredicateUnknown predicates
-                empty
+    whileDebugEvaluateCondition predicates go
+  where
+    go =
+        do
+            result <- query >>= whenUnknown retry
+            debugEvaluateConditionResult result
+            case result of
+                Unsat -> return False
+                Sat -> empty
+                Unknown ->
+                    errorDecidePredicateUnknown predicates
+        & runMaybeT
+
+    whenUnknown f Unknown = f
+    whenUnknown _ result  = return result
+
+    -- | Run the SMT query once.
+    query :: MaybeT simplifier Result
+    query =
+        SMT.withSolver $ evalTranslator $ do
+            tools <- Simplifier.askMetadataTools
+            predicates' <- traverse (translatePredicate tools) predicates
+            traverse_ SMT.assert predicates'
+            SMT.check
+
+    -- | Re-run the SMT query.
+    retry = do
+        SMT.reinit
+        result <- query
+        warnRetrySolverQuery predicates
+        return result
 
 translatePredicate
     :: forall variable m.

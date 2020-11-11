@@ -27,7 +27,6 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.Char as Char
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
     ( Const
     )
@@ -341,7 +340,7 @@ instance Debug a => Debug (Set a) where
 instance Debug a => Debug (Seq a) where
     debugPrec as precOut =
         (parens (precOut >= 10) . Pretty.sep)
-        ["Data.Sequence.fromList", debug (Foldable.toList as)]
+        ["Data.Sequence.fromList", debug (toList as)]
 
 instance Debug a => Debug (Const a b)
 
@@ -578,7 +577,7 @@ instance
 instance (Debug a, Diff a) => Diff (Seq a) where
     diffPrec as bs =
         fmap wrapFromList
-        $ diffPrec (Foldable.toList as) (Foldable.toList bs)
+        $ diffPrec (toList as) (toList bs)
       where
         wrapFromList diff' precOut =
             parens (precOut >= 10) $ "Data.Sequence.fromList" <+> diff' 10

@@ -8,9 +8,6 @@ module Test.Kore.With
 
 import Prelude.Kore
 
-import Data.List
-    ( foldl'
-    )
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
     ( cons

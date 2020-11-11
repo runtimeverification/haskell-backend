@@ -80,6 +80,13 @@ import Kore.Log.ErrorRewriteLoop
 import Kore.Log.ErrorRewritesInstantiation
     ( ErrorRewritesInstantiation
     )
+import Kore.Log.ErrorRuleMergeDuplicate
+    ( ErrorRuleMergeDuplicateIds
+    , ErrorRuleMergeDuplicateLabels
+    )
+import Kore.Log.ErrorVerify
+    ( ErrorVerify
+    )
 import Kore.Log.InfoAttemptUnification
     ( InfoAttemptUnification
     )
@@ -100,6 +107,9 @@ import Kore.Log.WarnFunctionWithoutEvaluators
     )
 import Kore.Log.WarnIfLowProductivity
     ( WarnIfLowProductivity
+    )
+import Kore.Log.WarnRetrySolverQuery
+    ( WarnRetrySolverQuery
     )
 import Kore.Log.WarnStuckClaimState
     ( WarnStuckClaimState
@@ -155,11 +165,15 @@ entryHelpDocs :: [Pretty.Doc ()]
     , mk $ Proxy @ErrorBottomTotalFunction
     , mk $ Proxy @ErrorDecidePredicateUnknown
     , mk $ Proxy @ErrorParse
+    , mk $ Proxy @ErrorVerify
+    , mk $ Proxy @ErrorRuleMergeDuplicateIds
+    , mk $ Proxy @ErrorRuleMergeDuplicateLabels
     , mk $ Proxy @WarnFunctionWithoutEvaluators
     , mk $ Proxy @WarnSymbolSMTRepresentation
     , mk $ Proxy @WarnStuckClaimState
     , mk $ Proxy @WarnIfLowProductivity
     , mk $ Proxy @WarnTrivialClaim
+    , mk $ Proxy @WarnRetrySolverQuery
     , mk $ Proxy @DebugEvaluateCondition
     , mk $ Proxy @ErrorException
     , mk $ Proxy @ErrorRewriteLoop

@@ -28,6 +28,8 @@ module Test.Kore
     , couple
     , symbolOrAliasGen
     , addVariable
+    , sentenceAxiomGen
+    , korePatternUnifiedGen
       -- * Re-exports
     , ParsedPattern
     , asParsedPattern

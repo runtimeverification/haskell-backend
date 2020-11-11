@@ -51,7 +51,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , claimPattern
+    , mkClaimPattern
     )
 import qualified Logic
 
@@ -268,7 +268,7 @@ mkGoal
         existentialVars
     )
   =
-    claimPattern leftPatt rightPatts existentialVars
+    mkClaimPattern leftPatt rightPatts existentialVars
 
 aToB :: ClaimPattern
 aToB =

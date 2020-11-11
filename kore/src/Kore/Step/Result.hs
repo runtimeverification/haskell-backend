@@ -23,7 +23,6 @@ module Kore.Step.Result
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -113,13 +112,13 @@ instance (Ord config, TopBottom config) => Monoid (Results rule config) where
 {- | 'True' if any rule applied.
  -}
 hasResults :: Results rule config -> Bool
-hasResults = not . Foldable.null . results
+hasResults = not . null . results
 
 mergeResults
     :: (Ord config, TopBottom config)
     => [Results rule config]
     -> Results rule config
-mergeResults = Foldable.fold
+mergeResults = fold
 
 {- | Take the 'Results' without any 'remainders'.
  -}
@@ -140,14 +139,14 @@ gatherResults
     :: (Ord config, TopBottom config)
     => Results rule config
     -> MultiOr config
-gatherResults = Foldable.fold . fmap result . results
+gatherResults = foldMap result . results
 
 {- | Distribute the 'Result' over a transition rule.
  -}
 transitionResult :: Result rule config -> TransitionT rule m config
 transitionResult Result { appliedRule, result } = do
     Transition.addRule appliedRule
-    Foldable.asum (return <$> Foldable.toList result)
+    asum (return <$> toList result)
 
 {- | Distribute the 'Results' over a transition rule.
  -}
@@ -155,9 +154,9 @@ transitionResults :: Results rule config -> TransitionT rule m config
 transitionResults Results { results, remainders } =
     transitionResultsResults <|> transitionResultsRemainders
   where
-    transitionResultsResults = Foldable.asum (transitionResult <$> results)
+    transitionResultsResults = asum (transitionResult <$> results)
     transitionResultsRemainders =
-        Foldable.asum (return <$> Foldable.toList remainders)
+        asum (return <$> toList remainders)
 
 {- | Apply a function to the rules of the 'results'.
 

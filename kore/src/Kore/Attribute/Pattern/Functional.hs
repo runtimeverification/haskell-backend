@@ -11,7 +11,6 @@ module Kore.Attribute.Pattern.Functional
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import qualified Data.Map.Strict as Map
 import Data.Monoid
@@ -62,7 +61,7 @@ instance Synthetic Functional (Bottom sort) where
 -- its arguments are 'Functional'.
 instance Synthetic Functional (Application Internal.Symbol) where
     synthetic application =
-        functionalSymbol <> Foldable.fold children
+        functionalSymbol <> fold children
       where
         functionalSymbol = Functional (Internal.isFunctional symbol)
         children = applicationChildren application
@@ -144,7 +143,7 @@ instance Synthetic Functional (Builtin key) where
             {builtinAcChild = NormalizedMap builtinMapChild}
         )
       = normalizedAcFunctional builtinMapChild
-    synthetic builtin = Foldable.fold builtin
+    synthetic builtin = fold builtin
     {-# INLINE synthetic #-}
 
 normalizedAcFunctional
@@ -170,7 +169,7 @@ normalizedAcFunctional ac@(NormalizedAc _ _ _) =
           | Map.null concreteElements -> sameAsChildren
         _ -> Functional False
   where
-    sameAsChildren = Foldable.fold ac
+    sameAsChildren = fold ac
 
 instance Synthetic Functional (Top sort) where
     synthetic = const (Functional False)

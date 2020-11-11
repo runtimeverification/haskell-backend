@@ -22,7 +22,6 @@ import Control.Monad.Reader
     )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -71,7 +70,7 @@ import Kore.Sort
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)
-    , claimPattern
+    , mkClaimPattern
     )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
@@ -389,7 +388,7 @@ runSimplifyRuleNoSMT
     => rule
     -> IO [rule]
 runSimplifyRuleNoSMT rule =
-    fmap Foldable.toList
+    fmap toList
     $ runNoSMT
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -400,7 +399,7 @@ runSimplifyRule
     => rule
     -> IO [rule]
 runSimplifyRule rule =
-    fmap Foldable.toList
+    fmap toList
     $ runSMT (pure ())
     $ runSimplifier Mock.env $ do
         SMT.All.declare Mock.smtDeclarations
@@ -418,13 +417,13 @@ test_simplifyClaimRule =
   where
     rule1, rule2, rule2' :: ClaimPattern
     rule1 =
-        claimPattern
+        mkClaimPattern
             (Pattern.fromTermLike (Mock.f Mock.a))
             (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
     rule1' = rule1 & requireDefined
     rule2 =
-        claimPattern
+        mkClaimPattern
             (Pattern.fromTermLike (Mock.g Mock.a))
             (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
@@ -472,7 +471,7 @@ test_simplifyClaimRule =
     test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
         -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
-            actual <- run (simplifyRuleLhs input) & fmap Foldable.toList
+            actual <- run (simplifyRuleLhs input) & fmap toList
             -- Equivalent under associativity of \\and
             let checkEquivalence
                     (fmap getOnePathClaim -> claims1)
@@ -546,7 +545,7 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
             -> TermLike variable
             -> TermLike variable
         applyReplacements replacements zero =
-            Foldable.foldl' applyReplacement zero
+            foldl' applyReplacement zero
             $ fmap liftReplacement replacements
 
         applyReplacement orig (ini, fin)

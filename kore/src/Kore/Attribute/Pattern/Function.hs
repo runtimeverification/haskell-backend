@@ -11,7 +11,6 @@ module Kore.Attribute.Pattern.Function
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Monoid
 import qualified Generics.SOP as SOP
@@ -56,7 +55,7 @@ instance Synthetic Function (Bottom sort) where
 -- arguments are 'Function'.
 instance Synthetic Function (Application Internal.Symbol) where
     synthetic application =
-        functionSymbol <> Foldable.fold children
+        functionSymbol <> fold children
       where
         functionSymbol = Function (Internal.isFunction symbol)
         children = applicationChildren application
@@ -128,7 +127,7 @@ instance Synthetic Function (Rewrites sort) where
 
 -- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
 instance Synthetic Function (Builtin key) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Function (Top sort) where

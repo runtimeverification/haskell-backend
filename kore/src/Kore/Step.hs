@@ -16,7 +16,6 @@ module Kore.Step
     , priorityAnyStrategy
     , TransitionRule
     , transitionRule
-    , heatingCooling
       -- * Re-exports
     , RulePattern
     , Natural
@@ -28,7 +27,6 @@ module Kore.Step
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
     , sortOn
@@ -46,9 +44,6 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
-    , isCoolingRule
-    , isHeatingRule
-    , isNormalRule
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
@@ -112,7 +107,7 @@ transitionRule =
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        Foldable.asum (pure <$> Foldable.toList filteredConfigs)
+        asum (pure <$> toList filteredConfigs)
     transitionRewrite rule config = do
         Transition.addRule rule
         results <-
@@ -121,8 +116,7 @@ transitionRule =
                 [rule]
                 config
             & lift
-        Foldable.asum
-            (pure <$> Foldable.toList (Step.gatherResults results))
+        asum (pure <$> toList (Step.gatherResults results))
 
 
 {- | A strategy that applies all the rewrites in parallel.
@@ -171,24 +165,3 @@ priorityAnyStrategy rewrites =
     anyRewrite sortedRewrites
   where
     sortedRewrites = sortOn Attribute.getPriorityOfAxiom rewrites
-
-{- | Heat the configuration, apply a normal rewrite, and cool the result.
- -}
--- TODO (thomas.tuegel): This strategy is not right because heating/cooling
--- rules must have side conditions if encoded as \rewrites, or they must be
--- \equals rules, which are not handled by this strategy.
-heatingCooling
-    :: From rule Attribute.HeatCool
-    => ([rule] -> Strategy (Prim rule))
-    -- ^ 'allRewrites' or 'anyRewrite'
-    -> [rule]
-    -> Strategy (Prim rule)
-heatingCooling rewriteStrategy rewrites =
-    Strategy.sequence [Strategy.many heat, normal, Strategy.try cool]
-  where
-    heatingRules = filter isHeatingRule rewrites
-    heat = rewriteStrategy heatingRules
-    normalRules = filter isNormalRule rewrites
-    normal = rewriteStrategy normalRules
-    coolingRules = filter isCoolingRule rewrites
-    cool = rewriteStrategy coolingRules

@@ -19,7 +19,6 @@ import Control.Error
 import Data.Bifunctor
     ( bimap
     )
-import qualified Data.Foldable as Foldable
 import Data.List
     ( foldl1'
     )
@@ -149,10 +148,10 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             unified <- termAnd notSimplifier term1 term2
             pure (Pattern.andCondition unified condition1)
     unified <-
-        Foldable.foldlM
+        foldlM
             unify
             Pattern.top
-            (term <$> Foldable.toList patterns)
+            (term <$> toList patterns)
     let substitutions =
             Pattern.substitution unified
             <> foldMap Pattern.substitution patterns
