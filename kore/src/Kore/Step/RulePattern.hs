@@ -133,7 +133,9 @@ import Kore.Unparser
     , unparse
     , unparse2
     )
-import Kore.Variables.Fresh
+import Kore.Variables.Fresh hiding
+    ( refreshVariables'
+    )
 import Pretty
     ( Pretty
     )
