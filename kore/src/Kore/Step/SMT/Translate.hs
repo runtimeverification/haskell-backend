@@ -300,7 +300,9 @@ translatePredicateWith translateTerm predicate =
                     VariableF _ -> translateUninterpreted'
                     ApplySymbolF app ->
                         translateApplication app
-                        <|> translateUninterpreted'
+                        <|> if isFunctionalPattern pat
+                                then translateUninterpreted'
+                                else empty
                     DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
