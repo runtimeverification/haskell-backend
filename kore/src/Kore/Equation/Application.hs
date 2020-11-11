@@ -89,6 +89,11 @@ import Kore.Internal.Substitution
     ( Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Internal.Symbol
+    ( isConstructor
+    , isSortInjection
+    , noEvaluators
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -320,9 +325,32 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     checkConcreteVariable variable termLike
       | Set.member variable concretes
       , (not . TermLike.isConstructorLike) termLike
+      , (not . isConcreteFunctionArgument) termLike
+      , (not . isUninterprededFunction) termLike
       = [NotConcrete variable termLike]
       | otherwise
       = empty
+
+    isConcreteFunctionArgument :: TermLike var -> Bool
+    isConcreteFunctionArgument (TermLike.BuiltinInt_ _) = True
+    isConcreteFunctionArgument (TermLike.BuiltinBool_ _) = True
+    isConcreteFunctionArgument (TermLike.BuiltinList_ items) =
+        all isConcreteFunctionArgument items
+    isConcreteFunctionArgument (TermLike.App_ symbol children)
+      | isConstructor symbol = all isConcreteFunctionArgument children
+      | isSortInjection symbol =
+        all isConcreteFunctionArgument children
+        && not (any isSortInjectionPattern children)
+      where
+        isSortInjectionPattern = \case
+            TermLike.Inj_ _ -> True
+            _               -> False
+    isConcreteFunctionArgument _ = False
+
+    isUninterprededFunction :: TermLike var -> Bool
+    isUninterprededFunction (TermLike.App_ symbol _)
+      | noEvaluators symbol = True
+    isUninterprededFunction _ = False
 
     checkSymbolicVariable variable termLike
       | Set.member variable symbolics
