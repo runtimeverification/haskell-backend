@@ -298,11 +298,12 @@ translatePredicateWith translateTerm predicate =
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
                     VariableF _ -> translateUninterpreted'
-                    ApplySymbolF app ->
-                        translateApplication app
-                        <|> if isFunctionalPattern pat
-                                then translateUninterpreted'
-                                else empty
+                    ApplySymbolF app
+                      | isFunctionalPattern pat ->
+                          translateApplication app
+                          <|> translateUninterpreted'
+                      | otherwise ->
+                          translateApplication app
                     DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
