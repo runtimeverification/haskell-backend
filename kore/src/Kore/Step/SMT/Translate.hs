@@ -297,10 +297,10 @@ translatePredicateWith translateTerm predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
-                    VariableF _ -> do
-                        smtSort <- hoistMaybe $ translateSort sort
-                        translateUninterpreted smtSort pat
-                    ApplySymbolF app -> translateApplication app
+                    VariableF _ -> translateUninterpreted'
+                    ApplySymbolF app ->
+                        translateApplication app
+                        <|> translateUninterpreted'
                     DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
@@ -308,6 +308,9 @@ translatePredicateWith translateTerm predicate =
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools sort
+        translateUninterpreted' = do
+            smtSort <- hoistMaybe $ translateSort sort
+            translateUninterpreted smtSort pat
 
 {-| Represents the SMT encoding of an untranslatable pattern containing
 occurrences of existential variables.  Since the same pattern might appear
