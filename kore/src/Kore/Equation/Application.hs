@@ -57,6 +57,12 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Source as Attribute
+import Kore.Domain.Builtin
+    ( InternalAc (..)
+    , NormalizedAc (..)
+    , getMapValue
+    , unwrapAc
+    )
 import Kore.Equation.Equation
     ( Equation (..)
     )
@@ -91,7 +97,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( isConstructor
-    , isSortInjection
     , noEvaluators
     )
 import Kore.Internal.TermLike
@@ -326,7 +331,6 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       | Set.member variable concretes
       , (not . TermLike.isConstructorLike) termLike
       , (not . isConcreteFunctionArgument) termLike
-      , (not . isUninterprededFunction) termLike
       = [NotConcrete variable termLike]
       | otherwise
       = empty
@@ -334,23 +338,35 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     isConcreteFunctionArgument :: TermLike var -> Bool
     isConcreteFunctionArgument (TermLike.BuiltinInt_ _) = True
     isConcreteFunctionArgument (TermLike.BuiltinBool_ _) = True
+    isConcreteFunctionArgument (TermLike.BuiltinString_ _) = True
+    isConcreteFunctionArgument (TermLike.InternalBytes_ _ _) = True
+    isConcreteFunctionArgument (TermLike.DV_ _ _) = True
     isConcreteFunctionArgument (TermLike.BuiltinList_ items) =
         all isConcreteFunctionArgument items
+    isConcreteFunctionArgument
+        (TermLike.BuiltinMap_ (unwrapAc . builtinAcChild -> normalized))
+      =
+        null (opaque normalized)
+        && null (elementsWithVariables normalized)
+        && all
+            (isConcreteFunctionArgument . getMapValue)
+            (concreteElements normalized)
+    isConcreteFunctionArgument
+        (TermLike.BuiltinSet_ (unwrapAc . builtinAcChild -> normalized))
+      =
+        null (opaque normalized)
+        && null (elementsWithVariables normalized)
     isConcreteFunctionArgument (TermLike.App_ symbol children)
-      | isConstructor symbol = all isConcreteFunctionArgument children
-      | isSortInjection symbol =
+      | isConstructor symbol || noEvaluators symbol =
         all isConcreteFunctionArgument children
-        && not (any isSortInjectionPattern children)
+    isConcreteFunctionArgument (TermLike.Inj_ inj) =
+        all isConcreteFunctionArgument inj
+        && not (any isSortInjectionPattern inj)
       where
         isSortInjectionPattern = \case
             TermLike.Inj_ _ -> True
             _               -> False
     isConcreteFunctionArgument _ = False
-
-    isUninterprededFunction :: TermLike var -> Bool
-    isUninterprededFunction (TermLike.App_ symbol _)
-      | noEvaluators symbol = True
-    isUninterprededFunction _ = False
 
     checkSymbolicVariable variable termLike
       | Set.member variable symbolics
