@@ -20,7 +20,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Exists as Exists
-import Kore.Unparser
 import Pretty
     ( Pretty (..)
     )
