@@ -148,9 +148,6 @@ instance TopBottom (Implication modality) where
 instance From (Implication modality) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance From (Implication modality) Attribute.HeatCool where
-    from = from @(Attribute.Axiom _ _) . attributes
-
 freeVariablesRight
     :: Implication modality
     -> FreeVariables RewritingVariableName
