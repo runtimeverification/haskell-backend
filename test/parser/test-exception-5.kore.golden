@@ -4,3 +4,4 @@ test-exception-5.kore:6:5:
   |     ^
 unexpected '-'
 expecting identifier or string literal
+

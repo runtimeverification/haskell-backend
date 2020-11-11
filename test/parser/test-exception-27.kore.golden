@@ -4,3 +4,4 @@ test-exception-27.kore:5:3:
   |   ^^^
 unexpected "/a<newline><newline>endmo"
 expecting "endmodule" or sentence
+
