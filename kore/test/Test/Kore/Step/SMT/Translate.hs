@@ -158,6 +158,20 @@ test_translatePredicateWith =
             & expectJustT
             & Test.SMT.runNoSMT
         assertEqual "" actual1 actual2
+    , testCase "b = a, both constructors" $
+            translating (peq Mock.b Mock.a)
+        `yields`
+        -- TODO: should be translated as constructors
+            (var 0 `eq` var 1)
+    , testCase "f() = a, f functional, a constructor" $
+            translating (peq Mock.functional00 Mock.a)
+        `yields`
+        -- TODO: 'a' should be translated as a constructor
+            (var 0 `eq` var 1)
+    , testCase "s() = a, s arbitrary symbol, a constructor" $
+            translating (peq Mock.plain00 Mock.a)
+        `yields`
+            var 0
     ]
   where
     x = TermLike.mkElemVar Mock.x
