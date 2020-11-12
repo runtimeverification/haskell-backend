@@ -349,6 +349,7 @@ parseAssoc foldAssoc = do
 
     // Syntax sugar
     | "\left-assoc" "{" "}" "(" <application-pattern> ")"
+    | "\right-assoc" "{" "}" "(" <application-pattern> ")"
 @
 
 Always starts with @\@.
