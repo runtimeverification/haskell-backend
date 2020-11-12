@@ -127,7 +127,7 @@ parseAliasHead = parseSymbolOrAliasDeclarationHead Alias
 parseSymbolHead :: Parser Symbol
 parseSymbolHead = parseSymbolOrAliasDeclarationHead Symbol
 
-{-| Parses an pattern.
+{-| Parses a pattern.
 
 @
 <pattern>
