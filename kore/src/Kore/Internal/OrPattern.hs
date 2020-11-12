@@ -22,6 +22,7 @@ module Kore.Internal.OrPattern
     , toTermLike
     , targetBinder
     , substitute
+    , mapVariables
     , MultiOr.flatten
     , MultiOr.filterOr
     , MultiOr.gather
@@ -246,3 +247,10 @@ substitute
     -> OrPattern variable
 substitute subst =
     fromPatterns . fmap (Pattern.substitute subst) . toPatterns
+
+mapVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> OrPattern variable1
+    -> OrPattern variable2
+mapVariables = MultiOr.map . Pattern.mapVariables
