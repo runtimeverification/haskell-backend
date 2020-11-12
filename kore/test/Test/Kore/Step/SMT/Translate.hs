@@ -24,6 +24,9 @@ import Kore.Step.SMT.Translate
     ( Translator
     , evalTranslator
     )
+import Log
+    ( MonadLog
+    )
 import SMT
 import qualified SMT.SimpleSMT
 
@@ -161,12 +164,10 @@ test_translatePredicateWith =
     , testCase "b = a, both constructors" $
             translating (peq Mock.b Mock.a)
         `yields`
-        -- TODO: should be translated as constructors
             (var 0 `eq` var 1)
     , testCase "f() = a, f functional, a constructor" $
             translating (peq Mock.functional00 Mock.a)
         `yields`
-        -- TODO: 'a' should be translated as a constructor
             (var 0 `eq` var 1)
     , testCase "s() = a, s arbitrary symbol, a constructor" $
             translating (peq Mock.plain00 Mock.a)
@@ -197,14 +198,15 @@ test_translatePredicateWith =
 
 translatePredicate
     :: HasCallStack
+    => MonadSMT smt
+    => MonadLog smt
     => Predicate VariableName
-    -> Translator NoSMT VariableName SExpr
+    -> Translator smt VariableName SExpr
 translatePredicate = Evaluator.translatePredicate Mock.metadataTools
 
 translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translating =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
-
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)
