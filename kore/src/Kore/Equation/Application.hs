@@ -329,7 +329,6 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     checkConcreteVariable variable termLike
       | Set.member variable concretes
-      , (not . TermLike.isConstructorLike) termLike
       , (not . isConcreteFunctionArgument) termLike
       = [NotConcrete variable termLike]
       | otherwise
