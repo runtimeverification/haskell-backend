@@ -24,9 +24,6 @@ import Kore.Step.SMT.Translate
     ( Translator
     , evalTranslator
     )
-import Log
-    ( MonadLog
-    )
 import SMT
 import qualified SMT.SimpleSMT
 
@@ -198,10 +195,8 @@ test_translatePredicateWith =
 
 translatePredicate
     :: HasCallStack
-    => MonadSMT smt
-    => MonadLog smt
     => Predicate VariableName
-    -> Translator smt VariableName SExpr
+    -> Translator NoSMT VariableName SExpr
 translatePredicate = Evaluator.translatePredicate Mock.metadataTools
 
 translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
