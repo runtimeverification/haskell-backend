@@ -637,5 +637,5 @@ evaluateWithPredicate
     -> Predicate VariableName
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
-    runSimplifier Mock.env
+    runSimplifierSMT Mock.env
     $ simplifier term (SideCondition.assumeTruePredicate predicate)

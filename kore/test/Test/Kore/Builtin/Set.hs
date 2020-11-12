@@ -489,7 +489,7 @@ test_difference_symbolic =
         actual <-
             Set.evalDifference (Application differenceSetSymbol args)
             & runMaybeT
-            & runSimplifierNoSMT testEnv
+            & runSimplifier testEnv
         assertEqual "" expect actual
 
 test_toList :: TestTree

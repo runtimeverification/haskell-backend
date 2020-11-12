@@ -1,6 +1,7 @@
-module Test.Kore.Step.ClaimPattern
+module Test.Kore.Step.Implication
     ( test_freeVariables
     , test_refreshRule
+    , test_substitute
     ) where
 
 import Prelude.Kore
@@ -9,10 +10,14 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import Data.Default
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Conditional
+    ( fromPredicate
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
@@ -21,7 +26,7 @@ import Kore.Internal.TermLike hiding
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
-import Kore.Step.ClaimPattern
+import Kore.Step.Implication
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -41,7 +46,7 @@ test_refreshRule =
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRule avoiding testRulePattern
-            renamed = Set.fromList (Prelude.Kore.toList renaming)
+            renamed = Set.fromList (Foldable.toList renaming)
             free' :: FreeVariables RewritingVariableName
             free' = freeVariables rulePattern'
             notAvoided (variableName -> var) =
@@ -60,7 +65,7 @@ test_refreshRule =
         let (renaming, _) = refreshRule mempty testRulePattern
         assertBool "expected not to rename variables" (null renaming)
     , testGroup "stale existentials" $
-        let assertions (renaming, claim@ClaimPattern { existentials }) = do
+        let assertions (renaming, claim@Implication { existentials }) = do
                 assertBool "expected to refresh existentials"
                     (notElem y existentials)
                 assertBool "expected to substitute fresh variables"
@@ -85,14 +90,29 @@ test_refreshRule =
         ]
     ]
 
-testRulePattern :: ClaimPattern
+test_substitute :: [TestTree]
+test_substitute =
+    [ testCase "does not capture free variables from the substitution" $ do
+        let dummy = Pattern.fromCondition_
+                (fromPredicate Predicate.makeTruePredicate_)
+            right = OrPattern.fromTermLike (mkElemVar y)
+            imp = mkImplication () dummy right [x]
+            newImp = substitute
+                (Map.singleton (inject $ variableName y) (mkElemVar x))
+                imp
+        assertBool "Expected the expected variable to not be captured"
+            $ not $ nullFreeVariables $ freeVariablesRight newImp
+    ]
+
+testRulePattern :: Implication ()
 testRulePattern =
-    ClaimPattern
+    Implication
         { left =
             -- Include an implicitly-quantified variable.
             Pattern.fromTermAndPredicate
                 (mkElemVar x)
                 (Predicate.makeCeilPredicate_ (mkElemVar z))
+        , modality = ()
         , existentials = [y]
         , right =
             Pattern.fromTermAndPredicate
