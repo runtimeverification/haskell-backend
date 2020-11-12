@@ -121,7 +121,11 @@ unparseKoreSolverOptions
     catMaybes
         [ (\limit -> unwords ["--smt-timeout", show limit])
             <$> maybeLimit Nothing Just unwrappedTimeOut
-        , pure $ unwords ["--smt-reset-interval", show resetInterval]
+        , pure
+            $ unwords
+                [ "--smt-reset-interval"
+                , show . getResetInterval $ resetInterval
+                ]
         , unwrappedPrelude
             $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
         , pure $ "--smt " <> fmap Char.toLower (show solver)
