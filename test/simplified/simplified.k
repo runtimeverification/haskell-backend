@@ -33,8 +33,8 @@ module SIMPLIFIED
   rule <k> cc(X) => aa(X) </k>
   rule <k> dd(X) => aa(X) </k>
 
-  syntax Int ::= t(Int) [function, functional]
-  syntax Int ::= s(Int) [function, functional]
+  syntax Int ::= t(Int) [function, functional, no-evaluators]
+  syntax Int ::= s(Int) [function, functional, no-evaluators]
 
   syntax Int ::= f(Int) [function, functional]
   rule f(X) => t(X) requires X >Int 0
