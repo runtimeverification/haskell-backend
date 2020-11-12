@@ -744,7 +744,7 @@ proveClaims breadthLimit depthLimit axioms claims alreadyProven =
         (Axioms axioms)
         (AlreadyProven (map unparseToText2 alreadyProven))
         (ToProve (map applyDepthLimit . selectUntrusted $ claims))
-    & runSimplifier mockEnv
+    & runSimplifierSMT mockEnv
   where
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)
