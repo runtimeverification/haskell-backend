@@ -374,7 +374,7 @@ test_SMT =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1 ] <- runStepMockEnv
+        [ _actual1 ] <- runStepSMT
             (smtPattern Mock.b PredicatePositive)
             [ mkRewritingRule $ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
@@ -405,7 +405,7 @@ test_SMT =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1 ] <- runStepMockEnv
+        [ _actual1 ] <- runStepSMT
             Conditional
                 { term = Mock.functionalConstr10 Mock.b
                 , predicate = makeEqualsPredicate_
@@ -476,7 +476,7 @@ mockMetadataTools = MetadataTools
     , sortConstructors = undefined
     }
 
-mockEnv :: Env Simplifier
+mockEnv :: MonadSimplify simplifier => Env simplifier
 mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: Symbol
@@ -497,8 +497,8 @@ axiomMetaSigmaId :: RewriteRule VariableName
 axiomMetaSigmaId =
     RewriteRule $ rulePattern
         (metaSigma
-                (mkElemVar $ x1 Mock.testSort)
-                (mkElemVar $ x1 Mock.testSort)
+            (mkElemVar $ x1 Mock.testSort)
+            (mkElemVar $ x1 Mock.testSort)
         )
         (mkElemVar $ x1 Mock.testSort)
 
@@ -537,15 +537,15 @@ runStep
     -> IO [Pattern RewritingVariableName]
 runStep configuration axioms =
     (<$>) pickFinal
-    $ runSimplifier mockEnv
+    $ runSimplifierSMT mockEnv
     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)
 
-runStepMockEnv
+runStepSMT
     :: Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
     -> IO [Pattern RewritingVariableName]
-runStepMockEnv configuration axioms =
+runStepSMT configuration axioms =
     (<$>) pickFinal
-    $ runSimplifier Mock.env
+    $ runSimplifierSMT Mock.env
     $ runStrategy Unlimited transitionRule [priorityAllStrategy axioms] (mkRewritingPattern configuration)

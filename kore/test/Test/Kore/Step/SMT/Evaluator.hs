@@ -163,13 +163,13 @@ evaluateMultiOr
     :: MultiOr (Conditional VariableName (TermLike VariableName))
     -> IO (MultiOr (Conditional VariableName (TermLike VariableName)))
 evaluateMultiOr =
-    runSimplifier Mock.env . SMT.Evaluator.filterMultiOr
+    runSimplifierSMT Mock.env . SMT.Evaluator.filterMultiOr
 
 evaluate
     :: SMT.Evaluator.Evaluable thing
     => thing
     -> IO (Maybe Bool)
-evaluate = runSimplifier Mock.env . SMT.Evaluator.evaluate
+evaluate = runSimplifierSMT Mock.env . SMT.Evaluator.evaluate
 
 test_andNegation :: TestTree
 test_andNegation =
@@ -222,7 +222,7 @@ assertRefuted prop = do
     let expect = Just False
     actual <-
         SMT.Evaluator.decidePredicate (prop :| [])
-        & Test.runSimplifier testEnv
+        & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 
 true, false :: TermLike VariableName

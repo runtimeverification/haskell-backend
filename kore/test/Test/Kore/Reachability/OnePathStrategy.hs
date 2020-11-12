@@ -863,7 +863,7 @@ runSteps
     strategy'
   =
     (<$>) picker
-    $ runSimplifier mockEnv
+    $ runSimplifierSMT mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
     <$> runStrategy
             breadthLimit
