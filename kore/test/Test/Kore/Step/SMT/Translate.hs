@@ -158,6 +158,10 @@ test_translatePredicateWith =
             & expectJustT
             & Test.SMT.runNoSMT
         assertEqual "" actual1 actual2
+    -- In the tests below, a and b are not tranlated correctly
+    -- to their constructor names because they need to be
+    -- declared twice in the test data: once as part of their
+    -- sort and once as symbols.
     , testCase "b = a, both constructors" $
             translating (peq Mock.b Mock.a)
         `yields`
