@@ -38,10 +38,10 @@ type SentenceAxiom = Syntax.SentenceAxiom Pattern
 
 type SentenceClaim = Syntax.SentenceClaim Pattern
 
-type SentenceHook = Syntax.SentenceHook Pattern
+type SentenceHook = Syntax.SentenceHook
 
-type SentenceImport = Syntax.SentenceImport Pattern
+type SentenceImport = Syntax.SentenceImport
 
-type SentenceSort = Syntax.SentenceSort Pattern
+type SentenceSort = Syntax.SentenceSort
 
-type SentenceSymbol = Syntax.SentenceSymbol Pattern
+type SentenceSymbol = Syntax.SentenceSymbol

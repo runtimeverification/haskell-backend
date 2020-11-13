@@ -89,7 +89,7 @@ withLocationAndContext location message =
  -}
 withSentenceSymbolContext
     :: MonadError (Error e) error
-    => SentenceSymbol patternType
+    => SentenceSymbol
     -> error a
     -> error a
 withSentenceSymbolContext
@@ -133,7 +133,7 @@ withSentenceClaimContext _ = withContext "claim declaration"
  -}
 withSentenceSortContext
     :: MonadError (Error e) error
-    => SentenceSort patternType
+    => SentenceSort
     -> error a
     -> error a
 withSentenceSortContext SentenceSort { sentenceSortName } =
@@ -144,7 +144,7 @@ withSentenceSortContext SentenceSort { sentenceSortName } =
  -}
 withSentenceHookContext
     :: MonadError (Error e) error
-    => SentenceHook patternType
+    => SentenceHook
     -> error a
     -> error a
 withSentenceHookContext =
@@ -167,7 +167,7 @@ withSentenceHookContext =
 {- | Locate the given import declaration in the error context.
  -}
 withSentenceImportContext
-    :: SentenceImport patternType
+    :: SentenceImport
     -> error a
     -> error a
 withSentenceImportContext _ = id

@@ -1,43 +1,36 @@
-{-|
-Module      : Kore.Parser.Lexeme
-Description : Lexical unit definitions for Kore and simple ways of composing
-              parsers. Meant for internal use only.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : POSIX
-
-Conventions used:
 
 All exported parsers consume the whitespace after the parsed element and expect
 no whitespace before.
--}
-module Kore.Parser.Lexeme
+ -}
+module Kore.Parser.Lexer
     (
-    -- * Parsers
-      colonParser
-    , commaParser
-    , curlyPairParser
-    , curlyPairRemainderParser
-    , idParser
+    -- * Lexemes
+      lexeme
+    , symbol
+    , comma
+    , colon
+    , skipChar
+    , lbrace, rbrace, braces
+    , lparen, rparen, parens
+    , lbracket, rbracket, brackets
+    , space
+    , keyword
+    , pair, tuple, list
+    , parensPair, parensTuple
+    , bracesPair
+    -- * Primitive parsers
+    , parseId
+    , parseAnyId, parseSetId, isSymbolId
+    , isElementVariableId, isSetVariableId
     , elementVariableIdParser
     , setVariableIdParser
-    , sortIdParser
-    , symbolIdParser
-    , openCurlyBraceParser
-    , closedCurlyBraceParser
-    , inCurlyBracesParser
-    , inCurlyBracesRemainderParser
-    , inParenthesesParser
-    , inSquareBracketsParser
-    , keywordBasedParsers
-    , mlLexemeParser
-    , moduleNameIdParser
-    , parenPairParser
-    , skipChar
-    , skipWhitespace
-    , stringLiteralParser
+    , parseSortId
+    , parseSymbolId
+    , parseModuleName
+    , parseStringLiteral
     -- * Error messages
     , unrepresentableCode
     , illegalSurrogate
@@ -46,7 +39,6 @@ module Kore.Parser.Lexeme
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char
 import Data.HashSet
     ( HashSet
@@ -68,7 +60,6 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import qualified Kore.Parser.CharDict as CharDict
 import Kore.Parser.ParserUtils as ParserUtils
 import Kore.Sort
 import Kore.Syntax.Definition
@@ -78,16 +69,18 @@ import Kore.Syntax.StringLiteral
 comments after the parsed element.
 -}
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme skipWhitespace
+lexeme = L.lexeme space
 
-{-|'skipWhitespace' skips whitespace and C-style comments:
+{- | Skip whitespace and C-style comments
 
-- @//@ line comment
-- @/*@ block comment (non-nested) @*/@
+* @\/\/@ line comment
+* @\/*@ block comment (non-nested) @*\/@
+
+See also: 'L.space'
+
 -}
-skipWhitespace ::  Parser ()
-skipWhitespace =
-    L.space Parser.space1 lineComment blockComment
+space ::  Parser ()
+space = L.space Parser.space1 lineComment blockComment
   where
     lineComment = L.skipLineComment "//"
     blockComment = L.skipBlockComment "/*" "*/"
@@ -97,156 +90,85 @@ skipWhitespace =
 skipChar :: Char -> Parser ()
 skipChar = Monad.void . Parser.char
 
-{- | Parse the string, but skip its result.
+{- | Skip a literal string (symbol) and any trailing whitespace.
+
+@symbol@ does not enforce that there is whitespace after the symbol.
+
+See also: 'L.symbol', 'space'
+
  -}
-skipString :: String -> Parser ()
-skipString = Monad.void . Parser.string
+symbol :: String -> Parser ()
+symbol = Monad.void . L.symbol space
 
-{-|'tokenCharParser' parses a character, skipping any whitespace after.
+colon :: Parser ()
+colon = symbol ":"
 
-Note that it does not enforce the existence of whitespace after the character.
--}
-tokenCharParser :: Char -> Parser ()
-tokenCharParser c = Monad.void $ L.symbol skipWhitespace [c]
+lbrace :: Parser ()
+lbrace = symbol "{"
 
-{-|'colonParser' parses a @:@ character.-}
-colonParser :: Parser ()
-colonParser = tokenCharParser ':'
+rbrace :: Parser ()
+rbrace = symbol "}"
 
-{-|'openCurlyBraceParser' parses a @{@ character.-}
-openCurlyBraceParser :: Parser ()
-openCurlyBraceParser = tokenCharParser '{'
+braces :: Parser a -> Parser a
+braces = Parser.between lbrace rbrace
 
-{-|'closedCurlyBraceParser' parses a @}@ character.-}
-closedCurlyBraceParser :: Parser ()
-closedCurlyBraceParser = tokenCharParser '}'
+lparen :: Parser ()
+lparen = symbol "("
 
-{-|'inCurlyBracesParser' parses an element surrounded by curly braces.
+rparen :: Parser ()
+rparen = symbol ")"
 
-Always starts with @{@.
--}
-inCurlyBracesParser :: Parser a -> Parser a
-inCurlyBracesParser p =
-    openCurlyBraceParser *> inCurlyBracesRemainderParser p
+parens :: Parser a -> Parser a
+parens = Parser.between lparen rparen
 
-inCurlyBracesRemainderParser :: Parser a -> Parser a
-inCurlyBracesRemainderParser p =
-    p <* closedCurlyBraceParser
+tuple :: Parser a -> Parser b -> Parser (a, b)
+tuple parseA parseB = do
+    a <- parseA
+    comma
+    b <- parseB
+    pure (a, b)
 
-{-|'openParenthesisParser' parses a @(@ character.-}
-openParenthesisParser :: Parser ()
-openParenthesisParser = tokenCharParser '('
+pair :: Parser a -> Parser (a, a)
+pair parseItem = tuple parseItem parseItem
 
-{-|'closedParenthesisParser' parses a @)@ character.-}
-closedParenthesisParser :: Parser ()
-closedParenthesisParser = tokenCharParser ')'
+list :: Parser a -> Parser [a]
+list item = Parser.sepBy item comma
 
-{-|'inParenthesesParser' parses an element surrounded by parentheses.
+parensPair :: Parser a -> Parser (a, a)
+parensPair parseItem = parens (pair parseItem)
 
-Always starts with @(@.
--}
-inParenthesesParser :: Parser a -> Parser a
-inParenthesesParser p =
-    openParenthesisParser *> p <* closedParenthesisParser
+parensTuple :: Parser a -> Parser b -> Parser (a, b)
+parensTuple parseA parseB = parens (tuple parseA parseB)
 
-{-|'commaSeparatedPairParser' parses two elements separated by a comma.-}
-commaSeparatedPairParser :: Parser a -> Parser b -> Parser (a,b)
-commaSeparatedPairParser pa pb = do
-    a <- pa
-    commaParser
-    b <- pb
-    return (a, b)
+bracesPair :: Parser a -> Parser (a, a)
+bracesPair parseItem = braces (pair parseItem)
 
-{-|'parenPairParser' parses two elements between parentheses, separated by
-a comma.
+lbracket :: Parser ()
+lbracket = symbol "["
 
-Always starts with @(@.
--}
-parenPairParser :: Parser a -> Parser b -> Parser (a,b)
-parenPairParser pa pb = inParenthesesParser (commaSeparatedPairParser pa pb)
+rbracket :: Parser ()
+rbracket = symbol "]"
 
-{-|'curlyPairParser' parses two elements between curly braces, separated by
-a comma.
+brackets :: Parser a -> Parser a
+brackets = Parser.between lbracket rbracket
 
-Always starts with @{@.
--}
-curlyPairParser :: Parser a -> Parser b -> Parser (a,b)
-curlyPairParser pa pb = inCurlyBracesParser (commaSeparatedPairParser pa pb)
+comma :: Parser ()
+comma = symbol ","
 
-{-|'curlyPairRemainderParser' parses two elements between curly braces,
-separated by a comma, assumming that the leading @{@ was already consumed.
--}
-curlyPairRemainderParser :: Parser a -> Parser (a,a)
-curlyPairRemainderParser pa =
-    inCurlyBracesRemainderParser (commaSeparatedPairParser pa pa)
+{- | Parse a literal keyword.
 
-{-|'openSquareBracketParser' parses a @[@ character.-}
-openSquareBracketParser :: Parser ()
-openSquareBracketParser = tokenCharParser '['
+@keyword@ checks that the keyword is not actually part of an identifier and
+consumes any trailing whitespace.
 
-{-|'closedSquareBracketParser' parses a @]@ character.-}
-closedSquareBracketParser :: Parser ()
-closedSquareBracketParser = tokenCharParser ']'
+See also: 'space'
 
-{-|'inSquareBracketsParser' parses an element surrounded by square brackets.
-
-Always starts with @[@.
--}
-inSquareBracketsParser :: Parser a -> Parser a
-inSquareBracketsParser p =
-    openSquareBracketParser *> p <* closedSquareBracketParser
-
-{-|'closedSquareBracketParser' parses a @,@ character.-}
-commaParser :: Parser ()
-commaParser = tokenCharParser ','
-
-{-|'mlLexemeParser' consumes the provided string, checking that it is not
-followed by a character which could be part of an @object-identifier@.
--}
-mlLexemeParser :: String -> Parser ()
-mlLexemeParser s =
-    lexeme (skipString s <* keywordEndParser)
-
-{-|'keywordEndParser' checks that the next character cannot be part of an
-@object-identifier@.
--}
-keywordEndParser :: Parser ()
-keywordEndParser = do
-    mc <- peekChar
-    case mc of
-        Just c | isIdChar c -> fail "Expecting keyword to end."
-        _ -> return ()
-
-{-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
-then parses an element using the corresponding parser. Checks that the consumed
-string is not followed by a character which could be part of an
-@object-identifier@.
-
-Fails if one of the strings is a prefix of another one.
--}
-keywordBasedParsers :: [(String, Parser a)] -> Parser a
-keywordBasedParsers = prefixBasedParsers mlLexemeParser
-
-{-|'prefixBasedParsers' consumes one of the strings in the provided pairs,
-then parses an element using the corresponding parser.
-
-Fails if one of the strings is a prefix of another one.
--}
-prefixBasedParsers ::  (String -> Parser ()) ->[(String, Parser a)] -> Parser a
-prefixBasedParsers _ [] = error "Keyword Based Parsers - no parsers"
-prefixBasedParsers prefixParser [(k, p)] = prefixParser k *> p
-prefixBasedParsers prefixParser stringParsers = do
-    c <- peekChar'
-    dict CharDict.! c
-  where
-    tails c =
-        [(tail prefix, p) | (prefix, p) <- stringParsers, head prefix == c]
-    tailParser c =
-        let ts = tails c
-        in if null ts
-            then fail "Keyword Based Parsers - unexpected character."
-            else Parser.char c *> prefixBasedParsers prefixParser ts
-    dict = CharDict.memoize tailParser
+ -}
+keyword :: String -> Parser ()
+keyword s = lexeme $ do
+    _ <- Parser.chunk s
+    -- Check that the next character cannot be part of an @id@, i.e.  check that
+    -- we have just parsed a keyword and not the first part of an identifier.
+    Parser.notFollowedBy $ Parser.satisfy isIdChar
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation
@@ -273,8 +195,8 @@ stringParserToIdParser stringRawParser = do
         , idLocation = AstLocationFile pos
         }
 
-koreKeywordsSet :: HashSet Char8.ByteString
-koreKeywordsSet = HashSet.fromList (Char8.pack <$> keywords)
+koreKeywordsSet :: HashSet String
+koreKeywordsSet = HashSet.fromList keywords
   where
     keywords =
         [ "module"
@@ -308,7 +230,7 @@ genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
     cs <- Parser.takeWhileP (Just "identifier character") isBodyChar
     let genericId = c : cs
         keywordsForbidden = idKeywordParsing == KeywordsForbidden
-        isKeyword = HashSet.member (Char8.pack genericId) koreKeywordsSet
+        isKeyword = HashSet.member genericId koreKeywordsSet
     when (keywordsForbidden && isKeyword)
         $ fail
             (  "Identifiers should not be keywords: '"
@@ -370,24 +292,24 @@ isIdChar c = isIdFirstChar c || isIdOtherChar c
 
 An identifier cannot be a keyword.
 -}
-idParser :: Parser Id
-idParser = stringParserToIdParser (idRawParser KeywordsForbidden)
+parseId :: Parser Id
+parseId = stringParserToIdParser (parseIdRaw KeywordsForbidden)
 
-idRawParser :: IdKeywordParsing -> Parser String
-idRawParser = genericIdRawParser isIdFirstChar isIdChar
+parseIdRaw :: IdKeywordParsing -> Parser String
+parseIdRaw = genericIdRawParser isIdFirstChar isIdChar
 
-{- | Parses a module name.
+{- | Parse a module name.
 
 @
 <module-name-id> ::= <id>
 @
 -}
-moduleNameIdParser :: Parser ModuleName
-moduleNameIdParser = lexeme moduleNameRawParser
+parseModuleName :: Parser ModuleName
+parseModuleName = lexeme moduleNameRawParser
 
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
-  ModuleName . Text.pack <$> idRawParser KeywordsForbidden
+  ModuleName . Text.pack <$> parseIdRaw KeywordsForbidden
 
 {- | Parses a 'Sort' 'Id'
 
@@ -395,8 +317,38 @@ moduleNameRawParser =
 <sort-id> ::= <id>
 @
 -}
-sortIdParser :: Parser Id
-sortIdParser = idParser
+parseSortId :: Parser Id
+parseSortId = parseId <?> "sort identifier"
+
+parseAnyId :: Parser Id
+parseAnyId = (parseSpecialId <|> parseSetId <|> parseId) <?> "identifier"
+
+isSymbolId :: Id -> Bool
+isSymbolId Id { getId } =
+    isIdFirstChar c || c == '\\'
+  where
+    c = Text.head getId
+
+isElementVariableId :: Id -> Bool
+isElementVariableId Id { getId } =
+    isIdFirstChar (Text.head getId)
+
+isSetVariableId :: Id -> Bool
+isSetVariableId Id { getId } = Text.head getId == '@'
+
+parseSpecialId :: Parser Id
+parseSpecialId =
+    stringParserToIdParser parseSpecialIdString
+  where
+    parseSpecialIdString =
+        (:) <$> Parser.char '\\' <*> parseIdRaw KeywordsPermitted
+
+parseSetId :: Parser Id
+parseSetId =
+    stringParserToIdParser parseSetIdString
+  where
+    parseSetIdString =
+        (:) <$> Parser.char '@' <*> parseIdRaw KeywordsPermitted
 
 {- | Parses a 'Symbol' 'Id'
 
@@ -404,8 +356,9 @@ sortIdParser = idParser
 <symbol-id> ::= ['\']?<id>
 @
 -}
-symbolIdParser :: Parser Id
-symbolIdParser = stringParserToIdParser symbolIdRawParser
+parseSymbolId :: Parser Id
+parseSymbolId =
+    stringParserToIdParser symbolIdRawParser <?> "symbol or alias identifier"
 
 symbolIdRawParser :: Parser String
 symbolIdRawParser = do
@@ -413,8 +366,8 @@ symbolIdRawParser = do
     if c == '\\'
     then do
         skipChar '\\'
-        (c :) <$> idRawParser KeywordsPermitted
-    else idRawParser KeywordsForbidden
+        (c :) <$> parseIdRaw KeywordsPermitted
+    else parseIdRaw KeywordsForbidden
 
 {-|Parses a @set-variable-id@, which always starts with @\@@.
 
@@ -428,7 +381,7 @@ setVariableIdParser = stringParserToIdParser setVariableIdRawParser
 setVariableIdRawParser :: Parser String
 setVariableIdRawParser = do
     start <- Parser.char '@'
-    end <- idRawParser KeywordsPermitted
+    end <- parseIdRaw KeywordsPermitted
     return (start:end)
 
 {-| Parses an @element-variable-id@
@@ -438,7 +391,7 @@ setVariableIdRawParser = do
 @
 -}
 elementVariableIdParser :: Parser Id
-elementVariableIdParser = idParser
+elementVariableIdParser = parseId
 
 {- | Parses a C-style string literal, unescaping it.
 
@@ -475,8 +428,8 @@ elementVariableIdParser = idParser
   ::= <hex-digit4> <hex-digit4>
 @
 -}
-stringLiteralParser :: Parser StringLiteral
-stringLiteralParser = lexeme stringLiteralRawParser
+parseStringLiteral :: Parser StringLiteral
+parseStringLiteral = lexeme stringLiteralRawParser
 
 stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do

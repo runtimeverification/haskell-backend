@@ -7,6 +7,7 @@ module Test.Kore.Parser
     , SuccessfulTest (..)
     , parsesTo_
     , fails
+    , parse'
     ) where
 
 import Prelude.Kore
@@ -20,6 +21,15 @@ import Test.Tasty.HUnit
     , assertBool
     , assertEqual
     , testCase
+    )
+
+import qualified Data.Bifunctor as Bifunctor
+import Text.Megaparsec
+    ( Parsec
+    , ShowErrorComponent
+    , eof
+    , errorBundlePretty
+    , parse
     )
 
 import Kore.Parser.ParserUtils
@@ -53,15 +63,19 @@ fails :: String -> () -> ParserTest a
 fails input _ = FailureWithoutMessage [input]
 
 parseTree
-    :: (HasCallStack, Show a, Eq a)
-    => Parser a
+    :: HasCallStack
+    => (Show a, Eq a)
+    => ShowErrorComponent e
+    => Parsec e String a
     -> [ParserTest a]
     -> [TestTree]
 parseTree parser = map (parseTest parser)
 
 parseTest
-    :: (HasCallStack, Show a, Eq a)
-    => Parser a
+    :: HasCallStack
+    => (Show a, Eq a)
+    => ShowErrorComponent e
+    => Parsec e String a
     -> ParserTest a
     -> TestTree
 parseTest parser (Success test) =
@@ -114,34 +128,32 @@ parseSkipTest _ (Success test) =
         (assertBool "Not Expecting Success Tests here" False)
 parseSkipTest parser test = parseTest parser test
 
+parse' :: ShowErrorComponent e => Parsec e String a -> String -> Either String a
+parse' parser input =
+    parse (parser <* eof) "<test-string>" input
+    & Bifunctor.first errorBundlePretty
+
 parseSuccess
-    :: (HasCallStack,Show a, Eq a) => a -> Parser a -> String -> Assertion
+    :: HasCallStack
+    => (Show a, Eq a)
+    => ShowErrorComponent e
+    => a -> Parsec e String a -> String -> Assertion
 parseSuccess expected parser input =
-    assertEqual
-        ""
-        (Right expected)
-        (parseOnly (parser <* endOfInput) "<test-string>" input)
+    assertEqual "" (Right expected) (parse' parser input)
 
-parseSkip :: Parser () -> String -> Assertion
+parseSkip :: ShowErrorComponent e => Parsec e String () -> String -> Assertion
 parseSkip parser input =
-    assertEqual
-        ""
-        (Right ())
-        (parseOnly (parser <* endOfInput) "<test-string>" input)
+    assertEqual "" (Right ()) (parse' parser input)
 
-parseFailureWithoutMessage :: Parser a -> String -> Assertion
+parseFailureWithoutMessage
+    :: ShowErrorComponent e => Parsec e String a -> String -> Assertion
 parseFailureWithoutMessage parser input =
-    assertBool
-        ""
-        (isLeft
-            (parseOnly (parser <* endOfInput) "<test-string>" input)
-        )
+    assertBool "" (isLeft (parse' parser input))
 
 parseFailureWithMessage
-    :: (HasCallStack, Show a, Eq a)
-    => String -> Parser a -> String -> Assertion
+    :: HasCallStack
+    => (Show a, Eq a)
+    => ShowErrorComponent e
+    => String -> Parsec e String a -> String -> Assertion
 parseFailureWithMessage expected parser input =
-    assertEqual
-        ""
-        (Left expected)
-        (parseOnly (parser <* endOfInput) "<test-string>" input)
+    assertEqual "" (Left expected) (parse' parser input)
