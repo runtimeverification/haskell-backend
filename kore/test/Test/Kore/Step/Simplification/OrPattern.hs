@@ -108,7 +108,7 @@ positive u =
     makeEqualsPredicate Mock.testSort
         (Mock.builtinBool False)
         (Mock.lessInt
-            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
 
@@ -116,7 +116,7 @@ negative :: TermLike VariableName -> Predicate VariableName
 negative u =
     makeEqualsPredicate_
         (Mock.greaterEqInt
-            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)
@@ -126,7 +126,7 @@ runSimplifyPredicates
     -> OrPattern VariableName
     -> IO (OrPattern VariableName)
 runSimplifyPredicates predicate orPattern =
-    Test.runSimplifier Mock.env
+    Test.runSimplifierSMT Mock.env
     $ simplifyConditionsWithSmt
         (SideCondition.assumeTruePredicate predicate)
         orPattern

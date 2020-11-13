@@ -277,6 +277,13 @@ test_substitute =
             [ testCase "Exists" (renaming mkExists)
             , testCase "Forall" (renaming mkForall)
             ]
+
+    , testCase "Preserves the identity of free variables" $ do
+        let actual = substitute (mkSubst Mock.x Mock.y)
+                $ mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
+        let expect = mkAnd (mkElemVar Mock.y) (mkElemVar Mock.y)
+        assertEqual "Expected y to remain as it is"
+            expect actual
     ]
 
 test_refreshVariables :: [TestTree]

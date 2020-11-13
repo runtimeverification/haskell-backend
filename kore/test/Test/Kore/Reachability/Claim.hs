@@ -57,7 +57,7 @@ import qualified Logic
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-    ( runSimplifier
+    ( runSimplifierSMT
     )
 
 test_checkImplication :: [TestTree]
@@ -252,7 +252,7 @@ test_simplifyRightHandSide =
                 id
                 SideCondition.top
                 claim
-            & runSimplifier Mock.env
+            & runSimplifierSMT Mock.env
         assertEqual "" expected actual
     ]
 
@@ -281,4 +281,4 @@ checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
 checkImplication claim =
     checkImplicationWorker claim
     & Logic.observeAllT
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
