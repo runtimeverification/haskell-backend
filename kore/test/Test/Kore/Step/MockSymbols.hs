@@ -1499,21 +1499,6 @@ builtinZeroarySmtSort sExpr =
         , declaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
-smtConstructor :: Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
-smtConstructor symbolId argumentSorts resultSort =
-    SMT.Symbol
-        { smtFromSortArgs = const (const (Just encodedId))
-        , declaration =
-            SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
-                { name = encodableId
-                , sortDependencies =
-                    SMT.SortReference <$> resultSort : argumentSorts
-                }
-        }
-  where
-    encodableId = SMT.encodable symbolId
-    encodedId = SMT.encode encodableId
-
 smtBuiltinSymbol
     :: Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
@@ -1553,18 +1538,9 @@ smtUnresolvedDeclarations = SMT.Declarations
         , (boolSortId, builtinZeroarySmtSort SMT.tBool)
         ]
     , symbols = Map.fromList
-        [ ( aSort0Id, smtConstructor aSort0Id [] testSort1)
-        , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
-        , ( aSubsortId, smtConstructor aSubsortId [] subSort)
-        , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
-        , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
-        , ( aTopSortId, smtConstructor aTopSortId [] topSort)
-        , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
-        , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
-        , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+        [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
-        , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
         ]
     }
 
