@@ -241,7 +241,7 @@ instance AstWithLocation variable => AstWithLocation (Equation variable) where
     locationFromAst = locationFromAst . left
 
 mapVariables
-    :: (Ord variable1, InternalVariable variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> Equation variable1
     -> Equation variable2

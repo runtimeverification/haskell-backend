@@ -90,8 +90,7 @@ import Kore.Syntax.Variable
     , mapElementVariable
     )
 import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    , refreshElementVariable
+    ( refreshElementVariable
     )
 
 {-| The part of an antileft pattern corresponding to a single rule.
@@ -188,7 +187,7 @@ instance
         AntiLeftLhs { existentials, predicate, term } = antiLeft
 
 mapVariables
-    :: (Ord variable1, FreshPartialOrd variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> AntiLeft variable1
     -> AntiLeft variable2
@@ -202,7 +201,7 @@ mapVariables adj antiLeft@(AntiLeft _ _ _) =
     AntiLeft {aliasTerm, maybeInner, leftHands} = antiLeft
 
 mapVariablesLeft
-    :: (Ord variable1, FreshPartialOrd variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> AntiLeftLhs variable1
     -> AntiLeftLhs variable2
