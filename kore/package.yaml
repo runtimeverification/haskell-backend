@@ -11,8 +11,6 @@ category:            Language
 extra-source-files:
   - README.md
   - CHANGELOG.md
-  - test/resources/*.kore
-  - test/resources/*.kore.golden
 
 data-dir: data
 

@@ -124,8 +124,7 @@ type SortDeclVerifier =
 newtype SortVerifier =
     SortVerifier
         { runSortVerifier
-            :: forall patternType
-            .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+            :: (Id -> Either (Error VerifyError) SentenceSort)
             -> Sort
             -> Either (Error VerifyError) ()
         }
@@ -136,8 +135,7 @@ type SortDeclVerifiers = HashMap Text SortDeclVerifier
 newtype SymbolVerifier =
     SymbolVerifier
         { runSymbolVerifier
-            :: forall patternType
-            .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+            :: (Id -> Either (Error VerifyError) SentenceSort)
             -> ParsedSentenceSymbol
             -> Either (Error VerifyError) ()
         }
@@ -435,8 +433,7 @@ verifySort builtinName =
     SortVerifier worker
   where
     worker
-        :: forall patternType
-        .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+        :: (Id -> Either (Error VerifyError) SentenceSort)
         -> Sort
         -> Either (Error VerifyError) ()
     worker findSort (SortActualSort SortActual { sortActualName }) = do
@@ -457,8 +454,7 @@ verifySortHasDomainValues :: SortVerifier
 verifySortHasDomainValues = SortVerifier worker
   where
     worker
-        :: forall patternType
-        .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+        :: (Id -> Either (Error VerifyError) SentenceSort)
         -> Sort
         -> Either (Error VerifyError) ()
     worker findSort (SortActualSort SortActual { sortActualName }) = do

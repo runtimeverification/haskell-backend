@@ -327,7 +327,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike VariableName)
+    sentence :: SentenceSort
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -339,7 +339,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike VariableName)
+    sentence :: SentenceSort
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"
@@ -363,7 +363,7 @@ extractIndexedModule name eModules =
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-symbolLeqAInt :: SentenceSymbol (TermLike VariableName)
+symbolLeqAInt :: SentenceSymbol
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt
@@ -372,7 +372,7 @@ applyLeqAInt
     -> TermLike VariableName
 applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 
-symbolLeqAExp :: SentenceSymbol (TermLike VariableName)
+symbolLeqAExp :: SentenceSymbol
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
@@ -382,7 +382,7 @@ applyLeqAExp
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolKSeq, symbolInj :: SentenceSymbol (TermLike VariableName)
+symbolKSeq, symbolInj :: SentenceSymbol
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -392,7 +392,7 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-symbolTCell, symbolKCell :: SentenceSymbol (TermLike VariableName)
+symbolTCell, symbolKCell :: SentenceSymbol
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell
