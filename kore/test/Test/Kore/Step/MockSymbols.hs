@@ -175,6 +175,8 @@ fIntId :: Id
 fIntId = testId "fInt"
 fTestIntId :: Id
 fTestIntId = testId "fTestInt"
+fTestFunctionalIntId :: Id
+fTestFunctionalIntId = testId "fTestFunctionalInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -373,6 +375,10 @@ fIntSymbol = symbol fIntId [intSort] intSort & function
 
 fTestIntSymbol :: Symbol
 fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
+
+fTestFunctionalIntSymbol :: Symbol
+fTestFunctionalIntSymbol =
+    symbol fTestFunctionalIntId [testSort] intSort & function & functional
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -839,6 +845,14 @@ fTestInt
     => TermLike variable
     -> TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
+
+fTestFunctionalInt
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestFunctionalInt arg =
+    Internal.mkApplySymbol fTestFunctionalIntSymbol [arg]
 
 fInt
     :: InternalVariable variable
@@ -1499,21 +1513,6 @@ builtinZeroarySmtSort sExpr =
         , declaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
-smtConstructor :: Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
-smtConstructor symbolId argumentSorts resultSort =
-    SMT.Symbol
-        { smtFromSortArgs = const (const (Just encodedId))
-        , declaration =
-            SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
-                { name = encodableId
-                , sortDependencies =
-                    SMT.SortReference <$> resultSort : argumentSorts
-                }
-        }
-  where
-    encodableId = SMT.encodable symbolId
-    encodedId = SMT.encode encodableId
-
 smtBuiltinSymbol
     :: Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
@@ -1553,18 +1552,9 @@ smtUnresolvedDeclarations = SMT.Declarations
         , (boolSortId, builtinZeroarySmtSort SMT.tBool)
         ]
     , symbols = Map.fromList
-        [ ( aSort0Id, smtConstructor aSort0Id [] testSort1)
-        , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
-        , ( aSubsortId, smtConstructor aSubsortId [] subSort)
-        , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
-        , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
-        , ( aTopSortId, smtConstructor aTopSortId [] topSort)
-        , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
-        , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
-        , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+        [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
-        , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
         ]
     }
 
