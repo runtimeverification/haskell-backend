@@ -1514,7 +1514,7 @@ parseEvalScript file scriptModeOutput = do
     toReplScriptParseErrors errorBundle =
         errorBundle
             { bundleErrors =
-                mapParseError ReplScriptParseError
+                mapParseError (ReplScriptParseError . unReplParseError)
                 <$> bundleErrors errorBundle
             }
 

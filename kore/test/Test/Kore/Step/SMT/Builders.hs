@@ -135,37 +135,28 @@ emptyModule name =
 
 sortDeclaration :: Text -> ParsedSentence
 sortDeclaration name =
-    asSentence
-        (SentenceSort
-            { sentenceSortName = testId name
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
-        :: SentenceSort ParsedPattern
-        )
+    asSentence SentenceSort
+        { sentenceSortName = testId name
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
+        }
 
 hookedSortDeclaration :: Text -> ParsedSentence
 hookedSortDeclaration name =
-    (asSentence . SentenceHookedSort)
-        (SentenceSort
-            { sentenceSortName = testId name
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
-        :: SentenceSort ParsedPattern
-        )
+    (asSentence . SentenceHookedSort) SentenceSort
+        { sentenceSortName = testId name
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
+        }
 
 symbolDeclaration :: Text -> Text -> [Text] -> ParsedSentence
 symbolDeclaration name sortName argumentSortNames =
-    asSentence
-        (SentenceSymbol
-            { sentenceSymbolSymbol     = makeSymbol name
-            , sentenceSymbolSorts      = map koreSort argumentSortNames
-            , sentenceSymbolResultSort = koreSort sortName
-            , sentenceSymbolAttributes = Attributes []
-            }
-        :: SentenceSymbol ParsedPattern
-        )
+    asSentence SentenceSymbol
+        { sentenceSymbolSymbol     = makeSymbol name
+        , sentenceSymbolSorts      = map koreSort argumentSortNames
+        , sentenceSymbolResultSort = koreSort sortName
+        , sentenceSymbolAttributes = Attributes []
+        }
 
 makeSymbol :: Text -> Symbol
 makeSymbol name =

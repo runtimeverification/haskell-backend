@@ -90,7 +90,7 @@ applyInitialConditions
     -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
-    & runSimplifier Mock.env . Logic.observeAllT
+    & runSimplifierSMT Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -1096,7 +1096,7 @@ applyRewriteRulesParallel initial rules =
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 applyClaimsSequence
     :: TestPattern
@@ -1110,7 +1110,7 @@ applyClaimsSequence initial claims =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 checkResults
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
@@ -1527,7 +1527,7 @@ applyRewriteRulesSequence initial rules =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         (mkRewritingRule <$> rules)
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =

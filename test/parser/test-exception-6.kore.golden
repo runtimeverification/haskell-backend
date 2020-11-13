@@ -3,5 +3,5 @@ test-exception-6.kore:6:5:
 6 |     2:S []
   |     ^
 unexpected '2'
-expecting first identifier character
+expecting identifier or string literal
 
