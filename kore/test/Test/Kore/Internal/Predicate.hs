@@ -1,5 +1,6 @@
 module Test.Kore.Internal.Predicate
     ( test_predicate
+    , test_mapVariables
     -- * Re-exports
     , TestPredicate
     , module Predicate
@@ -185,6 +186,17 @@ test_predicate =
                 , NotSimplified)
             ]
         ]
+    ]
+
+test_mapVariables :: [TestTree]
+test_mapVariables =
+    [ testCase "calls mapVariables on TermLike children" $ do
+        let input = makeCeilPredicate (mkExists Mock.x (mkElemVar Mock.x))
+            -- Does not actually rename anything, but will trigger the error if
+            -- the wrong function is passed to TermLike.mapVariables.
+            actual = Predicate.mapVariables (pure id) input
+            expect = input
+        assertEqual "" expect actual
     ]
 
 data Simplified = IsSimplified | NotSimplified
