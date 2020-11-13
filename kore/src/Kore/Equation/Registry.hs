@@ -61,6 +61,9 @@ import Kore.Internal.Symbol
     ( isDeclaredFunction
     , symbolic
     )
+import Kore.Internal.Symbol
+    ( noEvaluators
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
@@ -184,7 +187,7 @@ partitionEquations equations =
         freeVarsInFunctions (TermLike (_ :< termLikeF)) =
             case termLikeF of
                 ApplySymbolF (Application symbol children)
-                  | isDeclaredFunction symbol
+                  | isDeclaredFunction symbol && not (noEvaluators symbol)
                     -> Foldable.fold (fmap freeVariables children)
                 _ -> Foldable.foldMap freeVarsInFunctions termLikeF
 

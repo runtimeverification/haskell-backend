@@ -175,6 +175,8 @@ attemptEquation sideCondition termLike equation =
             case argument of
                 Nothing -> do
                     matchResult <- match left termLike & whileMatch
+                    -- traceM "matchResult"
+                    -- traceM . show $ matchResult
                     applyMatchResult equationRenamed matchResult
                         & whileApplyMatchResult
                 Just argument' -> do
