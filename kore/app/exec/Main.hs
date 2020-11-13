@@ -396,8 +396,8 @@ parserInfoModifiers =
 unparseKoreSearchOptions :: KoreSearchOptions -> [String]
 unparseKoreSearchOptions (KoreSearchOptions _ bound searchType) =
     [ "--search searchFile.kore"
-    , maybeLimit "" (\limit -> "--bound " <> show limit) bound
-    , "--searchType " <> show searchType
+    , maybeLimit "" (\limit -> unwords ["--bound", show limit]) bound
+    , unwords ["--searchType", show searchType]
     ]
 
 unparseKoreMergeOptions :: KoreMergeOptions -> [String]
@@ -416,9 +416,11 @@ unparseKoreProveOptions
     )
   =
     [ "--prove spec.kore"
-    , "--spec-module " <> unpack moduleName
-    , "--graph-search "
-        <> if graphSearch == DepthFirst then "depth-first" else "breadth-first"
+    , unwords ["--spec-module", unpack moduleName]
+    , unwords
+        [ "--graph-search"
+        , if graphSearch == DepthFirst then "depth-first" else "breadth-first"
+        ]
     , if bmc then "--bmc" else ""
     , maybe "" ("--save-proofs " <>) saveProofs
     ]
@@ -455,12 +457,12 @@ koreExecSh
             [ pure $ defaultDefinitionFilePath koreExecOptions
             , patternFileName $> "--pattern pgm.kore"
             , outputFileName $> "--output result.kore"
-            , pure $ "--module " <> unpack (getModuleName mainModuleName)
+            , pure $ unwords ["--module", unpack (getModuleName mainModuleName)]
             , (\limit -> unwords ["--breadth", show limit])
                 <$> maybeLimit Nothing Just breadthLimit
             , (\limit -> unwords ["--depth", show limit])
                 <$> maybeLimit Nothing Just depthLimit
-            , pure $ "--strategy " <> fst strategy
+            , pure $ unwords ["--strategy", fst strategy]
             , rtsStatistics $>
                 unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
             ]

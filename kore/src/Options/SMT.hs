@@ -128,7 +128,7 @@ unparseKoreSolverOptions
                 ]
         , unwrappedPrelude
             $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
-        , pure $ "--smt " <> fmap Char.toLower (show solver)
+        , pure $ unwords ["--smt", unparseSolver solver]
         ]
 
 -- | Available SMT solvers.
@@ -147,6 +147,10 @@ parseSolver =
     longName = "smt"
     knownOptions = intercalate ", " (map fst options)
     options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
+
+unparseSolver :: Solver -> String
+unparseSolver Z3 = "z3"
+unparseSolver None = "none"
 
 readSum :: String -> [(String, value)] -> Options.ReadM (String, value)
 readSum longName options = do
