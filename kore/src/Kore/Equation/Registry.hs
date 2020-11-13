@@ -59,10 +59,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.Symbol
     ( isDeclaredFunction
+    , noEvaluators
     , symbolic
-    )
-import Kore.Internal.Symbol
-    ( noEvaluators
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Identifier
