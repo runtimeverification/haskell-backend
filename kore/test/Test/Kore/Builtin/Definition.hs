@@ -1769,7 +1769,7 @@ testModuleWithTwoClaims =
                         Builtin.externalize (mkStringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asParsedPattern
+                            [ embedParsedPattern
                                 $ PatternF.StringLiteralF
                                 $ Const (StringLiteral "b")
                             ]
@@ -1782,7 +1782,7 @@ testModuleWithTwoClaims =
                         Builtin.externalize (mkStringLiteral "c")
                     , sentenceAxiomAttributes =
                         Attributes
-                            [ asParsedPattern
+                            [ embedParsedPattern
                                 $ PatternF.StringLiteralF
                                 $ Const (StringLiteral "b")
                             ]

@@ -39,10 +39,8 @@ import Test.Kore.ASTVerifier.DefinitionVerifier
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")
 
-objectA :: SentenceSymbol ParsedPattern
-objectA =
-    Builtin.externalize
-    <$> TermLike.mkSymbol_ (testId "a") [] objectS1
+objectA :: SentenceSymbol
+objectA = TermLike.mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
@@ -65,10 +63,8 @@ objectB =
     fmap Builtin.externalize
     $ TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
 
-metaA :: SentenceSymbol ParsedPattern
-metaA =
-    Builtin.externalize
-    <$> TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
+metaA :: SentenceSymbol
+metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =

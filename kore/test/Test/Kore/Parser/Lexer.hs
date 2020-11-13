@@ -1,65 +1,60 @@
-module Test.Kore.Parser.Lexeme (test_koreLexeme) where
+module Test.Kore.Parser.Lexer
+    ( test_keyword
+    , test_colon
+    , test_comma
+    , test_bracesPair
+    , test_parseSymbolId
+    , test_braces
+    , test_parens
+    , test_brackets
+    , test_parseModuleName
+    , test_parensTuple
+    , test_parseStringLiteral
+    , test_space
+    ) where
 
 import Prelude.Kore
 
 import Test.Tasty
     ( TestTree
-    , testGroup
     )
 
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
 
 import Test.Kore
 import Test.Kore.Parser
 
-test_koreLexeme :: [TestTree]
-test_koreLexeme =
-    [ testGroup "colonParser" colonParserTests
-    , testGroup "commaParser" commaParserTests
-    , testGroup "curlyPairParser" curlyPairParserTests
-    , testGroup "idParser" idParserTests
-    , testGroup "inCurlyBracesParser" inCurlyBracesParserTests
-    , testGroup "inParenthesesParser" inParenthesesParserTests
-    , testGroup "inSquareBracketsParser" inSquareBracketsParserTests
-    , testGroup "keywordBasedParsers" keywordBasedParsersTests
-    , testGroup "mlLexemeParser" mlLexemeParserTests
-    , testGroup "moduleNameIdParser" moduleNameIdParserTests
-    , testGroup "parenPairParser" parenPairParserTests
-    , testGroup "skipWhitespace" skipWhitespaceTests
-    , testGroup "stringLiteralParser" stringLiteralParserTests
-    ]
-
-colonParserTests :: [TestTree]
-colonParserTests =
-    parseSkipTree colonParser
+test_colon :: [TestTree]
+test_colon =
+    parseSkipTree colon
         [ Skip [":", ": ", ":/**/"]
         , FailureWithoutMessage ["", " :", " ", ","]
         ]
 
-commaParserTests :: [TestTree]
-commaParserTests =
-    parseSkipTree commaParser
+test_comma :: [TestTree]
+test_comma =
+    parseSkipTree comma
         [ Skip [",", ", ", ",/**/"]
         , FailureWithoutMessage ["", " ,", " ", ":"]
         ]
 
-curlyPairParserTests :: [TestTree]
-curlyPairParserTests =
-    parseTree (curlyPairParser idParser moduleNameIdParser)
-        [ success "{a,B}" (testId "a", ModuleName "B")
-        , success "{ a , B } " (testId "a", ModuleName "B")
-        , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", ModuleName "B")
-        , success "{/*/**/a,/**/B/**/}/**/" (testId "a", ModuleName "B")
+test_bracesPair :: [TestTree]
+test_bracesPair =
+    parseTree (bracesPair parseId)
+        [ success "{a,B}" (testId "a", testId "B")
+        , success "{ a , B } " (testId "a", testId "B")
+        , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", testId "B")
+        , success "{/*/**/a,/**/B/**/}/**/" (testId "a", testId "B")
         , FailureWithoutMessage
             [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
             , "{a,B,c}", "(a,B)"]
         ]
 
-idParserTests :: [TestTree]
-idParserTests =
-    parseTree symbolIdParser
+test_parseSymbolId :: [TestTree]
+test_parseSymbolId =
+    parseTree parseSymbolId
         [ success "A" (testId "A")
         , success "a" (testId "a")
         , success "abc" (testId "abc")
@@ -77,7 +72,7 @@ idParserTests =
                 \1 | [\n\
                 \  | ^\n\
                 \unexpected '['\n\
-                \expecting first identifier character\n"
+                \expecting symbol or alias identifier\n"
             }
         , Failure FailureTest
             { failureInput = "module"
@@ -96,9 +91,9 @@ idParserTests =
             , ",", " a"]
         ]
 
-inCurlyBracesParserTests :: [TestTree]
-inCurlyBracesParserTests =
-    parseTree (inCurlyBracesParser idParser)
+test_braces :: [TestTree]
+test_braces =
+    parseTree (braces parseId)
         [ success "{a}" (testId "a")
         , success "{ a } " (testId "a")
         , success "{/**/a/**/}/**/" (testId "a")
@@ -106,9 +101,9 @@ inCurlyBracesParserTests =
             [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
         ]
 
-inParenthesesParserTests :: [TestTree]
-inParenthesesParserTests =
-    parseTree (inParenthesesParser idParser)
+test_parens :: [TestTree]
+test_parens =
+    parseTree (parens parseId)
         [ success "(a)" (testId "a")
         , success "( a ) " (testId "a")
         , success "(/**/a/**/)/**/" (testId "a")
@@ -116,9 +111,9 @@ inParenthesesParserTests =
             [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
         ]
 
-inSquareBracketsParserTests :: [TestTree]
-inSquareBracketsParserTests =
-    parseTree (inSquareBracketsParser idParser)
+test_brackets :: [TestTree]
+test_brackets =
+    parseTree (brackets parseId)
         [ success "[a]" (testId "a")
         , success "[ a ] " (testId "a")
         , success "[/**/a/**/]/**/" (testId "a")
@@ -126,57 +121,16 @@ inSquareBracketsParserTests =
             [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
 
-keywordBasedParsersTests :: [TestTree]
-keywordBasedParsersTests =
-    parseTree
-        (keywordBasedParsers
-            [ ("abc", inCurlyBracesParser idParser)
-            , ("de", inParenthesesParser idParser)
-            , ("dd", idParser)
-            , ("df", inSquareBracketsParser idParser)
-            ]
-        )
-        [ success "abc{a}" (testId "a")
-        , success "de(a)" (testId "a")
-        , success "df[a]" (testId "a")
-        , success "df [ a ] " (testId "a")
-        , success "dd a" (testId "a")
-        , success "df/**/ [/**/ a/**/ ]/**/ " (testId "a")
-        , Failure FailureTest
-            { failureInput = "dg(a)"
-            , failureExpected =
-                "<test-string>:1:2:\n\
-                \  |\n\
-                \1 | dg(a)\n\
-                \  |  ^\n\
-                \Keyword Based Parsers - unexpected character.\n"
-            }
-        , Failure FailureTest
-            { failureInput = "dda"
-            , failureExpected =
-                "<test-string>:1:3:\n\
-                \  |\n\
-                \1 | dda\n\
-                \  |   ^\n\
-                \Expecting keyword to end.\n"
-            }
-        , FailureWithoutMessage
-            [ "abc(a)", "abc[a]", "de{a}", "de[a]", "df{a}", "dfa)"
-            , "abc", "de", "df"
-            , "", " de(a)", "(a)"
-            ]
+test_keyword :: [TestTree]
+test_keyword =
+    parseSkipTree (keyword "hello")
+        [ Skip ["hello", "hello ", "hello/**/ "]
+        , FailureWithoutMessage ["", "Hello", " hello", "hello-world"]
         ]
 
-mlLexemeParserTests :: [TestTree]
-mlLexemeParserTests =
-    parseSkipTree (mlLexemeParser "hello")
-    [ Skip ["hello", "hello ", "hello/**/ "]
-    , FailureWithoutMessage ["", "Hello", " hello"]
-    ]
-
-moduleNameIdParserTests :: [TestTree]
-moduleNameIdParserTests =
-    parseTree moduleNameIdParser
+test_parseModuleName :: [TestTree]
+test_parseModuleName =
+    parseTree parseModuleName
         [ success "A" (ModuleName "A")
         , success "A-" (ModuleName "A-")
         , success "A2" (ModuleName "A2")
@@ -188,9 +142,9 @@ moduleNameIdParserTests =
             , "#", "#A", " A", ","]
         ]
 
-parenPairParserTests :: [TestTree]
-parenPairParserTests =
-    parseTree (parenPairParser idParser moduleNameIdParser)
+test_parensTuple :: [TestTree]
+test_parensTuple =
+    parseTree (parensTuple parseId parseModuleName)
         [ success "(a,B)" (testId "a", ModuleName "B")
         , success "( a , B ) " (testId "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")
@@ -199,9 +153,9 @@ parenPairParserTests =
             , "(a,B,c)", "{a,B}"]
         ]
 
-skipWhitespaceTests :: [TestTree]
-skipWhitespaceTests =
-    parseSkipTree skipWhitespace
+test_space :: [TestTree]
+test_space =
+    parseSkipTree space
         [ Skip
             [ "", " ", "\n", "\r", "\t", "/**/", "//\n"
             , "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/"
@@ -222,9 +176,9 @@ skipWhitespaceTests =
             , "/ /", "/**//", "//\na"]
         ]
 
-stringLiteralParserTests :: [TestTree]
-stringLiteralParserTests =
-    parseTree stringLiteralParser
+test_parseStringLiteral :: [TestTree]
+test_parseStringLiteral =
+    parseTree parseStringLiteral
         [ success "\"\"" (StringLiteral "")
         , success "\"a\"" (StringLiteral "a")
         , success "\"\\\"\"" (StringLiteral "\"")
