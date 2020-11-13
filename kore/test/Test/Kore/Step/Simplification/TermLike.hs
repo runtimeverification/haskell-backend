@@ -46,7 +46,8 @@ simplifyEvaluated original =
             ConditionSimplifier $ const undefined
         }
 
-newtype TestSimplifier a = TestSimplifier { getTestSimplifier :: Simplifier a }
+newtype TestSimplifier a =
+    TestSimplifier { getTestSimplifier :: SimplifierT NoSMT a }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadLog, MonadSMT, MonadThrow)
 

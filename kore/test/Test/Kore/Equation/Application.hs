@@ -79,7 +79,7 @@ attemptEquation
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition termLike' equation
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
   where
     termLike' = TermLike.mapVariables Target.mkUnifiedNonTarget termLike
 

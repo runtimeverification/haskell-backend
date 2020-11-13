@@ -12,6 +12,7 @@ let
       inherit (haskell-nix) nixpkgsArgs;
       args = nixpkgsArgs // { };
     in import haskell-nix.sources.nixpkgs-2003 args;
+  inherit (pkgs) lib;
 
   local =
     if builtins.pathExists ./local.nix
@@ -34,6 +35,11 @@ let
             enableLibraryProfiling = profiling;
             enableExecutableProfiling = profiling;
             profilingDetail = "toplevel-functions";
+
+            # Add Z3 to PATH for unit tests.
+            components.tests.kore-test.preCheck = ''
+              export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
+            '';
           };
         }
       ];
