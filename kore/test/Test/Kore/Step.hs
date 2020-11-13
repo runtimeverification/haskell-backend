@@ -417,7 +417,7 @@ test_unificationError =
 
 actualUnificationError :: IO [Pattern RewritingVariableName]
 actualUnificationError =
-    runStep
+    runStepSMT
         Conditional
             { term =
                 metaSigma
