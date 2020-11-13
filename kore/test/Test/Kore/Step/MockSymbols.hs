@@ -175,6 +175,8 @@ fIntId :: Id
 fIntId = testId "fInt"
 fTestIntId :: Id
 fTestIntId = testId "fTestInt"
+fTestFunctionalIntId :: Id
+fTestFunctionalIntId = testId "fTestFunctionalInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -373,6 +375,10 @@ fIntSymbol = symbol fIntId [intSort] intSort & function
 
 fTestIntSymbol :: Symbol
 fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
+
+fTestFunctionalIntSymbol :: Symbol
+fTestFunctionalIntSymbol =
+    symbol fTestFunctionalIntId [testSort] intSort & function & functional
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -839,6 +845,14 @@ fTestInt
     => TermLike variable
     -> TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
+
+fTestFunctionalInt
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestFunctionalInt arg =
+    Internal.mkApplySymbol fTestFunctionalIntSymbol [arg]
 
 fInt
     :: InternalVariable variable

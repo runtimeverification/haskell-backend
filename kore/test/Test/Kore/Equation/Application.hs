@@ -616,7 +616,7 @@ positive :: TestTerm -> TestPredicate
 positive u' =
     makeEqualsPredicate Mock.testSort
         (Mock.lessInt
-            (Mock.fTestInt u')  -- wrap the given term for sort agreement
+            (Mock.fTestFunctionalInt u')  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)

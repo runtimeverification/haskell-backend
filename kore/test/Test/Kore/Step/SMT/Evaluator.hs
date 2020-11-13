@@ -259,8 +259,8 @@ test_Int_contradictions =
         . assertRefuted
         $ makeEqualsPredicate_ true
         $ andBool
-            (eqInt (dummyInt (int 0)) (int 123))
-            (eqInt (dummyInt (int 0)) (int 456))
+            (eqInt (dummyFunctionalInt (int 0)) (int 123))
+            (eqInt (dummyFunctionalInt (int 0)) (int 456))
     , testCase "¬(0 < a → (a / 2) < a)" . assertRefuted
         $ makeEqualsPredicate_ false
         $ impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)
