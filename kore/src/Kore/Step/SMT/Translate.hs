@@ -210,9 +210,7 @@ translatePredicateWith translateTerm predicate =
                 return $ SMT.int $ Builtin.Int.extractIntDomainValue
                     "while translating dv to SMT.int" dv
             ApplySymbolF app ->
-                (<|>)
-                    (translateApplication app)
-                    (translateUninterpreted SMT.tInt pat)
+                translateApplication (Just SMT.tInt) pat app
             DefinedF (Defined child) -> translateInt child
             _ -> empty
 
@@ -230,29 +228,39 @@ translatePredicateWith translateTerm predicate =
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
             ApplySymbolF app ->
-                (<|>)
-                    (translateApplication app)
-                    (translateUninterpreted SMT.tBool pat)
+                translateApplication (Just SMT.tBool) pat app
             DefinedF (Defined child) -> translateBool child
             _ -> empty
 
-    translateApplication :: Application Symbol p -> Translator m variable SExpr
+    translateApplication :: Maybe SExpr -> p -> Application Symbol p -> Translator m variable SExpr
     translateApplication
+        maybeSort
+        original
         Application
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = do
-        let translated = translateSymbol applicationSymbolOrAlias
-        sexpr <- maybe empty return translated
-        when (isNothing translated)
-            $ warnSymbolSMTRepresentation applicationSymbolOrAlias
-        children <- zipWithM translatePattern
-            applicationChildrenSorts
-            applicationChildren
-        return $ shortenSExpr (applySExpr sexpr children)
+      | isFunctionalPattern original =
+        translateInterpretedApplication
+        <|> translateUninterpreted'
+      | otherwise =
+        translateInterpretedApplication
       where
+        translateInterpretedApplication = do
+            let translated = translateSymbol applicationSymbolOrAlias
+            sexpr <- maybe warnAndDiscard return translated
+            children <- zipWithM translatePattern
+                applicationChildrenSorts
+                applicationChildren
+            return $ shortenSExpr (applySExpr sexpr children)
         applicationChildrenSorts = termLikeSort <$> applicationChildren
+        warnAndDiscard =
+            warnSymbolSMTRepresentation applicationSymbolOrAlias
+            >> empty
+        translateUninterpreted' = do
+            sort <- hoistMaybe maybeSort
+            translateUninterpreted sort original
+
 
     translatePredicateExists
         :: Exists Sort variable p -> Translator m variable SExpr
@@ -297,13 +305,11 @@ translatePredicateWith translateTerm predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
-                    VariableF _ -> translateUninterpreted'
-                    ApplySymbolF app
-                      | isFunctionalPattern pat ->
-                          translateApplication app
-                          <|> translateUninterpreted'
-                      | otherwise ->
-                          translateApplication app
+                    VariableF _ -> do
+                        smtSort <- hoistMaybe $ translateSort sort
+                        translateUninterpreted smtSort pat
+                    ApplySymbolF app ->
+                        translateApplication (translateSort sort) pat app
                     DefinedF (Defined child) -> translatePattern sort child
                     _ -> empty
       where
@@ -311,9 +317,6 @@ translatePredicateWith translateTerm predicate =
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools sort
-        translateUninterpreted' = do
-            smtSort <- hoistMaybe $ translateSort sort
-            translateUninterpreted smtSort pat
 
 {-| Represents the SMT encoding of an untranslatable pattern containing
 occurrences of existential variables.  Since the same pattern might appear
