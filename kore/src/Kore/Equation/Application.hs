@@ -342,6 +342,8 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     isConcreteFunctionArgument (TermLike.BuiltinString_ _) = True
     isConcreteFunctionArgument (TermLike.InternalBytes_ _ _) = True
     isConcreteFunctionArgument (TermLike.DV_ _ _) = True
+    isConcreteFunctionArgument (TermLike.Endianness_ _) = True
+    isConcreteFunctionArgument (TermLike.Signedness_ _) = True
     isConcreteFunctionArgument (TermLike.BuiltinList_ items) =
         all isConcreteFunctionArgument items
     isConcreteFunctionArgument
