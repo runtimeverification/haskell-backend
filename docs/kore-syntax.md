@@ -92,7 +92,7 @@ The UTF-32 code point must not exceed `U+10FFFF`.
 
 ```
 <identifier>
-  ::= <id-first-char> <id-char>*
+  ::= <identifier-first-char> <identifier-char>*
 
 <identifier-char>
   ::= <identifier-first-char>
