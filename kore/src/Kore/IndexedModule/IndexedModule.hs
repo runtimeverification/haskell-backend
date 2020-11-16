@@ -96,7 +96,7 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
-type SortDescription = SentenceSort (Pattern VariableName Attribute.Null)
+type SortDescription = SentenceSort
 
 data IndexModuleError
 
@@ -121,9 +121,9 @@ data IndexedModule pat declAtts axiomAtts =
     , indexedModuleAliasSentences
         :: !(Map.Map Id (declAtts, SentenceAlias pat))
     , indexedModuleSymbolSentences
-        :: !(Map.Map Id (declAtts, SentenceSymbol pat))
+        :: !(Map.Map Id (declAtts, SentenceSymbol))
     , indexedModuleSortDescriptions
-        :: !(Map.Map Id (Attribute.Sort, SentenceSort pat))
+        :: !(Map.Map Id (Attribute.Sort, SentenceSort))
     , indexedModuleAxioms :: ![(axiomAtts, SentenceAxiom pat)]
     , indexedModuleClaims :: ![(axiomAtts, SentenceClaim pat)]
     , indexedModuleAttributes :: !(declAtts, Attributes)
@@ -150,14 +150,14 @@ data IndexedModule pat declAtts axiomAtts =
 recursiveIndexedModuleSortDescriptions
     :: forall pat declAtts axiomAtts
     .  IndexedModule pat declAtts axiomAtts
-    -> Map.Map Id (Attribute.Sort, SentenceSort pat)
+    -> Map.Map Id (Attribute.Sort, SentenceSort)
 recursiveIndexedModuleSortDescriptions =
     recursiveIndexedModuleStuff indexedModuleSortDescriptions
 
 recursiveIndexedModuleSymbolSentences
     :: forall pat axiomAtts
     .  IndexedModule pat Attribute.Symbol axiomAtts
-    -> Map.Map Id (Attribute.Symbol, SentenceSymbol pat)
+    -> Map.Map Id (Attribute.Symbol, SentenceSymbol)
 recursiveIndexedModuleSymbolSentences =
     recursiveIndexedModuleStuff indexedModuleSymbolSentences
 
@@ -273,12 +273,6 @@ erasePatterns indexedModule =
         { indexedModuleAliasSentences =
             Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
             $ indexedModuleAliasSentences indexedModule
-        , indexedModuleSymbolSentences =
-            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
-            $ indexedModuleSymbolSentences indexedModule
-        , indexedModuleSortDescriptions =
-            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
-            $ indexedModuleSortDescriptions indexedModule
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleImports =
@@ -294,10 +288,6 @@ mapPatterns mapping indexedModule =
     indexedModule
         { indexedModuleAliasSentences =
             (fmap . fmap . fmap) mapping indexedModuleAliasSentences
-        , indexedModuleSymbolSentences =
-            (fmap . fmap . fmap) mapping indexedModuleSymbolSentences
-        , indexedModuleSortDescriptions =
-            (fmap . fmap . fmap) mapping indexedModuleSortDescriptions
         , indexedModuleAxioms =
             (fmap . fmap . fmap) mapping indexedModuleAxioms
         , indexedModuleClaims =
@@ -308,8 +298,6 @@ mapPatterns mapping indexedModule =
         }
   where
     IndexedModule { indexedModuleAliasSentences } = indexedModule
-    IndexedModule { indexedModuleSymbolSentences } = indexedModule
-    IndexedModule { indexedModuleSortDescriptions } = indexedModule
     IndexedModule { indexedModuleAxioms } = indexedModule
     IndexedModule { indexedModuleClaims } = indexedModule
     IndexedModule { indexedModuleImports } = indexedModule
@@ -461,7 +449,7 @@ indexedModuleWithDefaultImports name defaultImport =
  -}
 hookedObjectSymbolSentences
     :: IndexedModule pat declAtts axiomAtts
-    -> Map.Map Id (declAtts, SentenceSymbol pat)
+    -> Map.Map Id (declAtts, SentenceSymbol)
 hookedObjectSymbolSentences
     IndexedModule
         { indexedModuleSymbolSentences

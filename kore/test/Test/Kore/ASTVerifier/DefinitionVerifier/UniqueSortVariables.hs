@@ -13,6 +13,7 @@ import Kore.Error
 import Kore.Internal.TermLike
 import Kore.Syntax.Definition
     ( ModuleName (..)
+    , ParsedSentenceAlias
     , asSentence
     )
 
@@ -102,6 +103,7 @@ test_uniqueSortVariables =
                     (SortName "s")
                     []
                     topS
+                    :: ParsedSentenceAlias
                 )
             , simpleSortSentence (SortName "s")
             ]
@@ -351,6 +353,7 @@ test_uniqueSortVariables =
                     , sortVariable "sv"
                     ]
                     topS1
+                    :: ParsedSentenceAlias
                 )
             , simpleSortSentence (SortName "s")
             ]

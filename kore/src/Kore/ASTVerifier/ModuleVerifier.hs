@@ -134,7 +134,7 @@ The named modules are verified and imported into the current 'VerifiedModule'.
 verifyImports :: [ParsedSentence] -> SentenceVerifier ()
 verifyImports = traverse_ verifyImport . mapMaybe projectSentenceImport
 
-verifyImport :: SentenceImport ParsedPattern -> SentenceVerifier ()
+verifyImport :: SentenceImport -> SentenceVerifier ()
 verifyImport sentence =
     withSentenceImportContext sentence $ do
         let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
