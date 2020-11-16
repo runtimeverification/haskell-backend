@@ -1,6 +1,7 @@
 { profiling ? false
 , release ? false
 , threaded ? !profiling
+, checkMaterialization ? false
 }:
 
 let
@@ -22,6 +23,8 @@ let
   project =
     (args: pkgs.haskell-nix.stackProject (local args)) {
       src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
+      inherit checkMaterialization;
+      materialized = ./nix/kore.materialized;
       modules = [
         {
           # package *
