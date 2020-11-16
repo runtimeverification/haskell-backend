@@ -24,14 +24,14 @@ import Kore.Internal.TermLike hiding
     ( VariableName (..)
     )
 import Kore.Syntax.Definition
-    ( AsSentence (..)
-    , Attributes (..)
+    ( Attributes (..)
     , ModuleName (..)
     , ParsedSentence
     , ParsedSentenceAlias
     , ParsedSentenceSymbol
     , Sentence (SentenceSymbolSentence)
     , SentenceSort (..)
+    , asSentence
     )
 
 import Test.Kore

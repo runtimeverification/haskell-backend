@@ -947,7 +947,7 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 applySymbol
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -- ^ 'Symbol' declaration
     -> [Sort]
     -- ^ 'Symbol' sort parameters
@@ -979,7 +979,7 @@ See also: 'mkApplySymbol', 'applySymbol'
 applySymbol_
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -> [TermLike variable]
     -> TermLike variable
 applySymbol_ sentence = updateCallStack . applySymbol sentence []
@@ -1613,7 +1613,7 @@ mkSymbol
     -> [SortVariable]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1635,7 +1635,7 @@ mkSymbol_
     :: Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.
