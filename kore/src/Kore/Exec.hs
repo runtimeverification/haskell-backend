@@ -255,7 +255,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     ( limitedStrategy
-                    , (ExecDepth 0, StartExec (mkRewritingPattern initialConfig))
+                    , (ExecDepth 0, Start (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
@@ -291,8 +291,8 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
 {- | Modify a 'TransitionRule' to track the depth of the execution graph.
  -}
 trackExecDepth
-    :: ExecutionTransitionRule monad rule state
-    -> ExecutionTransitionRule monad rule (ExecDepth, state)
+    :: TransitionRule monad rule state
+    -> TransitionRule monad rule (ExecDepth, state)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
@@ -382,7 +382,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                     (transitionRule rewriteGroups All)
                     limitedStrategy
         executionGraph <-
-            runStrategy' (StartExec $ mkRewritingPattern initialPattern)
+            runStrategy' (Start $ mkRewritingPattern initialPattern)
         let
             match target config1 config2 =
                 Search.matchWith

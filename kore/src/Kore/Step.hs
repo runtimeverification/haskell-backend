@@ -9,18 +9,11 @@ Strategy-based interface to rule application (step-wise execution).
 module Kore.Step
     ( -- * Primitive strategies
       ExecutionStrategy (..)
+    , ProgramState (..)
     , Prim (..)
-    , ExecutionState (..)
-    , ExecutionPrim (..)
-    , ExecutionTransitionRule
+    , TransitionRule
     , executionStrategy
     , extractExecutionState
-    , rewrite
-    , simplify
-    , rewriteStep
-    , priorityAllStrategy
-    , priorityAnyStrategy
-    , TransitionRule
     , transitionRule
       -- * Re-exports
     , RulePattern
@@ -31,17 +24,10 @@ module Kore.Step
     , runStrategy
     ) where
 
--- import Kore.Unparser
---     ( unparseToString
---     )
 import Prelude.Kore
 
 import Control.Monad
     ( foldM
-    )
-import Data.List.Extra
-    ( groupSortOn
-    , sortOn
     )
 import Data.Stream.Infinite
     ( Stream
@@ -51,7 +37,6 @@ import Numeric.Natural
     ( Natural
     )
 
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -78,45 +63,28 @@ import qualified Kore.Unification.Procedure as Unification
 
 {- TODO: docs
 -}
-data ExecutionState a = StartExec !a | Rewritten !a | Remaining !a
+data ProgramState a = Start !a | Rewritten !a | Remaining !a
     deriving (Show, Functor)
 
-extractExecutionState :: ExecutionState a -> a
+extractExecutionState :: ProgramState a -> a
 extractExecutionState (Rewritten a) = a
 extractExecutionState (Remaining a) = a
-extractExecutionState (StartExec a) = a
+extractExecutionState (Start a) = a
 
-{- | A strategy primitive: a rewrite rule or builtin simplification step.
- -}
-data Prim rewrite = Begin | Simplify | Rewrite !rewrite
-    deriving (Show)
-
--- | Begin the strategy step.
-begin :: Prim rewrite
-begin = Begin
-
--- | Apply the rewrite.
-rewrite :: rewrite -> Prim rewrite
-rewrite = Rewrite
-
--- | Apply builtin simplification rewrites and evaluate functions.
-simplify :: Prim rewrite
-simplify = Simplify
-
-executionStrategy :: Stream (Strategy ExecutionPrim)
+executionStrategy :: Stream (Strategy Prim)
 executionStrategy =
     (Strategy.sequence . fmap Strategy.apply)
-        [ BeginExec
-        , SimplifyExec
+        [ Begin
+        , Simplify
         , ApplyRewrites
         ]
     & Stream.iterate id
 
 {- TODO: docs
 -}
-data ExecutionPrim
-    = BeginExec
-    | SimplifyExec
+data Prim
+    = Begin
+    | Simplify
     | ApplyRewrites
     deriving (Show)
 
@@ -125,27 +93,10 @@ data ExecutionPrim
 data ExecutionStrategy = All | Any
     deriving (Show)
 
-{- | A single-step strategy which applies the given rewrite rule.
-
-If the rewrite is successful, the built-in simplification rules and function
-evaluator are applied (see 'Pattern.simplify' for details).
-
- -}
-rewriteStep :: rewrite -> Strategy (Prim rewrite)
-rewriteStep a =
-    Strategy.sequence
-        [ Strategy.apply begin
-        , Strategy.apply (rewrite a)
-        , Strategy.apply simplify
-        ]
-
 {- | @TransitionRule@ is the general type of transition rules over 'Prim'.
  -}
 type TransitionRule monad rule state =
-    Prim rule -> state -> Strategy.TransitionT rule monad state
-
-type ExecutionTransitionRule monad rule state =
-    ExecutionPrim -> state -> Strategy.TransitionT rule monad state
+    Prim -> state -> Strategy.TransitionT rule monad state
 
 {- | Transition rule for primitive strategies in 'Prim'.
 
@@ -157,29 +108,29 @@ transitionRule
     .  MonadSimplify simplifier
     => [[RewriteRule RewritingVariableName]]
     -> ExecutionStrategy
-    -> ExecutionTransitionRule simplifier
+    -> TransitionRule simplifier
             (RewriteRule RewritingVariableName)
-            (ExecutionState (Pattern RewritingVariableName))
+            (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
-    transitionRuleWorker _ BeginExec (Rewritten a) = pure $ StartExec a
-    transitionRuleWorker _ BeginExec (Remaining _) = empty
-    transitionRuleWorker _ BeginExec state = pure state
+    transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
+    transitionRuleWorker _ Begin (Remaining _) = empty
+    transitionRuleWorker _ Begin state = pure state
 
-    transitionRuleWorker _ SimplifyExec (Rewritten patt) =
+    transitionRuleWorker _ Simplify (Rewritten patt) =
         Rewritten <$> transitionSimplify patt
-    transitionRuleWorker _ SimplifyExec (Remaining patt) =
+    transitionRuleWorker _ Simplify (Remaining patt) =
         Remaining <$> transitionSimplify patt
-    transitionRuleWorker _ SimplifyExec (StartExec patt) =
-        StartExec <$> transitionSimplify patt
+    transitionRuleWorker _ Simplify (Start patt) =
+        Start <$> transitionSimplify patt
 
     transitionRuleWorker All ApplyRewrites (Remaining patt) =
         transitionAllRewrite rewriteGroups patt
-    transitionRuleWorker All ApplyRewrites (StartExec patt) =
+    transitionRuleWorker All ApplyRewrites (Start patt) =
         transitionAllRewrite rewriteGroups patt
     transitionRuleWorker Any ApplyRewrites (Remaining patt) =
         transitionAnyRewrite rewriteGroups patt
-    transitionRuleWorker Any ApplyRewrites (StartExec patt) =
+    transitionRuleWorker Any ApplyRewrites (Start patt) =
         transitionAnyRewrite rewriteGroups patt
     transitionRuleWorker _ ApplyRewrites state = pure state
 
@@ -200,7 +151,7 @@ transitionRule rewriteGroups = transitionRuleWorker
         -> TransitionT
             (RewriteRule RewritingVariableName)
             simplifier
-            (ExecutionState (Pattern RewritingVariableName))
+            (ProgramState (Pattern RewritingVariableName))
     transitionAllRewrite xs config =
         foldM transitionRewrite' (Remaining config) xs
       where
@@ -220,7 +171,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 deriveResults
     :: Comonad w
     => Result.Results (w (RulePattern variable)) a
-    -> TransitionT (RewriteRule variable) m (ExecutionState a)
+    -> TransitionT (RewriteRule variable) m (ProgramState a)
 deriveResults Result.Results { results, remainders } =
     addResults results <|> addRemainders remainders
   where
@@ -231,7 +182,7 @@ deriveResults Result.Results { results, remainders } =
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
-retractApplyRemainder :: ExecutionState a -> Maybe a
+retractApplyRemainder :: ProgramState a -> Maybe a
 retractApplyRemainder (Remaining a) = Just a
 retractApplyRemainder _ = Nothing
 
@@ -246,50 +197,3 @@ simplify' config = do
     configs <- lift $ Pattern.simplifyTopConfiguration config
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     asum (pure <$> toList filteredConfigs)
-
-{- | A strategy that applies all the rewrites in parallel.
-
-After each successful rewrite, the built-in simplification rules and function
-evaluator are applied (see 'Pattern.simplify' for details).
-
-See also: 'Strategy.all'
-
- -}
-allRewrites
-    :: [rewrite]
-    -> Strategy (Prim rewrite)
-allRewrites rewrites =
-    Strategy.all (rewriteStep <$> rewrites)
-
-{- | A strategy that applies the rewrites until one succeeds.
-
-The rewrites are attempted in order until one succeeds. After a successful
-rewrite, the built-in simplification rules and function evaluator are applied
-(see 'Pattern.simplify' for details).
-
-See also: 'Strategy.any'
-
- -}
-anyRewrite
-    :: [rewrite]
-    -> Strategy (Prim rewrite)
-anyRewrite rewrites =
-    Strategy.any (rewriteStep <$> rewrites)
-
-priorityAllStrategy
-    :: From rewrite Attribute.PriorityAttributes
-    => [rewrite]
-    -> Strategy (Prim rewrite)
-priorityAllStrategy rewrites =
-    Strategy.first (fmap allRewrites priorityGroups)
-  where
-    priorityGroups = groupSortOn Attribute.getPriorityOfAxiom rewrites
-
-priorityAnyStrategy
-    :: From rewrite Attribute.PriorityAttributes
-    => [rewrite]
-    -> Strategy (Prim rewrite)
-priorityAnyStrategy rewrites =
-    anyRewrite sortedRewrites
-  where
-    sortedRewrites = sortOn Attribute.getPriorityOfAxiom rewrites

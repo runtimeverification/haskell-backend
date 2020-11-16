@@ -66,7 +66,10 @@ import Kore.Rewriting.RewritingVariable
 import Kore.Sort
     ( Sort (..)
     )
-import Kore.Step
+import Kore.Step hiding
+    ( Start
+    )
+import qualified Kore.Step as Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , injectTermIntoRHS
@@ -152,7 +155,7 @@ takeSteps (Start start, wrappedAxioms) = do
         :: Pattern RewritingVariableName
         -> [[RewriteRule RewritingVariableName]]
         -> Simplifier (Strategy.ExecutionGraph
-                (ExecutionState (Pattern RewritingVariableName))
+                (ProgramState (Pattern RewritingVariableName))
                 (RewriteRule RewritingVariableName)
               )
     makeExecutionGraph configuration axioms =
@@ -160,7 +163,7 @@ takeSteps (Start start, wrappedAxioms) = do
             Unlimited
             (transitionRule axioms All)
             (toList executionStrategy)
-            (StartExec configuration)
+            (Step.Start configuration)
     makeRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
     groupedRewrites =
         groupSortOn Attribute.getPriorityOfAxiom
@@ -503,7 +506,7 @@ runStep configuration axioms = do
             Unlimited
             (transitionRule groupedRewrites All)
             (toList executionStrategy)
-            (StartExec $ mkRewritingPattern configuration)
+            (Step.Start $ mkRewritingPattern configuration)
     let y = pickFinal x
     return (extractExecutionState <$> y)
   where
@@ -521,7 +524,7 @@ runStepSMT configuration axioms = do
             Unlimited
             (transitionRule groupedRewrites All)
             (toList executionStrategy)
-            (StartExec $ mkRewritingPattern configuration)
+            (Step.Start $ mkRewritingPattern configuration)
     let y = pickFinal x
     return (extractExecutionState <$> y)
   where
