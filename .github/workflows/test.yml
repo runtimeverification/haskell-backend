@@ -14,7 +14,7 @@ jobs:
       with:
         name: runtimeverification
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - run: nix-build -A kore -A project.kore.checks
+    - run: nix-build --arg checkMaterialization true -A kore -A project.kore.checks
     - run: nix-shell --run "echo OK"
 
   test-cabal:
