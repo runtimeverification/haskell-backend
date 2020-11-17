@@ -364,6 +364,8 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
             runStrategy' =
                 runStrategy
                     breadthLimit
+                    -- search relies on exploring
+                    -- the entire space of states.
                     (transitionRule rewriteGroups All)
                     (limitedExecutionStrategy depthLimit)
         executionGraph <-

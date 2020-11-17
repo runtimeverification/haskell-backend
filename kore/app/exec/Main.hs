@@ -264,9 +264,6 @@ applyKoreSearchOptions Nothing koreExecOpts = koreExecOpts
 applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
     koreExecOpts
         { koreSearchOptions
-        , strategy =
-            -- Search relies on exploring the entire space of states.
-            ("all", All)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
