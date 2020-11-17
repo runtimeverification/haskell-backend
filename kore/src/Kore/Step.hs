@@ -13,10 +13,9 @@ module Kore.Step
     , Prim (..)
     , TransitionRule
     , executionStrategy
-    , extractExecutionState
+    , extractProgramState
     , transitionRule
       -- * Re-exports
-    , RulePattern
     , Natural
     , Strategy
     , pickLongest
@@ -33,6 +32,8 @@ import Data.Stream.Infinite
     ( Stream
     )
 import qualified Data.Stream.Infinite as Stream
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Numeric.Natural
     ( Natural
     )
@@ -52,6 +53,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 
+import Kore.Debug
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
@@ -64,12 +66,16 @@ import qualified Kore.Unification.Procedure as Unification
 {- TODO: docs
 -}
 data ProgramState a = Start !a | Rewritten !a | Remaining !a
-    deriving (Show, Functor)
+    deriving (Eq, Ord, Show)
+    deriving (Functor)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-extractExecutionState :: ProgramState a -> a
-extractExecutionState (Rewritten a) = a
-extractExecutionState (Remaining a) = a
-extractExecutionState (Start a) = a
+extractProgramState :: ProgramState a -> a
+extractProgramState (Rewritten a) = a
+extractProgramState (Remaining a) = a
+extractProgramState (Start a) = a
 
 executionStrategy :: Stream (Strategy Prim)
 executionStrategy =

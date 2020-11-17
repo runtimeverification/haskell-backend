@@ -85,9 +85,6 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr
-    ( make
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -259,7 +256,11 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
-        let finalConfigs' = make $ getRewritingPattern . extractExecutionState <$> finalConfigs
+        let finalConfigs' =
+                MultiOr.make
+                $ getRewritingPattern
+                . extractProgramState
+                <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
         let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
@@ -269,13 +270,6 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
         executionStrategy
         & toList
         & Limit.takeWithin depthLimit
-    -- getFinalConfigsOf
-    --     :: LogicT
-    --         (SimplifierT smt)
-    --         ( [Strategy (Prim (RewriteRule RewritingVariableName))]
-    --         , (ExecDepth, Pattern RewritingVariableName)
-    --         )
-    --     -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
     getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
@@ -388,7 +382,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                 Search.matchWith
                     target
                     config1
-                    (extractExecutionState config2)
+                    (extractProgramState config2)
         solutionsLists <-
             searchGraph
                 searchConfig
