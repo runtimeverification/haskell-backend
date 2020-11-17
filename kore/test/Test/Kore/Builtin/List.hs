@@ -426,29 +426,16 @@ test_make =
             predicate = mkEquals_ (mkInt $ max 0 len) original
         (===) (Pattern.fromTermLike (mkInt $ max 0 len)) =<< evaluateT original
         (===) Pattern.top                                =<< evaluateT predicate
-    , testPropertyWithSolver
-        "in(val, make(len, val)) = \\dv{Bool{}}(\"true\")"
-        $ do
-            value <- forAll genInteger
-            let patValue = Test.Int.asInternal value
-                patIn = inList patValue (makeList (mkInt 3) patValue)
-                patTrue = Test.Bool.asInternal True
-                predicate = mkEquals_ patIn patTrue
-            (===) (Test.Bool.asPattern True) =<< evaluateT patIn
-            (===) Pattern.top =<< evaluateT predicate
-    , testPropertyWithSolver
-        "val1 /= val2 => in(val1, make(len, val2)) = \\dv{Bool{}}(\"false\")"
-        $ do
-            value1 <- forAll genInteger
-            value2 <- forAll genInteger
-            let patValue1 = Test.Int.asInternal value1
-                patValue2 = Test.Int.asInternal value2
-                patIn = inList patValue1 (makeList (mkInt 3) patValue2)
-                patFalse = Test.Bool.asInternal False
-                predicate = mkEquals_ patIn patFalse
-            when (value1 /= value2) $ do
-                (===) (Test.Bool.asPattern False) =<< evaluateT patIn
-                (===) Pattern.top =<< evaluateT predicate
+    , testPropertyWithSolver "get( make(len, val), ix ) = val" $ do
+        value <- forAll genInteger
+        len <- forAll $ Gen.integral (Range.linear 1 20)
+        ix <- forAll $ Gen.integral (Range.linear 0 (len -1))
+        let patValue = Test.Int.asInternal value
+            patValues = makeList (mkInt len) patValue
+            patGet = getList patValues (mkInt ix)
+            predicate = mkEquals_ patGet patValue
+        (===) (Test.Int.asPattern value) =<< evaluateT patGet
+        (===) Pattern.top =<< evaluateT predicate
     ]
 
 mkInt :: Integer -> TermLike VariableName
