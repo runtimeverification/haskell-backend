@@ -102,11 +102,11 @@ commandLineParser =
         <> help "The name of the main module in the Kore definition"
         <> value "" )
     <*> enableDisableFlag "print-definition"
-        True False True
-        "printing parsed definition to stdout [default enabled]"
+        True False False
+        "printing parsed definition to stdout [default disabled]"
     <*> enableDisableFlag "print-pattern"
-        True False True
-        "printing parsed pattern to stdout [default enabled]"
+        True False False
+        "printing parsed pattern to stdout [default disabled]"
     <*> enableDisableFlag "verify"
         True False True
         "Verify well-formedness of parsed definition [default enabled]"
