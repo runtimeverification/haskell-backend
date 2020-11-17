@@ -47,9 +47,6 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
-import Data.List.Extra
-    ( groupSortOn
-    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -61,7 +58,6 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
-import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
     ( StepperAttributes
@@ -216,8 +212,8 @@ exec
     -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ExecutionStrategy
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
+    -> ExecutionMode
+    -- ^ The execution mode
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)
@@ -238,8 +234,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                             . Strategy.applyBreadthLimit
                                 breadthLimit
                                 dropStrategy
-                    rewriteGroups =
-                        groupSortOn Attribute.getPriorityOfAxiom rewriteRules
+                    rewriteGroups = groupRewritesByPriority rewriteRules
                     transit instr config =
                         Strategy.transitionRule
                             (transitionRule rewriteGroups strategy & trackExecDepth)
@@ -251,7 +246,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    ( limitedStrategy
+                    ( limitedExecutionStrategy depthLimit
                     , (ExecDepth 0, Start (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
@@ -266,10 +261,6 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
-    limitedStrategy =
-        executionStrategy
-        & toList
-        & Limit.takeWithin depthLimit
     getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
@@ -369,12 +360,12 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
             rewriteGroups =
-                groupSortOn Attribute.getPriorityOfAxiom rewriteRules
+                groupRewritesByPriority rewriteRules
             runStrategy' =
                 runStrategy
                     breadthLimit
                     (transitionRule rewriteGroups All)
-                    limitedStrategy
+                    (limitedExecutionStrategy depthLimit)
         executionGraph <-
             runStrategy' (Start $ mkRewritingPattern initialPattern)
         let
@@ -402,11 +393,6 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
             $ orPredicate
   where
     patternSort = termLikeSort termLike
-    limitedStrategy =
-        executionStrategy
-        & toList
-        & Limit.takeWithin depthLimit
-
 
 -- | Proving a spec given as a module containing rules to be proven
 prove

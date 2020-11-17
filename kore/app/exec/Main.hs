@@ -289,7 +289,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !(String, ExecutionStrategy)
+    , strategy            :: !(String, ExecutionMode)
     , koreSolverOptions   :: !KoreSolverOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)

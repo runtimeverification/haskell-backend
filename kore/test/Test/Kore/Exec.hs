@@ -52,7 +52,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
-    ( ExecutionStrategy (..)
+    ( ExecutionMode (..)
     )
 import Kore.Step.AntiLeft
     ( AntiLeft (AntiLeft)

@@ -7,14 +7,15 @@ Strategy-based interface to rule application (step-wise execution).
  -}
 
 module Kore.Step
-    ( -- * Primitive strategies
-      ExecutionStrategy (..)
+    ( ExecutionMode (..)
     , ProgramState (..)
     , Prim (..)
     , TransitionRule
     , executionStrategy
     , extractProgramState
     , transitionRule
+    , groupRewritesByPriority
+    , limitedExecutionStrategy
       -- * Re-exports
     , Natural
     , Strategy
@@ -28,6 +29,9 @@ import Prelude.Kore
 import Control.Monad
     ( foldM
     )
+import Data.List.Extra
+    ( groupSortOn
+    )
 import Data.Stream.Infinite
     ( Stream
     )
@@ -38,6 +42,7 @@ import Numeric.Natural
     ( Natural
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -53,6 +58,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 
+import Data.Limit
+    ( Limit (..)
+    )
+import qualified Data.Limit as Limit
 import Kore.Debug
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
@@ -63,7 +72,7 @@ import Kore.Step.Strategy hiding
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Unification.Procedure as Unification
 
-{- TODO: docs
+{- | The program's state during symbolic execution.
 -}
 data ProgramState a = Start !a | Rewritten !a | Remaining !a
     deriving (Eq, Ord, Show)
@@ -77,6 +86,12 @@ extractProgramState (Rewritten a) = a
 extractProgramState (Remaining a) = a
 extractProgramState (Start a) = a
 
+retractRemaining :: ProgramState a -> Maybe a
+retractRemaining (Remaining a) = Just a
+retractRemaining _ = Nothing
+
+{- | The sequence of transitions for the symbolic execution strategy.
+-}
 executionStrategy :: Stream (Strategy Prim)
 executionStrategy =
     (Strategy.sequence . fmap Strategy.apply)
@@ -86,7 +101,11 @@ executionStrategy =
         ]
     & Stream.iterate id
 
-{- TODO: docs
+limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
+limitedExecutionStrategy depthLimit =
+    Limit.takeWithin depthLimit (toList executionStrategy)
+
+{- The primitive transitions for the symbolic execution strategy.
 -}
 data Prim
     = Begin
@@ -94,9 +113,10 @@ data Prim
     | ApplyRewrites
     deriving (Show)
 
-{- TODO: docs
+{- The two modes of symbolic execution. Each mode determines the way
+    rewrite rules are applied during a rewrite step.
 -}
-data ExecutionStrategy = All | Any
+data ExecutionMode = All | Any
     deriving (Show)
 
 {- | @TransitionRule@ is the general type of transition rules over 'Prim'.
@@ -105,15 +125,12 @@ type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
 
 {- | Transition rule for primitive strategies in 'Prim'.
-
-@transitionRule@ is intended to be partially applied and passed to
-'Strategy.runStrategy'.
  -}
 transitionRule
     :: forall simplifier
     .  MonadSimplify simplifier
     => [[RewriteRule RewritingVariableName]]
-    -> ExecutionStrategy
+    -> ExecutionMode
     -> TransitionRule simplifier
             (RewriteRule RewritingVariableName)
             (ProgramState (Pattern RewritingVariableName))
@@ -131,48 +148,45 @@ transitionRule rewriteGroups = transitionRuleWorker
         Start <$> transitionSimplify patt
 
     transitionRuleWorker All ApplyRewrites (Remaining patt) =
-        transitionAllRewrite rewriteGroups patt
+        transitionAllRewrite patt
     transitionRuleWorker All ApplyRewrites (Start patt) =
-        transitionAllRewrite rewriteGroups patt
+        transitionAllRewrite patt
     transitionRuleWorker Any ApplyRewrites (Remaining patt) =
-        transitionAnyRewrite rewriteGroups patt
+        transitionAnyRewrite patt
     transitionRuleWorker Any ApplyRewrites (Start patt) =
-        transitionAnyRewrite rewriteGroups patt
+        transitionAnyRewrite patt
     transitionRuleWorker _ ApplyRewrites state = pure state
 
-    transitionSimplify = simplify'
+    transitionSimplify config = do
+        configs <- lift $ Pattern.simplifyTopConfiguration config
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        asum (pure <$> toList filteredConfigs)
 
-    transitionAnyRewrite xs config = do
-        let rules = concat xs
+    transitionAllRewrite config =
+        foldM transitionRewrite' (Remaining config) rewriteGroups
+      where
+        transitionRewrite' applied rewrites
+          | Just config' <- retractRemaining applied =
+            Step.applyRewriteRulesParallel
+                Unification.unificationProcedure
+                rewrites
+                config'
+                & lift
+            >>= deriveResults
+            >>= simplifyRemainder
+          | otherwise = pure applied
+        simplifyRemainder (Remaining p) =
+            Remaining <$> transitionSimplify p
+        simplifyRemainder p = return p
+
+    transitionAnyRewrite config = do
+        let rules = concat rewriteGroups
         results <-
             Step.applyRewriteRulesSequence
                 Unification.unificationProcedure
                 config
                 rules
         deriveResults results
-
-    transitionAllRewrite
-        :: [[RewriteRule RewritingVariableName]]
-        -> Pattern RewritingVariableName
-        -> TransitionT
-            (RewriteRule RewritingVariableName)
-            simplifier
-            (ProgramState (Pattern RewritingVariableName))
-    transitionAllRewrite xs config =
-        foldM transitionRewrite' (Remaining config) xs
-      where
-        transitionRewrite' applied rewrites
-          | Just conf <- retractApplyRemainder applied =
-            Step.applyRewriteRulesParallel
-                Unification.unificationProcedure
-                rewrites
-                conf
-                & lift
-            >>= deriveResults
-            >>= simplifyRemainder
-          | otherwise = pure applied
-        simplifyRemainder (Remaining p) = Remaining <$> transitionSimplify p
-        simplifyRemainder p = return p
 
 deriveResults
     :: Comonad w
@@ -188,18 +202,7 @@ deriveResults Result.Results { results, remainders } =
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
-retractApplyRemainder :: ProgramState a -> Maybe a
-retractApplyRemainder (Remaining a) = Just a
-retractApplyRemainder _ = Nothing
-
-simplify'
-    :: MonadSimplify simplifier
-    => Pattern RewritingVariableName
-    -> TransitionT
-            (RewriteRule RewritingVariableName)
-            simplifier
-            (Pattern RewritingVariableName)
-simplify' config = do
-    configs <- lift $ Pattern.simplifyTopConfiguration config
-    filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-    asum (pure <$> toList filteredConfigs)
+groupRewritesByPriority
+    :: [RewriteRule variable] -> [[RewriteRule variable]]
+groupRewritesByPriority rewriteRules =
+    groupSortOn Attribute.getPriorityOfAxiom rewriteRules

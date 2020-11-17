@@ -19,10 +19,6 @@ import Data.Generics.Wrapped
 import Data.Limit
     ( Limit (..)
     )
-import qualified Data.Limit as Limit
-import Data.List.Extra
-    ( groupSortOn
-    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern
@@ -330,8 +326,8 @@ runStep
     -- ^ depth limit
     -> Limit Natural
     -- ^ breadth limit
-    -> ExecutionStrategy
-    -- ^ execution strategy
+    -> ExecutionMode
+    -- ^ execution mode
     -> Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
@@ -343,8 +339,8 @@ runStepSMT
     -- ^ depth limit
     -> Limit Natural
     -- ^ breadth limit
-    -> ExecutionStrategy
-    -- ^ execution strategy
+    -> ExecutionMode
+    -- ^ execution mode
     -> Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
@@ -363,8 +359,8 @@ runStepWorker
     -- ^ depth limit
     -> Limit Natural
     -- ^ breadth limit
-    -> ExecutionStrategy
-    -- ^ execution strategy
+    -> ExecutionMode
+    -- ^ execution mode
     -> Pattern VariableName
     -- ^left-hand-side of unification
     -> [RewriteRule RewritingVariableName]
@@ -389,7 +385,5 @@ runStepWorker
             <$> pickFinal result
     return finalResult
   where
-    groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom rules
-    limitedDepth =
-        Limit.takeWithin depthLimit
-        $ toList executionStrategy
+    groupedRewrites = groupRewritesByPriority rules
+    limitedDepth = limitedExecutionStrategy depthLimit
