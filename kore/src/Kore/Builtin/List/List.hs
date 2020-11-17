@@ -24,6 +24,7 @@ module Kore.Builtin.List.List
     , updateKey
     , inKey
     , sizeKey
+    , makeKey
     ) where
 
 import Prelude.Kore
@@ -197,3 +198,6 @@ inKey = "LIST.in"
 
 sizeKey :: IsString s => s
 sizeKey = "LIST.size"
+
+makeKey :: IsString s => s
+makeKey = "LIST.make"
