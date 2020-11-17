@@ -954,13 +954,16 @@ the definedness symbols for all the sorts $s_1$ and $s_2$.
 
 Note that, by default, symbols are interpreted as relations in matching logic.
 It is often the case, though, that we want symbols to be interpreted as
-\emph{functions}.
+(partial or total) \emph{functions}.
 This can be easily done by axiomatically constraining those symbols to evaluate to
 singletons.
 For example, if $f$ is a unary symbol, then the pattern equation
 ``$\forall x\,.\,\exists y\,.\,f(x) = y$'' (the convention for free variables
 allows us to drop the universal quantifier) states that in any model
-$M$, the set $f_M(a)$ contains precisely one element for any $a\in M$.
+$M$, the set $f_M(a)$ contains precisely one element for any $a\in M$;
+i.e. $f$ is a total function.
+Likewise, ``$\forall x\,.\,\exists y\,.\,\lceil f(x) \rceil \rightarrow f(x) = y$''
+states that $f_M(a)$ contains at most one element ($f$ is a partial function).
 %
 Inspired from similar notations in other logics,
 we adopt the familiar notation
