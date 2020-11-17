@@ -2,6 +2,7 @@ module Test.Kore.Step
     ( test_constructorRewriting
     , test_ruleThatDoesn'tApply
     , test_stepStrategy
+    , test_stepStrategyTODO
     , test_SMT
     , test_unificationError
     ) where
@@ -16,10 +17,14 @@ import Data.Default
     ( def
     )
 import Data.Generics.Product
+import Data.Generics.Wrapped
+    ( _Unwrapped
+    )
 
 import Data.Limit
     ( Limit (..)
     )
+import qualified Data.Limit as Limit
 import Data.List.Extra
     ( groupSortOn
     )
@@ -45,8 +50,11 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
+    , makeNotPredicate
     , makeTruePredicate
     , makeTruePredicate_
     )
@@ -149,7 +157,7 @@ takeSteps (Start start, wrappedAxioms) = do
                 (pure $ makeRewritingTerm start)
                 ((fmap . fmap) mkRewritingRule groupedRewrites)
     let y = pickLongest x
-    return (extractExecutionState y)
+    return (extractProgramState y)
   where
     makeExecutionGraph
         :: Pattern RewritingVariableName
@@ -300,6 +308,273 @@ test_stepStrategy =
         -- Expected: empty result list
         (assertEqual "" expectFailCycle =<< actualFailCycle)
     ]
+
+test_stepStrategyTODO :: [TestTree]
+test_stepStrategyTODO =
+    [ testGroup "depth = 0: remains in Start" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    [ actual ] <-
+                        runStepTODO
+                            (Limit 0)
+                            Unlimited
+                            strategy'
+                            aPatt
+                            [simpleRewrite Mock.a Mock.b]
+                    assertEqual "" (Step.Start aPatt) actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "depth = 1: applies rewrite rule, transitions to Rewritten" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    [ actual ] <-
+                        runStepTODO
+                            (Limit 1)
+                            Unlimited
+                            strategy'
+                            aPatt
+                            [simpleRewrite Mock.a Mock.b]
+                    assertEqual "" (Step.Rewritten bPatt) actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "depth = 2: no more rules can apply, becomes Remaining" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    [ actual ] <-
+                        runStepTODO
+                            (Limit 2)
+                            Unlimited
+                            strategy'
+                            aPatt
+                            [simpleRewrite Mock.a Mock.b]
+                    assertEqual "" (Step.Remaining bPatt) actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "breadth = 1: fails when breadth limit is exceeded" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    actual <-
+                        runStepSMTTODO
+                            Unlimited
+                            (Limit 1)
+                            strategy'
+                            xPatt
+                            [simpleRewrite Mock.a Mock.b]
+                        & try
+                    expectLimitExceeded actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "single rule application with remainder" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    actual <-
+                        runStepSMTTODO
+                            Unlimited
+                            Unlimited
+                            strategy'
+                            xPatt
+                            [ simpleRewrite Mock.a Mock.b
+                            ]
+                    let rewrittenPattern =
+                            Pattern.withCondition
+                                Mock.b
+                                (Condition.assign (inject Mock.x) Mock.a)
+                        remainderPattern =
+                            Pattern.fromTermAndPredicate
+                                xTerm
+                                ( makeNotPredicate
+                                    $ makeEqualsPredicate Mock.testSort
+                                        xTerm
+                                        Mock.a
+                                )
+                    assertEqual
+                        ""
+                        [ Step.Remaining remainderPattern
+                        , Step.Remaining rewrittenPattern
+                        ]
+                        actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "multiple rules, narrowing, variable renaming, remainders" $
+        -- Program: c10( f( X ) )
+        -- Rewrite rules:
+        --   - c10( a )      => c11( g( X ) )
+        --   - c11( g( b ) ) => c
+        let mkTest name strategy' =
+                testCase name $ do
+                    actual <-
+                        runStepSMTTODO
+                            Unlimited
+                            Unlimited
+                            strategy'
+                            ( Mock.functionalConstr10 (Mock.f xTerm)
+                            & Pattern.fromTermLike
+                            )
+                            [ simpleRewrite
+                                (Mock.functionalConstr10 Mock.a)
+                                (Mock.functionalConstr11 (Mock.g xTerm))
+                            , simpleRewrite
+                                (Mock.functionalConstr11
+                                    (Mock.g Mock.b))
+                                    Mock.c
+                            ]
+                    let -- f( X ) /\ not( a == f( X ) )
+                        firstRemainderPattern =
+                            Pattern.fromTermAndPredicate
+                                (Mock.functionalConstr10 (Mock.f xTerm))
+                                ( makeNotPredicate
+                                    $ makeEqualsPredicate Mock.testSort
+                                        Mock.a
+                                        (Mock.f xTerm)
+                                )
+                        --    c11 ( g( X0 ) )
+                        -- /\ a == f( X )
+                        -- /\ not( ceil( g( b ) ) /\ g( b ) == g( X0 ) )
+                        secondRemainderPattern =
+                            Pattern.fromTermAndPredicate
+                                (Mock.functionalConstr11 (Mock.g (mkElemVar Mock.var_x_0)))
+                                (makeAndPredicate
+                                    ( makeEqualsPredicate Mock.testSort
+                                        Mock.a
+                                        (Mock.f xTerm)
+                                    )
+                                    ( makeNotPredicate
+                                        (makeAndPredicate
+                                            ( makeCeilPredicate Mock.testSort
+                                                (Mock.g Mock.b)
+                                            )
+                                            (makeEqualsPredicate Mock.testSort
+                                                (Mock.g Mock.b)
+                                                (Mock.g (mkElemVar Mock.var_x_0))
+                                            )
+                                        )
+                                    )
+                                )
+                        -- c /\ ceil( g( b ) ) /\ a == f( X ) /\ g( b ) == g( X0 )
+                        finalRewrittenPattern =
+                            Pattern.fromTermAndPredicate
+                                Mock.c
+                                (makeAndPredicate
+                                    (makeCeilPredicate Mock.testSort (Mock.g Mock.b))
+                                    (makeAndPredicate
+                                        (makeEqualsPredicate Mock.testSort
+                                            Mock.a
+                                            (Mock.f xTerm)
+                                        )
+                                        (makeEqualsPredicate Mock.testSort
+                                            (Mock.g Mock.b)
+                                            (Mock.g (mkElemVar Mock.var_x_0))
+                                        )
+                                    )
+                                )
+                    assertEqual
+                        ""
+                        [ Step.Remaining firstRemainderPattern
+                        , Step.Remaining secondRemainderPattern
+                        , Step.Remaining finalRewrittenPattern
+                        ]
+                        actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "applies rules in priority order" $
+        let mkTest name strategy' =
+                testCase name $ do
+                    actual <-
+                        runStepTODO
+                            Unlimited
+                            Unlimited
+                            strategy'
+                            aPatt
+                            [ simplePriorityRewrite Mock.a Mock.b 2
+                            , simplePriorityRewrite Mock.a Mock.c 1
+                            , simpleRewrite Mock.c Mock.d
+                            ]
+                    assertEqual
+                        ""
+                        [Step.Remaining dPatt]
+                        actual
+        in
+        [ mkTest "strategy all" All
+        , mkTest "strategy any" Any
+        ]
+    , testGroup "non-deterministic rules" $
+        let program = aPatt
+            rules =
+                [ simpleRewrite Mock.a Mock.b
+                , simpleRewrite Mock.a Mock.c
+                ]
+        in
+        [ testCase "strategy all: considers both branches" $ do
+            actual <-
+                runStepTODO Unlimited Unlimited All program rules
+            assertEqual
+                ""
+                [Step.Remaining bPatt, Step.Remaining cPatt]
+                actual
+        , testCase "strategy any: picks only one branch" $ do
+            actual <-
+                runStepTODO Unlimited Unlimited Any program rules
+            assertEqual
+                ""
+                [Step.Remaining bPatt]
+                actual
+        ]
+    ]
+  where
+    aPatt = Pattern.fromTermLike Mock.a
+    bPatt = Pattern.fromTermLike Mock.b
+    cPatt = Pattern.fromTermLike Mock.c
+    dPatt = Pattern.fromTermLike Mock.d
+    xPatt = Pattern.fromTermLike xTerm
+    xTerm = mkElemVar Mock.x
+
+    try
+        :: Exception.Exception e
+        => e ~ Strategy.LimitExceeded Int
+        => IO a
+        -> IO (Either e a)
+    try = Exception.try
+    expectLimitExceeded result =
+        case result of
+            Left (Strategy.LimitExceeded _) ->
+                return ()
+            Right _ ->
+                assertFailure "Expected exception LimitExceeded"
+
+simpleRewrite
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> RewriteRule RewritingVariableName
+simpleRewrite left right =
+    mkRewritingRule
+    $ RewriteRule
+    $ rulePattern left right
+
+simplePriorityRewrite
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> Integer
+    -> RewriteRule RewritingVariableName
+simplePriorityRewrite left right priority =
+    Lens.set
+        ( _Unwrapped
+        . field @"attributes"
+        . field @"priority"
+        )
+        (Attribute.Priority (Just priority))
+        (simpleRewrite left right)
 
 data PredicateState = PredicatePositive | PredicateNegated
 
@@ -508,7 +783,55 @@ runStep configuration axioms = do
             (toList executionStrategy)
             (Step.Start $ mkRewritingPattern configuration)
     let y = pickFinal x
-    return (extractExecutionState <$> y)
+    return (extractProgramState <$> y)
+  where
+    groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom axioms
+
+runStepTODO
+    :: Limit Natural
+    -- ^ depth limit
+    -> Limit Natural
+    -- ^ breadth limit
+    -> ExecutionStrategy
+    -- ^ execution strategy
+    -> Pattern VariableName
+    -- ^left-hand-side of unification
+    -> [RewriteRule RewritingVariableName]
+    -> IO [ProgramState (Pattern VariableName)]
+runStepTODO depthLimit breadthLimit execStrategy configuration axioms = do
+    x <-
+        runSimplifier Mock.env
+        $ runStrategy
+            breadthLimit
+            (transitionRule groupedRewrites execStrategy)
+            (Limit.takeWithin depthLimit $ toList executionStrategy)
+            (Step.Start $ mkRewritingPattern configuration)
+    let y = pickFinal x
+    return $ fmap getRewritingPattern <$> y
+  where
+    groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom axioms
+
+runStepSMTTODO
+    :: Limit Natural
+    -- ^ depth limit
+    -> Limit Natural
+    -- ^ breadth limit
+    -> ExecutionStrategy
+    -- ^ execution strategy
+    -> Pattern VariableName
+    -- ^left-hand-side of unification
+    -> [RewriteRule RewritingVariableName]
+    -> IO [ProgramState (Pattern VariableName)]
+runStepSMTTODO depthLimit breadthLimit execStrategy configuration axioms = do
+    x <-
+        runSimplifierSMT Mock.env
+        $ runStrategy
+            breadthLimit
+            (transitionRule groupedRewrites execStrategy)
+            (Limit.takeWithin depthLimit $ toList executionStrategy)
+            (Step.Start $ mkRewritingPattern configuration)
+    let y = pickFinal x
+    return $ fmap getRewritingPattern <$> y
   where
     groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom axioms
 
@@ -526,6 +849,6 @@ runStepSMT configuration axioms = do
             (toList executionStrategy)
             (Step.Start $ mkRewritingPattern configuration)
     let y = pickFinal x
-    return (extractExecutionState <$> y)
+    return (extractProgramState <$> y)
   where
     groupedRewrites = groupSortOn Attribute.getPriorityOfAxiom axioms
