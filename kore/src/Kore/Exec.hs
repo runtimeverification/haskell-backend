@@ -284,7 +284,7 @@ trackExecDepth transit prim (execDepth, execState) = do
   where
     didRewrite _ = isRewrite prim
 
-    isRewrite ApplyRewrites = True
+    isRewrite Rewrite = True
     isRewrite _ = False
 
 -- | Project the value of the exit cell, if it is present.

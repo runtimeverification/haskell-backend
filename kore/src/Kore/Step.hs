@@ -105,7 +105,7 @@ executionStrategy =
     (Strategy.sequence . fmap Strategy.apply)
         [ Begin
         , Simplify
-        , ApplyRewrites
+        , Rewrite
         ]
     & Stream.iterate id
 
@@ -118,7 +118,7 @@ limitedExecutionStrategy depthLimit =
 data Prim
     = Begin
     | Simplify
-    | ApplyRewrites
+    | Rewrite
     deriving (Show)
 
 {- The two modes of symbolic execution. Each mode determines the way
@@ -146,7 +146,7 @@ transitionRule rewriteGroups = transitionRuleWorker
   where
     transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
-    transitionRuleWorker _ Begin state = pure state
+    transitionRuleWorker _ Begin state@(Start _) = pure state
 
     transitionRuleWorker _ Simplify (Rewritten patt) =
         Rewritten <$> transitionSimplify patt
@@ -155,20 +155,22 @@ transitionRule rewriteGroups = transitionRuleWorker
     transitionRuleWorker _ Simplify (Start patt) =
         Start <$> transitionSimplify patt
 
-    transitionRuleWorker All ApplyRewrites (Remaining patt) =
-        transitionAllRewrite patt
-    transitionRuleWorker All ApplyRewrites (Start patt) =
-        transitionAllRewrite patt
-    transitionRuleWorker Any ApplyRewrites (Remaining patt) =
-        transitionAnyRewrite patt
-    transitionRuleWorker Any ApplyRewrites (Start patt) =
-        transitionAnyRewrite patt
-    transitionRuleWorker _ ApplyRewrites state = pure state
+    transitionRuleWorker mode Rewrite (Remaining patt) =
+        transitionRewrite mode patt
+    transitionRuleWorker mode Rewrite (Start patt) =
+        transitionRewrite mode patt
+    transitionRuleWorker _ Rewrite state@(Rewritten _) =
+        pure state
 
     transitionSimplify config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
         asum (pure <$> toList filteredConfigs)
+
+    transitionRewrite All patt =
+        transitionAllRewrite patt
+    transitionRewrite Any patt =
+        transitionAnyRewrite patt
 
     transitionAllRewrite config =
         foldM transitionRewrite' (Remaining config) rewriteGroups
