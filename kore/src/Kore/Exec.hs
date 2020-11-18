@@ -213,7 +213,6 @@ exec
     -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> ExecutionMode
-    -- ^ The execution mode
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)

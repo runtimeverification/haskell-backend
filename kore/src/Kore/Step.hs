@@ -74,7 +74,15 @@ import qualified Kore.Unification.Procedure as Unification
 
 {- | The program's state during symbolic execution.
 -}
-data ProgramState a = Start !a | Rewritten !a | Remaining !a
+data ProgramState a
+    = Start !a
+    -- ^ The beginning of an execution step.
+    | Rewritten !a
+    -- ^ The configuration was rewritten after applying
+    -- the rewrite rules.
+    | Remaining !a
+    -- ^ The configuration is a remainder resulting
+    -- from rewrite rule application.
     deriving (Eq, Ord, Show)
     deriving (Functor)
     deriving (GHC.Generic)
