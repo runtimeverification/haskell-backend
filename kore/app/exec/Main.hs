@@ -56,6 +56,7 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import qualified Options.Applicative.Help.Pretty as OptPretty
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
@@ -377,7 +378,15 @@ parseKoreExecOptions startTime =
         case val :: String of
             "all" -> return All
             "any" -> return Any
-            _ -> empty
+            _ ->
+                readerError
+                $ show
+                $ OptPretty.hsep
+                    [ "Unknown option"
+                    , OptPretty.squotes (OptPretty.text val)
+                        <> OptPretty.dot
+                    , "Known options are 'all' and 'any'."
+                    ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
