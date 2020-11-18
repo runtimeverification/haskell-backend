@@ -13,6 +13,7 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_updateAll
     , hprop_unparse
     , test_size
     --
@@ -416,6 +417,65 @@ test_size =
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
     ]
+
+test_updateAll :: TestTree
+test_updateAll =
+    testPropertyWithSolver
+        "get( updateAll(list1, indexChange, list2), indexGet )"
+        prop
+  where
+    prop = do
+        values1 <- forAll genSeqInteger
+        values2 <- forAll genSeqInteger
+        indexChange <- forAll genSeqIndex
+        let len1 = fromIntegral @_ @Integer $ length values1
+            len2 = fromIntegral @_ @Integer $ length values2
+        indexGet <- forAll $ Gen.integral (Range.linear 0 (len1 - 1))
+        let patIxGet, patIxChange :: TermLike VariableName
+            patIxGet = Test.Int.asInternal indexGet
+            patIxChange = Test.Int.asInternal indexChange
+            patValues1 = asTermLike $ Test.Int.asInternal <$> values1
+            patValues2 = asTermLike $ Test.Int.asInternal <$> values2
+            patUpdated = updateAllList patValues1 patIxChange patValues2
+            patGet = getList patUpdated patIxGet
+
+            indicesInsideBounds =
+                (-len1) <= indexChange && indexChange < len1
+                && ((indexChange >= 0) `implies` (indexChange + len2 <= len1))
+                && ((indexChange < 0) `implies` (indexChange + len2 <= 0))
+              where
+                implies = (<=)
+            changedPosition
+              | indexChange < 0 = indexChange + len1
+              | otherwise = indexChange
+
+        if indicesInsideBounds
+          then
+            if indexGet < changedPosition || changedPosition + len2 <= indexGet
+              -- if position indexGet was not affected by the update
+              then do
+                let expect = getList patValues1 patIxGet
+                    predicate = mkEquals_ patGet (getList patValues1 patIxGet)
+                (===) Pattern.top  =<< evaluateT predicate
+                evalExpect <- evaluateT expect
+                evalGet    <- evaluateT patGet
+                (===) evalExpect evalGet
+              -- if position indexGet was affected by the update
+              else do
+                let ixOriginalValue =
+                        Test.Int.asInternal $ indexGet - changedPosition
+                    expect = getList patValues2 ixOriginalValue
+                    predicate =
+                        mkEquals_ patGet (getList patValues2 ixOriginalValue)
+                (===) Pattern.top  =<< evaluateT predicate
+                evalExpect <- evaluateT expect
+                evalGet    <- evaluateT patGet
+                (===) evalExpect evalGet
+          else do
+            let predicate = mkEquals_ mkBottom_ patUpdated
+            (===) Pattern.bottom =<< evaluateT patUpdated
+            (===) Pattern.top =<< evaluateT predicate
+
 
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal

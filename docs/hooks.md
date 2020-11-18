@@ -704,6 +704,17 @@ The number of elements in the given list.
         [hook{}("LIST.size")]
 ~~~
 
+## LIST.updateAll
+
+`LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`
+where the `N` elements of `L1` starting at `index` are replaced with the
+contents of `L2`.
+
+~~~
+    hooked-symbol updateAll{}(List{}, Int{}, List{}) : List{}
+        [hook{}("LIST.updateAll")]
+~~~
+
 ## SET
 
 Depends on `BOOL`.

@@ -194,6 +194,9 @@ symbolVerifiers =
     , ( sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
+    , ( updateAllKey
+      , Builtin.verifySymbol assertSort [assertSort, Int.assertSort, assertSort]
+      )
     ]
 
 {- | Abort function evaluation if the argument is not a List domain value.
@@ -324,6 +327,29 @@ evalSize resultSort [_list] = do
         & return
 evalSize _ _ = Builtin.wrongArity sizeKey
 
+evalUpdateAll :: Builtin.Function
+evalUpdateAll resultSort [_list1, _ix, _list2] = do
+    _list1 <- expectBuiltinList getKey _list1
+    _list2 <- expectBuiltinList getKey _list2
+    _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
+    let len1 = Seq.length _list1
+        len2 = Seq.length _list2
+        ix
+            | _ix < 0 =
+            -- negative indices count from end of list
+            _ix + len1
+            | otherwise = _ix
+    if ix >= 0 && ix < len1 && ix + len2 <= len1
+        then
+            returnList
+                resultSort
+                ( Seq.take ix _list1
+                    <> _list2
+                    <> Seq.drop (ix + length _list2) _list1
+                )
+        else return (Pattern.bottomOf resultSort)
+evalUpdateAll _ _ = Builtin.wrongArity updateKey
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
@@ -336,6 +362,7 @@ builtinFunctions =
         , (updateKey, Builtin.functionEvaluator evalUpdate)
         , (inKey, Builtin.functionEvaluator evalIn)
         , (sizeKey, Builtin.functionEvaluator evalSize)
+        , (updateAllKey, Builtin.functionEvaluator evalUpdateAll)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
