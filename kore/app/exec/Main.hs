@@ -286,7 +286,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !(String, ExecutionMode)
+    , strategy            :: !ExecutionMode
     , koreSolverOptions   :: !KoreSolverOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
@@ -339,17 +339,12 @@ parseKoreExecOptions startTime =
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
-        option (readSum "strategy" strategies)
+        option parseExecutionMode
             (  metavar "STRATEGY"
             <> long "strategy"
-            <> value ("all", All)
+            <> value All
             <> help "Select rewrites using STRATEGY."
             )
-      where
-        strategies =
-            [ ("any", Any)
-            , ("all", All)
-            ]
 
     breadth =
         option auto
@@ -377,6 +372,12 @@ parseKoreExecOptions startTime =
             , long "rts-statistics"
             , help "Write runtime statistics to FILENAME in JSON format."
             ]
+    parseExecutionMode = do
+        val <- str
+        case val :: String of
+            "all" -> return All
+            "any" -> return Any
+            _ -> empty
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -453,7 +454,7 @@ koreExecSh
                 <$> maybeLimit Nothing Just breadthLimit
             , (\limit -> unwords ["--depth", show limit])
                 <$> maybeLimit Nothing Just depthLimit
-            , pure $ "--strategy " <> fst strategy
+            , pure $ "--strategy " <> unparseExecutionMode strategy
             , rtsStatistics $>
                 unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
             ]
@@ -463,6 +464,8 @@ koreExecSh
         , maybe mempty unparseKoreProveOptions koreProveOptions
         , maybe mempty unparseKoreMergeOptions koreMergeOptions
         ]
+    unparseExecutionMode All = "all"
+    unparseExecutionMode Any = "any"
 
 defaultDefinitionFilePath :: KoreExecOptions -> FilePath
 defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
@@ -624,7 +627,7 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule
-        $ exec depthLimit breadthLimit mainModule (snd strategy) initial
+        $ exec depthLimit breadthLimit mainModule strategy initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
