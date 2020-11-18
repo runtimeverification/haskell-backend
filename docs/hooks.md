@@ -706,7 +706,7 @@ The number of elements in the given list.
 
 ### LIST.make
 
-`LIST.make(n, x)` is a list of length n with x the value of every element.
+`LIST.make(n, x)` is a list of length `n` with `x` the value of every element.
 If `n` is negative then the resulting list empty.
 
 ~~~

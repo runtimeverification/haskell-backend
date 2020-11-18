@@ -330,10 +330,10 @@ evalSize _ _ = Builtin.wrongArity sizeKey
 evalMake :: Builtin.Function
 evalMake resultSort [_len, value] = do
     _len <- fromInteger <$> Int.expectBuiltinInt getKey _len
-    let len
-          | _len < 0 = 0
-          | otherwise = _len
-    returnList resultSort (Seq.replicate len value)
+    if _len >= 0
+        then
+            returnList resultSort (Seq.replicate _len value)
+        else return (Pattern.bottomOf resultSort)
 evalMake _ _ = Builtin.wrongArity sizeKey
 
 {- | Implement builtin function evaluation.

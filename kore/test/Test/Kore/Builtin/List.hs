@@ -422,10 +422,16 @@ test_make :: [TestTree]
 test_make =
     [ testPropertyWithSolver "size( make(len, val) ) = len" $ do
         len <- forAll genSeqIndex
-        let original = sizeList $ makeList (mkInt len) (mkInt 5)
-            predicate = mkEquals_ (mkInt $ max 0 len) original
-        (===) (Pattern.fromTermLike (mkInt $ max 0 len)) =<< evaluateT original
-        (===) Pattern.top                                =<< evaluateT predicate
+        let newList = makeList (mkInt len) (mkInt 5)
+        if len >= 0 then do
+            let original = sizeList newList
+                predicate = mkEquals_ (mkInt len) original
+            (===) (Pattern.fromTermLike (mkInt len)) =<< evaluateT original
+            (===) Pattern.top                        =<< evaluateT predicate
+        else do
+            let predicate = mkEquals_ mkBottom_ newList
+            (===) Pattern.bottom =<< evaluateT newList
+            (===) Pattern.top =<< evaluateT predicate
     , testPropertyWithSolver "get( make(len, val), ix ) = val" $ do
         value <- forAll genInteger
         len <- forAll $ Gen.integral (Range.linear 1 20)
