@@ -334,10 +334,10 @@ test_onePathStrategy =
         -- Normal axiom: constr11(x) => h(x)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   Stuck after removing the destination during
+        --   Stuck after checking the implication during
         --   the second step.
         --
-        --   If remove destination didn't
+        --   If the check implication transition didn't
         --   detect that the conditions do not meet, then
         --   the configuration would have resulted in:
         --      (f(b) and x=b)
