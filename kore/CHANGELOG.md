@@ -14,6 +14,25 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.34.0.0] - 2020-11-16
+
+### Added
+
+- The `STRING.string2base` hook parses signed hexadecimal values. (#2251)
+- The `\left-assoc` and `\right-assoc` notations are parsed. (#2124)
+- Functional terms are translated as uninterpreted functions for the SMT solver
+  if no other translation is available. (#2261)
+
+### Fixed
+
+- The environment variable `KORE_EXEC_OPTS` has no effect outside
+  `kore-exec`. (#2235)
+- Claims with an `ensures` clause does not cause an internal error. (#2221)
+- The `--strategy all` option is effective. (#2205)
+- The rule merger does not complain about duplicate names when there are not
+  duplicate names. (#2226, #2228)
+- `kore-parser` prints human-readable error messages. (#2243)
+
 ## [0.33.0.0] - 2020-10-29
 
 ### Added

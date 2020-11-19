@@ -262,6 +262,12 @@ dummyIntSymbol = unaryIntSymbol "f" & function
 dummyInt :: TermLike VariableName -> TermLike VariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
 
+dummyFunctionalIntSymbol :: Internal.Symbol
+dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
+
+dummyFunctionalInt :: TermLike VariableName -> TermLike VariableName
+dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
+
 addInt, subInt, mulInt, divInt, tdivInt, tmodInt
     :: TermLike VariableName
     -> TermLike VariableName
