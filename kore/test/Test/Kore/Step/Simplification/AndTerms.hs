@@ -39,11 +39,13 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
+    ( top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
+    ( mkRepresentation
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
@@ -1570,5 +1572,5 @@ simplifyEquals simplifierAxioms first second =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation
+    SideCondition.Representation.mkRepresentation
     (SideCondition.top :: SideCondition VariableName)

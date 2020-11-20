@@ -45,10 +45,12 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( mapVariables
-    , toRepresentation
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
+    ( mkRepresentation
     )
 import qualified Kore.Internal.Substitution as Substitution
     ( toMap
@@ -180,7 +182,8 @@ simplify sideCondition = \termLike ->
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
-    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+    sideConditionRepresentation =
+        SideCondition.Representation.mkRepresentation sideCondition
 
     simplifyChildren
         :: Traversable t

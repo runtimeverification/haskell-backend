@@ -46,7 +46,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
@@ -99,7 +99,7 @@ definitionEvaluation equations =
                 case getMin <$> getOption minError of
                     Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
+                            (SideCondition.Representation.mkRepresentation condition)
                     _ -> return NotApplicable
 
 attemptEquationAndAccumulateErrors
@@ -154,7 +154,7 @@ simplificationEvaluation equation =
                 case err of
                     Equation.WhileCheckRequires _ ->
                         (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
+                            (SideCondition.Representation.mkRepresentation condition)
                     _ -> return NotApplicable
 
 {-| Creates an evaluator that choses the result of the first evaluator that
@@ -277,7 +277,7 @@ applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
 applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
     return
     $ AttemptedAxiom.NotApplicableUntilConditionChanges
-    $ SideCondition.toRepresentation sideCondition
+    $ SideCondition.Representation.mkRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults

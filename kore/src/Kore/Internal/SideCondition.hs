@@ -17,7 +17,6 @@ module Kore.Internal.SideCondition
     , top
     , topTODO
     , toPredicate
-    , toRepresentation
     , isNormalized
     ) where
 
@@ -41,7 +40,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
-import Kore.Internal.SideCondition.SideCondition as SideCondition
+-- import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Variable
     ( InternalVariable
     , SubstitutionOrd
@@ -63,10 +62,9 @@ It is not added to the result.
 It is usually used to remove infeasible branches, but it may also be used for
 other purposes, say, to remove redundant parts of the result predicate.
 -}
-data SideCondition variable =
+newtype SideCondition variable =
     SideCondition
-        { representation :: !SideCondition.Representation
-        , assumedTrue :: !(Condition variable)
+        { assumedTrue :: Condition variable
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -83,11 +81,11 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _ _) =
+    isTop sideCondition@(SideCondition _) =
         isTop assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
-    isBottom sideCondition@(SideCondition _ _) =
+    isBottom sideCondition@(SideCondition _) =
         isBottom assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
@@ -95,31 +93,25 @@ instance TopBottom (SideCondition variable) where
 instance InternalVariable variable
     => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables sideCondition@(SideCondition _ _) =
+    freeVariables sideCondition@(SideCondition _) =
         freeVariables assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
 
 instance InternalVariable variable => Unparse (SideCondition variable) where
-    unparse sideCondition@(SideCondition _ _) =
+    unparse sideCondition@(SideCondition _) =
         unparse assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
 
-    unparse2 sideCondition@(SideCondition _ _) =
+    unparse2 sideCondition@(SideCondition _) =
         unparse2 assumedTrue
       where
         SideCondition {assumedTrue} = sideCondition
 
-instance
-    InternalVariable variable
-    => From (Condition variable) (SideCondition variable)
+instance From (Condition variable) (SideCondition variable)
   where
-    from assumedTrue =
-        SideCondition
-            { representation = toRepresentationCondition assumedTrue
-            , assumedTrue
-            }
+      from = SideCondition
 
 instance From (SideCondition variable) (Condition variable) where
     from = assumedTrue
@@ -152,15 +144,11 @@ andCondition
     -> Condition variable
     -> SideCondition variable
 andCondition SideCondition { assumedTrue } newCondition =
-    SideCondition
-    { representation = toRepresentationCondition merged
-    , assumedTrue = merged
-    }
+    SideCondition merged
   where
     merged = assumedTrue `Condition.andCondition` newCondition
 
-assumeTrueCondition
-    :: InternalVariable variable => Condition variable -> SideCondition variable
+assumeTrueCondition :: Condition variable -> SideCondition variable
 assumeTrueCondition = fromCondition
 
 assumeTruePredicate
@@ -172,39 +160,35 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _ _) =
+toPredicate condition@(SideCondition _) =
     Condition.toPredicate assumedTrue
   where
     SideCondition { assumedTrue } = condition
-
-toRepresentation :: SideCondition variable -> SideCondition.Representation
-toRepresentation SideCondition { representation } = representation
 
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _ _) =
+mapVariables adj condition@(SideCondition _) =
     fromCondition (Condition.mapVariables adj assumedTrue)
   where
     SideCondition { assumedTrue } = condition
 
-fromCondition
-    :: InternalVariable variable => Condition variable -> SideCondition variable
+fromCondition :: Condition variable -> SideCondition variable
 fromCondition = from
 
 fromPredicate
     :: InternalVariable variable => Predicate variable -> SideCondition variable
 fromPredicate = fromCondition . from
 
-toRepresentationCondition
-    :: InternalVariable variable
-    => Condition variable
-    -> SideCondition.Representation
-toRepresentationCondition =
-    mkRepresentation
-    . Condition.mapVariables @_ @VariableName (pure toVariableName)
+-- toRepresentationCondition
+--     :: InternalVariable variable
+--     => Condition variable
+--     -> SideCondition.Representation
+-- toRepresentationCondition =
+--     mkRepresentation
+--     . Condition.mapVariables @_ @VariableName (pure toVariableName)
 
 isNormalized :: forall variable. Ord variable => SideCondition variable -> Bool
 isNormalized = Conditional.isNormalized . from @_ @(Condition variable)

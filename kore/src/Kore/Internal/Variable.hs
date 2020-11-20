@@ -107,4 +107,5 @@ type InternalVariable variable =
     , Debug variable, Show variable, Unparse variable
     , From VariableName variable, From variable VariableName
     , FreshPartialOrd variable, FreshName variable
+    , Typeable variable
     )

@@ -17,11 +17,13 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
+    ( top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
+    ( mkRepresentation
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -463,5 +465,5 @@ d = mkElementVariable (testId "d")
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation
+    SideCondition.Representation.mkRepresentation
     (SideCondition.top :: SideCondition VariableName)

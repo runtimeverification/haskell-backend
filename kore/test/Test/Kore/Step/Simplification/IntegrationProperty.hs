@@ -39,11 +39,13 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
+    ( top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
+    ( mkRepresentation
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -147,5 +149,5 @@ evaluateWithAxioms axioms =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation
+    SideCondition.Representation.mkRepresentation
     (SideCondition.top :: SideCondition VariableName)
