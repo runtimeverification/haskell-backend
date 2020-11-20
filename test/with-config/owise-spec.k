@@ -8,7 +8,7 @@ endmodule
 module OWISE-SPEC
     imports VERIFICATION
 
-    rule <k> A(AID) => 0 </k>
+    claim <k> A(AID) => 0 </k>
         <accounts>
             <account>
                 <accountID> BID </accountID>

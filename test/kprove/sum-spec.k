@@ -23,7 +23,7 @@ endmodule
 module SUM-SPEC
   imports SUM-INVARIANT
 
-rule
+claim
     <k>
       main(N:Int)
     =>

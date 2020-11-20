@@ -15,7 +15,7 @@ module UNREACHABLE-SPEC
   imports IMP
   imports VERIFICATION
 
-  rule
+  claim
     <k>
       if (a <= b) {
           if (!(a <= b)) {
