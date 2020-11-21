@@ -1,14 +1,29 @@
-  <generatedTop>
-    <k>
-      odd ~> .
-    </k>
-    <exitcode>
-      0
-    </exitcode>
-  </generatedTop>
-#And
-  {
-    1
-  #Equals
-    'QuesUnds'0 %Int 2
-  }
+    #Not ( {
+      1
+    #Equals
+      'QuesUnds'0 %Int 2
+    } )
+  #And
+    <generatedTop>
+      <k>
+        'QuesUnds'0:Int ~> .
+      </k>
+      <exitcode>
+        0
+      </exitcode>
+    </generatedTop>
+#Or
+    <generatedTop>
+      <k>
+        odd ~> .
+      </k>
+      <exitcode>
+        0
+      </exitcode>
+    </generatedTop>
+  #And
+    {
+      1
+    #Equals
+      'QuesUnds'0 %Int 2
+    }
