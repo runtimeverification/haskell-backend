@@ -346,20 +346,18 @@ evalUpdateAll resultSort [_list1, _ix, _list2] = do
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
     let len1 = Seq.length _list1
         len2 = Seq.length _list2
-        ix
-            | _ix < 0 =
-            -- negative indices count from end of list
-            _ix + len1
-            | otherwise = _ix
-    if ix >= 0 && ix < len1 && ix + len2 <= len1
-        then
-            returnList
-                resultSort
-                ( Seq.take ix _list1
-                    <> _list2
-                    <> Seq.drop (ix + length _list2) _list1
-                )
-        else return (Pattern.bottomOf resultSort)
+        result
+            | _ix < 0 = return (Pattern.bottomOf resultSort)
+            | len2 == 0 = returnList resultSort _list1
+            | _ix + len2 > len1 = return (Pattern.bottomOf resultSort)
+            | otherwise =
+                returnList
+                    resultSort
+                    ( Seq.take _ix _list1
+                        <> _list2
+                        <> Seq.drop (_ix + length _list2) _list1
+                    )
+    result
 evalUpdateAll _ _ = Builtin.wrongArity updateKey
 
 {- | Implement builtin function evaluation.
