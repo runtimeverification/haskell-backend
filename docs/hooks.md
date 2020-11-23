@@ -718,8 +718,11 @@ The result is `bottom` if n is negative.
 
 `LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`
 where the `N` elements of `L1` starting at `index` are replaced with the
-contents of `L2`. The result is `\bottom` if `index` is negative or part of `L2`
-would go of the end of `L1`.
+contents of `L2`.
+The result is `\bottom` in these cases:
+
+- `index` is negative
+- `L2` is non-empty and `index + N` exeeds the length of `L1`
 
 ~~~
     hooked-symbol updateAll{}(List{}, Int{}, List{}) : List{}
