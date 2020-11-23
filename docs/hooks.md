@@ -707,6 +707,7 @@ The number of elements in the given list.
 ### LIST.make
 
 `LIST.make(n, x)` is a list of length `n` with `x` the value of every element.
+The result is `bottom` if n is negative.
 
 ~~~
     hooked-symbol make{}(Int{}, Elem{}) : List{}
