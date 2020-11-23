@@ -421,28 +421,16 @@ test_size =
 
 test_make :: [TestTree]
 test_make =
-    [ testPropertyWithSolver "size( make(len, val) ) = len" $ do
-        len <- forAll genSeqIndex
-        let newList = makeList (mkInt len) (mkInt 5)
-        if len >= 0 then do
-            let original = sizeList newList
-                predicate = mkEquals_ (mkInt len) original
-            (===) (Pattern.fromTermLike (mkInt len)) =<< evaluateT original
-            (===) Pattern.top                        =<< evaluateT predicate
-        else do
-            let predicate = mkEquals_ mkBottom_ newList
-            (===) Pattern.bottom =<< evaluateT newList
-            (===) Pattern.top =<< evaluateT predicate
-    , testPropertyWithSolver "get( make(len, val), ix ) = val" $ do
-        value <- forAll genInteger
-        len <- forAll $ Gen.integral (Range.linear 1 20)
-        ix <- forAll $ Gen.integral (Range.linear 0 (len -1))
-        let patValue = Test.Int.asInternal value
-            patValues = makeList (mkInt len) patValue
-            patGet = getList patValues (mkInt ix)
-            predicate = mkEquals_ patGet patValue
-        (===) (Test.Int.asPattern value) =<< evaluateT patGet
-        (===) Pattern.top =<< evaluateT predicate
+    [ testCaseWithoutSMT "make(-1, 5) === \\bottom" $ do
+        result <- evaluate $ makeList (mkInt (-1)) (mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "make(0, 5) === []" $ do
+        result <- evaluate $ makeList (mkInt 0) (mkInt 5)
+        assertEqual' "" (Pattern.fromTermLike (asInternal [])) result
+    , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
+        result <- evaluate $ makeList (mkInt 3) (mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
+        assertEqual' "" (Pattern.fromTermLike expect) result
     ]
 
 test_updateAll :: [TestTree]
