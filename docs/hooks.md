@@ -714,7 +714,7 @@ The result is `bottom` if n is negative.
         [hook{}("LIST.make")]
 ~~~
 
-### LIST.updateAll
+## LIST.updateAll
 
 `LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`
 where the `N` elements of `L1` starting at `index` are replaced with the
