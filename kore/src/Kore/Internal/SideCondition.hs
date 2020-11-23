@@ -105,6 +105,14 @@ instance InternalVariable variable => Unparse (SideCondition variable) where
     unparse = unparse . toPredicate
     unparse2 = unparse2 . toPredicate
 
+instance From (SideCondition variable) (MultiAnd (Predicate variable))
+  where
+    from condition@(SideCondition _) = assumedTrue condition
+
+instance From (MultiAnd (Predicate variable)) (SideCondition variable)
+  where
+    from = SideCondition
+
 instance
     InternalVariable variable
     => From (SideCondition variable) (Predicate variable)
@@ -120,7 +128,7 @@ instance
 instance InternalVariable variable =>
     From (Condition variable) (SideCondition variable)
   where
-      from = fromCondition
+    from = fromCondition
 
 instance InternalVariable variable =>
     From (SideCondition variable) (Condition variable)
@@ -141,11 +149,11 @@ andCondition
     -> SideCondition variable
 andCondition
     SideCondition { assumedTrue }
-    (from @(Condition _) @(Predicate _) -> newPredicate)
+    (from @(Condition _) @(MultiAnd (Predicate _)) -> newPredicate)
   =
     SideCondition merged
   where
-    merged = MultiAnd.singleton newPredicate <> assumedTrue
+    merged = newPredicate <> assumedTrue
 
 assumeTrueCondition
     :: InternalVariable variable

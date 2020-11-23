@@ -40,6 +40,9 @@ import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
@@ -107,6 +110,13 @@ instance
     => From (Predicate variable) (MultiAnd (Predicate variable))
   where
     from = fromPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (Condition variable) (MultiAnd (Predicate variable))
+  where
+    from = fromPredicate . from @_ @(Predicate _)
     {-# INLINE from #-}
 
 instance
