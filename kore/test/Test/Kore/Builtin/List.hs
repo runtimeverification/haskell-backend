@@ -436,12 +436,13 @@ test_updateAll =
             $ updateAllList original (mkInt 1) (elementList $ mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
         assertEqual' "" (Pattern.fromTermLike expect) result
-    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4] === \\bottom" $ do
-        let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
-        result <-
-            evaluate
-            $ updateAllList original (mkInt 0) new
-        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4] === \\bottom"
+        $ do
+            let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
+            result <-
+                evaluate
+                $ updateAllList original (mkInt 0) new
+            assertEqual' "" Pattern.bottom result
     ]
   where
     original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]

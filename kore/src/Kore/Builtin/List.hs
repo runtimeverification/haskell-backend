@@ -335,25 +335,16 @@ evalUpdateAll resultSort [_list1, _ix, _list2] = do
     let len1 = Seq.length _list1
         len2 = Seq.length _list2
         result
-          | _ix < 0 = return (Pattern.bottomOf resultSort)
-          | len2 == 0 = returnList resultSort _list1
-          | _ix + len2 > len1 = return (Pattern.bottomOf resultSort)
-          | otherwise =
-            returnList
-                resultSort
-                ( Seq.take _ix _list1
-                    <> _list2
-                    <> Seq.drop (_ix + length _list2) _list1
-                )
-    -- if _ix >= 0 && _ix < len1 && _ix + len2 <= len1
-    --     then
-    --         returnList
-    --             resultSort
-    --             ( Seq.take _ix _list1
-    --                 <> _list2
-    --                 <> Seq.drop (_ix + length _list2) _list1
-    --             )
-    --     else return (Pattern.bottomOf resultSort)
+            | _ix < 0 = return (Pattern.bottomOf resultSort)
+            | len2 == 0 = returnList resultSort _list1
+            | _ix + len2 > len1 = return (Pattern.bottomOf resultSort)
+            | otherwise =
+                returnList
+                    resultSort
+                    ( Seq.take _ix _list1
+                        <> _list2
+                        <> Seq.drop (_ix + length _list2) _list1
+                    )
     result
 evalUpdateAll _ _ = Builtin.wrongArity updateKey
 
