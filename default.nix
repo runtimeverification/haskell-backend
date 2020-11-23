@@ -14,36 +14,30 @@ let
     in import haskell-nix.sources.nixpkgs-2003 args;
   inherit (pkgs) lib;
 
-  local =
-    if builtins.pathExists ./local.nix
-    then import ./local.nix { inherit default; }
-    else x: x;
-
-  project =
-    (args: pkgs.haskell-nix.stackProject (local args)) {
-      src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
-      modules = [
-        {
-          # package *
-          enableLibraryProfiling = true;
-          profilingDetail = "none";
-          # package kore
-          packages.kore = {
-            flags = {
-              inherit release threaded;
-            };
-            enableLibraryProfiling = profiling;
-            enableExecutableProfiling = profiling;
-            profilingDetail = "toplevel-functions";
-
-            # Add Z3 to PATH for unit tests.
-            components.tests.kore-test.preCheck = ''
-              export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
-            '';
+  project = pkgs.haskell-nix.stackProject {
+    src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
+    modules = [
+      {
+        # package *
+        enableLibraryProfiling = true;
+        profilingDetail = "none";
+        # package kore
+        packages.kore = {
+          flags = {
+            inherit release threaded;
           };
-        }
-      ];
-    };
+          enableLibraryProfiling = profiling;
+          enableExecutableProfiling = profiling;
+          profilingDetail = "toplevel-functions";
+
+          # Add Z3 to PATH for unit tests.
+          components.tests.kore-test.preCheck = ''
+            export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
+          '';
+        };
+      }
+    ];
+  };
 
   shell = import ./shell.nix { inherit default; };
 
