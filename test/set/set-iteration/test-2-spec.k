@@ -12,7 +12,7 @@ endmodule
 module TEST-2-SPEC
   imports VERIFICATION
 
-  rule <k> runTest( f( SetItem(X:Element) SetItem(Y:Element) ) ) </k>
+  claim <k> runTest( f( SetItem(X:Element) SetItem(Y:Element) ) ) </k>
     => <k> doneTest( SetItem(g(X)) SetItem(g(Y)) ) </k>
     requires
       (X =/=K Y)

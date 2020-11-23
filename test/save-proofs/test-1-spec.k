@@ -8,5 +8,5 @@ endmodule
 module TEST-1-SPEC
   imports VERIFICATION
 
-  rule BB(X:Int) => CC(X:Int)
+  claim BB(X:Int) => CC(X:Int)
 endmodule

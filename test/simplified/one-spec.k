@@ -12,7 +12,7 @@ module ONE-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> a(X) => f(X) </k>
 
 endmodule
