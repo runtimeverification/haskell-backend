@@ -373,8 +373,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         addPredicate predicate
         return substitution'
 
-    sideConditionRepresentation =
-        SideCondition.toRepresentation sideCondition
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
 data Private variable =
     Private

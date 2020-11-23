@@ -1470,5 +1470,4 @@ asInternal =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.toRepresentation
-    (SideCondition.top :: SideCondition')
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition')
