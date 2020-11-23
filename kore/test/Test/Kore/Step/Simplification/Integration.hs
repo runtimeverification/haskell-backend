@@ -1390,7 +1390,7 @@ evaluateConditionalWithAxioms
     -> TestPattern
     -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
-    runSimplifier env . Pattern.simplify sideCondition
+    runSimplifierSMT env . Pattern.simplify sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

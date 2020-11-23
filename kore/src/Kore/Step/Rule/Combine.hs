@@ -20,7 +20,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Default
     ( Default (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( antiLeftPredicate
     )
@@ -153,7 +152,7 @@ mergeRules
     => NonEmpty (RewriteRule variable)
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
-mergeRules (renameRulesVariables . Foldable.toList -> rules) =
+mergeRules (renameRulesVariables . toList -> rules) =
     Logic.observeAllT $ do
         Conditional {term = (), predicate, substitution} <-
             simplifyCondition SideCondition.topTODO . Condition.fromPredicate

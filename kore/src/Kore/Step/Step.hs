@@ -32,7 +32,6 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -212,7 +211,7 @@ checkFunctionLike
 checkFunctionLike unifiedRules pat
   | unifiedRules == mempty = pure ()
   | TermLike.isFunctionPattern pat =
-    Foldable.traverse_ checkFunctionLikeRule unifiedRules
+    traverse_ checkFunctionLikeRule unifiedRules
   | otherwise = Left . show . Pretty.vsep $
     [ "Expected function-like term, but found:"
     , Pretty.indent 4 (unparse pat)

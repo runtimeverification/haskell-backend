@@ -23,7 +23,6 @@ import Control.Monad.Reader
     ( MonadReader
     )
 import qualified Control.Monad.Reader as Reader
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
@@ -253,8 +252,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             defineValue
                 ::  Domain.Value normalized (TermLike variable)
                 ->  MaybeT simplifier (MultiAnd (OrCondition variable))
-            defineValue =
-                Foldable.foldlM worker mempty
+            defineValue = foldlM worker mempty
               where
                 worker multiAnd termLike = do
                     evaluated <- makeEvaluateTerm termLike
@@ -281,7 +279,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                     , mconcat definedValues
                     , mconcat distinctConcreteKeys
                     , mconcat distinctAbstractKeys
-                    , Foldable.foldMap (notMembers normalizedAc) opaque
+                    , foldMap (notMembers normalizedAc) opaque
                     , definedOpaquePairs
                     ]
 

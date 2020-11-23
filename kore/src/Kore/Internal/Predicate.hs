@@ -92,9 +92,6 @@ import Data.Functor.Foldable
     , Recursive
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.List
-    ( foldl'
-    )
 import Data.List.Extra
     ( nubOrd
     )
@@ -831,7 +828,7 @@ makePredicate t = fst <$> makePredicateWorker t
             att :< patE = dropChanged <$> termWithChanged
 
             childChanged :: HasChanged
-            childChanged = Foldable.fold (dropPredicate <$> termWithChanged)
+            childChanged = foldMap dropPredicate termWithChanged
 
             oldSimplified = APattern.simplifiedAttribute att
         (predicate, topChanged) <- case patE of

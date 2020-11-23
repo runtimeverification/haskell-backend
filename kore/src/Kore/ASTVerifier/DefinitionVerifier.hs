@@ -11,14 +11,23 @@ module Kore.ASTVerifier.DefinitionVerifier
     ( verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
+    , sortModuleClaims
     ) where
 
 import Prelude.Kore
 
+import Control.Lens
+    ( (%~)
+    )
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
+import Data.List
+    ( sortOn
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -123,7 +132,7 @@ verifyAndIndexDefinitionWithBase
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
-        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
+        verifyModules = traverse_ verifyModule definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-
@@ -138,3 +147,11 @@ verifyAndIndexDefinitionWithBase
     return (index, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+
+sortModuleClaims
+    :: VerifiedModule declAtts
+    -> VerifiedModule declAtts
+sortModuleClaims verifiedModule =
+    verifiedModule
+    & field @"indexedModuleClaims"
+        %~ sortOn (Attribute.sourceLocation . fst)

@@ -1049,7 +1049,7 @@ match
 match first second =
     runSimplifier Mock.env matchResult
   where
-    matchResult :: Simplifier MatchResult
+    matchResult :: SimplifierT NoSMT MatchResult
     matchResult = matchIncremental first second
 
 withMatch

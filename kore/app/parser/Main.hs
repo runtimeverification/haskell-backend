@@ -2,6 +2,11 @@ module Main (main) where
 
 import Prelude.Kore
 
+import Control.Monad.Catch
+    ( Exception (..)
+    , SomeException
+    , handle
+    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -30,9 +35,6 @@ import Kore.Attribute.Symbol
     )
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
-import Kore.Error
-    ( printError
-    )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     , toVerifiedDefinition
@@ -41,6 +43,9 @@ import Kore.Log
     ( runLoggerT
     )
 import qualified Kore.Log as Log
+import Kore.Log.ErrorVerify
+    ( errorVerify
+    )
 import Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
@@ -119,49 +124,61 @@ parserInfoModifiers =
                 \Verifies well-formedness"
     <> header "kore-parser - a parser for Kore definitions"
 
+{- | Top-level exception handler.
+
+Renders exceptions for the user with 'displayException' and exits
+unsuccessfully.
+
+ -}
+handleTop :: IO () -> IO ()
+handleTop =
+    handle handler
+  where
+    handler = die . displayException @SomeException
 
 -- TODO(virgil): Maybe add a regression test for main.
 -- | Parses a kore file and Check wellformedness
 main :: IO ()
-main = do
+main = handleTop $ do
     options <-
-        mainGlobal (ExeName "kore-parser") commandLineParser parserInfoModifiers
-    case localOptions options of
-        Nothing ->  -- global options parsed, but local failed; exit gracefully
-            return ()
-        Just KoreParserOptions
-            { fileName
-            , patternFileName
-            , mainModuleName
-            , willPrintDefinition
-            , willPrintPattern
-            , willVerify
-            , appKore
-            }
-            -> flip runLoggerT Log.emptyLogger $ do
-                parsedDefinition <- mainDefinitionParse fileName
-                indexedModules <- if willVerify
-                    then lift $ mainVerify parsedDefinition
-                    else return Map.empty
-                lift $ when willPrintDefinition
-                    $ if appKore
-                        then putStrLn
-                            $ unparseToString2
-                            $ completeDefinition
-                            $ toVerifiedDefinition indexedModules
-                    else putDoc (debug parsedDefinition)
+        mainGlobal
+            (ExeName "kore-parser")
+            Nothing  -- environment variable name for extra arguments
+            commandLineParser
+            parserInfoModifiers
+    for_ (localOptions options) $ \koreParserOptions ->
+        flip runLoggerT Log.emptyLogger $ do
+            let KoreParserOptions { fileName } = koreParserOptions
+            parsedDefinition <- mainDefinitionParse fileName
+            let KoreParserOptions { willVerify } = koreParserOptions
+            indexedModules <- if willVerify
+                then lift $ mainVerify parsedDefinition
+                else return Map.empty
+            let KoreParserOptions { willPrintDefinition } = koreParserOptions
+            let KoreParserOptions { appKore } = koreParserOptions
+            lift $ when willPrintDefinition
+                $ if appKore
+                    then putStrLn
+                        $ unparseToString2
+                        $ completeDefinition
+                        $ toVerifiedDefinition indexedModules
+                else putDoc (debug parsedDefinition)
 
-                when (patternFileName /= "") $ do
-                    parsedPattern <- mainPatternParse patternFileName
-                    when willVerify $ do
-                        indexedModule <-
-                            lift $ lookupMainModule
-                                (ModuleName mainModuleName)
-                                indexedModules
-                        _ <- mainPatternVerify indexedModule parsedPattern
-                        return ()
-                    when willPrintPattern $
-                        lift $ putDoc (debug parsedPattern)
+            let KoreParserOptions { patternFileName } = koreParserOptions
+            unless (null patternFileName) $ do
+                parsedPattern <- mainPatternParse patternFileName
+                when willVerify $ do
+                    let KoreParserOptions { mainModuleName } = koreParserOptions
+                    indexedModule <-
+                        lookupMainModule
+                            (ModuleName mainModuleName)
+                            indexedModules
+                        & lift
+                    _ <- mainPatternVerify indexedModule parsedPattern
+                    return ()
+                let KoreParserOptions { willPrintPattern } = koreParserOptions
+                when willPrintPattern $
+                    lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
@@ -178,11 +195,7 @@ mainPatternParse = mainParse parseKorePattern
 mainVerify
     :: ParsedDefinition
     -- ^ Parsed definition to check well-formedness
-    -> IO
-        (Map.Map
-            ModuleName
-            (VerifiedModule StepperAttributes)
-        )
+    -> IO (Map.Map ModuleName (VerifiedModule StepperAttributes))
 mainVerify definition = flip runLoggerT Log.emptyLogger $ do
     verifyResult <-
         clockSomething "Verifying the definition"
@@ -190,6 +203,4 @@ mainVerify definition = flip runLoggerT Log.emptyLogger $ do
                 Builtin.koreVerifiers
                 definition
             )
-    case verifyResult of
-        Left err1            -> liftIO $ die $ printError err1
-        Right indexedModules -> return indexedModules
+    either errorVerify return verifyResult

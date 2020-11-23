@@ -36,12 +36,8 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import Data.List
-    ( foldl'
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -323,7 +319,7 @@ matchApplication
     -> MaybeT (MatcherT variable simplifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
     Monad.guard (symbol1 == symbol2)
-    Foldable.traverse_ push (zipWith Pair children1 children2)
+    traverse_ push (zipWith Pair children1 children2)
 matchApplication _ = empty
 
 matchBuiltinList
@@ -333,7 +329,7 @@ matchBuiltinList
 matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Monad.guard (null tail2)
-    Foldable.traverse_ push aligned
+    traverse_ push aligned
 matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
   | List.isSymbolConcat symbol1 = matchBuiltinListConcat children1 list2
 matchBuiltinList _ = empty
@@ -346,13 +342,13 @@ matchBuiltinListConcat
 
 matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
-    Foldable.traverse_ push aligned
+    traverse_ push aligned
     push (Pair frame1 (mkBuiltinList tail2))
 
 matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
     push (Pair frame1 (mkBuiltinList head2))
-    Foldable.traverse_ push aligned
+    traverse_ push aligned
 
 matchBuiltinListConcat _ _ = empty
 
@@ -513,7 +509,7 @@ substitute eVariable termLike = do
     field @"deferred" .= indep
 
     -- Push the dependent deferred pairs to the front of the queue.
-    Foldable.traverse_ push dep
+    traverse_ push dep
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
@@ -575,7 +571,7 @@ setSubstitute sVariable termLike = do
     field @"deferred" .= indep
 
     -- Push the dependent deferred pairs to the front of the queue.
-    Foldable.traverse_ push dep
+    traverse_ push dep
     -- Apply the substitution to the queued pairs.
     field @"queued" . transformQueue Lens.mapped %= substitute2
 
@@ -771,8 +767,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                             }
                  in push (Pair frame1 normalized2')
           _ -> empty
-      lift $ Foldable.traverse_ pushValue concrete12
-      lift $ Foldable.traverse_ pushValue abstractMerge
+      lift $ traverse_ pushValue concrete12
+      lift $ traverse_ pushValue abstractMerge
     | [element1] <- abstract1
     , [frame1] <- opaque1
     , null concrete1 = do

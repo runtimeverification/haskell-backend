@@ -16,7 +16,6 @@ import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
     )
-import qualified Data.Foldable as Foldable
 import Data.Maybe
     ( fromJust
     )
@@ -48,7 +47,7 @@ import Kore.Reachability
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , claimPattern
+    , mkClaimPattern
     , refreshExistentials
     )
 import qualified Kore.Step.RewriteStep as Step
@@ -91,7 +90,7 @@ applyInitialConditions
     -> IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
-    & runSimplifier Mock.env . Logic.observeAllT
+    & runSimplifierSMT Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -160,7 +159,7 @@ claimPatternFromPatterns
     -> Pattern VariableName
     -> ClaimPattern
 claimPatternFromPatterns patt1 patt2 =
-    claimPattern
+    mkClaimPattern
         ( patt1
         & Pattern.mapVariables (pure mkRuleVariable)
         )
@@ -176,7 +175,7 @@ claimPatternFromTerms
     -> [ElementVariable VariableName]
     -> ClaimPattern
 claimPatternFromTerms term1 term2 existentials' =
-    claimPattern
+    mkClaimPattern
         ( term1
         & Pattern.fromTermLike
         & Pattern.mapVariables (pure mkRuleVariable)
@@ -310,7 +309,7 @@ applyRewriteRules_
     -> IO [OrPattern RewritingVariableName]
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
-    return (Foldable.toList . discardRemainders $ result)
+    return (toList . discardRemainders $ result)
   where
     discardRemainders = fmap Step.result . Step.results
 
@@ -336,7 +335,7 @@ applyClaims_
     -> IO [OrPattern RewritingVariableName]
 applyClaims_ applyClaims initial claims = do
     result <- applyClaims initial claims
-    return (Foldable.toList . discardRemainders $ result)
+    return (toList . discardRemainders $ result)
   where
     discardRemainders = fmap Step.result . Step.results
 
@@ -1098,7 +1097,7 @@ applyRewriteRulesParallel initial rules =
         Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 applyClaimsSequence
     :: TestPattern
@@ -1112,7 +1111,7 @@ applyClaimsSequence initial claims =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 checkResults
     :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
@@ -1529,7 +1528,7 @@ applyRewriteRulesSequence initial rules =
         Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         (mkRewritingRule <$> rules)
-    & runSimplifier Mock.env
+    & runSimplifierSMT Mock.env
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =

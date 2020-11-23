@@ -1,5 +1,5 @@
 name:                kore
-version:             0.32.0.0
+version:             0.34.0.0
 github:              "kframework/kore"
 license:             NCSA
 license-file:        LICENSE
@@ -11,8 +11,6 @@ category:            Language
 extra-source-files:
   - README.md
   - CHANGELOG.md
-  - test/resources/*.kore
-  - test/resources/*.kore.golden
 
 data-dir: data
 

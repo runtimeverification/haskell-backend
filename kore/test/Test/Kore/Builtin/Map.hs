@@ -128,7 +128,7 @@ import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-    ( runSimplifierNoSMT
+    ( runSimplifier
     )
 import Test.SMT
 import Test.Tasty.HUnit.Ext
@@ -1384,7 +1384,7 @@ test_inKeys =
         output <-
             Map.evalInKeys boolSort [termKey, termMap]
             & runMaybeT
-            & runSimplifierNoSMT testEnv
+            & runSimplifier testEnv
         case output of
             Nothing -> return Nothing
             Just result -> do

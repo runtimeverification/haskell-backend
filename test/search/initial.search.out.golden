@@ -1,3 +1,7 @@
-<k>
-  final2 ~> .
-</k>
+  <k>
+    final1 ~> .
+  </k>
+#Or
+  <k>
+    final2 ~> .
+  </k>

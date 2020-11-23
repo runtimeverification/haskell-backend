@@ -9,7 +9,6 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import Data.Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -40,7 +39,7 @@ test_refreshRule =
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRule avoiding testRulePattern
-            renamed = Set.fromList (Foldable.toList renaming)
+            renamed = Set.fromList (Prelude.Kore.toList renaming)
             free' :: FreeVariables VariableName
             free' = freeVariables rulePattern'
             notAvoided (variableName -> x) =

@@ -18,16 +18,12 @@ module Kore.ASTVerifier.AttributesVerifier
     , parseAttributes
     ) where
 
-import qualified Control.Lens as Lens
-import Data.Foldable
-    ( find
-    , for_
-    )
-import Data.Generics.Product
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Control.Lens as Lens
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
 
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute

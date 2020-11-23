@@ -18,7 +18,6 @@ import Control.Monad.State.Strict
     , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
     ( field
@@ -29,9 +28,6 @@ import Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( sortOn
-    )
-import Data.Traversable
-    ( for
     )
 import qualified GHC.Generics as GHC
 
@@ -223,7 +219,7 @@ simplifyConjunctionByAssumption
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Changed (MultiAnd (Predicate variable))
-simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
+simplifyConjunctionByAssumption (toList -> andPredicates) =
     fmap MultiAnd.make
     $ flip evalStateT (DoubleMap HashMap.empty HashMap.empty)
     $ for (sortBySize andPredicates)
@@ -244,17 +240,17 @@ simplifyConjunctionByAssumption (Foldable.toList -> andPredicates) =
             case termLikeF of
                 TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
                 TermLike.DefinedF defined -> TermLike.getDefined defined
-                _ -> 1 + Foldable.sum termLikeF
+                _ -> 1 + sum termLikeF
 
     predSize :: Predicate variable -> Int
     predSize =
         Recursive.fold $ \(_ :< predF) ->
             case predF of
-                Predicate.CeilF ceil_ -> 1 + Foldable.sum (size <$> ceil_)
-                Predicate.EqualsF equals_ -> 1 + Foldable.sum (size <$> equals_)
-                Predicate.FloorF floor_ -> 1 + Foldable.sum (size <$> floor_)
-                Predicate.InF in_ -> 1 + Foldable.sum (size <$> in_)
-                _ -> 1 + Foldable.sum predF
+                Predicate.CeilF ceil_ -> 1 + sum (size <$> ceil_)
+                Predicate.EqualsF equals_ -> 1 + sum (size <$> equals_)
+                Predicate.FloorF floor_ -> 1 + sum (size <$> floor_)
+                Predicate.InF in_ -> 1 + sum (size <$> in_)
+                _ -> 1 + sum predF
 
     assume
         :: Predicate variable ->

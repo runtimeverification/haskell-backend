@@ -10,9 +10,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Foldable
-    ( traverse_
-    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables

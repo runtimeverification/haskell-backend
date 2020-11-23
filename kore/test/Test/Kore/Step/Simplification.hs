@@ -1,6 +1,6 @@
 module Test.Kore.Step.Simplification
     ( runSimplifier
-    , runSimplifierNoSMT
+    , runSimplifierSMT
     , runSimplifierBranch
     , simplifiedCondition
     , simplifiedOrCondition
@@ -14,6 +14,7 @@ module Test.Kore.Step.Simplification
     , SimplifierT
     , NoSMT
     , Env (..)
+    , Kore.MonadSimplify
     ) where
 
 import Prelude.Kore
@@ -80,13 +81,13 @@ import SMT
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT as Test
 
-runSimplifier :: Env Simplifier -> Simplifier a -> IO a
-runSimplifier env = Test.runSMT userInit . Kore.runSimplifier env
+runSimplifierSMT :: Env Simplifier -> Simplifier a -> IO a
+runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env
   where
     userInit = SMT.AST.declare Mock.smtDeclarations
 
-runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
-runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
+runSimplifier :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
+runSimplifier env = Test.runNoSMT . Kore.runSimplifier env
 
 runSimplifierBranch
     :: Env (SimplifierT NoSMT)

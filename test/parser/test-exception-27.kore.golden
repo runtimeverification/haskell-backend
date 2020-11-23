@@ -1,0 +1,7 @@
+test-exception-27.kore:5:3:
+  |
+5 |   /a
+  |   ^^^
+unexpected "/a<newline><newline>endmo"
+expecting "endmodule" or sentence
+

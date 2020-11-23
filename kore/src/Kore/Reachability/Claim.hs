@@ -4,7 +4,9 @@ License     : NCSA
 -}
 module Kore.Reachability.Claim
     ( Claim (..)
+    , ApplyResult (..)
     , AppliedRule (..)
+    , retractApplyRemainder
     , strategy
     , TransitionRule
     , Prim
@@ -46,7 +48,6 @@ import Control.Monad.State.Strict
     , runStateT
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Functor.Compose
 import Data.Generics.Product
     ( field
@@ -110,7 +111,6 @@ import Kore.Log.WarnStuckClaimState
 import Kore.Reachability.ClaimState hiding
     ( claimState
     )
-import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Reachability.Prim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.AxiomPattern
@@ -182,30 +182,32 @@ class Claim claim where
         => claim
         -> Strategy.TransitionT (AppliedRule claim) m claim
 
-    {- TODO (thomas.tuegel): applyClaims and applyAxioms should return:
-
-    > data ApplyResult claim
-    >     = ApplyRewritten !claim
-    >     | ApplyRemainder !claim
-
-    Rationale: ClaimState is part of the implementation of transitionRule, that
-    is: these functions have hidden knowledge of how transitionRule works
-    because they tell it what to do next. Instead, they should report their
-    result and leave the decision up to transitionRule.
-
-    -}
     applyClaims
         :: MonadSimplify m
         => [claim]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
     applyAxioms
         :: MonadSimplify m
         => [[Rule claim]]
         -> claim
-        -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 
+{- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
+
+    Both 'ApplyRewritten' and 'ApplyRemainder' wrap a newly formed claim.
+    Its left hand side is constructed from either the application of rewrite rules,
+    or, respectively, from the remainder resulting after this procedure.
+-}
+data ApplyResult claim
+    = ApplyRewritten !claim
+    | ApplyRemainder !claim
+    deriving (Show, Eq)
+    deriving (Functor)
+
+{- | 'AppliedRule' represents the rule applied during a rewriting step.
+-}
 data AppliedRule claim
     = AppliedAxiom (Rule claim)
     | AppliedClaim claim
@@ -271,7 +273,7 @@ deriveSeqClaim
     -> (ClaimPattern -> claim)
     -> [claim]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -336,31 +338,29 @@ transitionRule claims axiomGroups = transitionRuleWorker
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState
 
-    -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-    --
-    -- thomas.tuegel: "Here" is in ApplyClaims and ApplyAxioms.
-    --
-    -- Note that in most transitions it is obvious what is being transformed
-    -- into what, e.g. that a `ResetGoal` transition transforms
-    -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
-    -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
-    -- opaque way. I think that there's no good reason for wrapping the
-    -- results in `derivePar` as opposed to here.
-
     transitionRuleWorker ApplyClaims (Claimed claim) =
         applyClaims claims claim
+        >>= return . applyResultToClaimState
     transitionRuleWorker ApplyClaims claimState = pure claimState
 
     transitionRuleWorker ApplyAxioms claimState
       | Just claim <- retractRewritable claimState =
         applyAxioms axiomGroups claim
+        >>= return . applyResultToClaimState
       | otherwise = pure claimState
+
+    applyResultToClaimState (ApplyRewritten a) = Rewritten a
+    applyResultToClaimState (ApplyRemainder a) = Remaining a
 
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
 retractSimplifiable (Rewritten a) = Just a
 retractSimplifiable (Remaining a) = Just a
 retractSimplifiable _ = Nothing
+
+retractApplyRemainder :: ApplyResult a -> Maybe a
+retractApplyRemainder (ApplyRemainder a) = Just a
+retractApplyRemainder _ = Nothing
 
 isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
@@ -616,7 +616,7 @@ simplify' lensClaimPattern claim = do
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
-            Foldable.asum (pure <$> Foldable.toList configs)
+            asum (pure <$> toList configs)
 
 simplifyRightHandSide
     :: MonadSimplify m
@@ -650,7 +650,7 @@ derivePar'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule
     $ Step.applyRewriteRulesParallel Unification.unificationProcedure
@@ -669,7 +669,7 @@ deriveWith
     -> Deriver m
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
     getCompose
     $ Lens.forOf lensClaimPattern claim
@@ -694,7 +694,7 @@ deriveSeq'
     -> (RewriteRule RewritingVariableName -> Rule claim)
     -> [RewriteRule RewritingVariableName]
     -> claim
-    -> Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+    -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule . flip
     $ Step.applyRewriteRulesSequence Unification.unificationProcedure
@@ -704,24 +704,21 @@ deriveResults
     => (Step.UnifiedRule representation -> AppliedRule claim)
     -> Step.Results representation
     -> Strategy.TransitionT (AppliedRule claim) simplifier
-        (ClaimState.ClaimState (Pattern RewritingVariableName))
+        (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
 deriveResults fromAppliedRule Results { results, remainders } =
     addResults <|> addRemainders
   where
-    addResults = Foldable.asum (addResult <$> results)
-    addRemainders = Foldable.asum (addRemainder <$> Foldable.toList remainders)
+    addResults = asum (addResult <$> results)
+    addRemainders = asum (addRemainder <$> toList remainders)
 
     addResult Result { appliedRule, result } = do
         addRule appliedRule
-        case Foldable.toList result of
-            []      ->
-                -- If the rule returns \bottom, the claim is proven on the
-                -- current branch.
-                pure Proven
-            configs -> Foldable.asum (addRewritten <$> configs)
+        case toList result of
+            [] -> addRewritten Pattern.bottom
+            configs -> asum (addRewritten <$> configs)
 
-    addRewritten = pure . Rewritten
-    addRemainder = pure . Remaining
+    addRewritten = pure . ApplyRewritten
+    addRemainder = pure . ApplyRemainder
 
     addRule = Transition.addRule . fromAppliedRule

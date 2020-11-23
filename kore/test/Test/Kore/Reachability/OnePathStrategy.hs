@@ -12,7 +12,6 @@ import Data.Coerce
 import Data.Default
     ( def
     )
-import qualified Data.Foldable as Foldable
 import Data.List.Extra
     ( groupSortOn
     , nub
@@ -334,10 +333,10 @@ test_onePathStrategy =
         -- Normal axiom: constr11(x) => h(x)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   Stuck after removing the destination during
+        --   Stuck after checking the implication during
         --   the second step.
         --
-        --   If remove destination didn't
+        --   If the check implication transition didn't
         --   detect that the conditions do not meet, then
         --   the configuration would have resulted in:
         --      (f(b) and x=b)
@@ -863,7 +862,7 @@ runSteps
     strategy'
   =
     (<$>) picker
-    $ runSimplifier mockEnv
+    $ runSimplifierSMT mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
     <$> runStrategy
             breadthLimit
@@ -898,7 +897,7 @@ runOnePathSteps
         coinductiveRewrites
         (groupSortOn Attribute.Axiom.getPriorityOfAxiom rewrites)
         claim
-        (Limit.takeWithin depthLimit (Foldable.toList strategy))
+        (Limit.takeWithin depthLimit (toList strategy))
     return (sort $ nub result)
 
 assertStuck

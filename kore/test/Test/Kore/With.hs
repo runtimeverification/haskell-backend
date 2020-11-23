@@ -8,9 +8,6 @@ module Test.Kore.With
 
 import Prelude.Kore
 
-import Data.List
-    ( foldl'
-    )
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
     ( cons
@@ -178,34 +175,34 @@ instance With (SentenceClaim patt) Attribute where
 instance With (SentenceClaim patt) [Attribute] where
     with a b = SentenceClaim (with (getSentenceClaim a) b)
 
-instance With (SentenceImport patt) Attribute where
+instance With SentenceImport Attribute where
     s@SentenceImport {sentenceImportAttributes} `with` attribute =
         s
             { SentenceImport.sentenceImportAttributes =
                 sentenceImportAttributes `with` attribute
             }
 
-instance With (SentenceImport patt) [Attribute] where
+instance With SentenceImport [Attribute] where
     with = foldl' with
 
-instance With (SentenceSymbol patt) Attribute where
+instance With SentenceSymbol Attribute where
     s@SentenceSymbol {sentenceSymbolAttributes} `with` attribute =
         s
             { SentenceSymbol.sentenceSymbolAttributes =
                 sentenceSymbolAttributes `with` attribute
             }
 
-instance With (SentenceSymbol patt) [Attribute] where
+instance With SentenceSymbol [Attribute] where
     with = foldl' with
 
-instance With (SentenceSort patt) Attribute where
+instance With SentenceSort Attribute where
     s@SentenceSort {sentenceSortAttributes} `with` attribute =
         s
             { SentenceSort.sentenceSortAttributes =
                 sentenceSortAttributes `with` attribute
             }
 
-instance With (SentenceSort patt) [Attribute] where
+instance With SentenceSort [Attribute] where
     with = foldl' with
 
 instance With Attributes Attribute where

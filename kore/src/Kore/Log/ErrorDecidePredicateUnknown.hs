@@ -59,7 +59,7 @@ instance Entry ErrorDecidePredicateUnknown where
 errorDecidePredicateUnknown
     :: InternalVariable variable
     => NonEmpty (Predicate variable)
-    -> log ()
+    -> log a
 errorDecidePredicateUnknown predicates' =
     throw ErrorDecidePredicateUnknown { predicates }
   where

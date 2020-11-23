@@ -12,7 +12,6 @@ import Prelude.Kore
 import Control.Monad
     ( (>=>)
     )
-import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -80,8 +79,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
         fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
-        let rules =
-                map (setRuleLeft rule) (Foldable.toList fullySimplified)
+        let rules = map (setRuleLeft rule) (toList fullySimplified)
         return (MultiAnd.make rules)
       where
         RulePattern {left} = rule

@@ -12,8 +12,6 @@ module Kore.Step.Remainder
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     )
@@ -103,14 +101,13 @@ mkNotMultiOr
 mkNotMultiOr =
     MultiAnd.make
     . map Predicate.makeNotPredicate
-    . Foldable.toList
+    . toList
 
 mkMultiAndPredicate
     :: InternalVariable variable
     => MultiAnd (Predicate variable)
     ->           Predicate variable
-mkMultiAndPredicate =
-    Predicate.makeMultipleAndPredicate . Foldable.toList
+mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . toList
 
 {- | Represent the unification solution as a conjunction of predicates.
  -}

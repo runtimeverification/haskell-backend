@@ -19,10 +19,6 @@ import Prelude.Kore
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Foldable as Foldable
-import Data.List
-    ( foldl'
-    )
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -211,8 +207,8 @@ simplifyEvaluated sideCondition first second
                     (OrPattern.toPattern second)
                     sideCondition
   where
-    firstPatterns = Foldable.toList first
-    secondPatterns = Foldable.toList second
+    firstPatterns = toList first
+    secondPatterns = toList second
 
 makeEvaluateFunctionalOr
     :: forall variable simplifier

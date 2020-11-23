@@ -15,7 +15,6 @@ import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)
     )
-import qualified Data.Foldable as Foldable
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import Data.Limit
@@ -32,6 +31,7 @@ import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim
     ( AppliedRule (..)
+    , ApplyResult (..)
     , Claim (..)
     )
 import qualified Kore.Reachability.Claim as Claim
@@ -79,11 +79,11 @@ test_unprovenNodes =
     [ unprovenNodes
         (emptyExecutionGraph ClaimState.Proven)
         `satisfies_`
-        Foldable.null
+        null
     , unprovenNodes
         (goal 0)
         `satisfies_`
-        (not . Foldable.null)
+        (not . null)
     , unprovenNodes
         (goal 0)
         `equals`
@@ -141,7 +141,7 @@ test_transitionRule_Begin =
     unmodified :: HasCallStack => MockClaimState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => MockClaimState -> TestTree
-    done state = run state `satisfies_` Foldable.null
+    done state = run state `satisfies_` null
 
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
@@ -257,7 +257,7 @@ test_runStrategy =
         $ Strategy.runStrategy
             Unlimited
             (Claim.transitionRule [MockClaim (unRule goal)] [axioms])
-            (Foldable.toList Claim.strategy)
+            (toList Claim.strategy)
             (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves
         :: HasCallStack
@@ -381,21 +381,21 @@ derivePar
     :: (MockClaim -> MockAppliedRule)
     -> [MockRule]
     -> MockClaim
-    -> Transition.TransitionT MockAppliedRule m MockClaimState
+    -> Transition.TransitionT MockAppliedRule m (ApplyResult MockClaim)
 derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
   where
     goal (Rule rule@(_, to)) = do
         Transition.addRule (mkAppliedRule (MockClaim rule))
-        (pure . ClaimState.Rewritten . MockClaim) (to, dst)
+        (pure . ApplyRewritten . MockClaim) (to, dst)
     goalRemainder = do
-        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-        (pure . ClaimState.Remaining . MockClaim) (r, dst)
+        let r = foldl' difference src (fst . unRule <$> applied)
+        (pure . ApplyRemainder . MockClaim) (r, dst)
     applyRule rule@(Rule (fromMockClaim, _))
         | fromMockClaim `matches` src = Just rule
         | otherwise = Nothing
     applied = mapMaybe applyRule rules
-    goals = Foldable.asum (goal <$> applied)
+    goals = asum (goal <$> applied)
 
 runTransitionRule
     :: [MockClaim]
@@ -469,7 +469,7 @@ unprovenNodes
     => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim)
     -> [a]
 unprovenNodes executionGraph =
-    Foldable.toList . MultiOr.make
+    toList . MultiOr.make
     $ mapMaybe ClaimState.extractUnproven
     $ Strategy.pickFinal executionGraph
 
@@ -480,4 +480,4 @@ proven
     .  (Ord a, TopBottom a)
     => Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim)
     -> Bool
-proven = Foldable.null . unprovenNodes
+proven = null . unprovenNodes

@@ -28,9 +28,11 @@ module Test.Kore
     , couple
     , symbolOrAliasGen
     , addVariable
+    , sentenceAxiomGen
+    , korePatternUnifiedGen
       -- * Re-exports
     , ParsedPattern
-    , asParsedPattern
+    , embedParsedPattern
     , Log.emptyLogger
     ) where
 
@@ -73,7 +75,7 @@ import qualified Kore.Log as Log
     ( emptyLogger
     )
 import Kore.Parser
-    ( asParsedPattern
+    ( embedParsedPattern
     )
 import Kore.Parser.Parser
     ( parseVariableCounter
@@ -501,31 +503,31 @@ korePatternChildGen patternSort' =
 
     korePatternGenLevel :: Gen ParsedPattern
     korePatternGenLevel =
-        asParsedPattern <$> patternGen korePatternChildGen patternSort'
+        embedParsedPattern <$> patternGen korePatternChildGen patternSort'
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralF . Const
+        embedParsedPattern . Syntax.StringLiteralF . Const
         <$> stringLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Syntax.DomainValueF
+        embedParsedPattern . Syntax.DomainValueF
             <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Syntax.NextF
+        embedParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Syntax.RewritesF
+        embedParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariableF . Const
+        embedParsedPattern . Syntax.VariableF . Const
         <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
@@ -646,7 +648,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol patternType)
+sentenceSymbolGen :: Gen SentenceSymbol
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol
@@ -661,7 +663,7 @@ sentenceSymbolGen = do
             , sentenceSymbolAttributes
             }
 
-sentenceImportGen :: Gen (SentenceImport patternType)
+sentenceImportGen :: Gen SentenceImport
 sentenceImportGen =
     SentenceImport
         <$> moduleNameGen
@@ -681,9 +683,7 @@ sentenceAxiomGen patGen = do
             , sentenceAxiomAttributes
             }
 
-sentenceSortGen
-    :: forall patternType
-    .  Gen (SentenceSort patternType)
+sentenceSortGen :: Gen SentenceSort
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen

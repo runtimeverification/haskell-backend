@@ -27,8 +27,8 @@ argument, because we want to give it a short-circuit semantics. */
 
   syntax AExp  ::= Int | Id | "?Int"
                  | "-" Int                    [format(%1%2)]
-                 | AExp "/" AExp              [left, strict, color(pink)]
-                 > AExp "+" AExp              [left, strict, color(pink)]
+                 | AExp "/" AExp              [left, seqstrict, color(pink)]
+                 > AExp "+" AExp              [left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]

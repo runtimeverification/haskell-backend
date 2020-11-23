@@ -8,8 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
@@ -1002,10 +1000,10 @@ assertBidirectionalEqualityResult
                             (OrPattern.toPattern <$> orderedEquality)
                         , "would simplify to:"
                         , unlines (renderDefault . pretty
-                            <$> Foldable.toList expect)
+                            <$> toList expect)
                         , "but instead found:"
                         , unlines (renderDefault . pretty
-                            <$> Foldable.toList actual)
+                            <$> toList actual)
                         ]
                  in assertEqual message expect actual
         assertEqual' "evaluate equals"

@@ -158,6 +158,22 @@ test_translatePredicateWith =
             & expectJustT
             & Test.SMT.runNoSMT
         assertEqual "" actual1 actual2
+    -- In the tests below, a and b are not tranlated correctly
+    -- to their constructor names because they need to be
+    -- declared twice in the test data: once as part of their
+    -- sort and once as symbols.
+    , testCase "b = a, both constructors" $
+            translating (peq Mock.b Mock.a)
+        `yields`
+            (var 0 `eq` var 1)
+    , testCase "f() = a, f functional, a constructor" $
+            translating (peq Mock.functional00 Mock.a)
+        `yields`
+            (var 0 `eq` var 1)
+    , testCase "s() = a, s arbitrary symbol, a constructor" $
+            translating (peq Mock.plain00 Mock.a)
+        `yields`
+            var 0
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -190,7 +206,6 @@ translatePredicate = Evaluator.translatePredicate Mock.metadataTools
 translating :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translating =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
-
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)

@@ -603,6 +603,14 @@ test_InternalBytes =
                 mkDomainValue
                 $ DomainValue bytesSort
                 $ mkStringLiteral "00"
+            expect = Right $ asInternal "00"
+            actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    , testCase "\\dv{Bytes{}}(\"\x00\")" $ do
+        let unverified =
+                mkDomainValue
+                $ DomainValue bytesSort
+                $ mkStringLiteral "\x00"
             expect = Right $ asInternal "\x00"
             actual = verifyPattern (Just bytesSort) unverified
         assertEqual "" expect actual

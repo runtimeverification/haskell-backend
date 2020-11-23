@@ -359,13 +359,10 @@ test_sortDeclaration =
   where
     importModule :: Text -> ParsedSentence
     importModule name =
-        asSentence
-            (SentenceImport
-                { sentenceImportModuleName = ModuleName name
-                , sentenceImportAttributes = Attributes []
-                }
-            :: SentenceImport ParsedPattern
-            )
+        asSentence SentenceImport
+            { sentenceImportModuleName = ModuleName name
+            , sentenceImportAttributes = Attributes []
+            }
 
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 

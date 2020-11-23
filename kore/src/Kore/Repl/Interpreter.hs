@@ -23,7 +23,9 @@ module Kore.Repl.Interpreter
     , showCurrentClaimIndex
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( toList
+    )
 
 import Control.Lens
     ( (%=)
@@ -69,7 +71,6 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -291,7 +292,7 @@ replInterpreter0 printAux printKore replCmd = do
                 DebugEquation op        -> debugEquation op        $> Continue
                 Exit                    -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
-    liftIO $ Foldable.traverse_
+    liftIO $ traverse_
             ( replOut
                 (unPrintAuxOutput printAux)
                 (unPrintKoreOutput printKore)
@@ -625,7 +626,7 @@ omitCell =
         omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
-            else Foldable.traverse_ putStrLn' omit
+            else traverse_ putStrLn' omit
 
     addOrRemove :: String -> ReplM m ()
     addOrRemove str = field @"omit" %= toggle str
@@ -737,7 +738,7 @@ showRules (ReplNode node1, ReplNode node2) = do
         <> "\n  to reach node "
         <> show node
         <> " the following rules were applied:"
-        <> case Foldable.toList rules of
+        <> case toList rules of
               [] -> " Implication checking."
               rules' -> foldr oneStepRuleIndexes "" rules'
     oneStepRuleIndexes rule result =
@@ -1312,7 +1313,7 @@ recursiveForcedStep n node
     case result of
         NoResult -> pure ()
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
-        BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
+        BranchResult xs -> traverse_ (recursiveForcedStep (n-1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule
@@ -1518,7 +1519,7 @@ parseEvalScript file scriptModeOutput = do
     toReplScriptParseErrors errorBundle =
         errorBundle
             { bundleErrors =
-                mapParseError ReplScriptParseError
+                mapParseError (ReplScriptParseError . unReplParseError)
                 <$> bundleErrors errorBundle
             }
 
@@ -1532,7 +1533,7 @@ parseEvalScript file scriptModeOutput = do
         executeCommands config st =
            lift
                $ execStateReader config st
-               $ Foldable.for_ cmds
+               $ for_ cmds
                $ if scriptModeOutput == EnableOutput
                     then executeCommandWithOutput
                     else executeCommand
@@ -1569,7 +1570,7 @@ formatUnificationMessage docOrCondition =
         . (:) (AuxOut "Succeeded with unifiers:\n")
         . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
         . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
-        . Foldable.toList
+        . toList
     unparseUnifier c =
         unparse
         . Pattern.toTermLike

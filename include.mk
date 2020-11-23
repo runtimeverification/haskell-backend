@@ -31,7 +31,7 @@ KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KRUN_OPTS
 KPROVE_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KPROVE_OPTS
-KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) $(KORE_REPL_OPTS)"
+KPROVE_REPL_OPTS = --haskell-backend-command $(KORE_REPL)
 export KPROVE_REPL_OPTS
 
 HS_TOP = $(TOP)/kore
@@ -73,5 +73,6 @@ $(K_RELEASE_DEFAULT)/lib/kframework/java/kernel-1.0-SNAPSHOT.jar:
 	mkdir -p $(K_RELEASE_DEFAULT)
 	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
 	cp $(TOP)/src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
+	rm $(K_RELEASE_DEFAULT)/bin/kore*
 	$(KRUN) --version
 	test -f $@

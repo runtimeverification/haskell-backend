@@ -9,13 +9,13 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Repl.Parser
     ( commandParser
     , scriptParser
+    , ReplParseError (..)
     ) where
 
 import Prelude.Kore hiding
     ( many
     )
 
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
     )
@@ -28,9 +28,13 @@ import Data.List
     ( nub
     )
 import qualified Data.Set as Set
+import Data.String
+    ( IsString (..)
+    )
 import qualified Data.Text as Text
 import Text.Megaparsec
     ( Parsec
+    , ShowErrorComponent (..)
     , customFailure
     , eof
     , many
@@ -53,7 +57,16 @@ import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
-type Parser = Parsec String String
+type Parser = Parsec ReplParseError String
+
+newtype ReplParseError = ReplParseError { unReplParseError :: String }
+    deriving (Eq, Ord)
+
+instance IsString ReplParseError where
+    fromString = ReplParseError
+
+instance ShowErrorComponent ReplParseError where
+    showErrorComponent (ReplParseError string) = string
 
 -- | This parser fails no match is found. It is expected to be used as
 -- @
@@ -92,7 +105,7 @@ commandParserExceptAlias endParser = do
 
 nonRecursiveCommand :: Parser ReplCommand
 nonRecursiveCommand =
-    Foldable.asum
+    asum
         [ help
         , showClaim
         , showAxiom

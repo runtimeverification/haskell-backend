@@ -297,10 +297,10 @@ test_string2Base =
         [asInternal "42", Test.Int.asInternal 16]
         (Test.Int.asPattern 66)
     , Test.Int.testInt
-        "string2Base hex negative is bottom"
+        "string2Base hex negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 16]
-        bottom
+        (Test.Int.asPattern (-66))
     , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
@@ -317,7 +317,7 @@ test_string2Base =
         [asInternal "foobar", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
-        "string2Base hex from hex is bottom"
+        "string2Base hex from hex"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)

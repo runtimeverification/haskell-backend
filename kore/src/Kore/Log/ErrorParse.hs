@@ -25,8 +25,8 @@ newtype ErrorParse = ErrorParse { message :: String }
 
 instance Exception ErrorParse where
     toException = toException . SomeEntry
-    fromException exn =
-        fromException exn >>= fromEntry
+    fromException exn = fromException exn >>= fromEntry
+    displayException = message
 
 instance Pretty ErrorParse where
     pretty ErrorParse { message } =

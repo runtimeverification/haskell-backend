@@ -18,7 +18,6 @@ import Control.Monad.Catch
     ( MonadThrow
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
     ( Limit (..)
@@ -152,8 +151,7 @@ checkClaim
     checkFinalNodes
         :: [CommonProofState]
         -> CheckResult (TermLike VariableName)
-    checkFinalNodes nodes
-      = Foldable.foldl' checkFinalNodesHelper Proved nodes
+    checkFinalNodes nodes = foldl' checkFinalNodesHelper Proved nodes
       where
         checkFinalNodesHelper Proved  ProofState.Proven = Proved
         checkFinalNodesHelper Proved  (ProofState.Unprovable config) =

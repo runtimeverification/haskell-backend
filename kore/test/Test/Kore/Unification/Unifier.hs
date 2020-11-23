@@ -14,7 +14,6 @@ import Control.Exception
     , evaluate
     )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -202,9 +201,9 @@ andSimplify term1 term2 results = do
             , "with term:"
             , Pretty.indent 4 (unparse term2)
             , "expected="
-            , Pretty.indent 4 (Foldable.fold (map pretty expected))
+            , Pretty.indent 4 (foldMap pretty expected)
             , "actual="
-            , Pretty.indent 4 (Foldable.fold (map pretty actual))
+            , Pretty.indent 4 (foldMap pretty actual)
             ]
 
 andSimplifyException
@@ -806,7 +805,7 @@ simplifyPattern (UnificationTerm term) = do
     simplifier = do
         simplifiedPatterns <-
             Pattern.simplify SideCondition.top expandedPattern
-        case Foldable.toList simplifiedPatterns of
+        case toList simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term

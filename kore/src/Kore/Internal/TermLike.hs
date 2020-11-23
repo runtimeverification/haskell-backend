@@ -196,7 +196,6 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
     ( Const (..)
     )
@@ -463,7 +462,8 @@ assertConstructorLikeKeys
 assertConstructorLikeKeys keys a
     | any (not . Pattern.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
+                filter (not . Pattern.isConstructorLike)
+                $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected constructor-like patterns,\
@@ -474,7 +474,7 @@ assertConstructorLikeKeys keys a
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isFullySimplified) keys =
         let simplifiableKeys =
-                filter (not . isFullySimplified) $ Foldable.toList keys
+                filter (not . isFullySimplified) $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected fully simplified patterns,\
@@ -948,7 +948,7 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 applySymbol
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -- ^ 'Symbol' declaration
     -> [Sort]
     -- ^ 'Symbol' sort parameters
@@ -980,7 +980,7 @@ See also: 'mkApplySymbol', 'applySymbol'
 applySymbol_
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -> [TermLike variable]
     -> TermLike variable
 applySymbol_ sentence = updateCallStack . applySymbol sentence []
@@ -1614,7 +1614,7 @@ mkSymbol
     -> [SortVariable]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1636,7 +1636,7 @@ mkSymbol_
     :: Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.

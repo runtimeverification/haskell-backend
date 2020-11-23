@@ -7,7 +7,6 @@ import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
@@ -55,7 +54,11 @@ import Kore.Internal.TermLike hiding
     ( Symbol
     , bytesSort
     )
+import Kore.Syntax
+    ( Const (..)
+    )
 import Kore.Syntax.Definition as Syntax
+import qualified Kore.Syntax.PatternF as PatternF
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -258,6 +261,12 @@ dummyIntSymbol = unaryIntSymbol "f" & function
 
 dummyInt :: TermLike VariableName -> TermLike VariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
+
+dummyFunctionalIntSymbol :: Internal.Symbol
+dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
+
+dummyFunctionalInt :: TermLike VariableName -> TermLike VariableName
+dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
 
 addInt, subInt, mulInt, divInt, tdivInt, tmodInt
     :: TermLike VariableName
@@ -1201,7 +1210,7 @@ builtinSet elements opaque =
         (,) <$> Builtin.toKey key <*> pure Domain.SetValue
         & maybe (Left (key, Domain.SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asKey <$> Foldable.toList elements
+        asKey <$> toList elements
         & partitionEithers
 
 builtinSet_
@@ -1746,6 +1755,42 @@ testModule =
             , subsortDecl kItemSort kSort
             ]
         }
+
+testModuleWithTwoClaims :: ParsedModule
+testModuleWithTwoClaims =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ embedParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            , SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv2")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "c")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ embedParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            ]
+        }
+
 
 -- -------------------------------------------------------------
 -- * Definition

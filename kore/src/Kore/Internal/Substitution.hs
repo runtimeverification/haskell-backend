@@ -56,7 +56,6 @@ import Prelude.Kore hiding
 import Control.DeepSeq
     ( NFData
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -330,7 +329,7 @@ toMultiMap
     => Substitution variable
     -> Map (SomeVariable variable) (NonEmpty (TermLike variable))
 toMultiMap =
-    Foldable.foldl' insertSubstitution Map.empty
+    foldl' insertSubstitution Map.empty
     . fmap assignmentToPair
     . unwrap
   where
@@ -341,7 +340,7 @@ toMultiMap =
         -> (variable1, term)
         -> Map variable1 (NonEmpty term)
     insertSubstitution multiMap (variable, termLike) =
-        let push = (termLike :|) . maybe [] Foldable.toList
+        let push = (termLike :|) . maybe [] Prelude.Kore.toList
         in Map.alter (Just . push) variable multiMap
 
 {- | Apply a normal order to a single substitution.
@@ -516,7 +515,7 @@ simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
 simplifiedAttribute (Substitution _) = Attribute.NotSimplified
 simplifiedAttribute (NormalizedSubstitution normalized) =
-    Foldable.foldMap TermLike.simplifiedAttribute normalized
+    foldMap TermLike.simplifiedAttribute normalized
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution variable -> Bool
@@ -635,7 +634,7 @@ assertNoneAreFreeVarsInRhs lhsVariables =
 instance InternalVariable variable
   => HasFreeVariables (Substitution variable) variable
   where
-    freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
+    freeVariables = foldMap freeVariablesWorker . unwrap
       where
         freeVariablesWorker (Assignment x t) =
             freeVariable x <> freeVariables t
@@ -647,7 +646,7 @@ variables
     -> Set (SomeVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) =
-    Foldable.foldMap (Set.singleton . assignedVariable) subst
+    foldMap (Set.singleton . assignedVariable) subst
 
 {- | The result of /normalizing/ a substitution.
 

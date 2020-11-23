@@ -53,9 +53,6 @@ import Kore.Step.RulePattern
 import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.Data
-    ( runSimplifier
-    )
 import Kore.Syntax.Variable
 import Kore.Unparser
     ( unparseToString
@@ -65,9 +62,9 @@ import Test.Kore
     ( testId
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.SMT
-    ( runNoSMT
-    , runSMT
+import Test.Kore.Step.Simplification
+    ( runSimplifier
+    , runSimplifierSMT
     )
 import Test.Tasty.HUnit.Ext
 
@@ -235,13 +232,13 @@ test_combineRules =
     [ testCase "One rule" $ do
         let expected = [Mock.a `rewritesTo` Mock.cf]
 
-        actual <- runMergeRulesNoSMT [ Mock.a `rewritesTo` Mock.cf ]
+        actual <- runMergeRules [ Mock.a `rewritesTo` Mock.cf ]
 
         assertEqual "" expected actual
     , testCase "Two rules" $ do
         let expected = [Mock.a `rewritesTo` Mock.cf]
 
-        actual <- runMergeRulesNoSMT
+        actual <- runMergeRules
             [ Mock.a `rewritesTo` Mock.b
             , Mock.b `rewritesTo` Mock.cf
             ]
@@ -256,7 +253,7 @@ test_combineRules =
                     `rewritesTo` Pair (Mock.cg, makeTruePredicate)
                 ]
 
-        actual <- runMergeRules
+        actual <- runMergeRulesSMT
             [ Mock.a `rewritesTo` Mock.functionalConstr10 Mock.cf
             , Mock.functionalConstr10 Mock.b `rewritesTo` Mock.cg
             ]
@@ -268,7 +265,7 @@ test_combineRules =
                     `rewritesTo` y
                 ]
 
-        actual <- runMergeRulesNoSMT
+        actual <- runMergeRules
             [ Mock.functionalConstr10 x `rewritesTo` x
             , Mock.functionalConstr11 y `rewritesTo` y
             ]
@@ -291,7 +288,7 @@ test_combineRules =
                     `rewritesTo` Pair (y, makeTruePredicate)
                 ]
 
-        actual <- runMergeRules
+        actual <- runMergeRulesSMT
             [   Pair
                     ( Mock.functionalConstr10 x
                     , makeEqualsPredicate (Mock.f x) (Mock.g x)
@@ -319,7 +316,7 @@ test_combineRules =
                     `rewritesTo` x0
                 ]
 
-        actual <- runMergeRulesNoSMT
+        actual <- runMergeRules
             [ Mock.functionalConstr10 x `rewritesTo` x
             , Mock.functionalConstr11 x `rewritesTo` x
             ]
@@ -342,7 +339,7 @@ test_combineRulesGrouped =
     , testCase "Two rules" $ do
         let expected = [Mock.a `rewritesTo` Mock.cf]
 
-        actual <- runMergeRulesNoSMT
+        actual <- runMergeRules
             [ Mock.a `rewritesTo` Mock.b
             , Mock.b `rewritesTo` Mock.cf
             ]
@@ -355,7 +352,7 @@ test_combineRulesGrouped =
                     `rewritesTo` z
                 ]
 
-        actual <- runMergeRulesNoSMT
+        actual <- runMergeRules
             [ Mock.functionalConstr10 x `rewritesTo` x
             , Mock.functionalConstr11 y `rewritesTo` y
             , Mock.functionalConstr12 z `rewritesTo` z
@@ -380,29 +377,26 @@ applyAlias name aliasRight =
             }
         []
 
-runMergeRulesNoSMT
-    :: [RewriteRule VariableName]
-    -> IO [RewriteRule VariableName]
-runMergeRulesNoSMT (rule : rules) =
-    runNoSMT
-    $ runSimplifier Mock.env
-    $ mergeRules (rule :| rules)
-runMergeRulesNoSMT [] = error "Unexpected empty list of rules."
-
 runMergeRules
     :: [RewriteRule VariableName]
     -> IO [RewriteRule VariableName]
 runMergeRules (rule : rules) =
-    runSMT (pure ())
-    $ runSimplifier Mock.env
+    runSimplifier Mock.env
     $ mergeRules (rule :| rules)
 runMergeRules [] = error "Unexpected empty list of rules."
+
+runMergeRulesSMT
+    :: [RewriteRule VariableName]
+    -> IO [RewriteRule VariableName]
+runMergeRulesSMT (rule : rules) =
+    runSimplifierSMT Mock.env
+    $ mergeRules (rule :| rules)
+runMergeRulesSMT [] = error "Unexpected empty list of rules."
 
 runMergeRulesGrouped
     :: [RewriteRule VariableName]
     -> IO [RewriteRule VariableName]
 runMergeRulesGrouped (rule : rules) =
-    runNoSMT
-    $ runSimplifier Mock.env
+    runSimplifier Mock.env
     $ mergeRulesConsecutiveBatches 2 (rule :| rules)
 runMergeRulesGrouped [] = error "Unexpected empty list of rules."

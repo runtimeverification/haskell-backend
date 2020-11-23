@@ -15,6 +15,8 @@ module SMT
     , Config (..)
     , defaultConfig
     , TimeOut (..)
+    , ResetInterval (..)
+    , Prelude (..)
     , Result (..)
     , Constructor (..)
     , ConstructorArgument (..)
@@ -94,7 +96,6 @@ import qualified GHC.Generics as GHC
 import Control.Monad
     ( join
     )
-import qualified Data.Foldable as Foldable
 import Log
     ( LogAction
     , LoggerT
@@ -343,14 +344,15 @@ unshareSolverHandle action = do
 
 {- | Increase the 'queryCounter' and indicate if the solver should be reset.
  -}
-incrementQueryCounter :: Monad monad => StateT SolverHandle monad Bool
-incrementQueryCounter = do
+incrementQueryCounter
+    :: Monad monad => ResetInterval -> StateT SolverHandle monad Bool
+incrementQueryCounter (ResetInterval resetInterval) = do
     Lens.modifying (field @"queryCounter") (+ 1)
     counter <- Lens.use (field @"queryCounter")
     -- Due to an issue with the SMT solver, we need to reinitialise it after a
     -- number of runs, specified here. This number can be adjusted based on
     -- experimentation.
-    pure (counter >= 100)
+    pure (toInteger counter >= resetInterval)
 
 instance MonadSMT SMT where
     withSolver action =
@@ -359,7 +361,10 @@ instance MonadSMT SMT where
             Exception.finally action
                 (do
                     withSolver' pop
-                    needReset <- modifySolverHandle incrementQueryCounter
+                    resetInterval' <- extractResetInterval
+                    needReset <-
+                        modifySolverHandle
+                            (incrementQueryCounter resetInterval')
                     when needReset reinit
                 )
 
@@ -422,19 +427,29 @@ instance MonadSMT m => MonadSMT (ExceptT e m)
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
     deriving (Eq, Ord, Read, Show)
 
+-- | Reset interval for solver.
+newtype ResetInterval =
+    ResetInterval { getResetInterval :: Integer }
+    deriving (Eq, Ord, Read, Show)
+
+-- | Optional filepath for the SMT prelude.
+newtype Prelude = Prelude { getPrelude :: Maybe FilePath }
+
 -- | Solver configuration
 data Config =
     Config
-        { executable :: FilePath
+        { executable :: !FilePath
         -- ^ solver executable file name
-        , arguments :: [String]
+        , arguments :: ![String]
         -- ^ default command-line arguments to solver
-        , preludeFile :: Maybe FilePath
+        , prelude :: !Prelude
         -- ^ prelude of definitions to initialize solver
-        , logFile :: Maybe FilePath
+        , logFile :: !(Maybe FilePath)
         -- ^ optional log file name
-        , timeOut :: TimeOut
+        , timeOut :: !TimeOut
         -- ^ query time limit
+        , resetInterval :: !ResetInterval
+        -- ^ reset solver after this number of queries
         }
 
 -- | Default configuration using the Z3 solver.
@@ -446,16 +461,19 @@ defaultConfig =
             [ "-smt2"  -- use SMT-LIB2 format
             , "-in"    -- read from standard input
             ]
-        , preludeFile = Nothing
+        , prelude = Prelude Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
+        , resetInterval = ResetInterval 100
         }
 
 initSolver :: Config -> SMT ()
-initSolver Config { timeOut, preludeFile } = do
+initSolver Config { timeOut, prelude } = do
     setTimeOut timeOut
-    Foldable.traverse_ loadFile preludeFile
+    traverse_ loadFile preludeFile
     join $ SMT (Reader.asks userInit)
+  where
+      preludeFile = getPrelude prelude
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
@@ -538,3 +556,9 @@ setTimeOut TimeOut { getTimeOut } =
             setOption ":timeout" (SimpleSMT.int timeOut)
         Unlimited ->
             return ()
+
+-- | Extract the reset interval value from the configuration.
+extractResetInterval :: SMT ResetInterval
+extractResetInterval =
+    SMT (Reader.asks config)
+    >>= return . resetInterval
