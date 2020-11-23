@@ -27,6 +27,9 @@ import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
+import Kore.Internal.InternalInt
+    ( InternalInt
+    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -139,8 +142,13 @@ instance Synthetic Function (Const StringLiteral) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
--- | A 'Bytes' pattern is always 'Function'.
+-- | An 'InternalBytes' pattern is always 'Function'.
 instance Synthetic Function (Const InternalBytes) where
+    synthetic = const (Function True)
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalInt' pattern is always 'Function'.
+instance Synthetic Function (Const InternalInt) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 

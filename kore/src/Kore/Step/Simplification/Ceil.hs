@@ -344,7 +344,6 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
 makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
 makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
 
 {-| This handles the case when we can't simplify a term's ceil.
@@ -399,7 +398,6 @@ makeSimplifiedCeil
         BuiltinF (Domain.BuiltinMap _) -> True
         BuiltinF (Domain.BuiltinList _) -> True
         BuiltinF (Domain.BuiltinSet _) -> True
-        BuiltinF (Domain.BuiltinInt _) -> unexpectedError
         BuiltinF (Domain.BuiltinBool _) -> unexpectedError
         BuiltinF (Domain.BuiltinString _) -> unexpectedError
         DomainValueF _ -> True
@@ -414,6 +412,7 @@ makeSimplifiedCeil
         TopF _ -> unexpectedError
         StringLiteralF _ -> unexpectedError
         InternalBytesF _ -> unexpectedError
+        InternalIntF _ -> unexpectedError
         VariableF _ -> False
 
     unsimplified =

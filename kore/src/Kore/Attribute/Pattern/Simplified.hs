@@ -37,6 +37,9 @@ import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
+import Kore.Internal.InternalInt
+    ( InternalInt
+    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -294,6 +297,10 @@ instance Synthetic Simplified (Const InternalBytes) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
+instance Synthetic Simplified (Const InternalInt) where
+    synthetic = alwaysSimplified
+    {-# INLINE synthetic #-}
+
 instance Synthetic Simplified (Const (SomeVariable variable)) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
@@ -367,7 +374,6 @@ instance Synthetic Simplified (Rewrites sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Builtin key) where
-    synthetic (BuiltinInt    _) = fullySimplified
     synthetic (BuiltinBool   _) = fullySimplified
     synthetic (BuiltinString _) = fullySimplified
     synthetic b@(BuiltinMap    _) = notSimplified b

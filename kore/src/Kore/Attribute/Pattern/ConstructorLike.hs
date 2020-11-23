@@ -30,6 +30,9 @@ import Kore.Internal.Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
+import Kore.Internal.InternalInt
+    ( InternalInt
+    )
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -186,7 +189,6 @@ instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
   where
     synthetic =
         \case
-            BuiltinInt _    -> ConstructorLike . Just $ ConstructorLikeHead
             BuiltinBool _   -> ConstructorLike . Just $ ConstructorLikeHead
             BuiltinString _ -> ConstructorLike . Just $ ConstructorLikeHead
             (BuiltinMap InternalAc
@@ -230,6 +232,10 @@ instance Synthetic ConstructorLike (Const StringLiteral) where
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike (Const InternalBytes) where
+    synthetic = const (ConstructorLike . Just $ ConstructorLikeHead)
+    {-# INLINE synthetic #-}
+
+instance Synthetic ConstructorLike (Const InternalInt) where
     synthetic = const (ConstructorLike . Just $ ConstructorLikeHead)
     {-# INLINE synthetic #-}
 

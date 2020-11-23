@@ -38,6 +38,7 @@ import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalInt
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -1026,10 +1027,10 @@ intSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "INT.Int" ]
 
 builtinInt :: Integer -> InternalInt
-builtinInt builtinIntValue =
+builtinInt internalIntValue =
     InternalInt
-        { builtinIntSort = intSort
-        , builtinIntValue
+        { internalIntSort = intSort
+        , internalIntValue
         }
 
 -- ** KEQUAL

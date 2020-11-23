@@ -42,11 +42,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
     ( resynthesize
     )
-import Kore.Domain.Builtin
-    ( Builtin (..)
-    , InternalInt (..)
-    )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalInt
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -90,6 +87,7 @@ termLikeChildGen patternSort =
                 Gen.choice
                     [ mkElemVar <$> elementVariableGen patternSort
                     , mkBuiltin <$> genBuiltin patternSort
+                    , mkInternalInt <$> genInternalInt patternSort
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)
@@ -329,16 +327,13 @@ test_hasConstructorLikeTop =
                 True
                 $ isConstructorLikeTop (mkDomainValue dv)
             let
-                b :: Kore.Domain.Builtin.Builtin key child
-                b = BuiltinInt
-                        (InternalInt
-                            { builtinIntSort = Mock.intSort
-                            , builtinIntValue = 1
-                            }
-                        )
+                b = InternalInt
+                    { internalIntSort = Mock.intSort
+                    , internalIntValue = 1
+                    }
             assertEqual "BuiltinF is constructor-like-top"
                 True
-                (isConstructorLikeTop $ mkBuiltin b)
+                (isConstructorLikeTop $ mkInternalInt b)
             assertEqual "StringLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop $ mkStringLiteral "")

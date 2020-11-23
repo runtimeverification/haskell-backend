@@ -25,6 +25,7 @@ module Test.Kore
     , unifiedTargetVariableGen
     , unifiedVariableGen
     , genBuiltin
+    , genInternalInt
     , couple
     , symbolOrAliasGen
     , addVariable
@@ -60,6 +61,7 @@ import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
 import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import Kore.Internal.InternalInt
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -400,14 +402,13 @@ genDomainValue childGen domainValueSort =
 
 genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
 genBuiltin domainValueSort = Gen.choice
-    [ Domain.BuiltinInt <$> genInternalInt domainValueSort
-    , Domain.BuiltinBool <$> genInternalBool domainValueSort
+    [ Domain.BuiltinBool <$> genInternalBool domainValueSort
     , Domain.BuiltinString <$> genInternalString domainValueSort
     ]
 
-genInternalInt :: Sort -> Gen Domain.InternalInt
+genInternalInt :: Sort -> Gen InternalInt
 genInternalInt builtinIntSort =
-    Domain.InternalInt builtinIntSort <$> genInteger
+    InternalInt builtinIntSort <$> genInteger
   where
     genInteger = Gen.integral (Range.linear (-1024) 1024)
 

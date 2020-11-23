@@ -41,7 +41,6 @@ module Kore.Domain.Builtin
     , SetValue
     , NormalizedSet (..)
     --
-    , InternalInt (..)
     , InternalBool (..)
     , InternalString (..)
     ) where
@@ -637,32 +636,6 @@ instance AcWrapper NormalizedSet where
  -}
 type InternalSet key child = InternalAc key NormalizedSet child
 
--- * Builtin Int
-
-{- | Internal representation of the builtin @INT.Int@ domain.
- -}
-data InternalInt =
-    InternalInt
-        { builtinIntSort :: !Sort
-        , builtinIntValue :: !Integer
-        }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Unparse InternalInt where
-    unparse InternalInt { builtinIntSort, builtinIntValue } =
-        "\\dv"
-        <> parameters [builtinIntSort]
-        <> Pretty.parens (Pretty.dquotes $ Pretty.pretty builtinIntValue)
-
-    unparse2 InternalInt { builtinIntSort, builtinIntValue } =
-        "\\dv2"
-        <> parameters2 [builtinIntSort]
-        <> arguments' [Pretty.dquotes $ Pretty.pretty builtinIntValue]
-
 -- * Builtin Bool
 
 {- | Internal representation of the builtin @BOOL.Bool@ domain.
@@ -729,7 +702,6 @@ data Builtin key child
     = BuiltinMap !(InternalMap key child)
     | BuiltinList !(InternalList child)
     | BuiltinSet !(InternalSet key child)
-    | BuiltinInt !InternalInt
     | BuiltinBool !InternalBool
     | BuiltinString !InternalString
     deriving (Eq, Ord, Show)
@@ -748,7 +720,6 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
 builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
-        BuiltinInt InternalInt { builtinIntSort } -> builtinIntSort
         BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
         BuiltinString InternalString { internalStringSort } ->
             internalStringSort
