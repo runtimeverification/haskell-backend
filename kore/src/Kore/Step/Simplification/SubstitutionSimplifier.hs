@@ -65,6 +65,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    )
 import Kore.Internal.Substitution
     ( Assignment
     , pattern Assignment
