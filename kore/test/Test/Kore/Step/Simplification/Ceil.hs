@@ -20,13 +20,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
-    ( mkRepresentation
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
@@ -526,5 +524,5 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.Representation.mkRepresentation
+    SideCondition.toRepresentation
     (SideCondition.top :: SideCondition VariableName)

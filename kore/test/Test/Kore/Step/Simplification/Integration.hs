@@ -30,13 +30,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
-    ( mkRepresentation
     )
 import Kore.Sort
     ( predicateSort
@@ -1472,5 +1470,5 @@ asInternal =
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
-    SideCondition.Representation.mkRepresentation
-        (SideCondition.top :: SideCondition')
+    SideCondition.toRepresentation
+    (SideCondition.top :: SideCondition')

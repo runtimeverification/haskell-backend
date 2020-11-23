@@ -51,13 +51,11 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
+    ( toRepresentation
+    , top
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
-    ( mkRepresentation
     )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
@@ -656,5 +654,5 @@ test_mkDefined =
 
     sideRepresentation :: SideCondition.Representation
     sideRepresentation =
-        SideCondition.Representation.mkRepresentation
+        SideCondition.toRepresentation
         (SideCondition.top :: SideCondition VariableName)

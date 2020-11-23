@@ -64,7 +64,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition.Representation
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Substitution
     ( Assignment
     , pattern Assignment
@@ -374,7 +374,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation =
-        SideCondition.Representation.mkRepresentation sideCondition
+        SideCondition.toRepresentation sideCondition
 
 data Private variable =
     Private
