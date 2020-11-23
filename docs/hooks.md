@@ -712,7 +712,7 @@ contents of `L2`.
 The result is `\bottom` in these cases:
 
 - `index` is negative
-- `L2` is non-empty and `index + N` exeeds the lenth of `L1`
+- `L2` is non-empty and `index + N` exeeds the length of `L1`
 
 ~~~
     hooked-symbol updateAll{}(List{}, Int{}, List{}) : List{}

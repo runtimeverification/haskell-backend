@@ -447,7 +447,6 @@ test_updateAll =
   where
     original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]
 
-
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal
 
