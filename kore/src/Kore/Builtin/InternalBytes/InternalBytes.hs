@@ -67,11 +67,13 @@ sort :: Text
 sort = "BYTES.Bytes"
 
 
--- | Render a 'ByteString' as an internal domain value of the given sort.
--- | The result sort should be hooked to the builtin @Bytes@ sort, but this is
--- | not checked.
--- |
--- | See also: 'sort'.
+{- | Render a 'ByteString' as an internal domain value of the given sort.
+
+The result sort should be hooked to the builtin @Bytes@ sort, but this is
+not checked.
+
+See also: 'sort'.
+ -}
 asInternal
     :: InternalVariable variable
     => Sort        -- ^ resulting sort
@@ -80,12 +82,13 @@ asInternal
 asInternal bytesSort bytesValue =
     TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
 
--- | Render a 'Bytes' as a domain value pattern of the given sort.
--- |
--- | The result sort should be hooked to the builtin @Bytes@ sort, but this is
--- | not checked.
--- |
--- | See also: 'sort'.
+{- | Render a 'Bytes' as a domain value pattern of the given sort.
+
+The result sort should be hooked to the builtin @Bytes@ sort, but this is
+not checked.
+
+See also: 'sort'.
+ -}
 asTermLike
     :: InternalVariable variable
     => InternalBytes  -- ^ builtin value to render
@@ -93,7 +96,7 @@ asTermLike
 asTermLike InternalBytes { bytesSort, bytesValue }  =
     mkDomainValue DomainValue
         { domainValueSort = bytesSort
-        , domainValueChild = mkStringLiteral $ Encoding.toBase16 bytesValue
+        , domainValueChild = mkStringLiteral $ Encoding.decode8Bit bytesValue
         }
 
 internalize

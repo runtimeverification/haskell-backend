@@ -149,7 +149,7 @@ patternVerifierHook =
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ literal -> do
-                bytesValue <- Builtin.parseString Encoding.parseBase16 literal
+                bytesValue <- Builtin.parseString Encoding.parse8Bit literal
                 (return . InternalBytesF . Const)
                     InternalBytes { bytesSort, bytesValue }
             _ -> Kore.Error.koreFail "Expected literal string"
