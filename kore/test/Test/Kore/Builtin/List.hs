@@ -13,6 +13,7 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_updateAll
     , hprop_unparse
     , test_size
     --
@@ -416,6 +417,35 @@ test_size =
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
     ]
+
+test_updateAll :: [TestTree]
+test_updateAll =
+    [ testCaseWithoutSMT "updateAll([1, 2, 3], -1, [5]) === \\bottom" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt (-1)) (elementList $ mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 10, []) === [1, 2, 3]" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt 10) unitList
+        assertEqual' "" (Pattern.fromTermLike original) result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 1, [5]) === [1, 5, 3]" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt 1) (elementList $ mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
+        assertEqual' "" (Pattern.fromTermLike expect) result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4] === \\bottom"
+        $ do
+            let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
+            result <-
+                evaluate
+                $ updateAllList original (mkInt 0) new
+            assertEqual' "" Pattern.bottom result
+    ]
+  where
+    original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]
 
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal
