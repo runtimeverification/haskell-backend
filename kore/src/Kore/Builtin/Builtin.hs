@@ -19,8 +19,11 @@ module Kore.Builtin.Builtin
       -- * Implementing builtin functions
     , notImplemented
     , unaryOperator
+    , unaryOperator'
     , binaryOperator
+    , binaryOperator'
     , ternaryOperator
+    , ternaryOperator'
     , functionEvaluator
     , applicationEvaluator
     , verifierBug
@@ -175,6 +178,7 @@ unaryOperator extractVal asPattern ctx op =
   where
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
+
     unaryOperator0 :: Function
     unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
@@ -183,6 +187,84 @@ unaryOperator extractVal asPattern ctx op =
                 let r = op (get a)
                 return (asPattern resultSort r)
             [_] -> empty
+            _ -> wrongArity (Text.unpack ctx)
+
+{- | Construct a builtin unary operator.
+
+  The operand type may differ from the result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+unaryOperator'
+    :: forall a b
+    .   (forall variable. Text -> TermLike variable -> Maybe a)
+    -- ^ Parse operand
+    ->  (forall variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
+        )
+    -- ^ Render result as pattern with given sort
+    -> Text
+    -- ^ Builtin function name (for error messages)
+    -> (a -> b)
+    -- ^ Operation on builtin types
+    -> BuiltinAndAxiomSimplifier
+unaryOperator' extractVal asPattern ctx op =
+    functionEvaluator unaryOperator0
+  where
+    get :: TermLike variable -> Maybe a
+    get = extractVal ctx
+
+    unaryOperator0 :: Function
+    unaryOperator0 resultSort children =
+        case children of
+            [termLike]
+              | Just a <- get termLike -> do
+                -- Apply the operator to a domain value
+                let r = op a
+                return (asPattern resultSort r)
+              | otherwise -> empty
+            _ -> wrongArity (Text.unpack ctx)
+
+{- | Construct a builtin binary operator.
+
+  Both operands have the same builtin type, which may be different from the
+  result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+binaryOperator'
+    :: forall a b
+    .  (forall variable. Text -> TermLike variable -> Maybe a)
+    -- ^ Extract domain value
+    ->  (forall variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
+        )
+    -- ^ Render result as pattern with given sort
+    -> Text
+    -- ^ Builtin function name (for error messages)
+    -> (a -> a -> b)
+    -- ^ Operation on builtin types
+    -> BuiltinAndAxiomSimplifier
+binaryOperator' extractVal asPattern ctx op =
+    functionEvaluator binaryOperator0
+  where
+    get :: TermLike variable -> Maybe a
+    get = extractVal ctx
+
+    binaryOperator0 :: Function
+    binaryOperator0 resultSort children =
+        case children of
+            [(get -> Just a), (get -> Just b)] -> do
+                -- Apply the operator to two domain values
+                let r = op a b
+                return (asPattern resultSort r)
+            [_, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
@@ -221,6 +303,45 @@ binaryOperator extractVal asPattern ctx op =
                 let r = op (get a) (get b)
                 return (asPattern resultSort r)
             [_, _] -> empty
+            _ -> wrongArity (Text.unpack ctx)
+
+{- | Construct a builtin ternary operator.
+
+  All three operands have the same builtin type, which may be different from the
+  result type.
+
+  The function is skipped if its arguments are not domain values.
+  It is an error if the wrong number of arguments is given; this must be checked
+  during verification.
+
+ -}
+ternaryOperator'
+    :: forall a b
+    .  (forall variable. Text -> TermLike variable -> Maybe a)
+    -- ^ Extract domain value
+    ->  (forall variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
+        )
+    -- ^ Render result as pattern with given sort
+    -> Text
+    -- ^ Builtin function name (for error messages)
+    -> (a -> a -> a -> b)
+    -- ^ Operation on builtin types
+    -> BuiltinAndAxiomSimplifier
+ternaryOperator' extractVal asPattern ctx op =
+    functionEvaluator ternaryOperator0
+  where
+    get :: TermLike variable -> Maybe a
+    get = extractVal ctx
+
+    ternaryOperator0 :: Function
+    ternaryOperator0 resultSort children =
+        case children of
+            [(get -> Just a), (get -> Just b), (get -> Just c)] -> do
+                -- Apply the operator to three domain values
+                let r = op a b c
+                return (asPattern resultSort r)
+            [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin ternary operator.

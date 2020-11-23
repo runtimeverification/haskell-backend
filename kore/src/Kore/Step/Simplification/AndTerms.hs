@@ -42,6 +42,7 @@ import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -230,6 +231,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals)
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads)
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s)
+    , (BothT,   \_ _ _ -> unifyInternalInt)
     , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
@@ -568,6 +570,24 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             explainAndReturnBottom (fromString message) firstTerm secondTerm
         Left Overloading.NotApplicable -> empty
 
+unifyInternalInt
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyInternalInt term1@(BuiltinInt_ int1) term2@(BuiltinInt_ int2) =
+    assert (on (==) internalIntSort int1 int2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | on (==) internalIntValue int1 int2 =
+        return $ from @_ @(Pattern variable) term1
+      | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+unifyInternalInt _ _ = empty
+
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
@@ -642,8 +662,8 @@ domainValueAndEqualsAssumesDifferent
     second@(DV_ _ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinInt _))
-    second@(Builtin_ (Domain.BuiltinInt _))
+    first@(BuiltinInt_ _)
+    second@(BuiltinInt_ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinString _))

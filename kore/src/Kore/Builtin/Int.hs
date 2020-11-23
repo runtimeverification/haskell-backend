@@ -81,6 +81,7 @@ import Data.Bits
     , (.&.)
     , (.|.)
     )
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -89,7 +90,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import GHC.Integer
     ( smallInteger
     )
@@ -109,9 +109,9 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -214,29 +214,26 @@ patternVerifierHook =
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ lit -> do
-                builtinIntValue <- Builtin.parseString parse lit
-                (return . BuiltinF . Domain.BuiltinInt)
-                    Domain.InternalInt
-                        { builtinIntSort = domainValueSort
-                        , builtinIntValue
+                internalIntValue <- Builtin.parseString parse lit
+                (return . InternalIntF . Const)
+                    InternalInt
+                        { internalIntSort
+                        , internalIntValue
                         }
             _ -> Kore.Error.koreFail "Expected literal string"
       where
-        DomainValue { domainValueSort } = external
+        DomainValue { domainValueSort = internalIntSort } = external
         DomainValue { domainValueChild = externalChild } = external
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue
     :: Text -- ^ error message Context
-    -> Builtin child
-    -> Integer
-extractIntDomainValue ctx =
+    -> TermLike variable
+    -> Maybe Integer
+extractIntDomainValue _ =
     \case
-        Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
-            builtinIntValue
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Int builtin should be internal"
+        BuiltinInt_ InternalInt { internalIntValue } -> Just internalIntValue
+        _ -> Nothing
 
 {- | Parse a string literal as an integer.
  -}
@@ -257,16 +254,9 @@ expectBuiltinInt
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Integer
-expectBuiltinInt ctx =
+expectBuiltinInt _ =
     \case
-        Builtin_ domain ->
-            case domain of
-                Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
-                    return builtinIntValue
-                _ ->
-                    Builtin.verifierBug
-                    $ Text.unpack ctx
-                    ++ ": Domain value is not a string or internal value"
+        BuiltinInt_ InternalInt { internalIntValue } -> return internalIntValue
         _ -> empty
 
 {- | Implement builtin function evaluation.
@@ -318,22 +308,22 @@ builtinFunctions =
     ]
   where
     unaryOperator name op =
-        ( name, Builtin.unaryOperator extractIntDomainValue
+        ( name, Builtin.unaryOperator' extractIntDomainValue
             asPattern name op )
     binaryOperator name op =
-        ( name, Builtin.binaryOperator extractIntDomainValue
+        ( name, Builtin.binaryOperator' extractIntDomainValue
             asPattern name op )
     comparator name op =
-        ( name, Builtin.binaryOperator extractIntDomainValue
+        ( name, Builtin.binaryOperator' extractIntDomainValue
             Bool.asPattern name op )
     partialUnaryOperator name op =
-        ( name, Builtin.unaryOperator extractIntDomainValue
+        ( name, Builtin.unaryOperator' extractIntDomainValue
             asPartialPattern name op )
     partialBinaryOperator name op =
-        ( name, Builtin.binaryOperator extractIntDomainValue
+        ( name, Builtin.binaryOperator' extractIntDomainValue
             asPartialPattern name op )
     partialTernaryOperator name op =
-        ( name, Builtin.ternaryOperator extractIntDomainValue
+        ( name, Builtin.ternaryOperator' extractIntDomainValue
             asPartialPattern name op )
 
 tdiv, tmod, ediv, emod, pow

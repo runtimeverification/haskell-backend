@@ -68,15 +68,15 @@ externalize =
                     Domain.BuiltinSet  builtin ->
                         (toPatternF . Recursive.project)
                             (Set.asTermLike builtin)
-                    Domain.BuiltinInt  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Int.asTermLike builtin)
                     Domain.BuiltinBool builtin ->
                         (toPatternF . Recursive.project)
                             (Bool.asTermLike builtin)
                     Domain.BuiltinString builtin ->
                         (toPatternF . Recursive.project)
                             (String.asTermLike builtin)
+            InternalIntF (Const internalInt) ->
+                (toPatternF . Recursive.project)
+                    (Int.asTermLike internalInt)
             InternalBytesF (Const internalBytes) ->
                 (toPatternF . Recursive.project)
                     (InternalBytes.asTermLike internalBytes)
@@ -145,3 +145,4 @@ externalize =
             InjF _ -> error "Unexpected sort injection"
             BuiltinF _ -> error "Unexpected internal builtin"
             InternalBytesF _ -> error "Unexpected internal builtin"
+            InternalIntF _ -> error "Unexpected internal builtin"

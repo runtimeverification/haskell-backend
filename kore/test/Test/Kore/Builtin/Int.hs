@@ -67,8 +67,8 @@ import Kore.Builtin.Int
     , tmod
     )
 import qualified Kore.Builtin.Int as Int
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -382,9 +382,8 @@ test_euclidian_division_theorem =
     extractValue :: Pattern VariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
-            Builtin_
-                (Domain.BuiltinInt Domain.InternalInt { builtinIntValue }) ->
-                    builtinIntValue
+            BuiltinInt_ InternalInt { internalIntValue } ->
+                internalIntValue
             _ -> error "Expecting builtin int."
 
 testDivEvaluatedArguments

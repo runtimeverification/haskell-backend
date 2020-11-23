@@ -1128,6 +1128,21 @@ test_andTermsSimplification =
                 assertEqual "" expect actual
             ]
         ]
+
+    , testGroup "internal Int values"
+        [ testCase "distinct values" $ do
+            let expect = []
+                input1 = Mock.builtinInt 1
+                input2 = Mock.builtinInt 2
+            actual <- unify input1 input2
+            assertEqual "Expected \\bottom" expect actual
+        , testCase "identical values" $ do
+            let expect = [Pattern.fromTermLike input1]
+                input1 = Mock.builtinInt 1
+                input2 = Mock.builtinInt 1
+            actual <- unify input1 input2
+            assertEqual "" expect actual
+        ]
     ]
 
 mkVariable :: Text -> Variable VariableName
