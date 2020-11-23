@@ -708,7 +708,7 @@ The number of elements in the given list.
 
 `LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`
 where the `N` elements of `L1` starting at `index` are replaced with the
-contents of `L2`.
+contents of `L2`. The result is `\bottom` if part of `L2` would go off the end.
 
 ~~~
     hooked-symbol updateAll{}(List{}, Int{}, List{}) : List{}
