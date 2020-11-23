@@ -12,8 +12,8 @@ jobs:
     - uses: cachix/install-nix-action@v12
     - uses: cachix/cachix-action@v8
       with:
-        name: runtimeverification
-        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+        name: kore
+        signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
     - run: nix-build --arg checkMaterialization true -A kore -A project.kore.checks
     - run: nix-shell --run "echo OK"
 

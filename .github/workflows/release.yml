@@ -1,0 +1,16 @@
+name: "Release"
+on:
+  push:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.3.4
+      with:
+        submodules: recursive
+    - uses: cachix/install-nix-action@v12
+    - uses: cachix/cachix-action@v8
+      with:
+        name: runtimeverification
+        signingKey: '${{ secrets.RUNTIMEVERIFICATION_CACHIX_SIGNING_KEY }}'
+    - run: nix-build -A kore -A project.kore.checks
