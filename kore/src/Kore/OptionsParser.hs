@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.OptionsParser
     ( enableDisableFlag
+    , PatternOptions (..)
     , KoreParserOptions (..)
     , commandLineParser
     ) where
@@ -57,7 +58,7 @@ data PatternOptions = PatternOptions
     }
 
 -- | Main options record
-data KoreParserOptions' = KoreParserOptions'
+data KoreParserOptions = KoreParserOptions
     { fileName            :: !FilePath
     -- ^ Name for a file containing a definition to parse and verify
     , patternOpt          :: !(Maybe PatternOptions)
@@ -72,21 +73,10 @@ data KoreParserOptions' = KoreParserOptions'
     -- ^ Option to print in applicative Kore syntax
     }
 
-
-data KoreParserOptions = KoreParserOptions
-    { fileName            :: !FilePath
-    , patternFileName     :: !FilePath
-    , mainModuleName      :: !Text
-    , willPrintDefinition :: !Bool
-    , willPrintPattern    :: !Bool
-    , willVerify          :: !Bool
-    , appKore             :: !Bool
-    }
-
 -- | Command Line Argument Parser
-commandLineParser' :: Parser KoreParserOptions'
-commandLineParser' =
-    KoreParserOptions'
+commandLineParser :: Parser KoreParserOptions
+commandLineParser =
+    KoreParserOptions
     <$> argument str
         (  metavar "FILE"
         <> help "Kore source file to parse [and verify]" )
@@ -120,44 +110,3 @@ commandLineParser' =
         (  "printing parsed definition in applicative Kore syntax "
         ++ "[default disabled]"
         )
-
--- TODO (MirceaS): Refactor the code that uses the
--- command line parser so that it uses the new
--- KoreParserOptions options type so that we may
--- remove the terms below
-
-morph :: KoreParserOptions' -> KoreParserOptions
-morph kpo
-    | Nothing <- patternOpt = KoreParserOptions
-        { fileName
-        , patternFileName = ""
-        , mainModuleName = ""
-        , willPrintDefinition
-        , willPrintPattern
-        , willVerify
-        , appKore
-        }
-    | Just PatternOptions
-        { patternFileName
-        , mainModuleName
-        } <- patternOpt = KoreParserOptions
-        { fileName
-        , patternFileName
-        , mainModuleName
-        , willPrintDefinition
-        , willPrintPattern
-        , willVerify
-        , appKore
-        }
-  where
-    KoreParserOptions'
-        { fileName
-        , patternOpt
-        , willPrintDefinition
-        , willPrintPattern
-        , willVerify
-        , appKore
-        } = kpo
-
-commandLineParser :: Parser KoreParserOptions
-commandLineParser = morph <$> commandLineParser'

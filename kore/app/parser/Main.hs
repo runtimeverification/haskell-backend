@@ -103,21 +103,23 @@ main = handleTop $ do
                         $ toVerifiedDefinition indexedModules
                 else putDoc (debug parsedDefinition)
 
-            let KoreParserOptions { patternFileName } = koreParserOptions
-            unless (null patternFileName) $ do
-                parsedPattern <- mainPatternParse patternFileName
-                when willVerify $ do
-                    let KoreParserOptions { mainModuleName } = koreParserOptions
-                    indexedModule <-
-                        lookupMainModule
-                            (ModuleName mainModuleName)
-                            indexedModules
-                        & lift
-                    _ <- mainPatternVerify indexedModule parsedPattern
-                    return ()
-                let KoreParserOptions { willPrintPattern } = koreParserOptions
-                when willPrintPattern $
-                    lift $ putDoc (debug parsedPattern)
+            let KoreParserOptions { patternOpt } = koreParserOptions
+            case patternOpt of
+                Nothing -> pure ()
+                Just PatternOptions {patternFileName, mainModuleName} -> do
+                    parsedPattern <- mainPatternParse patternFileName
+                    when willVerify $ do
+                        indexedModule <-
+                            lookupMainModule
+                                (ModuleName mainModuleName)
+                                indexedModules
+                            & lift
+                        _ <- mainPatternVerify indexedModule parsedPattern
+                        return ()
+                    let KoreParserOptions { willPrintPattern } =
+                            koreParserOptions
+                    when willPrintPattern $
+                        lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
