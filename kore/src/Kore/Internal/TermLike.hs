@@ -58,6 +58,7 @@ module Kore.Internal.TermLike
     , mkInternalBytes
     , mkInternalBytes'
     , mkBuiltin
+    , mkInternalBool
     , mkInternalInt
     , mkBuiltinList
     , mkBuiltinMap
@@ -239,6 +240,7 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -710,6 +712,7 @@ forceSortPredicate
         ApplySymbolF _ -> illSorted forcedSort original
         ApplyAliasF _ -> illSorted forcedSort original
         BuiltinF _ -> illSorted forcedSort original
+        InternalBoolF _ -> illSorted forcedSort original
         InternalIntF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
@@ -1054,6 +1057,15 @@ mkBuiltin
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltin = updateCallStack . synthesize . BuiltinF
+
+{- | Construct an internal integer pattern.
+ -}
+mkInternalBool
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalBool
+    -> TermLike variable
+mkInternalBool = updateCallStack . synthesize . InternalBoolF . Const
 
 {- | Construct an internal integer pattern.
  -}
@@ -1504,7 +1516,7 @@ mkDefined = worker
                     \ a \\bottom pattern as defined."
             CeilF _ -> term
             DomainValueF _  -> term
-            BuiltinF (Domain.BuiltinBool _) -> term
+            InternalBoolF _ -> term
             InternalIntF _ -> term
             BuiltinF (Domain.BuiltinString _) -> term
             BuiltinF (Domain.BuiltinList _) ->
@@ -1733,7 +1745,7 @@ pattern Builtin_
     -> TermLike variable
 
 pattern BuiltinBool_
-    :: Domain.InternalBool
+    :: InternalBool
     -> TermLike variable
 
 pattern InternalInt_
@@ -1886,7 +1898,8 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
-pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
+pattern BuiltinBool_ internalBool <-
+    (Recursive.project -> _ :< InternalBoolF (Const internalBool))
 
 pattern InternalInt_ internalInt <-
     (Recursive.project -> _ :< InternalIntF (Const internalInt))

@@ -78,6 +78,7 @@ import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Alias
 import Kore.Internal.Inj
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import Kore.Internal.Symbol hiding
@@ -198,6 +199,7 @@ data TermLikeF variable child
     | TopF           !(Top Sort child)
     | InhabitantF    !(Inhabitant child)
     | BuiltinF       !(Builtin child)
+    | InternalBoolF  !(Const InternalBool child)
     | InternalIntF   !(Const InternalInt child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
@@ -251,6 +253,7 @@ instance
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -286,6 +289,7 @@ instance Synthetic Sort (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -321,6 +325,7 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -356,6 +361,7 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -391,6 +397,7 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -426,6 +433,7 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -461,6 +469,7 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBytesF internalBytes -> synthetic internalBytes
             InternalIntF internalInt -> synthetic internalInt
+            InternalBoolF internalBool -> synthetic internalBool
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -703,6 +712,8 @@ instance
             BuiltinF builtin -> locationFromAst (Domain.builtinSort builtin)
             InternalIntF (Const InternalInt { internalIntSort }) ->
                 locationFromAst internalIntSort
+            InternalBoolF (Const InternalBool { internalBoolSort }) ->
+                locationFromAst internalBoolSort
             DefinedF Defined { getDefined } ->
                 locationFromAst getDefined
 
@@ -747,8 +758,9 @@ traverseVariablesF adj =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
+        InternalBoolF boolP -> pure (InternalBoolF boolP)
         InternalBytesF bytesP -> pure (InternalBytesF bytesP)
-        InternalIntF bytesP -> pure (InternalIntF bytesP)
+        InternalIntF intP -> pure (InternalIntF intP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)

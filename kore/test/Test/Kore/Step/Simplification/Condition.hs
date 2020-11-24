@@ -61,11 +61,12 @@ test_simplify_local_functions =
     , test "contradiction: injA = f(x) ∧ f(x) = injB" f (Left  injA) (Right injB)
     , test "contradiction: injA = f(x) ∧ injB = f(x)" f (Left  injA) (Left  injB)
     , test "contradiction: f(x) = injA ∧ injB = f(x)" f (Right injA) (Left  injB)
-    -- Builtin at top
+    -- Int at top
     , test "contradiction: f(x) = 2 ∧ f(x) = 3" fInt (Right int2) (Right int3)
     , test "contradiction: 2 = f(x) ∧ f(x) = 3" fInt (Left  int2) (Right int3)
     , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
     , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
+    -- TODO (thomas.tuegel): Bool at top
     ]
   where
     f = Mock.f (mkElemVar Mock.x)

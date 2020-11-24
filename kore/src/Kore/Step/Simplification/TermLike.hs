@@ -107,6 +107,9 @@ import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
 import qualified Kore.Step.Simplification.Inj as Inj
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalBool as InternalBool
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
     ( simplify
     )
@@ -435,6 +438,8 @@ simplify sideCondition = \termLike ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
             InternalBytesF internalBytesF ->
                 return $ InternalBytes.simplify (getConst internalBytesF)
+            InternalBoolF internalBoolF ->
+                return $ InternalBool.simplify (getConst internalBoolF)
             InternalIntF internalIntF ->
                 return $ InternalInt.simplify (getConst internalIntF)
             VariableF variableF ->

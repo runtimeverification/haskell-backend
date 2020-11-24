@@ -96,6 +96,7 @@ import Kore.Internal.TermLike
     , mkIff
     , mkImplies
     , mkIn
+    , mkInternalBool
     , mkInternalInt
     , mkMu
     , mkNot
@@ -324,6 +325,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (VariableF _) = term
     checkTermF (StringLiteralF _) = term
     checkTermF (InternalBytesF _) = term
+    checkTermF (InternalBoolF _) = term
     checkTermF (InternalIntF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
@@ -612,7 +614,6 @@ _checkAllBuiltinImplemented
     -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 _checkAllBuiltinImplemented builtin =
     case builtin of
-        Domain.BuiltinBool _ -> builtin
         Domain.BuiltinList _ -> builtin
         Domain.BuiltinMap _ -> builtin
         Domain.BuiltinSet _ -> builtin
@@ -693,7 +694,7 @@ maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
         -> Gen (Maybe (TermLike VariableName))
     boolGenerator boolSort _childGenerator =
-        Just . mkBuiltin . BuiltinBool.asBuiltin boolSort <$> Gen.bool
+        Just . mkInternalBool . BuiltinBool.asBuiltin boolSort <$> Gen.bool
 
 maybeIntBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeIntBuiltinGenerator Setup { maybeIntSort } =

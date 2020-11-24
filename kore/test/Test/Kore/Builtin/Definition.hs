@@ -38,6 +38,7 @@ import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.Symbol
     ( constructor
@@ -1004,10 +1005,10 @@ boolSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "BOOL.Bool" ]
 
 builtinBool :: Bool -> InternalBool
-builtinBool builtinBoolValue =
+builtinBool internalBoolValue =
     InternalBool
-        { builtinBoolSort = boolSort
-        , builtinBoolValue
+        { internalBoolSort = boolSort
+        , internalBoolValue
         }
 
 -- ** Int
