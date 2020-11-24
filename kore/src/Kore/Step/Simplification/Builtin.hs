@@ -60,8 +60,6 @@ simplifyBuiltin =
             fmap mkBuiltin <$> simplifyInternalList list'
         Domain.BuiltinSet set' ->
             fmap mkBuiltin <$> simplifyInternalSet set'
-        Domain.BuiltinString string ->
-            (return . pure . mkBuiltin) (Domain.BuiltinString string)
 
 simplifyInternal
     :: (InternalVariable variable, Traversable t)

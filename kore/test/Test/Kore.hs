@@ -24,9 +24,9 @@ module Test.Kore
     , setTargetVariableGen
     , unifiedTargetVariableGen
     , unifiedVariableGen
-    , genBuiltin
     , genInternalInt
     , genInternalBool
+    , genInternalString
     , couple
     , symbolOrAliasGen
     , addVariable
@@ -57,13 +57,13 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
 import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
+import Kore.Internal.InternalString
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -402,11 +402,6 @@ genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (DomainValue Sort child)
 genDomainValue childGen domainValueSort =
     DomainValue domainValueSort <$> childGen stringMetaSort
 
-genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
-genBuiltin domainValueSort = Gen.choice
-    [ Domain.BuiltinString <$> genInternalString domainValueSort
-    ]
-
 genInternalInt :: Sort -> Gen InternalInt
 genInternalInt builtinIntSort =
     InternalInt builtinIntSort <$> genInteger
@@ -417,9 +412,9 @@ genInternalBool :: Sort -> Gen InternalBool
 genInternalBool builtinBoolSort =
     InternalBool builtinBoolSort <$> Gen.bool
 
-genInternalString :: Sort -> Gen Domain.InternalString
+genInternalString :: Sort -> Gen InternalString
 genInternalString internalStringSort =
-    Domain.InternalString internalStringSort
+    InternalString internalStringSort
     <$> Gen.text (Range.linear 0 1024) (Reader.lift Gen.unicode)
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort VariableName child)
