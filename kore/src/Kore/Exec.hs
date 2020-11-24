@@ -312,7 +312,7 @@ getExitCode indexedModule configs =
         return exitCode
   where
     extractExit = \case
-        BuiltinInt_ InternalInt { internalIntValue = exit }
+        InternalInt_ InternalInt { internalIntValue = exit }
           | exit == 0 -> ExitSuccess
           | otherwise -> ExitFailure (fromInteger exit)
         _ -> ExitFailure 111

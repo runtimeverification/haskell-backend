@@ -122,7 +122,7 @@ findClass (Constraint (Pair left _)) = findClassWorker left
     findClassWorker (ElemVar_ _)       = Variables
     findClassWorker (SetVar_ _)        = Variables
     findClassWorker (StringLiteral_ _) = ConcreteBuiltins
-    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
+    findClassWorker (InternalInt_ _)    = ConcreteBuiltins
     findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
     findClassWorker (BuiltinString_ _) = ConcreteBuiltins
     findClassWorker (App_ symbol _) =
@@ -226,7 +226,7 @@ matchEqualHeads
 -- Terminal patterns
 matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
     Monad.guard (string1 == string2)
-matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
+matchEqualHeads (Pair (InternalInt_ int1) (InternalInt_ int2)) =
     Monad.guard (int1 == int2)
 matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =
     Monad.guard (bool1 == bool2)

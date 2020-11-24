@@ -382,7 +382,7 @@ test_euclidian_division_theorem =
     extractValue :: Pattern VariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
-            BuiltinInt_ InternalInt { internalIntValue } ->
+            InternalInt_ InternalInt { internalIntValue } ->
                 internalIntValue
             _ -> error "Expecting builtin int."
 

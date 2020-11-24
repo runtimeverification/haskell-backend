@@ -232,7 +232,7 @@ extractIntDomainValue
     -> Maybe Integer
 extractIntDomainValue _ =
     \case
-        BuiltinInt_ InternalInt { internalIntValue } -> Just internalIntValue
+        InternalInt_ InternalInt { internalIntValue } -> Just internalIntValue
         _ -> Nothing
 
 {- | Parse a string literal as an integer.
@@ -256,7 +256,7 @@ expectBuiltinInt
     -> MaybeT m Integer
 expectBuiltinInt _ =
     \case
-        BuiltinInt_ InternalInt { internalIntValue } -> return internalIntValue
+        InternalInt_ InternalInt { internalIntValue } -> return internalIntValue
         _ -> empty
 
 {- | Implement builtin function evaluation.

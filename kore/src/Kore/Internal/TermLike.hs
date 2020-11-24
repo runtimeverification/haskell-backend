@@ -120,7 +120,7 @@ module Kore.Internal.TermLike
     , pattern InternalBytes_
     , pattern Builtin_
     , pattern BuiltinBool_
-    , pattern BuiltinInt_
+    , pattern InternalInt_
     , pattern BuiltinList_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
@@ -352,7 +352,7 @@ hasConstructorLikeTop = \case
     App_ symbol _ -> isConstructor symbol
     DV_ _ _ -> True
     BuiltinBool_ _ -> True
-    BuiltinInt_ _ -> True
+    InternalInt_ _ -> True
     BuiltinList_ _ -> True
     BuiltinMap_ _ -> True
     BuiltinSet_ _ -> True
@@ -1736,7 +1736,7 @@ pattern BuiltinBool_
     :: Domain.InternalBool
     -> TermLike variable
 
-pattern BuiltinInt_
+pattern InternalInt_
     :: InternalInt
     -> TermLike variable
 
@@ -1888,7 +1888,7 @@ pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
 pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
 
-pattern BuiltinInt_ internalInt <-
+pattern InternalInt_ internalInt <-
     (Recursive.project -> _ :< InternalIntF (Const internalInt))
 
 pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
