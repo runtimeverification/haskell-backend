@@ -18,7 +18,10 @@ import Data.ByteString
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.Function
+import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.Encoding as Encoding
 import Kore.Debug
@@ -57,4 +60,19 @@ instance Synthetic Sort (Const InternalBytes) where
 
 instance Synthetic (FreeVariables variable) (Const InternalBytes) where
     synthetic = const emptyFreeVariables
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalBytes' pattern is always 'Defined'.
+instance Synthetic Defined (Const InternalBytes) where
+    synthetic = alwaysDefined
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalBytes' pattern is always 'Function'.
+instance Synthetic Function (Const InternalBytes) where
+    synthetic = const (Function True)
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalBytes' pattern is always 'Functional'.
+instance Synthetic Functional (Const InternalBytes) where
+    synthetic = const (Functional True)
     {-# INLINE synthetic #-}
