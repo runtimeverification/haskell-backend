@@ -41,7 +41,6 @@ module Kore.Domain.Builtin
     , SetValue
     , NormalizedSet (..)
     --
-    , InternalBool (..)
     , InternalString (..)
     ) where
 
@@ -638,38 +637,6 @@ type InternalSet key child = InternalAc key NormalizedSet child
 
 -- * Builtin Bool
 
-{- | Internal representation of the builtin @BOOL.Bool@ domain.
- -}
-data InternalBool =
-    InternalBool
-        { builtinBoolSort :: !Sort
-        , builtinBoolValue :: !Bool
-        }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Unparse InternalBool where
-    unparse InternalBool { builtinBoolSort, builtinBoolValue } =
-        "\\dv"
-        <> parameters [builtinBoolSort]
-        <> Pretty.parens (Pretty.dquotes value)
-      where
-        value
-          | builtinBoolValue = "true"
-          | otherwise        = "false"
-
-    unparse2 InternalBool { builtinBoolSort, builtinBoolValue } =
-        "\\dv2"
-        <> parameters2 [builtinBoolSort]
-        <> arguments' [Pretty.dquotes value]
-      where
-        value
-          | builtinBoolValue = "true"
-          | otherwise        = "false"
-
 -- * Builtin String
 
 {- | Internal representation of the builtin @STRING.String@ domain.
@@ -702,7 +669,6 @@ data Builtin key child
     = BuiltinMap !(InternalMap key child)
     | BuiltinList !(InternalList child)
     | BuiltinSet !(InternalSet key child)
-    | BuiltinBool !InternalBool
     | BuiltinString !InternalString
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
@@ -720,7 +686,6 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
 builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
-        BuiltinBool InternalBool { builtinBoolSort } -> builtinBoolSort
         BuiltinString InternalString { internalStringSort } ->
             internalStringSort
         BuiltinMap InternalAc { builtinAcSort } -> builtinAcSort

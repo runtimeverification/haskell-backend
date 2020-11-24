@@ -60,8 +60,6 @@ simplifyBuiltin =
             fmap mkBuiltin <$> simplifyInternalList list'
         Domain.BuiltinSet set' ->
             fmap mkBuiltin <$> simplifyInternalSet set'
-        Domain.BuiltinBool bool ->
-            (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
         Domain.BuiltinString string ->
             (return . pure . mkBuiltin) (Domain.BuiltinString string)
 

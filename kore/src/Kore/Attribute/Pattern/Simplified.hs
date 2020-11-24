@@ -368,7 +368,6 @@ instance Synthetic Simplified (Rewrites sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Builtin key) where
-    synthetic (BuiltinBool   _) = fullySimplified
     synthetic (BuiltinString _) = fullySimplified
     synthetic b@(BuiltinMap    _) = notSimplified b
     synthetic b@(BuiltinList   _) = notSimplified b

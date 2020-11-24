@@ -70,6 +70,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
@@ -174,6 +175,7 @@ translatePredicateWith translateTerm predicate =
             VariableF _ -> empty
             StringLiteralF _ -> empty
             InternalBytesF _ -> empty
+            InternalBoolF _ -> empty
             InternalIntF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
@@ -311,9 +313,8 @@ translatePattern translateTerm sort pat =
     translateBool pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
-            BuiltinF dv ->
-                return $ SMT.bool $ Builtin.Bool.extractBoolDomainValue
-                    "while translating dv to SMT.bool" dv
+            InternalBoolF (Const InternalBool { internalBoolValue }) ->
+                return $ SMT.bool internalBoolValue
             NotF Not { notChild } ->
                 -- \not is equivalent to BOOL.not for functional patterns.
                 -- The following is safe because non-functional patterns

@@ -1143,6 +1143,21 @@ test_andTermsSimplification =
             actual <- unify input1 input2
             assertEqual "" expect actual
         ]
+
+    , testGroup "internal Bool values"
+        [ testCase "distinct values" $ do
+            let expect = []
+                input1 = Mock.builtinBool True
+                input2 = Mock.builtinBool False
+            actual <- unify input1 input2
+            assertEqual "Expected \\bottom" expect actual
+        , testCase "identical values" $ do
+            let expect = [Pattern.fromTermLike input1]
+                input1 = Mock.builtinBool True
+                input2 = Mock.builtinBool True
+            actual <- unify input1 input2
+            assertEqual "" expect actual
+        ]
     ]
 
 mkVariable :: Text -> Variable VariableName
