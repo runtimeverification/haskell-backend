@@ -578,7 +578,7 @@ unifyInternalInt
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyInternalInt term1@(BuiltinInt_ int1) term2@(BuiltinInt_ int2) =
+unifyInternalInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
     assert (on (==) internalIntSort int1 int2) $ lift worker
   where
     worker :: unifier (Pattern variable)
@@ -662,8 +662,8 @@ domainValueAndEqualsAssumesDifferent
     second@(DV_ _ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
-    first@(BuiltinInt_ _)
-    second@(BuiltinInt_ _)
+    first@(InternalInt_ _)
+    second@(InternalInt_ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent
     first@(Builtin_ (Domain.BuiltinString _))
