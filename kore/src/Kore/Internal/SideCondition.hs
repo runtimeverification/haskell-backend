@@ -17,7 +17,6 @@ module Kore.Internal.SideCondition
     , top
     , topTODO
     , toPredicate
-    , isNormalized
     , toRepresentation
     ) where
 
@@ -37,7 +36,6 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -133,13 +131,17 @@ instance InternalVariable variable =>
 instance InternalVariable variable =>
     From (SideCondition variable) (Condition variable)
   where
-    from = Condition.fromPredicate . from @_ @(Predicate _)
+    from = Condition.fromPredicate . toPredicate
 
-top :: InternalVariable variable => SideCondition variable
-top = fromCondition Condition.top
+top :: forall variable . SideCondition variable
+top =
+    from
+        @(MultiAnd (Predicate variable))
+        @(SideCondition variable)
+        MultiAnd.top
 
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
-topTODO :: InternalVariable variable => SideCondition variable
+topTODO :: SideCondition variable
 topTODO = top
 
 andCondition
@@ -165,8 +167,7 @@ assumeTruePredicate
     :: InternalVariable variable
     => Predicate variable
     -> SideCondition variable
-assumeTruePredicate predicate =
-    assumeTrueCondition (Condition.fromPredicate predicate)
+assumeTruePredicate = fromPredicate
 
 toPredicate
     :: InternalVariable variable
@@ -189,7 +190,8 @@ mapVariables
     -> SideCondition variable1
     -> SideCondition variable2
 mapVariables adj condition@(SideCondition _) =
-    SideCondition (MultiAnd.map (Predicate.mapVariables adj) assumedTrue)
+    MultiAnd.map (Predicate.mapVariables adj) assumedTrue
+    & SideCondition
   where
     SideCondition { assumedTrue } = condition
 
@@ -197,7 +199,7 @@ fromCondition
     :: InternalVariable variable
     => Condition variable
     -> SideCondition variable
-fromCondition = from @(Predicate _) @_ . Condition.toPredicate
+fromCondition = fromPredicate . Condition.toPredicate
 
 toRepresentation
     :: InternalVariable variable
@@ -206,9 +208,3 @@ toRepresentation
 toRepresentation =
     mkRepresentation
     . mapVariables @_ @VariableName (pure toVariableName)
-
-isNormalized
-    :: forall variable
-    .  InternalVariable variable
-    => SideCondition variable -> Bool
-isNormalized = Conditional.isNormalized . from @_ @(Condition variable)
