@@ -48,14 +48,20 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
         <> help ( "Enable/disable " ++ helpSuffix ) )
     <|> pure defaultVal
 
--- | Main options record
-data KoreParserOptions = KoreParserOptions
-    { fileName            :: !FilePath
-    -- ^ Name for a file containing a definition to parse and verify
-    , patternFileName     :: !FilePath
+
+data PatternOptions = PatternOptions
+    { patternFileName     :: !FilePath
     -- ^ Name for file containing a pattern to parse and verify
     , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
+    }
+
+-- | Main options record
+data KoreParserOptions' = KoreParserOptions'
+    { fileName            :: !FilePath
+    -- ^ Name for a file containing a definition to parse and verify
+    , patternOpt          :: !(Maybe PatternOptions)
+    -- ^ Optional options for parsing a pattern
     , willPrintDefinition :: !Bool
     -- ^ Option to print definition
     , willPrintPattern    :: !Bool
@@ -66,24 +72,40 @@ data KoreParserOptions = KoreParserOptions
     -- ^ Option to print in applicative Kore syntax
     }
 
+
+data KoreParserOptions = KoreParserOptions
+    { fileName            :: !FilePath
+    , patternFileName     :: !FilePath
+    , mainModuleName      :: !Text
+    , willPrintDefinition :: !Bool
+    , willPrintPattern    :: !Bool
+    , willVerify          :: !Bool
+    , appKore             :: !Bool
+    }
+
 -- | Command Line Argument Parser
-commandLineParser :: Parser KoreParserOptions
-commandLineParser =
-    KoreParserOptions
+commandLineParser' :: Parser KoreParserOptions'
+commandLineParser' =
+    KoreParserOptions'
     <$> argument str
         (  metavar "FILE"
         <> help "Kore source file to parse [and verify]" )
-    <*> strOption
-        (  metavar "PATTERN_FILE"
-        <> long "pattern"
-        <> help
-            "Kore pattern source file to parse [and verify]. Needs --module."
-        <> value "" )
-    <*> strOption
-        (  metavar "MODULE"
-        <> long "module"
-        <> help "The name of the main module in the Kore definition"
-        <> value "" )
+    <*> (   (Just <$>
+                (PatternOptions
+                <$> strOption
+                    (  metavar "PATTERN_FILE"
+                    <> long "pattern"
+                    <> help "Kore pattern source file to parse [and verify]. Needs --module.")
+                <*> strOption
+                    (  metavar "MODULE"
+                    <> long "module"
+                    <> help "The name of the main module in the Kore definition")
+                )
+            )
+            <|> flag Nothing Nothing
+                (  long "definition-only"
+                <> help "No Kore pattern may be checked against the definition")
+        )
     <*> enableDisableFlag "print-definition"
         True False False
         "printing parsed definition to stdout [default disabled]"
@@ -98,3 +120,44 @@ commandLineParser =
         (  "printing parsed definition in applicative Kore syntax "
         ++ "[default disabled]"
         )
+
+-- TODO (MirceaS): Refactor the code that uses the
+-- command line parser so that it uses the new
+-- KoreParserOptions options type so that we may
+-- remove the terms below
+
+morph :: KoreParserOptions' -> KoreParserOptions
+morph kpo
+    | Nothing <- patternOpt = KoreParserOptions
+        { fileName
+        , patternFileName = ""
+        , mainModuleName = ""
+        , willPrintDefinition
+        , willPrintPattern
+        , willVerify
+        , appKore
+        }
+    | Just PatternOptions
+        { patternFileName
+        , mainModuleName
+        } <- patternOpt = KoreParserOptions
+        { fileName
+        , patternFileName
+        , mainModuleName
+        , willPrintDefinition
+        , willPrintPattern
+        , willVerify
+        , appKore
+        }
+  where
+    KoreParserOptions'
+        { fileName
+        , patternOpt
+        , willPrintDefinition
+        , willPrintPattern
+        , willVerify
+        , appKore
+        } = kpo
+
+commandLineParser :: Parser KoreParserOptions
+commandLineParser = morph <$> commandLineParser'
