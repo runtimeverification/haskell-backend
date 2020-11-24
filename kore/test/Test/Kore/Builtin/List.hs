@@ -139,7 +139,7 @@ test_GetUpdate =
         let len = fromIntegral $ length values
             patValues = asTermLike $ Test.Int.asInternal <$> values
             patUpdated = updateList patValues (Test.Int.asInternal ix) value
-        if (-len) <= ix && ix < len then do
+        if 0 <= ix && ix < len then do
             let patGet = getList patUpdated $ Test.Int.asInternal ix
                 predicate = mkEquals_
                     patGet

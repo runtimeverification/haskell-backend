@@ -676,10 +676,8 @@ of the list and negative indices count from the end. The first element is
 
 ### LIST.update
 
-Update an element from the list by index. Positive indices count from the
-beginning of the list and negative indices count from the end. The first element
-is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
-`\bottom{}()` if the index is out-of-bounds.
+Update an element from the list by index. The first element is `\dv{Int{}}("0")`.
+The result is `\bottom{}()` if the index is out-of-bounds.
 
 ~~~
     hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
