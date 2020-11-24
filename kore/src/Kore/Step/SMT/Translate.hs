@@ -174,9 +174,10 @@ translatePredicateWith translateTerm predicate =
             RewritesF _ -> empty
             VariableF _ -> empty
             StringLiteralF _ -> empty
-            InternalBytesF _ -> empty
             InternalBoolF _ -> empty
+            InternalBytesF _ -> empty
             InternalIntF _ -> empty
+            InternalStringF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
             SignednessF _ -> empty

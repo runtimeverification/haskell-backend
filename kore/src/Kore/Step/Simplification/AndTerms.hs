@@ -40,7 +40,6 @@ import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
 import qualified Kore.Internal.OrCondition as OrCondition
@@ -664,10 +663,6 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent
     first@(InternalInt_ _)
     second@(InternalInt_ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinString _))
-    second@(Builtin_ (Domain.BuiltinString _))
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 

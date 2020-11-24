@@ -40,8 +40,6 @@ module Kore.Domain.Builtin
     , SetElement
     , SetValue
     , NormalizedSet (..)
-    --
-    , InternalString (..)
     ) where
 
 import Prelude.Kore
@@ -63,9 +61,6 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 import Data.Sequence
     ( Seq
-    )
-import Data.Text
-    ( Text
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -635,41 +630,12 @@ instance AcWrapper NormalizedSet where
  -}
 type InternalSet key child = InternalAc key NormalizedSet child
 
--- * Builtin Bool
-
--- * Builtin String
-
-{- | Internal representation of the builtin @STRING.String@ domain.
- -}
-data InternalString =
-    InternalString
-        { internalStringSort :: !Sort
-        , internalStringValue :: !Text
-        }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Unparse InternalString where
-    unparse InternalString { internalStringSort, internalStringValue } =
-        "\\dv"
-        <> parameters [internalStringSort]
-        <> Pretty.parens (unparse $ StringLiteral internalStringValue)
-
-    unparse2 InternalString { internalStringSort, internalStringValue } =
-        "\\dv2"
-        <> parameters2 [internalStringSort]
-        <> arguments2 [StringLiteral internalStringValue]
-
 -- * Builtin domain representations
 
 data Builtin key child
     = BuiltinMap !(InternalMap key child)
     | BuiltinList !(InternalList child)
     | BuiltinSet !(InternalSet key child)
-    | BuiltinString !InternalString
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -686,8 +652,6 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
 builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
-        BuiltinString InternalString { internalStringSort } ->
-            internalStringSort
         BuiltinMap InternalAc { builtinAcSort } -> builtinAcSort
         BuiltinList InternalList { builtinListSort } -> builtinListSort
         BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort

@@ -52,6 +52,7 @@ import Data.Char
     ( chr
     , ord
     )
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( findIndex
@@ -78,8 +79,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.InternalString
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -189,8 +190,8 @@ patternVerifierHook =
     patternVerifierWorker domainValue =
         case externalChild of
             StringLiteral_ internalStringValue ->
-                (return . BuiltinF . Domain.BuiltinString)
-                    Domain.InternalString
+                (return . InternalStringF . Const)
+                    InternalString
                         { internalStringSort
                         , internalStringValue
                         }
@@ -201,18 +202,16 @@ patternVerifierHook =
 
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue
-    :: Text -- ^ error message Context
-    -> Builtin (TermLike variable)
-    -> Text
-extractStringDomainValue ctx =
+    :: Text -- ^ error message context
+    -> TermLike variable
+    -> Maybe Text
+extractStringDomainValue _ =
     \case
-        Domain.BuiltinString internal ->
-            internalStringValue
+        BuiltinString_ internal ->
+            Just internalStringValue
           where
-            Domain.InternalString { internalStringValue } = internal
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Domain value is not a string"
+            InternalString { internalStringValue } = internal
+        _ -> Nothing
 
 {- | Parse a string literal.
  -}
@@ -231,17 +230,12 @@ expectBuiltinString
     => String  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Text
-expectBuiltinString ctx =
+expectBuiltinString _ =
     \case
-        Builtin_ domain ->
-            case domain of
-                Domain.BuiltinString internal ->
-                    return internalStringValue
-                  where
-                    Domain.InternalString { internalStringValue } = internal
-                _ ->
-                    Builtin.verifierBug
-                    $ ctx ++ ": Domain value is not a string"
+        BuiltinString_ internal ->
+            return internalStringValue
+          where
+            InternalString { internalStringValue } = internal
         _ -> empty
 
 
@@ -398,10 +392,10 @@ builtinFunctions =
     ]
   where
     comparator name op =
-        ( name, Builtin.binaryOperator extractStringDomainValue
+        ( name, Builtin.binaryOperator' extractStringDomainValue
             Bool.asPattern name op )
     binaryOperator name op =
-        ( name, Builtin.binaryOperator extractStringDomainValue
+        ( name, Builtin.binaryOperator' extractStringDomainValue
             asPattern name op )
 
 {- | Match the @STRING.eq@ hooked symbol.

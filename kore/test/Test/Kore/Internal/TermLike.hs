@@ -86,8 +86,9 @@ termLikeChildGen patternSort =
               | otherwise ->
                 Gen.choice
                     [ mkElemVar <$> elementVariableGen patternSort
-                    , mkBuiltin <$> genBuiltin patternSort
+                    , mkInternalBool <$> genInternalBool patternSort
                     , mkInternalInt <$> genInternalInt patternSort
+                    , mkInternalString <$> genInternalString patternSort
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)

@@ -60,9 +60,6 @@ import Kore.Builtin.Map.Map as BuiltinMap
 import Kore.Builtin.Set.Set as BuiltinSet
     ( isSymbolElement
     )
-import qualified Kore.Builtin.String.String as BuiltinString
-    ( asBuiltin
-    )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -74,6 +71,7 @@ import qualified Kore.Internal.Alias as Alias.DoNotUse
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
+import Kore.Internal.InternalString
 import qualified Kore.Internal.Symbol as Internal
     ( Symbol (Symbol)
     )
@@ -98,6 +96,7 @@ import Kore.Internal.TermLike
     , mkIn
     , mkInternalBool
     , mkInternalInt
+    , mkInternalString
     , mkMu
     , mkNot
     , mkNu
@@ -324,9 +323,10 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (TopF _) = term
     checkTermF (VariableF _) = term
     checkTermF (StringLiteralF _) = term
-    checkTermF (InternalBytesF _) = term
     checkTermF (InternalBoolF _) = term
+    checkTermF (InternalBytesF _) = term
     checkTermF (InternalIntF _) = term
+    checkTermF (InternalStringF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
@@ -617,7 +617,6 @@ _checkAllBuiltinImplemented builtin =
         Domain.BuiltinList _ -> builtin
         Domain.BuiltinMap _ -> builtin
         Domain.BuiltinSet _ -> builtin
-        Domain.BuiltinString _ -> builtin
 
 allBuiltinGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 allBuiltinGenerators = do
@@ -672,7 +671,7 @@ maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
         -> Gen (Maybe (TermLike VariableName))
     stringGenerator stringSort _childGenerator =
-        Just . mkBuiltin . BuiltinString.asBuiltin stringSort <$> stringGen
+        Just . mkInternalString . InternalString stringSort <$> stringGen
 
 maybeBoolBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
