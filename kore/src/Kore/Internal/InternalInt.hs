@@ -15,10 +15,12 @@ import Data.Functor.Const
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.ConstructorLike
+import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , emptyFreeVariables
-    )
+import Kore.Attribute.Pattern.Function
+import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -51,3 +53,26 @@ instance Synthetic Sort (Const InternalInt) where
 
 instance Synthetic (FreeVariables variable) (Const InternalInt) where
     synthetic _ = emptyFreeVariables
+
+instance Synthetic ConstructorLike (Const InternalInt) where
+    synthetic = const (ConstructorLike . Just $ ConstructorLikeHead)
+    {-# INLINE synthetic #-}
+
+-- | A 'InternalInt' pattern is always 'Defined'.
+instance Synthetic Defined (Const InternalInt) where
+    synthetic = alwaysDefined
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalInt' pattern is always 'Function'.
+instance Synthetic Function (Const InternalInt) where
+    synthetic = const (Function True)
+    {-# INLINE synthetic #-}
+
+-- | An 'InternalInt' pattern is always 'Functional'.
+instance Synthetic Functional (Const InternalInt) where
+    synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const InternalInt) where
+    synthetic = alwaysSimplified
+    {-# INLINE synthetic #-}

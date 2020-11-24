@@ -13,6 +13,7 @@ module Kore.Attribute.Pattern.Simplified
     , isFullySimplified
     , simplifiedTo
     , fullySimplified
+    , alwaysSimplified
     , simplifiedConditionally
     , simplifiableConditionally
     , unparseTag
@@ -36,9 +37,6 @@ import Kore.Internal.Inj
 import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
-    )
-import Kore.Internal.InternalInt
-    ( InternalInt
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -294,10 +292,6 @@ instance Synthetic Simplified (Const StringLiteral) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const InternalBytes) where
-    synthetic = alwaysSimplified
-    {-# INLINE synthetic #-}
-
-instance Synthetic Simplified (Const InternalInt) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 

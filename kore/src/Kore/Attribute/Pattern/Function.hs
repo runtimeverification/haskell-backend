@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Function
     ( Function (..)
+    , alwaysFunction
     ) where
 
 import Prelude.Kore
@@ -24,12 +25,6 @@ import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
-import Kore.Internal.InternalInt
-    ( InternalInt
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -42,6 +37,10 @@ newtype Function = Function { isFunction :: Bool }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
+
+alwaysFunction :: a -> Function
+alwaysFunction = const (Function True)
+{-# INLINE alwaysFunction #-}
 
 instance Synthetic Function (And sort) where
     -- TODO (thomas.tuegel):
@@ -139,16 +138,6 @@ instance Synthetic Function (Top sort) where
 
 -- | A 'StringLiteral' pattern is always 'Function'.
 instance Synthetic Function (Const StringLiteral) where
-    synthetic = const (Function True)
-    {-# INLINE synthetic #-}
-
--- | An 'InternalBytes' pattern is always 'Function'.
-instance Synthetic Function (Const InternalBytes) where
-    synthetic = const (Function True)
-    {-# INLINE synthetic #-}
-
--- | An 'InternalInt' pattern is always 'Function'.
-instance Synthetic Function (Const InternalInt) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
