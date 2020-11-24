@@ -11,3 +11,20 @@ package *
 package kore
   ghc-options: -Wall -Werror
   ghc-options: -fprof-auto-top
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-sqlite-simple.git
+  tag: a3920f053f92e76f2a7ff7c68e34f9e926817702
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-ghc-events.git
+  tag: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
+  subdir: eventlog2speedscope
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-ghc-events.git
+  tag: 4f3966a4580076a8f6e8ca74e7c1d63c0aae79d2
+  subdir: pipes-ghc-events
