@@ -5,7 +5,7 @@ endmodule
 module TEST-3-SPEC
   imports VERIFICATION
 
-  rule
+  claim
     <k> add(X, 3) => end </k>
     <a> M => ?_ </a>
 

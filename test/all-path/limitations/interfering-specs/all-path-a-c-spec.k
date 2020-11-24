@@ -8,6 +8,6 @@ module ALL-PATH-A-C-SPEC
   imports PATH
 
   // This should be provable
-  rule <k> a => c </k> [all-path]
+  claim <k> a => c </k> [all-path]
 
 endmodule

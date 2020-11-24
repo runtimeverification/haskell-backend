@@ -1,7 +1,7 @@
 module H2-SPEC
 imports H
 
-rule <k> foo(X +Int 1) => . </k>
+claim <k> foo(X +Int 1) => . </k>
      <m>
        0 => ?Y
      </m>

@@ -8,7 +8,7 @@ module PUSH-SPEC
 
   imports VERIFICATION
 
-  rule
+  claim
     <k> push(X) => . ... </k>
     <stack> _ => ?_ </stack>
 
