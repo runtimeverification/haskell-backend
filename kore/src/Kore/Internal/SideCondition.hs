@@ -106,32 +106,38 @@ instance InternalVariable variable => Unparse (SideCondition variable) where
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
     from condition@(SideCondition _) = assumedTrue condition
+    {-# INLINE from #-}
 
 instance From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
     from = SideCondition
+    {-# INLINE from #-}
 
 instance
     InternalVariable variable
     => From (SideCondition variable) (Predicate variable)
   where
     from = toPredicate
+    {-# INLINE from #-}
 
 instance
     InternalVariable variable
     => From (Predicate variable) (SideCondition variable)
   where
     from = fromPredicate
+    {-# INLINE from #-}
 
 instance InternalVariable variable =>
     From (Condition variable) (SideCondition variable)
   where
     from = fromCondition
+    {-# INLINE from #-}
 
 instance InternalVariable variable =>
     From (SideCondition variable) (Condition variable)
   where
     from = Condition.fromPredicate . toPredicate
+    {-# INLINE from #-}
 
 top :: forall variable . SideCondition variable
 top =
