@@ -5,8 +5,6 @@ License     : NCSA
 
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
-    -- Should not be used directly.
-    -- See 'Kore.Internal.SideCondition.toRepresentation'
     , mkRepresentation
     ) where
 
