@@ -20,7 +20,7 @@ module SIX-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> bb(X) => s(X) </k>
 
 endmodule

@@ -5,7 +5,7 @@ endmodule
 module LOCALS-SPEC
   imports VERIFICATION
 
-  rule
+  claim
     <k> begin X:Int => end V:Value </k>
     <locals> X:Int |-> V:Value </locals>
 endmodule

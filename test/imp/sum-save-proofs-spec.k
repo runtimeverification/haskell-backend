@@ -15,7 +15,7 @@ module SUM-SAVE-PROOFS-SPEC
   imports VERIFICATION
 
 
-rule
+claim
     <k>
       while (!(n <= 0)) {
         sum = sum + n + n;
@@ -30,7 +30,7 @@ rule
   </state>
 requires N >=Int 0
 
-rule
+claim
     <k>
       int n, sum;
       n = N:Int;

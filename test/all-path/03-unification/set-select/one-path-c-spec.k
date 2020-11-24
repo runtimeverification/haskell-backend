@@ -9,7 +9,7 @@ module ONE-PATH-C-SPEC
 
   // This should be provable as an one-path claim, but should not be provable as an 
   //all-path claim.
-  rule <k> select => b </k>
+  claim <k> select => b </k>
        <state> SetItem(b) SetItem(c) </state>
     [one-path]
 
