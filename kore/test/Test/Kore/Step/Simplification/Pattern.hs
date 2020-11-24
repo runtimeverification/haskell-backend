@@ -8,7 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -36,9 +35,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.TopBottom
-    ( isBottom
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -52,46 +48,6 @@ test_Pattern_simplify =
         $ "\\or(a, a)"
     , bottomLike `becomes` OrPattern.bottom
         $ "\\and(a, \\bottom)"
-    , testGroup "Local function evaluation" $
-        let f = Mock.f (mkElemVar Mock.x)
-            fInt = Mock.fInt (mkElemVar Mock.xInt)
-            defined = makeCeilPredicate_ f & Condition.fromPredicate
-            a = Mock.a
-            b = Mock.b
-            injA = Mock.sortInjection10 Mock.a
-            injB = Mock.sortInjection10 Mock.b
-            int2 = Mock.builtinInt 2
-            int3 = Mock.builtinInt 3
-            mkLocalDefn func (Left t)  = makeEqualsPredicate_ t func
-            mkLocalDefn func (Right t) = makeEqualsPredicate_ func t
-            test name func eitherC1 eitherC2 =
-                testCase name $ do
-                    let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
-                        equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
-                        patt =
-                            Pattern.fromCondition_
-                                ( defined <> equals1
-                                <> defined <> equals2
-                                )
-                    actual <- simplify patt
-                    assertBool "Expected \\bottom" $ isBottom actual
-        in
-            [ -- Constructor at top
-              test "contradiction: f(x) = a ∧ f(x) = b" f (Right a) (Right b)
-            , test "contradiction: a = f(x) ∧ f(x) = b" f (Left  a) (Right b)
-            , test "contradiction: a = f(x) ∧ b = f(x)" f (Left  a) (Left  b)
-            , test "contradiction: f(x) = a ∧ b = f(x)" f (Right a) (Left  b)
-            -- Sort injection at top
-            , test "contradiction: f(x) = injA ∧ f(x) = injB" f (Right injA) (Right injB)
-            , test "contradiction: injA = f(x) ∧ f(x) = injB" f (Left  injA) (Right injB)
-            , test "contradiction: injA = f(x) ∧ injB = f(x)" f (Left  injA) (Left  injB)
-            , test "contradiction: f(x) = injA ∧ injB = f(x)" f (Right injA) (Left  injB)
-            -- Builtin at top
-            , test "contradiction: f(x) = 2 ∧ f(x) = 3" fInt (Right int2) (Right int3)
-            , test "contradiction: 2 = f(x) ∧ f(x) = 3" fInt (Left  int2) (Right int3)
-            , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
-            , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
-            ]
     , testCase "Replaces and terms under independent quantifiers" $ do
         let expect =
                 Pattern.fromTermAndPredicate
