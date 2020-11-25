@@ -13,6 +13,7 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_make
     , test_updateAll
     , hprop_unparse
     , test_size
@@ -416,6 +417,20 @@ test_size =
         expect2 <- evaluateT addSize
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
+    ]
+
+test_make :: [TestTree]
+test_make =
+    [ testCaseWithoutSMT "make(-1, 5) === \\bottom" $ do
+        result <- evaluate $ makeList (mkInt (-1)) (mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "make(0, 5) === []" $ do
+        result <- evaluate $ makeList (mkInt 0) (mkInt 5)
+        assertEqual' "" (Pattern.fromTermLike (asInternal [])) result
+    , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
+        result <- evaluate $ makeList (mkInt 3) (mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
+        assertEqual' "" (Pattern.fromTermLike expect) result
     ]
 
 test_updateAll :: [TestTree]
