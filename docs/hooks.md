@@ -702,6 +702,16 @@ The number of elements in the given list.
         [hook{}("LIST.size")]
 ~~~
 
+### LIST.make
+
+`LIST.make(n, x)` is a list of length `n` with `x` the value of every element.
+The result is `bottom` if n is negative.
+
+~~~
+    hooked-symbol make{}(Int{}, Elem{}) : List{}
+        [hook{}("LIST.make")]
+~~~
+
 ## LIST.updateAll
 
 `LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`

@@ -384,6 +384,10 @@ getListSymbol =
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 
+makeListSymbol :: Internal.Symbol
+makeListSymbol =
+    builtinSymbol "makeList" listSort [intSort, intSort] & hook "LIST.make"
+
 updateListSymbol :: Internal.Symbol
 updateListSymbol = builtinSymbol "updateList" listSort
     [listSort, intSort, intSort] & hook "LIST.update"
@@ -410,6 +414,9 @@ getList list poz = mkApplySymbol getListSymbol [list, poz]
 
 sizeList :: TermLike VariableName -> TermLike VariableName
 sizeList l = mkApplySymbol sizeListSymbol [l]
+
+makeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+makeList len x = mkApplySymbol makeListSymbol [len, x]
 
 updateList
     :: TermLike VariableName
@@ -1530,6 +1537,7 @@ listModule =
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
             , hookedSymbolDecl sizeListSymbol
+            , hookedSymbolDecl makeListSymbol
             , hookedSymbolDecl updateAllListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
