@@ -10,13 +10,13 @@ module LENGTH-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> begin => end </k>
     <n> LIST:ConsList </n>
     requires length(LIST) >Int 1
 
   // applies only if initial condition applied
-  rule
+  claim
     <k> next _ => end </k>
     <n> LIST:ConsList </n>
     requires length(LIST) >Int 1

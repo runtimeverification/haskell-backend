@@ -5,7 +5,7 @@ endmodule
 module SUM-SPEC
   import VERIFICATION
 
-  rule  <k> loop(N:Int) => . ...</k>
+  claim  <k> loop(N:Int) => . ...</k>
         <counter> C:Int => ?_ </counter>
         <sum> S:Int => ?S:Int </sum>
     requires

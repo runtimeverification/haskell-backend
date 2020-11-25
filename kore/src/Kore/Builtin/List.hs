@@ -278,13 +278,8 @@ evalUpdate resultSort [_list, _ix, value] = do
     _list <- expectBuiltinList getKey _list
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
     let len = Seq.length _list
-        ix
-            | _ix < 0 =
-            -- negative indices count from end of list
-            _ix + len
-            | otherwise = _ix
-    if ix >= 0 && ix < len
-        then returnList resultSort (Seq.update ix value _list)
+    if _ix >= 0 && _ix < len
+        then returnList resultSort (Seq.update _ix value _list)
         else return (Pattern.bottomOf resultSort)
 evalUpdate _ _ = Builtin.wrongArity updateKey
 

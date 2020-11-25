@@ -15,7 +15,7 @@ module DOUBLE-SUM-SPEC
   imports VERIFICATION
 
 
-rule
+claim
     <k>
       while (!(p <= 0)) {
         sum = sum + p + p + p + p + p + p;
@@ -32,7 +32,7 @@ rule
   <stack> .ValStack </stack>
 requires P >=Int 0
 
-rule
+claim
     <k>
       while (!(n <= 0)) {
         p = n;
@@ -53,7 +53,7 @@ rule
   <stack> .ValStack </stack>
 requires N >=Int 0
 
-rule
+claim
     <k>
       int n, p, sum;
       n = N:Int;

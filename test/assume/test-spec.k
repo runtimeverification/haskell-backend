@@ -7,6 +7,6 @@ endmodule
 module TEST-SPEC
     imports VERIFICATION
 
-    rule <k> #assume false => . </k>
+    claim <k> #assume false => . </k>
 
 endmodule

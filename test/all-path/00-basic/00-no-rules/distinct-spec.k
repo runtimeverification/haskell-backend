@@ -8,6 +8,6 @@ module DISTINCT-SPEC
   imports PATH
 
   // should not be provable, as there is no axiom
-  rule <k> a => b </k> [all-path]
+  claim <k> a => b </k> [all-path]
 
 endmodule

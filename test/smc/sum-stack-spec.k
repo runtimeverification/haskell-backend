@@ -15,7 +15,7 @@ module SUM-STACK-SPEC
   imports VERIFICATION
 
 
-rule
+  claim
     <k>
       while (!(n <= 0)) {
         sum = sum + (n + n);
@@ -33,7 +33,7 @@ rule
   </stack>
   requires N >=Int 0 andBool stackSize(VS) <=Int 5
 
-rule
+  claim
     <k>
       int n, sum;
       n = N:Int;
