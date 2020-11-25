@@ -169,7 +169,7 @@ test_translatePredicateWith =
     , testCase "f() = a, f functional, a constructor" $
             translating (peq Mock.functional00 Mock.a)
         `yields`
-            (var 0 `eq` var 1)
+            (Atom "functional00" `eq` var 0)
     , testCase "s() = a, s arbitrary symbol, a constructor" $
             translating (peq Mock.plain00 Mock.a)
         `yields`

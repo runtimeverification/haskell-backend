@@ -1526,6 +1526,19 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
                 }
         }
 
+smtDeclaredSymbol
+    :: Text -> Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
+smtDeclaredSymbol smtName id' argumentSorts resultSort =
+    SMT.Symbol
+        { smtFromSortArgs = const (const (Just (SMT.Atom smtName)))
+        , declaration =
+            SMT.SymbolDeclaredDirectly SMT.FunctionDeclaration
+                { name = SMT.encodable id'
+                , inputSorts = SMT.SortReference <$> argumentSorts
+                , resultSort = SMT.SortReference resultSort
+                }
+        }
+
 emptySmtDeclarations :: SMT.SmtDeclarations
 emptySmtDeclarations =
     SMT.Declarations
@@ -1555,6 +1568,7 @@ smtUnresolvedDeclarations = SMT.Declarations
         [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
+        , ( functional00Id, smtDeclaredSymbol "functional00" functional00Id [] testSort )
         ]
     }
 
