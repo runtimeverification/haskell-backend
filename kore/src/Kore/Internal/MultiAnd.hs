@@ -92,7 +92,7 @@ instance TopBottom child => TopBottom (MultiAnd child) where
 instance (Ord variable, HasFreeVariables a variable) =>
     HasFreeVariables (MultiAnd a) variable
   where
-    freeVariables multiAnd = foldMap' freeVariables multiAnd
+    freeVariables = foldMap' freeVariables
 
 instance Debug child => Debug (MultiAnd child)
 
