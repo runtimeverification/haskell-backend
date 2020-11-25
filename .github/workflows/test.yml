@@ -38,3 +38,6 @@ jobs:
 
     - name: Build project
       run: cabal v2-build --enable-tests --enable-benchmarks all
+
+    - name: Configure with profiling
+      run: cabal v2-configure --enable-profiling -f-threaded
