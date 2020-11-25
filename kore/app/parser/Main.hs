@@ -8,12 +8,6 @@ import Control.Monad.Catch
     , handle
     )
 import qualified Data.Map.Strict as Map
-import Options.Applicative
-    ( InfoMod
-    , fullDesc
-    , header
-    , progDesc
-    )
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
@@ -35,7 +29,7 @@ import qualified Kore.Log as Log
 import Kore.Log.ErrorVerify
     ( errorVerify
     )
-import Kore.OptionsParser
+import Kore.Options
 import Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
@@ -83,7 +77,7 @@ main = handleTop $ do
         mainGlobal
             (ExeName "kore-parser")
             Nothing  -- environment variable name for extra arguments
-            commandLineParser
+            parseKoreParserOptions
             parserInfoModifiers
     for_ (localOptions options) $ \koreParserOptions ->
         flip runLoggerT Log.emptyLogger $ do
@@ -104,22 +98,22 @@ main = handleTop $ do
                 else putDoc (debug parsedDefinition)
 
             let KoreParserOptions { patternOpt } = koreParserOptions
-            case patternOpt of
-                Nothing -> pure ()
-                Just PatternOptions {patternFileName, mainModuleName} -> do
-                    parsedPattern <- mainPatternParse patternFileName
-                    when willVerify $ do
-                        indexedModule <-
-                            lookupMainModule
-                                (ModuleName mainModuleName)
-                                indexedModules
-                            & lift
-                        _ <- mainPatternVerify indexedModule parsedPattern
-                        return ()
-                    let KoreParserOptions { willPrintPattern } =
-                            koreParserOptions
-                    when willPrintPattern $
-                        lift $ putDoc (debug parsedPattern)
+            for_ patternOpt $ \patternOptions -> do
+                let PatternOptions { patternFileName } = patternOptions
+                parsedPattern <- mainPatternParse patternFileName
+                when willVerify $ do
+                    let PatternOptions { mainModuleName } = patternOptions
+                    indexedModule <-
+                        lookupMainModule
+                            (ModuleName mainModuleName)
+                            indexedModules
+                        & lift
+                    _ <- mainPatternVerify indexedModule parsedPattern
+                    return ()
+                let KoreParserOptions { willPrintPattern } =
+                        koreParserOptions
+                when willPrintPattern $
+                    lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.

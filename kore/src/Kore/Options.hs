@@ -4,11 +4,12 @@ License     : NCSA
 
 -}
 
-module Kore.OptionsParser
-    ( enableDisableFlag
+module Kore.Options
+    ( module Options.Applicative
+    , enableDisableFlag
     , PatternOptions (..)
     , KoreParserOptions (..)
-    , commandLineParser
+    , parseKoreParserOptions
     ) where
 
 import Data.Text
@@ -49,7 +50,6 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
         <> help ( "Enable/disable " ++ helpSuffix ) )
     <|> pure defaultVal
 
-
 data PatternOptions = PatternOptions
     { patternFileName     :: !FilePath
     -- ^ Name for file containing a pattern to parse and verify
@@ -73,29 +73,25 @@ data KoreParserOptions = KoreParserOptions
     -- ^ Option to print in applicative Kore syntax
     }
 
+parsePatternOptions :: Parser PatternOptions
+parsePatternOptions = PatternOptions
+    <$> strOption
+        (  metavar "PATTERN_FILE"
+        <> long "pattern"
+        <> help "Kore pattern source file to parse [and verify]. Needs --module.")
+    <*> strOption
+        (  metavar "MODULE"
+        <> long "module"
+        <> help "The name of the main module in the Kore definition")
+
 -- | Command Line Argument Parser
-commandLineParser :: Parser KoreParserOptions
-commandLineParser =
+parseKoreParserOptions :: Parser KoreParserOptions
+parseKoreParserOptions =
     KoreParserOptions
     <$> argument str
         (  metavar "FILE"
         <> help "Kore source file to parse [and verify]" )
-    <*> (   (Just <$>
-                (PatternOptions
-                <$> strOption
-                    (  metavar "PATTERN_FILE"
-                    <> long "pattern"
-                    <> help "Kore pattern source file to parse [and verify]. Needs --module.")
-                <*> strOption
-                    (  metavar "MODULE"
-                    <> long "module"
-                    <> help "The name of the main module in the Kore definition")
-                )
-            )
-            <|> flag Nothing Nothing
-                (  long "definition-only"
-                <> help "No Kore pattern may be checked against the definition")
-        )
+    <*> optional parsePatternOptions
     <*> enableDisableFlag "print-definition"
         True False False
         "printing parsed definition to stdout [default disabled]"
