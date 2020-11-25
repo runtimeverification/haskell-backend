@@ -38,6 +38,9 @@ import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 
 import Debug
 import Kore.Internal.Condition
@@ -85,6 +88,11 @@ instance TopBottom child => TopBottom (MultiAnd child) where
     isTop _ = False
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
+
+instance (Ord variable, HasFreeVariables a variable) =>
+    HasFreeVariables (MultiAnd a) variable
+  where
+    freeVariables multiAnd = foldMap' freeVariables multiAnd
 
 instance Debug child => Debug (MultiAnd child)
 

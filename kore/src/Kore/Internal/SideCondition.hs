@@ -72,6 +72,7 @@ newtype SideCondition variable =
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
+    deriving newtype (Semigroup, Monoid)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -94,10 +95,10 @@ instance TopBottom (SideCondition variable) where
       where
         SideCondition {assumedTrue} = sideCondition
 
-instance InternalVariable variable
-    => HasFreeVariables (SideCondition variable) variable
+instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables = freeVariables . toPredicate
+    freeVariables (SideCondition multiAnd) =
+        freeVariables multiAnd
 
 instance InternalVariable variable => Unparse (SideCondition variable) where
     unparse = unparse . toPredicate
@@ -139,12 +140,8 @@ instance InternalVariable variable =>
     from = Condition.fromPredicate . toPredicate
     {-# INLINE from #-}
 
-top :: forall variable . SideCondition variable
-top =
-    from
-        @(MultiAnd (Predicate variable))
-        @(SideCondition variable)
-        MultiAnd.top
+top :: SideCondition variable
+top = SideCondition MultiAnd.top
 
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
 topTODO :: SideCondition variable
@@ -156,12 +153,10 @@ andCondition
     -> Condition variable
     -> SideCondition variable
 andCondition
-    SideCondition { assumedTrue }
-    (from @(Condition _) @(MultiAnd (Predicate _)) -> newPredicate)
+    sideCondition
+    (from @(Condition _) @(SideCondition _) -> newSideCondition)
   =
-    SideCondition merged
-  where
-    merged = newPredicate <> assumedTrue
+    newSideCondition <> sideCondition
 
 assumeTrueCondition
     :: InternalVariable variable
