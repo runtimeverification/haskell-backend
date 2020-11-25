@@ -61,6 +61,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
+import Kore.Internal.InternalList
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -339,7 +340,7 @@ matchBuiltinList _ = empty
 matchBuiltinListConcat
     :: (MatchingVariable variable, Monad simplifier)
     => [TermLike variable]
-    -> Builtin.InternalList (TermLike variable)
+    -> InternalList (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 
 matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
@@ -685,42 +686,42 @@ liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (Pair (TermLike variable))
-            , Builtin.InternalList (TermLike variable)
+            ( InternalList (Pair (TermLike variable))
+            , InternalList (TermLike variable)
             )
 leftAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = list12 }
-        , internal1 { Builtin.builtinListChild = tail2 }
+        ( internal1 { internalListChild = list12 }
+        , internal1 { internalListChild = tail2 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 head2
     (head2, tail2) = Seq.splitAt (length list1) list2
 
 rightAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (TermLike variable)
-            , Builtin.InternalList (Pair (TermLike variable))
+            ( InternalList (TermLike variable)
+            , InternalList (Pair (TermLike variable))
             )
 rightAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = head2 }
-        , internal1 { Builtin.builtinListChild = list12 }
+        ( internal1 { internalListChild = head2 }
+        , internal1 { internalListChild = list12 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 

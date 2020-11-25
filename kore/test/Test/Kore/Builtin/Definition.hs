@@ -40,6 +40,7 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
+import Kore.Internal.InternalList
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -1086,11 +1087,11 @@ builtinList
     -> InternalList (TermLike VariableName)
 builtinList children =
     InternalList
-        { builtinListSort = listSort
-        , builtinListUnit = unitListSymbol
-        , builtinListElement = elementListSymbol
-        , builtinListConcat = concatListSymbol
-        , builtinListChild = Seq.fromList children
+        { internalListSort = listSort
+        , internalListUnit = unitListSymbol
+        , internalListElement = elementListSymbol
+        , internalListConcat = concatListSymbol
+        , internalListChild = Seq.fromList children
         }
 
 -- | Another sort with the same hook

@@ -244,6 +244,7 @@ import Kore.Internal.Inj
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
+import Kore.Internal.InternalList
 import Kore.Internal.InternalString
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -718,6 +719,7 @@ forceSortPredicate
         InternalBytesF _ -> illSorted forcedSort original
         InternalIntF _ -> illSorted forcedSort original
         InternalStringF _ -> illSorted forcedSort original
+        InternalListF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
         VariableF _ -> illSorted forcedSort original
@@ -1093,9 +1095,9 @@ mkInternalString = updateCallStack . synthesize . InternalStringF . Const
 mkBuiltinList
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalList (TermLike variable)
+    => InternalList (TermLike variable)
     -> TermLike variable
-mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
+mkBuiltinList = updateCallStack . synthesize . InternalListF
 
 {- | Construct a builtin map pattern.
  -}
@@ -1528,7 +1530,7 @@ mkDefined = worker
                     \ a \\bottom pattern as defined."
             CeilF _ -> term
             DomainValueF _  -> term
-            BuiltinF (Domain.BuiltinList _) ->
+            InternalListF _ ->
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
                 embed (worker <$> termF)
@@ -1765,7 +1767,7 @@ pattern InternalInt_
     -> TermLike variable
 
 pattern BuiltinList_
-    :: Domain.InternalList (TermLike variable)
+    :: InternalList (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinMap_
@@ -1917,7 +1919,8 @@ pattern InternalInt_ internalInt <-
 pattern InternalString_ internalString <-
     (Recursive.project -> _ :< InternalStringF (Const internalString))
 
-pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
+pattern BuiltinList_ internalList <-
+    (Recursive.project -> _ :< InternalListF internalList)
 
 pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
 

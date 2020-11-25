@@ -66,7 +66,6 @@ import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin
@@ -75,10 +74,10 @@ import Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.List.List
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.InternalList
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -87,14 +86,14 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
     , Builtin
-    , pattern Builtin_
+    , pattern BuiltinList_
     , Concrete
     , pattern ElemVar_
     , Sort
     , TermLike
     , pattern Var_
     , mkApplySymbol
-    , mkBuiltin
+    , mkBuiltinList
     , mkSort
     , termLikeSort
     )
@@ -214,15 +213,10 @@ expectBuiltinList
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Seq (TermLike variable))
-expectBuiltinList ctx =
+expectBuiltinList _ =
     \case
-        Builtin_ domain ->
-            case domain of
-                Domain.BuiltinList Domain.InternalList { builtinListChild } ->
-                    return builtinListChild
-                _ ->
-                    Builtin.verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a list"
+        BuiltinList_ InternalList { internalListChild } ->
+            return internalListChild
         _ -> empty
 
 expectConcreteBuiltinList
@@ -421,16 +415,16 @@ unifyEquals
     unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
       | isSymbolConcat symbol1, isSymbolConcat symbol1 =
         lift $ case (args1, args2) of
-            (     [ Builtin_ (Domain.BuiltinList builtin1), x1@(Var_ _) ]
-                , [ Builtin_ (Domain.BuiltinList builtin2), x2@(Var_ _) ] ) ->
+            (     [ BuiltinList_ builtin1, x1@(Var_ _) ]
+                , [ BuiltinList_ builtin2, x2@(Var_ _) ] ) ->
                     unifyEqualsFramedRightRight
                         symbol2
                         builtin1
                         x1
                         builtin2
                         x2
-            (     [ x1@(Var_ _), Builtin_ (Domain.BuiltinList builtin1)]
-                , [ x2@(Var_ _), Builtin_ (Domain.BuiltinList builtin2)] ) ->
+            (     [ x1@(Var_ _), BuiltinList_ builtin1]
+                , [ x2@(Var_ _), BuiltinList_ builtin2] ) ->
                     unifyEqualsFramedLeftLeft
                         symbol2
                         x1
@@ -439,25 +433,16 @@ unifyEquals
                         builtin2
             _ -> empty
 
-    unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) pat2 =
+    unifyEquals0 dv1@(BuiltinList_ builtin1) pat2 =
         case pat2 of
-            dv2@(Builtin_ child2)
-              | Domain.BuiltinList builtin2 <- child2 ->
+            BuiltinList_ builtin2 ->
                 lift $ unifyEqualsConcrete builtin1 builtin2
-              | otherwise ->
-                (error . unlines)
-                    [ "Cannot unify a builtin List domain value:"
-                    , show dv1
-                    , "with:"
-                    , show dv2
-                    , "This should have been a sort error."
-                    ]
             app@(App_ symbol2 args2)
               | isSymbolConcat symbol2 ->
                 lift $ case args2 of
-                    [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
+                    [ BuiltinList_ builtin2, x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x
-                    [ x@(Var_ _), Builtin_ (Domain.BuiltinList builtin2) ] ->
+                    [ x@(Var_ _), BuiltinList_ builtin2 ] ->
                         unifyEqualsFramedLeft builtin1 x builtin2
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
@@ -470,12 +455,12 @@ unifyEquals
 
     unifyEquals0 pat1 pat2 =
         case pat2 of
-            dv@(Builtin_ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
+            dv@(BuiltinList_ _) -> unifyEquals0 dv pat1
             _ -> empty
 
     unifyEqualsConcrete
-        :: Domain.InternalList (TermLike variable)
-        -> Domain.InternalList (TermLike variable)
+        :: InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
@@ -487,71 +472,74 @@ unifyEquals
                 propagatedUnified = propagateConditions unified
                 result =
                     TermLike.markSimplified
-                    . asInternal tools builtinListSort
+                    . asInternal tools internalListSort
                     <$> propagatedUnified
             return result
       where
-        Domain.InternalList { builtinListSort } = builtin1
-        Domain.InternalList { builtinListChild = list1 } = builtin1
-        Domain.InternalList { builtinListChild = list2 } = builtin2
+        InternalList { internalListSort } = builtin1
+        InternalList { internalListChild = list1 } = builtin1
+        InternalList { internalListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
-        :: Domain.InternalList (TermLike variable)
-        -> Domain.InternalList (TermLike variable)
+        :: InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> TermLike variable
         -> unifier (Pattern variable)
     unifyEqualsFramedRight
-        builtin1
-        builtin2
+        internal1
+        internal2
         frame2
       | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
             tools <- Simplifier.askMetadataTools
-            let listSuffix1 = asInternal tools builtinListSort suffix1
+            let listSuffix1 = asInternal tools internalListSort suffix1
             prefixUnified <-
                 unifyEqualsConcrete
-                    builtin1 { Domain.builtinListChild = prefix1 }
-                    builtin2
+                    internal1 { internalListChild = prefix1 }
+                    internal2
             suffixUnified <- simplifyChild frame2 listSuffix1
-            let result = TermLike.markSimplified (mkBuiltin internal1)
-                    <$ prefixUnified <* suffixUnified
+            let result =
+                    TermLike.markSimplified (mkBuiltinList internal1)
+                    <$ prefixUnified
+                    <* suffixUnified
             return result
       where
-        internal1 = Domain.BuiltinList builtin1
-        Domain.InternalList { builtinListSort } = builtin1
-        Domain.InternalList { builtinListChild = list1 } = builtin1
-        Domain.InternalList { builtinListChild = prefix2 } = builtin2
+        InternalList { internalListSort } = internal1
+        InternalList { internalListChild = list1 } = internal1
+        InternalList { internalListChild = prefix2 } = internal2
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length prefix2
 
     unifyEqualsFramedLeft
-        :: Domain.InternalList (TermLike variable)
+        :: InternalList (TermLike variable)
         -> TermLike variable
-        -> Domain.InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> unifier (Pattern variable)
     unifyEqualsFramedLeft
-        builtin1
+        internal1
         frame2
-        builtin2
+        internal2
       | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
             tools <- Simplifier.askMetadataTools
-            let listPrefix1 = asInternal tools builtinListSort prefix1
+            let listPrefix1 = asInternal tools internalListSort prefix1
             prefixUnified <- simplifyChild frame2 listPrefix1
             suffixUnified <-
                 unifyEqualsConcrete
-                    builtin1 { Domain.builtinListChild = suffix1 }
-                    builtin2
-            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
+                    internal1 { internalListChild = suffix1 }
+                    internal2
+            let result =
+                    mkBuiltinList internal1
+                    <$ prefixUnified
+                    <* suffixUnified
             return result
       where
-        internal1 = Domain.BuiltinList builtin1
-        Domain.InternalList { builtinListSort } = builtin1
-        Domain.InternalList { builtinListChild = list1 } = builtin1
-        Domain.InternalList { builtinListChild = suffix2 } = builtin2
+        InternalList { internalListSort } = internal1
+        InternalList { internalListChild = list1 } = internal1
+        InternalList { internalListChild = suffix2 } = internal2
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
@@ -564,47 +552,50 @@ unifyEquals
 
     unifyEqualsFramedRightRight
         :: TermLike.Symbol
-        -> Domain.InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> TermLike variable
-        -> Domain.InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> TermLike variable
         -> unifier (Pattern variable)
     unifyEqualsFramedRightRight
         symbol
-        builtin1
+        internal1
         frame1
-        builtin2
+        internal2
         frame2
       | length1 < length2 = do
         tools <- Simplifier.askMetadataTools
         prefixUnified <-
             unifyEqualsConcrete
-                builtin1
-                builtin2 { Domain.builtinListChild = prefix2 }
-        let listSuffix2 = asInternal tools builtinListSort suffix2
+                internal1
+                internal2 { internalListChild = prefix2 }
+        let listSuffix2 = asInternal tools internalListSort suffix2
             suffix2Frame2 = mkApplySymbol symbol [listSuffix2, frame2]
         suffixUnified <-
             simplifyChild
                 frame1
                 suffix2Frame2
         let result =
-                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
+                TermLike.markSimplified initial
+                <$ prefixUnified
+                <* suffixUnified
         return result
       | length1 == length2 = do
         prefixUnified <-
-            unifyEqualsConcrete builtin1 builtin2
+            unifyEqualsConcrete internal1 internal2
         suffixUnified <- simplifyChild frame1 frame2
         let result =
-                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
+                TermLike.markSimplified initial
+                <$ prefixUnified
+                <* suffixUnified
         return result
       | otherwise =
-        unifyEqualsFramedRightRight symbol builtin2 frame2 builtin1 frame1
+        unifyEqualsFramedRightRight symbol internal2 frame2 internal1 frame1
       where
-        initial = mkApplySymbol symbol [mkBuiltin internal1, frame1]
-        internal1 = Domain.BuiltinList builtin1
-        Domain.InternalList { builtinListSort } = builtin1
-        Domain.InternalList { builtinListChild = list1 } = builtin1
-        Domain.InternalList { builtinListChild = list2 } = builtin2
+        initial = mkApplySymbol symbol [mkBuiltinList internal1, frame1]
+        InternalList { internalListSort } = internal1
+        InternalList { internalListChild = list1 } = internal1
+        InternalList { internalListChild = list2 } = internal2
         length1 = Seq.length list1
         length2 = Seq.length list2
         (prefix2, suffix2) = Seq.splitAt length1 list2
@@ -612,43 +603,43 @@ unifyEquals
     unifyEqualsFramedLeftLeft
         :: TermLike.Symbol
         -> TermLike variable
-        -> Domain.InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> TermLike variable
-        -> Domain.InternalList (TermLike variable)
+        -> InternalList (TermLike variable)
         -> unifier (Pattern variable)
     unifyEqualsFramedLeftLeft
         symbol
         frame1
-        builtin1
+        internal1
         frame2
-        builtin2
+        internal2
       | length1 < length2 = do
         tools <- Simplifier.askMetadataTools
-        let listPrefix2 = asInternal tools builtinListSort prefix2
+        let listPrefix2 = asInternal tools internalListSort prefix2
             frame2Prefix2 = mkApplySymbol symbol [frame2, listPrefix2]
         prefixUnified <- simplifyChild frame1 frame2Prefix2
         suffixUnified <-
             unifyEqualsConcrete
-                builtin1
-                builtin2 { Domain.builtinListChild = suffix2 }
+                internal1
+                internal2 { internalListChild = suffix2 }
         let result =
                 TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
         return result
       | length1 == length2 = do
         prefixUnified <- simplifyChild frame1 frame2
-        suffixUnified <-
-            unifyEqualsConcrete builtin1 builtin2
+        suffixUnified <- unifyEqualsConcrete internal1 internal2
         let result =
-                TermLike.markSimplified initial <$ prefixUnified <* suffixUnified
+                TermLike.markSimplified initial
+                <$ prefixUnified
+                <* suffixUnified
         return result
       | otherwise =
-        unifyEqualsFramedLeftLeft symbol frame2 builtin2 frame1 builtin1
+        unifyEqualsFramedLeftLeft symbol frame2 internal2 frame1 internal1
       where
-        initial = mkApplySymbol symbol [frame1, mkBuiltin internal1]
-        internal1 = Domain.BuiltinList builtin1
-        Domain.InternalList { builtinListSort } = builtin1
-        Domain.InternalList { builtinListChild = list1 } = builtin1
-        Domain.InternalList { builtinListChild = list2 } = builtin2
+        initial = mkApplySymbol symbol [frame1, mkBuiltinList internal1]
+        InternalList { internalListSort } = internal1
+        InternalList { internalListChild = list1 } = internal1
+        InternalList { internalListChild = list2 } = internal2
         length1 = Seq.length list1
         length2 = Seq.length list2
         (prefix2, suffix2) = Seq.splitAt (length2 - length1) list2
