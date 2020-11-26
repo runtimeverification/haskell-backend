@@ -1568,7 +1568,16 @@ smtUnresolvedDeclarations = SMT.Declarations
         [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
-        , ( functional00Id, smtDeclaredSymbol "functional00" functional00Id [] testSort )
+        , ( functional00Id
+            , smtDeclaredSymbol "functional00" functional00Id [] testSort
+          )
+        -- TODO: use another symbol here
+        , ( functional10Id
+            , smtDeclaredSymbol "functional10" functional10Id [testSort] testSort
+          )
+        , ( fId
+            , smtDeclaredSymbol "f" fId [testSort] testSort
+          )
         ]
     }
 
