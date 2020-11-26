@@ -17,6 +17,8 @@ module Kore.Step.SMT.Translate
     , translateSMTDependentAtom
     , evalTranslator
     , runTranslator
+    -- For testing
+    , translatePattern
     ) where
 
 import Prelude.Kore
@@ -312,6 +314,10 @@ translatePattern translateTerm sort pat =
         translateInterpretedApplication
         <|> translateUninterpreted'
       | otherwise =
+        -- Warning: this is not right, function-like
+        -- symbols should be sent to the solver only if
+        -- we know they are defined. Arbitrary symbols
+        -- should never be sent to the solver.
         translateInterpretedApplication
       where
         translateInterpretedApplication = do
