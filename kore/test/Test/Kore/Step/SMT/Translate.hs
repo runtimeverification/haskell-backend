@@ -197,7 +197,7 @@ test_translatePredicateWith =
                 \, where f(x) is defined" $
             translatingPatt (TermLike.mkDefined $ Mock.functional10 (Mock.f x))
         `yields`
-            List [Atom "functional10", Atom "f", var 0]
+            List [Atom "functional10", List [Atom "f", var 0]]
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -244,7 +244,10 @@ translatingPatt =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePattern
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
-actual `yields` expected = actual >>= assertEqual "" (Just expected)
+actual `yields` expected = do
+    x <- actual
+    traceM $ show x
+    assertEqual "" (Just expected) x
 
 fails :: HasCallStack => IO (Maybe SExpr) -> IO ()
 fails actual = actual >>= assertEqual "" Nothing
