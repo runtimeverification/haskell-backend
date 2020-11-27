@@ -124,7 +124,9 @@ translatePredicateWith translateTerm predicate =
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
-            DefinedF child -> translatePredicatePattern (getDefined child)
+            DefinedF child ->
+                local (const (TranslatorEnv True))
+                $ translatePredicatePattern (getDefined child)
             -- Logical connectives: translate as connectives
             AndF and' -> translatePredicateAnd and'
             BottomF _ -> return (SMT.bool False)
@@ -288,7 +290,9 @@ translatePattern translateTerm sort pat =
                     "while translating dv to SMT.int" dv
             ApplySymbolF app ->
                 translateApplication (Just SMT.tInt) pat' app
-            DefinedF (Defined child) -> translateInt child
+            DefinedF (Defined child) ->
+                local (const (TranslatorEnv True))
+                $ translateInt child
             _ -> empty
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
@@ -306,7 +310,9 @@ translatePattern translateTerm sort pat =
                 SMT.not <$> translateBool notChild
             ApplySymbolF app ->
                 translateApplication (Just SMT.tBool) pat' app
-            DefinedF (Defined child) -> translateBool child
+            DefinedF (Defined child) ->
+                local (const (TranslatorEnv True))
+                $ translateBool child
             _ -> empty
 
     translateApplication
