@@ -252,6 +252,9 @@ translatePredicateWith translateTerm predicate =
         Attribute.Sort { hook = Hook { getHook } } =
             sortAttributes tools variableSort
 
+-- | Attempt to translate an arbitrary ML pattern for the solver.
+-- It should only be used in the 'Predicate' translator or in
+-- the tests.
 translatePattern
     :: forall variable monad
     .  Given (SmtMetadataTools Attribute.Symbol)
@@ -339,7 +342,7 @@ translatePattern translateTerm sort pat =
               translateInterpretedApplication
               <|> translateUninterpreted'
           | otherwise =
-              -- Warning: this is not right, function-like
+              -- TODO: this is not right, function-like
               -- symbols should be sent to the solver only if
               -- we know they are defined. Arbitrary symbols
               -- should never be sent to the solver.
@@ -417,6 +420,8 @@ data TranslatorState variable
 instance Default (TranslatorState variable) where
     def = TranslatorState def def def
 
+-- | Translator local environment, used to check if a subterm is
+-- assumed to be defined. If it is, we can translate it for the solver.
 newtype TranslatorEnv = TranslatorEnv { assumeDefined :: Bool }
 
 instance Default TranslatorEnv where
