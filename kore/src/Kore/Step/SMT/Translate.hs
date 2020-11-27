@@ -10,13 +10,14 @@ Portability : portable
 
 module Kore.Step.SMT.Translate
     ( translatePredicateWith
-    , Translator
+    , Translator (..)
     , TranslateItem (..)
     , TranslatorState (..)
     , SMTDependentAtom (..)
     , translateSMTDependentAtom
     , evalTranslator
     , runTranslator
+    , maybeToTranslator
     -- For testing
     , translatePattern
     ) where
@@ -31,12 +32,14 @@ import Control.Error
 import qualified Control.Lens as Lens
 import Control.Monad.Counter
     ( CounterT
+    , MonadCounter
     , evalCounterT
     )
 import Control.Monad.Except
 import Control.Monad.Morph as Morph
 import Control.Monad.State.Strict
-    ( StateT
+    ( MonadState
+    , StateT
     , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
@@ -104,15 +107,15 @@ translatePredicateWith
         , InternalVariable variable
         )
     -- TODO: type alias for this function
-    => (SExpr -> TranslateItem variable -> Translator m variable SExpr)
+    => (SExpr -> TranslateItem variable -> Translator variable m SExpr)
     -> Predicate variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translatePredicateWith translateTerm predicate =
     translatePredicatePattern
     $ unwrapPredicate
     $ coerceSort Sort.predicateSort predicate
   where
-    translatePredicatePattern :: p -> Translator m variable SExpr
+    translatePredicatePattern :: p -> Translator variable m SExpr
     translatePredicatePattern pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
@@ -204,12 +207,12 @@ translatePredicateWith translateTerm predicate =
             <*> translatePredicatePattern orSecond
 
     translatePredicateExists
-        :: Exists Sort variable p -> Translator m variable SExpr
+        :: Exists Sort variable p -> Translator variable m SExpr
     translatePredicateExists Exists { existsVariable, existsChild } =
         translateQuantifier SMT.existsQ existsVariable existsChild
 
     translatePredicateForall
-        :: Forall Sort variable p -> Translator m variable SExpr
+        :: Forall Sort variable p -> Translator variable m SExpr
     translatePredicateForall Forall { forallVariable, forallChild } =
         translateQuantifier SMT.forallQ forallVariable forallChild
 
@@ -217,7 +220,7 @@ translatePredicateWith translateTerm predicate =
         :: ([SExpr] -> SExpr -> SExpr)
         -> ElementVariable variable
         -> p
-        -> Translator m variable SExpr
+        -> Translator variable m SExpr
     translateQuantifier quantifier var predTerm = do
         smtSort <- translateVariableSort
         oldVar <- State.gets (Map.lookup var . quantifiedVars)
@@ -228,12 +231,13 @@ translatePredicateWith translateTerm predicate =
         return $ quantifier [SMT.List [smtVar, smtSort]] smtPred
       where
         Variable { variableSort } = var
+        translateVariableSort :: Translator variable m SExpr
         translateVariableSort =
             case getHook of
               Just builtinSort
                 | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
                 | builtinSort == Builtin.Int.sort  -> pure SMT.tInt
-              _ -> translateSort variableSort & hoistMaybe
+              _ -> translateSort variableSort & maybeToTranslator
         tools :: SmtMetadataTools Attribute.Symbol
         tools = given
         Attribute.Sort { hook = Hook { getHook } } =
@@ -244,10 +248,10 @@ translatePattern
     .  Given (SmtMetadataTools Attribute.Symbol)
     => MonadLog monad
     => InternalVariable variable
-    => (SExpr -> TranslateItem variable -> Translator monad variable SExpr)
+    => (SExpr -> TranslateItem variable -> Translator variable monad SExpr)
     -> Sort
     -> TermLike variable
-    -> Translator monad variable SExpr
+    -> Translator variable monad SExpr
 translatePattern translateTerm sort pat =
     case getHook of
         Just builtinSort
@@ -255,7 +259,7 @@ translatePattern translateTerm sort pat =
           | builtinSort == Builtin.Int.sort -> translateInt pat
         _ -> case Cofree.tailF $ Recursive.project pat of
                 VariableF _ -> do
-                    smtSort <- hoistMaybe $ translateSort sort
+                    smtSort <- maybeToTranslator $ translateSort sort
                     translateUninterpreted translateTerm smtSort pat
                 ApplySymbolF app ->
                     translateApplication (translateSort sort) pat app
@@ -268,7 +272,7 @@ translatePattern translateTerm sort pat =
         sortAttributes tools sort
 
     -- | Translate a functional pattern in the builtin Int sort for SMT.
-    translateInt :: TermLike variable -> Translator monad variable SExpr
+    translateInt :: TermLike variable -> Translator variable monad SExpr
     translateInt pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tInt pat'
@@ -281,7 +285,7 @@ translatePattern translateTerm sort pat =
             _ -> empty
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
-    translateBool :: TermLike variable -> Translator monad variable SExpr
+    translateBool :: TermLike variable -> Translator variable monad SExpr
     translateBool pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
@@ -302,7 +306,7 @@ translatePattern translateTerm sort pat =
         :: Maybe SExpr
         -> TermLike variable
         -> Application Symbol (TermLike variable)
-        -> Translator monad variable SExpr
+        -> Translator variable monad SExpr
     translateApplication
         maybeSort
         original
@@ -332,7 +336,7 @@ translatePattern translateTerm sort pat =
             warnSymbolSMTRepresentation applicationSymbolOrAlias
             >> empty
         translateUninterpreted' = do
-            sort' <- hoistMaybe maybeSort
+            sort' <- maybeToTranslator maybeSort
             translateUninterpreted translateTerm sort' original
 
 -- TODO: type does not need to be this general
@@ -369,7 +373,7 @@ translateSMTDependentAtom
     => SMT.MonadSMT m
     => Map.Map (ElementVariable variable) (SMTDependentAtom variable)
     -> SMTDependentAtom variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translateSMTDependentAtom
     quantifiedVars
     SMTDependentAtom { smtName = funName, boundVars }
@@ -394,15 +398,30 @@ data TranslatorState variable
 instance Default (TranslatorState variable) where
     def = TranslatorState def def def
 
-type Translator m variable =
-    MaybeT (StateT (TranslatorState variable) (CounterT m))
+newtype Translator variable m a =
+    Translator
+        { getTranslator :: MaybeT (StateT (TranslatorState variable) (CounterT m)) a
+        }
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (Alternative)
+    deriving newtype (MonadState (TranslatorState variable), MonadLog)
+    deriving newtype (MonadCounter)
 
-evalTranslator :: Monad m => Translator m p a -> MaybeT m a
-evalTranslator = Morph.hoist (evalCounterT . flip evalStateT def)
+instance MonadTrans (Translator variable) where
+    lift = Translator . lift . lift . lift
 
-runTranslator :: Monad m => Translator m p a -> MaybeT m (a, TranslatorState p)
+deriving newtype instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
+
+evalTranslator :: Monad m => Translator p m a -> MaybeT m a
+evalTranslator (Translator translator) =
+    Morph.hoist (evalCounterT . flip evalStateT def) translator
+
+runTranslator :: Monad m => Translator p m a -> MaybeT m (a, TranslatorState p)
 runTranslator = evalTranslator . includeState
   where includeState comp = do
             comp' <- comp
             state <- State.get
             pure (comp', state)
+
+maybeToTranslator :: Monad m => Maybe a -> Translator p m a
+maybeToTranslator = Translator . hoistMaybe

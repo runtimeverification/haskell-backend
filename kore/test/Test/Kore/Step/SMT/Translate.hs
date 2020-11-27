@@ -182,22 +182,19 @@ test_translatePredicateWith =
         `yields`
             var 0
     -- This should fail because we don't know if it is defined.
-    , testCase "f(x), f function-like" $
-        translatingPatt (Mock.f x) & fails
+    , testCase "function(x)" $
+        translatingPatt (Mock.functionSMT x) & fails
     -- This should fail because we don't know if it is defined.
-    , testCase "functional10(f(x)), f function-like, functional10 functional" $
-        translatingPatt (Mock.functional10 (Mock.f x)) & fails
-    , testCase "f(x), f function-like, where f(x) is defined" $
-            translatingPatt (TermLike.mkDefined $ Mock.f x)
+    , testCase "functional(function(x))" $
+        translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
+    , testCase "function(x), where function(x) is defined" $
+            translatingPatt (TermLike.mkDefined $ Mock.functionSMT x)
         `yields`
-            List [Atom "f", var 0]
-    , testCase "functional10(f(x))\
-                \, f function-like\
-                \, functional10 functional\
-                \, where f(x) is defined" $
-            translatingPatt (TermLike.mkDefined $ Mock.functional10 (Mock.f x))
+            List [Atom "functionSMT", var 0]
+    , testCase "functional(function(x)) where function(x) is defined" $
+            translatingPatt (TermLike.mkDefined $ Mock.functionalSMT (Mock.functionSMT x))
         `yields`
-            List [Atom "functional10", List [Atom "f", var 0]]
+            List [Atom "functionalSMT", List [Atom "functionSMT", var 0]]
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -224,13 +221,13 @@ test_translatePredicateWith =
 translatePredicate
     :: HasCallStack
     => Predicate VariableName
-    -> Translator NoSMT VariableName SExpr
+    -> Translator VariableName NoSMT SExpr
 translatePredicate = Evaluator.translatePredicate Mock.metadataTools
 
 translatePattern
     :: HasCallStack
     => TermLike VariableName
-    -> Translator NoSMT VariableName SExpr
+    -> Translator VariableName NoSMT SExpr
 translatePattern =
     give Mock.metadataTools
     $ SMT.translatePattern Evaluator.translateTerm Mock.testSort
@@ -244,10 +241,7 @@ translatingPatt =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePattern
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
-actual `yields` expected = do
-    x <- actual
-    traceM $ show x
-    assertEqual "" (Just expected) x
+actual `yields` expected = actual >>= assertEqual "" (Just expected)
 
 fails :: HasCallStack => IO (Maybe SExpr) -> IO ()
 fails actual = actual >>= assertEqual "" Nothing

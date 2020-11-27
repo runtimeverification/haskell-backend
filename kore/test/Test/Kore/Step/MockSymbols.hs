@@ -283,6 +283,10 @@ otherOverloadId :: Id
 otherOverloadId = testId "otherOverload"
 topOverloadId :: Id
 topOverloadId = testId "topOverload"
+functionSMTId :: Id
+functionSMTId = testId "functionSMT"
+functionalSMTId :: Id
+functionalSMTId = testId "functionalSMT"
 
 symbol :: Id -> [Sort] -> Sort -> Symbol
 symbol name operands result =
@@ -653,6 +657,14 @@ anywhereSymbol =
     & Lens.set
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
+
+functionSMTSymbol :: Symbol
+functionSMTSymbol =
+    symbol functionSMTId [testSort] testSort & function
+
+functionalSMTSymbol :: Symbol
+functionalSMTSymbol =
+    symbol functionalSMTId [testSort] testSort & function & functional
 
 type MockElementVariable = ElementVariable VariableName
 
@@ -1312,6 +1324,16 @@ sigma child1 child2 = Internal.mkApplySymbol sigmaSymbol [child1, child2]
 anywhere :: InternalVariable variable => TermLike variable
 anywhere = Internal.mkApplySymbol anywhereSymbol []
 
+functionSMT, functionalSMT
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+functionSMT arg =
+    Internal.mkApplySymbol functionSMTSymbol [arg]
+functionalSMT arg =
+    Internal.mkApplySymbol functionalSMTSymbol [arg]
+
 attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
 attributesMapping =
     map (liftA2 (,) toSymbolOrAlias symbolAttributes) symbols
@@ -1413,6 +1435,8 @@ symbols =
     , subOverloadSymbol
     , otherOverloadSymbol
     , topOverloadSymbol
+    , functionSMTSymbol
+    , functionalSMTSymbol
     ]
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
@@ -1571,12 +1595,11 @@ smtUnresolvedDeclarations = SMT.Declarations
         , ( functional00Id
             , smtDeclaredSymbol "functional00" functional00Id [] testSort
           )
-        -- TODO: use another symbol here
-        , ( functional10Id
-            , smtDeclaredSymbol "functional10" functional10Id [testSort] testSort
+        , ( functionSMTId
+            , smtDeclaredSymbol "functionSMT" functionSMTId [testSort] testSort
           )
-        , ( fId
-            , smtDeclaredSymbol "f" fId [testSort] testSort
+        , ( functionalSMTId
+            , smtDeclaredSymbol "functionalSMT" functionalSMTId [testSort] testSort
           )
         ]
     }
