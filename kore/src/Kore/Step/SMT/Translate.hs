@@ -92,6 +92,9 @@ data TranslateItem variable
     = QuantifiedVariable !(ElementVariable variable)
     | UninterpretedTerm !(TermLike variable)
 
+type TranslateTerm variable m =
+    SExpr -> TranslateItem variable -> Translator variable m SExpr
+
 -- ----------------------------------------------------------------
 -- Predicate translation
 
@@ -111,8 +114,7 @@ translatePredicateWith
         , MonadLog m
         , InternalVariable variable
         )
-    -- TODO: type alias for this function
-    => (SExpr -> TranslateItem variable -> Translator variable m SExpr)
+    => TranslateTerm variable m
     -> Predicate variable
     -> Translator variable m SExpr
 translatePredicateWith translateTerm predicate =
@@ -125,7 +127,7 @@ translatePredicateWith translateTerm predicate =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
             DefinedF child ->
-                local (const (TranslatorEnv True))
+                withDefinednessAssumption
                 $ translatePredicatePattern (getDefined child)
             -- Logical connectives: translate as connectives
             AndF and' -> translatePredicateAnd and'
@@ -255,7 +257,7 @@ translatePattern
     .  Given (SmtMetadataTools Attribute.Symbol)
     => MonadLog monad
     => InternalVariable variable
-    => (SExpr -> TranslateItem variable -> Translator variable monad SExpr)
+    => TranslateTerm variable monad
     -> Sort
     -> TermLike variable
     -> Translator variable monad SExpr
@@ -271,7 +273,7 @@ translatePattern translateTerm sort pat =
                 ApplySymbolF app ->
                     translateApplication (translateSort sort) pat app
                 DefinedF (Defined child) ->
-                    local (const (TranslatorEnv True))
+                    withDefinednessAssumption
                     $ translatePattern translateTerm sort child
                 _ -> empty
   where
@@ -291,7 +293,7 @@ translatePattern translateTerm sort pat =
             ApplySymbolF app ->
                 translateApplication (Just SMT.tInt) pat' app
             DefinedF (Defined child) ->
-                local (const (TranslatorEnv True))
+                withDefinednessAssumption
                 $ translateInt child
             _ -> empty
 
@@ -311,7 +313,7 @@ translatePattern translateTerm sort pat =
             ApplySymbolF app ->
                 translateApplication (Just SMT.tBool) pat' app
             DefinedF (Defined child) ->
-                local (const (TranslatorEnv True))
+                withDefinednessAssumption
                 $ translateBool child
             _ -> empty
 
@@ -357,14 +359,13 @@ translatePattern translateTerm sort pat =
             sort' <- maybeToTranslator maybeSort
             translateUninterpreted translateTerm sort' original
 
--- TODO: type does not need to be this general
 translateUninterpreted
-    :: (t1 -> TranslateItem variable -> t2)
-    -> t1
+    :: TranslateTerm variable m
+    -> SExpr
     -> TermLike variable
-    -> t2
-translateUninterpreted translateTerm t pat =
-    translateTerm t (UninterpretedTerm pat)
+    -> Translator variable m SExpr
+translateUninterpreted translateTerm sExpr pat =
+    translateTerm sExpr (UninterpretedTerm pat)
 
 {-| Represents the SMT encoding of an untranslatable pattern containing
 occurrences of existential variables.  Since the same pattern might appear
@@ -435,24 +436,25 @@ newtype Translator variable m a =
         }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (Alternative)
-    deriving newtype (MonadState (TranslatorState variable))
-    deriving newtype (MonadReader TranslatorEnv)
     deriving newtype (MonadCounter, MonadLog)
+    deriving newtype (MonadReader TranslatorEnv)
+    deriving newtype (MonadState (TranslatorState variable))
 
 instance MonadTrans (Translator variable) where
     lift = Translator . lift . lift . lift
 
 instance MFunctor (Translator variable) where
     hoist f (Translator translator) =
-        Translator $ hoist (hoist (hoist f)) translator
+        hoist (hoist (hoist f)) translator
+        & Translator
 
 instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
 
 evalTranslator :: Monad m => Translator p m a -> MaybeT m a
 evalTranslator (Translator translator) =
-    Morph.hoist (evalCounterT . evalRWST' def def) translator
+    Morph.hoist (evalCounterT . evalRST def def) translator
   where
-      evalRWST' env state rwst = do
+      evalRST env state rwst = do
           (result, _) <- evalRWST rwst env state
           return result
 
@@ -465,3 +467,7 @@ runTranslator = evalTranslator . includeState
 
 maybeToTranslator :: Monad m => Maybe a -> Translator p m a
 maybeToTranslator = Translator . hoistMaybe
+
+withDefinednessAssumption :: Monad m => Translator p m a -> Translator p m a
+withDefinednessAssumption =
+    local (const $ TranslatorEnv True)

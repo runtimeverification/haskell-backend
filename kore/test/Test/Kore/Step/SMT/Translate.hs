@@ -188,13 +188,13 @@ test_translatePredicateWith =
     -- , testCase "functional(function(x))" $
     --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
     , testCase "function(x), where function(x) is defined" $
-            translatingPatt (TermLike.mkDefined $ Mock.functionSMT x)
+            translatingPatt (defined (function x))
         `yields`
-            List [Atom "functionSMT", var 0]
+            functionSMT (var 0)
     , testCase "functional(function(x)) where function(x) is defined" $
-            translatingPatt (TermLike.mkDefined $ Mock.functionalSMT (Mock.functionSMT x))
+            translatingPatt (defined (functional (function x)))
         `yields`
-            List [Atom "functionalSMT", List [Atom "functionSMT", var 0]]
+            functionalSMT (functionSMT (var 0))
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -204,6 +204,11 @@ test_translatePredicateWith =
     smtTrue = Atom "true"
     var :: Integer -> SExpr
     var i = Atom $ "<" <> Text.pack (show i) <> ">"
+    function = Mock.functionSMT
+    functional = Mock.functionalSMT
+    defined = TermLike.mkDefined
+    functionSMT sexpr = List [Atom "functionSMT", sexpr]
+    functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
     pleq = Mock.lessInt
     peq = Predicate.makeEqualsPredicate_
     pand = Predicate.makeAndPredicate
@@ -242,6 +247,6 @@ translatingPatt =
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)
-
+--
 -- fails :: HasCallStack => IO (Maybe SExpr) -> IO ()
 -- fails actual = actual >>= assertEqual "" Nothing
