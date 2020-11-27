@@ -37,10 +37,12 @@ import Control.Monad.Counter
     )
 import Control.Monad.Except
 import Control.Monad.Morph as Morph
+import Control.Monad.RWS.Strict
+    ( RWST (..)
+    , evalRWST
+    )
 import Control.Monad.State.Strict
     ( MonadState
-    , StateT
-    , evalStateT
     )
 import qualified Control.Monad.State.Strict as State
 import Data.Default
@@ -400,7 +402,7 @@ instance Default (TranslatorState variable) where
 
 newtype Translator variable m a =
     Translator
-        { getTranslator :: MaybeT (StateT (TranslatorState variable) (CounterT m)) a
+        { getTranslator :: MaybeT (RWST () () (TranslatorState variable) (CounterT m)) a
         }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (Alternative)
@@ -410,11 +412,19 @@ newtype Translator variable m a =
 instance MonadTrans (Translator variable) where
     lift = Translator . lift . lift . lift
 
-deriving newtype instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
+instance MFunctor (Translator variable) where
+    hoist f (Translator translator) =
+        Translator $ hoist (hoist (hoist f)) translator
+
+instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
 
 evalTranslator :: Monad m => Translator p m a -> MaybeT m a
 evalTranslator (Translator translator) =
-    Morph.hoist (evalCounterT . flip evalStateT def) translator
+    Morph.hoist (evalCounterT . evalRWST' () def) translator
+  where
+      evalRWST' env state rwst = do
+          (result, _) <- evalRWST rwst env state
+          return result
 
 runTranslator :: Monad m => Translator p m a -> MaybeT m (a, TranslatorState p)
 runTranslator = evalTranslator . includeState
