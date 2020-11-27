@@ -38,8 +38,11 @@ import Control.Monad.Counter
 import Control.Monad.Except
 import Control.Monad.Morph as Morph
 import Control.Monad.RWS.Strict
-    ( RWST (..)
+    ( MonadReader
+    , RWST (..)
+    , ask
     , evalRWST
+    , local
     )
 import Control.Monad.State.Strict
     ( MonadState
@@ -265,7 +268,9 @@ translatePattern translateTerm sort pat =
                     translateUninterpreted translateTerm smtSort pat
                 ApplySymbolF app ->
                     translateApplication (translateSort sort) pat app
-                DefinedF (Defined child) -> translatePattern translateTerm sort child
+                DefinedF (Defined child) ->
+                    local (const (TranslatorEnv True))
+                    $ translatePattern translateTerm sort child
                 _ -> empty
   where
     tools :: SmtMetadataTools Attribute.Symbol
@@ -316,16 +321,21 @@ translatePattern translateTerm sort pat =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      | isFunctionalPattern original =
-        translateInterpretedApplication
-        <|> translateUninterpreted'
-      | otherwise =
-        -- Warning: this is not right, function-like
-        -- symbols should be sent to the solver only if
-        -- we know they are defined. Arbitrary symbols
-        -- should never be sent to the solver.
-        translateInterpretedApplication
+      = do
+        TranslatorEnv { assumeDefined } <- ask
+        translateApplicationWorker assumeDefined
       where
+        translateApplicationWorker isDefined
+          | (isDefined && isFunctionPattern original)
+          || isFunctionalPattern original =
+              translateInterpretedApplication
+              <|> translateUninterpreted'
+          | otherwise =
+              -- Warning: this is not right, function-like
+              -- symbols should be sent to the solver only if
+              -- we know they are defined. Arbitrary symbols
+              -- should never be sent to the solver.
+              translateInterpretedApplication
         translateInterpretedApplication = do
             let translated = translateSymbol applicationSymbolOrAlias
             sexpr <- maybe warnAndDiscard return translated
@@ -400,14 +410,28 @@ data TranslatorState variable
 instance Default (TranslatorState variable) where
     def = TranslatorState def def def
 
+newtype TranslatorEnv = TranslatorEnv { assumeDefined :: Bool }
+
+instance Default TranslatorEnv where
+    def = TranslatorEnv False
+
 newtype Translator variable m a =
     Translator
-        { getTranslator :: MaybeT (RWST () () (TranslatorState variable) (CounterT m)) a
+        { getTranslator
+            :: MaybeT
+                ( RWST
+                    TranslatorEnv
+                    ()
+                    (TranslatorState variable)
+                    (CounterT m)
+                )
+                a
         }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (Alternative)
-    deriving newtype (MonadState (TranslatorState variable), MonadLog)
-    deriving newtype (MonadCounter)
+    deriving newtype (MonadState (TranslatorState variable))
+    deriving newtype (MonadReader TranslatorEnv)
+    deriving newtype (MonadCounter, MonadLog)
 
 instance MonadTrans (Translator variable) where
     lift = Translator . lift . lift . lift
@@ -420,7 +444,7 @@ instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
 
 evalTranslator :: Monad m => Translator p m a -> MaybeT m a
 evalTranslator (Translator translator) =
-    Morph.hoist (evalCounterT . evalRWST' () def) translator
+    Morph.hoist (evalCounterT . evalRWST' def def) translator
   where
       evalRWST' env state rwst = do
           (result, _) <- evalRWST rwst env state
