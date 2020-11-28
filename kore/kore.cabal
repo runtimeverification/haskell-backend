@@ -181,6 +181,7 @@ library
       Kore.Internal.InternalString
       Kore.Internal.MultiAnd
       Kore.Internal.MultiOr
+      Kore.Internal.NormalizedAc
       Kore.Internal.OrCondition
       Kore.Internal.OrPattern
       Kore.Internal.Pattern
