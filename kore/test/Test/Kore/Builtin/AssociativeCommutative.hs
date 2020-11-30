@@ -10,11 +10,8 @@ import Prelude.Kore
 import Test.Tasty
 
 import Kore.Builtin.AssociativeCommutative
-import Kore.Domain.Builtin
-    ( NormalizedSet (..)
-    , Value (..)
-    )
 import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Step.MockSymbols as Mock

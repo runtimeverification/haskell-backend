@@ -22,6 +22,9 @@ module Kore.Internal.NormalizedAc
     , getConcreteValuesOfAc
     , unparsedChildren
     , InternalAc (..)
+    , normalizedAcDefined
+    , normalizedAcConstructorLike
+    , normalizedAcFunctional
     ) where
 
 import Prelude.Kore
@@ -43,8 +46,13 @@ import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.ConstructorLike
+import Kore.Attribute.Pattern.Defined
+import Kore.Attribute.Pattern.Functional
 import Kore.Debug
-import Kore.Internal.Symbol
+import Kore.Internal.Symbol hiding
+    ( isConstructorLike
+    )
 import Kore.Sort
 import Kore.Unparser
 import Pretty
@@ -421,3 +429,73 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
     InternalAc { builtinAcUnit } = builtinAc
     InternalAc { builtinAcElement } = builtinAc
     InternalAc { builtinAcConcat } = builtinAc
+
+normalizedAcDefined
+    :: (Foldable (Element collection), Foldable (Value collection))
+    => NormalizedAc collection key Defined -> Defined
+normalizedAcDefined ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , opaque = []
+            } -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = [_]
+            , concreteElements
+            , opaque = []
+            }
+          | Map.null concreteElements -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = [_]
+            }
+          | Map.null concreteElements -> sameAsChildren
+        _ -> Defined False
+  where
+    sameAsChildren = fold ac
+
+normalizedAcFunctional
+    :: (Foldable (Element collection), Foldable (Value collection))
+    => NormalizedAc collection key Functional -> Functional
+normalizedAcFunctional ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , opaque = []
+            } -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = [_]
+            , concreteElements
+            , opaque = []
+            }
+          | Map.null concreteElements -> sameAsChildren
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = [_]
+            }
+          | Map.null concreteElements -> sameAsChildren
+        _ -> Functional False
+  where
+    sameAsChildren = fold ac
+
+normalizedAcConstructorLike
+    ::  ( HasConstructorLike key
+        , HasConstructorLike (Value collection ConstructorLike)
+        )
+    => NormalizedAc collection key ConstructorLike -> ConstructorLike
+normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = []
+            }
+              | all pairIsConstructorLike concreteElementsList
+                -> ConstructorLike . Just $ ConstructorLikeHead
+              where
+                concreteElementsList = Map.toList concreteElements
+                pairIsConstructorLike (key, value) =
+                    assertConstructorLike "" key $ isConstructorLike value
+        _ -> ConstructorLike Nothing

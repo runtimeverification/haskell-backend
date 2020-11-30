@@ -393,10 +393,10 @@ builtinFunctions =
     ]
   where
     comparator name op =
-        ( name, Builtin.binaryOperator' extractStringDomainValue
+        ( name, Builtin.binaryOperator extractStringDomainValue
             Bool.asPattern name op )
     binaryOperator name op =
-        ( name, Builtin.binaryOperator' extractStringDomainValue
+        ( name, Builtin.binaryOperator extractStringDomainValue
             asPattern name op )
 
 {- | Match the @STRING.eq@ hooked symbol.

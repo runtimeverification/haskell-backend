@@ -7,21 +7,18 @@ License     : NCSA
 module Kore.Attribute.Pattern.Defined
     ( Defined (..)
     , alwaysDefined
-    , normalizedAcDefined
     ) where
 
 import Prelude.Kore
 
 import Control.DeepSeq
 import Data.Functor.Const
-import qualified Data.Map.Strict as Map
 import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
@@ -127,42 +124,6 @@ instance Synthetic Defined (Or sort) where
 instance Synthetic Defined (Rewrites sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
-
--- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
-instance Synthetic Defined (Builtin key) where
-    synthetic (BuiltinSet internalSet) = synthetic internalSet
-    {-# INLINE synthetic #-}
-
--- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
-instance Synthetic Defined (InternalAc key NormalizedSet) where
-    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
-        normalizedAcDefined builtinSetChild
-    {-# INLINE synthetic #-}
-
-normalizedAcDefined
-    :: (Foldable (Element collection), Foldable (Value collection))
-    => NormalizedAc collection key Defined -> Defined
-normalizedAcDefined ac@(NormalizedAc _ _ _) =
-    case ac of
-        NormalizedAc
-            { elementsWithVariables = []
-            , opaque = []
-            } -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = [_]
-            , concreteElements
-            , opaque = []
-            }
-          | Map.null concreteElements -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements
-            , opaque = [_]
-            }
-          | Map.null concreteElements -> sameAsChildren
-        _ -> Defined False
-  where
-    sameAsChildren = fold ac
 
 -- | A 'Top' pattern is always 'Defined'.
 instance Synthetic Defined (Top sort) where

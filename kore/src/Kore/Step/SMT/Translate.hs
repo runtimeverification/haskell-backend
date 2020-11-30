@@ -168,7 +168,6 @@ translatePredicateWith translateTerm predicate =
             ApplySymbolF _ -> empty
             InjF _ -> empty
             ApplyAliasF _ -> empty
-            BuiltinF _ -> empty
             DomainValueF _ -> empty
             NextF _ -> empty
             RewritesF _ -> empty
@@ -180,6 +179,7 @@ translatePredicateWith translateTerm predicate =
             InternalStringF _ -> empty
             InternalListF _ -> empty
             InternalMapF _ -> empty
+            InternalSetF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
             SignednessF _ -> empty

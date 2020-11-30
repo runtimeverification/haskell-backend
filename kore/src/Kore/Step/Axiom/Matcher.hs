@@ -60,9 +60,13 @@ import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
-import qualified Kore.Domain.Builtin as Builtin
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
+import Kore.Internal.InternalSet hiding
     ( Element
     , NormalizedAc
     , Value
@@ -71,6 +75,11 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.NormalizedAc as Builtin
+    ( Element
+    , NormalizedAc
+    , Value
+    )
 import Kore.Internal.Predicate
     ( Predicate
     , makeCeilPredicate_
@@ -367,13 +376,13 @@ matchBuiltinSet
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
     matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
-    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
-    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
+    normalized1 = unwrapAc $ builtinAcChild set1
+    normalized2 = unwrapAc $ builtinAcChild set2
     pushSetValue _ = return ()
-    pushSetElement = push . fmap Builtin.getSetElement
+    pushSetElement = push . fmap getSetElement
     wrapTermLike unwrapped =
         set2
-        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
+        & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
         & mkBuiltinSet
 matchBuiltinSet _ = empty
 
@@ -384,8 +393,8 @@ matchBuiltinMap
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
     matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
-    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
-    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
+    normalized1 = unwrapAc $ builtinAcChild map1
+    normalized2 = unwrapAc $ builtinAcChild map2
     pushMapValue = push . fmap getMapValue
     pushMapElement (Pair element1 element2) = do
         let (key1, value1) = getMapElement element1
@@ -394,7 +403,7 @@ matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
         push (Pair value1 value2)
     wrapTermLike unwrapped =
         map2
-        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
+        & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
         & mkBuiltinMap
 matchBuiltinMap _ = empty
 
@@ -548,7 +557,7 @@ substitute eVariable termLike = do
         termLike'
             & TermLike.substitute subst
             -- Injected Map and Set keys must be properly normalized before
-            -- calling Builtin.renormalize.
+            -- calling renormalize.
             & InjSimplifier.normalize injSimplifier
             & renormalizeBuiltins
             & return
@@ -743,7 +752,7 @@ type NormalizedAc normalized variable =
 
 matchNormalizedAc
     :: forall normalized simplifier variable
-    .   ( Builtin.AcWrapper normalized
+    .   ( AcWrapper normalized
         , MatchingVariable variable
         , Monad simplifier
         )
@@ -770,8 +779,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
             | otherwise ->
                 let normalized2' =
                         wrapTermLike normalized2
-                            { Builtin.concreteElements = excessConcrete2
-                            , Builtin.elementsWithVariables = excessAbstract2
+                            { concreteElements = excessConcrete2
+                            , elementsWithVariables = excessAbstract2
                             }
                  in push (Pair frame1 normalized2')
           _ -> empty
@@ -780,42 +789,42 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
     | [element1] <- abstract1
     , [frame1] <- opaque1
     , null concrete1 = do
-        let (key1, value1) = Builtin.unwrapElement element1
-        case Builtin.lookupSymbolicKeyOfAc key1 normalized2 of
+        let (key1, value1) = unwrapElement element1
+        case lookupSymbolicKeyOfAc key1 normalized2 of
             Just value2 -> lift $ do
                 pushValue (Pair value1 value2)
                 let normalized2' =
                         wrapTermLike
-                        $ Builtin.removeSymbolicKeyOfAc key1 normalized2
+                        $ removeSymbolicKeyOfAc key1 normalized2
                 push (Pair frame1 normalized2')
             Nothing ->
                 case (headMay . Map.toList $ concrete2, headMay abstract2) of
                     (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
-                                Builtin.wrapElement
+                                wrapElement
                                 $ Bifunctor.first TermLike.fromConcrete concreteElement2
                         pushElement (Pair element1 liftedConcreteElement2)
                         let (key2, _) = concreteElement2
                             normalized2' =
                                 wrapTermLike
-                                $ Builtin.removeConcreteKeyOfAc key2 normalized2
+                                $ removeConcreteKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     (_, Just abstractElement2) -> lift $ do
                         pushElement (Pair element1 abstractElement2)
-                        let (key2, _) = Builtin.unwrapElement abstractElement2
+                        let (key2, _) = unwrapElement abstractElement2
                             normalized2' =
                                 wrapTermLike
-                                $ Builtin.removeSymbolicKeyOfAc key2 normalized2
+                                $ removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
     | otherwise = empty
   where
-    abstract1 = Builtin.elementsWithVariables normalized1
-    concrete1 = Builtin.concreteElements normalized1
-    opaque1 = Builtin.opaque normalized1
-    abstract2 = Builtin.elementsWithVariables normalized2
-    concrete2 = Builtin.concreteElements normalized2
-    opaque2 = Builtin.opaque normalized2
+    abstract1 = elementsWithVariables normalized1
+    concrete1 = concreteElements normalized1
+    opaque1 = opaque normalized1
+    abstract2 = elementsWithVariables normalized2
+    concrete2 = concreteElements normalized2
+    opaque2 = opaque normalized2
 
     excessConcrete1 = Map.difference concrete1 concrete2
     excessConcrete2 = Map.difference concrete2 concrete1
@@ -828,11 +837,11 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
         } = abstractIntersectionMerge abstract1 abstract2
 
     abstractIntersectionMerge
-        :: [Builtin.Element normalized (TermLike variable)]
-        -> [Builtin.Element normalized (TermLike variable)]
+        :: [Element normalized variable]
+        -> [Element normalized variable]
         -> IntersectionDifference
-            (Builtin.Element normalized (TermLike variable))
-            (Pair (Builtin.Value normalized (TermLike variable)))
+            (Element normalized variable)
+            (Pair (Value normalized variable))
     abstractIntersectionMerge first second =
         keyBasedIntersectionDifference
             elementMerger
@@ -840,10 +849,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
             (toMap second)
       where
         toMap
-            :: [Builtin.Element normalized (TermLike variable)]
-            -> Map
-                (TermLike variable)
-                (Builtin.Element normalized (TermLike variable))
+            :: [Element normalized variable]
+            -> Map (TermLike variable) (Element normalized variable)
         toMap elements =
             let elementMap =
                     Map.fromList
@@ -855,14 +862,14 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 then elementMap
                 else error "Invalid map: duplicated keys."
         elementKey
-            :: Builtin.Element normalized (TermLike variable)
+            :: Element normalized variable
             -> TermLike variable
-        elementKey = fst . Builtin.unwrapElement
+        elementKey = fst . unwrapElement
         elementMerger
-            :: Builtin.Element normalized (TermLike variable)
-            -> Builtin.Element normalized (TermLike variable)
-            -> Pair (Builtin.Value normalized (TermLike variable))
-        elementMerger = Pair `on` (snd . Builtin.unwrapElement)
+            :: Element normalized variable
+            -> Element normalized variable
+            -> Pair (Value normalized variable)
+        elementMerger = Pair `on` (snd . unwrapElement)
 
 data IntersectionDifference a b
     = IntersectionDifference
@@ -917,7 +924,7 @@ renormalizeBuiltins =
         InternalMapF internalMap ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
             & maybe bottom' mkBuiltinMap
-        BuiltinF (Builtin.BuiltinSet internalSet) ->
+        InternalSetF internalSet ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
             & maybe bottom' mkBuiltinSet
         _ -> Recursive.embed base

@@ -19,7 +19,6 @@ module Kore.Builtin.List
     , assertSort
     , verifiers
     , builtinFunctions
-    , Builtin
     , returnList
     , asPattern
     , asInternal
@@ -85,7 +84,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
-    , Builtin
+    , pattern InternalList_
     , Concrete
     , pattern ElemVar_
     , pattern InternalList_

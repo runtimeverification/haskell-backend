@@ -8,7 +8,6 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -67,7 +66,7 @@ test_simplify =
 
 mkMap :: [(child, child)] -> [child] -> InternalMap (TermLike Concrete) child
 mkMap elements opaque =
-    Domain.InternalAc
+    InternalAc
         { builtinAcSort = Mock.mapSort
         , builtinAcUnit = Mock.unitMapSymbol
         , builtinAcElement = Mock.elementMapSymbol

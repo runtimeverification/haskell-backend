@@ -7,21 +7,18 @@ License     : NCSA
 module Kore.Attribute.Pattern.Functional
     ( Functional (..)
     , alwaysFunctional
-    , normalizedAcFunctional
     ) where
 
 import Prelude.Kore
 
 import Control.DeepSeq
 import Data.Functor.Const
-import qualified Data.Map.Strict as Map
 import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
@@ -124,42 +121,6 @@ instance Synthetic Functional (Or sort) where
 instance Synthetic Functional (Rewrites sort) where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
-
--- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (Builtin key) where
-    synthetic (BuiltinSet internalSet) = synthetic internalSet
-    {-# INLINE synthetic #-}
-
--- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (InternalAc key NormalizedSet) where
-    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
-        normalizedAcFunctional builtinSetChild
-    {-# INLINE synthetic #-}
-
-normalizedAcFunctional
-    :: (Foldable (Element collection), Foldable (Value collection))
-    => NormalizedAc collection key Functional -> Functional
-normalizedAcFunctional ac@(NormalizedAc _ _ _) =
-    case ac of
-        NormalizedAc
-            { elementsWithVariables = []
-            , opaque = []
-            } -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = [_]
-            , concreteElements
-            , opaque = []
-            }
-          | Map.null concreteElements -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements
-            , opaque = [_]
-            }
-          | Map.null concreteElements -> sameAsChildren
-        _ -> Functional False
-  where
-    sameAsChildren = fold ac
 
 instance Synthetic Functional (Top sort) where
     synthetic = const (Functional False)

@@ -63,14 +63,14 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
-import Kore.Domain.Builtin
-    ( Value (SetValue)
-    )
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+    ( Value (SetValue)
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition

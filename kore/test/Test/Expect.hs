@@ -2,6 +2,7 @@ module Test.Expect
     ( expectRight
     , expectLeft
     , expectJust
+    , expectThese
     , expectOne
     , assertNull
     , assertTop
@@ -15,6 +16,7 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
+import Data.These
 
 import Debug
 import Kore.Internal.InternalBool
@@ -31,6 +33,13 @@ expectLeft = either return (assertFailure . show . debug)
 
 expectJust :: HasCallStack => Maybe a -> IO a
 expectJust = maybe (assertFailure "expected Just _, found Nothing") return
+
+expectThese :: HasCallStack => These a b -> IO (a, b)
+expectThese =
+    these
+        (\_ -> assertFailure "expected (These _ _), but found (This _)")
+        (\_ -> assertFailure "expected (These _ _), but found (That _)")
+        (\a b -> pure (a, b))
 
 expectOne :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO a
 expectOne as =

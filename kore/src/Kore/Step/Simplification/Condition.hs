@@ -63,7 +63,11 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern Builtin_
+    , pattern InternalBool_
+    , pattern InternalList_
+    , pattern BuiltinMap_
+    , pattern BuiltinSet_
+    , pattern InternalString_
     , pattern Equals_
     , pattern Exists_
     , pattern Forall_
@@ -345,10 +349,12 @@ retractLocalFunction =
             App_ symbol2 _
               | isConstructor symbol2 -> Just (Pair term1 term2)
             Inj_ _     -> Just (Pair term1 term2)
-            Builtin_ _ -> Just (Pair term1 term2)
             InternalInt_ _ -> Just (Pair term1 term2)
             InternalBytes_ _ _ -> Just (Pair term1 term2)
             InternalString_ _ -> Just (Pair term1 term2)
             InternalBool_ _ -> Just (Pair term1 term2)
+            InternalList_ _ -> Just (Pair term1 term2)
+            BuiltinMap_ _ -> Just (Pair term1 term2)
+            BuiltinSet_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing

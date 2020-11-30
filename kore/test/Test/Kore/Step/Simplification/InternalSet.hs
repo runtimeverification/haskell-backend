@@ -1,4 +1,4 @@
-module Test.Kore.Step.Simplification.Builtin
+module Test.Kore.Step.Simplification.InternalSet
     ( test_simplify
     ) where
 
@@ -8,7 +8,7 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -18,7 +18,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Builtin
+import Kore.Step.Simplification.InternalSet
     ( simplify
     )
 
@@ -39,7 +39,7 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> Builtin (OrPattern VariableName)
+        -> InternalSet (TermLike Concrete) (OrPattern VariableName)
         -> [Pattern VariableName]
         -> TestTree
     becomes name origin expect =
@@ -48,19 +48,21 @@ test_simplify =
             (OrPattern.fromPatterns expect)
             (evaluate origin)
 
-mkSet :: [child] -> [child] -> Builtin child
+mkSet :: [child] -> [child] -> InternalSet (TermLike Concrete) child
 mkSet elements opaque =
-    Domain.BuiltinSet Domain.InternalAc
+    InternalAc
         { builtinAcSort = Mock.setSort
         , builtinAcUnit = Mock.unitSetSymbol
         , builtinAcElement = Mock.elementSetSymbol
         , builtinAcConcat = Mock.concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = Domain.SetElement <$> elements
+        , builtinAcChild = NormalizedSet NormalizedAc
+            { elementsWithVariables = SetElement <$> elements
             , concreteElements = Map.empty
             , opaque
             }
         }
 
-evaluate :: Builtin (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: InternalSet (TermLike Concrete) (OrPattern VariableName)
+    -> OrPattern VariableName
 evaluate = simplify

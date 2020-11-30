@@ -53,11 +53,6 @@ import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import Kore.Domain.Builtin
-    ( NormalizedAc
-    , NormalizedSet
-    , emptyNormalizedAc
-    )
 import Kore.Error
     ( Error
     )
@@ -71,6 +66,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern

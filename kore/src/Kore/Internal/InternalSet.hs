@@ -1,39 +1,16 @@
-{-|
-Module      : Kore.Domain.Builtin
-Description : Internal representation of internal domains
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 
-module Kore.Domain.Builtin
-    ( Builtin (..)
-    , builtinSort
-    --
-    , Element (..)
-    , Value (..)
-    , AcWrapper (..)
-    , wrapElement, unwrapElement
-    , wrapConcreteElement
+module Kore.Internal.InternalSet
+    ( InternalSet
     , InternalAc (..)
-    , NormalizedAc (..)
-    , nullAc
-    , emptyNormalizedAc
-    , asSingleOpaqueElem
-    , isSymbolicKeyOfAc
-    , lookupSymbolicKeyOfAc
-    , removeSymbolicKeyOfAc
-    , isConcreteKeyOfAc
-    , removeConcreteKeyOfAc
-    , getSymbolicKeysOfAc
-    , getConcreteKeysOfAc
-    , getSymbolicValuesOfAc
-    , getConcreteValuesOfAc
-    --
-    , InternalSet
-    , SetElement
-    , SetValue
+    , Element (..), SetElement
+    , Value (..), SetValue
     , NormalizedSet (..)
+    -- * Re-exports
+    , module Kore.Internal.NormalizedAc
     ) where
 
 import Prelude.Kore
@@ -45,15 +22,19 @@ import qualified Control.Lens as Lens
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.ConstructorLike
+import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables hiding
     ( toList
     )
+import Kore.Attribute.Pattern.Function
+import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.NormalizedAc
 import Kore.Syntax
 import Kore.Unparser
-import qualified Pretty
 
 -- * Builtin Set
 
@@ -108,34 +89,48 @@ instance AcWrapper NormalizedSet where
 
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
-type InternalSet key child = InternalAc key NormalizedSet child
+type InternalSet key = InternalAc key NormalizedSet
 
--- * Builtin domain representations
-
-data Builtin key child
-    = BuiltinSet !(InternalSet key child)
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
-    unparse evaluated =
-        Pretty.sep ["/* builtin: */", unparseGeneric evaluated]
-    unparse2 evaluated =
-        Pretty.sep ["/* builtin: */", unparse2Generic evaluated]
-
-builtinSort :: Builtin key child -> Sort
-builtinSort builtin =
-    case builtin of
-        BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort
-
-instance Synthetic Sort (Builtin key) where
-    synthetic = builtinSort
+instance Synthetic Sort (InternalSet key) where
+    synthetic = builtinAcSort
     {-# INLINE synthetic #-}
 
-instance Ord variable => Synthetic (FreeVariables variable) (Builtin key) where
+instance
+    HasConstructorLike key
+    => Synthetic ConstructorLike (InternalSet key)
+  where
+    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
+        normalizedAcConstructorLike builtinSetChild
+    {-# INLINE synthetic #-}
+
+-- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
+instance Synthetic Defined (InternalSet key) where
+    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
+        normalizedAcDefined builtinSetChild
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) (InternalSet key)
+  where
     synthetic = fold
     {-# INLINE synthetic #-}
+
+-- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
+instance Synthetic Function (InternalAc key NormalizedSet) where
+    synthetic = fold
+    {-# INLINE synthetic #-}
+
+-- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
+instance Synthetic Functional (InternalAc key NormalizedSet) where
+    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
+        normalizedAcFunctional builtinSetChild
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (InternalAc key NormalizedSet) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance HasConstructorLike (Value NormalizedSet ConstructorLike) where
+    extractConstructorLike SetValue =
+        ConstructorLike . Just $ ConstructorLikeHead

@@ -14,7 +14,6 @@ import Data.Functor.Compose
 import Data.Generics.Product
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
     ( Conditional
     )
@@ -76,12 +75,8 @@ normalizeInternalMap
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedMap ->
-            maybe
-                (NormalizedMapResult normalizedMap)
-                SingleOpaqueElemResult
-                $ Domain.asSingleOpaqueElem
-                    . getNormalizedAc
-                    $ normalizedMap
+            (asSingleOpaqueElem . getNormalizedAc) normalizedMap
+            & maybe (NormalizedMapResult normalizedMap) SingleOpaqueElemResult
         _ -> BottomResult
   where
-    getNormalizedAc = getNormalizedMap . Domain.builtinAcChild
+    getNormalizedAc = getNormalizedMap . builtinAcChild

@@ -31,7 +31,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import Kore.Internal.Inj
     ( Inj
     )
@@ -366,10 +365,6 @@ instance Synthetic Simplified (Next sort) where
 
 instance Synthetic Simplified (Rewrites sort) where
     synthetic = notSimplified
-    {-# INLINE synthetic #-}
-
-instance Synthetic Simplified (Builtin key) where
-    synthetic b@(BuiltinSet    _) = notSimplified b
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified Inhabitant where

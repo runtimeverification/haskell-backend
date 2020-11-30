@@ -17,7 +17,6 @@ module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.ApplicationVerifiers
     , BuiltinAndAxiomSimplifier
-    , Kore.Internal.TermLike.Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)

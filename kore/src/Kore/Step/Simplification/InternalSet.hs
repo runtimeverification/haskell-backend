@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
-module Kore.Step.Simplification.Builtin
+module Kore.Step.Simplification.InternalSet
     ( simplify
     ) where
 
@@ -13,14 +13,11 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
-import Kore.Domain.Builtin
-    ( InternalSet
-    )
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
     ( Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -39,21 +36,12 @@ an or containing a term made of that value.
 -}
 simplify
     :: InternalVariable variable
-    => Builtin (OrPattern variable)
+    => InternalSet (TermLike Concrete) (OrPattern variable)
     -> OrPattern variable
-simplify builtin =
+simplify internalSet =
     MultiOr.observeAll $ do
-        child <- simplifyBuiltin builtin
+        child <- fmap mkBuiltinSet <$> simplifyInternalSet internalSet
         return (markSimplified <$> child)
-
-simplifyBuiltin
-    :: InternalVariable variable
-    => Builtin (OrPattern variable)
-    -> Logic (Conditional variable (TermLike variable))
-simplifyBuiltin =
-    \case
-        Domain.BuiltinSet set' ->
-            fmap mkBuiltin <$> simplifyInternalSet set'
 
 simplifyInternal
     :: (InternalVariable variable, Traversable t)
@@ -68,11 +56,9 @@ simplifyInternal normalizer tOrPattern = do
 
 simplifyInternalSet
     :: InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
-    -> Logic (Conditional variable (Builtin (TermLike variable)))
-simplifyInternalSet =
-    (fmap . fmap) Domain.BuiltinSet
-    . simplifyInternal normalizeInternalSet
+    => InternalSet (TermLike Concrete) (OrPattern variable)
+    -> Logic (Conditional variable (InternalSet (TermLike Concrete) (TermLike variable)))
+simplifyInternalSet = simplifyInternal normalizeInternalSet
 
 normalizeInternalSet
     :: Ord variable

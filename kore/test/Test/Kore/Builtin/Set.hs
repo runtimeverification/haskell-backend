@@ -90,13 +90,9 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
-import Kore.Domain.Builtin
-    ( NormalizedAc
-    , NormalizedSet
-    )
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
@@ -1912,13 +1908,13 @@ unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
 asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const Domain.SetValue)
+    . Map.fromSet (const SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
     :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
     -> TermLike VariableName
-asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
+asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
 
@@ -1932,8 +1928,8 @@ normalizedSet
     -- ^ opaque terms
     -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
 normalizedSet elements opaque =
-    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
-        { elementsWithVariables = Domain.SetElement <$> elements
+    Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
+        { elementsWithVariables = SetElement <$> elements
         , concreteElements = Map.empty
         , opaque
         }
