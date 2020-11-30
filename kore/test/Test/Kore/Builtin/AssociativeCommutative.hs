@@ -11,14 +11,10 @@ import Test.Tasty
 
 import Kore.Builtin.AssociativeCommutative
 import Kore.Domain.Builtin
-    ( AcWrapper (..)
-    , NormalizedAc (..)
-    , NormalizedMap (..)
-    , NormalizedSet (..)
+    ( NormalizedSet (..)
     , Value (..)
-    , emptyNormalizedAc
-    , wrapElement
     )
+import Kore.Internal.InternalMap
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Step.MockSymbols as Mock

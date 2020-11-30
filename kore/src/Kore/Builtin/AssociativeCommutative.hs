@@ -18,8 +18,7 @@ builtin modules.
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Builtin.AssociativeCommutative
-    ( asInternal
-    , asInternalConcrete
+    ( asInternalConcrete
     , asPattern
     , asTermLike
     , ConcatSymbol(..)
@@ -83,6 +82,7 @@ import Kore.Internal.Conditional
     , withCondition
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalMap
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -101,7 +101,6 @@ import Kore.Internal.TermLike
     , pattern ElemVar_
     , TermLike
     , mkApplySymbol
-    , mkBuiltin
     , mkElemVar
     , termLikeSort
     )
@@ -133,15 +132,27 @@ class
     Domain.AcWrapper (normalized :: Type -> Type -> Type)
     => TermWrapper normalized
   where
-    {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
+    {- | Render a normalized value (e.g. 'NormalizedSet') as an 'InternalAc'.
 
     The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
     -}
     asInternalBuiltin
         :: SmtMetadataTools Attribute.Symbol
         -> Sort
-        -> normalized key child
-        -> Domain.Builtin key child
+        -> normalized (TermLike Concrete) child
+        -> InternalAc (TermLike Concrete) normalized child
+
+    -- TODO (thomas.tuegel): Use From.
+    {- | Render a normalized value (e.g. 'NormalizedSet') as a 'TermLike'.
+
+    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    -}
+    asInternal
+        :: InternalVariable variable
+        => SmtMetadataTools Attribute.Symbol
+        -> Sort
+        -> normalized (TermLike Concrete) (TermLike variable)
+        -> TermLike variable
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
 
@@ -173,19 +184,22 @@ class
     simplifiedAttributeValue
         :: Domain.Value normalized (TermLike variable) -> Attribute.Simplified
 
-instance TermWrapper Domain.NormalizedMap where
+instance TermWrapper NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
 
     The result sort must be hooked to the builtin @Map@ sort.
     -}
     asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinMap Domain.InternalAc
+        InternalAc
             { builtinAcSort
             , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
             , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
             , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
+
+    asInternal tools sort child =
+        TermLike.mkBuiltinMap (asInternalBuiltin tools sort child)
 
     matchBuiltin (BuiltinMap_ internalMap) =
         Just (Domain.builtinAcChild internalMap)
@@ -217,12 +231,12 @@ instance TermWrapper Domain.NormalizedMap where
                 (Normalized . Domain.wrapAc) Domain.NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements =
-                        Map.singleton key' (Domain.MapValue value)
+                        Map.singleton key' (MapValue value)
                     , opaque = []
                     }
               | otherwise ->
                 (Normalized . Domain.wrapAc) Domain.NormalizedAc
-                    { elementsWithVariables = [Domain.MapElement (key, value)]
+                    { elementsWithVariables = [MapElement (key, value)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -239,7 +253,7 @@ instance TermWrapper Domain.NormalizedMap where
             , opaque = [patt]
             }
 
-    simplifiedAttributeValue = TermLike.simplifiedAttribute . Domain.getMapValue
+    simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
 instance TermWrapper Domain.NormalizedSet where
     {- | Render a 'NormalizedSet' as a Domain.Builtin.
@@ -247,13 +261,16 @@ instance TermWrapper Domain.NormalizedSet where
     The result sort must be hooked to the builtin @Set@ sort.
     -}
     asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinSet Domain.InternalAc
+        InternalAc
             { builtinAcSort
             , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
             , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
             , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
+
+    asInternal tools sort child =
+        TermLike.mkBuiltinSet (asInternalBuiltin tools sort child)
 
     matchBuiltin (BuiltinSet_ internalSet) =
         Just (Domain.builtinAcChild internalSet)
@@ -581,24 +598,6 @@ returnConcreteAc resultSort concrete =
         , concreteElements = concrete
         , opaque = []
         }
-
-{- | Render an Ac structure as an internal domain value pattern of the given
-sort.
-
-The result sort must be hooked to the right builtin sort. The pattern will use
-the internal representation of the domain values; it will not use a
-valid external representation. Use 'asPattern' to construct an externally-valid
-pattern.
-
--}
-asInternal
-    :: (InternalVariable variable, TermWrapper normalized)
-    => SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> TermNormalizedAc normalized variable
-    -> TermLike variable
-asInternal tools builtinAcSort builtinAcChild =
-    mkBuiltin $ asInternalBuiltin tools builtinAcSort builtinAcChild
 
 {- | The same as 'asInternal', but for ac structures made only of concrete
 elements.

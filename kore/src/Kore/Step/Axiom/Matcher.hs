@@ -62,6 +62,11 @@ import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -381,10 +386,10 @@ matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
-    pushMapValue = push . fmap Builtin.getMapValue
+    pushMapValue = push . fmap getMapValue
     pushMapElement (Pair element1 element2) = do
-        let (key1, value1) = Builtin.getMapElement element1
-            (key2, value2) = Builtin.getMapElement element2
+        let (key1, value1) = getMapElement element1
+            (key2, value2) = getMapElement element2
         push (Pair key1 key2)
         push (Pair value1 value2)
     wrapTermLike unwrapped =
@@ -909,7 +914,7 @@ renormalizeBuiltins =
     Recursive.fold $ \base@(attrs :< termLikeF) ->
     let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
     case termLikeF of
-        BuiltinF (Builtin.BuiltinMap internalMap) ->
+        InternalMapF internalMap ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
             & maybe bottom' mkBuiltinMap
         BuiltinF (Builtin.BuiltinSet internalSet) ->

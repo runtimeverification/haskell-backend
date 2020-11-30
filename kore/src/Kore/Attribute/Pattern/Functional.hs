@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Attribute.Pattern.Functional
     ( Functional (..)
     , alwaysFunctional
+    , normalizedAcFunctional
     ) where
 
 import Prelude.Kore
@@ -126,16 +127,13 @@ instance Synthetic Functional (Rewrites sort) where
 
 -- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
 instance Synthetic Functional (Builtin key) where
-    synthetic
-        (BuiltinSet InternalAc
-            {builtinAcChild = NormalizedSet builtinSetChild}
-        )
-      = normalizedAcFunctional builtinSetChild
-    synthetic
-        (BuiltinMap InternalAc
-            {builtinAcChild = NormalizedMap builtinMapChild}
-        )
-      = normalizedAcFunctional builtinMapChild
+    synthetic (BuiltinSet internalSet) = synthetic internalSet
+    {-# INLINE synthetic #-}
+
+-- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
+instance Synthetic Functional (InternalAc key NormalizedSet) where
+    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
+        normalizedAcFunctional builtinSetChild
     {-# INLINE synthetic #-}
 
 normalizedAcFunctional

@@ -50,7 +50,6 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -209,15 +208,12 @@ expectBuiltinSet
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Ac.TermNormalizedAc Domain.NormalizedSet variable)
-expectBuiltinSet ctx set =
+expectBuiltinSet _ set =
     case set of
         Builtin_ domain ->
             case domain of
                 Domain.BuiltinSet Domain.InternalAc { builtinAcChild } ->
                     return builtinAcChild
-                _ ->
-                    Builtin.verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a set"
         _ -> empty
 
 {- | Returns @empty@ if the argument is not a @NormalizedSet@ domain value

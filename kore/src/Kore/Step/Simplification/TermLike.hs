@@ -119,6 +119,9 @@ import qualified Kore.Step.Simplification.InternalInt as InternalInt
 import qualified Kore.Step.Simplification.InternalList as InternalList
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalMap as InternalMap
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalString as InternalString
     ( simplify
     )
@@ -452,6 +455,8 @@ simplify sideCondition = \termLike ->
                 return $ InternalInt.simplify (getConst internalIntF)
             InternalStringF internalStringF ->
                 return $ InternalString.simplify (getConst internalStringF)
+            InternalMapF internalMapF ->
+                InternalMap.simplify <$> simplifyChildren internalMapF
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
             DefinedF definedF ->

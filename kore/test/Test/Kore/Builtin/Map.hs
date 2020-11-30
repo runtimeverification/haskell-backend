@@ -86,10 +86,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
-import Kore.Domain.Builtin
-    ( NormalizedMap (..)
-    )
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
@@ -1073,11 +1071,11 @@ test_unifySameSymbolicKeySymbolicOpaque =
                     Ac.asInternal testMetadataTools mapSort
                     $ Domain.wrapAc Domain.NormalizedAc
                         { elementsWithVariables =
-                            [Domain.MapElement (mkElemVar keyVar2, value2)]
+                            [MapElement (mkElemVar keyVar2, value2)]
                         , concreteElements =
                             Map.singleton
                                 (unsafeAsConcrete key1)
-                                (Domain.MapValue value1)
+                                (MapValue value1)
                         , opaque = [mkElemVar mapVar]
                         }
                 mapValue = mapValueFromVar mapVar1
@@ -1293,9 +1291,9 @@ test_renormalize =
         -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
     mkMap abstract concrete opaque =
         Domain.wrapAc Domain.NormalizedAc
-            { elementsWithVariables = Domain.MapElement <$> abstract
+            { elementsWithVariables = MapElement <$> abstract
             , concreteElements =
-                Map.fromList (Bifunctor.second Domain.MapValue <$> concrete)
+                Map.fromList (Bifunctor.second MapValue <$> concrete)
             , opaque =
                 Ac.asInternal testMetadataTools mapSort <$> opaque
             }
@@ -1436,7 +1434,7 @@ asPattern concreteMap =
     $ Ac.asPattern mapSort
     $ Domain.wrapAc Domain.NormalizedAc
         { elementsWithVariables = []
-        , concreteElements = Domain.MapValue <$> concreteMap
+        , concreteElements = MapValue <$> concreteMap
         , opaque = []
         }
 
@@ -1446,7 +1444,7 @@ asVariablePattern variableMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
     $ Domain.wrapAc Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+        { elementsWithVariables = MapElement <$> Map.toList variableMap
         , concreteElements = Map.empty
         , opaque = []
         }
@@ -1456,7 +1454,7 @@ asVariableInternal
 asVariableInternal variableMap =
     Ac.asInternal testMetadataTools mapSort
     $ Domain.wrapAc Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+        { elementsWithVariables = MapElement <$> Map.toList variableMap
         , concreteElements = Map.empty
         , opaque = []
         }
@@ -1477,7 +1475,7 @@ asInternal elements =
         (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
 
 unsafeAsConcrete :: TermLike VariableName -> TermLike Concrete
@@ -1498,7 +1496,7 @@ normalizedMap
     -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> elements
+        { elementsWithVariables = MapElement <$> elements
         , concreteElements = Map.empty
         , opaque
         }

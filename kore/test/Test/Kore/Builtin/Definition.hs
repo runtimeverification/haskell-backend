@@ -41,6 +41,7 @@ import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -1143,10 +1144,10 @@ builtinMap children =
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+        , builtinAcChild = NormalizedMap Domain.NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
+                Map.fromList (Bifunctor.second MapValue <$> children)
             , opaque = []
             }
         }

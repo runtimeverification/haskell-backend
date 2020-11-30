@@ -20,6 +20,7 @@ import Kore.Builtin.AssocComm.CeilSimplifier
     )
 import Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
+import Kore.Internal.InternalMap
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -103,9 +104,9 @@ hprop_Builtin_Set :: Property
         (makeForallPredicate variable . makeCeilPredicate_)
             (Mock.framedMap [(key', value')] [term])
       where
-        element = Domain.wrapElement (key, Domain.MapValue value)
+        element = Domain.wrapElement (key, MapValue value)
         (variable, element') = generalizeMapElement (freeVariables term) element
-        (key', Domain.MapValue value') = Domain.unwrapElement element'
+        (key', MapValue value') = Domain.unwrapElement element'
 
     mkNotMemberSet key term = makeCeilPredicate_ (Mock.framedSet [key] [term])
 

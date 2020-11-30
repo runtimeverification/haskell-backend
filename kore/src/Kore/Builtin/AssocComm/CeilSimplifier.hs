@@ -31,15 +31,8 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Domain.Builtin
-    ( AcWrapper
-    , Element
-    , MapElement
-    , NormalizedAc (..)
-    , Value (MapValue)
-    , emptyNormalizedAc
-    )
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalMap
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -124,7 +117,7 @@ newMapCeilSimplifier
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm Domain.NormalizedMap variable)
+            (BuiltinAssocComm NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do

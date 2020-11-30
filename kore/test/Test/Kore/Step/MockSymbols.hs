@@ -73,6 +73,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     , sortInjection
@@ -1826,12 +1827,12 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
+    Internal.mkBuiltinMap InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+        , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = Domain.wrapElement <$> abstractElements
             , concreteElements
             , opaque
@@ -1842,7 +1843,7 @@ framedMap elements opaque =
         (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
 
 builtinList

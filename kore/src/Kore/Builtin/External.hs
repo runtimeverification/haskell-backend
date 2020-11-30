@@ -59,9 +59,6 @@ externalize =
         case termLikeF of
             BuiltinF domain ->
                 case domain of
-                    Domain.BuiltinMap  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Map.asTermLike builtin)
                     Domain.BuiltinSet  builtin ->
                         (toPatternF . Recursive.project)
                             (Set.asTermLike builtin)
@@ -78,6 +75,9 @@ externalize =
             InternalListF internalList ->
                 (toPatternF . Recursive.project)
                     (List.asTermLike internalList)
+            InternalMapF internalMap ->
+                (toPatternF . Recursive.project)
+                    (Map.asTermLike internalMap)
             InjF inj ->
                 (toPatternF . Recursive.project . synthesize . ApplySymbolF)
                     (Inj.toApplication inj)
@@ -147,3 +147,4 @@ externalize =
             InternalIntF _ -> error "Unexpected internal builtin"
             InternalStringF _ -> error "Unexpected internal builtin"
             InternalListF _ -> error "Unexpected internal builtin"
+            InternalMapF _ -> error "Unexpected internal builtin"

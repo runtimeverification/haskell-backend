@@ -43,7 +43,7 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
     )
 import Kore.Builtin.AssociativeCommutative as AssociativeCommutative
     ( TermWrapper
-    , asInternalBuiltin
+    , asInternal
     )
 import qualified Kore.Builtin.Bool.Bool as BuiltinBool
     ( asBuiltin
@@ -71,6 +71,7 @@ import qualified Kore.Internal.Alias as Alias.DoNotUse
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
+import Kore.Internal.InternalMap
 import Kore.Internal.InternalString
 import qualified Kore.Internal.Symbol as Internal
     ( Symbol (Symbol)
@@ -83,7 +84,6 @@ import Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
-    , mkBuiltin
     , mkBuiltinList
     , mkCeil
     , mkElemVar
@@ -329,6 +329,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (InternalIntF _) = term
     checkTermF (InternalStringF _) = term
     checkTermF (InternalListF _) = term
+    checkTermF (InternalMapF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
@@ -616,7 +617,6 @@ _checkAllBuiltinImplemented
     -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 _checkAllBuiltinImplemented builtin =
     case builtin of
-        Domain.BuiltinMap _ -> builtin
         Domain.BuiltinSet _ -> builtin
 
 allBuiltinGenerators :: Gen (Map.Map SortRequirements TermGenerator)
@@ -791,10 +791,10 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
     valueGenerator
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.MapValue (TermLike VariableName)))
+        -> Gen (Maybe (MapValue (TermLike VariableName)))
     valueGenerator valueSort childGenerator = do
         maybeValue <- childGenerator valueSort
-        return (Domain.MapValue <$> maybeValue)
+        return (MapValue <$> maybeValue)
 
 -- TODO(virgil): Test that we are generating non-empty sets.
 maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
@@ -862,8 +862,8 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     let variablePairs :: [Domain.Element normalized (TermLike VariableName)]
         variablePairs = catMaybes maybeVariablePairs
     (Setup {metadataTools}, _) <- Reader.ask
-    return $ Just . mkBuiltin $
-        AssociativeCommutative.asInternalBuiltin
+    return $ Just $
+        AssociativeCommutative.asInternal
             metadataTools
             mapSort
             (Domain.wrapAc Domain.NormalizedAc

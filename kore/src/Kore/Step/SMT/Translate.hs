@@ -179,6 +179,7 @@ translatePredicateWith translateTerm predicate =
             InternalIntF _ -> empty
             InternalStringF _ -> empty
             InternalListF _ -> empty
+            InternalMapF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
             SignednessF _ -> empty

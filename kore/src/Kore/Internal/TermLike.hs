@@ -245,6 +245,7 @@ import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
 import Kore.Internal.InternalString
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -720,6 +721,7 @@ forceSortPredicate
         InternalIntF _ -> illSorted forcedSort original
         InternalStringF _ -> illSorted forcedSort original
         InternalListF _ -> illSorted forcedSort original
+        InternalMapF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
         VariableF _ -> illSorted forcedSort original
@@ -1104,9 +1106,9 @@ mkBuiltinList = updateCallStack . synthesize . InternalListF
 mkBuiltinMap
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
+mkBuiltinMap = updateCallStack . synthesize . InternalMapF
 
 {- | Construct a builtin set pattern.
  -}
@@ -1534,12 +1536,12 @@ mkDefined = worker
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
                 embed (worker <$> termF)
-            BuiltinF (Domain.BuiltinMap internalMap) ->
-                let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
-                in (mkDefined1 . embed) (BuiltinF map')
+            InternalMapF internalMap ->
+                let map' = mkDefinedInternalAc internalMap
+                in (mkDefined1 . embed) (InternalMapF map')
             BuiltinF (Domain.BuiltinSet internalSet) ->
-                let set' = Domain.BuiltinSet (mkDefinedInternalAc internalSet)
-                in (mkDefined1 . embed) (BuiltinF set')
+                let set' = mkDefinedInternalAc internalSet
+                in (mkDefined1 . embed) (BuiltinF $ Domain.BuiltinSet set')
             EqualsF _ -> term
             ExistsF _ -> mkDefinedAtTop term
             FloorF _ -> term
@@ -1570,6 +1572,13 @@ mkDefined = worker
             InternalIntF _ -> term
             InternalStringF _ -> term
 
+    mkDefinedInternalAc
+        :: forall normalized
+        .  Domain.AcWrapper normalized
+        => Functor (Domain.Value normalized)
+        => Functor (Domain.Element normalized)
+        => InternalAc (TermLike Concrete) normalized (TermLike variable)
+        -> InternalAc (TermLike Concrete) normalized (TermLike variable)
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
       where
@@ -1771,7 +1780,7 @@ pattern InternalList_
     -> TermLike variable
 
 pattern BuiltinMap_
-    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    :: InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
 pattern BuiltinSet_
@@ -1922,7 +1931,8 @@ pattern InternalString_ internalString <-
 pattern InternalList_ internalList <-
     (Recursive.project -> _ :< InternalListF internalList)
 
-pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
+pattern BuiltinMap_ internalMap <-
+    (Recursive.project -> _ :< InternalMapF internalMap)
 
 pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
 

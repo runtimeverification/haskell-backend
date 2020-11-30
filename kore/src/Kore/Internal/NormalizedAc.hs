@@ -363,6 +363,7 @@ asSingleOpaqueElem
       Just singleOpaqueElem
     | otherwise =  Nothing
 
+-- TODO (thomas.tuegel): Change order of parameters.
 {- | Internal representation of associative-commutative builtin terms.
 -}
 data InternalAc key (normalized :: Type -> Type -> Type) child =
@@ -405,7 +406,6 @@ instance
   where
     unparse = unparseInternalAc unparse unparse
     unparse2 = unparseInternalAc unparse2 unparse2
-
 
 unparseInternalAc
     :: (AcWrapper normalized)

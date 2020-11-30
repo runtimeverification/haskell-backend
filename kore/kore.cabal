@@ -178,6 +178,7 @@ library
       Kore.Internal.InternalBytes
       Kore.Internal.InternalInt
       Kore.Internal.InternalList
+      Kore.Internal.InternalMap
       Kore.Internal.InternalString
       Kore.Internal.MultiAnd
       Kore.Internal.MultiOr
@@ -296,6 +297,7 @@ library
       Kore.Step.Simplification.InternalBytes
       Kore.Step.Simplification.InternalInt
       Kore.Step.Simplification.InternalList
+      Kore.Step.Simplification.InternalMap
       Kore.Step.Simplification.InternalString
       Kore.Step.Simplification.Mu
       Kore.Step.Simplification.Next
@@ -1016,6 +1018,7 @@ test-suite kore-test
       Test.Kore.Step.Simplification.Integration
       Test.Kore.Step.Simplification.IntegrationProperty
       Test.Kore.Step.Simplification.InternalList
+      Test.Kore.Step.Simplification.InternalMap
       Test.Kore.Step.Simplification.Next
       Test.Kore.Step.Simplification.Not
       Test.Kore.Step.Simplification.Or

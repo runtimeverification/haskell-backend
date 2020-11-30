@@ -30,11 +30,6 @@ module Kore.Domain.Builtin
     , getSymbolicValuesOfAc
     , getConcreteValuesOfAc
     --
-    , InternalMap
-    , MapElement
-    , MapValue
-    , NormalizedMap (..)
-    --
     , InternalSet
     , SetElement
     , SetValue
@@ -47,7 +42,6 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import qualified Control.Lens as Lens
-import qualified Data.Bifunctor as Bifunctor
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -60,63 +54,6 @@ import Kore.Internal.NormalizedAc
 import Kore.Syntax
 import Kore.Unparser
 import qualified Pretty
-
--- * Builtin Map
-
-{- | Wrapper for map values.
--}
-type MapValue = Value NormalizedMap
-
-{- | Wrapper for map elements.
- -}
-type MapElement = Element NormalizedMap
-
-{- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
--}
-newtype NormalizedMap key child =
-    NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance AcWrapper NormalizedMap where
-    newtype Value NormalizedMap child = MapValue { getMapValue :: child }
-        deriving (Eq, Ord, Show)
-        deriving (Foldable, Functor, Traversable)
-        deriving (GHC.Generic)
-        deriving anyclass (Hashable, NFData)
-        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-        deriving anyclass (Debug, Diff)
-
-    newtype Element NormalizedMap child =
-        MapElement { getMapElement :: (child, child) }
-        deriving (Eq, Ord, Show)
-        deriving (Foldable, Functor, Traversable)
-        deriving (GHC.Generic)
-        deriving anyclass (Hashable, NFData)
-        deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-        deriving anyclass (Debug, Diff)
-
-    wrapAc = NormalizedMap
-    unwrapAc = getNormalizedMap
-    alignValues (MapValue a) (MapValue b) = MapValue (a, b)
-
-    elementIso =
-        Lens.iso
-            (Bifunctor.second MapValue . getMapElement)
-            (MapElement . Bifunctor.second getMapValue)
-
-    unparseElement childUnparser (MapElement (key, value)) =
-        arguments' [childUnparser key, childUnparser value]
-    unparseConcreteElement keyUnparser childUnparser (key, MapValue value) =
-        arguments' [keyUnparser key, childUnparser value]
-
-{- | Internal representation of the builtin @MAP.Map@ domain.
--}
-type InternalMap key child = InternalAc key NormalizedMap child
 
 -- * Builtin Set
 
@@ -176,8 +113,7 @@ type InternalSet key child = InternalAc key NormalizedSet child
 -- * Builtin domain representations
 
 data Builtin key child
-    = BuiltinMap !(InternalMap key child)
-    | BuiltinSet !(InternalSet key child)
+    = BuiltinSet !(InternalSet key child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -194,7 +130,6 @@ instance (Unparse key, Unparse child) => Unparse (Builtin key child) where
 builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
-        BuiltinMap InternalAc { builtinAcSort } -> builtinAcSort
         BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort
 
 instance Synthetic Sort (Builtin key) where

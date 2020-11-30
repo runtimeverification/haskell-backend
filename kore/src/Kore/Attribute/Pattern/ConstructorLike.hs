@@ -9,6 +9,7 @@ module Kore.Attribute.Pattern.ConstructorLike
     , ConstructorLikeHead (..)
     , HasConstructorLike (..)
     , assertConstructorLike
+    , normalizedAcConstructorLike
     ) where
 
 import Prelude.Kore
@@ -186,9 +187,6 @@ instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
   where
     synthetic =
         \case
-            (BuiltinMap InternalAc
-                    {builtinAcChild = NormalizedMap builtinMapChild}
-                ) -> normalizedAcConstructorLike builtinMapChild
             (BuiltinSet InternalAc
                     {builtinAcChild = NormalizedSet builtinSetChild}
                 ) -> normalizedAcConstructorLike builtinSetChild
@@ -261,9 +259,6 @@ class HasConstructorLike a where
 
 instance HasConstructorLike ConstructorLike where
     extractConstructorLike = id
-
-instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
-    extractConstructorLike (MapValue result) = result
 
 instance HasConstructorLike (Value NormalizedSet ConstructorLike) where
     extractConstructorLike SetValue =

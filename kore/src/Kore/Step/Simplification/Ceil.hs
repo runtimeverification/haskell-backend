@@ -40,6 +40,7 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -270,9 +271,9 @@ newConcatMapCeilSimplifier
     => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newConcatMapCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
-        Builtin_ builtin -> do
+        BuiltinMap_ internalMap -> do
             sideCondition <- Reader.ask
-            makeEvaluateConcatMap sideCondition builtin
+            makeEvaluateConcatMap sideCondition internalMap
         _ -> empty
 
 newAxiomCeilSimplifier
@@ -305,20 +306,19 @@ makeEvaluateConcatMap
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> Builtin (TermLike variable)
+    -> InternalMap (TermLike Concrete) (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
+makeEvaluateConcatMap sideCondition internalMap =
     runCeilSimplifierWith
         AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
             , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
+            , ceilChild = internalMap
             }
   where
-    Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateConcatMap _ _ = empty
+    Domain.InternalAc { builtinAcSort } = internalMap
 
 {-| Evaluates the ceil of a domain value.
 -}
@@ -340,7 +340,6 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
             }
   where
     Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
 
 makeEvaluateInternalList
     :: forall variable simplifier
@@ -405,7 +404,6 @@ makeSimplifiedCeil
         InF _ -> False
         NotF _ -> False
         BottomF _ -> unexpectedError
-        BuiltinF (Domain.BuiltinMap _) -> True
         BuiltinF (Domain.BuiltinSet _) -> True
         InternalListF _ -> True
         DomainValueF _ -> True
@@ -423,6 +421,7 @@ makeSimplifiedCeil
         InternalBytesF _ -> unexpectedError
         InternalIntF _ -> unexpectedError
         InternalStringF _ -> unexpectedError
+        InternalMapF _ -> True
         VariableF _ -> False
 
     unsimplified =

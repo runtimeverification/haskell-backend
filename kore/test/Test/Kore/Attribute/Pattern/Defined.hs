@@ -146,6 +146,6 @@ test_instance_Synthetic =
 
     asSetBuiltin
         :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) Defined
-        -> Domain.Builtin (TermLike Concrete) Defined
+        -> Domain.InternalAc (TermLike Concrete) Domain.NormalizedSet Defined
     asSetBuiltin =
         Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc

@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Attribute.Pattern.Defined
     ( Defined (..)
     , alwaysDefined
+    , normalizedAcDefined
     ) where
 
 import Prelude.Kore
@@ -129,16 +130,13 @@ instance Synthetic Defined (Rewrites sort) where
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
 instance Synthetic Defined (Builtin key) where
-    synthetic
-        (BuiltinSet InternalAc
-            {builtinAcChild = NormalizedSet builtinSetChild}
-        )
-      = normalizedAcDefined builtinSetChild
-    synthetic
-        (BuiltinMap InternalAc
-            {builtinAcChild = NormalizedMap builtinMapChild}
-        )
-      = normalizedAcDefined builtinMapChild
+    synthetic (BuiltinSet internalSet) = synthetic internalSet
+    {-# INLINE synthetic #-}
+
+-- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
+instance Synthetic Defined (InternalAc key NormalizedSet) where
+    synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
+        normalizedAcDefined builtinSetChild
     {-# INLINE synthetic #-}
 
 normalizedAcDefined

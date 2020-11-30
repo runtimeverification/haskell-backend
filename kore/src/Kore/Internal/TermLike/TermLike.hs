@@ -82,6 +82,7 @@ import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
 import Kore.Internal.InternalString
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
@@ -208,6 +209,7 @@ data TermLikeF variable child
     | InternalIntF    !(Const InternalInt child)
     | InternalStringF !(Const InternalString child)
     | InternalListF   !(InternalList child)
+    | InternalMapF    !(InternalMap (TermLike Concrete) child)
     | VariableF       !(Const (SomeVariable variable) child)
     | EndiannessF     !(Const Endianness child)
     | SignednessF     !(Const Signedness child)
@@ -260,6 +262,7 @@ instance
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -298,6 +301,7 @@ instance Synthetic Sort (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -336,6 +340,7 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -374,6 +379,7 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -412,6 +418,7 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -450,6 +457,7 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -488,6 +496,7 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             InternalIntF internalInt -> synthetic internalInt
             InternalStringF internalString -> synthetic internalString
             InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -736,6 +745,8 @@ instance
                 locationFromAst internalStringSort
             InternalListF InternalList { internalListSort } ->
                 locationFromAst internalListSort
+            InternalMapF InternalAc { builtinAcSort } ->
+                locationFromAst builtinAcSort
             DefinedF Defined { getDefined } ->
                 locationFromAst getDefined
 
@@ -785,6 +796,7 @@ traverseVariablesF adj =
         InternalIntF intP -> pure (InternalIntF intP)
         InternalStringF stringP -> pure (InternalStringF stringP)
         InternalListF listP -> pure (InternalListF listP)
+        InternalMapF mapP -> pure (InternalMapF mapP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
