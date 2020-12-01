@@ -61,9 +61,6 @@ module Kore.Internal.Predicate
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Containers.ListUtils
     ( nubOrd
     )

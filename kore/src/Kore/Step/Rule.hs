@@ -25,9 +25,6 @@ module Kore.Step.Rule
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.Extra

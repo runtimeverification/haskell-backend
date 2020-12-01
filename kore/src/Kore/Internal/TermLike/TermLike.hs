@@ -27,9 +27,6 @@ import Prelude.Kore
 import Control.Comonad.Trans.Cofree
     ( tailF
     )
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Control.Lens
     ( Lens'
     )

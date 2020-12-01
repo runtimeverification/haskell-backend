@@ -68,9 +68,6 @@ module Kore.Attribute.Parser
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Lens
     ( Getter
     , Iso'

@@ -8,9 +8,6 @@ module Kore.Internal.InternalList
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Sequence
     ( Seq
     )

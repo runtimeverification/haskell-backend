@@ -9,9 +9,6 @@ module Kore.Internal.InternalBytes
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Data.ByteString
     ( ByteString
     )

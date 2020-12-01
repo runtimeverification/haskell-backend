@@ -13,9 +13,6 @@ module Kore.Reachability.AllPathClaim
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Monad
     ( foldM
     )

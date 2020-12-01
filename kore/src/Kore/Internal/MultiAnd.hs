@@ -29,9 +29,6 @@ import Prelude.Kore hiding
     , traverse
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable

@@ -11,9 +11,6 @@ module Kore.Syntax.Module
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Data.Kind
     ( Type
     )

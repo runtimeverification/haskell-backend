@@ -22,9 +22,6 @@ module Kore.Internal.SideCondition
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

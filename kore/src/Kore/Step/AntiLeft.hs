@@ -15,9 +15,6 @@ module Kore.Step.AntiLeft
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Map.Strict
     ( Map
     )

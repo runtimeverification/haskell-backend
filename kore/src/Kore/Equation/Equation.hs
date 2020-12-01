@@ -17,9 +17,6 @@ module Kore.Equation.Equation
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import qualified Data.Functor.Foldable as Recursive
