@@ -50,6 +50,8 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
         <> help ( "Enable/disable " ++ helpSuffix ) )
     <|> pure defaultVal
 
+{- | Options for parsing and verifying a pattern.
+ -}
 data PatternOptions = PatternOptions
     { patternFileName     :: !FilePath
     -- ^ name of file containing a pattern to parse and verify
