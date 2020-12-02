@@ -332,21 +332,21 @@ translatePattern translateTerm sort pat =
             { applicationSymbolOrAlias
             , applicationChildren
             }
-      = do
-        TranslatorEnv { assumeDefined } <- ask
+      =
+        -- TODO: This would send interpreted symbols to the solver
+        -- even if they may not be defined. We should only send symbols
+        -- we know to be defined.
+        translateInterpretedApplication
+        -- TODO: Move call to guardLocalFunctionalPattern inside translateUnintepreted'.
+        <|> (guardLocalFunctionalPattern >> translateUninterpreted')
+        
         translateApplicationWorker assumeDefined
       where
-        translateApplicationWorker isDefined
-          | (isDefined && isFunctionPattern original)
-          || isFunctionalPattern original =
-              translateInterpretedApplication
-              <|> translateUninterpreted'
-          | otherwise =
-              -- TODO: this is not right, function-like
-              -- symbols should be sent to the solver only if
-              -- we know they are defined. Arbitrary symbols
-              -- should never be sent to the solver.
-              translateInterpretedApplication
+        guardLocalFunctionalPattern
+          | isFunctionalPattern original = return ()
+          | otherwise = do
+            TranslatorEnv { assumeDefined } <- ask
+            Monad.guard (assumeDefined && isFunctionPattern original)
         translateInterpretedApplication = do
             let translated = translateSymbol applicationSymbolOrAlias
             sexpr <- maybe warnAndDiscard return translated
