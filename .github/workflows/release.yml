@@ -1,6 +1,8 @@
 name: "Release"
 on:
   push:
+    branches:
+      - master
 jobs:
   tests:
     runs-on: ubuntu-latest
