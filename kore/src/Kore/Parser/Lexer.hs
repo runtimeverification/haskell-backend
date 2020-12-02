@@ -25,8 +25,6 @@ module Kore.Parser.Lexer
     , parseId
     , parseAnyId, parseSetId, isSymbolId
     , isElementVariableId, isSetVariableId
-    , elementVariableIdParser
-    , setVariableIdParser
     , parseSortId
     , parseSymbolId
     , parseModuleName
@@ -370,30 +368,6 @@ symbolIdRawParser = do
         skipChar '\\'
         (c :) <$> parseIdRaw KeywordsPermitted
     else parseIdRaw KeywordsForbidden
-
-{-|Parses a @set-variable-id@, which always starts with @\@@.
-
-@
-<set-variable-id> ::= ['@'] <id>
-@
--}
-setVariableIdParser :: Parser Id
-setVariableIdParser = stringParserToIdParser setVariableIdRawParser
-
-setVariableIdRawParser :: Parser String
-setVariableIdRawParser = do
-    start <- Parser.char '@'
-    end <- parseIdRaw KeywordsPermitted
-    return (start:end)
-
-{-| Parses an @element-variable-id@
-
-@
-<element-variable-id> ::= <id>
-@
--}
-elementVariableIdParser :: Parser Id
-elementVariableIdParser = parseId
 
 {- | Parses a C-style string literal, unescaping it.
 
