@@ -64,7 +64,7 @@ data KoreParserOptions = KoreParserOptions
     { fileName            :: !FilePath
     -- ^ Name for a file containing a definition to parse and verify
     , patternOpt          :: !(Maybe PatternOptions)
-    -- ^ Optional options for parsing a pattern
+    -- ^ Optionally, parse and verify a pattern relative to the definition.
     , willPrintDefinition :: !Bool
     -- ^ Option to print definition
     , willPrintPattern    :: !Bool
