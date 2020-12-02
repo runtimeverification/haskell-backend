@@ -84,6 +84,7 @@ space = L.space Parser.space1 lineComment blockComment
   where
     lineComment = L.skipLineComment "//"
     blockComment = L.skipBlockComment "/*" "*/"
+{-# INLINE space #-}
 
 {- | Parse the character, but skip its result.
  -}
@@ -194,6 +195,7 @@ stringParserToIdParser stringRawParser = do
         { getId = Text.pack name
         , idLocation = AstLocationFile pos
         }
+{-# INLINE stringParserToIdParser #-}
 
 koreKeywordsSet :: HashSet String
 koreKeywordsSet = HashSet.fromList keywords
