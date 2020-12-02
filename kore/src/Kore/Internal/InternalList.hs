@@ -25,6 +25,8 @@ import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Symbol
+    ( Symbol
+    )
 import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
@@ -93,7 +95,10 @@ instance Ord variable => Synthetic (FreeVariables variable) InternalList where
     {-# INLINE synthetic #-}
 
 instance Synthetic ConstructorLike InternalList where
-    synthetic = const (ConstructorLike Nothing)
+    synthetic internalList
+      | all isConstructorLike internalList =
+        ConstructorLike (Just ConstructorLikeHead)
+      | otherwise = ConstructorLike Nothing
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined InternalList where

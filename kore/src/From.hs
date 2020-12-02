@@ -9,7 +9,9 @@ module From
     , into
     ) where
 
-import Data.Sequence (Seq)
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
 import Data.Void
 

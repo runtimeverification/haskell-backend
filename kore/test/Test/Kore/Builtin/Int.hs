@@ -26,9 +26,11 @@ module Test.Kore.Builtin.Int
     , asInternal
     , asPattern
     , asConcretePattern
+    , asKey
     , asPartialPattern
     , genIntegerPattern
     , genConcreteIntegerPattern
+    , genIntegerKey
     , genInteger
     , intLiteral
     , testInt
@@ -70,6 +72,7 @@ import Kore.Builtin.Int
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
+import Kore.Internal.Key as Key
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -106,6 +109,9 @@ genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (TermLike Concrete)
 genConcreteIntegerPattern = asInternal <$> genInteger
+
+genIntegerKey :: Gen Key
+genIntegerKey = asKey <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
@@ -444,6 +450,9 @@ intLiteral = asInternal
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
 asInternal :: InternalVariable variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
+
+asKey :: Integer -> Key
+asKey internalIntValue = from InternalInt { internalIntSort = intSort, internalIntValue }
 
 -- | Specialize 'asInternal' to the builtin sort 'intSort'.
 asConcretePattern :: Integer -> TermLike Concrete

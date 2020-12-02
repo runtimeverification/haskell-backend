@@ -12,6 +12,7 @@ module Kore.Internal.TermLike.TermLike
     , Defined (..)
     , TermLike (..)
     , TermLikeF (..)
+    , retractKey
     , extractAttributes
     , freeVariables
     , mapVariables
@@ -31,6 +32,7 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import Data.Functor.Const
     ( Const (..)
@@ -51,16 +53,13 @@ import qualified GHC.Stack as GHC
 
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.ConstructorLike
     ( HasConstructorLike (extractConstructorLike)
     )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
-import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Function as Pattern
-import qualified Kore.Attribute.Pattern.Functional as Pattern
-import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
     ( unparseTag
     )
@@ -81,6 +80,11 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
+import Kore.Internal.Key
+    ( Key
+    , KeyF
+    )
+import qualified Kore.Internal.Key as Key
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
@@ -179,6 +183,7 @@ instance {-# OVERLAPS #-} Synthetic Pattern.Defined Defined where
 data TermLikeF variable child
     = AndF            !(And Sort child)
     | ApplySymbolF    !(Application Symbol child)
+    -- TODO (thomas.tuegel): Expand aliases during validation?
     | ApplyAliasF     !(Application (Alias (TermLike VariableName)) child)
     | BottomF         !(Bottom Sort child)
     | CeilF           !(Ceil Sort child)
@@ -205,8 +210,8 @@ data TermLikeF variable child
     | InternalIntF    !(Const InternalInt child)
     | InternalStringF !(Const InternalString child)
     | InternalListF   !(InternalList child)
-    | InternalMapF    !(InternalMap (TermLike Concrete) child)
-    | InternalSetF    !(InternalSet (TermLike Concrete) child)
+    | InternalMapF    !(InternalMap Key child)
+    | InternalSetF    !(InternalSet Key child)
     | VariableF       !(Const (SomeVariable variable) child)
     | EndiannessF     !(Const Endianness child)
     | SignednessF     !(Const Signedness child)
@@ -500,6 +505,19 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             InjF inj -> synthetic inj
             DefinedF defined -> synthetic defined
 
+instance From (KeyF child) (TermLikeF variable child) where
+    from (Key.ApplySymbolF app) = ApplySymbolF app
+    from (Key.InjF inj) = InjF inj
+    from (Key.DomainValueF domainValue) = DomainValueF domainValue
+    from (Key.InternalBoolF internalBool) = InternalBoolF internalBool
+    from (Key.InternalIntF internalInt) = InternalIntF internalInt
+    from (Key.InternalStringF internalString) = InternalStringF internalString
+    from (Key.InternalSetF internalSet) = InternalSetF internalSet
+    from (Key.InternalMapF internalMap) = InternalMapF internalMap
+    from (Key.InternalListF internalList) = InternalListF internalList
+    from (Key.InternalBytesF internalBytes) = InternalBytesF internalBytes
+    {-# INLINE from #-}
+
 {- | @TermLike@ is a term-like Kore pattern.
 
 @TermLike@ is the common internal representation of patterns, especially terms.
@@ -685,6 +703,51 @@ instance
   where
     from = mapVariables (pure $ from @Concrete)
     {-# INLINE from #-}
+
+instance Ord variable => From Key (TermLike variable) where
+    from = Recursive.unfold worker
+      where
+        worker key =
+            attrs' :< from @(KeyF _) keyF
+          where
+            attrs :< keyF = Recursive.project key
+            attrs' :: Attribute.Pattern variable
+            attrs' = Attribute.mapVariables (pure coerceVariable) attrs
+            coerceVariable = from @Concrete @variable
+
+{- | Ensure that a 'TermLike' is a concrete, constructor-like term.
+ -}
+retractKey :: TermLike variable -> Maybe Key
+retractKey =
+    Recursive.fold worker
+  where
+    worker (attrs :< termLikeF) = do
+        Monad.guard (Pattern.isConstructorLike attrs)
+        attrs' <- Pattern.traverseVariables (pure toConcrete) attrs
+        keyF <-
+            case termLikeF of
+                InternalBoolF internalBool ->
+                    sequence (Key.InternalBoolF internalBool)
+                InternalBytesF internalBytes ->
+                    sequence (Key.InternalBytesF internalBytes)
+                InternalIntF internalInt ->
+                    sequence (Key.InternalIntF internalInt)
+                InternalStringF internalString ->
+                    sequence (Key.InternalStringF internalString)
+                DomainValueF domainValue ->
+                    sequence (Key.DomainValueF domainValue)
+                InjF inj ->
+                    sequence (Key.InjF inj)
+                ApplySymbolF application ->
+                    sequence (Key.ApplySymbolF application)
+                InternalListF internalList ->
+                    sequence (Key.InternalListF internalList)
+                InternalMapF internalMap ->
+                    sequence (Key.InternalMapF internalMap)
+                InternalSetF internalSet ->
+                    sequence (Key.InternalSetF internalSet)
+                _ -> empty
+        pure (Recursive.embed (attrs' :< keyF))
 
 instance
     ( AstWithLocation variable

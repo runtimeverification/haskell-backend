@@ -34,7 +34,6 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Internal.ApplicationSorts
@@ -1137,8 +1136,9 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(TermLike Concrete, TermLike VariableName)]
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    :: Ord key
+    => [(key, TermLike VariableName)]
+    -> InternalMap key (TermLike VariableName)
 builtinMap children =
     InternalAc
         { builtinAcSort = mapSort
@@ -1233,7 +1233,7 @@ builtinSet elements opaque =
         }
   where
     asKey key =
-        (,) <$> Builtin.toKey key <*> pure SetValue
+        (,) <$> retractKey key <*> pure SetValue
         & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asKey <$> toList elements

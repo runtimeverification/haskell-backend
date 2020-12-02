@@ -38,6 +38,7 @@ module Kore.Internal.TermLike
     , asConcrete
     , isConcrete
     , fromConcrete
+    , retractKey
     , Substitute.substitute
     , refreshElementBinder
     , refreshSetBinder
@@ -61,6 +62,7 @@ module Kore.Internal.TermLike
     , mkInternalInt
     , mkInternalString
     , mkInternalList
+    , Key
     , mkInternalMap
     , mkInternalSet
     , mkCeil
@@ -206,6 +208,9 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
     ( field
     )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
@@ -245,6 +250,9 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
+import Kore.Internal.Key
+    ( Key
+    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -1095,7 +1103,7 @@ mkInternalList = updateCallStack . synthesize . InternalListF
 mkInternalMap
     :: HasCallStack
     => InternalVariable variable
-    => InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap Key (TermLike variable)
     -> TermLike variable
 mkInternalMap = updateCallStack . synthesize . InternalMapF
 
@@ -1104,7 +1112,7 @@ mkInternalMap = updateCallStack . synthesize . InternalMapF
 mkInternalSet
     :: HasCallStack
     => InternalVariable variable
-    => InternalSet (TermLike Concrete) (TermLike variable)
+    => InternalSet Key (TermLike variable)
     -> TermLike variable
 mkInternalSet = updateCallStack . synthesize . InternalSetF
 
@@ -1566,20 +1574,25 @@ mkDefined = worker
         .  AcWrapper normalized
         => Functor (Value normalized)
         => Functor (Element normalized)
-        => InternalAc (TermLike Concrete) normalized (TermLike variable)
-        -> InternalAc (TermLike Concrete) normalized (TermLike variable)
+        => InternalAc Key normalized (TermLike variable)
+        -> InternalAc Key normalized (TermLike variable)
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
       where
+        mkDefinedNormalized
+            :: normalized Key (TermLike variable)
+            -> normalized Key (TermLike variable)
         mkDefinedNormalized =
             unwrapAc
             >>> Lens.over (field @"concreteElements") mkDefinedConcrete
             >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
             >>> Lens.over (field @"opaque") mkDefinedOpaque
             >>> wrapAc
+        mkDefinedConcrete
+            :: Map Key (Value normalized (TermLike variable))
+            -> Map Key (Value normalized (TermLike variable))
         mkDefinedConcrete =
             (fmap . fmap) mkDefined
-            . Map.mapKeys mkDefined
         mkDefinedAbstract = (fmap . fmap) mkDefined
         mkDefinedOpaque = map mkDefined
 
@@ -1765,11 +1778,11 @@ pattern InternalList_
     -> TermLike variable
 
 pattern InternalMap_
-    :: InternalMap (TermLike Concrete) (TermLike variable)
+    :: InternalMap Key (TermLike variable)
     -> TermLike variable
 
 pattern InternalSet_
-    :: InternalSet (TermLike Concrete) (TermLike variable)
+    :: InternalSet Key (TermLike variable)
     -> TermLike variable
 
 pattern InternalString_ :: InternalString -> TermLike variable
