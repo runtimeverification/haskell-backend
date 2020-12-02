@@ -30,6 +30,7 @@ import Control.Error
     , hoistMaybe
     )
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import Control.Monad.Counter
     ( CounterT
     , MonadCounter
@@ -337,10 +338,7 @@ translatePattern translateTerm sort pat =
         -- even if they may not be defined. We should only send symbols
         -- we know to be defined.
         translateInterpretedApplication
-        -- TODO: Move call to guardLocalFunctionalPattern inside translateUnintepreted'.
-        <|> (guardLocalFunctionalPattern >> translateUninterpreted')
-        
-        translateApplicationWorker assumeDefined
+        <|> translateUninterpreted'
       where
         guardLocalFunctionalPattern
           | isFunctionalPattern original = return ()
@@ -359,6 +357,7 @@ translatePattern translateTerm sort pat =
             warnSymbolSMTRepresentation applicationSymbolOrAlias
             >> empty
         translateUninterpreted' = do
+            guardLocalFunctionalPattern
             sort' <- maybeToTranslator maybeSort
             translateUninterpreted translateTerm sort' original
 
