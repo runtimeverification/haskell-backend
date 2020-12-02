@@ -12,11 +12,11 @@ module Kore.Options
     , parseKoreParserOptions
     ) where
 
+import Prelude.Kore
+
 import Data.Text
     ( Text
     )
-
-import Prelude.Kore
 
 import Options.Applicative
 
