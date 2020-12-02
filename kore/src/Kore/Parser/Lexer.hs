@@ -46,6 +46,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Text.Megaparsec
     ( SourcePos (..)
@@ -96,7 +99,7 @@ skipChar = Monad.void . Parser.char
 See also: 'L.symbol', 'space'
 
  -}
-symbol :: String -> Parser ()
+symbol :: Text -> Parser ()
 symbol = Monad.void . L.symbol space
 
 colon :: Parser ()
@@ -162,7 +165,7 @@ consumes any trailing whitespace.
 See also: 'space'
 
  -}
-keyword :: String -> Parser ()
+keyword :: Text -> Parser ()
 keyword s = lexeme $ do
     _ <- Parser.chunk s
     -- Check that the next character cannot be part of an @id@, i.e.  check that
@@ -182,20 +185,16 @@ sourcePosToFileLocation
     , column   = unPos column'
     }
 
-{- Takes a parser for the string of the identifier
-   and returns an 'Id' annotated with position.
--}
-stringParserToIdParser :: Parser String -> Parser Id
-stringParserToIdParser stringRawParser = do
+{- | Annotate a 'Text' parser with an 'AstLocation'.
+ -}
+parseIntoId :: Parser Text -> Parser Id
+parseIntoId stringRawParser = do
     !pos <- sourcePosToFileLocation <$> getSourcePos
-    name <- lexeme stringRawParser
-    return Id
-        { getId = Text.pack name
-        , idLocation = AstLocationFile pos
-        }
-{-# INLINE stringParserToIdParser #-}
+    getId <- lexeme stringRawParser
+    return Id { getId, idLocation = AstLocationFile pos }
+{-# INLINE parseIntoId #-}
 
-koreKeywordsSet :: HashSet String
+koreKeywordsSet :: HashSet Text
 koreKeywordsSet = HashSet.fromList keywords
   where
     keywords =
@@ -224,17 +223,17 @@ genericIdRawParser
     :: (Char -> Bool)  -- ^ contains the characters allowed for @⟨prefix-char⟩@.
     -> (Char -> Bool)  -- ^ contains the characters allowed for @⟨body-char⟩@.
     -> IdKeywordParsing
-    -> Parser String
+    -> Parser Text
 genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
     c <- Parser.satisfy isFirstChar <?> "first identifier character"
     cs <- Parser.takeWhileP (Just "identifier character") isBodyChar
-    let genericId = c : cs
+    let genericId = Text.cons c cs
         keywordsForbidden = idKeywordParsing == KeywordsForbidden
         isKeyword = HashSet.member genericId koreKeywordsSet
     when (keywordsForbidden && isKeyword)
         $ fail
             (  "Identifiers should not be keywords: '"
-            ++ genericId
+            ++ Text.unpack genericId
             ++ "'."
             )
     return genericId
@@ -293,9 +292,9 @@ isIdChar c = isIdFirstChar c || isIdOtherChar c
 An identifier cannot be a keyword.
 -}
 parseId :: Parser Id
-parseId = stringParserToIdParser (parseIdRaw KeywordsForbidden)
+parseId = parseIntoId (parseIdRaw KeywordsForbidden)
 
-parseIdRaw :: IdKeywordParsing -> Parser String
+parseIdRaw :: IdKeywordParsing -> Parser Text
 parseIdRaw = genericIdRawParser isIdFirstChar isIdChar
 
 {- | Parse a module name.
@@ -309,7 +308,7 @@ parseModuleName = lexeme moduleNameRawParser
 
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
-  ModuleName . Text.pack <$> parseIdRaw KeywordsForbidden
+  ModuleName <$> parseIdRaw KeywordsForbidden
 
 {- | Parses a 'Sort' 'Id'
 
@@ -338,17 +337,17 @@ isSetVariableId Id { getId } = Text.head getId == '@'
 
 parseSpecialId :: Parser Id
 parseSpecialId =
-    stringParserToIdParser parseSpecialIdString
+    parseIntoId parseSpecialIdString
   where
     parseSpecialIdString =
-        (:) <$> Parser.char '\\' <*> parseIdRaw KeywordsPermitted
+        Text.cons <$> Parser.char '\\' <*> parseIdRaw KeywordsPermitted
 
 parseSetId :: Parser Id
 parseSetId =
-    stringParserToIdParser parseSetIdString
+    parseIntoId parseSetIdString
   where
     parseSetIdString =
-        (:) <$> Parser.char '@' <*> parseIdRaw KeywordsPermitted
+        Text.cons <$> Parser.char '@' <*> parseIdRaw KeywordsPermitted
 
 {- | Parses a 'Symbol' 'Id'
 
@@ -357,16 +356,15 @@ parseSetId =
 @
 -}
 parseSymbolId :: Parser Id
-parseSymbolId =
-    stringParserToIdParser symbolIdRawParser <?> "symbol or alias identifier"
+parseSymbolId = parseIntoId symbolIdRawParser <?> "symbol or alias identifier"
 
-symbolIdRawParser :: Parser String
+symbolIdRawParser :: Parser Text
 symbolIdRawParser = do
     c <- peekChar'
     if c == '\\'
     then do
         skipChar '\\'
-        (c :) <$> parseIdRaw KeywordsPermitted
+        Text.cons c <$> parseIdRaw KeywordsPermitted
     else parseIdRaw KeywordsForbidden
 
 {- | Parses a C-style string literal, unescaping it.

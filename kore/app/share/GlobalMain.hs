@@ -49,6 +49,7 @@ import Data.Text
     ( Text
     , pack
     )
+import qualified Data.Text.IO as Text
 import Data.Time.Format
     ( defaultTimeLocale
     , formatTime
@@ -511,12 +512,14 @@ parseDefinition :: FilePath -> Main ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
-    :: (FilePath -> String -> Either String a)
+    :: (FilePath -> Text -> Either String a)
     -> String
     -> Main a
 mainParse parser fileName = do
     contents <-
-        clockSomethingIO "Reading the input file" $ liftIO $ readFile fileName
+        Text.readFile fileName
+        & liftIO
+        & clockSomethingIO "Reading the input file"
     parseResult <-
         clockSomething "Parsing the file" (parser fileName contents)
     case parseResult of
