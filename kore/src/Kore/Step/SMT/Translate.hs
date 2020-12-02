@@ -75,6 +75,9 @@ import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
     )
 import qualified Kore.Sort as Sort
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol
@@ -453,6 +456,8 @@ instance MFunctor (Translator variable) where
         & Translator
 
 instance SMT.MonadSMT m => SMT.MonadSMT (Translator variable m)
+
+instance MonadSimplify m => MonadSimplify (Translator variable m)
 
 evalTranslator :: Monad m => Translator p m a -> MaybeT m a
 evalTranslator (Translator translator) =

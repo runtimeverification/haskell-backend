@@ -193,8 +193,8 @@ decidePredicate predicates =
     -- | Run the SMT query once.
     query :: MaybeT simplifier Result
     query =
-        SMT.withSolver $ evalTranslator $ do
-            tools <- lift Simplifier.askMetadataTools
+        SMT.withSolver . evalTranslator $ do
+            tools <- Simplifier.askMetadataTools
             predicates' <- traverse (translatePredicate tools) predicates
             traverse_ SMT.assert predicates'
             SMT.check
