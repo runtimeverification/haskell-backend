@@ -38,8 +38,14 @@ import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 
 import Debug
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
@@ -83,6 +89,11 @@ instance TopBottom child => TopBottom (MultiAnd child) where
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
 
+instance (Ord variable, HasFreeVariables a variable) =>
+    HasFreeVariables (MultiAnd a) variable
+  where
+    freeVariables = foldMap' freeVariables
+
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
@@ -107,6 +118,13 @@ instance
     => From (Predicate variable) (MultiAnd (Predicate variable))
   where
     from = fromPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (Condition variable) (MultiAnd (Predicate variable))
+  where
+    from = fromPredicate . from @_ @(Predicate _)
     {-# INLINE from #-}
 
 instance
