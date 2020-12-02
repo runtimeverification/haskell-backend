@@ -52,7 +52,7 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 data PatternOptions = PatternOptions
     { patternFileName     :: !FilePath
-    -- ^ Name for file containing a pattern to parse and verify
+    -- ^ name of file containing a pattern to parse and verify
     , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
     }
