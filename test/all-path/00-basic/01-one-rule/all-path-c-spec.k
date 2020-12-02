@@ -8,6 +8,6 @@ module ALL-PATH-C-SPEC
   imports PATH
 
   // This should not be provable as the only axiom is a => b.
-  rule <k> a => c </k> [all-path]
+  claim <k> a => c </k> [all-path]
 
 endmodule

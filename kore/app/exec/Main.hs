@@ -56,6 +56,7 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import qualified Options.Applicative.Help.Pretty as OptPretty
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
@@ -82,7 +83,6 @@ import System.IO
     , withFile
     )
 
-import qualified Data.Limit as Limit
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -148,9 +148,6 @@ import Kore.Reachability
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
-import Kore.Step.RulePattern
-    ( RewriteRule
-    )
 import Kore.Step.Search
     ( SearchType (..)
     )
@@ -268,9 +265,6 @@ applyKoreSearchOptions Nothing koreExecOpts = koreExecOpts
 applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
     koreExecOpts
         { koreSearchOptions
-        , strategy =
-            -- Search relies on exploring the entire space of states.
-            ("all", priorityAllStrategy)
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
@@ -293,7 +287,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
-    , strategy            :: !(String, [RewriteRule RewritingVariableName] -> Strategy (Prim (RewriteRule RewritingVariableName)))
+    , strategy            :: !ExecutionMode
     , koreSolverOptions   :: !KoreSolverOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
@@ -346,17 +340,12 @@ parseKoreExecOptions startTime =
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
-        option (readSum "strategy" strategies)
+        option parseExecutionMode
             (  metavar "STRATEGY"
             <> long "strategy"
-            <> value ("all", priorityAllStrategy)
+            <> value All
             <> help "Select rewrites using STRATEGY."
             )
-      where
-        strategies =
-            [ ("any", priorityAnyStrategy)
-            , ("all", priorityAllStrategy)
-            ]
 
     breadth =
         option auto
@@ -384,6 +373,20 @@ parseKoreExecOptions startTime =
             , long "rts-statistics"
             , help "Write runtime statistics to FILENAME in JSON format."
             ]
+    parseExecutionMode = do
+        val <- str
+        case val :: String of
+            "all" -> return All
+            "any" -> return Any
+            _ ->
+                readerError
+                $ show
+                $ OptPretty.hsep
+                    [ "Unknown option"
+                    , OptPretty.squotes (OptPretty.text val)
+                        <> OptPretty.dot
+                    , "Known options are 'all' and 'any'."
+                    ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -462,7 +465,7 @@ koreExecSh
                 <$> maybeLimit Nothing Just breadthLimit
             , (\limit -> unwords ["--depth", show limit])
                 <$> maybeLimit Nothing Just depthLimit
-            , pure $ unwords ["--strategy", fst strategy]
+            , pure $ unwords ["--strategy", unparseExecutionMode strategy]
             , rtsStatistics $>
                 unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
             ]
@@ -472,6 +475,8 @@ koreExecSh
         , maybe mempty unparseKoreProveOptions koreProveOptions
         , maybe mempty unparseKoreMergeOptions koreMergeOptions
         ]
+    unparseExecutionMode All = "all"
+    unparseExecutionMode Any = "any"
 
 defaultDefinitionFilePath :: KoreExecOptions -> FilePath
 defaultDefinitionFilePath KoreExecOptions { koreProveOptions }
@@ -615,14 +620,13 @@ koreSearch execOptions searchOptions = do
     initial <- loadPattern mainModule patternFileName
     final <-
         execute execOptions mainModule
-        $ search breadthLimit mainModule strategy' initial target config
+        $ search depthLimit breadthLimit mainModule initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
-    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . snd strategy
+    KoreExecOptions { breadthLimit, depthLimit } = execOptions
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -634,12 +638,11 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <-
         execute execOptions mainModule
-        $ exec breadthLimit mainModule strategy' initial
+        $ exec depthLimit breadthLimit mainModule strategy initial
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
     KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
-    strategy' = Limit.replicate depthLimit . snd strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do

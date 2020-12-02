@@ -384,12 +384,21 @@ getListSymbol =
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 
+makeListSymbol :: Internal.Symbol
+makeListSymbol =
+    builtinSymbol "makeList" listSort [intSort, intSort] & hook "LIST.make"
+
 updateListSymbol :: Internal.Symbol
 updateListSymbol = builtinSymbol "updateList" listSort
     [listSort, intSort, intSort] & hook "LIST.update"
 
 inListSymbol :: Internal.Symbol
 inListSymbol = builtinSymbol "inList" boolSort [intSort, listSort] & hook "LIST.in"
+
+updateAllListSymbol :: Internal.Symbol
+updateAllListSymbol =
+    builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
+    & hook "LIST.updateAll"
 
 unitList :: TermLike VariableName
 unitList = mkApplySymbol unitListSymbol []
@@ -406,6 +415,9 @@ getList list poz = mkApplySymbol getListSymbol [list, poz]
 sizeList :: TermLike VariableName -> TermLike VariableName
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
+makeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+makeList len x = mkApplySymbol makeListSymbol [len, x]
+
 updateList
     :: TermLike VariableName
     -> TermLike VariableName
@@ -418,6 +430,13 @@ inList
     -> TermLike VariableName
     -> TermLike VariableName
 inList x list = mkApplySymbol inListSymbol [x, list]
+
+updateAllList
+    :: TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+    -> TermLike VariableName
+updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
 
 -- ** Map
 
@@ -1518,6 +1537,8 @@ listModule =
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
             , hookedSymbolDecl sizeListSymbol
+            , hookedSymbolDecl makeListSymbol
+            , hookedSymbolDecl updateAllListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol

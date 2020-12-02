@@ -13,6 +13,8 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_make
+    , test_updateAll
     , hprop_unparse
     , test_size
     --
@@ -138,7 +140,7 @@ test_GetUpdate =
         let len = fromIntegral $ length values
             patValues = asTermLike $ Test.Int.asInternal <$> values
             patUpdated = updateList patValues (Test.Int.asInternal ix) value
-        if (-len) <= ix && ix < len then do
+        if 0 <= ix && ix < len then do
             let patGet = getList patUpdated $ Test.Int.asInternal ix
                 predicate = mkEquals_
                     patGet
@@ -416,6 +418,49 @@ test_size =
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
     ]
+
+test_make :: [TestTree]
+test_make =
+    [ testCaseWithoutSMT "make(-1, 5) === \\bottom" $ do
+        result <- evaluate $ makeList (mkInt (-1)) (mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "make(0, 5) === []" $ do
+        result <- evaluate $ makeList (mkInt 0) (mkInt 5)
+        assertEqual' "" (Pattern.fromTermLike (asInternal [])) result
+    , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
+        result <- evaluate $ makeList (mkInt 3) (mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
+        assertEqual' "" (Pattern.fromTermLike expect) result
+    ]
+
+test_updateAll :: [TestTree]
+test_updateAll =
+    [ testCaseWithoutSMT "updateAll([1, 2, 3], -1, [5]) === \\bottom" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt (-1)) (elementList $ mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 10, []) === [1, 2, 3]" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt 10) unitList
+        assertEqual' "" (Pattern.fromTermLike original) result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 1, [5]) === [1, 5, 3]" $ do
+        result <-
+            evaluate
+            $ updateAllList original (mkInt 1) (elementList $ mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
+        assertEqual' "" (Pattern.fromTermLike expect) result
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4] === \\bottom"
+        $ do
+            let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
+            result <-
+                evaluate
+                $ updateAllList original (mkInt 0) new
+            assertEqual' "" Pattern.bottom result
+    ]
+  where
+    original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]
 
 mkInt :: Integer -> TermLike VariableName
 mkInt = Test.Int.asInternal

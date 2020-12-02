@@ -8,6 +8,6 @@ module ALL-PATH-B-SPEC
   imports PATH
 
   // Everything is provable if I can reach a cycling rule
-  rule <k> a => b </k> [all-path]
+  claim <k> a => b </k> [all-path]
 
 endmodule

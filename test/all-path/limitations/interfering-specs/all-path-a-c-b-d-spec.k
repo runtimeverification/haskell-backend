@@ -13,7 +13,7 @@ module ALL-PATH-A-C-B-D-SPEC
   imports VERIFICATION
   imports PATH
 
-  rule <k> a => c </k> [all-path]
-  rule <k> b => d </k> [all-path]
+  claim <k> a => c </k> [all-path]
+  claim <k> b => d </k> [all-path]
 
 endmodule

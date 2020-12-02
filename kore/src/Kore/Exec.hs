@@ -81,9 +81,6 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr
-    ( make
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -160,7 +157,6 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
     ( MonadProf
-    , SimplifierT
     , evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -213,14 +209,14 @@ exec
         , MonadProf smt
         )
     => Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
+    -> ExecutionMode
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)
-exec breadthLimit verifiedModule strategy initialTerm =
+exec depthLimit breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
@@ -237,9 +233,10 @@ exec breadthLimit verifiedModule strategy initialTerm =
                             . Strategy.applyBreadthLimit
                                 breadthLimit
                                 dropStrategy
+                    rewriteGroups = groupRewritesByPriority rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule & trackExecDepth)
+                            (transitionRule rewriteGroups strategy & trackExecDepth)
                             instr
                             config
                         & runTransitionT
@@ -248,24 +245,21 @@ exec breadthLimit verifiedModule strategy initialTerm =
                 Strategy.leavesM
                     updateQueue
                     (Strategy.unfoldTransition transit)
-                    ( strategy rewriteRules
-                    , (ExecDepth 0, mkRewritingPattern initialConfig)
+                    ( limitedExecutionStrategy depthLimit
+                    , (ExecDepth 0, Start (mkRewritingPattern initialConfig))
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
-        let finalConfigs' = make $ getRewritingPattern <$> finalConfigs
+        let finalConfigs' =
+                MultiOr.make
+                $ getRewritingPattern
+                . extractProgramState
+                <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
         let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
-    getFinalConfigsOf
-        :: LogicT
-            (SimplifierT smt)
-            ( [Strategy (Prim (RewriteRule RewritingVariableName))]
-            , (ExecDepth, Pattern RewritingVariableName)
-            )
-        -> SimplifierT smt [(ExecDepth, Pattern RewritingVariableName)]
     getFinalConfigsOf act = observeAllT $ fmap snd act
     verifiedModule' =
         IndexedModule.mapPatterns
@@ -290,8 +284,8 @@ trackExecDepth transit prim (execDepth, execState) = do
   where
     didRewrite _ = isRewrite prim
 
-    isRewrite Simplify = False
-    isRewrite (Rewrite _) = True
+    isRewrite Rewrite = True
+    isRewrite _ = False
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
@@ -341,10 +335,9 @@ search
         , MonadProf smt
         )
     => Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes
     -- ^ The main module
-    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
-    -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike VariableName
     -- ^ The input pattern
     -> Pattern VariableName
@@ -352,7 +345,7 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike VariableName)
-search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
+search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfig
   =
     evalSimplifier verifiedModule $ do
         initialized <- initializeAndSimplify verifiedModule
@@ -365,15 +358,30 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
                 case toList simplifiedPatterns of
                     [] -> Pattern.bottomOf (termLikeSort termLike)
                     (config : _) -> config
+            rewriteGroups =
+                groupRewritesByPriority rewriteRules
             runStrategy' =
-                runStrategy breadthLimit transitionRule (strategy rewriteRules)
-        executionGraph <- runStrategy' (mkRewritingPattern initialPattern)
+                runStrategy
+                    breadthLimit
+                    -- search relies on exploring
+                    -- the entire space of states.
+                    (transitionRule rewriteGroups All)
+                    (limitedExecutionStrategy depthLimit)
+        executionGraph <-
+            runStrategy' (Start $ mkRewritingPattern initialPattern)
         let
-            match target config = Search.matchWith target config
+            match target config1 config2 =
+                Search.matchWith
+                    target
+                    config1
+                    (extractProgramState config2)
         solutionsLists <-
             searchGraph
                 searchConfig
-                (match SideCondition.topTODO (mkRewritingPattern searchPattern))
+                (match
+                    SideCondition.topTODO
+                    (mkRewritingPattern searchPattern)
+                )
                 executionGraph
         let
             solutions = concatMap toList solutionsLists
@@ -386,7 +394,6 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
             $ orPredicate
   where
     patternSort = termLikeSort termLike
-
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
