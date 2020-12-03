@@ -68,7 +68,7 @@ For integration testing, we require:
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [ghcide] or [haskell-ide-engine], [language servers] for Haskell that are
+- [ghcide] or [haskell-language-server], [language servers] for Haskell that are
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
@@ -117,7 +117,7 @@ When the `.cabal` package description file changes, run:
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
-[haskell-ide-engine]: https://github.com/haskell/haskell-ide-engine
+[haskell-language-server]: https://github.com/haskell/haskell-language-server
 [language servers]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
