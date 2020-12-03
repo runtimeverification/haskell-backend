@@ -52,10 +52,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-import Pretty
-    ( Pretty (..)
-    )
-
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
     [ testCase "bottom == bottom" $ do
@@ -996,14 +992,12 @@ assertBidirectionalEqualityResult
                         unlines
                         [ firstName ++ " vs " ++ secondName ++ ":"
                         , "Expected " <> name
-                        , renderDefault $ pretty
+                        , unparseToString
                             (OrPattern.toPattern <$> orderedEquality)
                         , "would simplify to:"
-                        , unlines (renderDefault . pretty
-                            <$> toList expect)
+                        , unlines (unparseToString <$> toList expect)
                         , "but instead found:"
-                        , unlines (renderDefault . pretty
-                            <$> toList actual)
+                        , unlines (unparseToString <$> toList actual)
                         ]
                  in assertEqual message expect actual
         assertEqual' "evaluate equals"

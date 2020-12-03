@@ -20,9 +20,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Exists as Exists
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
@@ -137,10 +135,10 @@ test_simplify =
                     (show . Pretty.vsep)
                         [ "expected:"
                         , (Pretty.indent 4 . Pretty.vsep)
-                            (pretty <$> expected)
+                            (unparse <$> expected)
                         , "actual:"
                         , (Pretty.indent 4 . Pretty.vsep)
-                            (pretty <$> OrPattern.toPatterns actual)
+                            (unparse <$> OrPattern.toPatterns actual)
                         ]
             assertEqual message expected (OrPattern.toPatterns actual)
 
