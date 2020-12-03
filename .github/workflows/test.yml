@@ -7,23 +7,35 @@ jobs:
     name: 'Nix'
     runs-on: ubuntu-latest
     steps:
-    - name: 'Check out code'
+    - name: Check out code
       uses: actions/checkout@v2.3.4
       with:
         submodules: recursive
+
     - name: Install Nix
       uses: cachix/install-nix-action@v12
       with:
         extra_nix_config: |
           substituters = http://cache.nixos.org https://hydra.iohk.io
           trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
     - name: Install Cachix
       uses: cachix/cachix-action@v8
       with:
         name: kore
         signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
-    - run: nix-build --arg checkMaterialization true -A kore -A project.kore.checks
-    - run: nix-shell --run "echo OK"
+
+    - name: Check materialization
+      run: nix-build --arg checkMaterialization true -A project.stack-nix
+
+    - name: Build
+      run: nix-build -A kore
+
+    - name: Run unit tests
+      run: nix-build -A project.kore.checks
+
+    - name: Check shell
+      run: nix-shell --run "echo OK"
 
   test-cabal:
     name: 'Cabal'
