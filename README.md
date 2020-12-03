@@ -44,8 +44,26 @@ If using `cabal`, version 3.0 or later is recommended.
 
 ## Developing
 
-Developers will require all the dependencies listed above.
-We also recommend (but not require!) the following dependencies.
+Developers will require all the dependencies listed above,
+in addition to the requirements and recommendations below.
+
+### Required dependencies
+
+For packaging, we require:
+
+- [Nix], a tool for reproducible builds and deployments.
+
+Refer to instructions at [kore.cachix.org] to set up the binary cache.
+Refer to the section [below](#developing-with-nix) for more instructions,
+and to learn why this is required.
+
+For integration testing, we require:
+
+- GNU [make]
+- The [K Framework] frontend, or [curl] to fetch an appropriate version.
+  The frontend has other dependencies, most notably a Java runtime.
+
+### Recommended dependencies
 
 For setting up a development environment, we recommend:
 
@@ -54,12 +72,6 @@ For setting up a development environment, we recommend:
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
-
-For integration testing, we also recommend:
-
-- GNU [make]
-- The [K Framework] frontend, or [curl] to fetch an appropriate version.
-  The frontend has other dependencies, most notably a Java runtime.
 
 ### Running a language server
 
@@ -85,9 +97,16 @@ cabal build --enable-tests --enable-benchmarks --only-dependencies kore
 
 ### Developing with Nix
 
-For developers so inclined, we provide a `shell.nix` expression with a suitable
-development environment and a binary cache at [kore.cachix.org]. The development
-environment is intended to be used with `nix-shell` and `cabal`.
+We provide a `shell.nix` expression with a suitable development environment and
+a binary cache at [kore.cachix.org]. The development environment is intended to
+be used with `nix-shell` and `cabal`.
+
+When the `.cabal` package description file changes, run:
+
+```.sh
+# Requires Nix to be installed.
+./nix/rematerialize.sh
+```
 
 
 [git]: https://git-scm.com/
@@ -103,3 +122,4 @@ environment is intended to be used with `nix-shell` and `cabal`.
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
+[Nix]: https://nixos.org
