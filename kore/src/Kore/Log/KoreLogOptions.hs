@@ -96,6 +96,7 @@ data KoreLogOptions = KoreLogOptions
     , startTime :: !TimeSpec
     , logSQLiteOptions :: !LogSQLiteOptions
     , warningSwitch :: !WarningSwitch
+    , turnedIntoErrors :: !EntryTypes
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
@@ -117,6 +118,7 @@ defaultKoreLogOptions exeName startTime =
         , startTime
         , logSQLiteOptions = def @LogSQLiteOptions
         , warningSwitch = def @WarningSwitch
+        , turnedIntoErrors = mempty
         , debugApplyEquationOptions = def @DebugApplyEquationOptions
         , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
         , debugEquationOptions = def @DebugEquationOptions
@@ -182,6 +184,7 @@ parseKoreLogOptions exeName startTime =
     <*> pure startTime
     <*> parseLogSQLiteOptions
     <*> parseWarningSwitch
+    <*> (mconcat <$> many parseErrorEntries)
     <*> parseDebugApplyEquationOptions
     <*> parseDebugAttemptEquationOptions
     <*> parseDebugEquationOptions
@@ -204,9 +207,10 @@ parseEntryTypes =
                 (OptPretty.text <$> getEntryTypesAsText)
             ]
 
-    parseCommaSeparatedEntries =
-        Options.maybeReader $ Parser.parseMaybe parseEntryTypes'
-
+parseCommaSeparatedEntries :: Options.ReadM EntryTypes
+parseCommaSeparatedEntries =
+    Options.maybeReader $ Parser.parseMaybe parseEntryTypes'
+  where
     parseEntryTypes' :: Parser.Parsec String String EntryTypes
     parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
 
@@ -243,6 +247,32 @@ parseWarningSwitch =
         ( Options.long "warnings-to-errors"
         <> Options.help "Turn warnings into errors"
         )
+
+parseErrorEntries :: Parser EntryTypes
+parseErrorEntries =
+    option parseCommaSeparatedEntries info
+  where
+    info =
+        mempty
+        <> Options.long "error-entries"
+        <> Options.helpDoc ( Just nonErrorEntryTypes )
+
+    nonErrorEntryTypes :: OptPretty.Doc
+    nonErrorEntryTypes =
+        OptPretty.vsep
+            [ "Turn arbitrary log entries into errors"
+            , "Available entry types:"
+            , (OptPretty.indent 4 . OptPretty.vsep)
+                (OptPretty.text <$> filter notError getEntryTypesAsText)
+            {- The user can still give error entries as arguments, but it's
+                useless, so we don't list them here
+            -}
+            ]
+
+    notError :: String -> Bool
+    notError entryType
+      | take 5 entryType == "Error" = False
+      | otherwise = True
 
 -- | Caller of the logging function
 newtype ExeName = ExeName { getExeName :: String }
@@ -396,6 +426,7 @@ unparseKoreLogOptions
         _
         logSQLiteOptions
         warningSwitch
+        toError
         debugApplyEquationOptions
         debugAttemptEquationOptions
         debugEquationOptions
@@ -409,6 +440,7 @@ unparseKoreLogOptions
         , debugSolverOptionsFlag debugSolverOptions
         , logSQLiteOptionsFlag logSQLiteOptions
         , ["--warnings-to-errors" | AsError <- [warningSwitch] ]
+        , logEntriesFlag toError
         , debugApplyEquationOptionsFlag debugApplyEquationOptions
         , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
         , debugEquationOptionsFlag debugEquationOptions
