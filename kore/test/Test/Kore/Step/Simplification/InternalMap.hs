@@ -8,9 +8,7 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -21,7 +19,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate_
+    ( makeCeilPredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.InternalMap
@@ -33,25 +31,49 @@ import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testGroup "Map"
-        [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
-        , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
-        , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
-        , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) []
-        , becomes "single opaque elem" (mkMap [] [a]) [aPat]
+    [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
+    , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
+    , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
+    , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) []
+    , becomes "single opaque elem" (mkMap [] [a])
+        [Mock.a & Pattern.fromTermLike]
+    , becomes "distributes \\or key" (mkMap [(a <> b, c)] [])
+        [ mkMap [(Mock.a, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
+        , mkMap [(Mock.b, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
+        ]
+    , becomes "distributes \\or value" (mkMap [(a, b <> c)] [])
+        [ mkMap [(Mock.a, Mock.b)] [] & mkBuiltinMap & Pattern.fromTermLike
+        , mkMap [(Mock.a, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
+        ]
+    , becomes "distributes \\or compound" (mkMap [] [a <> b])
+        [ mkMap [] [Mock.a] & mkBuiltinMap & Pattern.fromTermLike
+        , mkMap [] [Mock.b] & mkBuiltinMap & Pattern.fromTermLike
+        ]
+    , becomes "collects \\and"
+        (mkMap
+            [ (,)
+                (Pattern.withCondition Mock.a ceila)
+                (Pattern.withCondition Mock.b ceilb)
+            ]
+            []
+            & fmap OrPattern.fromPattern
+        )
+        [Pattern.withCondition
+            (mkMap [(Mock.a, Mock.b)] [] & mkBuiltinMap)
+            (ceila <> ceilb)
         ]
     ]
   where
     a = OrPattern.fromTermLike Mock.a
     b = OrPattern.fromTermLike Mock.b
     c = OrPattern.fromTermLike Mock.c
+    ceila =
+        makeCeilPredicate_ (Mock.f Mock.a)
+        & Condition.fromPredicate
+    ceilb =
+        makeCeilPredicate_ (Mock.f Mock.b)
+        & Condition.fromPredicate
     bottom = OrPattern.fromPatterns [Pattern.bottom]
-    aPat =
-        Conditional
-            { term = Mock.a
-            , predicate = makeTruePredicate_
-            , substitution = mempty
-            }
     becomes
         :: HasCallStack
         => TestName
