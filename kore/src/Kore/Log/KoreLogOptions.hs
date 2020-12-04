@@ -67,7 +67,7 @@ import Kore.Log.DebugSolver
     , parseDebugSolverOptions
     )
 import Kore.Log.Registry
-    ( getErrEntryTypesAsText
+    ( getEntryTypesAsText
     , getNoErrEntryTypesAsText
     , parseEntryType
     )
@@ -205,9 +205,7 @@ parseEntryTypes =
             [ "Log entries: logs entries of supplied types"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                ( OptPretty.text
-                    <$> getNoErrEntryTypesAsText <> getErrEntryTypesAsText
-                )
+                ( OptPretty.text <$> getEntryTypesAsText )
             ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes

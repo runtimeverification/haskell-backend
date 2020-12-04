@@ -10,6 +10,7 @@ module Kore.Log.Registry
     , registry
     , typeToText
     , textToType
+    , getEntryTypesAsText
     , getErrEntryTypesAsText
     , getNoErrEntryTypesAsText
     , typeOfSomeEntry
@@ -147,8 +148,7 @@ data Registry =
 registry :: Registry
 registry =
     let textToType =
-            (Map.fromList . map register)
-                $ entryTypeRepsNoErr <> entryTypeRepsErr
+            (Map.fromList . map register) entryTypeReps
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
           then Registry { textToType, typeToText }
@@ -167,7 +167,8 @@ entryTypeReps = entryTypeRepsErr <> entryTypeRepsNoErr
 
 entryTypeRepsErr, entryTypeRepsNoErr :: [SomeTypeRep]
 entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
-((entryTypeRepsNoErr, entryHelpDocsNoErr), (entryTypeRepsErr, entryHelpDocsErr))
+( (entryTypeRepsNoErr, entryHelpDocsNoErr)
+    , (entryTypeRepsErr, entryHelpDocsErr) )
   =
     (   [ mk $ Proxy @DebugSolverSend
         , mk $ Proxy @DebugSolverRecv
@@ -247,6 +248,9 @@ toSomeEntryType =
  -}
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
 typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
+
+getEntryTypesAsText :: [String]
+getEntryTypesAsText = getNoErrEntryTypesAsText <> getErrEntryTypesAsText
 
 getErrEntryTypesAsText :: [String]
 getErrEntryTypesAsText = show <$> entryHelpDocsErr
