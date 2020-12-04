@@ -260,7 +260,7 @@ binaryOperator' extractVal asPattern ctx op =
     binaryOperator0 :: Function
     binaryOperator0 resultSort children =
         case children of
-            [(get -> Just a), (get -> Just b)] -> do
+            [get -> Just a, get -> Just b] -> do
                 -- Apply the operator to two domain values
                 let r = op a b
                 return (asPattern resultSort r)
@@ -337,7 +337,7 @@ ternaryOperator' extractVal asPattern ctx op =
     ternaryOperator0 :: Function
     ternaryOperator0 resultSort children =
         case children of
-            [(get -> Just a), (get -> Just b), (get -> Just c)] -> do
+            [get -> Just a, get -> Just b, get -> Just c] -> do
                 -- Apply the operator to three domain values
                 let r = op a b c
                 return (asPattern resultSort r)
