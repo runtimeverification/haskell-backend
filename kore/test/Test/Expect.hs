@@ -39,7 +39,7 @@ expectThese =
     these
         (\_ -> assertFailure "expected (These _ _), but found (This _)")
         (\_ -> assertFailure "expected (These _ _), but found (That _)")
-        (\a b -> pure (a, b))
+        (curry pure)
 
 expectOne :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO a
 expectOne as =
