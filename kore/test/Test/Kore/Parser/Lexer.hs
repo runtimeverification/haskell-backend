@@ -15,6 +15,11 @@ module Test.Kore.Parser.Lexer
 
 import Prelude.Kore
 
+import Data.Text
+    ( Text
+    , unpack
+    )
+
 import Test.Tasty
     ( TestTree
     )
@@ -277,7 +282,7 @@ test_parseStringLiteral =
             ]
         ]
 
-invalidEscape :: String -> ParserTest a
+invalidEscape :: Text -> ParserTest a
 invalidEscape failureInput =
     Failure FailureTest { failureInput, failureExpected }
   where
@@ -285,7 +290,7 @@ invalidEscape failureInput =
         unlines
             [ "<test-string>:1:4:"
             , "  |"
-            , "1 | " ++ failureInput
+            , "1 | " ++ unpack failureInput
             , "  |    ^"
             , "expecting escape sequence"
             ]
