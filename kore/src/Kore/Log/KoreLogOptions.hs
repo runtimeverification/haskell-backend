@@ -67,7 +67,8 @@ import Kore.Log.DebugSolver
     , parseDebugSolverOptions
     )
 import Kore.Log.Registry
-    ( getEntryTypesAsText
+    ( getErrEntryTypesAsText
+    , getNoErrEntryTypesAsText
     , parseEntryType
     )
 import Kore.Log.SQLite
@@ -204,7 +205,9 @@ parseEntryTypes =
             [ "Log entries: logs entries of supplied types"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getEntryTypesAsText)
+                ( OptPretty.text
+                    <$> getNoErrEntryTypesAsText <> getErrEntryTypesAsText
+                )
             ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
@@ -263,16 +266,11 @@ parseErrorEntries =
             [ "Turn arbitrary log entries into errors"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> filter notError getEntryTypesAsText)
+                (OptPretty.text <$> getNoErrEntryTypesAsText)
             {- The user can still give error entries as arguments, but it's
                 useless, so we don't list them here
             -}
             ]
-
-    notError :: String -> Bool
-    notError entryType
-      | take 5 entryType == "Error" = False
-      | otherwise = True
 
 -- | Caller of the logging function
 newtype ExeName = ExeName { getExeName :: String }

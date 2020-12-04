@@ -10,13 +10,20 @@ module Kore.Log.Registry
     , registry
     , typeToText
     , textToType
-    , getEntryTypesAsText
+    , getErrEntryTypesAsText
+    , getNoErrEntryTypesAsText
     , typeOfSomeEntry
+    , entryTypeRepsErr
+    , entryTypeRepsNoErr
     , entryTypeReps
     ) where
 
 import Prelude.Kore
 
+import Control.Lens
+    ( (%~)
+    )
+import qualified Control.Lens as Lens
 import Data.Functor.Classes
     ( eq2
     )
@@ -139,7 +146,9 @@ data Registry =
 -- When adding a new entry type you should register it here.
 registry :: Registry
 registry =
-    let textToType = (Map.fromList . map register) entryTypeReps
+    let textToType =
+            (Map.fromList . map register)
+                $ entryTypeRepsNoErr <> entryTypeRepsErr
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
           then Registry { textToType, typeToText }
@@ -154,41 +163,48 @@ registry =
         (asText type', type')
 
 entryTypeReps :: [SomeTypeRep]
-entryHelpDocs :: [Pretty.Doc ()]
-(entryTypeReps, entryHelpDocs) =
-    unzip
-    [ mk $ Proxy @DebugSolverSend
-    , mk $ Proxy @DebugSolverRecv
-    , mk $ Proxy @DebugClaimState
-    , mk $ Proxy @DebugAppliedRewriteRules
-    , mk $ Proxy @DebugSubstitutionSimplifier
-    , mk $ Proxy @ErrorBottomTotalFunction
-    , mk $ Proxy @ErrorDecidePredicateUnknown
-    , mk $ Proxy @ErrorParse
-    , mk $ Proxy @ErrorVerify
-    , mk $ Proxy @ErrorRuleMergeDuplicateIds
-    , mk $ Proxy @ErrorRuleMergeDuplicateLabels
-    , mk $ Proxy @WarnFunctionWithoutEvaluators
-    , mk $ Proxy @WarnSymbolSMTRepresentation
-    , mk $ Proxy @WarnStuckClaimState
-    , mk $ Proxy @WarnIfLowProductivity
-    , mk $ Proxy @WarnTrivialClaim
-    , mk $ Proxy @WarnRetrySolverQuery
-    , mk $ Proxy @DebugEvaluateCondition
-    , mk $ Proxy @ErrorException
-    , mk $ Proxy @ErrorRewriteLoop
-    , mk $ Proxy @LogMessage
-    , mk $ Proxy @InfoAttemptUnification
-    , mk $ Proxy @InfoReachability
-    , mk $ Proxy @InfoExecBreadth
-    , mk $ Proxy @ErrorRewritesInstantiation
-    , mk $ Proxy @DebugAttemptEquation
-    , mk $ Proxy @DebugApplyEquation
-    , mk $ Proxy @DebugUnification
-    , mk $ Proxy @InfoProofDepth
-    , mk $ Proxy @InfoExecDepth
-    , mk $ Proxy @DebugProven
-    ]
+entryTypeReps = entryTypeRepsErr <> entryTypeRepsNoErr
+
+entryTypeRepsErr, entryTypeRepsNoErr :: [SomeTypeRep]
+entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
+((entryTypeRepsNoErr, entryHelpDocsNoErr), (entryTypeRepsErr, entryHelpDocsErr))
+  =
+    (   [ mk $ Proxy @DebugSolverSend
+        , mk $ Proxy @DebugSolverRecv
+        , mk $ Proxy @DebugClaimState
+        , mk $ Proxy @DebugAppliedRewriteRules
+        , mk $ Proxy @DebugSubstitutionSimplifier
+        , mk $ Proxy @WarnFunctionWithoutEvaluators
+        , mk $ Proxy @WarnSymbolSMTRepresentation
+        , mk $ Proxy @WarnStuckClaimState
+        , mk $ Proxy @WarnIfLowProductivity
+        , mk $ Proxy @WarnTrivialClaim
+        , mk $ Proxy @WarnRetrySolverQuery
+        , mk $ Proxy @DebugEvaluateCondition
+        , mk $ Proxy @LogMessage
+        , mk $ Proxy @InfoAttemptUnification
+        , mk $ Proxy @InfoReachability
+        , mk $ Proxy @InfoExecBreadth
+        , mk $ Proxy @DebugAttemptEquation
+        , mk $ Proxy @DebugApplyEquation
+        , mk $ Proxy @DebugUnification
+        , mk $ Proxy @InfoProofDepth
+        , mk $ Proxy @InfoExecDepth
+        , mk $ Proxy @DebugProven
+        ]
+
+    ,   [ mk $ Proxy @ErrorBottomTotalFunction
+        , mk $ Proxy @ErrorDecidePredicateUnknown
+        , mk $ Proxy @ErrorParse
+        , mk $ Proxy @ErrorVerify
+        , mk $ Proxy @ErrorRuleMergeDuplicateIds
+        , mk $ Proxy @ErrorRuleMergeDuplicateLabels
+        , mk $ Proxy @ErrorException
+        , mk $ Proxy @ErrorRewriteLoop
+        , mk $ Proxy @ErrorRewritesInstantiation
+        ]
+    )
+    & Lens.each %~ unzip
   where
     mk proxy =
         let tRep = someTypeRep proxy
@@ -232,5 +248,8 @@ toSomeEntryType =
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
 typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
 
-getEntryTypesAsText :: [String]
-getEntryTypesAsText = show <$> entryHelpDocs
+getErrEntryTypesAsText :: [String]
+getErrEntryTypesAsText = show <$> entryHelpDocsErr
+
+getNoErrEntryTypesAsText :: [String]
+getNoErrEntryTypesAsText = show <$> entryHelpDocsNoErr
