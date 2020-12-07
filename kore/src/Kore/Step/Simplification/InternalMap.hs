@@ -14,18 +14,13 @@ import Data.Functor.Compose
 import Data.Generics.Product
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
-import Kore.Internal.Conditional
-    ( Conditional
-    )
 import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Logic
-    ( Logic
-    )
 import qualified Logic
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -35,22 +30,12 @@ simplify
     :: InternalVariable variable
     => InternalMap (TermLike Concrete) (OrPattern variable)
     -> OrPattern variable
-simplify internalMap =
-    MultiOr.observeAll $ do
-        child <- simplifyInternalMap normalizeInternalMap internalMap
-        return (markSimplified <$> child)
-
-simplifyInternalMap
-    :: InternalVariable variable
-    => ( InternalMap (TermLike Concrete) (TermLike variable)
-        -> NormalizedMapResult variable
-       )
-    -> InternalMap (TermLike Concrete) (OrPattern variable)
-    -> Logic (Conditional variable (TermLike variable))
-simplifyInternalMap normalizer tOrPattern = do
-    conditional <- getCompose $ traverse (Compose . Logic.scatter) tOrPattern
-    let normalized = normalizedMapResultToTerm . normalizer <$> conditional
-    return normalized
+simplify =
+    traverse (Logic.scatter >>> Compose)
+    >>> fmap (normalizeInternalMap >>> normalizedMapResultToTerm)
+    >>> getCompose
+    >>> fmap (Pattern.syncSort >>> fmap markSimplified)
+    >>> MultiOr.observeAll
 
 data NormalizedMapResult variable =
     NormalizedMapResult (InternalMap (TermLike Concrete) (TermLike variable))
