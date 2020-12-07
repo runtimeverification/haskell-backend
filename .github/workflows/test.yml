@@ -50,6 +50,10 @@ jobs:
     name: 'Cabal'
     runs-on: ubuntu-latest
     steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
       - uses: actions/checkout@v2.3.4
         with:
           submodules: recursive
@@ -79,6 +83,10 @@ jobs:
     name: 'Stack'
     runs-on: ubuntu-latest
     steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
       - uses: actions/checkout@v2.3.4
         with:
           submodules: recursive
