@@ -78,7 +78,7 @@ other purposes, say, to remove redundant parts of the result predicate.
 data SideCondition variable =
     SideCondition
         { assumedTrue :: MultiAnd (Predicate variable)
-        , assumptions :: HashMap (TermLike variable) (TermLike variable)
+        , replacements :: HashMap (TermLike variable) (TermLike variable)
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -118,7 +118,7 @@ instance From (SideCondition variable) (MultiAnd (Predicate variable))
 
 instance InternalVariable variable => From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
-    from assumedTrue = SideCondition { assumedTrue, assumptions = mempty }
+    from assumedTrue = SideCondition { assumedTrue, replacements = mempty }
     {-# INLINE from #-}
 
 instance
@@ -148,7 +148,7 @@ instance InternalVariable variable =>
     {-# INLINE from #-}
 
 top :: InternalVariable variable => SideCondition variable
-top = SideCondition { assumedTrue = MultiAnd.top, assumptions = mempty }
+top = SideCondition { assumedTrue = MultiAnd.top, replacements = mempty }
 
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
 topTODO :: InternalVariable variable => SideCondition variable
@@ -200,14 +200,14 @@ mapVariables
 mapVariables adj condition@(SideCondition _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
-        assumptions' =
-            mapKeysAndValues (TermLike.mapVariables adj) assumptions
+        replacements' =
+            mapKeysAndValues (TermLike.mapVariables adj) replacements
      in SideCondition
             { assumedTrue = assumedTrue'
-            , assumptions = assumptions'
+            , replacements = replacements'
             }
   where
-    SideCondition { assumedTrue, assumptions } = condition
+    SideCondition { assumedTrue, replacements } = condition
     mapKeysAndValues f hashMap =
         HashMap.fromList
         $ Bifunctor.bimap f f
