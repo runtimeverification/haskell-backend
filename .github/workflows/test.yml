@@ -50,24 +50,53 @@ jobs:
     name: 'Cabal'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.4
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
 
-    - uses: actions/setup-haskell@v1.1.4
-      id: setup-haskell-cabal
-      with:
-        ghc-version: "8.10.1"
-        cabal-version: "3.2"
+      - uses: actions/setup-haskell@v1.1.4
+        id: setup-haskell-cabal
+        with:
+          ghc-version: "8.10.1"
+          cabal-version: "3.2"
 
-    - name: Cache Cabal store
-      uses: actions/cache@v2
-      with:
-        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('cabal.project.freeze') }}
+      - name: Cache Cabal store
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('cabal.project.freeze') }}
 
-    - name: Build project
-      run: cabal v2-build --enable-tests --enable-benchmarks all
+      - name: Build project
+        run: cabal v2-build --enable-tests --enable-benchmarks all
 
-    - name: Configure with profiling
-      run: cabal v2-configure --enable-profiling -f-threaded
+      - name: Configure with profiling
+        run: cabal v2-configure --enable-profiling -f-threaded
+
+  stack:
+    name: 'Stack'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-haskell@v1.1.4
+        id: setup-haskell-stack
+        with:
+          enable-stack: true
+          stack-no-global: true
+          stack-setup-ghc: true
+
+      - name: Locate Stack root
+        id: locate-stack-root
+        run: |
+          echo "::set-output name=stack-root::$(stack path --stack-root)"
+
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.locate-stack-root.outputs.stack-root }}
+          key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('stack.yaml.lock') }}
+
+      - name: Build project
+        run: stack build --pedantic
