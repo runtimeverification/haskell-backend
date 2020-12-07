@@ -225,10 +225,10 @@ genericIdRawParser
     -> IdKeywordParsing
     -> Parser Text
 genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
-    c <- Parser.satisfy isFirstChar <?> "first identifier character"
-    cs <- Parser.takeWhileP (Just "identifier character") isBodyChar
-    let genericId = Text.cons c cs
-        keywordsForbidden = idKeywordParsing == KeywordsForbidden
+    (genericId, _) <- Parser.match
+        $ (Parser.satisfy isFirstChar <?> "first identifier character")
+        >> Parser.takeWhileP (Just "identifier character") isBodyChar
+    let keywordsForbidden = idKeywordParsing == KeywordsForbidden
         isKeyword = HashSet.member genericId koreKeywordsSet
     when (keywordsForbidden && isKeyword)
         $ fail
@@ -292,10 +292,13 @@ isIdChar c = isIdFirstChar c || isIdOtherChar c
 An identifier cannot be a keyword.
 -}
 parseId :: Parser Id
-parseId = parseIntoId (parseIdRaw KeywordsForbidden)
+parseId = parseIntoId parseIdText
 
 parseIdRaw :: IdKeywordParsing -> Parser Text
 parseIdRaw = genericIdRawParser isIdFirstChar isIdChar
+
+parseIdText :: Parser Text
+parseIdText = parseIdRaw KeywordsForbidden
 
 {- | Parse a module name.
 
@@ -320,7 +323,9 @@ parseSortId :: Parser Id
 parseSortId = parseId <?> "sort identifier"
 
 parseAnyId :: Parser Id
-parseAnyId = (parseSpecialId <|> parseSetId <|> parseId) <?> "identifier"
+parseAnyId = parseIntoId
+    (parseSpecialIdText <|> parseSetIdText <|> parseIdText)
+    <?> "identifier"
 
 isSymbolId :: Id -> Bool
 isSymbolId Id { getId } =
@@ -335,19 +340,16 @@ isElementVariableId Id { getId } =
 isSetVariableId :: Id -> Bool
 isSetVariableId Id { getId } = Text.head getId == '@'
 
-parseSpecialId :: Parser Id
-parseSpecialId =
-    parseIntoId parseSpecialIdString
-  where
-    parseSpecialIdString =
-        Text.cons <$> Parser.char '\\' <*> parseIdRaw KeywordsPermitted
+parseSpecialIdText :: Parser Text
+parseSpecialIdText = fst <$> Parser.match
+    (Parser.char '\\' >> parseIdRaw KeywordsPermitted)
+
+parseSetIdText :: Parser Text
+parseSetIdText = fst <$> Parser.match
+    (Parser.char '@' >> parseIdRaw KeywordsPermitted)
 
 parseSetId :: Parser Id
-parseSetId =
-    parseIntoId parseSetIdString
-  where
-    parseSetIdString =
-        Text.cons <$> Parser.char '@' <*> parseIdRaw KeywordsPermitted
+parseSetId = parseIntoId parseSetIdText
 
 {- | Parses a 'Symbol' 'Id'
 
@@ -362,9 +364,8 @@ symbolIdRawParser :: Parser Text
 symbolIdRawParser = do
     c <- peekChar'
     if c == '\\'
-    then do
-        skipChar '\\'
-        Text.cons c <$> parseIdRaw KeywordsPermitted
+    then fst <$> Parser.match
+        (Parser.char '\\' >> parseIdRaw KeywordsPermitted)
     else parseIdRaw KeywordsForbidden
 
 {- | Parses a C-style string literal, unescaping it.
