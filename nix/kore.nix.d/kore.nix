@@ -14,8 +14,8 @@
       identifier = { name = "kore"; version = "0.35.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
-      maintainer = "virgil.serbanuta@runtimeverification.com";
-      author = "Virgil Serbanuta";
+      maintainer = "thomas.tuegel@runtimeverification.com";
+      author = "Runtime Verification Inc";
       homepage = "https://github.com/kframework/kore#readme";
       url = "";
       synopsis = "";
