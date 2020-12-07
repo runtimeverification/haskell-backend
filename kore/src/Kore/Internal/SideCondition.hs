@@ -25,6 +25,11 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Bifunctor as Bifunctor
+import Data.HashMap.Strict
+    ( HashMap
+    )
+import qualified Data.HashMap.Strict as HashMap
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,6 +50,10 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     , SubstitutionOrd
@@ -66,39 +75,37 @@ It is not added to the result.
 It is usually used to remove infeasible branches, but it may also be used for
 other purposes, say, to remove redundant parts of the result predicate.
 -}
-newtype SideCondition variable =
+data SideCondition variable =
     SideCondition
         { assumedTrue :: MultiAnd (Predicate variable)
+        , assumptions :: HashMap (TermLike variable) (TermLike variable)
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
-    deriving newtype (Semigroup, Monoid)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+    deriving anyclass (Debug, Diff)
 
-instance
-    (Debug variable, Diff variable, Ord variable, SubstitutionOrd variable)
-    => Diff (SideCondition variable)
-
-instance InternalVariable variable => SQL.Column (SideCondition variable) where
-    defineColumn = SQL.defineTextColumn
-    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+-- instance InternalVariable variable => SQL.Column (SideCondition variable) where
+--     defineColumn = SQL.defineTextColumn
+--     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _) =
+    isTop sideCondition@(SideCondition _ _) =
         isTop assumedTrue
       where
-        SideCondition {assumedTrue} = sideCondition
-    isBottom sideCondition@(SideCondition _) =
+        SideCondition { assumedTrue } = sideCondition
+    isBottom sideCondition@(SideCondition _ _) =
         isBottom assumedTrue
       where
-        SideCondition {assumedTrue} = sideCondition
+        SideCondition { assumedTrue } = sideCondition
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables (SideCondition multiAnd) =
-        freeVariables multiAnd
+    freeVariables sideCondition@(SideCondition _ _) =
+        freeVariables assumedTrue
+      where
+        SideCondition { assumedTrue } = sideCondition
 
 instance InternalVariable variable => Unparse (SideCondition variable) where
     unparse = unparse . toPredicate
@@ -106,12 +113,12 @@ instance InternalVariable variable => Unparse (SideCondition variable) where
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
-    from condition@(SideCondition _) = assumedTrue condition
+    from condition@(SideCondition _ _) = assumedTrue condition
     {-# INLINE from #-}
 
-instance From (MultiAnd (Predicate variable)) (SideCondition variable)
+instance InternalVariable variable => From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
-    from = SideCondition
+    from assumedTrue = SideCondition { assumedTrue, assumptions = mempty }
     {-# INLINE from #-}
 
 instance
@@ -140,11 +147,11 @@ instance InternalVariable variable =>
     from = Condition.fromPredicate . toPredicate
     {-# INLINE from #-}
 
-top :: SideCondition variable
-top = SideCondition MultiAnd.top
+top :: InternalVariable variable => SideCondition variable
+top = SideCondition { assumedTrue = MultiAnd.top, assumptions = mempty }
 
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
-topTODO :: SideCondition variable
+topTODO :: InternalVariable variable => SideCondition variable
 topTODO = top
 
 andCondition
@@ -152,11 +159,11 @@ andCondition
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
-andCondition
-    sideCondition
-    (from @(Condition _) @(SideCondition _) -> newSideCondition)
-  =
-    newSideCondition <> sideCondition
+andCondition = undefined
+--     sideCondition
+--     (from @(Condition _) @(SideCondition _) -> newSideCondition)
+--   =
+--     newSideCondition <> sideCondition
 
 assumeTrueCondition
     :: InternalVariable variable
@@ -174,7 +181,7 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _) =
+toPredicate condition@(SideCondition _ _) =
     MultiAnd.toPredicate assumedTrue
   where
     SideCondition { assumedTrue } = condition
@@ -183,18 +190,28 @@ fromPredicate
     :: InternalVariable variable
     => Predicate variable
     -> SideCondition variable
-fromPredicate = SideCondition . MultiAnd.fromPredicate
+fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
 
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _) =
-    MultiAnd.map (Predicate.mapVariables adj) assumedTrue
-    & SideCondition
+mapVariables adj condition@(SideCondition _ _) =
+    let assumedTrue' =
+            MultiAnd.map (Predicate.mapVariables adj) assumedTrue
+        assumptions' =
+            mapKeysAndValues (TermLike.mapVariables adj) assumptions
+     in SideCondition
+            { assumedTrue = assumedTrue'
+            , assumptions = assumptions'
+            }
   where
-    SideCondition { assumedTrue } = condition
+    SideCondition { assumedTrue, assumptions } = condition
+    mapKeysAndValues f hashMap =
+        HashMap.fromList
+        $ Bifunctor.bimap f f
+        <$> HashMap.toList hashMap
 
 fromCondition
     :: InternalVariable variable
