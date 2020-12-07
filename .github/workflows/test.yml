@@ -103,3 +103,6 @@ jobs:
 
       - name: Build project
         run: stack build --pedantic
+
+      - name: Run unit tests
+        run: stack test --pedantic
