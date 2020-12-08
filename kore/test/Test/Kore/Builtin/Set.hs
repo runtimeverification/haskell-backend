@@ -180,7 +180,7 @@ test_unit :: [TestTree]
 test_unit =
     [ unitSet `becomes` asInternal Set.empty
         $ "unit() === /* builtin */ unit()"
-    , concatSet (mkElemVar xSet) unitSet `becomes` internalOpaque (mkElemVar xSet)
+    , concatSet (mkElemVar xSet) unitSet `becomes` mkElemVar xSet
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
@@ -195,9 +195,6 @@ test_unit =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
             assertEqual "" (Pattern.fromTermLike expect) actual
-
-    internalOpaque set =
-        asInternalNormalized (emptyNormalizedSet `with` OpaqueSet set)
 
 test_getUnit :: TestTree
 test_getUnit =

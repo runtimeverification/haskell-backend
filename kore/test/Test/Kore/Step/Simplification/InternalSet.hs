@@ -15,13 +15,11 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate_
-    , predicateSort
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.InternalSet
@@ -72,9 +70,6 @@ test_simplify =
     becomes name origin (OrPattern.fromPatterns -> expects) =
         testCase name $ do
             let actuals = evaluate origin
-            for_ actuals $ \actual -> do
-                assertEqual "" Mock.setSort (termLikeSort $ term actual)
-                assertEqual "" Mock.setSort (predicateSort $ predicate actual)
             assertEqual "" expects actuals
 
 mkSet :: [child] -> [child] -> InternalSet (TermLike Concrete) child
