@@ -38,16 +38,22 @@ test_simplify =
     , becomes "single opaque elem" (mkMap [] [a])
         [Mock.a & Pattern.fromTermLike]
     , becomes "distributes \\or key" (mkMap [(a <> b, c)] [])
-        [ mkMap [(Mock.a, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
-        , mkMap [(Mock.b, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
+        [ mkMapAux [(Mock.a, Mock.c)] [] []
+            & mkBuiltinMap & Pattern.fromTermLike
+        , mkMapAux [(Mock.b, Mock.c)] [] []
+            & mkBuiltinMap & Pattern.fromTermLike
         ]
     , becomes "distributes \\or value" (mkMap [(a, b <> c)] [])
-        [ mkMap [(Mock.a, Mock.b)] [] & mkBuiltinMap & Pattern.fromTermLike
-        , mkMap [(Mock.a, Mock.c)] [] & mkBuiltinMap & Pattern.fromTermLike
+        [ mkMapAux [(Mock.a, Mock.b)] [] []
+            & mkBuiltinMap & Pattern.fromTermLike
+        , mkMapAux [(Mock.a, Mock.c)] [] []
+            & mkBuiltinMap & Pattern.fromTermLike
         ]
-    , becomes "distributes \\or compound" (mkMap [] [a <> b])
-        [ mkMap [] [Mock.a] & mkBuiltinMap & Pattern.fromTermLike
-        , mkMap [] [Mock.b] & mkBuiltinMap & Pattern.fromTermLike
+    , becomes "distributes \\or compound" (mkMap [(a, b)] [a <> b])
+        [ mkMapAux [(Mock.a, Mock.b)] [] [Mock.a]
+            & mkBuiltinMap & Pattern.fromTermLike
+        , mkMapAux [(Mock.a, Mock.b)] [] [Mock.b]
+            & mkBuiltinMap & Pattern.fromTermLike
         ]
     , becomes "collects \\and"
         (mkMap
@@ -59,7 +65,7 @@ test_simplify =
             & fmap OrPattern.fromPattern
         )
         [Pattern.withCondition
-            (mkMap [(Mock.a, Mock.b)] [] & mkBuiltinMap)
+            (mkMapAux [(Mock.a, Mock.b)] [] [] & mkBuiltinMap)
             (ceila <> ceilb)
         ]
     ]
@@ -87,7 +93,14 @@ test_simplify =
             (evaluate origin)
 
 mkMap :: [(child, child)] -> [child] -> InternalMap (TermLike Concrete) child
-mkMap elements opaque =
+mkMap = mkMapAux []
+
+mkMapAux
+    :: [(TermLike Concrete, child)]
+    -> [(child, child)]
+    -> [child]
+    -> InternalMap (TermLike Concrete) child
+mkMapAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.mapSort
         , builtinAcUnit = Mock.unitMapSymbol
@@ -95,7 +108,7 @@ mkMap elements opaque =
         , builtinAcConcat = Mock.concatMapSymbol
         , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = MapElement <$> elements
-            , concreteElements = Map.empty
+            , concreteElements = MapValue <$> Map.fromList concreteElements
             , opaque
             }
         }
