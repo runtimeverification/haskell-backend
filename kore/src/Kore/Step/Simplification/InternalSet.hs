@@ -10,18 +10,20 @@ module Kore.Step.Simplification.InternalSet
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import Data.Functor.Compose
 import Data.Generics.Product
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
-import Kore.Internal.Conditional
-    ( Conditional
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeFalsePredicate_
     )
@@ -38,27 +40,21 @@ simplify
     :: InternalVariable variable
     => InternalSet (TermLike Concrete) (OrPattern variable)
     -> OrPattern variable
-simplify internalSet =
-    MultiOr.observeAll $ do
-        child <- fmap mkBuiltinSet <$> simplifyInternalSet internalSet
-        return (markSimplified <$> child)
+simplify =
+    simplifyInternal
+    >>> fmap Pattern.syncSort
+    >>> (fmap . fmap) (markSimplified)
+    >>> MultiOr.observeAll
 
 simplifyInternal
-    :: (InternalVariable variable, Traversable t)
-    => (t (TermLike variable) -> Maybe (t (TermLike variable)))
-    -> t (OrPattern variable)
-    -> Logic (Conditional variable (t (TermLike variable)))
-simplifyInternal normalizer tOrPattern = do
-    conditional <- sequenceA <$> traverse Logic.scatter tOrPattern
-    let bottom = conditional `Conditional.andPredicate` makeFalsePredicate_
-        normalized = fromMaybe bottom $ traverse normalizer conditional
-    return normalized
-
-simplifyInternalSet
     :: InternalVariable variable
     => InternalSet (TermLike Concrete) (OrPattern variable)
-    -> Logic (Conditional variable (InternalSet (TermLike Concrete) (TermLike variable)))
-simplifyInternalSet = simplifyInternal normalizeInternalSet
+    -> Logic (Pattern variable)
+simplifyInternal internalSet = do
+    conditional <- getCompose $ traverse (Logic.scatter >>> Compose) internalSet
+    let bottom = conditional `Conditional.andPredicate` makeFalsePredicate_
+        normalized = fromMaybe bottom $ traverse normalizeInternalSet conditional
+    return (mkBuiltinSet <$> normalized)
 
 normalizeInternalSet
     :: Ord variable
