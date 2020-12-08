@@ -3,8 +3,8 @@ version:             0.35.0.0
 github:              "kframework/kore"
 license:             NCSA
 license-file:        LICENSE
-author:              "Virgil Serbanuta"
-maintainer:          "virgil.serbanuta@runtimeverification.com"
+author:              "Runtime Verification Inc"
+maintainer:          "thomas.tuegel@runtimeverification.com"
 copyright:           "2018-2020 Runtime Verification Inc"
 category:            Language
 

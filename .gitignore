@@ -1,7 +1,6 @@
 /.build/*
 /evm-semantics
 
-*.cache
 *.class
 *.iml
 *.ipr
