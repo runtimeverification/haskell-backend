@@ -1,5 +1,7 @@
 module Test.Kore.Step
-    ( test_stepStrategy
+    ( prop_alwaysRewrite
+    , prop_finalIsSimplify
+    , test_stepStrategy
     ) where
 
 import Prelude.Kore
@@ -18,6 +20,7 @@ import Data.Generics.Wrapped
 
 import Data.Limit
     ( Limit (..)
+    , takeWithin
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
@@ -297,6 +300,33 @@ test_stepStrategy =
                 return ()
             Right _ ->
                 assertFailure "Expected exception LimitExceeded"
+
+hasRewrite :: Strategy Prim -> Bool
+hasRewrite = \case
+    Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
+    Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
+    Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
+    Strategy.Apply Rewrite -> True
+    Strategy.Apply _ -> False
+    Strategy.Stuck -> False
+    Strategy.Continue -> False
+
+prop_alwaysRewrite :: Natural -> Bool
+prop_alwaysRewrite depthLimit =
+    all hasRewrite $ takeWithin (Limit depthLimit) (toList executionStrategy)
+
+getPrims :: Strategy Prim -> [Prim]
+getPrims = \case
+    Strategy.Seq s1 s2 -> getPrims s1 ++ getPrims s2
+    Strategy.Apply p -> [p]
+    Strategy.Continue -> []
+    _ -> [] -- ?
+
+prop_finalIsSimplify :: Natural -> Bool
+prop_finalIsSimplify depthLimit
+    | depthLimit == 0 = True
+    | otherwise       =
+        last (getPrims $ last $ takeWithin (Limit depthLimit) (toList executionStrategy)) == Simplify
 
 simpleRewrite
     :: TermLike VariableName
