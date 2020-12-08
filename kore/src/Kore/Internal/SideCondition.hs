@@ -132,7 +132,8 @@ instance From (SideCondition variable) (MultiAnd (Predicate variable))
     from condition@(SideCondition _ _) = assumedTrue condition
     {-# INLINE from #-}
 
-instance InternalVariable variable => From (MultiAnd (Predicate variable)) (SideCondition variable)
+instance InternalVariable variable =>
+    From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
     from multiAnd =
         let (assumedTrue, replacements) =
@@ -317,9 +318,11 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        return $
-            (unsafeMakePredicate assumptions replaceIn)
-            (applyAssumptionsWorker assumptions replaceIn)
+        return
+            $ unsafeMakePredicate
+                assumptions
+                replaceIn
+                (applyAssumptionsWorker assumptions replaceIn)
 
     unsafeMakePredicate replacements original result =
         case Predicate.makePredicate result of
