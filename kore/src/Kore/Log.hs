@@ -119,18 +119,19 @@ koreLogTransformer
     -> LogAction m ActualEntry
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
-        ( warningsToErrors warningSwitch
-        )
+        ( toErrors warningSwitch )
         baseLogger
   where
-    KoreLogOptions { warningSwitch } = koreLogOptions
+    KoreLogOptions { turnedIntoErrors, warningSwitch } = koreLogOptions
 
-    warningsToErrors :: WarningSwitch -> ActualEntry -> ActualEntry
-    warningsToErrors AsError entry@ActualEntry { actualEntry }
+    toErrors :: WarningSwitch -> ActualEntry -> ActualEntry
+    toErrors AsError ActualEntry { actualEntry }
         | entrySeverity actualEntry == Warning =
             error . show . longDoc $ actualEntry
+    toErrors _ entry@ActualEntry { actualEntry }
+        | typeOfSomeEntry actualEntry `elem` turnedIntoErrors =
+            error . show . longDoc $ actualEntry
         | otherwise = entry
-    warningsToErrors AsWarning entry = entry
 
 koreLogFilters
     :: Applicative m

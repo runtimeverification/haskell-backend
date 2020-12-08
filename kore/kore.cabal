@@ -10,8 +10,8 @@ description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
 bug-reports:    https://github.com/kframework/kore/issues
-author:         Virgil Serbanuta
-maintainer:     virgil.serbanuta@runtimeverification.com
+author:         Runtime Verification Inc
+maintainer:     thomas.tuegel@runtimeverification.com
 copyright:      2018-2020 Runtime Verification Inc
 license:        NCSA
 license-file:   LICENSE
@@ -222,6 +222,7 @@ library
       Kore.ModelChecker.Bounded
       Kore.ModelChecker.Simplification
       Kore.ModelChecker.Step
+      Kore.Options
       Kore.Parser
       Kore.Parser.CString
       Kore.Parser.Lexer
@@ -954,6 +955,7 @@ test-suite kore-test
       Test.Kore.Log.ErrorBottomTotalFunction
       Test.Kore.Log.WarnFunctionWithoutEvaluators
       Test.Kore.Log.WarnSymbolSMTRepresentation
+      Test.Kore.Options
       Test.Kore.Parser
       Test.Kore.Parser.Lexer
       Test.Kore.Parser.Parser
