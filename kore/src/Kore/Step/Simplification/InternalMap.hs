@@ -23,8 +23,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Logic
 
-{-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
-an or containing a term made of that value.
+{-| Simplify an 'InternalMap' pattern.
 -}
 simplify
     :: InternalVariable variable
@@ -32,36 +31,24 @@ simplify
     -> OrPattern variable
 simplify =
     traverse (Logic.scatter >>> Compose)
-    >>> fmap (normalizeInternalMap >>> normalizedMapResultToTerm)
+    >>> fmap (normalizeInternalMap >>> markSimplified)
     >>> getCompose
-    >>> fmap (Pattern.syncSort >>> fmap markSimplified)
+    >>> fmap Pattern.syncSort
     >>> MultiOr.observeAll
 
-data NormalizedMapResult variable =
-    NormalizedMapResult (InternalMap (TermLike Concrete) (TermLike variable))
-    | SingleOpaqueElemResult (TermLike variable)
-    | BottomResult
-
-normalizedMapResultToTerm
-    :: InternalVariable variable
-    => NormalizedMapResult variable
-    -> TermLike variable
-normalizedMapResultToTerm (NormalizedMapResult map') =
-    mkBuiltinMap map'
-normalizedMapResultToTerm (SingleOpaqueElemResult opaqueElem) =
-    opaqueElem
-normalizedMapResultToTerm BottomResult =
-    mkBottom_
-
 normalizeInternalMap
-    :: Ord variable
+    :: InternalVariable variable
     => InternalMap (TermLike Concrete) (TermLike variable)
-    -> NormalizedMapResult variable
+    -> TermLike variable
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedMap ->
-            (asSingleOpaqueElem . getNormalizedAc) normalizedMap
-            & maybe (NormalizedMapResult normalizedMap) SingleOpaqueElemResult
-        _ -> BottomResult
+            -- If the InternalMap consists of a single compound, remove the
+            -- wrapper around that term.
+            getSingleOpaque normalizedMap
+            -- Otherwise, inject the InternalMap into TermLike.
+            & fromMaybe (mkBuiltinMap normalizedMap)
+        _ -> mkBottom_
   where
+    getSingleOpaque = asSingleOpaqueElem . getNormalizedAc
     getNormalizedAc = getNormalizedMap . builtinAcChild
