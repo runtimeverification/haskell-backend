@@ -100,7 +100,7 @@ translateUninterpreted
        )
     => SExpr  -- ^ type name
     -> TranslateItem variable -- ^ uninterpreted pattern
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translateUninterpreted _ (QuantifiedVariable _) =
     empty
 translateUninterpreted t (UninterpretedTerm pat)

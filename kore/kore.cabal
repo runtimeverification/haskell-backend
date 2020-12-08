@@ -222,6 +222,7 @@ library
       Kore.ModelChecker.Bounded
       Kore.ModelChecker.Simplification
       Kore.ModelChecker.Step
+      Kore.Options
       Kore.Parser
       Kore.Parser.CString
       Kore.Parser.Lexer
@@ -954,6 +955,7 @@ test-suite kore-test
       Test.Kore.Log.ErrorBottomTotalFunction
       Test.Kore.Log.WarnFunctionWithoutEvaluators
       Test.Kore.Log.WarnSymbolSMTRepresentation
+      Test.Kore.Options
       Test.Kore.Parser
       Test.Kore.Parser.Lexer
       Test.Kore.Parser.Parser
