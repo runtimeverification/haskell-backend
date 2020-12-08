@@ -49,14 +49,6 @@ in addition to the requirements and recommendations below.
 
 ### Required dependencies
 
-For packaging, we require:
-
-- [Nix], a tool for reproducible builds and deployments.
-
-Refer to instructions at [kore.cachix.org] to set up the binary cache.
-Refer to the section [below](#developing-with-nix) for more instructions,
-and to learn why this is required.
-
 For integration testing, we require:
 
 - GNU [make]
@@ -107,6 +99,8 @@ When the `.cabal` package description file changes, run:
 # Requires Nix to be installed.
 ./nix/rematerialize.sh
 ```
+
+This script is also run by an automatic workflow.
 
 
 [git]: https://git-scm.com/
