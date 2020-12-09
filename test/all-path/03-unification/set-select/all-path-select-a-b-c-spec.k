@@ -9,7 +9,7 @@ module ALL-PATH-SELECT-A-B-C-SPEC
 
   // This should be provable as an one-path claim, but should not be provable as an
   //all-path claim.
-  rule <k> select => b #Or c </k>
+  claim <k> select => b #Or c </k>
        <state> SetItem(a) SetItem(b) SetItem(c) </state> [all-path]
 
 endmodule

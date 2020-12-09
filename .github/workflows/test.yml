@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
 jobs:
-  tests:
+  test-nix:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.3.4
@@ -16,3 +16,28 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: nix-build -A kore -A project.kore.checks
     - run: nix-shell --run "echo OK"
+
+  test-cabal:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.3.4
+      with:
+        submodules: recursive
+
+    - uses: actions/setup-haskell@v1.1.4
+      id: setup-haskell-cabal
+      with:
+        ghc-version: "8.10.1"
+        cabal-version: "3.2"
+
+    - name: Cache Cabal store
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+        key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('cabal.project.freeze') }}
+
+    - name: Build project
+      run: cabal v2-build --enable-tests --enable-benchmarks all
+
+    - name: Configure with profiling
+      run: cabal v2-configure --enable-profiling -f-threaded

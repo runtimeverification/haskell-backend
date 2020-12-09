@@ -317,13 +317,13 @@ instance
             <$> Substitution.unwrap substitution
 
 instance
-    ( InternalVariable variable, Typeable variable
+    ( InternalVariable variable
     , SQL.Column term, Typeable term
     )
     => SQL.Table (Conditional variable term)
 
 instance
-    ( InternalVariable variable, Typeable variable
+    ( InternalVariable variable
     , SQL.Column term, Typeable term
     )
     => SQL.Column (Conditional variable term)

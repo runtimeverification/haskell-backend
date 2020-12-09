@@ -8,9 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Applicative
-    ( ZipList (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad.Morph
     ( MFunctor (..)
@@ -28,11 +25,8 @@ import Data.Generics.Product
 
 import Kore.Internal.Condition
     ( Condition
-    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -45,7 +39,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( AdjSomeVariableName
     , InternalVariable
@@ -460,13 +453,7 @@ test_simplifyClaimRule =
         -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
             actual <- run (simplifyRuleLhs input) & fmap toList
-            -- Equivalent under associativity of \\and
-            let checkEquivalence
-                    (fmap getOnePathClaim -> claims1)
-                    (fmap getOnePathClaim -> claims2)
-                  =
-                    and (areEquivalent <$> ZipList claims1 <*> ZipList claims2)
-            assertEqual "" True (checkEquivalence expect actual)
+            assertEqual "" expect actual
       where
         run =
             runSimplifierSMT env
@@ -513,12 +500,7 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
                 & liftPredicate
                 & Condition.fromPredicate
                 & SideCondition.fromCondition
-            -- Equivalent under associativity of \\and
-            checkEquivalence cond1 cond2 =
-                (==)
-                    (cond1 & SideCondition.toPredicate & MultiAnd.fromPredicate)
-                    (cond2 & SideCondition.toPredicate & MultiAnd.fromPredicate)
-            satisfied = checkEquivalence sideCondition expectSideCondition
+            satisfied = sideCondition == expectSideCondition
         return
             . OrPattern.fromTermLike
             . (if satisfied then applyReplacements replacements else id)
@@ -562,46 +544,3 @@ instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
             => AdjSomeVariableName (RewritingVariableName -> variable)
         liftRewritingVariable =
             pure (.) <*> pure fromVariableName <*> getRewritingVariable
-
--- | The terms of the implication are equivalent in respect to
--- the associativity, commutativity, and idempotence of \\and.
---
--- Warning: this should only be used when the distinction between the
--- predicate and substitution of a pattern is not of importance.
-areEquivalent
-    :: ClaimPattern
-    -> ClaimPattern
-    -> Bool
-areEquivalent
-    ClaimPattern
-        { left = left1
-        , right = right1
-        , existentials = existentials1
-        , attributes = attributes1
-        }
-    ClaimPattern
-        { left = left2
-        , right = right2
-        , existentials = existentials2
-        , attributes = attributes2
-        }
-  =
-    let leftsAreEquivalent =
-            toConjunctionOfTerms left1
-            == toConjunctionOfTerms left2
-        rightsAreEquivalent =
-            MultiOr.map toConjunctionOfTerms right1
-            == MultiOr.map toConjunctionOfTerms right2
-     in leftsAreEquivalent
-        && rightsAreEquivalent
-        && existentials1 == existentials2
-        && attributes1 == attributes2
-  where
-    toConjunctionOfTerms Conditional { term, predicate, substitution } =
-        MultiAnd.fromTermLike term
-        <> MultiAnd.fromTermLike (Predicate.fromPredicate_ predicate)
-        <> MultiAnd.fromTermLike
-            ( Predicate.fromPredicate_
-            . Substitution.toPredicate
-            $ substitution
-            )

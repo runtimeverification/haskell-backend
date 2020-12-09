@@ -10,13 +10,13 @@ module POSITIVE-REQUIRES-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> begin => end </k>
     <n> N </n>
     requires N >Int 0
 
   // applies only if `positive` is defined
-  rule
+  claim
     <k> next _ => end </k>
     <n> N </n>
     requires positive(N)
