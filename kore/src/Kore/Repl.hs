@@ -45,6 +45,7 @@ import Data.List
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
 import Kore.Attribute.RuleIndex
     ( RuleIndex (..)
     )
@@ -176,7 +177,7 @@ runRepl
     repl0 = do
         str <- prompt
         let command =
-                fromMaybe ShowUsage $ parseMaybe commandParser str
+                fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 

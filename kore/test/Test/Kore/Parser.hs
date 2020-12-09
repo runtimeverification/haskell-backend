@@ -12,6 +12,11 @@ module Test.Kore.Parser
 
 import Prelude.Kore
 
+import Data.Text
+    ( Text
+    , unpack
+    )
+
 import Test.Tasty
     ( TestTree
     , testGroup
@@ -35,38 +40,38 @@ import Text.Megaparsec
 import Kore.Parser.ParserUtils
 
 data SuccessfulTest a = SuccessfulTest
-    { successInput    :: String
+    { successInput    :: Text
     , successExpected :: a
     }
 
 data FailureTest = FailureTest
-    { failureInput    :: String
+    { failureInput    :: Text
     , failureExpected :: String
     }
 
 data ParserTest a
     = Success (SuccessfulTest a)
     | Failure FailureTest
-    | Skip [String]
-    | FailureWithoutMessage [String]
+    | Skip [Text]
+    | FailureWithoutMessage [Text]
 
-success :: String -> a -> ParserTest a
+success :: Text -> a -> ParserTest a
 success input expected = Success SuccessfulTest
     { successInput = input
     , successExpected = expected
     }
 
-parsesTo_ :: String -> a -> ParserTest a
+parsesTo_ :: Text -> a -> ParserTest a
 parsesTo_ = success
 
-fails :: String -> () -> ParserTest a
+fails :: Text -> () -> ParserTest a
 fails input _ = FailureWithoutMessage [input]
 
 parseTree
     :: HasCallStack
     => (Show a, Eq a)
     => ShowErrorComponent e
-    => Parsec e String a
+    => Parsec e Text a
     -> [ParserTest a]
     -> [TestTree]
 parseTree parser = map (parseTest parser)
@@ -75,16 +80,16 @@ parseTest
     :: HasCallStack
     => (Show a, Eq a)
     => ShowErrorComponent e
-    => Parsec e String a
+    => Parsec e Text a
     -> ParserTest a
     -> TestTree
 parseTest parser (Success test) =
     testCase
-        ("Parsing '" ++ successInput test ++ "'")
+        ("Parsing '" ++ unpack (successInput test) ++ "'")
         (parseSuccess (successExpected test) parser (successInput test))
 parseTest parser (Failure test) =
     testCase
-        ("Failing to parse '" ++ failureInput test ++ "'")
+        ("Failing to parse '" ++ unpack (failureInput test) ++ "'")
         (parseFailureWithMessage
             (failureExpected test) parser (failureInput test))
 parseTest parser (FailureWithoutMessage tests) =
@@ -92,7 +97,7 @@ parseTest parser (FailureWithoutMessage tests) =
     (map
         (\input ->
             testCase
-                ("Failing to parse '" ++ input ++ "'")
+                ("Failing to parse '" ++ unpack input ++ "'")
                 (parseFailureWithoutMessage parser input)
         )
         tests
@@ -117,18 +122,18 @@ parseSkipTest parser (Skip tests) =
     (map
         (\input ->
             testCase
-                ("Skipping '" ++ input ++ "'")
+                ("Skipping '" ++ unpack input ++ "'")
                 (parseSkip parser input)
         )
         tests
     )
 parseSkipTest _ (Success test) =
     testCase
-        ("Parsing success test '" ++ successInput test ++ "'")
+        ("Parsing success test '" ++ unpack (successInput test) ++ "'")
         (assertBool "Not Expecting Success Tests here" False)
 parseSkipTest parser test = parseTest parser test
 
-parse' :: ShowErrorComponent e => Parsec e String a -> String -> Either String a
+parse' :: ShowErrorComponent e => Parsec e Text a -> Text -> Either String a
 parse' parser input =
     parse (parser <* eof) "<test-string>" input
     & Bifunctor.first errorBundlePretty
@@ -137,16 +142,16 @@ parseSuccess
     :: HasCallStack
     => (Show a, Eq a)
     => ShowErrorComponent e
-    => a -> Parsec e String a -> String -> Assertion
+    => a -> Parsec e Text a -> Text -> Assertion
 parseSuccess expected parser input =
     assertEqual "" (Right expected) (parse' parser input)
 
-parseSkip :: ShowErrorComponent e => Parsec e String () -> String -> Assertion
+parseSkip :: ShowErrorComponent e => Parsec e Text () -> Text -> Assertion
 parseSkip parser input =
     assertEqual "" (Right ()) (parse' parser input)
 
 parseFailureWithoutMessage
-    :: ShowErrorComponent e => Parsec e String a -> String -> Assertion
+    :: ShowErrorComponent e => Parsec e Text a -> Text -> Assertion
 parseFailureWithoutMessage parser input =
     assertBool "" (isLeft (parse' parser input))
 
@@ -154,6 +159,6 @@ parseFailureWithMessage
     :: HasCallStack
     => (Show a, Eq a)
     => ShowErrorComponent e
-    => String -> Parsec e String a -> String -> Assertion
+    => String -> Parsec e Text a -> Text -> Assertion
 parseFailureWithMessage expected parser input =
     assertEqual "" (Left expected) (parse' parser input)

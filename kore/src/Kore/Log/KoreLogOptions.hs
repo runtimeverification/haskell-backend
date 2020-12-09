@@ -210,17 +210,17 @@ parseEntryTypes =
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
 parseCommaSeparatedEntries =
-    Options.maybeReader $ Parser.parseMaybe parseEntryTypes'
+    Options.maybeReader $ Parser.parseMaybe parseEntryTypes' . Text.pack
   where
-    parseEntryTypes' :: Parser.Parsec String String EntryTypes
+    parseEntryTypes' :: Parser.Parsec String Text EntryTypes
     parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
 
     comma = void (Parser.char ',')
 
-    parseSomeTypeRep :: Parser.Parsec String String SomeTypeRep
+    parseSomeTypeRep :: Parser.Parsec String Text SomeTypeRep
     parseSomeTypeRep =
         Parser.takeWhile1P (Just "SomeTypeRep") (flip notElem [',', ' '])
-        >>= parseEntryType . Text.pack
+        >>= parseEntryType
 
 parseSeverity :: Parser Severity
 parseSeverity =
