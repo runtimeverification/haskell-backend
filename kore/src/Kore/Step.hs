@@ -118,6 +118,11 @@ executionStrategy =
             , Simplify
             ]
 
+{- | The sequence of transitions under the specified depth limit.
+
+See also: 'executionStrategy'
+
+ -}
 limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
 limitedExecutionStrategy depthLimit =
     Limit.takeWithin depthLimit (toList executionStrategy)
