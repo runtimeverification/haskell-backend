@@ -10,8 +10,8 @@ description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
 bug-reports:    https://github.com/kframework/kore/issues
-author:         Virgil Serbanuta
-maintainer:     virgil.serbanuta@runtimeverification.com
+author:         Runtime Verification Inc
+maintainer:     thomas.tuegel@runtimeverification.com
 copyright:      2018-2020 Runtime Verification Inc
 license:        NCSA
 license-file:   LICENSE
