@@ -1,12 +1,18 @@
 module Test.Kore.Step
-    ( prop_alwaysRewrite
-    , prop_finalIsSimplify
-    , test_stepStrategy
+    ( test_stepStrategy
+    , test_executionStrategy
     ) where
 
 import Prelude.Kore
 
+import Hedgehog
+    ( Gen
+    )
+import qualified Hedgehog
+import qualified Hedgehog.Gen
+import qualified Hedgehog.Range
 import Test.Tasty
+import Test.Tasty.Hedgehog
 
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
@@ -20,7 +26,6 @@ import Data.Generics.Wrapped
 
 import Data.Limit
     ( Limit (..)
-    , takeWithin
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
@@ -301,36 +306,46 @@ test_stepStrategy =
             Right _ ->
                 assertFailure "Expected exception LimitExceeded"
 
-hasRewrite :: Strategy Prim -> Bool
-hasRewrite = \case
-    Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
-    Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
-    Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
-    Strategy.Apply p -> p == Rewrite
-    Strategy.Stuck -> False
-    Strategy.Continue -> False
+test_executionStrategy :: [TestTree]
+test_executionStrategy =
+    [ testProperty "every step contains Rewrite" $ Hedgehog.property $ do
+        strategies <- Hedgehog.forAll genStrategies
+        for_ strategies $ \strategy -> do
+            Hedgehog.annotateShow strategy
+            Hedgehog.assert (hasRewrite strategy)
 
-prop_alwaysRewrite :: Natural -> Bool
-prop_alwaysRewrite depthLimit =
-    all hasRewrite $ takeWithin (Limit depthLimit) (toList executionStrategy)
+    , testProperty "Simplify is the last sub-step" $ Hedgehog.property $ do
+        strategies <- Hedgehog.forAll genStrategies
+        let strategy = last strategies
+        Hedgehog.annotateShow strategy
+        Hedgehog.assert (isLastSimplify strategy)
+    ]
+  where
+    genStrategies :: Gen [Strategy Prim]
+    genStrategies = do
+        let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
+        depthLimit <- Limit <$> range
+        pure (limitedExecutionStrategy depthLimit)
 
-isLastSimplify :: Strategy Prim -> Bool
-isLastSimplify = \case
-    Strategy.Seq s Strategy.Continue -> isLastSimplify s
-    Strategy.Seq s Strategy.Stuck -> isLastSimplify s
-    Strategy.Seq _ s -> isLastSimplify s
-    Strategy.And s1 s2 -> isLastSimplify s1 && isLastSimplify s2
-    Strategy.Or s1 s2 -> isLastSimplify s1 && isLastSimplify s2
-    Strategy.Apply p -> p == Simplify
-    Strategy.Stuck -> False
-    Strategy.Continue -> False
+    hasRewrite :: Strategy Prim -> Bool
+    hasRewrite = \case
+        Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
+        Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
+        Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
+        Strategy.Apply p -> p == Rewrite
+        Strategy.Stuck -> False
+        Strategy.Continue -> False
 
-prop_finalIsSimplify :: Natural -> Bool
-prop_finalIsSimplify depthLimit
-    | depthLimit == 0 = True
-    | otherwise       =
-        isLastSimplify $ last
-            $ takeWithin (Limit depthLimit) (toList executionStrategy)
+    isLastSimplify :: Strategy Prim -> Bool
+    isLastSimplify = \case
+        Strategy.Seq s Strategy.Continue -> isLastSimplify s
+        Strategy.Seq s Strategy.Stuck -> isLastSimplify s
+        Strategy.Seq _ s -> isLastSimplify s
+        Strategy.And s1 s2 -> isLastSimplify s1 && isLastSimplify s2
+        Strategy.Or s1 s2 -> isLastSimplify s1 && isLastSimplify s2
+        Strategy.Apply p -> p == Simplify
+        Strategy.Stuck -> False
+        Strategy.Continue -> False
 
 simpleRewrite
     :: TermLike VariableName
