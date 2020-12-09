@@ -306,8 +306,7 @@ hasRewrite = \case
     Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
     Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
     Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
-    Strategy.Apply Rewrite -> True
-    Strategy.Apply _ -> False
+    Strategy.Apply p -> p == Rewrite
     Strategy.Stuck -> False
     Strategy.Continue -> False
 
@@ -315,18 +314,23 @@ prop_alwaysRewrite :: Natural -> Bool
 prop_alwaysRewrite depthLimit =
     all hasRewrite $ takeWithin (Limit depthLimit) (toList executionStrategy)
 
-getPrims :: Strategy Prim -> [Prim]
-getPrims = \case
-    Strategy.Seq s1 s2 -> getPrims s1 ++ getPrims s2
-    Strategy.Apply p -> [p]
-    Strategy.Continue -> []
-    _ -> [] -- ?
+isLastSimplify :: Strategy Prim -> Bool
+isLastSimplify = \case
+    Strategy.Seq s Strategy.Continue -> isLastSimplify s
+    Strategy.Seq s Strategy.Stuck -> isLastSimplify s
+    Strategy.Seq _ s -> isLastSimplify s
+    Strategy.And s1 s2 -> isLastSimplify s1 && isLastSimplify s2
+    Strategy.Or s1 s2 -> isLastSimplify s1 && isLastSimplify s2
+    Strategy.Apply p -> p == Simplify
+    Strategy.Stuck -> False
+    Strategy.Continue -> False
 
 prop_finalIsSimplify :: Natural -> Bool
 prop_finalIsSimplify depthLimit
     | depthLimit == 0 = True
     | otherwise       =
-        last (getPrims $ last $ takeWithin (Limit depthLimit) (toList executionStrategy)) == Simplify
+        isLastSimplify $ last
+            $ takeWithin (Limit depthLimit) (toList executionStrategy)
 
 simpleRewrite
     :: TermLike VariableName

@@ -102,19 +102,21 @@ retractRemaining _ = Nothing
 -}
 executionStrategy :: Stream (Strategy Prim)
 executionStrategy =
-    (Strategy.sequence . fmap Strategy.apply)
-        [ Begin
-        , Simplify
-        , Rewrite
-        , Simplify
-        ]
-     Stream.:> (
-    (Strategy.sequence . fmap Strategy.apply)
-        [ Begin
-        , Rewrite
-        , Simplify
-        ]
-    & Stream.iterate id)
+    step1 Stream.:> Stream.iterate id stepN
+  where
+    step1 =
+        (Strategy.sequence . fmap Strategy.apply)
+            [ Begin
+            , Simplify
+            , Rewrite
+            , Simplify
+            ]
+    stepN =
+        (Strategy.sequence . fmap Strategy.apply)
+            [ Begin
+            , Rewrite
+            , Simplify
+            ]
 
 limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
 limitedExecutionStrategy depthLimit =
@@ -126,7 +128,7 @@ data Prim
     = Begin
     | Simplify
     | Rewrite
-    deriving (Eq,Show)
+    deriving (Eq, Show)
 
 {- The two modes of symbolic execution. Each mode determines the way
     rewrite rules are applied during a rewrite step.
