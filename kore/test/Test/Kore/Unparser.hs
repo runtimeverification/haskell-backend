@@ -313,7 +313,7 @@ roundtrip
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
-        parse' parser (unparseToString generated) === Right generated
+        parse' parser (unparseToText generated) === Right generated
 
 unparseParseTest
     :: (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
@@ -322,7 +322,7 @@ unparseParseTest parser astInput =
         "Parsing + unparsing."
         (assertEqual ""
             (Right astInput)
-            (parse' parser (unparseToString astInput)))
+            (parse' parser (unparseToText astInput)))
 
 unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree
 unparseTest astInput expected =
