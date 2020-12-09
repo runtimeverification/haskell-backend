@@ -225,9 +225,10 @@ genericIdRawParser
     -> IdKeywordParsing
     -> Parser Text
 genericIdRawParser isFirstChar isBodyChar idKeywordParsing = do
-    (genericId, _) <- Parser.match
-        $ (Parser.satisfy isFirstChar <?> "first identifier character")
-        >> Parser.takeWhileP (Just "identifier character") isBodyChar
+    (genericId, _) <- Parser.match $ do
+        _ <- Parser.satisfy isFirstChar <?> "first identifier character"
+        _ <- Parser.takeWhileP (Just "identifier character") isBodyChar
+        pure ()
     let keywordsForbidden = idKeywordParsing == KeywordsForbidden
         isKeyword = HashSet.member genericId koreKeywordsSet
     when (keywordsForbidden && isKeyword)
@@ -361,12 +362,9 @@ parseSymbolId :: Parser Id
 parseSymbolId = parseIntoId symbolIdRawParser <?> "symbol or alias identifier"
 
 symbolIdRawParser :: Parser Text
-symbolIdRawParser = do
-    c <- peekChar'
-    if c == '\\'
-    then fst <$> Parser.match
-        (Parser.char '\\' >> parseIdRaw KeywordsPermitted)
-    else parseIdRaw KeywordsForbidden
+symbolIdRawParser = fmap fst $ Parser.match $
+    (Parser.char '\\' >> parseIdRaw KeywordsPermitted)
+    <|> parseIdRaw KeywordsForbidden
 
 {- | Parses a C-style string literal, unescaping it.
 
