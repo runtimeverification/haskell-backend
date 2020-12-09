@@ -101,13 +101,13 @@
                                             /* Fl Fn D Sfa */
                                             VarL:SortInternalList{},
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         ),
                                         /* Fl Fn D Sfa */
                                         Lbl'UndsPlus'Int'Unds'{}(
                                             /* Fl Fn D Sfa */ VarI:SortInt{},
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("1")
+                                            \dv{SortInt{}}("1")
                                         )
                                     )
                                 )
@@ -167,12 +167,12 @@
                     /* Fl Fn D Sfa */
                     Lblsize'LParUndsCommUndsRParUnds'MICHELSON-COMMON'Unds'Int'Unds'InternalList'Unds'Int{}(
                         /* Fl Fn D Sfa */ VarL:SortInternalList{},
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa */
                     Lbl'UndsPlus'Int'Unds'{}(
                         /* Fl Fn D Sfa */ VarI:SortInt{},
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                     )
                 ),
                 /* Fl Fn D Sfa */
@@ -180,7 +180,7 @@
                     /* Fl Fn D Sfa */
                     Lblsize'LParUndsCommUndsRParUnds'MICHELSON-COMMON'Unds'Int'Unds'InternalList'Unds'Int{}(
                         /* Fl Fn D Sfa */ VarL:SortInternalList{},
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                     ),
                     /* Fl Fn D Sfa */ VarI:SortInt{}
                 )
