@@ -1507,6 +1507,9 @@ sortAttributesMapping =
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
         )
+    ,   ( stringSort
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
+        )
 
     -- Also add attributes for the implicitly defined sorts.
     ,   ( stringMetaSort
