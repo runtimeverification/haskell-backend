@@ -14,6 +14,30 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.36.0.0] - 2020-12-09
+
+### Added
+
+- Added option `--error-entries` to turn any log entry into an error. (#2285)
+
+### Changed
+
+- `krun` always prints fully-simplified states. (#2299)
+- `kore-exec` sends terms to the SMT solver if it can infer dynamically that
+  they are defined at runtime. (#2287)
+- The `kore-parser` options `--no-print-definition` and `--no-print-pattern` are
+  now the default. (#2264)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- The performance of the parser is significantly improved. (#2189)
+- `kore-parser` prints a helpful error message if the `--module` option is
+  omitted where it is required. (#2254)
+
 ## [0.35.0.0] - 2020-11-30
 
 ### Added
