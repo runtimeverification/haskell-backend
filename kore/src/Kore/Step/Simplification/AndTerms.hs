@@ -41,7 +41,6 @@ import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
 import Kore.Internal.Condition as Condition
-import Kore.Internal.InternalInt
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -219,6 +218,12 @@ andEqualsFunctions
 andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
+    , (BothT,   \_ _ _ -> Builtin.Int.unifyInt)
+    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
+    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
+    , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
     , (BothT,   \_ _ _ -> equalAndEquals)
     , (BothT,   \_ _ _ -> bytesDifferent)
     , (EqualsT, \p _ _ -> bottomTermEquals p)
@@ -230,12 +235,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals)
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads)
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s)
-    , (BothT,   \_ _ _ -> unifyInternalInt)
-    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
-    , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
     , (EqualsT, \_ _ s -> Builtin.String.unifyStringEq s notSimplifier)
     , (EqualsT, \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
@@ -569,23 +568,6 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             explainAndReturnBottom (fromString message) firstTerm secondTerm
         Left Overloading.NotApplicable -> empty
 
-unifyInternalInt
-    :: forall unifier variable
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-unifyInternalInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
-    assert (on (==) internalIntSort int1 int2) $ lift worker
-  where
-    worker :: unifier (Pattern variable)
-    worker
-      | on (==) internalIntValue int1 int2 =
-        return $ from @_ @(Pattern variable) term1
-      | otherwise = explainAndReturnBottom "distinct integers" term1 term2
-unifyInternalInt _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
@@ -660,18 +642,6 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ _)
     second@(DV_ _ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(InternalInt_ _)
-    second@(InternalInt_ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(BuiltinBool_ _)
-    second@(BuiltinBool_ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(BuiltinString_ _)
-    second@(BuiltinString_ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 

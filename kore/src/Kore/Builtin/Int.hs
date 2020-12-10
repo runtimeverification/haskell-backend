@@ -30,6 +30,7 @@ module Kore.Builtin.Int
     , asPartialPattern
     , parse
     , unifyIntEq
+    , unifyInt
       -- * keys
     , randKey
     , srandKey
@@ -65,8 +66,7 @@ module Kore.Builtin.Int
     , emod
     , pow
     , powmod
-    , log2
-    ) where
+    , log2 ) where
 
 import Prelude.Kore
 
@@ -401,6 +401,26 @@ matchIntEqual =
             hook2 <- (getHook . symbolHook) symbol
             Monad.guard (hook2 == eqKey)
         & isJust
+
+{- | Unification of Int values.
+ -}
+unifyInt
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
+    assert (on (==) internalIntSort int1 int2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | on (==) internalIntValue int1 int2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+unifyInt _ _ = empty
 
 {- | Unification of the @INT.eq@ symbol.
 
