@@ -26,6 +26,7 @@ module Kore.Builtin.String
     , asTermLike
     , asPartialPattern
     , parse
+    , unifyString
     , unifyStringEq
       -- * keys
     , ltKey
@@ -407,6 +408,26 @@ matchStringEqual =
             hook2 <- (getHook . symbolHook) symbol
             Monad.guard (hook2 == eqKey)
         & isJust
+
+{- | Unification of String values.
+ -}
+unifyString
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyString term1@(BuiltinString_ int1) term2@(BuiltinString_ int2) =
+    assert (on (==) internalStringSort int1 int2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | on (==) internalStringValue int1 int2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+unifyString _ _ = empty
 
 {- | Unification of the @STRING.eq@ symbol
 
