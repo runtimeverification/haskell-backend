@@ -6,7 +6,8 @@ License     : NCSA
 
 module Kore.BugReport
     ( BugReport (..)
-    , parseBugReport
+    , BugReportOption (..)
+    , parseBugReportOption
     , withBugReport
     -- * Re-exports
     , ExitCode (..)
@@ -52,18 +53,31 @@ import Kore.Log.KoreLogOptions
     ( ExeName (..)
     )
 
-newtype BugReport = BugReport { toReport :: Maybe FilePath }
+newtype BugReport = BugReport { toReport :: FilePath }
     deriving Show
 
-parseBugReport :: Parser BugReport
-parseBugReport =
-    BugReport
-        <$> optional
-            ( strOption
-                ( metavar "REPORT_FILE"
-                <> long "bug-report"
-                <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
-                )
+data BugReportOption
+    = BugReportEnable BugReport -- Always creates a bug report
+    | BugReportDisable -- Never creates a bug report
+    | BugReportDefault -- Creates a bug report only after a crash
+
+parseBugReportOption :: Parser BugReportOption
+parseBugReportOption =
+    parseBugReportEnable <|> parseBugReportDisable
+  where
+    parseBugReportEnable =
+        BugReportEnable . BugReport
+            <$> strOption
+                    ( metavar "REPORT_FILE"
+                    <> long "bug-report"
+                    <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
+                    )
+    parseBugReportDisable =
+        flag
+            BugReportDefault
+            BugReportDisable
+            ( long "no-bug-report"
+            <> help "Disables the creation of a bug report."
             )
 
 {- | Create a @.tar.gz@ archive containing the bug report.
@@ -88,10 +102,10 @@ if there is an error in the inner action other than
  -}
 withBugReport
     :: ExeName
-    -> BugReport
+    -> BugReportOption
     -> (FilePath -> IO ExitCode)
     -> IO ExitCode
-withBugReport exeName bugReport act =
+withBugReport exeName bugReportOption act =
     do
         (exitCode, _) <-
             generalBracket
@@ -121,7 +135,14 @@ withBugReport exeName bugReport act =
             ExitCaseAbort -> alwaysWriteBugReport tmpDir
         removePathForcibly tmpDir
     alwaysWriteBugReport tmpDir =
-        writeBugReportArchive tmpDir
-            (fromMaybe (getExeName exeName) (toReport bugReport))
+        case bugReportOption of
+            BugReportEnable bugReport ->
+                writeBugReportArchive tmpDir (toReport bugReport)
+            BugReportDefault ->
+                writeBugReportArchive tmpDir (getExeName exeName)
+            BugReportDisable -> pure ()
     optionalWriteBugReport tmpDir =
-        traverse_ (writeBugReportArchive tmpDir) (toReport bugReport)
+        case bugReportOption of
+            BugReportEnable bugReport ->
+                writeBugReportArchive tmpDir (toReport bugReport)
+            _ -> pure ()
