@@ -149,7 +149,7 @@ test_unifyBoolValues =
             assertEqual "" expected actual
 
     unify term1 term2 =
-        run (Bool.unifyBoolValues term1 term2)
+        run (Bool.unifyBool term1 term2)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =

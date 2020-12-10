@@ -219,7 +219,7 @@ andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
     , (BothT,   \_ _ _ -> Builtin.Int.unifyInt)
-    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
+    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBool)
     , (BothT,   \_ _ _ -> Builtin.String.unifyString)
     , (BothT,   \_ _ _ -> unifyDomainValue)
     , (BothT,   \_ _ _ -> unifyStringLiteral)

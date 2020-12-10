@@ -13,7 +13,7 @@ module Kore.Builtin.Bool
     , asPattern
     , extractBoolDomainValue
     , parse
-    , unifyBoolValues
+    , unifyBool
     , unifyBoolAnd
     , unifyBoolOr
     , unifyBoolNot
@@ -171,14 +171,16 @@ builtinFunctions =
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 
-unifyBoolValues
+{- | Unification of @BOOL.Bool@ values.
+ -}
+unifyBool
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyBoolValues a b =
+unifyBool a b =
     worker a b <|> worker b a
   where
     worker termLike1 termLike2
