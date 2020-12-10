@@ -115,8 +115,8 @@ jobs:
       - name: Run unit tests
         run: stack test --pedantic
 
-  style:
-    name: 'Style'
+  check:
+    name: 'Check'
     runs-on: ubuntu-latest
     steps:
       - name: Install stylish-haskell
@@ -144,13 +144,5 @@ jobs:
         with:
           commit_message: 'Format with stylish-haskell'
 
-  style:
-    name: 'Lint'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
-        with:
-          submodules: recursive
-
       - name: Run hlint
-        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j   
