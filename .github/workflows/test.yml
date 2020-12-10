@@ -121,6 +121,7 @@ jobs:
     steps:
       - name: Install stylish-haskell
         run: |
+          cd $(mktemp -d)
           wget https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
           tar xaf stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
           sudo mv stylish-haskell-v0.11.0.0-linux-x86_64/stylish-haskell /usr/local/bin/
@@ -142,4 +143,3 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4.7.2
         with:
           commit_message: 'Format with stylish-haskell'
-          
