@@ -17,6 +17,7 @@ import Data.Generics.Product
     )
 import Data.Text
     ( Text
+    , pack
     )
 
 import Data.Sup
@@ -1534,7 +1535,7 @@ definitionParserTests =
                     ]
                 }
         , success
-            (  "[\"a\"] "
+            (pack $ "[\"a\"] "
                 ++ "module M sort c{}[] endmodule [\"b\"] "
                 ++ "module N sort d{}[] endmodule [\"e\"]"
                 )

@@ -235,7 +235,7 @@ lookupTextFromTypeWithError type' =
             <> show type'
             <> " It should be added to Kore.Log.Registry.registry."
 
-parseEntryType :: Ord e => Text -> Parser.Parsec e String SomeTypeRep
+parseEntryType :: Ord e => Text -> Parser.Parsec e Text SomeTypeRep
 parseEntryType entryText =
     maybe empty return
     $ Map.lookup entryText (textToType registry)

@@ -21,6 +21,9 @@ import Prelude.Kore hiding
     ( takeWhile
     )
 
+import Data.Text
+    ( Text
+    )
 import Data.Void
     ( Void
     )
@@ -34,7 +37,7 @@ import Text.Megaparsec.Error
     ( errorBundlePretty
     )
 
-type Parser = Parsec Void String
+type Parser = Parsec Void Text
 
 {-|'peekChar' is similar to Attoparsec's 'peekChar'. It returns the next
 available character in the input, without consuming it. Returns 'Nothing'
@@ -55,7 +58,7 @@ peekChar' = lookAhead anySingle
 a FilePath that is used for generating error messages and an input string
 and produces either a parsed object, or an error message.
 -}
-parseOnly :: Parser a -> FilePath -> String -> Either String a
+parseOnly :: Parser a -> FilePath -> Text -> Either String a
 parseOnly parser filePathForErrors input =
     case parse parser filePathForErrors input of
         Left err -> Left (errorBundlePretty err)
