@@ -110,10 +110,10 @@ withSmtSolverLogger
 withSmtSolverLogger DebugSolverOptions {logFile} continue =
     case logFile of
         Nothing -> continue mempty
-        Just filename -> 
-            writeFile filename "" >>
-                Colog.withLogTextFile filename
-                    (continue . solverTranscriptLogger)
+        Just filename -> do
+            writeFile filename ""
+            Colog.withLogTextFile filename
+                (continue . solverTranscriptLogger)
 
 koreLogTransformer
     :: KoreLogOptions
