@@ -114,3 +114,35 @@ jobs:
 
       - name: Run unit tests
         run: stack test --pedantic
+
+  check:
+    name: 'Check'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install stylish-haskell
+        run: |
+          cd $(mktemp -d)
+          wget https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          tar xaf stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          sudo mv stylish-haskell-v0.11.0.0-linux-x86_64/stylish-haskell /usr/local/bin/
+          stylish-haskell --version
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+          # Avoid cloning a detached-HEAD repository on pull_request events.
+          # git-auto-commit-action (below) needs this to find the original
+          # branch where it should push the changes.
+          ref: ${{ github.head_ref }}
+
+      - name: Format with stylish-haskell
+        run: |
+          find . -type f -name '*.hs*' '(' ! -path '*/.stack-work*' ')' '(' ! -path '*/dist*' ')' -print0 | xargs -0L1 stylish-haskell -i
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4.7.2
+        with:
+          commit_message: 'Format with stylish-haskell'
+
+      - name: Run hlint
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j   
