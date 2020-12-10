@@ -649,6 +649,7 @@ See also: 'equalAndEquals'
 -}
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
+-- TODO (thomas.tuegel): Remove all the "assumes different" cases.
 domainValueAndEqualsAssumesDifferent
     :: HasCallStack
     => InternalVariable variable
@@ -663,6 +664,14 @@ domainValueAndEqualsAssumesDifferent
 domainValueAndEqualsAssumesDifferent
     first@(InternalInt_ _)
     second@(InternalInt_ _)
+  = lift $ cannotUnifyDomainValues first second
+domainValueAndEqualsAssumesDifferent
+    first@(BuiltinBool_ _)
+    second@(BuiltinBool_ _)
+  = lift $ cannotUnifyDomainValues first second
+domainValueAndEqualsAssumesDifferent
+    first@(BuiltinString_ _)
+    second@(BuiltinString_ _)
   = lift $ cannotUnifyDomainValues first second
 domainValueAndEqualsAssumesDifferent _ _ = empty
 
