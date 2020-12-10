@@ -133,7 +133,8 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
     ( simplify
     )
-import qualified Kore.Step.Simplification.Top as Top ( simplify
+import qualified Kore.Step.Simplification.Top as Top
+    ( simplify
     )
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
