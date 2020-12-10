@@ -118,11 +118,13 @@ instance Ord TermLikeClass where
 findClass :: Constraint variable -> TermLikeClass
 findClass (Constraint (Pair left _)) = findClassWorker left
   where
+    -- TODO (thomas.tuegel): Don't use pattern synonyms here!
     findClassWorker (Var_ _)           = Variables
     findClassWorker (ElemVar_ _)       = Variables
     findClassWorker (SetVar_ _)        = Variables
     findClassWorker (StringLiteral_ _) = ConcreteBuiltins
-    findClassWorker (InternalInt_ _)    = ConcreteBuiltins
+    findClassWorker (InternalBytes_ _ _) = ConcreteBuiltins
+    findClassWorker (InternalInt_ _)   = ConcreteBuiltins
     findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
     findClassWorker (BuiltinString_ _) = ConcreteBuiltins
     findClassWorker (App_ symbol _) =
