@@ -21,5 +21,3 @@ then
     echo >&2 "Did you forget to run 'stack build' after updating 'stack.yaml'?"
     exit 1
 fi
-
-hlint kore
