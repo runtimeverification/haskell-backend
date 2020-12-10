@@ -62,7 +62,9 @@ import Kore.Internal.Symbol
     , isFunction
     )
 import Kore.Internal.TermLike
-    ( pattern BuiltinString_, pattern BuiltinBool_, pattern App_
+    ( pattern App_
+    , pattern BuiltinBool_
+    , pattern BuiltinString_
     , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
