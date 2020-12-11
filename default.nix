@@ -16,7 +16,18 @@ let
   inherit (pkgs) lib;
 
   project = pkgs.haskell-nix.stackProject {
-    src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
+    src =
+      # Despite the haskell.nix documentation, do not use cleanGit!
+      # The kore repository is imported as a Git submodule, but cleanGit does 
+      # not support submodules.
+      let 
+        patterns = [
+          "/*"
+          "!/stack.yaml"
+          "!/kore"
+        ];
+      in
+        pkgs.nix-gitignore.gitignoreSourcePure patterns ./.;
     inherit checkMaterialization;
     materialized = ./nix/kore.nix.d;
     modules = [
