@@ -754,11 +754,12 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
-eqString
+eqString, concatString
     :: TermLike VariableName
     -> TermLike VariableName
     -> TermLike VariableName
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
+concatString x y = mkApplySymbol concatStringSymbol [x, y]
 
 -- * Bytes
 
