@@ -74,7 +74,7 @@ parseBugReportOption =
                     )
     parseBugReportDisable =
         flag
-            BugReportDefault
+            BugReportOnError
             BugReportDisable
             ( long "no-bug-report"
             <> help "Disables the creation of a bug report."
@@ -138,7 +138,7 @@ withBugReport exeName bugReportOption act =
         case bugReportOption of
             BugReportEnable bugReport ->
                 writeBugReportArchive tmpDir (toReport bugReport)
-            BugReportDefault ->
+            BugReportOnError ->
                 writeBugReportArchive tmpDir (getExeName exeName)
             BugReportDisable -> pure ()
     optionalWriteBugReport tmpDir =
