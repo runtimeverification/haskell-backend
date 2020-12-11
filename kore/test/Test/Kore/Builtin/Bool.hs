@@ -32,9 +32,12 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate (makeEqualsPredicate, makeAndPredicate)
-import Kore.Internal.TermLike
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
     ( SimplifierT
     , runSimplifier
@@ -259,11 +262,11 @@ y = inject (mkElementVariable "y" boolSort)
 test_contradiction :: TestTree
 test_contradiction =
     testCase "x andBool y = true ∧ x andBool y = false" $ do
-        let clause0 = 
-                makeEqualsPredicate boolSort 
+        let clause0 =
+                makeEqualsPredicate boolSort
                     _True
                     (andThenBool (mkVar x) (mkVar y))
-            clause1 = 
+            clause1 =
                 makeEqualsPredicate boolSort
                     _False
                     (andThenBool (mkVar x) (mkVar y))

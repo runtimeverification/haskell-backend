@@ -643,11 +643,11 @@ test_unifyIntEq =
 test_contradiction :: TestTree
 test_contradiction =
     testCase "x + y = 0 ∧ x + y = 1" $ do
-        let clause0 = 
-                makeEqualsPredicate intSort 
+        let clause0 =
+                makeEqualsPredicate intSort
                     (asInternal 0)
                     (addInt x y)
-            clause1 = 
+            clause1 =
                 makeEqualsPredicate intSort
                     (asInternal 1)
                     (addInt x y)

@@ -481,11 +481,11 @@ y = "y" `ofSort` stringSort
 test_contradiction :: TestTree
 test_contradiction =
     testCase "concatString(x, y) = \"zero\" ∧ concatString(x, y) = \"one\"" $ do
-        let clause0 = 
-                makeEqualsPredicate boolSort 
+        let clause0 =
+                makeEqualsPredicate boolSort
                     (asInternal "zero")
                     (concatString (mkElemVar x) (mkElemVar y))
-            clause1 = 
+            clause1 =
                 makeEqualsPredicate boolSort
                     (asInternal "one")
                     (concatString (mkElemVar x) (mkElemVar y))
