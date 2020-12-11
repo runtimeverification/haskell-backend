@@ -57,9 +57,9 @@ newtype BugReport = BugReport { toReport :: FilePath }
     deriving Show
 
 data BugReportOption
-    = BugReportEnable BugReport -- Always creates a bug report
-    | BugReportDisable -- Never creates a bug report
-    | BugReportDefault -- Creates a bug report only after a crash
+    = BugReportEnable BugReport -- ^ Always creates a bug report
+    | BugReportDisable -- ^ Never creates a bug report
+    | BugReportOnError -- ^ Creates a bug report only after a crash
 
 parseBugReportOption :: Parser BugReportOption
 parseBugReportOption =
