@@ -12,6 +12,7 @@ module Test.Kore.Builtin.Bool
     , test_unifyBoolValues
     , test_unifyBoolAnd
     , test_unifyBoolOr
+    , test_contradiction
     --
     , asPattern
     , asInternal
@@ -31,10 +32,14 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate (makeEqualsPredicate, makeAndPredicate)
 import Kore.Internal.TermLike
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Step.Simplification.Data
     ( SimplifierT
     , runSimplifier
+    , runSimplifierBranch
+    , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
@@ -250,3 +255,28 @@ _False = asInternal False
 x, y :: SomeVariable VariableName
 x = inject (mkElementVariable "x" boolSort)
 y = inject (mkElementVariable "y" boolSort)
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "x andBool y = true ∧ x andBool y = false" $ do
+        let clause0 = 
+                makeEqualsPredicate boolSort 
+                    _True
+                    (andThenBool (mkVar x) (mkVar y))
+            clause1 = 
+                makeEqualsPredicate boolSort
+                    _False
+                    (andThenBool (mkVar x) (mkVar y))
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT

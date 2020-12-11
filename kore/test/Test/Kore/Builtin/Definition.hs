@@ -125,7 +125,7 @@ impliesBoolSymbol =
 notBool :: TermLike VariableName -> TermLike VariableName
 notBool x = mkApplySymbol notBoolSymbol [x]
 
-andBool, impliesBool, eqBool, orBool
+andBool, impliesBool, eqBool, orBool, andThenBool
     :: TermLike VariableName
     -> TermLike VariableName
     -> TermLike VariableName
@@ -133,6 +133,7 @@ andBool x y = mkApplySymbol andBoolSymbol [x, y]
 impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
 eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
 orBool x y = mkApplySymbol orBoolSymbol [x, y]
+andThenBool x y = mkApplySymbol andThenBoolSymbol [x, y]
 
 -- ** Int
 
