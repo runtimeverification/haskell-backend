@@ -21,6 +21,7 @@ module Test.Kore.Builtin.Int
     , test_symbolic_eq_not_conclusive
     , test_unifyIntEq
     , hprop_unparse
+    , test_contradiction
     --
     , asInternal
     , asPattern
@@ -630,6 +631,35 @@ test_unifyIntEq =
         & evalEnvUnifierT Not.notSimplifier
         & runSimplifierBranch testEnv
         & runNoSMT
+
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "x + y = 0 ∧ x + y = 1" $ do
+        let clause0 = 
+                makeEqualsPredicate intSort 
+                    (asInternal 0)
+                    (addInt x y)
+            clause1 = 
+                makeEqualsPredicate intSort
+                    (asInternal 1)
+                    (addInt x y)
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
+    x, y :: TermLike VariableName
+    x = mkElemVar $ ofSort "x" intSort
+    y = mkElemVar $ ofSort "y" intSort
 
     simplifyCondition'
         :: Condition VariableName
