@@ -47,6 +47,7 @@ import Log
     )
 import SMT
     ( MonadSMT (..)
+    , Result (..)
     , SExpr (..)
     )
 
@@ -55,6 +56,8 @@ import SMT
 -- smt2 standard, and sends them to the current SMT solver.
 -- It assumes that all symbols in all smt-lemma rules either have been
 -- declared in the smt prelude or they have an smtlib attribute.
+-- This function will throw an error if the definitions sent to
+-- the solver are inconsistent.
 declareSMTLemmas
     :: forall m
     .   ( Given (SmtMetadataTools StepperAttributes)
@@ -67,6 +70,8 @@ declareSMTLemmas
 declareSMTLemmas m = do
     SMT.All.declare (smtData tools)
     mapM_ declareRule (indexedModuleAxioms m)
+    result <- SMT.check
+    when (isUnsatisfiable result) errorInconsistentDefinitions
   where
     tools :: SmtMetadataTools StepperAttributes
     tools = given
@@ -92,6 +97,12 @@ declareSMTLemmas m = do
             | SMTDependentAtom { smtName, smtType } <- Map.elems vars ]
         , lemma
         ]
+
+    isUnsatisfiable Unsat = True
+    isUnsatisfiable _ = False
+    -- TODO: add log entry type for this error
+    errorInconsistentDefinitions =
+        error "The definitions sent to the solver are inconsistent."
 
 translateUninterpreted
     :: forall m variable
