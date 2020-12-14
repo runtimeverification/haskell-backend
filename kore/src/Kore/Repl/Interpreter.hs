@@ -1255,7 +1255,7 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
                 parsedCommand =
                     fromMaybe
                         ShowUsage
-                        $ parseMaybe commandParser command
+                        $ parseMaybe commandParser (Text.pack command)
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1505,7 +1505,7 @@ parseEvalScript file scriptModeOutput = do
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser scriptParser file contents
+            let result = runParser scriptParser file (Text.pack contents)
             either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 

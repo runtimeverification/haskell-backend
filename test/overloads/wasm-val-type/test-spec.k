@@ -7,6 +7,6 @@ endmodule
 module TEST-SPEC
     imports VERIFICATION
 
-    rule <k> ITYPE:IValType . const X:Int => . ... </k>
+    claim <k> ITYPE:IValType . const X:Int => . ... </k>
 
 endmodule

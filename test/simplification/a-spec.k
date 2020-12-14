@@ -11,6 +11,6 @@ module A-SPEC
 
     imports VERIFICATION
 
-    rule <k> f(X:Int) => a </k>
+    claim <k> f(X:Int) => a </k>
 
 endmodule

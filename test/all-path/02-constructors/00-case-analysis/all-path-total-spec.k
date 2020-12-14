@@ -9,6 +9,6 @@ module ALL-PATH-TOTAL-SPEC
 
   // This should be provable as both one-path and all-path.
   // Note that this uses that S is only formed of a | b | c
-  rule <k> total(X:S) => end </k> [all-path]
+  claim <k> total(X:S) => end </k> [all-path]
 
 endmodule

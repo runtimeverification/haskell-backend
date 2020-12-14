@@ -31,6 +31,9 @@ import qualified Data.Set as Set
 import Data.String
     ( IsString (..)
     )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Text.Megaparsec
     ( Parsec
@@ -57,7 +60,7 @@ import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
-type Parser = Parsec ReplParseError String
+type Parser = Parsec ReplParseError Text
 
 newtype ReplParseError = ReplParseError { unReplParseError :: String }
     deriving (Eq, Ord)
@@ -449,7 +452,7 @@ spaceNoNewline :: Parser ()
 spaceNoNewline =
     void . many $ oneOf [' ', '\t', '\r', '\f', '\v']
 
-literal :: String -> Parser ()
+literal :: Text -> Parser ()
 literal str = void $ Char.string str <* spaceNoNewline
 
 decimal :: Integral a => Parser a

@@ -12,7 +12,7 @@ module ADD-STACK-SPEC
   imports VERIFICATION
   imports SMC
 
-  rule
+  claim
     <k>
 sum = 1 + 1;
 => .K

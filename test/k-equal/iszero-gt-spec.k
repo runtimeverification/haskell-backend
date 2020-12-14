@@ -5,5 +5,5 @@ endmodule
 module ISZERO-GT-SPEC
   imports VERIFICATION
 
-  rule <k> #iszero(I) => #done(1) </k> requires I >Int 0
+  claim <k> #iszero(I) => #done(1) </k> requires I >Int 0
 endmodule

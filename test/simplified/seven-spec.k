@@ -30,7 +30,7 @@ module SEVEN-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> bb(g(X)) => s(s(X)) </k>
 
 endmodule

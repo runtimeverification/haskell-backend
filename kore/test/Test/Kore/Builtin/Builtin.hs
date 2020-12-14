@@ -112,7 +112,7 @@ import Kore.Syntax.Definition
 import qualified Kore.Unification.Procedure as Unification
 import Kore.Unification.UnificationProcedure
 import Kore.Unparser
-    ( unparseToString
+    ( unparseToText
     )
 import qualified Logic
 import SMT
@@ -303,6 +303,6 @@ hpropUnparse
     -> Hedgehog.Property
 hpropUnparse gen = Hedgehog.property $ do
     builtin <- Hedgehog.forAll gen
-    let syntax = unparseToString builtin
+    let syntax = unparseToText builtin
         expected = Builtin.externalize builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax

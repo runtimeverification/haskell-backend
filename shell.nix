@@ -1,13 +1,10 @@
-{ default ? import ./default.nix {} }:
+{ default ? import ./default.nix {}
+, checkMaterialization ? false
+}:
 
 let
   inherit (default) project;
-
-  local =
-    if builtins.pathExists ./shell.local.nix
-    then import ./shell.local.nix { inherit default; }
-    else x: x;
-  shellFor = args: project.shellFor (local args);
+  inherit (project) shellFor;
 
   sources = import ./nix/sources.nix;
   pkgs = import sources."nixpkgs" {};
@@ -22,17 +19,23 @@ let
       # This fixes a performance issue, probably https://gitlab.haskell.org/ghc/ghc/issues/15524
       { packages.ghcide.configureFlags = [ "--enable-executable-dynamic" ]; }
     ];
+    inherit checkMaterialization;
+    materialized = ./nix/ghcide.nix.d;
   };
   inherit (ghcide-project.ghcide.components.exes) ghcide;
   inherit (ghcide-project.hie-bios.components.exes) hie-bios;
 
   hlint-project = default.pkgs.haskell-nix.stackProject {
     src = sources."hlint";
+    inherit checkMaterialization;
+    materialized = ./nix/hlint.nix.d;
   };
   inherit (hlint-project.hlint.components.exes) hlint;
 
   stylish-haskell-project = default.pkgs.haskell-nix.stackProject {
     src = sources."stylish-haskell";
+    inherit checkMaterialization;
+    materialized = ./nix/stylish-haskell.nix.d;
   };
   inherit (stylish-haskell-project.stylish-haskell.components.exes) stylish-haskell;
 

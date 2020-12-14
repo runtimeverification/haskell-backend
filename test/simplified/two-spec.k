@@ -22,7 +22,7 @@ module TWO-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> b(X) => t(X) </k>
 
 endmodule

@@ -10,7 +10,6 @@ module GlobalMain
     , parseKoreProveOptions
     , parseKoreMergeOptions
     , mainGlobal
-    , enableDisableFlag
     , clockSomething
     , clockSomethingIO
     , mainPatternVerify
@@ -49,6 +48,7 @@ import Data.Text
     ( Text
     , pack
     )
+import qualified Data.Text.IO as Text
 import Data.Time.Format
     ( defaultTimeLocale
     , formatTime
@@ -76,13 +76,10 @@ import Options.Applicative
     , defaultPrefs
     , execParserPure
     , flag
-    , flag'
     , handleParseResult
     , help
     , helper
-    , hidden
     , info
-    , internal
     , long
     , maybeReader
     , metavar
@@ -385,36 +382,6 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
 ----------------------
 -- Helper Functions --
 
-{-|
-Parser builder to create an optional boolean flag,
-with an enabled, disabled and default value.
-Based on `enableDisableFlagNoDefault`
-from commercialhaskell/stack:
-https://github.com/commercialhaskell/stack/blob/master/src/Options/Applicative/Builder/Extra.hs
--}
-enableDisableFlag
-    :: String -- ^ flag name
-    -> option -- ^ enabled value
-    -> option -- ^ disabled value
-    -> option -- ^ default value
-    -> String -- ^ Help text suffix; appended to "Enable/disable "
-    -> Parser option
-enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
-    flag' enabledVal
-        (  hidden
-        <> internal
-        <> long name
-        <> help helpSuffix)
-    <|> flag' disabledVal
-        (  hidden
-        <> internal
-        <> long ("no-" ++ name)
-        <> help helpSuffix )
-    <|> flag' disabledVal
-        (  long ( "[no-]" ++ name )
-        <> help ( "Enable/disable " ++ helpSuffix ) )
-    <|> pure defaultVal
-
 
 -- | Time a pure computation and print results.
 clockSomething :: String -> a -> Main a
@@ -511,12 +478,14 @@ parseDefinition :: FilePath -> Main ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
-    :: (FilePath -> String -> Either String a)
+    :: (FilePath -> Text -> Either String a)
     -> String
     -> Main a
 mainParse parser fileName = do
     contents <-
-        clockSomethingIO "Reading the input file" $ liftIO $ readFile fileName
+        Text.readFile fileName
+        & liftIO
+        & clockSomethingIO "Reading the input file"
     parseResult <-
         clockSomething "Parsing the file" (parser fileName contents)
     case parseResult of

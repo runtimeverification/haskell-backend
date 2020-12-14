@@ -8,23 +8,6 @@ import Control.Monad.Catch
     , handle
     )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
-import Options.Applicative
-    ( InfoMod
-    , Parser
-    , argument
-    , fullDesc
-    , header
-    , help
-    , long
-    , metavar
-    , progDesc
-    , str
-    , strOption
-    , value
-    )
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
@@ -46,6 +29,7 @@ import qualified Kore.Log as Log
 import Kore.Log.ErrorVerify
     ( errorVerify
     )
+import Kore.Options
 import Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
@@ -64,57 +48,6 @@ import GlobalMain
 Main module to run kore-parser
 TODO: add command line argument tab-completion
 -}
-
--- | Main options record
-data KoreParserOptions = KoreParserOptions
-    { fileName            :: !FilePath
-    -- ^ Name for a file containing a definition to parse and verify
-    , patternFileName     :: !FilePath
-    -- ^ Name for file containing a pattern to parse and verify
-    , mainModuleName      :: !Text
-    -- ^ the name of the main module in the definition
-    , willPrintDefinition :: !Bool
-    -- ^ Option to print definition
-    , willPrintPattern    :: !Bool
-    -- ^ Option to print pattern
-    , willVerify          :: !Bool
-    -- ^ Option to verify definition
-    , appKore             :: !Bool
-    -- ^ Option to print in applicative Kore syntax
-    }
-
--- | Command Line Argument Parser
-commandLineParser :: Parser KoreParserOptions
-commandLineParser =
-    KoreParserOptions
-    <$> argument str
-        (  metavar "FILE"
-        <> help "Kore source file to parse [and verify]" )
-    <*> strOption
-        (  metavar "PATTERN_FILE"
-        <> long "pattern"
-        <> help
-            "Kore pattern source file to parse [and verify]. Needs --module."
-        <> value "" )
-    <*> strOption
-        (  metavar "MODULE"
-        <> long "module"
-        <> help "The name of the main module in the Kore definition"
-        <> value "" )
-    <*> enableDisableFlag "print-definition"
-        True False True
-        "printing parsed definition to stdout [default enabled]"
-    <*> enableDisableFlag "print-pattern"
-        True False True
-        "printing parsed pattern to stdout [default enabled]"
-    <*> enableDisableFlag "verify"
-        True False True
-        "Verify well-formedness of parsed definition [default enabled]"
-    <*> enableDisableFlag "appkore"
-        True False False
-        (  "printing parsed definition in applicative Kore syntax "
-        ++ "[default disabled]"
-        )
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -144,7 +77,7 @@ main = handleTop $ do
         mainGlobal
             (ExeName "kore-parser")
             Nothing  -- environment variable name for extra arguments
-            commandLineParser
+            parseKoreParserOptions
             parserInfoModifiers
     for_ (localOptions options) $ \koreParserOptions ->
         flip runLoggerT Log.emptyLogger $ do
@@ -164,11 +97,12 @@ main = handleTop $ do
                         $ toVerifiedDefinition indexedModules
                 else putDoc (debug parsedDefinition)
 
-            let KoreParserOptions { patternFileName } = koreParserOptions
-            unless (null patternFileName) $ do
+            let KoreParserOptions { patternOpt } = koreParserOptions
+            for_ patternOpt $ \patternOptions -> do
+                let PatternOptions { patternFileName } = patternOptions
                 parsedPattern <- mainPatternParse patternFileName
                 when willVerify $ do
-                    let KoreParserOptions { mainModuleName } = koreParserOptions
+                    let PatternOptions { mainModuleName } = patternOptions
                     indexedModule <-
                         lookupMainModule
                             (ModuleName mainModuleName)
@@ -176,7 +110,8 @@ main = handleTop $ do
                         & lift
                     _ <- mainPatternVerify indexedModule parsedPattern
                     return ()
-                let KoreParserOptions { willPrintPattern } = koreParserOptions
+                let KoreParserOptions { willPrintPattern } =
+                        koreParserOptions
                 when willPrintPattern $
                     lift $ putDoc (debug parsedPattern)
 

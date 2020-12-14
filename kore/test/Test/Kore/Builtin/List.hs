@@ -13,6 +13,7 @@ module Test.Kore.Builtin.List
     , test_inUnit
     , test_inElement
     , test_inConcat
+    , test_make
     , test_updateAll
     , hprop_unparse
     , test_size
@@ -139,7 +140,7 @@ test_GetUpdate =
         let len = fromIntegral $ length values
             patValues = asTermLike $ Test.Int.asInternal <$> values
             patUpdated = updateList patValues (Test.Int.asInternal ix) value
-        if (-len) <= ix && ix < len then do
+        if 0 <= ix && ix < len then do
             let patGet = getList patUpdated $ Test.Int.asInternal ix
                 predicate = mkEquals_
                     patGet
@@ -416,6 +417,20 @@ test_size =
         expect2 <- evaluateT addSize
         (===) expect1 expect2
         (===) Pattern.top    =<< evaluateT predicate
+    ]
+
+test_make :: [TestTree]
+test_make =
+    [ testCaseWithoutSMT "make(-1, 5) === \\bottom" $ do
+        result <- evaluate $ makeList (mkInt (-1)) (mkInt 5)
+        assertEqual' "" Pattern.bottom result
+    , testCaseWithoutSMT "make(0, 5) === []" $ do
+        result <- evaluate $ makeList (mkInt 0) (mkInt 5)
+        assertEqual' "" (Pattern.fromTermLike (asInternal [])) result
+    , testCaseWithoutSMT "make(3, 5) === [5, 5, 5]" $ do
+        result <- evaluate $ makeList (mkInt 3) (mkInt 5)
+        let expect = asInternal . fmap mkInt $ Seq.fromList [5, 5, 5]
+        assertEqual' "" (Pattern.fromTermLike expect) result
     ]
 
 test_updateAll :: [TestTree]

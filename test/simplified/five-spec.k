@@ -12,7 +12,7 @@ module FIVE-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> aa(X) => g(X) </k>
 
 endmodule

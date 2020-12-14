@@ -19,7 +19,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT
-    , hoistMaybe
     , runMaybeT
     )
 import qualified Control.Lens as Lens
@@ -194,7 +193,7 @@ decidePredicate predicates =
     -- | Run the SMT query once.
     query :: MaybeT simplifier Result
     query =
-        SMT.withSolver $ evalTranslator $ do
+        SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
             predicates' <- traverse (translatePredicate tools) predicates
             traverse_ SMT.assert predicates'
@@ -215,7 +214,7 @@ translatePredicate
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translatePredicate tools predicate =
     give tools $ translatePredicateWith translateTerm predicate
 
@@ -226,7 +225,7 @@ translateTerm
     => MonadLog m
     => SExpr  -- ^ type name
     -> TranslateItem variable  -- ^ uninterpreted pattern
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translateTerm smtType (QuantifiedVariable var) = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
@@ -277,16 +276,17 @@ lookupVariable
     :: InternalVariable variable
     => Monad m
     => TermLike.ElementVariable variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 lookupVariable var =
     lookupQuantifiedVariable <|> lookupFreeVariable
   where
     lookupQuantifiedVariable = do
         TranslatorState { quantifiedVars } <- State.get
-        hoistMaybe $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
+        maybeToTranslator
+            $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
     lookupFreeVariable = do
         TranslatorState { freeVars} <- State.get
-        hoistMaybe $ Map.lookup var freeVars
+        maybeToTranslator $ Map.lookup var freeVars
 
 declareVariable
     :: InternalVariable variable
@@ -294,7 +294,7 @@ declareVariable
     => MonadLog m
     => SExpr  -- ^ type name
     -> TermLike.ElementVariable variable  -- ^ variable to be declared
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 declareVariable t variable = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
@@ -308,7 +308,7 @@ logVariableAssignment
     => MonadLog m
     => Counter.Natural
     -> TermLike variable  -- ^ variable to be declared
-    -> Translator m variable ()
+    -> Translator variable m ()
 logVariableAssignment n pat =
     logDebug
     . Text.pack . show

@@ -7,7 +7,7 @@ endmodule
 module ONE-SPEC
   imports VERIFICATION
 
-  rule
+  claim
     <k> delayed(X:Int)
     => 5 <Int X
     </k>

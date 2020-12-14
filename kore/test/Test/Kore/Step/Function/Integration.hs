@@ -1542,15 +1542,8 @@ test_updateList =
             (mkInt 2)
         )
         [mkList [mkInt 1, mkInt 2]]
-    , equals "different negative keys; evaluates updateList"
-        (updateList
-            (updateList twoElementList (mkInt (-2)) (mkInt 1))
-            (addInt (mkInt 0) (Builtin.dummyInt (mkInt (-1))))
-            (mkInt 2)
-        )
-        [mkList [mkInt 1, mkInt 2]]
-    , equals "negative index outside rage"
-        (updateList singletonList (mkInt (-2)) (mkInt 1))
+    , equals "negative index"
+        (updateList singletonList (mkInt (-1)) (mkInt 1))
         [mkBottom_]
     , equals "positive index outside rage"
         (updateList singletonList (mkInt 1) (mkInt 1))

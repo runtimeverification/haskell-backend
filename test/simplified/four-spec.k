@@ -12,7 +12,7 @@ module FOUR-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> a(g(X)) => f(g(X)) </k>
 
 endmodule

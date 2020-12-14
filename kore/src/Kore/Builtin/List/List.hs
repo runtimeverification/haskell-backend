@@ -24,6 +24,7 @@ module Kore.Builtin.List.List
     , updateKey
     , inKey
     , sizeKey
+    , makeKey
     , updateAllKey
     ) where
 
@@ -198,6 +199,9 @@ inKey = "LIST.in"
 
 sizeKey :: IsString s => s
 sizeKey = "LIST.size"
+
+makeKey :: IsString s => s
+makeKey = "LIST.make"
 
 updateAllKey :: IsString s => s
 updateAllKey = "LIST.updateAll"

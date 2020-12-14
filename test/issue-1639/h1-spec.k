@@ -1,7 +1,7 @@
 module H1-SPEC
 imports H
 
-rule <k> foo(X) => . </k>
+claim <k> foo(X) => . </k>
      <m>
        0 => ?Y
      </m>

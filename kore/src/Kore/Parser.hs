@@ -34,6 +34,9 @@ module Kore.Parser
 
 import Prelude.Kore
 
+import Data.Text
+    ( Text
+    )
 import Text.Megaparsec
     ( eof
     )
@@ -58,7 +61,7 @@ else.
  -}
 parseKoreDefinition
     :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore definition
+    -> Text  -- ^ The concrete syntax of a valid Kore definition
     -> Either String ParsedDefinition
 parseKoreDefinition = parseOnly (Lexer.space *> koreParser)
 
@@ -70,6 +73,6 @@ message otherwise. The input must contain a valid Kore pattern and nothing else.
  -}
 parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore pattern
+    -> Text  -- ^ The concrete syntax of a valid Kore pattern
     -> Either String ParsedPattern
 parseKorePattern = parseOnly (Lexer.space *> Parser.parsePattern)

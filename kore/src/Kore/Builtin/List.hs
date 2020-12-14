@@ -194,6 +194,9 @@ symbolVerifiers =
     , ( sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
       )
+    , ( makeKey
+      , Builtin.verifySymbol assertSort [Int.assertSort, acceptAnySort]
+      )
     , ( updateAllKey
       , Builtin.verifySymbol assertSort [assertSort, Int.assertSort, assertSort]
       )
@@ -275,13 +278,8 @@ evalUpdate resultSort [_list, _ix, value] = do
     _list <- expectBuiltinList getKey _list
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
     let len = Seq.length _list
-        ix
-            | _ix < 0 =
-            -- negative indices count from end of list
-            _ix + len
-            | otherwise = _ix
-    if ix >= 0 && ix < len
-        then returnList resultSort (Seq.update ix value _list)
+    if _ix >= 0 && _ix < len
+        then returnList resultSort (Seq.update _ix value _list)
         else return (Pattern.bottomOf resultSort)
 evalUpdate _ _ = Builtin.wrongArity updateKey
 
@@ -327,6 +325,15 @@ evalSize resultSort [_list] = do
         & return
 evalSize _ _ = Builtin.wrongArity sizeKey
 
+evalMake :: Builtin.Function
+evalMake resultSort [_len, value] = do
+    _len <- fromInteger <$> Int.expectBuiltinInt getKey _len
+    if _len >= 0
+        then
+            returnList resultSort (Seq.replicate _len value)
+        else return (Pattern.bottomOf resultSort)
+evalMake _ _ = Builtin.wrongArity sizeKey
+
 evalUpdateAll :: Builtin.Function
 evalUpdateAll resultSort [_list1, _ix, _list2] = do
     _list1 <- expectBuiltinList getKey _list1
@@ -357,6 +364,7 @@ builtinFunctions =
         , (updateKey, Builtin.functionEvaluator evalUpdate)
         , (inKey, Builtin.functionEvaluator evalIn)
         , (sizeKey, Builtin.functionEvaluator evalSize)
+        , (makeKey, Builtin.functionEvaluator evalMake)
         , (updateAllKey, Builtin.functionEvaluator evalUpdateAll)
         ]
 
