@@ -294,9 +294,9 @@ assertSameSort expectedSort actualSort =
         [expectedSort, actualSort]
     $ Pretty.renderText . Pretty.layoutCompact
     $ "Expecting sort"
-        <+> Pretty.squotes (unparse expectedSort)
+        <+> unparse expectedSort
         <+> "but got"
-        <+> Pretty.squotes (unparse actualSort)
+        <+> unparse actualSort
         <>  Pretty.dot
 
 assertExpectedSort

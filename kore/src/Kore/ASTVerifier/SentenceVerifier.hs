@@ -130,7 +130,7 @@ verifyUniqueId existing (UnparameterizedId name location) =
     case Map.lookup name existing of
         Just location' ->
             koreFailWithLocations [location, location']
-                ("Duplicated name: '" <> name <> "'.")
+                ("Duplicated name: " <> name <> ".")
         _ -> Right (Map.insert name location existing)
 
 definedNamesForSentence :: Sentence pat -> [UnparameterizedId]
