@@ -772,7 +772,7 @@ instance Pretty DebugApplyEquation where
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             , Just "with result:"
             ]
-        , Pretty.indent 4 (pretty result)
+        , Pretty.indent 4 (unparse result)
         ]
 
 srcLoc :: Equation VariableName -> Maybe Attribute.SourceLocation

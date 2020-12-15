@@ -20,9 +20,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
@@ -74,13 +72,13 @@ test_simplifyEvaluated =
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> firsts
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> firsts
                 , "->"
-                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> seconds
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> seconds
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> expecteds
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ pretty <$> actuals
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
           where
             actuals = toList actual

@@ -310,10 +310,10 @@ applyFirstSimplifierThatWorksWorker
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (pretty <$> toList orResults)
+                    (unparse <$> toList orResults)
                 , Pretty.indent 2 "remainders:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (pretty <$> toList orRemainders)
+                    (unparse <$> toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->
             tryNextSimplifier Conditional

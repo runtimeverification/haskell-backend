@@ -21,6 +21,8 @@ module Kore.Internal.Predicate
         , OrF
         , TopF
         )
+    , unparseWithSort
+    , unparse2WithSort
     , fromPredicate
     , fromPredicate_
     , makePredicate
@@ -393,6 +395,27 @@ instance TopBottom (Predicate variable) where
     isTop _ = False
     isBottom PredicateFalse = True
     isBottom _ = False
+
+unparseWithSort
+    :: forall variable ann
+    . InternalVariable variable
+    => Sort
+    -> Predicate variable
+    -> Pretty.Doc ann
+unparseWithSort sort predicate =
+        unparseAssoc'
+            ("\\and" <> parameters [sort])
+            (unparse (mkTop sort :: TermLike variable))
+            (worker <$> getMultiAndPredicate predicate)
+      where
+        worker = unparse . fromPredicate sort
+
+unparse2WithSort
+    :: InternalVariable variable
+    => Sort
+    -> Predicate variable
+    -> Pretty.Doc ann
+unparse2WithSort sort = unparse2 . fromPredicate sort
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}

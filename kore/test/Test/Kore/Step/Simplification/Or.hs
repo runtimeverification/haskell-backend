@@ -33,9 +33,6 @@ import Kore.Step.Simplification.Or
     , simplifyEvaluated
     )
 import qualified Kore.Unparser as Unparser
-import Pretty
-    ( Pretty (..)
-    )
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
@@ -231,7 +228,7 @@ becomes
         (stateIntention
             [ prettyOr or1 or2
             , "to become:"
-            , pretty $ OrPattern.toPattern expected
+            , Unparser.unparse $ OrPattern.toPattern expected
             ]
         )
 
@@ -251,7 +248,7 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
         (stateIntention
             [ prettyOr or1 or2
             , "to simplify to:"
-            , pretty simplified
+            , Unparser.unparse simplified
             ]
         )
 
@@ -262,7 +259,7 @@ prettyOr
     -> TestPattern
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
-    pretty Or { orSort, orFirst, orSecond }
+    Unparser.unparse Or { orSort, orFirst, orSecond }
   where
     orSort = termLikeSort (Pattern.term orFirst)
 

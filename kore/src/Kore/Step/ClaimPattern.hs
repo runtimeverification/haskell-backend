@@ -126,7 +126,7 @@ instance Pretty ClaimPattern where
     pretty claimPattern'@(ClaimPattern _ _ _ _) =
         Pretty.vsep
             [ "left:"
-            , Pretty.indent 4 (pretty left)
+            , Pretty.indent 4 (unparse left)
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"

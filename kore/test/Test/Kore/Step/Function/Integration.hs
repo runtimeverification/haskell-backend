@@ -97,9 +97,7 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore
@@ -432,9 +430,9 @@ test_functionIntegration =
         let message =
                 (show . Pretty.vsep)
                     [ "Expected:"
-                    , Pretty.indent 4 (pretty expect)
+                    , Pretty.indent 4 (unparse expect)
                     , "but found:"
-                    , Pretty.indent 4 (pretty actual)
+                    , Pretty.indent 4 (unparse actual)
                     ]
         assertEqual message expect actual
 

@@ -105,14 +105,14 @@ instance Pretty ErrorRewritesInstantiation where
       =
         Pretty.vsep $
             [ "While rewriting the configuration:"
-            , Pretty.indent 4 (pretty configuration)
+            , Pretty.indent 4 (unparse configuration)
             , "Unable to instantiate semantic rule at "
                 <> Pretty.pretty location
             , "Unification did not find a solution for the variables:"
             , (Pretty.indent 4 . Pretty.sep)
                 (unparse <$> Set.toAscList missingVariables)
             , "The unification solution was:"
-            , pretty (fmap getAxiomPattern solution)
+            , unparse (fmap getAxiomPattern solution)
             , "Error! Please report this."
             ]
             <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)

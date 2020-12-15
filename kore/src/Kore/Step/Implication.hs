@@ -128,7 +128,7 @@ instance Pretty (Implication modality) where
     pretty implication'@(Implication _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
-            , Pretty.indent 4 (pretty left)
+            , Pretty.indent 4 (unparse left)
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"

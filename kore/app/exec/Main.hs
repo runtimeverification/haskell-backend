@@ -589,7 +589,7 @@ mainWithOptions execOptions = do
       = do
         liftIO $ renderResult
             execOptions
-            ("// Last configuration:\n" <> pretty lastConfiguration)
+            ("// Last configuration:\n" <> unparse lastConfiguration)
         throwM someException
 
     go :: Main ExitCode

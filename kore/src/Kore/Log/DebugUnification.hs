@@ -79,7 +79,7 @@ instance Pretty UnificationSolved where
     pretty UnificationSolved { solution } =
         Pretty.vsep
         [ "Unification solution:"
-        , Pretty.indent 4 (pretty solution)
+        , Pretty.indent 4 (unparse solution)
         ]
 
 whileDebugUnification

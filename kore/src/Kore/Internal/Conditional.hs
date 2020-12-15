@@ -46,6 +46,8 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
+    , unparseWithSort
+    , unparse2WithSort
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -274,14 +276,26 @@ instance InternalVariable variable => Pretty (Conditional variable ()) where
 
 instance
     InternalVariable variable
-    => Pretty (Conditional variable (TermLike variable))
+    => Unparse (Conditional variable (TermLike variable))
   where
-    pretty Conditional { term, predicate, substitution } =
+    unparse Conditional { term, predicate, substitution } =
         prettyConditional
             sort
             (unparse term)
-            (pretty predicate)
-            (pretty <$> termLikeSubstitution)
+            (unparseWithSort sort predicate)
+            (unparseWithSort sort <$> termLikeSubstitution)
+      where
+        sort = termLikeSort term
+        termLikeSubstitution =
+            Substitution.singleSubstitutionToPredicate
+            <$> Substitution.unwrap substitution
+
+    unparse2 Conditional { term, predicate, substitution } =
+        prettyConditional
+            sort
+            (unparse2 term)
+            (unparse2WithSort sort predicate)
+            (unparse2WithSort sort <$> termLikeSubstitution)
       where
         sort = termLikeSort term
         termLikeSubstitution =

@@ -207,7 +207,6 @@ import qualified Kore.Syntax.Id as Id
 import Kore.Syntax.Variable
 import Kore.Unparser
     ( Unparse
-    , renderDefault
     , unparse
     , unparseToString
     )
@@ -1349,7 +1348,7 @@ prettyClaimStateComponent transformation omitList =
         }
   where
     prettyComponent =
-        renderDefault . pretty . fmap hide . getRewritingPattern
+        unparseToString . fmap hide . getRewritingPattern
             . transformation
     hide
         :: TermLike VariableName

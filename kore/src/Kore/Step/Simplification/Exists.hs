@@ -87,9 +87,6 @@ import Logic
     ( LogicT
     )
 import qualified Logic
-import Pretty
-    ( Pretty (..)
-    )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -402,7 +399,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     [ "Quantifying both the term and the predicate probably means that there's"
     , "an error somewhere else."
     , "variable=" ++ unparseToString variable
-    , "patt=" ++ renderDefault (pretty original)
+    , "patt=" ++ unparseToString original
     ]
   | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
   | quantifyPredicate =

@@ -268,7 +268,7 @@ simplify sideCondition = \termLike ->
                     , Pretty.indent 4 (unparse termLike)
                     , Pretty.indent 2 "unsimplified results:"
                     , (Pretty.indent 4 . Pretty.vsep)
-                        (pretty <$> unsimplified)
+                        (unparse <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
 
@@ -453,7 +453,7 @@ ensureSimplifiedResult repr termLike results
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
         , (Pretty.indent 4 . Pretty.vsep)
-            (pretty <$> OrPattern.toPatterns results)
+            (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]

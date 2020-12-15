@@ -84,11 +84,9 @@ import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
+import Kore.Unparser
 import Logic
 import Pair
-import Pretty
-    ( Pretty (..)
-    )
 import qualified Pretty
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
@@ -189,7 +187,7 @@ simplifyPredicate sideCondition predicate = do
       | otherwise =
         (error . show . Pretty.vsep)
             [ "Expecting a \\top term, but found:"
-            , pretty conditional
+            , unparse conditional
             ]
 
 simplifyConjunctions

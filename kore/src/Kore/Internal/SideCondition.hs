@@ -85,6 +85,9 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
+instance InternalVariable variable => Pretty (SideCondition variable) where
+    pretty = pretty . toPredicate
+
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _) =
         isTop assumedTrue
@@ -99,9 +102,6 @@ instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
     freeVariables (SideCondition multiAnd) =
         freeVariables multiAnd
-
-instance InternalVariable variable => Pretty (SideCondition variable) where
-    pretty sideCondition@(SideCondition _) = pretty $ toPredicate sideCondition
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
