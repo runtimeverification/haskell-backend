@@ -606,7 +606,7 @@ test_InternalBytes =
             expect = Right $ asInternal "00"
             actual = verifyPattern (Just bytesSort) unverified
         assertEqual "" expect actual
-    , testCase "\\dv{Bytes{}}(\"\x00\")" $ do
+    , testCase "\\dv{Bytes{}}(\"\\x00\")" $ do
         let unverified =
                 mkDomainValue
                 $ DomainValue bytesSort
