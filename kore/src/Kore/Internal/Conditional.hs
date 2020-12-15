@@ -46,8 +46,8 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
-    , unparseWithSort
     , unparse2WithSort
+    , unparseWithSort
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
