@@ -461,9 +461,9 @@ buildDeclaredSortVariables (unifiedVariable : list) = do
     koreFailWithLocationsWhen
         (unifiedVariable `Set.member` variables)
         [unifiedVariable]
-        (  "Duplicated sort variable: '"
+        (  "Duplicated sort variable: "
         <> extractVariableName unifiedVariable
-        <> "'.")
+        <> ".")
     return (Set.insert unifiedVariable variables)
   where
     extractVariableName variable = getId (getSortVariable variable)
