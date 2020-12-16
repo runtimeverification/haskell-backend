@@ -431,7 +431,7 @@ maybeMkInj maybeInj injChild = maybe injChild (flip mkInj injChild) maybeInj
 notUnifiableError
     :: Monad unifier => TermLike variable -> OverloadingResult unifier a
 notUnifiableError (DV_ _ _) = throwBottom "injected domain value"
-notUnifiableError (BuiltinBool_ _) = throwBottom "injected builtin bool"
+notUnifiableError (InternalBool_ _) = throwBottom "injected builtin bool"
 notUnifiableError (InternalInt_ _) = throwBottom "injected builtin int"
 notUnifiableError (BuiltinList_ _) = throwBottom "injected builtin list"
 notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"

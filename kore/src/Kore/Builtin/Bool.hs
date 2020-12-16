@@ -281,7 +281,7 @@ unifyBoolNot unifyChildren a b =
 {- | Match a @BOOL.Bool@ builtin value.
  -}
 matchBool :: TermLike variable -> Maybe Bool
-matchBool (BuiltinBool_ InternalBool { internalBoolValue }) =
+matchBool (InternalBool_ InternalBool { internalBoolValue }) =
     Just internalBoolValue
 matchBool _ = Nothing
 

@@ -50,7 +50,7 @@ assertTop a
   | otherwise = (assertFailure . show) (debug a)
 
 expectBool :: HasCallStack => TermLike VariableName -> IO Bool
-expectBool (BuiltinBool_ internalBool) = return (internalBoolValue internalBool)
+expectBool (InternalBool_ internalBool) = return (internalBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)
 
 expectJustT :: MonadIO io => HasCallStack => MaybeT io a -> io a
