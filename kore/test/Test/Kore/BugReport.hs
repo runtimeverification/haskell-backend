@@ -12,7 +12,8 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Kore.BugReport
-    ( BugReportOption (..)
+    ( BugReport (..)
+    , BugReportOption (..)
     , parseBugReportOption
     )
 
