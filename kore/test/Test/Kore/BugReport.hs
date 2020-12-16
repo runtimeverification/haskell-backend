@@ -100,9 +100,9 @@ test_bugReportOption =
         ]
   where
     enableAssert =
-        assertParse 
+        assertParse
             ["--bug-report", "fileName"]
-            (BugReportEnable $ BugReport "fileName") 
+            (BugReportEnable $ BugReport "fileName")
 
     disableAssert =
         assertParse
@@ -122,7 +122,7 @@ test_bugReportOption =
             ++ "\n."
             )
             (Just opt)
-            (getParseResult $ parseBugReportOpts arguments)  
+            (getParseResult $ parseBugReportOpts arguments)
 
 parseKoreLogOpts :: [String] -> ParserResult KoreLogOptions
 parseKoreLogOpts arguments =
