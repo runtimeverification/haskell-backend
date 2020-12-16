@@ -18,16 +18,29 @@ let
   project = pkgs.haskell-nix.stackProject {
     src =
       # Despite the haskell.nix documentation, do not use cleanGit!
-      # The kore repository is imported as a Git submodule, but cleanGit does 
+      # The kore repository is imported as a Git submodule, but cleanGit does
       # not support submodules.
-      let 
+      let
         patterns = [
           "/*"
           "!/stack.yaml"
           "!/kore"
         ];
+        inherit (pkgs.nix-gitignore) gitignoreFilterPure;
       in
-        pkgs.nix-gitignore.gitignoreSourcePure patterns ./.;
+        # Give a fixed name ("kore") to the current directory.
+        # When imported as a submodule with a different name, the store path
+        # of the source code would be different. For example, in
+        # kframework/kore it might be
+        #     /nix/store/00000000000000000000000000000000-kore
+        # but when imported as a submodule of kframework/k, it might be
+        #     /nix/store/00000000000000000000000000000000-haskell-backend
+        # This would change the hash of the build products and ruin caching.
+        builtins.path {
+          path = ./.;
+          name = "kore";
+          filter = gitignoreFilterPure (_: _: true) patterns ./.;
+        };
     inherit checkMaterialization;
     materialized = ./nix/kore.nix.d;
     modules = [
