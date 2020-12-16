@@ -100,7 +100,6 @@ declareSMTLemmas m = do
 
     isUnsatisfiable Unsat = True
     isUnsatisfiable _ = False
-    -- TODO: add log entry type for this error
     errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
 
