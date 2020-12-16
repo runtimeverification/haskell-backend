@@ -1,0 +1,1138 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 8a2a75936cbb3a30e992399f6af8b4656da42e36be194a4ec9eeb44f3a962e02
+
+name:           kore
+version:        0.36.0.0
+description:    Please see the [README](README.md) file.
+category:       Language
+homepage:       https://github.com/kframework/kore#readme
+bug-reports:    https://github.com/kframework/kore/issues
+author:         Runtime Verification Inc
+maintainer:     thomas.tuegel@runtimeverification.com
+copyright:      2018-2020 Runtime Verification Inc
+license:        NCSA
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+data-dir:       data
+
+source-repository head
+  type: git
+  location: https://github.com/kframework/kore
+
+flag release
+  description: Build a faster runtime, at the expense of a slower build.
+  manual: True
+  default: False
+
+flag threaded
+  description: Use the threaded runtime. Recommended to disable for profiling.
+  manual: True
+  default: True
+
+library
+  exposed-modules:
+      Changed
+      Control.Monad.Counter
+      Data.Graph.TopologicalSort
+      Data.Limit
+      Data.Sup
+      Debug
+      ErrorContext
+      From
+      Injection
+      Kore.AST.ApplicativeKore
+      Kore.AST.AstWithLocation
+      Kore.AST.Common
+      Kore.AST.Error
+      Kore.ASTVerifier.AliasVerifier
+      Kore.ASTVerifier.AttributesVerifier
+      Kore.ASTVerifier.DefinitionVerifier
+      Kore.ASTVerifier.Error
+      Kore.ASTVerifier.ModuleVerifier
+      Kore.ASTVerifier.PatternVerifier
+      Kore.ASTVerifier.PatternVerifier.PatternVerifier
+      Kore.ASTVerifier.SentenceVerifier
+      Kore.ASTVerifier.SortVerifier
+      Kore.ASTVerifier.Verifier
+      Kore.Attribute.Assoc
+      Kore.Attribute.Attributes
+      Kore.Attribute.Axiom
+      Kore.Attribute.Axiom.Concrete
+      Kore.Attribute.Axiom.Constructor
+      Kore.Attribute.Axiom.Symbolic
+      Kore.Attribute.Axiom.Unit
+      Kore.Attribute.Comm
+      Kore.Attribute.Constructor
+      Kore.Attribute.Function
+      Kore.Attribute.Functional
+      Kore.Attribute.Hook
+      Kore.Attribute.Idem
+      Kore.Attribute.Injective
+      Kore.Attribute.Label
+      Kore.Attribute.Location
+      Kore.Attribute.Null
+      Kore.Attribute.Overload
+      Kore.Attribute.Owise
+      Kore.Attribute.Parser
+      Kore.Attribute.Pattern
+      Kore.Attribute.Pattern.ConstructorLike
+      Kore.Attribute.Pattern.Created
+      Kore.Attribute.Pattern.Defined
+      Kore.Attribute.Pattern.FreeVariables
+      Kore.Attribute.Pattern.Function
+      Kore.Attribute.Pattern.Functional
+      Kore.Attribute.Pattern.Simplified
+      Kore.Attribute.PredicatePattern
+      Kore.Attribute.Priority
+      Kore.Attribute.ProductionID
+      Kore.Attribute.RuleIndex
+      Kore.Attribute.Simplification
+      Kore.Attribute.Smthook
+      Kore.Attribute.SmtLemma
+      Kore.Attribute.Smtlib
+      Kore.Attribute.Smtlib.Smthook
+      Kore.Attribute.Smtlib.Smtlib
+      Kore.Attribute.Sort
+      Kore.Attribute.Sort.Concat
+      Kore.Attribute.Sort.Constructors
+      Kore.Attribute.Sort.ConstructorsBuilder
+      Kore.Attribute.Sort.Element
+      Kore.Attribute.Sort.HasDomainValues
+      Kore.Attribute.Sort.Unit
+      Kore.Attribute.SortInjection
+      Kore.Attribute.Source
+      Kore.Attribute.SourceLocation
+      Kore.Attribute.Subsort
+      Kore.Attribute.Symbol
+      Kore.Attribute.Symbol.Anywhere
+      Kore.Attribute.Symbol.Klabel
+      Kore.Attribute.Symbol.Memo
+      Kore.Attribute.Symbol.NoEvaluators
+      Kore.Attribute.Symbol.SymbolKywd
+      Kore.Attribute.Synthetic
+      Kore.Attribute.Trusted
+      Kore.Attribute.UniqueId
+      Kore.BugReport
+      Kore.Builtin
+      Kore.Builtin.AssocComm.AssocComm
+      Kore.Builtin.AssocComm.CeilSimplifier
+      Kore.Builtin.AssociativeCommutative
+      Kore.Builtin.Attributes
+      Kore.Builtin.Bool
+      Kore.Builtin.Bool.Bool
+      Kore.Builtin.Builtin
+      Kore.Builtin.Encoding
+      Kore.Builtin.Endianness
+      Kore.Builtin.Endianness.Endianness
+      Kore.Builtin.EqTerm
+      Kore.Builtin.Error
+      Kore.Builtin.External
+      Kore.Builtin.Inj
+      Kore.Builtin.Int
+      Kore.Builtin.Int.Int
+      Kore.Builtin.InternalBytes
+      Kore.Builtin.InternalBytes.InternalBytes
+      Kore.Builtin.KEqual
+      Kore.Builtin.Kreflection
+      Kore.Builtin.Krypto
+      Kore.Builtin.List
+      Kore.Builtin.List.List
+      Kore.Builtin.Map
+      Kore.Builtin.Map.Map
+      Kore.Builtin.Set
+      Kore.Builtin.Set.Set
+      Kore.Builtin.Signedness
+      Kore.Builtin.Signedness.Signedness
+      Kore.Builtin.String
+      Kore.Builtin.String.String
+      Kore.Builtin.Symbols
+      Kore.Builtin.Verifiers
+      Kore.Debug
+      Kore.Domain.Builtin
+      Kore.Equation
+      Kore.Equation.Application
+      Kore.Equation.Equation
+      Kore.Equation.Registry
+      Kore.Equation.Sentence
+      Kore.Equation.Simplification
+      Kore.Error
+      Kore.Exec
+      Kore.IndexedModule.Error
+      Kore.IndexedModule.IndexedModule
+      Kore.IndexedModule.MetadataTools
+      Kore.IndexedModule.MetadataToolsBuilder
+      Kore.IndexedModule.OverloadGraph
+      Kore.IndexedModule.Resolvers
+      Kore.IndexedModule.SortGraph
+      Kore.Internal.Alias
+      Kore.Internal.ApplicationSorts
+      Kore.Internal.Condition
+      Kore.Internal.Conditional
+      Kore.Internal.Inj
+      Kore.Internal.InternalBytes
+      Kore.Internal.MultiAnd
+      Kore.Internal.MultiOr
+      Kore.Internal.OrCondition
+      Kore.Internal.OrPattern
+      Kore.Internal.Pattern
+      Kore.Internal.Predicate
+      Kore.Internal.SideCondition
+      Kore.Internal.SideCondition.SideCondition
+      Kore.Internal.Substitution
+      Kore.Internal.Symbol
+      Kore.Internal.TermLike
+      Kore.Internal.TermLike.Renaming
+      Kore.Internal.TermLike.TermLike
+      Kore.Internal.Variable
+      Kore.Log
+      Kore.Log.DebugAppliedRewriteRules
+      Kore.Log.DebugClaimState
+      Kore.Log.DebugEvaluateCondition
+      Kore.Log.DebugProven
+      Kore.Log.DebugSolver
+      Kore.Log.DebugSubstitutionSimplifier
+      Kore.Log.DebugUnification
+      Kore.Log.ErrorBottomTotalFunction
+      Kore.Log.ErrorDecidePredicateUnknown
+      Kore.Log.ErrorException
+      Kore.Log.ErrorParse
+      Kore.Log.ErrorRewriteLoop
+      Kore.Log.ErrorRewritesInstantiation
+      Kore.Log.ErrorRuleMergeDuplicate
+      Kore.Log.ErrorVerify
+      Kore.Log.InfoAttemptUnification
+      Kore.Log.InfoExecBreadth
+      Kore.Log.InfoExecDepth
+      Kore.Log.InfoProofDepth
+      Kore.Log.InfoReachability
+      Kore.Log.KoreLogOptions
+      Kore.Log.Registry
+      Kore.Log.SQLite
+      Kore.Log.WarnFunctionWithoutEvaluators
+      Kore.Log.WarnIfLowProductivity
+      Kore.Log.WarnRetrySolverQuery
+      Kore.Log.WarnStuckClaimState
+      Kore.Log.WarnSymbolSMTRepresentation
+      Kore.Log.WarnTrivialClaim
+      Kore.ModelChecker.Bounded
+      Kore.ModelChecker.Simplification
+      Kore.ModelChecker.Step
+      Kore.Options
+      Kore.Parser
+      Kore.Parser.CString
+      Kore.Parser.Lexer
+      Kore.Parser.Parser
+      Kore.Parser.ParserUtils
+      Kore.Reachability
+      Kore.Reachability.AllPathClaim
+      Kore.Reachability.Claim
+      Kore.Reachability.ClaimState
+      Kore.Reachability.OnePathClaim
+      Kore.Reachability.Prim
+      Kore.Reachability.Prove
+      Kore.Reachability.SomeClaim
+      Kore.Repl
+      Kore.Repl.Data
+      Kore.Repl.Interpreter
+      Kore.Repl.Parser
+      Kore.Repl.State
+      Kore.Rewriting.RewritingVariable
+      Kore.Rewriting.UnifyingRule
+      Kore.Sort
+      Kore.Step
+      Kore.Step.AntiLeft
+      Kore.Step.Axiom.EvaluationStrategy
+      Kore.Step.Axiom.Identifier
+      Kore.Step.Axiom.Matcher
+      Kore.Step.Axiom.Registry
+      Kore.Step.AxiomPattern
+      Kore.Step.ClaimPattern
+      Kore.Step.Function.Evaluator
+      Kore.Step.Function.Memo
+      Kore.Step.Implication
+      Kore.Step.Remainder
+      Kore.Step.Result
+      Kore.Step.RewriteStep
+      Kore.Step.Rule
+      Kore.Step.Rule.Combine
+      Kore.Step.Rule.Expand
+      Kore.Step.Rule.Simplify
+      Kore.Step.RulePattern
+      Kore.Step.Search
+      Kore.Step.Simplification.And
+      Kore.Step.Simplification.AndPredicates
+      Kore.Step.Simplification.AndTerms
+      Kore.Step.Simplification.Application
+      Kore.Step.Simplification.Bottom
+      Kore.Step.Simplification.Builtin
+      Kore.Step.Simplification.Ceil
+      Kore.Step.Simplification.CeilSimplifier
+      Kore.Step.Simplification.Condition
+      Kore.Step.Simplification.Data
+      Kore.Step.Simplification.Defined
+      Kore.Step.Simplification.DomainValue
+      Kore.Step.Simplification.Equals
+      Kore.Step.Simplification.Exists
+      Kore.Step.Simplification.ExpandAlias
+      Kore.Step.Simplification.Floor
+      Kore.Step.Simplification.Forall
+      Kore.Step.Simplification.Iff
+      Kore.Step.Simplification.Implies
+      Kore.Step.Simplification.In
+      Kore.Step.Simplification.Inhabitant
+      Kore.Step.Simplification.Inj
+      Kore.Step.Simplification.InjSimplifier
+      Kore.Step.Simplification.InternalBytes
+      Kore.Step.Simplification.Mu
+      Kore.Step.Simplification.Next
+      Kore.Step.Simplification.NoConfusion
+      Kore.Step.Simplification.Not
+      Kore.Step.Simplification.NotSimplifier
+      Kore.Step.Simplification.Nu
+      Kore.Step.Simplification.Or
+      Kore.Step.Simplification.OrPattern
+      Kore.Step.Simplification.Overloading
+      Kore.Step.Simplification.OverloadSimplifier
+      Kore.Step.Simplification.Pattern
+      Kore.Step.Simplification.Rewrites
+      Kore.Step.Simplification.Rule
+      Kore.Step.Simplification.SetVariable
+      Kore.Step.Simplification.SimplificationType
+      Kore.Step.Simplification.Simplify
+      Kore.Step.Simplification.StringLiteral
+      Kore.Step.Simplification.SubstitutionSimplifier
+      Kore.Step.Simplification.TermLike
+      Kore.Step.Simplification.Top
+      Kore.Step.Simplification.Variable
+      Kore.Step.SMT.AST
+      Kore.Step.SMT.Declaration.All
+      Kore.Step.SMT.Declaration.Sorts
+      Kore.Step.SMT.Declaration.Symbols
+      Kore.Step.SMT.Encoder
+      Kore.Step.SMT.Evaluator
+      Kore.Step.SMT.Lemma
+      Kore.Step.SMT.Representation.All
+      Kore.Step.SMT.Representation.Resolve
+      Kore.Step.SMT.Representation.Sorts
+      Kore.Step.SMT.Representation.Symbols
+      Kore.Step.SMT.Resolvers
+      Kore.Step.SMT.Translate
+      Kore.Step.Step
+      Kore.Step.Strategy
+      Kore.Step.Substitution
+      Kore.Step.Transition
+      Kore.Substitute
+      Kore.Syntax
+      Kore.Syntax.And
+      Kore.Syntax.Application
+      Kore.Syntax.Bottom
+      Kore.Syntax.Ceil
+      Kore.Syntax.Definition
+      Kore.Syntax.DomainValue
+      Kore.Syntax.Equals
+      Kore.Syntax.Exists
+      Kore.Syntax.Floor
+      Kore.Syntax.Forall
+      Kore.Syntax.Id
+      Kore.Syntax.Iff
+      Kore.Syntax.Implies
+      Kore.Syntax.In
+      Kore.Syntax.Inhabitant
+      Kore.Syntax.Module
+      Kore.Syntax.Mu
+      Kore.Syntax.Next
+      Kore.Syntax.Not
+      Kore.Syntax.Nu
+      Kore.Syntax.Or
+      Kore.Syntax.Pattern
+      Kore.Syntax.PatternF
+      Kore.Syntax.Rewrites
+      Kore.Syntax.Sentence
+      Kore.Syntax.StringLiteral
+      Kore.Syntax.Top
+      Kore.Syntax.Variable
+      Kore.TopBottom
+      Kore.Unification.Procedure
+      Kore.Unification.SubstitutionNormalization
+      Kore.Unification.SubstitutionSimplifier
+      Kore.Unification.UnificationProcedure
+      Kore.Unification.UnifierT
+      Kore.Unification.Unify
+      Kore.Unparser
+      Kore.Variables.Binding
+      Kore.Variables.Free
+      Kore.Variables.Fresh
+      Kore.Variables.Target
+      Kore.Verified
+      Log
+      Log.Entry
+      Logic
+      Options.SMT
+      Pair
+      Prelude.Kore
+      Pretty
+      Prof
+      SMT
+      SMT.AST
+      SMT.SimpleSMT
+      SQL
+      SQL.ColumnDef
+      SQL.Key
+      SQL.Query
+      SQL.SOP
+      SQL.SQL
+      Stats
+  other-modules:
+      Paths_kore
+  hs-source-dirs:
+      src
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  default-language: Haskell2010
+
+executable kore-exec
+  main-is: Main.hs
+  other-modules:
+      GlobalMain
+      Paths_kore
+  hs-source-dirs:
+      app/exec
+      app/share
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , kore
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  if flag(threaded)
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
+  else
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
+  default-language: Haskell2010
+
+executable kore-format
+  main-is: Main.hs
+  other-modules:
+      GlobalMain
+      Paths_kore
+  hs-source-dirs:
+      app/format
+      app/share
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , kore
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  if flag(threaded)
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
+  else
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
+  default-language: Haskell2010
+
+executable kore-parser
+  main-is: Main.hs
+  other-modules:
+      GlobalMain
+      Paths_kore
+  hs-source-dirs:
+      app/parser
+      app/share
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , kore
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  if flag(threaded)
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
+  else
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
+  default-language: Haskell2010
+
+executable kore-prof
+  main-is: Main.hs
+  other-modules:
+      Paths_kore
+  hs-source-dirs:
+      app/prof
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , eventlog2speedscope
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  default-language: Haskell2010
+
+executable kore-repl
+  main-is: Main.hs
+  other-modules:
+      GlobalMain
+      Paths_kore
+  hs-source-dirs:
+      app/repl
+      app/share
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , integer-gmp >=1.0
+    , kore
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  if flag(threaded)
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
+  else
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
+  default-language: Haskell2010
+
+test-suite kore-test
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  other-modules:
+      Driver
+      Test.ConsistentKore
+      Test.Data.Graph.TopologicalSort
+      Test.Data.Limit
+      Test.Data.Sup
+      Test.Debug
+      Test.Expect
+      Test.Injection
+      Test.Kore
+      Test.Kore.AST.Common
+      Test.Kore.ASTVerifier.DefinitionVerifier
+      Test.Kore.ASTVerifier.DefinitionVerifier.Imports
+      Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
+      Test.Kore.ASTVerifier.DefinitionVerifier.SentenceVerifier
+      Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage
+      Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames
+      Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
+      Test.Kore.Attribute.Assoc
+      Test.Kore.Attribute.Axiom.Concrete
+      Test.Kore.Attribute.Axiom.Symbolic
+      Test.Kore.Attribute.Axiom.Unit
+      Test.Kore.Attribute.Comm
+      Test.Kore.Attribute.Constructor
+      Test.Kore.Attribute.Function
+      Test.Kore.Attribute.Functional
+      Test.Kore.Attribute.Hook
+      Test.Kore.Attribute.Idem
+      Test.Kore.Attribute.Injective
+      Test.Kore.Attribute.Label
+      Test.Kore.Attribute.Overload
+      Test.Kore.Attribute.Owise
+      Test.Kore.Attribute.Parser
+      Test.Kore.Attribute.Pattern.ConstructorLike
+      Test.Kore.Attribute.Pattern.Defined
+      Test.Kore.Attribute.Pattern.FreeVariables
+      Test.Kore.Attribute.Pattern.Function
+      Test.Kore.Attribute.Pattern.Functional
+      Test.Kore.Attribute.Pattern.Sort
+      Test.Kore.Attribute.Priority
+      Test.Kore.Attribute.ProductionID
+      Test.Kore.Attribute.Simplification
+      Test.Kore.Attribute.Smtlib
+      Test.Kore.Attribute.Sort.ConstructorsBuilder
+      Test.Kore.Attribute.Sort.HasDomainValues
+      Test.Kore.Attribute.Sort.Unit
+      Test.Kore.Attribute.SortInjection
+      Test.Kore.Attribute.Subsort
+      Test.Kore.Attribute.Symbol
+      Test.Kore.Attribute.Symbol.Anywhere
+      Test.Kore.Attribute.Symbol.Klabel
+      Test.Kore.Attribute.Symbol.Memo
+      Test.Kore.Attribute.Symbol.NoEvaluators
+      Test.Kore.Attribute.Symbol.SymbolKywd
+      Test.Kore.Attribute.Trusted
+      Test.Kore.Attribute.UniqueId
+      Test.Kore.BugReport
+      Test.Kore.Builtin
+      Test.Kore.Builtin.AssocComm.CeilSimplifier
+      Test.Kore.Builtin.AssociativeCommutative
+      Test.Kore.Builtin.Bool
+      Test.Kore.Builtin.Builtin
+      Test.Kore.Builtin.Definition
+      Test.Kore.Builtin.Encoding
+      Test.Kore.Builtin.Endianness
+      Test.Kore.Builtin.Inj
+      Test.Kore.Builtin.Int
+      Test.Kore.Builtin.InternalBytes
+      Test.Kore.Builtin.KEqual
+      Test.Kore.Builtin.Krypto
+      Test.Kore.Builtin.List
+      Test.Kore.Builtin.Map
+      Test.Kore.Builtin.Set
+      Test.Kore.Builtin.Signedness
+      Test.Kore.Builtin.String
+      Test.Kore.Contains
+      Test.Kore.Equation.Application
+      Test.Kore.Equation.Sentence
+      Test.Kore.Error
+      Test.Kore.Exec
+      Test.Kore.IndexedModule.Error
+      Test.Kore.IndexedModule.MockMetadataTools
+      Test.Kore.IndexedModule.OverloadGraph
+      Test.Kore.IndexedModule.Resolvers
+      Test.Kore.IndexedModule.SortGraph
+      Test.Kore.Internal.ApplicationSorts
+      Test.Kore.Internal.Condition
+      Test.Kore.Internal.MultiAnd
+      Test.Kore.Internal.OrCondition
+      Test.Kore.Internal.OrPattern
+      Test.Kore.Internal.Pattern
+      Test.Kore.Internal.Predicate
+      Test.Kore.Internal.SideCondition
+      Test.Kore.Internal.Substitution
+      Test.Kore.Internal.Symbol
+      Test.Kore.Internal.TermLike
+      Test.Kore.Log.DebugEvaluateCondition
+      Test.Kore.Log.ErrorBottomTotalFunction
+      Test.Kore.Log.WarnFunctionWithoutEvaluators
+      Test.Kore.Log.WarnSymbolSMTRepresentation
+      Test.Kore.Options
+      Test.Kore.Parser
+      Test.Kore.Parser.Lexer
+      Test.Kore.Parser.Parser
+      Test.Kore.Reachability.Claim
+      Test.Kore.Reachability.MockAllPath
+      Test.Kore.Reachability.OnePathStrategy
+      Test.Kore.Reachability.Prove
+      Test.Kore.Reachability.SomeClaim
+      Test.Kore.Repl.Graph
+      Test.Kore.Repl.Interpreter
+      Test.Kore.Repl.Parser
+      Test.Kore.Rewriting.RewritingVariable
+      Test.Kore.Step
+      Test.Kore.Step.AntiLeft
+      Test.Kore.Step.Axiom.EvaluationStrategy
+      Test.Kore.Step.Axiom.Identifier
+      Test.Kore.Step.Axiom.Matcher
+      Test.Kore.Step.Axiom.Registry
+      Test.Kore.Step.ClaimPattern
+      Test.Kore.Step.Function.Evaluator
+      Test.Kore.Step.Function.Integration
+      Test.Kore.Step.Function.Memo
+      Test.Kore.Step.Implication
+      Test.Kore.Step.MockSymbols
+      Test.Kore.Step.Remainder
+      Test.Kore.Step.RewriteStep
+      Test.Kore.Step.Rule
+      Test.Kore.Step.Rule.Combine
+      Test.Kore.Step.Rule.Common
+      Test.Kore.Step.Rule.Expand
+      Test.Kore.Step.Rule.Simplify
+      Test.Kore.Step.RulePattern
+      Test.Kore.Step.Simplification
+      Test.Kore.Step.Simplification.And
+      Test.Kore.Step.Simplification.AndTerms
+      Test.Kore.Step.Simplification.Application
+      Test.Kore.Step.Simplification.Bottom
+      Test.Kore.Step.Simplification.Builtin
+      Test.Kore.Step.Simplification.Ceil
+      Test.Kore.Step.Simplification.Condition
+      Test.Kore.Step.Simplification.DomainValue
+      Test.Kore.Step.Simplification.Equals
+      Test.Kore.Step.Simplification.Exists
+      Test.Kore.Step.Simplification.Floor
+      Test.Kore.Step.Simplification.Forall
+      Test.Kore.Step.Simplification.Iff
+      Test.Kore.Step.Simplification.Implies
+      Test.Kore.Step.Simplification.InjSimplifier
+      Test.Kore.Step.Simplification.Integration
+      Test.Kore.Step.Simplification.IntegrationProperty
+      Test.Kore.Step.Simplification.Next
+      Test.Kore.Step.Simplification.Not
+      Test.Kore.Step.Simplification.Or
+      Test.Kore.Step.Simplification.OrPattern
+      Test.Kore.Step.Simplification.Overloading
+      Test.Kore.Step.Simplification.Pattern
+      Test.Kore.Step.Simplification.Rule
+      Test.Kore.Step.Simplification.StringLiteral
+      Test.Kore.Step.Simplification.SubstitutionSimplifier
+      Test.Kore.Step.Simplification.TermLike
+      Test.Kore.Step.Simplification.Top
+      Test.Kore.Step.SMT.Builders
+      Test.Kore.Step.SMT.Evaluator
+      Test.Kore.Step.SMT.Helpers
+      Test.Kore.Step.SMT.Representation.All
+      Test.Kore.Step.SMT.Representation.Builders
+      Test.Kore.Step.SMT.Representation.Helpers
+      Test.Kore.Step.SMT.Representation.Sorts
+      Test.Kore.Step.SMT.Representation.Symbols
+      Test.Kore.Step.SMT.Sorts
+      Test.Kore.Step.SMT.Symbols
+      Test.Kore.Step.SMT.Translate
+      Test.Kore.Step.Strategy
+      Test.Kore.Step.Transition
+      Test.Kore.Syntax.Id
+      Test.Kore.Syntax.Variable
+      Test.Kore.TopBottom
+      Test.Kore.Unification.SubstitutionNormalization
+      Test.Kore.Unification.Unifier
+      Test.Kore.Unification.UnifierT
+      Test.Kore.Unparser
+      Test.Kore.Variables.Fresh
+      Test.Kore.Variables.Target
+      Test.Kore.Variables.V
+      Test.Kore.Variables.W
+      Test.Kore.With
+      Test.Pretty
+      Test.SMT
+      Test.SMT.AST
+      Test.SQL
+      Test.Stats
+      Test.Tasty.HUnit.Ext
+      Test.Terse
+      Paths_kore
+  hs-source-dirs:
+      test
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances UndecidableInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Wredundant-constraints -Wmissing-export-lists -eventlog
+  build-tool-depends:
+      tasty-discover:tasty-discover >=4.2
+  build-depends:
+      QuickCheck >=2.13
+    , adjunctions >=4.4
+    , aeson >=1.4
+    , array >=0.5
+    , async >=2.2
+    , base >=4.7
+    , bytestring >=0.10
+    , call-stack >=0.1
+    , clock >=0.8
+    , co-log >=0.3
+    , comonad >=5.0
+    , containers >=0.5.8
+    , cryptonite >=0.25
+    , data-default >=0.7
+    , deepseq >=1.4
+    , directory >=1.3
+    , distributive >=0.6
+    , errors >=2.3
+    , exceptions >=0.10
+    , extra >=1.6
+    , fgl >=5.7
+    , filepath >=1.4
+    , free >=5.1
+    , generic-lens >=1.1
+    , generics-sop >=0.5
+    , ghc-trace-events >=0.1
+    , gitrev >=1.3
+    , graphviz >=2999.20
+    , groom >=0.1
+    , hashable >=1.2
+    , haskeline >=0.7
+    , hedgehog >=1.0
+    , integer-gmp >=1.0
+    , kore
+    , lens >=4.17
+    , logict >=0.7
+    , megaparsec >=7.0.4
+    , memory >=0.14
+    , mmorph >=1.1
+    , mtl >=2.2
+    , optparse-applicative >=0.14
+    , parser-combinators >=1.1
+    , prettyprinter >=1.2
+    , process >=1.6
+    , profunctors >=5.3
+    , quickcheck-instances >=0.3
+    , recursion-schemes >=5.1
+    , reflection >=2.1
+    , semialign >=1
+    , sqlite-simple >=0.4
+    , stm >=2.5
+    , streams
+    , tar >=0.5
+    , tasty >=1.2
+    , tasty-golden >=2.3
+    , tasty-hedgehog >=1.0
+    , tasty-hunit >=0.10
+    , tasty-quickcheck >=0.10
+    , tasty-test-reporter >=0.1
+    , template-haskell >=2.14
+    , temporary >=1.3
+    , text >=1.2
+    , these >=1.0
+    , time >=1.8
+    , transformers >=0.4
+    , unordered-containers >=0.2
+    , vector >=0.12
+    , witherable >=0.3
+    , zlib >=0.6
+  if !flag(release)
+    ghc-options: -fno-specialise
+  if flag(threaded)
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
+  else
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
+  default-language: Haskell2010
