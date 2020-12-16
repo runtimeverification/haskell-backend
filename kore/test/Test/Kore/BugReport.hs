@@ -1,5 +1,6 @@
 module Test.Kore.BugReport
-    ( test_parse
+    ( test_bugReportOption
+    , test_parse
     ) where
 
 import Prelude.Kore
@@ -9,6 +10,11 @@ import qualified Data.List as List
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+
+import Kore.BugReport
+    ( BugReportOption (..)
+    , parseBugReportOption
+    )
 
 import Kore.Log
     ( parseKoreLogOptions
@@ -29,6 +35,7 @@ import Options.Applicative
 
 import Test.Tasty
 import Test.Tasty.Hedgehog
+import Test.Tasty.HUnit
 
 test_parse :: TestTree
 test_parse =
@@ -82,6 +89,40 @@ test_parse =
             actual = expect >>= parseKoreLogOpts . unparseKoreLogOptions
         getParseResult expect === getParseResult actual
 
+test_bugReportOption :: TestTree
+test_bugReportOption =
+    testGroup
+        "Parse BugReportOption"
+        [ testCase "Parse BugReportEnable" enableAssert
+        , testCase "Parse BugReportDisable" disableAssert
+        , testCase "Parse BugReportOnError" onErrorAssert
+        ]
+  where
+    enableAssert =
+        assertParse 
+            ["--bug-report", "fileName"]
+            (BugReportEnable $ BugReport "fileName") 
+
+    disableAssert =
+        assertParse
+            ["--no-bug-report"]
+            BugReportDisable
+
+    onErrorAssert =
+        assertParse
+            []
+            BugReportOnError
+
+    assertParse :: [String] -> BugReportOption -> Assertion
+    assertParse arguments opt =
+        assertEqual
+            (  "Encountered error when parsing flag\n  "
+            ++ unwords arguments
+            ++ "\n."
+            )
+            (Just opt)
+            (getParseResult $ parseBugReportOpts arguments)  
+
 parseKoreLogOpts :: [String] -> ParserResult KoreLogOptions
 parseKoreLogOpts arguments =
     execParserPure
@@ -90,6 +131,13 @@ parseKoreLogOpts arguments =
             (parseKoreLogOptions (ExeName "kore-exec") (fromNanoSecs 0))
             fullDesc
         )
+        arguments
+
+parseBugReportOpts :: [String] -> ParserResult BugReportOption
+parseBugReportOpts arguments =
+    execParserPure
+        defaultPrefs
+        (info parseBugReportOption fullDesc)
         arguments
 
 element :: [a] -> Gen a

@@ -54,12 +54,13 @@ import Kore.Log.KoreLogOptions
     )
 
 newtype BugReport = BugReport { toReport :: FilePath }
-    deriving Show
+    deriving (Eq, Show)
 
 data BugReportOption
     = BugReportEnable BugReport -- ^ Always creates a bug report
     | BugReportDisable -- ^ Never creates a bug report
     | BugReportOnError -- ^ Creates a bug report only after a crash
+    deriving (Eq, Show)
 
 parseBugReportOption :: Parser BugReportOption
 parseBugReportOption =
