@@ -63,6 +63,7 @@ module Kore.Internal.Predicate
     , setSimplified
     , forgetSimplified
     , wrapPredicate
+    , containsSymbolWithIdPred
     , pattern PredicateTrue
     , pattern PredicateFalse
     , pattern PredicateAnd
@@ -1155,3 +1156,12 @@ depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth
   where
     levelDepth (_ :< predF) = 1 + foldl' max 0 predF
+
+containsSymbolWithIdPred :: String -> Predicate variable -> Bool
+containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
+    case predicate of
+        EqualsF x -> any (containsSymbolWithId symId) x
+        InF     x -> any (containsSymbolWithId symId) x
+        CeilF   x -> any (containsSymbolWithId symId) x
+        FloorF  x -> any (containsSymbolWithId symId) x
+        _ -> any (containsSymbolWithIdPred symId) predicate
