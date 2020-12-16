@@ -63,15 +63,15 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern InternalBool_
-    , pattern InternalString_
     , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
     , pattern Forall_
     , pattern Inj_
+    , pattern InternalBool_
     , pattern InternalBytes_
     , pattern InternalInt_
+    , pattern InternalString_
     , pattern Mu_
     , pattern Not_
     , pattern Nu_
