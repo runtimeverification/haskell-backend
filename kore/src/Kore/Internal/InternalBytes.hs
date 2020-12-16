@@ -62,17 +62,14 @@ instance Synthetic (FreeVariables variable) (Const InternalBytes) where
     synthetic = const emptyFreeVariables
     {-# INLINE synthetic #-}
 
--- | An 'InternalBytes' pattern is always 'Defined'.
 instance Synthetic Defined (Const InternalBytes) where
     synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
--- | An 'InternalBytes' pattern is always 'Function'.
 instance Synthetic Function (Const InternalBytes) where
-    synthetic = const (Function True)
+    synthetic = alwaysFunction
     {-# INLINE synthetic #-}
 
--- | An 'InternalBytes' pattern is always 'Functional'.
 instance Synthetic Functional (Const InternalBytes) where
-    synthetic = const (Functional True)
+    synthetic = alwaysFunctional
     {-# INLINE synthetic #-}

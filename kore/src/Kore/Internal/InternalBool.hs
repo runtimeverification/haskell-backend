@@ -71,19 +71,16 @@ instance Synthetic ConstructorLike (Const InternalBool) where
     synthetic _ = ConstructorLike . Just $ ConstructorLikeHead
     {-# INLINE synthetic #-}
 
--- | A 'InternalInt' pattern is always 'Defined'.
 instance Synthetic Defined (Const InternalBool) where
     synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
--- | An 'InternalBool' pattern is always 'Function'.
 instance Synthetic Function (Const InternalBool) where
-    synthetic = const (Function True)
+    synthetic = alwaysFunction
     {-# INLINE synthetic #-}
 
--- | An 'InternalBool' pattern is always 'Functional'.
 instance Synthetic Functional (Const InternalBool) where
-    synthetic = const (Functional True)
+    synthetic = alwaysFunctional
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const InternalBool) where

@@ -569,7 +569,6 @@ overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
             explainAndReturnBottom (fromString message) firstTerm secondTerm
         Left Overloading.NotApplicable -> empty
 
-
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
