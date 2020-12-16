@@ -13,7 +13,6 @@
             /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
         )
     ),
-    /* Created: Kore.Internal.Predicate.makeAndPredicate */
     /* Spa */
     \and{SortGeneratedTopCell{}}(
         /* Spa */
