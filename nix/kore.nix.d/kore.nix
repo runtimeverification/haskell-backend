@@ -149,6 +149,7 @@
           "Kore/Attribute/Pattern/Function"
           "Kore/Attribute/Pattern/Functional"
           "Kore/Attribute/Pattern/Simplified"
+          "Kore/Attribute/PredicatePattern"
           "Kore/Attribute/Priority"
           "Kore/Attribute/ProductionID"
           "Kore/Attribute/RuleIndex"
