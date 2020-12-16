@@ -17,8 +17,10 @@ import Data.Generics.Product
     ( field
     )
 
+import Changed
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
@@ -85,18 +87,20 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
         let simplifiedPattern =
-                Lens.set (field @"term") term
-                $ from @(SideCondition _) @(Condition _)
-                $ SideCondition.fromCondition normalized
+                Lens.traverseOf
+                    (field @"predicate")
+                    simplifyConjunctions
+                    normalized { term }
         if fullySimplified simplifiedPattern
-            then return simplifiedPattern
-            else worker simplifiedPattern
+            then return (extract simplifiedPattern)
+            else worker (extract simplifiedPattern)
 
     -- TODO(Ana): this should also check if the predicate is simplified
-    fullySimplified Conditional { predicate, substitution } =
+    fullySimplified (Unchanged Conditional { predicate, substitution }) =
         Predicate.isFreeOf predicate variables
       where
         variables = Substitution.variables substitution
+    fullySimplified (Changed _) = False
 
     normalize
         ::  forall any'
@@ -142,3 +146,14 @@ simplifyPredicate sideCondition predicate = do
             [ "Expecting a \\top term, but found:"
             , unparse conditional
             ]
+
+simplifyConjunctions
+    :: InternalVariable variable
+    => Predicate variable
+    -> Changed (Predicate variable)
+simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
+    let sort = Predicate.predicateSort original
+     in case SideCondition.simplifyConjunctionByAssumption predicates of
+            Unchanged _ -> Unchanged original
+            Changed (changed, _) ->
+                Changed (MultiAnd.toPredicateSorted sort changed)

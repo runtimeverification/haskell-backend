@@ -18,6 +18,7 @@ module Kore.Internal.SideCondition
     , topTODO
     , toPredicate
     , toRepresentation
+    , simplifyConjunctionByAssumption
     ) where
 
 import Prelude.Kore
@@ -26,8 +27,8 @@ import Control.DeepSeq
     ( NFData
     )
 import Control.Monad.State.Strict
-    ( State
-    , runState
+    ( StateT
+    , runStateT
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
@@ -42,6 +43,7 @@ import Data.List
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Changed
 import Debug
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
@@ -67,7 +69,19 @@ import Kore.Internal.Symbol
     , isFunction
     )
 import Kore.Internal.TermLike
-    ( TermLike
+    ( pattern App_
+    , pattern Builtin_
+    , pattern Equals_
+    , pattern Exists_
+    , pattern Forall_
+    , pattern Inj_
+    , pattern Mu_
+    , pattern Not_
+    , pattern Nu_
+    , TermLike
+    , mkBottom
+    , mkTop
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
@@ -138,6 +152,7 @@ instance InternalVariable variable =>
     from multiAnd =
         let (assumedTrue, replacements) =
                   simplifyConjunctionByAssumption multiAnd
+                  & extract
          in SideCondition { assumedTrue, replacements }
     {-# INLINE from #-}
 
@@ -186,6 +201,7 @@ andCondition
     let combinedConditions = oldCondition <> newCondition
         (assumedTrue, replacements) =
             simplifyConjunctionByAssumption combinedConditions
+            & extract
      in SideCondition { assumedTrue, replacements }
   where
     SideCondition { assumedTrue = oldCondition } = sideCondition
@@ -262,12 +278,13 @@ simplifyConjunctionByAssumption
     :: forall variable
     .  InternalVariable variable
     => MultiAnd (Predicate variable)
-    -> ( MultiAnd (Predicate variable)
+    -> Changed
+        ( MultiAnd (Predicate variable)
         , HashMap (TermLike variable) (TermLike variable)
-       )
+        )
 simplifyConjunctionByAssumption (toList -> andPredicates) =
-    Bifunctor.first MultiAnd.make
-    $ flip runState HashMap.empty
+    (fmap . Bifunctor.first) MultiAnd.make
+    $ flip runStateT HashMap.empty
     $ for (sortBySize andPredicates)
     $ \predicate' -> do
         let original = Predicate.unwrapPredicate predicate'
@@ -291,38 +308,35 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
     assume
         :: Predicate variable
-        -> State (HashMap (TermLike variable) (TermLike variable)) ()
+        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
     assume predicate1 =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
         assumePredicate =
             case termLike of
-                TermLike.Not_ _ notChild ->
+                Not_ _ notChild ->
                     -- Infer that the predicate is \bottom.
-                    HashMap.insert notChild (TermLike.mkBottom sort)
+                    HashMap.insert notChild (mkBottom sort)
                 _ ->
                     -- Infer that the predicate is \top.
-                    HashMap.insert termLike (TermLike.mkTop sort)
+                    HashMap.insert termLike (mkTop sort)
         assumeEqualTerms =
             case retractLocalFunction termLike of
                 Just (Pair term1 term2) -> HashMap.insert term1 term2
                 _ -> id
 
         termLike = Predicate.unwrapPredicate predicate1
-        sort = TermLike.termLikeSort termLike
+        sort = termLikeSort termLike
 
     applyAssumptions
         ::  TermLike variable
-        ->  State
-                (HashMap (TermLike variable) (TermLike variable))
+        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
                 (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        return
-            $ unsafeMakePredicate
-                assumptions
-                replaceIn
-                (applyAssumptionsWorker assumptions replaceIn)
+        lift $ fmap
+            (unsafeMakePredicate assumptions replaceIn)
+            (applyAssumptionsWorker assumptions replaceIn)
 
     unsafeMakePredicate replacements original result =
         case Predicate.makePredicate result of
@@ -341,23 +355,27 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     applyAssumptionsWorker
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
-        -> TermLike variable
+        -> Changed (TermLike variable)
     applyAssumptionsWorker assumptions original
-      | Just result <- HashMap.lookup original assumptions = result
+      | Just result <- HashMap.lookup original assumptions = Changed result
 
-      | HashMap.null assumptions' = original
+      | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        synthesize $ fmap (applyAssumptionsWorker assumptions') replaceIn
+        traverse (applyAssumptionsWorker assumptions') replaceIn
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
 
       where
         _ :< replaceIn = Recursive.project original
 
         assumptions'
-          | TermLike.Exists_ _ var _ <- original = restrictAssumptions (inject var)
-          | TermLike.Forall_ _ var _ <- original = restrictAssumptions (inject var)
-          | TermLike.Mu_       var _ <- original = restrictAssumptions (inject var)
-          | TermLike.Nu_       var _ <- original = restrictAssumptions (inject var)
+          | Exists_ _ var _ <- original = restrictAssumptions (inject var)
+          | Forall_ _ var _ <- original = restrictAssumptions (inject var)
+          | Mu_       var _ <- original = restrictAssumptions (inject var)
+          | Nu_       var _ <- original = restrictAssumptions (inject var)
           | otherwise = assumptions
 
         restrictAssumptions Variable { variableName } =
@@ -384,15 +402,15 @@ retractLocalFunction
     -> Maybe (Pair (TermLike variable))
 retractLocalFunction =
     \case
-        TermLike.Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
+        Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1
         _ -> Nothing
   where
-    go term1@(TermLike.App_ symbol1 _) term2
+    go term1@(App_ symbol1 _) term2
       | isFunction symbol1 =
         case term2 of
-            TermLike.App_ symbol2 _
+            App_ symbol2 _
               | isConstructor symbol2 -> Just (Pair term1 term2)
-            TermLike.Inj_ _     -> Just (Pair term1 term2)
-            TermLike.Builtin_ _ -> Just (Pair term1 term2)
+            Inj_ _     -> Just (Pair term1 term2)
+            Builtin_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing
