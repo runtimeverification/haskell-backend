@@ -208,7 +208,7 @@ extractStringDomainValue
     -> Maybe Text
 extractStringDomainValue _ =
     \case
-        BuiltinString_ internal ->
+        InternalString_ internal ->
             Just internalStringValue
           where
             InternalString { internalStringValue } = internal
@@ -233,7 +233,7 @@ expectBuiltinString
     -> MaybeT m Text
 expectBuiltinString _ =
     \case
-        BuiltinString_ internal ->
+        InternalString_ internal ->
             return internalStringValue
           where
             InternalString { internalStringValue } = internal
@@ -419,7 +419,7 @@ unifyString
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyString term1@(BuiltinString_ int1) term2@(BuiltinString_ int2) =
+unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
     assert (on (==) internalStringSort int1 int2) $ lift worker
   where
     worker :: unifier (Pattern variable)

@@ -126,7 +126,7 @@ module Kore.Internal.TermLike
     , pattern BuiltinList_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
-    , pattern BuiltinString_
+    , pattern InternalString_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -360,7 +360,7 @@ hasConstructorLikeTop = \case
     BuiltinList_ _ -> True
     BuiltinMap_ _ -> True
     BuiltinSet_ _ -> True
-    BuiltinString_ _ -> True
+    InternalString_ _ -> True
     StringLiteral_ _ -> True
     _ -> False
 
@@ -1776,7 +1776,7 @@ pattern BuiltinSet_
     :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinString_ :: InternalString -> TermLike variable
+pattern InternalString_ :: InternalString -> TermLike variable
 
 pattern Equals_
     :: Sort
@@ -1914,7 +1914,7 @@ pattern InternalBool_ internalBool <-
 pattern InternalInt_ internalInt <-
     (Recursive.project -> _ :< InternalIntF (Const internalInt))
 
-pattern BuiltinString_ internalString <-
+pattern InternalString_ internalString <-
     (Recursive.project -> _ :< InternalStringF (Const internalString))
 
 pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)

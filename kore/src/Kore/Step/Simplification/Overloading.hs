@@ -436,7 +436,7 @@ notUnifiableError (InternalInt_ _) = throwBottom "injected builtin int"
 notUnifiableError (BuiltinList_ _) = throwBottom "injected builtin list"
 notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
 notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
-notUnifiableError (BuiltinString_ _) = throwBottom "injected builtin string"
+notUnifiableError (InternalString_ _) = throwBottom "injected builtin string"
 notUnifiableError _ = notApplicable
 
 notUnifiableOverloads :: Monad unifier => OverloadingResult unifier a
