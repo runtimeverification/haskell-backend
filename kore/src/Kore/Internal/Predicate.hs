@@ -1012,7 +1012,18 @@ forgetSimplified
     :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
-forgetSimplified = resynthesize
+forgetSimplified = Recursive.fold worker
+  where
+    worker (_ :< predF) = case predF of
+        CeilF ceil'     -> synthesize $ CeilF
+            (TermLike.forgetSimplified <$> ceil')
+        FloorF floor'   -> synthesize $ FloorF
+            (TermLike.forgetSimplified <$> floor')
+        EqualsF equals' -> synthesize $ EqualsF
+            (TermLike.forgetSimplified <$> equals')
+        InF in'         -> synthesize $ InF
+            (TermLike.forgetSimplified <$> in')
+        _               -> synthesize predF
 
 mapVariables
     :: forall variable1 variable2
