@@ -28,6 +28,9 @@ import Control.Monad.Catch
     , handleAll
     )
 import qualified Data.ByteString.Lazy as ByteString.Lazy
+import Debug
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import Options.Applicative
 import System.Directory
     ( listDirectory
@@ -55,12 +58,18 @@ import Kore.Log.KoreLogOptions
 
 newtype BugReport = BugReport { toReport :: FilePath }
     deriving (Eq, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 data BugReportOption
     = BugReportEnable BugReport -- ^ Always creates a bug report
     | BugReportDisable -- ^ Never creates a bug report
     | BugReportOnError -- ^ Creates a bug report only after a crash
     deriving (Eq, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 parseBugReportOption :: Parser BugReportOption
 parseBugReportOption =

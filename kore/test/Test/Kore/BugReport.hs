@@ -1,5 +1,5 @@
 module Test.Kore.BugReport
-    ( test_bugReportOption
+    ( test_Parse_BugReportOption
     , test_parse
     ) where
 
@@ -7,9 +7,13 @@ import Prelude.Kore
 
 import qualified Data.List as List
 
+import Debug
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+
+import qualified Pretty
 
 import Kore.BugReport
     ( BugReport (..)
@@ -91,25 +95,17 @@ test_parse =
 
 test_Parse_BugReportOption :: [TestTree]
 test_Parse_BugReportOption =
-        [ testCase "Parse BugReportEnable" enableAssert
-        , testCase "Parse BugReportDisable" disableAssert
-        , test "Parse BugReportOnError" [] BugReportOnError
+        [ testParse "Parse BugReportEnable" ["--bug-report", "fileName"] 
+            (BugReportEnable $ BugReport "fileName")
+        , testParse "Parse BugReportDisable" ["--no-bug-report"]
+            BugReportDisable
+        , testParse "Parse BugReportOnError" [] BugReportOnError
         ]
   where
-    enableAssert =
-        assertParse
-            ["--bug-report", "fileName"]
-            (BugReportEnable $ BugReport "fileName")
-
-    disableAssert =
-        assertParse
-            ["--no-bug-report"]
-            BugReportDisable
-
-    onErrorAssert =
-        assertParse
-            []
-            BugReportOnError
+    
+    testParse :: TestName -> [String] -> BugReportOption -> TestTree
+    testParse testName arguments opt =
+        testCase testName $ assertParse arguments opt
 
     assertParse :: HasCallStack => [String] -> BugReportOption -> Assertion
     assertParse arguments opt =
