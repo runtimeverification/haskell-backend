@@ -87,7 +87,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern BuiltinMap_
+    , pattern InternalMap_
     , TermLike
     , termLikeSort
     )
@@ -228,7 +228,7 @@ expectBuiltinMap
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Ac.TermNormalizedAc NormalizedMap variable)
-expectBuiltinMap _ (BuiltinMap_ internalMap) = do
+expectBuiltinMap _ (InternalMap_ internalMap) = do
     let InternalAc { builtinAcChild } = internalMap
     return builtinAcChild
 expectBuiltinMap _ _ = empty
@@ -536,7 +536,7 @@ unifyEquals unifyEqualsChildren first second = do
         :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    unifyEquals0 (BuiltinMap_ normalized1) (BuiltinMap_ normalized2) = do
+    unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
             tools

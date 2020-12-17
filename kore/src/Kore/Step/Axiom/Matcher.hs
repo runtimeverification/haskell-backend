@@ -148,7 +148,7 @@ findClass (Constraint (Pair left _)) = findClassWorker left
             else OtherTermLike
     findClassWorker (InternalList_ _)   = ListBuiltin
     findClassWorker (InternalSet_ _)    = AssocCommBuiltin
-    findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
+    findClassWorker (InternalMap_ _)    = AssocCommBuiltin
     findClassWorker _                  = OtherTermLike
 
 instance Ord variable => Ord (Constraint variable) where
@@ -390,7 +390,7 @@ matchBuiltinMap
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
+matchBuiltinMap (Pair (InternalMap_ map1) (InternalMap_ map2)) =
     matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
     normalized1 = unwrapAc $ builtinAcChild map1

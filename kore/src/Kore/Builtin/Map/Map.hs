@@ -239,7 +239,7 @@ asTermLike builtin =
     filteredMaps = filter (not . isEmptyMap) opaque
 
     isEmptyMap :: TermLike variable -> Bool
-    isEmptyMap (BuiltinMap_ InternalAc { builtinAcChild = wrappedChild }) =
+    isEmptyMap (InternalMap_ InternalAc { builtinAcChild = wrappedChild }) =
         unwrapAc wrappedChild == emptyNormalizedAc
     isEmptyMap (App_ symbol _) = unitSymbol == symbol
     isEmptyMap _ = False
