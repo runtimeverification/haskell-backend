@@ -16,7 +16,6 @@ import Kore.BugReport
     , BugReportOption (..)
     , parseBugReportOption
     )
-
 import Kore.Log
     ( parseKoreLogOptions
     , unparseKoreLogOptions
