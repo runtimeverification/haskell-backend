@@ -45,6 +45,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( mapVariables
+    , replaceTerm
     , toRepresentation
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -322,7 +323,8 @@ simplify sideCondition = \termLike ->
                 Condition.fromPredicate <$> Predicate.makePredicate originalTerm
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
-    descendAndSimplify termLike =
+    -- descendAndSimplify (SideCondition.replaceTerm sideCondition -> termLike) =
+    descendAndSimplify (SideCondition.replaceTerm sideCondition -> termLike) =
         let doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
@@ -331,7 +333,7 @@ simplify sideCondition = \termLike ->
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
-        in case termLikeF of
+         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
             -- Do not simplify non-simplifiable patterns.

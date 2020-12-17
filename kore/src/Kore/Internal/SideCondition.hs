@@ -18,7 +18,9 @@ module Kore.Internal.SideCondition
     , topTODO
     , toPredicate
     , toRepresentation
+    , replaceTerm
     , simplifyConjunctionByAssumption
+    , emptyReplacements
     ) where
 
 import Prelude.Kore
@@ -233,6 +235,14 @@ fromPredicate
     -> SideCondition variable
 fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
 
+-- TODO: docs
+emptyReplacements
+    :: InternalVariable variable
+    => SideCondition variable
+    -> SideCondition variable
+emptyReplacements sideCondition =
+    sideCondition { replacements = mempty }
+
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
@@ -267,6 +277,15 @@ toRepresentation
 toRepresentation =
     mkRepresentation
     . mapVariables @_ @VariableName (pure toVariableName)
+
+-- TODO: docs
+replaceTerm
+    :: InternalVariable variable
+    => SideCondition variable
+    -> TermLike variable
+    -> TermLike variable
+replaceTerm SideCondition { replacements } original =
+    HashMap.findWithDefault original original replacements
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
