@@ -769,7 +769,9 @@ koreBmc execOptions proveOptions = do
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
     unknown =
         ( ExitSuccess
-        , mkElemVar $ mkElementVariable "Unknown" (mkSort $ noLocationId "SortUnknown")
+        , mkElemVar
+            $ mkElementConfigVariable
+            $ mkElementVariable "Unknown" (mkSort $ noLocationId "SortUnknown")
         )
 
 koreMerge :: KoreExecOptions -> KoreMergeOptions -> Main ExitCode

@@ -145,6 +145,7 @@ import Kore.Step.RulePattern
     , RewriteRule (RewriteRule)
     , getRewriteRule
     , lhsEqualsRhs
+    , mapRuleVariables
     , mkRewritingRule
     , unRewritingRule
     )
@@ -510,7 +511,7 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike VariableName))
+    -> smt (Bounded.CheckResult (TermLike RewritingVariableName))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initializeAndSimplify definitionModule
@@ -518,8 +519,13 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
         assertSingleClaim specClaims
-        let axioms = fmap (Bounded.Axiom . unRewritingRule) rewriteRules
-            claims = fmap makeImplicationRule specClaims
+        let axioms = fmap Bounded.Axiom rewriteRules
+            claims =
+                fmap
+                    ( mapRuleVariables (pure mkConfigVariable)
+                    . makeImplicationRule
+                    )
+                    specClaims
 
         Bounded.checkClaim
             breadthLimit

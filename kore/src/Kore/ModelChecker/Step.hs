@@ -42,8 +42,6 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , allPathGlobally
-    , mkRewritingRule
-    , unRewritingRule
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
@@ -59,9 +57,6 @@ import Kore.Step.Strategy
     , TransitionT
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.Variable
-    ( VariableName
-    )
 import Kore.TopBottom
 import qualified Kore.Unification.Procedure as Unification
 import qualified Pretty
@@ -85,7 +80,7 @@ data ModalPattern variable = ModalPattern
 deriving instance Eq variable => Eq (ModalPattern variable)
 deriving instance Show variable => Show (ModalPattern variable)
 
-type CommonModalPattern = ModalPattern VariableName
+type CommonModalPattern = ModalPattern RewritingVariableName
 
 data ProofState patt
     = Proven
@@ -101,8 +96,8 @@ instance TopBottom (ProofState patt) where
     isTop _ = False
     isBottom _ = False
 
--- | A 'ProofState' instantiated to 'Pattern VariableName' for convenience.
-type CommonProofState = ProofState (Pattern VariableName)
+-- | A 'ProofState' instantiated to 'Pattern RewritingVariableName' for convenience.
+type CommonProofState = ProofState (Pattern RewritingVariableName)
 
 instance Hashable patt => Hashable (ProofState patt)
 
@@ -119,12 +114,12 @@ computeWeakNext :: [rewrite] -> Prim patt rewrite
 computeWeakNext = ComputeWeakNext
 
 type Transition m =
-    TransitionT (RewriteRule VariableName) (StateT (Maybe ()) m)
+    TransitionT (RewriteRule RewritingVariableName) (StateT (Maybe ()) m)
 
 transitionRule
     :: forall m
     .  MonadSimplify m
-    => Prim CommonModalPattern (RewriteRule VariableName)
+    => Prim CommonModalPattern (RewriteRule RewritingVariableName)
     -> CommonProofState
     -> Transition m CommonProofState
 transitionRule
@@ -202,7 +197,7 @@ transitionRule
                       ]
 
     transitionComputeWeakNext
-        :: [RewriteRule VariableName]
+        :: [RewriteRule RewritingVariableName]
         -> CommonProofState
         -> Transition m CommonProofState
     transitionComputeWeakNext _ Proven = return Proven
@@ -215,8 +210,8 @@ transitionRule
     unificationProcedure = Unification.unificationProcedure
 
     transitionComputeWeakNextHelper
-        :: [RewriteRule VariableName]
-        -> Pattern VariableName
+        :: [RewriteRule RewritingVariableName]
+        -> Pattern RewritingVariableName
         -> Transition m CommonProofState
     transitionComputeWeakNextHelper _ config
         | Pattern.isBottom config = return Proven
@@ -224,21 +219,19 @@ transitionRule
         results <-
             Step.applyRewriteRulesParallel
                 unificationProcedure
-                (mkRewritingRule <$> rules)
-                (mkRewritingPattern config)
+                rules
+                config
             & lift . lift
         let
             mapRules =
                 StepResult.mapRules
                 $ RewriteRule
-                . unRewritingRule
                 . Step.withoutUnification
             mapConfigs =
                 StepResult.mapConfigs
                     GoalLHS
                     GoalRemLHS
         StepResult.transitionResults (mapConfigs $ mapRules results)
-            & (fmap . fmap) getRewritingPattern
 
 defaultOneStepStrategy
     :: patt

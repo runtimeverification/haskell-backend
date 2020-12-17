@@ -3,18 +3,18 @@
       #execute ~> .
     </k>
     <state>
-      "x" |-> X +Int 1
+      "x" |-> ConfigVarX +Int 1
     </state>
   </T>
 #And
   {
     false
   #Equals
-    X >Int 0
+    ConfigVarX >Int 0
   }
 #And
   {
     true
   #Equals
-    X <Int 0
+    ConfigVarX <Int 0
   }

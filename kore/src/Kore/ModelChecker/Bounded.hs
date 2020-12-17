@@ -45,6 +45,9 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     ( Transition
     , transitionRule
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
     , RHS (..)
@@ -75,18 +78,18 @@ data CheckResult patt
     -- ^ Result is unknown within the bound.
     deriving (Show)
 
-newtype Axiom = Axiom { unAxiom :: RewriteRule VariableName }
+newtype Axiom = Axiom { unAxiom :: RewriteRule RewritingVariableName }
 
 bmcStrategy
     :: [Axiom]
     -> CommonModalPattern
-    -> [Strategy (Prim CommonModalPattern (RewriteRule VariableName))]
+    -> [Strategy (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
 bmcStrategy
     axioms
     goal
   =  repeat (defaultOneStepStrategy goal rewrites)
   where
-    rewrites :: [RewriteRule VariableName]
+    rewrites :: [RewriteRule RewritingVariableName]
     rewrites = map unwrap axioms
       where
         unwrap (Axiom a) = a
@@ -96,15 +99,15 @@ checkClaim
     .  (MonadSimplify m, MonadThrow m)
     => Limit Natural
     ->  (  CommonModalPattern
-        -> [Strategy (Prim CommonModalPattern (RewriteRule VariableName))]
+        -> [Strategy (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     -> GraphSearchOrder
-    -> (ImplicationRule VariableName, Limit Natural)
+    -> (ImplicationRule RewritingVariableName, Limit Natural)
     -- a claim to check, together with a maximum number of verification steps
     -- for each.
-    -> m (CheckResult (TermLike VariableName))
+    -> m (CheckResult (TermLike RewritingVariableName))
 checkClaim
     breadthLimit
     strategyBuilder
@@ -143,14 +146,14 @@ checkClaim
         return finalResult
   where
     transitionRule'
-        :: Prim CommonModalPattern (RewriteRule VariableName)
+        :: Prim CommonModalPattern (RewriteRule RewritingVariableName)
         -> CommonProofState
         -> ModelChecker.Transition m CommonProofState
     transitionRule' = ModelChecker.transitionRule
 
     checkFinalNodes
         :: [CommonProofState]
-        -> CheckResult (TermLike VariableName)
+        -> CheckResult (TermLike RewritingVariableName)
     checkFinalNodes nodes = foldl' checkFinalNodesHelper Proved nodes
       where
         checkFinalNodesHelper Proved  ProofState.Proven = Proved
