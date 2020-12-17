@@ -261,7 +261,7 @@ newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
         BuiltinMap_ internalMap -> do
             sideCondition <- Reader.ask
             makeEvaluateInternalMap sideCondition internalMap
-        BuiltinSet_ internalSet -> do
+        InternalSet_ internalSet -> do
             sideCondition <- Reader.ask
             makeEvaluateInternalSet sideCondition internalSet
         _ -> empty

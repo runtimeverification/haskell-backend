@@ -66,7 +66,7 @@ import Kore.Internal.TermLike
     , pattern InternalBool_
     , pattern InternalList_
     , pattern BuiltinMap_
-    , pattern BuiltinSet_
+    , pattern InternalSet_
     , pattern InternalString_
     , pattern Equals_
     , pattern Exists_
@@ -355,6 +355,6 @@ retractLocalFunction =
             InternalBool_ _ -> Just (Pair term1 term2)
             InternalList_ _ -> Just (Pair term1 term2)
             BuiltinMap_ _ -> Just (Pair term1 term2)
-            BuiltinSet_ _ -> Just (Pair term1 term2)
+            InternalSet_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing

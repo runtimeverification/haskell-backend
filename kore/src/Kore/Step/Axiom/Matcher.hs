@@ -147,7 +147,7 @@ findClass (Constraint (Pair left _)) = findClassWorker left
             then ConstructorAtTop
             else OtherTermLike
     findClassWorker (InternalList_ _)   = ListBuiltin
-    findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
+    findClassWorker (InternalSet_ _)    = AssocCommBuiltin
     findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
     findClassWorker _                  = OtherTermLike
 
@@ -373,7 +373,7 @@ matchBuiltinSet
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
+matchBuiltinSet (Pair (InternalSet_ set1) (InternalSet_ set2)) =
     matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
     normalized1 = unwrapAc $ builtinAcChild set1

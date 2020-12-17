@@ -96,7 +96,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern BuiltinMap_
-    , pattern BuiltinSet_
+    , pattern InternalSet_
     , pattern Defined_
     , pattern ElemVar_
     , TermLike
@@ -272,7 +272,7 @@ instance TermWrapper NormalizedSet where
     asInternal tools sort child =
         TermLike.mkBuiltinSet (asInternalBuiltin tools sort child)
 
-    matchBuiltin (BuiltinSet_ internalSet) =
+    matchBuiltin (InternalSet_ internalSet) =
         Just (builtinAcChild internalSet)
     matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
@@ -288,7 +288,7 @@ instance TermWrapper NormalizedSet where
     concat(X:Set, concat({1}, X:Set))
     @
     -}
-    toNormalized (BuiltinSet_ InternalAc { builtinAcChild }) =
+    toNormalized (InternalSet_ InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Set.isSymbolUnit symbol =

@@ -160,7 +160,7 @@ asTermLike builtin =
     filteredSets = filter (not . isEmptySet) opaque
 
     isEmptySet :: TermLike variable -> Bool
-    isEmptySet (BuiltinSet_ InternalAc { builtinAcChild = wrappedChild }) =
+    isEmptySet (InternalSet_ InternalAc { builtinAcChild = wrappedChild }) =
         unwrapAc wrappedChild == emptyNormalizedAc
     isEmptySet (App_ symbol _) = unitSymbol == symbol
     isEmptySet _ = False

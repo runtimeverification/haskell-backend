@@ -82,7 +82,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern BuiltinSet_
+    , pattern InternalSet_
     , Concrete
     , TermLike
     , mkSort
@@ -207,7 +207,7 @@ expectBuiltinSet
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Ac.TermNormalizedAc NormalizedSet variable)
-expectBuiltinSet _ (BuiltinSet_ internalSet) =
+expectBuiltinSet _ (InternalSet_ internalSet) =
     return (builtinAcChild internalSet)
 expectBuiltinSet _ _ = empty
 
@@ -537,7 +537,7 @@ unifyEquals
         :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    unifyEquals0 (BuiltinSet_ normalized1) (BuiltinSet_ normalized2) = do
+    unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
             tools
