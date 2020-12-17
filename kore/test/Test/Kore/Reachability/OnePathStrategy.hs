@@ -28,7 +28,7 @@ import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Rewriting.RewritingVariable
 
-import qualified Kore.Internal.Condition as Condition
+-- import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -758,42 +758,44 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             ((fmap . fmap) OnePath _actual)
             _actualReach
-    , testCase "Goal stuck after remove destination" $ do
-        -- Goal: X && X = a => X && X != a
-        -- Coinductive axiom: -
-        -- Normal axiom: -
-        -- Expected: stuck, since the terms unify but the conditions do not
-        let left =
-                Pattern.withCondition
-                    (TermLike.mkElemVar Mock.x)
-                    (Condition.fromPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (TermLike.mkElemVar Mock.x)
-                            Mock.a
-                        )
-                    )
-            left' =
-                Pattern.withCondition
-                    Mock.a
-                    (Condition.assign (inject Mock.x) Mock.a)
-            right =
-                Pattern.withCondition
-                    (TermLike.mkElemVar Mock.x)
-                    (Condition.fromPredicate $ makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (TermLike.mkElemVar Mock.x)
-                            Mock.a
-                        )
-                    )
-            original = makeOnePathGoalFromPatterns left right
-            expect = makeOnePathGoalFromPatterns left' right
-        [ _actual ] <- runOnePathSteps
-            Unlimited
-            (Limit 1)
-            original
-            []
-            []
-        assertEqual "" (Stuck expect) _actual
+    -- TODO: RHS is now \\bottom after simplification,
+    -- add different test and keep this for RHS simplification
+    -- , testCase "TESTING Goal stuck after remove destination" $ do
+    --     -- Goal: X && X = a => X && X != a
+    --     -- Coinductive axiom: -
+    --     -- Normal axiom: -
+    --     -- Expected: stuck, since the terms unify but the conditions do not
+    --     let left =
+    --             Pattern.withCondition
+    --                 (TermLike.mkElemVar Mock.x)
+    --                 (Condition.fromPredicate
+    --                     (makeEqualsPredicate Mock.testSort
+    --                         (TermLike.mkElemVar Mock.x)
+    --                         Mock.a
+    --                     )
+    --                 )
+    --         left' =
+    --             Pattern.withCondition
+    --                 Mock.a
+    --                 (Condition.assign (inject Mock.x) Mock.a)
+    --         right =
+    --             Pattern.withCondition
+    --                 (TermLike.mkElemVar Mock.x)
+    --                 (Condition.fromPredicate $ makeNotPredicate
+    --                     (makeEqualsPredicate Mock.testSort
+    --                         (TermLike.mkElemVar Mock.x)
+    --                         Mock.a
+    --                     )
+    --                 )
+    --         original = makeOnePathGoalFromPatterns left right
+    --         expect = makeOnePathGoalFromPatterns left' right
+    --     [ _actual ] <- runOnePathSteps
+    --         Unlimited
+    --         (Limit 1)
+    --         original
+    --         []
+    --         []
+    --     assertEqual "" (Stuck expect) _actual
     ]
 
 simpleRewrite
