@@ -56,18 +56,6 @@ instance Unparse child => Unparse (And Sort child) where
             , unparse2 andSecond
             ])
 
-instance Unparse child => Unparse (And () child) where
-    unparse And { andFirst, andSecond } =
-        "\\and"
-        <> arguments [andFirst, andSecond]
-
-    unparse2 And { andFirst, andSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\and"
-            , unparse2 andFirst
-            , unparse2 andSecond
-            ])
-
 instance Ord variable => Synthetic (FreeVariables variable) (And sort) where
     synthetic = fold
     {-# INLINE synthetic #-}
