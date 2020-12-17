@@ -95,14 +95,14 @@ test_parse =
 
 test_Parse_BugReportOption :: [TestTree]
 test_Parse_BugReportOption =
-        [ testParse "Parse BugReportEnable" ["--bug-report", "fileName"] 
+        [ testParse "Parse BugReportEnable" ["--bug-report", "fileName"]
             (BugReportEnable $ BugReport "fileName")
         , testParse "Parse BugReportDisable" ["--no-bug-report"]
             BugReportDisable
         , testParse "Parse BugReportOnError" [] BugReportOnError
         ]
   where
-    
+
     testParse :: TestName -> [String] -> BugReportOption -> TestTree
     testParse testName arguments opt =
         testCase testName $ assertParse arguments opt
