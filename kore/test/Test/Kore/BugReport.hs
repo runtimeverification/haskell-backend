@@ -117,9 +117,12 @@ test_bugReportOption =
     assertParse :: [String] -> BugReportOption -> Assertion
     assertParse arguments opt =
         assertEqual
-            (  "Encountered error when parsing flag\n  "
-            ++ unwords arguments
-            ++ "\n."
+            (show $ Pretty.vsep
+                [ "while parsing:"
+                , Pretty.indent 4 (debug arguments)
+                , "expected:"
+                , Pretty.indent 4 (debug opt)
+                ]
             )
             (Just opt)
             (getParseResult $ parseBugReportOpts arguments)
