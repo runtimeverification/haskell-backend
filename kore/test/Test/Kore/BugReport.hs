@@ -93,7 +93,7 @@ test_Parse_BugReportOption :: [TestTree]
 test_Parse_BugReportOption =
         [ testCase "Parse BugReportEnable" enableAssert
         , testCase "Parse BugReportDisable" disableAssert
-        , testCase "Parse BugReportOnError" onErrorAssert
+        , test "Parse BugReportOnError" [] BugReportOnError
         ]
   where
     enableAssert =
