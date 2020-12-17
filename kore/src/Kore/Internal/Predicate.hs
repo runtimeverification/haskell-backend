@@ -1155,7 +1155,12 @@ substitute subst predicate =
 depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth
   where
-    levelDepth (_ :< predF) = 1 + foldl' max 0 predF
+    levelDepth (_ :< predF) = case predF of
+        CeilF x   -> 1 + foldl' max 0 (TermLike.depth <$> x)
+        FloorF x  -> 1 + foldl' max 0 (TermLike.depth <$> x)
+        EqualsF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
+        InF x     -> 1 + foldl' max 0 (TermLike.depth <$> x)
+        _         -> 1 + foldl' max 0 predF
 
 containsSymbolWithIdPred :: String -> Predicate variable -> Bool
 containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
