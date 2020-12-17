@@ -510,6 +510,7 @@ writeOptionsAndKoreFiles
     opts@KoreExecOptions
         { definitionFileName
         , patternFileName
+        , outputFileName
         , koreSolverOptions
         , koreSearchOptions
         , koreProveOptions
@@ -528,6 +529,8 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
+    for_ outputFileName
+        $ flip copyFile (reportDirectory </> "result.kore")
     writeKoreSolverFiles koreSolverOptions reportDirectory
     for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
