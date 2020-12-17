@@ -529,8 +529,9 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    for_ outputFileName
-        $ flip copyFile (reportDirectory </> "result.kore")
+    --for_ outputFileName
+    --    $ flip copyFile (reportDirectory </> "result.kore")
+    _ <- error "Test."
     writeKoreSolverFiles koreSolverOptions reportDirectory
     for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
