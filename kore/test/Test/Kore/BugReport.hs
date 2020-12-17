@@ -113,7 +113,7 @@ test_bugReportOption =
             []
             BugReportOnError
 
-    assertParse :: [String] -> BugReportOption -> Assertion
+    assertParse :: HasCallStack => [String] -> BugReportOption -> Assertion
     assertParse arguments opt =
         assertEqual
             (show $ Pretty.vsep
