@@ -66,11 +66,22 @@ test_simplify_local_functions =
     , test "contradiction: 2 = f(x) ∧ f(x) = 3" fInt (Left  int2) (Right int3)
     , test "contradiction: 2 = f(x) ∧ 3 = f(x)" fInt (Left  int2) (Left  int3)
     , test "contradiction: f(x) = 2 ∧ 3 = f(x)" fInt (Right int2) (Left  int3)
-    -- TODO (thomas.tuegel): Bool at top
+    -- Bool at top
+    , test "contradiction: f(x) = true ∧ f(x) = false" fBool (Right boolTrue) (Right boolFalse)
+    , test "contradiction: true = f(x) ∧ f(x) = false" fBool (Left  boolTrue) (Right boolFalse)
+    , test "contradiction: true = f(x) ∧ false = f(x)" fBool (Left  boolTrue) (Left  boolFalse)
+    , test "contradiction: f(x) = true ∧ false = f(x)" fBool (Right boolTrue) (Left  boolFalse)
+    -- String at top
+    , test "contradiction: f(x) = \"one\" ∧ f(x) = \"two\"" fString (Right strOne) (Right strTwo)
+    , test "contradiction: \"one\" = f(x) ∧ f(x) = \"two\"" fString (Left  strOne) (Right strTwo)
+    , test "contradiction: \"one\" = f(x) ∧ \"two\" = f(x)" fString (Left  strOne) (Left  strTwo)
+    , test "contradiction: f(x) = \"one\" ∧ \"two\" = f(x)" fString (Right strOne) (Left  strTwo)
     ]
   where
     f = Mock.f (mkElemVar Mock.x)
     fInt = Mock.fInt (mkElemVar Mock.xInt)
+    fBool = Mock.fBool (mkElemVar Mock.xBool)
+    fString = Mock.fString (mkElemVar Mock.xString)
     defined = makeCeilPredicate_ f & Condition.fromPredicate
 
     a = Mock.a
@@ -81,6 +92,12 @@ test_simplify_local_functions =
 
     int2 = Mock.builtinInt 2
     int3 = Mock.builtinInt 3
+
+    boolTrue = Mock.builtinBool True
+    boolFalse = Mock.builtinBool False
+
+    strOne = Mock.builtinString "one"
+    strTwo = Mock.builtinString "two"
 
     mkLocalDefn func (Left t)  = makeEqualsPredicate_ t func
     mkLocalDefn func (Right t) = makeEqualsPredicate_ func t
