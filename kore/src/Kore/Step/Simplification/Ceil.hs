@@ -258,7 +258,7 @@ newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
         Builtin_ builtin -> do
             sideCondition <- Reader.ask
             makeEvaluateBuiltin sideCondition builtin
-        BuiltinList_ internal -> do
+        InternalList_ internal -> do
             sideCondition <- Reader.ask
             makeEvaluateInternalList sideCondition internal
         _ -> empty

@@ -144,11 +144,11 @@ internalize tools termLike@(App_ symbol args)
   | isSymbolElement symbol , [_] <- args = asInternal' (Seq.fromList args)
   | isSymbolConcat  symbol =
     case args of
-        [BuiltinList_ list1, arg2              ]
+        [InternalList_ list1, arg2              ]
           | (null . internalListChild) list1 -> arg2
-        [arg1              , BuiltinList_ list2]
+        [arg1              , InternalList_ list2]
           | (null . internalListChild) list2 -> arg1
-        [BuiltinList_ list1, BuiltinList_ list2] ->
+        [InternalList_ list1, InternalList_ list2] ->
             asInternal' (on (<>) internalListChild list1 list2)
         _ -> termLike
   where

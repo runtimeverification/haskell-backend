@@ -86,7 +86,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
     , Builtin
-    , pattern BuiltinList_
+    , pattern InternalList_
     , Concrete
     , pattern ElemVar_
     , Sort
@@ -215,7 +215,7 @@ expectBuiltinList
     -> MaybeT m (Seq (TermLike variable))
 expectBuiltinList _ =
     \case
-        BuiltinList_ InternalList { internalListChild } ->
+        InternalList_ InternalList { internalListChild } ->
             return internalListChild
         _ -> empty
 
@@ -415,16 +415,16 @@ unifyEquals
     unifyEquals0 (App_ symbol1 args1) (App_ symbol2 args2)
       | isSymbolConcat symbol1, isSymbolConcat symbol1 =
         lift $ case (args1, args2) of
-            (     [ BuiltinList_ builtin1, x1@(Var_ _) ]
-                , [ BuiltinList_ builtin2, x2@(Var_ _) ] ) ->
+            (     [ InternalList_ builtin1, x1@(Var_ _) ]
+                , [ InternalList_ builtin2, x2@(Var_ _) ] ) ->
                     unifyEqualsFramedRightRight
                         symbol2
                         builtin1
                         x1
                         builtin2
                         x2
-            (     [ x1@(Var_ _), BuiltinList_ builtin1]
-                , [ x2@(Var_ _), BuiltinList_ builtin2] ) ->
+            (     [ x1@(Var_ _), InternalList_ builtin1]
+                , [ x2@(Var_ _), InternalList_ builtin2] ) ->
                     unifyEqualsFramedLeftLeft
                         symbol2
                         x1
@@ -433,16 +433,16 @@ unifyEquals
                         builtin2
             _ -> empty
 
-    unifyEquals0 dv1@(BuiltinList_ builtin1) pat2 =
+    unifyEquals0 dv1@(InternalList_ builtin1) pat2 =
         case pat2 of
-            BuiltinList_ builtin2 ->
+            InternalList_ builtin2 ->
                 lift $ unifyEqualsConcrete builtin1 builtin2
             app@(App_ symbol2 args2)
               | isSymbolConcat symbol2 ->
                 lift $ case args2 of
-                    [ BuiltinList_ builtin2, x@(Var_ _) ] ->
+                    [ InternalList_ builtin2, x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x
-                    [ x@(Var_ _), BuiltinList_ builtin2 ] ->
+                    [ x@(Var_ _), InternalList_ builtin2 ] ->
                         unifyEqualsFramedLeft builtin1 x builtin2
                     [ _, _ ] ->
                         Builtin.unifyEqualsUnsolved
@@ -455,7 +455,7 @@ unifyEquals
 
     unifyEquals0 pat1 pat2 =
         case pat2 of
-            dv@(BuiltinList_ _) -> unifyEquals0 dv pat1
+            dv@(InternalList_ _) -> unifyEquals0 dv pat1
             _ -> empty
 
     unifyEqualsConcrete

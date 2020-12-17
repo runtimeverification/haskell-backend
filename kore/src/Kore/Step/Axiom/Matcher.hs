@@ -132,7 +132,7 @@ findClass (Constraint (Pair left _)) = findClassWorker left
         if Symbol.isConstructor symbol
             then ConstructorAtTop
             else OtherTermLike
-    findClassWorker (BuiltinList_ _)   = ListBuiltin
+    findClassWorker (InternalList_ _)   = ListBuiltin
     findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
     findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
     findClassWorker _                  = OtherTermLike
@@ -329,11 +329,11 @@ matchBuiltinList
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
+matchBuiltinList (Pair (InternalList_ list1) (InternalList_ list2)) = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Monad.guard (null tail2)
     traverse_ push aligned
-matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
+matchBuiltinList (Pair (App_ symbol1 children1) (InternalList_ list2))
   | List.isSymbolConcat symbol1 = matchBuiltinListConcat children1 list2
 matchBuiltinList _ = empty
 
@@ -343,12 +343,12 @@ matchBuiltinListConcat
     -> InternalList (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 
-matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
+matchBuiltinListConcat [InternalList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     traverse_ push aligned
     push (Pair frame1 (mkBuiltinList tail2))
 
-matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
+matchBuiltinListConcat [frame1, InternalList_ list1] list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
     push (Pair frame1 (mkBuiltinList head2))
     traverse_ push aligned
