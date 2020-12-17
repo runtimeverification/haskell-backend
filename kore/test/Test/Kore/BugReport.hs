@@ -89,10 +89,8 @@ test_parse =
             actual = expect >>= parseKoreLogOpts . unparseKoreLogOptions
         getParseResult expect === getParseResult actual
 
-test_bugReportOption :: TestTree
-test_bugReportOption =
-    testGroup
-        "Parse BugReportOption"
+test_Parse_BugReportOption :: [TestTree]
+test_Parse_BugReportOption =
         [ testCase "Parse BugReportEnable" enableAssert
         , testCase "Parse BugReportDisable" disableAssert
         , testCase "Parse BugReportOnError" onErrorAssert
