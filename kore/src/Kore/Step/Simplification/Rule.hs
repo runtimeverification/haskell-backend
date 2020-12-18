@@ -141,4 +141,4 @@ simplifyPattern
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplifyTopConfiguration (Pattern.fromTermLike termLike)
+    $ Pattern.simplify (Pattern.fromTermLike termLike)
