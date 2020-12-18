@@ -58,6 +58,9 @@ module Kore.Internal.TermLike
     , mkInternalBytes
     , mkInternalBytes'
     , mkBuiltin
+    , mkInternalBool
+    , mkInternalInt
+    , mkInternalString
     , mkBuiltinList
     , mkBuiltinMap
     , mkBuiltinSet
@@ -118,12 +121,12 @@ module Kore.Internal.TermLike
     , pattern Bottom_
     , pattern InternalBytes_
     , pattern Builtin_
-    , pattern BuiltinBool_
-    , pattern BuiltinInt_
+    , pattern InternalBool_
+    , pattern InternalInt_
     , pattern BuiltinList_
     , pattern BuiltinMap_
     , pattern BuiltinSet_
-    , pattern BuiltinString_
+    , pattern InternalString_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -238,7 +241,10 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalString
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -349,12 +355,12 @@ hasConstructorLikeTop :: TermLike variable -> Bool
 hasConstructorLikeTop = \case
     App_ symbol _ -> isConstructor symbol
     DV_ _ _ -> True
-    BuiltinBool_ _ -> True
-    BuiltinInt_ _ -> True
+    InternalBool_ _ -> True
+    InternalInt_ _ -> True
     BuiltinList_ _ -> True
     BuiltinMap_ _ -> True
     BuiltinSet_ _ -> True
-    BuiltinString_ _ -> True
+    InternalString_ _ -> True
     StringLiteral_ _ -> True
     _ -> False
 
@@ -708,10 +714,13 @@ forceSortPredicate
         ApplySymbolF _ -> illSorted forcedSort original
         ApplyAliasF _ -> illSorted forcedSort original
         BuiltinF _ -> illSorted forcedSort original
+        InternalBoolF _ -> illSorted forcedSort original
+        InternalBytesF _ -> illSorted forcedSort original
+        InternalIntF _ -> illSorted forcedSort original
+        InternalStringF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
         VariableF _ -> illSorted forcedSort original
-        InternalBytesF _ -> illSorted forcedSort original
         InhabitantF _ -> illSorted forcedSort original
         EndiannessF _ -> illSorted forcedSort original
         SignednessF _ -> illSorted forcedSort original
@@ -1051,6 +1060,33 @@ mkBuiltin
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltin = updateCallStack . synthesize . BuiltinF
+
+{- | Construct an internal bool pattern.
+ -}
+mkInternalBool
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalBool
+    -> TermLike variable
+mkInternalBool = updateCallStack . synthesize . InternalBoolF . Const
+
+{- | Construct an internal integer pattern.
+ -}
+mkInternalInt
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalInt
+    -> TermLike variable
+mkInternalInt = updateCallStack . synthesize . InternalIntF . Const
+
+{- | Construct an internal string pattern.
+ -}
+mkInternalString
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalString
+    -> TermLike variable
+mkInternalString = updateCallStack . synthesize . InternalStringF . Const
 
 {- | Construct a builtin list pattern.
  -}
@@ -1492,9 +1528,6 @@ mkDefined = worker
                     \ a \\bottom pattern as defined."
             CeilF _ -> term
             DomainValueF _  -> term
-            BuiltinF (Domain.BuiltinBool _) -> term
-            BuiltinF (Domain.BuiltinInt _) -> term
-            BuiltinF (Domain.BuiltinString _) -> term
             BuiltinF (Domain.BuiltinList _) ->
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
@@ -1530,7 +1563,10 @@ mkDefined = worker
             SignednessF _ -> term
             InjF _ -> mkDefined1 term
             InhabitantF _ -> mkDefined1 term
+            InternalBoolF _ -> term
             InternalBytesF _ -> term
+            InternalIntF _ -> term
+            InternalStringF _ -> term
 
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
@@ -1720,12 +1756,12 @@ pattern Builtin_
     :: Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinBool_
-    :: Domain.InternalBool
+pattern InternalBool_
+    :: InternalBool
     -> TermLike variable
 
-pattern BuiltinInt_
-    :: Domain.InternalInt
+pattern InternalInt_
+    :: InternalInt
     -> TermLike variable
 
 pattern BuiltinList_
@@ -1740,9 +1776,7 @@ pattern BuiltinSet_
     :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinString_
-    :: Domain.InternalString
-    -> TermLike variable
+pattern InternalString_ :: InternalString -> TermLike variable
 
 pattern Equals_
     :: Sort
@@ -1874,18 +1908,20 @@ pattern DV_ domainValueSort domainValueChild <-
 
 pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
 
-pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
+pattern InternalBool_ internalBool <-
+    (Recursive.project -> _ :< InternalBoolF (Const internalBool))
 
-pattern BuiltinInt_ internalInt <- Builtin_ (Domain.BuiltinInt internalInt)
+pattern InternalInt_ internalInt <-
+    (Recursive.project -> _ :< InternalIntF (Const internalInt))
+
+pattern InternalString_ internalString <-
+    (Recursive.project -> _ :< InternalStringF (Const internalString))
 
 pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
 
 pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
 
 pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
-
-pattern BuiltinString_ internalString
-    <- Builtin_ (Domain.BuiltinString internalString)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

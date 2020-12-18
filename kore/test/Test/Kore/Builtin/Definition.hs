@@ -38,6 +38,8 @@ import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalBool
+import Kore.Internal.InternalInt
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -123,7 +125,7 @@ impliesBoolSymbol =
 notBool :: TermLike VariableName -> TermLike VariableName
 notBool x = mkApplySymbol notBoolSymbol [x]
 
-andBool, impliesBool, eqBool, orBool
+andBool, impliesBool, eqBool, orBool, andThenBool
     :: TermLike VariableName
     -> TermLike VariableName
     -> TermLike VariableName
@@ -131,6 +133,7 @@ andBool x y = mkApplySymbol andBoolSymbol [x, y]
 impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
 eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
 orBool x y = mkApplySymbol orBoolSymbol [x, y]
+andThenBool x y = mkApplySymbol andThenBoolSymbol [x, y]
 
 -- ** Int
 
@@ -751,11 +754,12 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
-eqString
+eqString, concatString
     :: TermLike VariableName
     -> TermLike VariableName
     -> TermLike VariableName
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
+concatString x y = mkApplySymbol concatStringSymbol [x, y]
 
 -- * Bytes
 
@@ -1003,10 +1007,10 @@ boolSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "BOOL.Bool" ]
 
 builtinBool :: Bool -> InternalBool
-builtinBool builtinBoolValue =
+builtinBool internalBoolValue =
     InternalBool
-        { builtinBoolSort = boolSort
-        , builtinBoolValue
+        { internalBoolSort = boolSort
+        , internalBoolValue
         }
 
 -- ** Int
@@ -1026,10 +1030,10 @@ intSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "INT.Int" ]
 
 builtinInt :: Integer -> InternalInt
-builtinInt builtinIntValue =
+builtinInt internalIntValue =
     InternalInt
-        { builtinIntSort = intSort
-        , builtinIntValue
+        { internalIntSort = intSort
+        , internalIntValue
         }
 
 -- ** KEQUAL

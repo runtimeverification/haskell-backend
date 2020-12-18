@@ -173,6 +173,10 @@ fSetId :: Id
 fSetId = testId "fSet"
 fIntId :: Id
 fIntId = testId "fInt"
+fBoolId :: Id
+fBoolId = testId "fBool"
+fStringId :: Id
+fStringId = testId "fString"
 fTestIntId :: Id
 fTestIntId = testId "fTestInt"
 fTestFunctionalIntId :: Id
@@ -376,6 +380,12 @@ fSetSymbol = symbol fSetId [setSort] setSort & function
 
 fIntSymbol :: Symbol
 fIntSymbol = symbol fIntId [intSort] intSort & function
+
+fBoolSymbol :: Symbol
+fBoolSymbol = symbol fBoolId [boolSort] boolSort & function
+
+fStringSymbol :: Symbol
+fStringSymbol = symbol fStringId [stringSort] stringSort & function
 
 fTestIntSymbol :: Symbol
 fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
@@ -872,6 +882,20 @@ fInt
     => TermLike variable
     -> TermLike variable
 fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
+
+fBool
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fBool arg = Internal.mkApplySymbol fBoolSymbol [arg]
+
+fString
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fString arg = Internal.mkApplySymbol fStringSymbol [arg]
 
 plain00 :: InternalVariable variable => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
@@ -1506,6 +1530,9 @@ sortAttributesMapping =
         )
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
+        )
+    ,   ( stringSort
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
         )
 
     -- Also add attributes for the implicitly defined sorts.

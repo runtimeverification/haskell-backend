@@ -107,7 +107,16 @@ import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
 import qualified Kore.Step.Simplification.Inj as Inj
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalBool as InternalBool
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalInt as InternalInt
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalString as InternalString
     ( simplify
     )
 import qualified Kore.Step.Simplification.Mu as Mu
@@ -430,8 +439,14 @@ simplify sideCondition = \termLike ->
             --
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
+            InternalBoolF internalBoolF ->
+                return $ InternalBool.simplify (getConst internalBoolF)
             InternalBytesF internalBytesF ->
                 return $ InternalBytes.simplify (getConst internalBytesF)
+            InternalIntF internalIntF ->
+                return $ InternalInt.simplify (getConst internalIntF)
+            InternalStringF internalStringF ->
+                return $ InternalString.simplify (getConst internalStringF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
             DefinedF definedF ->

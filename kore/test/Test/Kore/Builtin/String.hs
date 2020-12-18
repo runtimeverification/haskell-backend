@@ -13,6 +13,7 @@ module Test.Kore.Builtin.String
     , test_token2String
     , test_string2Token
     , test_unifyStringEq
+    , test_contradiction
     --
     , asPattern
     , asInternal
@@ -450,10 +451,6 @@ test_unifyStringEq =
             assertEqual "" [expect { term = () }] actual
     ]
   where
-    x, y :: ElementVariable VariableName
-    x = "x" `ofSort` stringSort
-    y = "y" `ofSort` stringSort
-
     unifyStringEq
         :: TermLike VariableName
         -> TermLike VariableName
@@ -469,6 +466,35 @@ test_unifyStringEq =
         & runSimplifierBranch testEnv
         & runNoSMT
 
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+x, y :: ElementVariable VariableName
+x = "x" `ofSort` stringSort
+y = "y" `ofSort` stringSort
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "concatString(x, y) = \"zero\" ∧ concatString(x, y) = \"one\"" $ do
+        let clause0 =
+                makeEqualsPredicate boolSort
+                    (asInternal "zero")
+                    (concatString (mkElemVar x) (mkElemVar y))
+            clause1 =
+                makeEqualsPredicate boolSort
+                    (asInternal "one")
+                    (concatString (mkElemVar x) (mkElemVar y))
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
     simplifyCondition'
         :: Condition VariableName
         -> IO [Condition VariableName]
