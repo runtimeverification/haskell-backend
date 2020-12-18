@@ -584,8 +584,12 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         -> Pattern RewritingVariableName
         -> CheckImplicationResult ClaimPattern
     examine AnyUnified { didAnyUnify } stuck
-      | not didAnyUnify = NotImplied claimPattern
-      | isBottom condition = Implied
+      | not didAnyUnify
+      , not (isBottom right) =
+          NotImplied claimPattern
+      | didAnyUnify
+      , isBottom condition =
+          Implied
       | otherwise =
         Lens.set (field @"left") stuck claimPattern
         & NotImpliedStuck
