@@ -38,7 +38,7 @@
             ),
             /* Sfc */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("false"),
+                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
                 /* Fl Fn D Sfc */
                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                     /* Fl Fn D Sfc */

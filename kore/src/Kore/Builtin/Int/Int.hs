@@ -51,7 +51,7 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalInt
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 
@@ -74,18 +74,15 @@ asInternal
     -> Integer  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    TermLike.fromConcrete . TermLike.markSimplified . mkBuiltin
+    TermLike.fromConcrete . TermLike.markSimplified . mkInternalInt
     $ asBuiltin builtinIntSort builtinIntValue
 
 asBuiltin
     :: Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
-    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
-asBuiltin builtinIntSort builtinIntValue =
-    Domain.BuiltinInt Domain.InternalInt
-        { builtinIntSort
-        , builtinIntValue
-        }
+    -> InternalInt
+asBuiltin internalIntSort internalIntValue =
+    InternalInt { internalIntSort, internalIntValue }
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -97,16 +94,15 @@ asBuiltin builtinIntSort builtinIntValue =
  -}
 asTermLike
     :: InternalVariable variable
-    => Domain.InternalInt  -- ^ builtin value to render
+    => InternalInt  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
     mkDomainValue DomainValue
-        { domainValueSort = builtinIntSort
-        , domainValueChild = mkStringLiteral . Text.pack $ show int
+        { domainValueSort = internalIntSort
+        , domainValueChild = mkStringLiteral . Text.pack $ show internalIntValue
         }
   where
-    Domain.InternalInt { builtinIntSort } = builtin
-    Domain.InternalInt { builtinIntValue = int } = builtin
+    InternalInt { internalIntSort, internalIntValue } = builtin
 
 asPattern
     :: InternalVariable variable

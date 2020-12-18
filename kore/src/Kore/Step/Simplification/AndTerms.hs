@@ -40,7 +40,6 @@ import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -219,6 +218,11 @@ andEqualsFunctions
 andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
+    , (BothT,   \_ _ _ -> Builtin.Int.unifyInt)
+    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBool)
+    , (BothT,   \_ _ _ -> Builtin.String.unifyString)
+    , (BothT,   \_ _ _ -> unifyDomainValue)
+    , (BothT,   \_ _ _ -> unifyStringLiteral)
     , (BothT,   \_ _ _ -> equalAndEquals)
     , (BothT,   \_ _ _ -> bytesDifferent)
     , (EqualsT, \p _ _ -> bottomTermEquals p)
@@ -230,7 +234,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals)
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads)
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s)
-    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBoolValues)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
@@ -245,8 +248,6 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
     , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent)
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent)
     , (BothT,   \_ _ s -> unifyDefined s)
     , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
     ]
@@ -629,44 +630,34 @@ See also: 'equalAndEquals'
 -}
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
-domainValueAndEqualsAssumesDifferent
-    :: HasCallStack
+unifyDomainValue
+    :: forall variable unifier
+    .  HasCallStack
     => InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier a
-domainValueAndEqualsAssumesDifferent
-    first@(DV_ _ _)
-    second@(DV_ _ _)
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinInt _))
-    second@(Builtin_ (Domain.BuiltinInt _))
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent
-    first@(Builtin_ (Domain.BuiltinString _))
-    second@(Builtin_ (Domain.BuiltinString _))
-  = lift $ cannotUnifyDomainValues first second
-domainValueAndEqualsAssumesDifferent _ _ = empty
+    -> MaybeT unifier (Pattern variable)
+unifyDomainValue term1@(DV_ sort1 value1) term2@(DV_ sort2 value2) =
+    assert (sort1 == sort2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | value1 == value2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = cannotUnifyDomainValues term1 term2
+unifyDomainValue _ _ = empty
 
 cannotUnifyDistinctDomainValues :: Pretty.Doc ()
-cannotUnifyDistinctDomainValues = "Cannot unify distinct domain values."
+cannotUnifyDistinctDomainValues = "distinct domain values"
 
 cannotUnifyDomainValues
-    :: HasCallStack
-    => InternalVariable variable
+    :: InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> unifier a
-cannotUnifyDomainValues first second =
-    assert (first /= second) $ do
-        explainBottom
-            cannotUnifyDistinctDomainValues
-            first
-            second
-        empty
+cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
 
 {-| Unify two literal strings.
 
@@ -676,18 +667,21 @@ The two patterns are assumed to be inequal; therefore this case always returns
 See also: 'equalAndEquals'
 
  -}
-stringLiteralAndEqualsAssumesDifferent
-    :: HasCallStack
-    => InternalVariable variable
+unifyStringLiteral
+    :: forall variable unifier
+    .  InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier a
-stringLiteralAndEqualsAssumesDifferent
-    first@(StringLiteral_ _)
-    second@(StringLiteral_ _)
-  = lift $ cannotUnifyDomainValues first second
-stringLiteralAndEqualsAssumesDifferent _ _ = empty
+    -> MaybeT unifier (Pattern variable)
+unifyStringLiteral term1@(StringLiteral_ _) term2@(StringLiteral_ _) = lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | term1 == term2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = explainAndReturnBottom "distinct string literals" term1 term2
+unifyStringLiteral _ _ = empty
 
 {- | Unify any two function patterns.
 

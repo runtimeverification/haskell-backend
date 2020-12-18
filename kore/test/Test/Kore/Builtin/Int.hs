@@ -21,6 +21,7 @@ module Test.Kore.Builtin.Int
     , test_symbolic_eq_not_conclusive
     , test_unifyIntEq
     , hprop_unparse
+    , test_contradiction
     --
     , asInternal
     , asPattern
@@ -67,8 +68,8 @@ import Kore.Builtin.Int
     , tmod
     )
 import qualified Kore.Builtin.Int as Int
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -382,9 +383,8 @@ test_euclidian_division_theorem =
     extractValue :: Pattern VariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
-            Builtin_
-                (Domain.BuiltinInt Domain.InternalInt { builtinIntValue }) ->
-                    builtinIntValue
+            InternalInt_ InternalInt { internalIntValue } ->
+                internalIntValue
             _ -> error "Expecting builtin int."
 
 testDivEvaluatedArguments
@@ -631,6 +631,35 @@ test_unifyIntEq =
         & evalEnvUnifierT Not.notSimplifier
         & runSimplifierBranch testEnv
         & runNoSMT
+
+    simplifyCondition'
+        :: Condition VariableName
+        -> IO [Condition VariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "x + y = 0 ∧ x + y = 1" $ do
+        let clause0 =
+                makeEqualsPredicate
+                    (asInternal 0)
+                    (addInt x y)
+            clause1 =
+                makeEqualsPredicate
+                    (asInternal 1)
+                    (addInt x y)
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
+    x, y :: TermLike VariableName
+    x = mkElemVar $ ofSort "x" intSort
+    y = mkElemVar $ ofSort "y" intSort
 
     simplifyCondition'
         :: Condition VariableName

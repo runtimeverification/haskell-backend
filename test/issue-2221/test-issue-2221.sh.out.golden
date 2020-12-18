@@ -9,9 +9,7 @@
             /* Fl Fn D Sfa */ Var'Unds'DotVar1:SortInt{}
         ),
         /* Fl Fn D Sfa Cl */
-        Lbl'-LT-'size'-GT-'{}(
-            /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
-        )
+        Lbl'-LT-'size'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"))
     ),
     /* Spa */
     \and{SortGeneratedTopCell{}}(

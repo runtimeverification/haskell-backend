@@ -72,6 +72,10 @@ import Kore.Internal.TermLike
     , pattern Exists_
     , pattern Forall_
     , pattern Inj_
+    , pattern InternalBool_
+    , pattern InternalBytes_
+    , pattern InternalInt_
+    , pattern InternalString_
     , pattern Mu_
     , pattern Nu_
     , TermLike
@@ -383,10 +387,15 @@ retractLocalFunction =
   where
     go term1@(App_ symbol1 _) term2
       | isFunction symbol1 =
+        -- TODO (thomas.tuegel): Add tests.
         case term2 of
             App_ symbol2 _
               | isConstructor symbol2 -> Just (Pair term1 term2)
             Inj_ _     -> Just (Pair term1 term2)
             Builtin_ _ -> Just (Pair term1 term2)
+            InternalInt_ _ -> Just (Pair term1 term2)
+            InternalBytes_ _ _ -> Just (Pair term1 term2)
+            InternalString_ _ -> Just (Pair term1 term2)
+            InternalBool_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing

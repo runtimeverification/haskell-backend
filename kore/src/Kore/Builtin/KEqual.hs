@@ -32,7 +32,6 @@ import Control.Error
     , hoistMaybe
     )
 import qualified Control.Monad as Monad
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -182,14 +181,8 @@ evalKIte (_ :< app) =
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where
-    evaluate
-        :: TermLike variable
-        -> Maybe Bool
-    evaluate (Recursive.project -> _ :< pat) =
-        case pat of
-            BuiltinF dv ->
-                Just (Bool.extractBoolDomainValue iteKey dv)
-            _ -> Nothing
+    evaluate :: TermLike variable -> Maybe Bool
+    evaluate = Bool.matchBool
 
     evalIte expr t1 t2 =
         case evaluate expr of

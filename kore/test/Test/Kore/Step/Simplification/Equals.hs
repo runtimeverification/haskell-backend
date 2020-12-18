@@ -510,20 +510,6 @@ test_equalsSimplification_TermLike =
                 }
             )
         )
-    , testCase "domain-value != domain-value because of sorts"
-        (assertTermEquals
-            Condition.bottomCondition
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort
-                , domainValueChild = mkStringLiteral "a"
-                }
-            )
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort2
-                , domainValueChild = mkStringLiteral "a"
-                }
-            )
-        )
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
             Condition.topCondition
@@ -1112,13 +1098,6 @@ plain1OfA = Mock.plain10 Mock.a
 
 testSort :: Sort
 testSort = Mock.testSort
-
-testSort2 :: Sort
-testSort2 =
-    SortActualSort SortActual
-        { sortActualName  = Id "testSort2" AstLocationTest
-        , sortActualSorts = []
-        }
 
 evaluateOr
     :: Equals Sort (OrPattern VariableName)
