@@ -207,7 +207,7 @@ lookupDeclaredVariable varId = do
         $ Pretty.renderText . Pretty.layoutOneLine
         $ Pretty.hsep
         [ "Unquantified variable:"
-        , Pretty.squotes (unparse varId)
+        , unparse varId
         ]
 
 addDeclaredVariable
@@ -243,7 +243,7 @@ newDeclaredVariable declared variable = do
         $ Pretty.renderText . Pretty.layoutOneLine
         $ Pretty.hsep
         [ "Variable"
-        , Pretty.squotes (unparse name)
+        , unparse name
         , "was already declared."
         ]
 
