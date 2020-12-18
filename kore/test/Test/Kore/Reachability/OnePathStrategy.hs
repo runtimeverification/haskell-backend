@@ -28,7 +28,7 @@ import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Rewriting.RewritingVariable
 
--- import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -758,44 +758,56 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             ((fmap . fmap) OnePath _actual)
             _actualReach
-    -- TODO: RHS is now \\bottom after simplification,
-    -- add different test and keep this for RHS simplification
-    -- , testCase "TESTING Goal stuck after remove destination" $ do
-    --     -- Goal: X && X = a => X && X != a
-    --     -- Coinductive axiom: -
-    --     -- Normal axiom: -
-    --     -- Expected: stuck, since the terms unify but the conditions do not
-    --     let left =
-    --             Pattern.withCondition
-    --                 (TermLike.mkElemVar Mock.x)
-    --                 (Condition.fromPredicate
-    --                     (makeEqualsPredicate Mock.testSort
-    --                         (TermLike.mkElemVar Mock.x)
-    --                         Mock.a
-    --                     )
-    --                 )
-    --         left' =
-    --             Pattern.withCondition
-    --                 Mock.a
-    --                 (Condition.assign (inject Mock.x) Mock.a)
-    --         right =
-    --             Pattern.withCondition
-    --                 (TermLike.mkElemVar Mock.x)
-    --                 (Condition.fromPredicate $ makeNotPredicate
-    --                     (makeEqualsPredicate Mock.testSort
-    --                         (TermLike.mkElemVar Mock.x)
-    --                         Mock.a
-    --                     )
-    --                 )
-    --         original = makeOnePathGoalFromPatterns left right
-    --         expect = makeOnePathGoalFromPatterns left' right
-    --     [ _actual ] <- runOnePathSteps
-    --         Unlimited
-    --         (Limit 1)
-    --         original
-    --         []
-    --         []
-    --     assertEqual "" (Stuck expect) _actual
+    -- TODO: I think we should probably fix this somehow
+    , testCase "RHS simplification" $ do
+        -- Goal: X && X = a => X && X != a
+        -- Coinductive axiom: -
+        -- Normal axiom: -
+        -- Expected: stuck
+        -- Explanation:
+        --   This requires two steps to get stuck because the
+        --   proof strategy simplifies before checking the
+        --   implication.
+        --   - Step 1: the RHS will be simplified to \\bottom
+        --       using the LHS as a side condition; the result of
+        --       checkImplication is NotImplied;
+        --   - Step 2: during checkImplication,
+        --       the LHS does not unify with \\bottom,
+        --       so the result is NotImplied; this results in
+        --       a stuck proof because the current ClaimState
+        --       is Remaining;
+        let left =
+                Pattern.withCondition
+                    (TermLike.mkElemVar Mock.x)
+                    (Condition.fromPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (TermLike.mkElemVar Mock.x)
+                            Mock.a
+                        )
+                    )
+            left' =
+                Pattern.withCondition
+                    Mock.a
+                    (Condition.assign (inject Mock.x) Mock.a)
+            right =
+                Pattern.withCondition
+                    (TermLike.mkElemVar Mock.x)
+                    (Condition.fromPredicate $ makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (TermLike.mkElemVar Mock.x)
+                            Mock.a
+                        )
+                    )
+            right' = Pattern.bottom
+            original = makeOnePathGoalFromPatterns left right
+            expect = makeOnePathGoalFromPatterns left' right'
+        [ _actual ] <- runOnePathSteps
+            Unlimited
+            (Limit 2)
+            original
+            []
+            []
+        assertEqual "" (Stuck expect) _actual
     ]
 
 simpleRewrite
