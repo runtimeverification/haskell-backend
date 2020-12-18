@@ -7572,8 +7572,7 @@
                                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                                /* Fl Fn D Sfa */
-                                                                                                /* builtin: */
+                                                                                                /* Fl Fn D Sfc */
                                                                                                 Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
@@ -8923,8 +8922,7 @@
                                                                 LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                        /* Fl Fn D Sfa */
-                                                                        /* builtin: */
+                                                                        /* Fl Fn D Sfc */
                                                                         Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
@@ -9775,8 +9773,7 @@
                                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                                /* Fl Fn D Sfa */
-                                                                                                /* builtin: */
+                                                                                                /* Fl Fn D Sfc */
                                                                                                 Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
@@ -11117,8 +11114,7 @@
                                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                 /* Fl Fn D Sfc */
                                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    /* builtin: */
+                                                                    /* Fl Fn D Sfc */
                                                                     Lbl'Stop'List{}()
                                                                 ),
                                                                 /* Fl Fn D Sfc */
@@ -11728,8 +11724,7 @@
                                                     LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            /* builtin: */
+                                                            /* Fl Fn D Sfc */
                                                             Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
@@ -13488,8 +13483,7 @@
                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                             /* Fl Fn D Sfc */
                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                /* Fl Fn D Sfa */
-                                                                                /* builtin: */
+                                                                                /* Fl Fn D Sfc */
                                                                                 Lbl'Stop'List{}()
                                                                             ),
                                                                             /* Fl Fn D Sfc */
@@ -14797,8 +14791,7 @@
                                                     LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            /* builtin: */
+                                                            /* Fl Fn D Sfc */
                                                             Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
@@ -15409,8 +15402,7 @@
                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    /* builtin: */
+                                                    /* Fl Fn D Sfc */
                                                     Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
@@ -17134,8 +17126,7 @@
                                                                 LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                        /* Fl Fn D Sfa */
-                                                                        /* builtin: */
+                                                                        /* Fl Fn D Sfc */
                                                                         Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
@@ -18440,8 +18431,7 @@
                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    /* builtin: */
+                                                    /* Fl Fn D Sfc */
                                                     Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
