@@ -1,15 +1,25 @@
 module Test.Kore.BugReport
-    ( test_parse
+    ( test_Parse_BugReportOption
+    , test_parse
     ) where
 
 import Prelude.Kore
 
 import qualified Data.List as List
 
+import Debug
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
+import qualified Pretty
+
+import Kore.BugReport
+    ( BugReport (..)
+    , BugReportOption (..)
+    , parseBugReportOption
+    )
 import Kore.Log
     ( parseKoreLogOptions
     , unparseKoreLogOptions
@@ -29,6 +39,7 @@ import Options.Applicative
 
 import Test.Tasty
 import Test.Tasty.Hedgehog
+import Test.Tasty.HUnit
 
 test_parse :: TestTree
 test_parse =
@@ -82,6 +93,33 @@ test_parse =
             actual = expect >>= parseKoreLogOpts . unparseKoreLogOptions
         getParseResult expect === getParseResult actual
 
+test_Parse_BugReportOption :: [TestTree]
+test_Parse_BugReportOption =
+        [ testParse "Parse BugReportEnable" ["--bug-report", "fileName"]
+            (BugReportEnable $ BugReport "fileName")
+        , testParse "Parse BugReportDisable" ["--no-bug-report"]
+            BugReportDisable
+        , testParse "Parse BugReportOnError" [] BugReportOnError
+        ]
+  where
+
+    testParse :: TestName -> [String] -> BugReportOption -> TestTree
+    testParse testName arguments opt =
+        testCase testName $ assertParse arguments opt
+
+    assertParse :: HasCallStack => [String] -> BugReportOption -> Assertion
+    assertParse arguments opt =
+        assertEqual
+            (show $ Pretty.vsep
+                [ "while parsing:"
+                , Pretty.indent 4 (debug arguments)
+                , "expected:"
+                , Pretty.indent 4 (debug opt)
+                ]
+            )
+            (Just opt)
+            (getParseResult $ parseBugReportOpts arguments)
+
 parseKoreLogOpts :: [String] -> ParserResult KoreLogOptions
 parseKoreLogOpts arguments =
     execParserPure
@@ -90,6 +128,13 @@ parseKoreLogOpts arguments =
             (parseKoreLogOptions (ExeName "kore-exec") (fromNanoSecs 0))
             fullDesc
         )
+        arguments
+
+parseBugReportOpts :: [String] -> ParserResult BugReportOption
+parseBugReportOpts arguments =
+    execParserPure
+        defaultPrefs
+        (info parseBugReportOption fullDesc)
         arguments
 
 element :: [a] -> Gen a
