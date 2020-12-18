@@ -29,9 +29,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
@@ -113,4 +110,4 @@ simplifyTermLike
     -> simplifier (OrPattern variable)
 simplifyTermLike termLike =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)
+    $ Pattern.simplifyTopConfiguration (Pattern.fromTermLike termLike)

@@ -92,8 +92,7 @@ import Kore.Internal.Predicate
     , unwrapPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    , topTODO
+    ( topTODO
     )
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
@@ -223,7 +222,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
         finals <-
             getFinalConfigsOf $ do
                 initialConfig <-
-                    Pattern.simplify SideCondition.top
+                    Pattern.simplify
                         (Pattern.fromTermLike initialTerm)
                     >>= Logic.scatter
                 let
@@ -351,7 +350,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
-            Pattern.simplify SideCondition.top
+            Pattern.simplify
             $ Pattern.fromTermLike termLike
         let
             initialPattern =

@@ -530,7 +530,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             simplifyConditionsWithSmt sideCondition' configs'
             >>= Logic.scatter
-            >>= Pattern.simplifyTopConfiguration
+            >>= Pattern.simplify
             >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied
@@ -559,12 +559,12 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             unified <-
                 mkIn sort leftTerm rightTerm
                 & Pattern.fromTermLike
-                & Pattern.simplify sideCondition
+                & Pattern.simplify
                 & (>>= Logic.scatter)
             didUnify
             removed <-
                 Pattern.andCondition unified rightCondition
-                & Pattern.simplify sideCondition
+                & Pattern.simplify
                 & (>>= Logic.scatter)
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
@@ -629,7 +629,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
         OrPattern.observeAllT
         $ Logic.scatter dest
-        >>= Pattern.simplify sideCondition . Pattern.requireDefined
+        >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
         >>= SMT.Evaluator.filterMultiOr
         >>= Logic.scatter
 
