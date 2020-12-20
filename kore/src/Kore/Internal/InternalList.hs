@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
  -}
 module Kore.Internal.InternalList
