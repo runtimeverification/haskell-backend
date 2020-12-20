@@ -30,6 +30,7 @@ import Kore.Debug
 import Kore.Internal.Symbol
 import Kore.Sort
 import Kore.Unparser
+import qualified Pretty
 
 {- | Internal representation of the builtin @LIST.List@ domain.
  -}
@@ -57,11 +58,14 @@ instance NFData child => NFData (InternalList child)
 
 instance Unparse child => Unparse (InternalList child) where
     unparse internalList =
-        unparseConcat'
+        Pretty.hsep
+        [ "/* InternalList: */"
+        , unparseConcat'
             (unparse internalListUnit)
             (unparse internalListConcat)
             (element <$> toList internalListChild)
-      where
+        ]
+       where
         element x = unparse internalListElement <> arguments [x]
         InternalList { internalListChild } = internalList
         InternalList { internalListUnit } = internalList
@@ -69,10 +73,13 @@ instance Unparse child => Unparse (InternalList child) where
         InternalList { internalListConcat } = internalList
 
     unparse2 internalList =
-        unparseConcat'
+        Pretty.hsep
+        [ "/* InternalList: */"
+        , unparseConcat'
             (unparse internalListUnit)
             (unparse internalListConcat)
             (element <$> toList internalListChild)
+        ]
       where
         element x = unparse2 internalListElement <> arguments2 [x]
         InternalList { internalListChild } = internalList
