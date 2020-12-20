@@ -9,6 +9,8 @@ module From
     , into
     ) where
 
+import Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 import Data.Void
 
 {- | Convert type @from@ into @to@.
@@ -53,4 +55,8 @@ into = from @from @to
  -}
 instance From Void any where
     from = absurd
+    {-# INLINE from #-}
+
+instance From [a] (Seq a) where
+    from = Seq.fromList
     {-# INLINE from #-}
