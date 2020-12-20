@@ -6,6 +6,7 @@ License     : NCSA
 
 module From
     ( From (..)
+    , into
     ) where
 
 import Data.Void
@@ -42,6 +43,11 @@ let b = let a :: A = _ in from @_ @B a
  -}
 class From from to where
     from :: from -> to
+
+{- | @into@ is 'from' with the type parameters in reverse order.
+ -}
+into :: forall to from. From from to => from -> to
+into = from @from @to
 
 {- | This instance implements the principle /ex falso quodlibet/.
  -}
