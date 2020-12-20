@@ -1,47 +1,47 @@
 /* Created: Kore.Internal.Predicate.makeAndPredicate */
-/* Spc */
+/* Spa */
 \and{SortGeneratedTopCell{}}(
     /* Created: Kore.Internal.Predicate.makeAndPredicate */
-    /* Spc */
+    /* Spa */
     \and{SortGeneratedTopCell{}}(
         /* Created: Kore.Internal.Predicate.makeAndPredicate */
-        /* Spc */
+        /* Spa */
         \and{SortGeneratedTopCell{}}(
             /* Created: Kore.Internal.Predicate.makeAndPredicate */
-            /* Spc */
+            /* Spa */
             \and{SortGeneratedTopCell{}}(
                 /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                /* Spc */
+                /* Spa */
                 \and{SortGeneratedTopCell{}}(
                     /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                    /* Spc */
+                    /* Spa */
                     \and{SortGeneratedTopCell{}}(
                         /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                        /* Spc */
+                        /* Spa */
                         \and{SortGeneratedTopCell{}}(
                             /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                            /* Spc */
+                            /* Spa */
                             \and{SortGeneratedTopCell{}}(
                                 /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                /* Spc */
+                                /* Spa */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                    /* Spc */
+                                    /* Spa */
                                     \and{SortGeneratedTopCell{}}(
                                         /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                        /* Spc */
+                                        /* Spa */
                                         \and{SortGeneratedTopCell{}}(
                                             /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                            /* Spc */
+                                            /* Spa */
                                             \and{SortGeneratedTopCell{}}(
                                                 /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                                /* Spc */
+                                                /* Spa */
                                                 \and{SortGeneratedTopCell{}}(
                                                     /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                                    /* Spc */
+                                                    /* Spa */
                                                     \and{SortGeneratedTopCell{}}(
                                                         /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                                        /* Spc */
+                                                        /* Spa */
                                                         \and{SortGeneratedTopCell{}}(
                                                             /* Spa */
                                                             \equals{SortOutputCell{}, SortGeneratedTopCell{}}(
@@ -55,25 +55,25 @@
                                                                     )
                                                                 )
                                                             ),
-                                                            /* Spc */
+                                                            /* Spa */
                                                             \equals{SortCallStackCell{}, SortGeneratedTopCell{}}(
                                                                 /* Fl Fn D Sfa */
                                                                 Var'Unds'1:SortCallStackCell{},
-                                                                /* Fl Fn D Sfc */
+                                                                /* Fl Fn D Sfa */
                                                                 Lbl'-LT-'callStack'-GT-'{}(
-                                                                    /* Fl Fn D Sfc */
-                                                                    Lbl'Stop'List{}()
+                                                                    /* Fl Fn D Sfa */
+                                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                                 )
                                                             )
                                                         ),
-                                                        /* Spc */
+                                                        /* Spa */
                                                         \equals{SortInterimStatesCell{}, SortGeneratedTopCell{}}(
                                                             /* Fl Fn D Sfa */
                                                             Var'Unds'2:SortInterimStatesCell{},
-                                                            /* Fl Fn D Sfc */
+                                                            /* Fl Fn D Sfa */
                                                             Lbl'-LT-'interimStates'-GT-'{}(
-                                                                /* Fl Fn D Sfc */
-                                                                Lbl'Stop'List{}()
+                                                                /* Fl Fn D Sfa */
+                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                             )
                                                         )
                                                     ),
@@ -178,11 +178,11 @@
                                                     )
                                                 )
                                             ),
-                                            /* Spc */
+                                            /* Spa */
                                             \equals{SortSubstateCell{}, SortGeneratedTopCell{}}(
                                                 /* Fl Fn D Sfa */
                                                 Var'Unds'5:SortSubstateCell{},
-                                                /* Fl Fn D Sfc */
+                                                /* Fl Fn D Sfa */
                                                 Lbl'-LT-'substate'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'selfDestruct'-GT-'{}(
@@ -190,10 +190,10 @@
                                                         /* builtin: */
                                                         Lbl'Stop'Set{}()
                                                     ),
-                                                    /* Fl Fn D Sfc */
+                                                    /* Fl Fn D Sfa */
                                                     Lbl'-LT-'log'-GT-'{}(
-                                                        /* Fl Fn D Sfc */
-                                                        Lbl'Stop'List{}()
+                                                        /* Fl Fn D Sfa */
+                                                        /* InternalList: */ Lbl'Stop'List{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'refund'-GT-'{}(
@@ -225,13 +225,14 @@
                                         )
                                     )
                                 ),
-                                /* Spc */
+                                /* Spa */
                                 \equals{SortBlockhashesCell{}, SortGeneratedTopCell{}}(
                                     /* Fl Fn D Sfa */
                                     Var'Unds'8:SortBlockhashesCell{},
-                                    /* Fl Fn D Sfc */
+                                    /* Fl Fn D Sfa */
                                     Lbl'-LT-'blockhashes'-GT-'{}(
-                                        /* Fl Fn D Sfc */ Lbl'Stop'List{}()
+                                        /* Fl Fn D Sfa */
+                                        /* InternalList: */ Lbl'Stop'List{}()
                                     )
                                 )
                             ),
@@ -361,10 +362,10 @@
             )
         )
     ),
-    /* Spc */
+    /* Spa */
     \equals{SortNetworkCell{}, SortGeneratedTopCell{}}(
         /* Fl Fn D Sfa */ VarDotVar2:SortNetworkCell{},
-        /* Fl Fn D Sfc */
+        /* Fl Fn D Sfa */
         Lbl'-LT-'network'-GT-'{}(
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'activeAccounts'-GT-'{}(
@@ -374,10 +375,14 @@
             Lbl'-LT-'accounts'-GT-'{}(
                 /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'AccountCellMap{}()
             ),
-            /* Fl Fn D Sfc */
-            Lbl'-LT-'txOrder'-GT-'{}(/* Fl Fn D Sfc */ Lbl'Stop'List{}()),
-            /* Fl Fn D Sfc */
-            Lbl'-LT-'txPending'-GT-'{}(/* Fl Fn D Sfc */ Lbl'Stop'List{}()),
+            /* Fl Fn D Sfa */
+            Lbl'-LT-'txOrder'-GT-'{}(
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
+            ),
+            /* Fl Fn D Sfa */
+            Lbl'-LT-'txPending'-GT-'{}(
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
+            ),
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'messages'-GT-'{}(
                 /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'MessageCellMap{}()
