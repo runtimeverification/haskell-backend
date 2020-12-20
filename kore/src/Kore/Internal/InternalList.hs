@@ -92,17 +92,14 @@ instance Synthetic ConstructorLike InternalList where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
--- | A 'InternalInt' pattern is always 'Defined'.
 instance Synthetic Defined InternalList where
     synthetic = fold
     {-# INLINE synthetic #-}
 
--- | An 'InternalList' pattern is always 'Function'.
 instance Synthetic Function InternalList where
     synthetic = fold
     {-# INLINE synthetic #-}
 
--- | An 'InternalList' pattern is always 'Functional'.
 instance Synthetic Functional InternalList where
     synthetic = fold
     {-# INLINE synthetic #-}
