@@ -44,7 +44,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( mapVariables
+    ( cannotReplace
+    , mapVariables
     , replaceTerm
     , toRepresentation
     )
@@ -160,6 +161,7 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( unparse
+    , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
@@ -200,8 +202,10 @@ simplify sideCondition = \termLike ->
 
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
-    simplifyInternalWorker termLike
-      | TermLike.isSimplified sideConditionRepresentation termLike =
+    simplifyInternalWorker
+      termLike@(SideCondition.replaceTerm sideCondition -> changedTerm)
+      | changedTerm == termLike
+      , TermLike.isSimplified sideConditionRepresentation termLike =
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -216,12 +220,12 @@ simplify sideCondition = \termLike ->
                     & pure
       | otherwise =
         assertTermNotPredicate $ do
-            unfixedTermOr <- descendAndSimplify termLike
+            unfixedTermOr <- descendAndSimplify changedTerm
             let termOr = OrPattern.coerceSort
-                    (termLikeSort termLike)
+                    (termLikeSort changedTerm)
                     unfixedTermOr
             returnIfSimplifiedOrContinue
-                termLike
+                changedTerm
                 (OrPattern.toPatterns termOr)
                 (do
                     termPredicateList <- Logic.observeAllT $ do
@@ -231,7 +235,7 @@ simplify sideCondition = \termLike ->
                         return (applyTermSubstitution simplified)
 
                     returnIfSimplifiedOrContinue
-                        termLike
+                        changedTerm
                         termPredicateList
                         (do
                             resultsList <- mapM resimplify termPredicateList
@@ -301,11 +305,14 @@ simplify sideCondition = \termLike ->
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultTerm
             && resultSubstitutionIsEmpty
+            && SideCondition.cannotReplace sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultPredicate
+            && SideCondition.cannotReplace sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
+            && SideCondition.cannotReplace sideCondition (Pattern.term result)
           = return
                 (OrPattern.fromTermLike
                     (TermLike.markSimplifiedConditional
@@ -332,8 +339,7 @@ simplify sideCondition = \termLike ->
                 Condition.fromPredicate <$> Predicate.makePredicate originalTerm
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
-    -- descendAndSimplify (SideCondition.replaceTerm sideCondition -> termLike) =
-    descendAndSimplify (SideCondition.replaceTerm sideCondition -> termLike) =
+    descendAndSimplify termLike =
         let doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)

@@ -19,6 +19,7 @@ module Kore.Internal.SideCondition
     , toPredicate
     , toRepresentation
     , replaceTerm
+    , cannotReplace
     , simplifyConjunctionByAssumption
     , emptyReplacements
     ) where
@@ -99,8 +100,12 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( Unparse (..)
+    , unparseToString
     )
 import Pair
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 import qualified SQL
 
@@ -146,6 +151,15 @@ instance Ord variable => HasFreeVariables (SideCondition variable) variable
 instance InternalVariable variable => Unparse (SideCondition variable) where
     unparse = unparse . toPredicate
     unparse2 = unparse2 . toPredicate
+
+instance InternalVariable variable => Pretty (SideCondition variable) where
+    pretty SideCondition { assumedTrue, replacements } =
+        Pretty.vsep $
+            [ "Assumed true condition:"
+            , Pretty.indent 4 (unparse . MultiAnd.toPredicate $ assumedTrue)
+            , "Replacements:"
+            ]
+            <> fmap (\(k, v) -> Pretty.lparen <> unparse k <> Pretty.comma <> unparse v <> Pretty.rparen) (HashMap.toList replacements)
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
@@ -290,6 +304,14 @@ replaceTerm
     -> TermLike variable
 replaceTerm SideCondition { replacements } original =
     HashMap.findWithDefault original original replacements
+
+cannotReplace
+    :: InternalVariable variable
+    => SideCondition variable
+    -> TermLike variable
+    -> Bool
+cannotReplace SideCondition { replacements } term =
+    HashMap.lookup term replacements & isNothing
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
