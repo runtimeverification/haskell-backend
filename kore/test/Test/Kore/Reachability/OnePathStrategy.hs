@@ -758,24 +758,11 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             ((fmap . fmap) OnePath _actual)
             _actualReach
-    -- TODO: I think we should probably fix this somehow
-    , testCase "RHS simplification" $ do
+    , testCase "RHS simplification, checkImplication detects \\bottom RHS" $ do
         -- Goal: X && X = a => X && X != a
         -- Coinductive axiom: -
         -- Normal axiom: -
         -- Expected: stuck
-        -- Explanation:
-        --   This requires two steps to get stuck because the
-        --   proof strategy simplifies before checking the
-        --   implication.
-        --   - Step 1: the RHS will be simplified to \\bottom
-        --       using the LHS as a side condition; the result of
-        --       checkImplication is NotImplied;
-        --   - Step 2: during checkImplication,
-        --       the LHS does not unify with \\bottom,
-        --       so the result is NotImplied; this results in
-        --       a stuck proof because the current ClaimState
-        --       is Remaining;
         let left =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
@@ -803,7 +790,7 @@ test_onePathStrategy =
             expect = makeOnePathGoalFromPatterns left' right'
         [ _actual ] <- runOnePathSteps
             Unlimited
-            (Limit 2)
+            (Limit 1)
             original
             []
             []
