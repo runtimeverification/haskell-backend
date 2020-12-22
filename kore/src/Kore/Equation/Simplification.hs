@@ -23,10 +23,13 @@ import Kore.Equation.Equation
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -44,8 +47,9 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
+import qualified Logic
 
-{- | Simplify a 'Map' of 'EqualityRule's using only Matching Logic rules.
+{- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 
 See also: 'Kore.Equation.Registry.extractEquations'
 
@@ -54,8 +58,9 @@ simplifyExtractedEquations
     :: (InternalVariable variable, MonadSimplify simplifier)
     => Map identifier [Equation variable]
     -> simplifier (Map identifier [Equation variable])
-simplifyExtractedEquations =
-    (traverse . traverse) simplifyEquation
+simplifyExtractedEquations = do
+    results <- (traverse . traverse) simplifyEquation
+    return $ (fmap . fmap) (concatMap toList) results
 
 {- | Simplify an 'Equation' using only Matching Logic rules.
 
@@ -66,45 +71,45 @@ narrowly-defined criteria.
 simplifyEquation
     :: (InternalVariable variable, MonadSimplify simplifier)
     => Equation variable
-    -> simplifier (Equation variable)
-simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
-    do
-        let Equation
-                { requires
-                , argument
-                , antiLeft
-                , left
-                , right
-                , ensures
-                , attributes } = equation
-        simplified <- simplifyTermLike left >>= expectSingleResult
-        let Conditional { term, predicate, substitution } = simplified
-        Monad.guard (isTop predicate)
-        let subst = Substitution.toMap substitution
-            left' = TermLike.substitute subst term
-            requires' = TermLike.substitute subst <$> requires
-            argument' = (fmap . fmap) (TermLike.substitute subst) argument
-            antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
-            right' = TermLike.substitute subst right
-            ensures' = TermLike.substitute subst <$> ensures
-        return Equation
-            { left = TermLike.forgetSimplified left'
-            , requires = Predicate.forgetSimplified requires'
-            , argument = Predicate.forgetSimplified <$> argument'
-            , antiLeft = Predicate.forgetSimplified <$> antiLeft'
-            , right = TermLike.forgetSimplified right'
-            , ensures = Predicate.forgetSimplified ensures'
-            , attributes = attributes
-            }
-    -- Unable to simplify the given equation, so we return the original equation
-    -- in the hope that we can do something with it later.
-    & fromMaybeT (return equation)
+    -> simplifier (MultiAnd (Equation variable))
+simplifyEquation equation@(Equation _ _ _ _ _ _ _) = do
+    let Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            , attributes } = equation
+    simplified' <- simplifyTermLike left
+    results <-
+        Logic.observeAllT $
+            do
+                simplified <- Logic.scatter simplified'
+                let Conditional { term, predicate, substitution } = simplified
+                Monad.guard (isTop predicate)
+                let subst = Substitution.toMap substitution
+                    left' = TermLike.substitute subst term
+                    requires' = TermLike.substitute subst <$> requires
+                    argument' = (fmap . fmap) (TermLike.substitute subst) argument
+                    antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
+                    right' = TermLike.substitute subst right
+                    ensures' = TermLike.substitute subst <$> ensures
+                return Equation
+                    { left = TermLike.forgetSimplified left'
+                    , requires = Predicate.forgetSimplified requires'
+                    , argument = Predicate.forgetSimplified <$> argument'
+                    , antiLeft = Predicate.forgetSimplified <$> antiLeft'
+                    , right = TermLike.forgetSimplified right'
+                    , ensures = Predicate.forgetSimplified ensures'
+                    , attributes = attributes
+                    }
+                -- Unable to simplify the given equation, so we return the original equation
+                -- in the hope that we can do something with it later.
+            & fromMaybeT (return equation)
+    return $ MultiAnd.make results
   where
     fromMaybeT = flip maybeT return
-    expectSingleResult results =
-        case OrPattern.toPatterns results of
-            [result] -> return result
-            _        -> empty
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyTermLike
