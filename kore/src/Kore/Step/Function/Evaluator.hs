@@ -97,7 +97,8 @@ evaluateApplication
         & maybeT (unevaluated Nothing) return
         & lift
     for_ canMemoize (recordOrPattern results)
-    when (Symbol.isFunctional symbol && isBottom results) $
+    when (Symbol.isFunctional symbol && isBottom results
+            && not (any isBottom application)) $
         lift $ errorBottomTotalFunction termLike
     return results
   where
