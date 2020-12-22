@@ -22,7 +22,6 @@
                                         /* Sfc */
                                         \equals{SortBool{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortBool{}}("false"),
                                             /* Fl Fn D Sfc */
                                             Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -84,7 +83,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -93,7 +91,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -102,7 +99,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -111,7 +107,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidMyAddr")
                                                         )
                                                     ),
@@ -126,7 +121,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidSourceAddr")
                                                         )
                                                     ),
@@ -135,7 +129,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidSenderAddr")
                                                         )
                                                     ),
@@ -156,7 +149,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -312,7 +304,6 @@
                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                        /* builtin: */
                                                                                                                         \dv{SortInt{}}("1")
                                                                                                                     )
                                                                                                                 )
@@ -788,7 +779,6 @@
                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortString{}}("==")
                                                                                                         )
                                                                                                     ),
@@ -1052,7 +1042,6 @@
                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortString{}}("=/=")
                                                                                                         )
                                                                                                     ),
@@ -1189,7 +1178,6 @@
                                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                            /* builtin: */
                                                                                                                                             \dv{SortBool{}}("true")
                                                                                                                                         )
                                                                                                                                     )
@@ -1204,7 +1192,6 @@
                                                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                            /* builtin: */
                                                                                                                                             \dv{SortString{}}("IN MAP")
                                                                                                                                         )
                                                                                                                                     ),
@@ -1229,7 +1216,6 @@
                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                    /* builtin: */
                                                                                                                                                     \dv{SortInt{}}("1")
                                                                                                                                                 )
                                                                                                                                             )
@@ -1381,7 +1367,6 @@
                                                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                    /* builtin: */
                                                                                                                                                                                     \dv{SortBool{}}("false")
                                                                                                                                                                                 )
                                                                                                                                                                             )
@@ -1396,7 +1381,6 @@
                                                                                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                    /* builtin: */
                                                                                                                                                                                     \dv{SortString{}}("COMPARE")
                                                                                                                                                                                 )
                                                                                                                                                                             ),
@@ -1529,13 +1513,11 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'returncode'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'assumeFailed'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortBool{}}("true")
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
@@ -1547,7 +1529,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'generatedCounter'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             )
@@ -1588,7 +1569,6 @@
                                                 /* Sfc */
                                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortBool{}}("true"),
                                                     /* Fl Fn D Sfc */
                                                     Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -1719,7 +1699,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -1728,7 +1707,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -1737,7 +1715,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -1746,7 +1723,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidMyAddr")
                                                         )
                                                     ),
@@ -1761,7 +1737,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidSourceAddr")
                                                         )
                                                     ),
@@ -1770,7 +1745,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortString{}}("InvalidSenderAddr")
                                                         )
                                                     ),
@@ -1791,7 +1765,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     ),
@@ -1947,7 +1920,6 @@
                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                        /* builtin: */
                                                                                                                         \dv{SortInt{}}("1")
                                                                                                                     )
                                                                                                                 )
@@ -2086,7 +2058,6 @@
                                                                                 /* Fl Fn D Sfa Cli */
                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                    /* builtin: */
                                                                                     \dv{SortInt{}}("1")
                                                                                 )
                                                                             )
@@ -2648,7 +2619,6 @@
                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortString{}}("==")
                                                                                                         )
                                                                                                     ),
@@ -2912,7 +2882,6 @@
                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortString{}}("=/=")
                                                                                                         )
                                                                                                     ),
@@ -3049,7 +3018,6 @@
                                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                            /* builtin: */
                                                                                                                                             \dv{SortBool{}}("true")
                                                                                                                                         )
                                                                                                                                     )
@@ -3064,7 +3032,6 @@
                                                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                            /* builtin: */
                                                                                                                                             \dv{SortString{}}("IN MAP")
                                                                                                                                         )
                                                                                                                                     ),
@@ -3089,7 +3056,6 @@
                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                    /* builtin: */
                                                                                                                                                     \dv{SortInt{}}("1")
                                                                                                                                                 )
                                                                                                                                             )
@@ -3241,7 +3207,6 @@
                                                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                    /* builtin: */
                                                                                                                                                                                     \dv{SortBool{}}("false")
                                                                                                                                                                                 )
                                                                                                                                                                             )
@@ -3256,7 +3221,6 @@
                                                                                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                    /* builtin: */
                                                                                                                                                                                     \dv{SortString{}}("COMPARE")
                                                                                                                                                                                 )
                                                                                                                                                                             ),
@@ -3389,13 +3353,11 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'returncode'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("1")
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'assumeFailed'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortBool{}}("false")
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
@@ -3407,7 +3369,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'generatedCounter'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             )
@@ -3449,7 +3410,6 @@
                                             /* Sfc */
                                             \equals{SortBool{}, SortGeneratedTopCell{}}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortBool{}}("true"),
                                                 /* Fl Fn D Sfc */
                                                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -3562,7 +3522,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     )
                                                 ),
@@ -3571,7 +3530,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     )
                                                 ),
@@ -3580,7 +3538,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     )
                                                 ),
@@ -3589,7 +3546,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortString{}}("InvalidMyAddr")
                                                     )
                                                 ),
@@ -3604,7 +3560,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortString{}}("InvalidSourceAddr")
                                                     )
                                                 ),
@@ -3613,7 +3568,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortString{}}("InvalidSenderAddr")
                                                     )
                                                 ),
@@ -3634,7 +3588,6 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     )
                                                 ),
@@ -3790,7 +3743,6 @@
                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                    /* builtin: */
                                                                                                                     \dv{SortInt{}}("1")
                                                                                                                 )
                                                                                                             )
@@ -3975,7 +3927,6 @@
                                                                 /* Fl Fn D Sfa Cli */
                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                     /* Fl Fn D Sfa Cl */
-                                                                    /* builtin: */
                                                                     \dv{SortInt{}}("1")
                                                                 )
                                                             ),
@@ -4414,7 +4365,6 @@
                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                        /* builtin: */
                                                                                                         \dv{SortString{}}("==")
                                                                                                     )
                                                                                                 ),
@@ -4678,7 +4628,6 @@
                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                        /* builtin: */
                                                                                                         \dv{SortString{}}("=/=")
                                                                                                     )
                                                                                                 ),
@@ -4815,7 +4764,6 @@
                                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                                     /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                        /* builtin: */
                                                                                                                                         \dv{SortBool{}}("true")
                                                                                                                                     )
                                                                                                                                 )
@@ -4830,7 +4778,6 @@
                                                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                        /* builtin: */
                                                                                                                                         \dv{SortString{}}("IN MAP")
                                                                                                                                     )
                                                                                                                                 ),
@@ -4855,7 +4802,6 @@
                                                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                                                             /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                                /* builtin: */
                                                                                                                                                 \dv{SortInt{}}("1")
                                                                                                                                             )
                                                                                                                                         )
@@ -5007,7 +4953,6 @@
                                                                                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                                                                                             /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                /* builtin: */
                                                                                                                                                                                 \dv{SortBool{}}("false")
                                                                                                                                                                             )
                                                                                                                                                                         )
@@ -5022,7 +4967,6 @@
                                                                                                                                                                             /* Fl Fn D Sfa Cl */
                                                                                                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                                                                /* builtin: */
                                                                                                                                                                                 \dv{SortString{}}("COMPARE")
                                                                                                                                                                             )
                                                                                                                                                                         ),
@@ -5155,13 +5099,11 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'returncode'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("1")
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'assumeFailed'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortBool{}}("false")
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
@@ -5173,7 +5115,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'generatedCounter'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         )
@@ -5215,7 +5156,6 @@
                                         /* Sfc */
                                         \equals{SortBool{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortBool{}}("true"),
                                             /* Fl Fn D Sfc */
                                             Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -5304,7 +5244,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             ),
@@ -5313,7 +5252,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             ),
@@ -5322,7 +5260,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             ),
@@ -5331,7 +5268,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortString{}}("InvalidMyAddr")
                                                 )
                                             ),
@@ -5345,7 +5281,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortString{}}("InvalidSourceAddr")
                                                 )
                                             ),
@@ -5354,7 +5289,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortString{}}("InvalidSenderAddr")
                                                 )
                                             ),
@@ -5375,7 +5309,6 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortInt{}}("0")
                                                 )
                                             ),
@@ -5530,7 +5463,6 @@
                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                             /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                /* builtin: */
                                                                                                                 \dv{SortInt{}}("1")
                                                                                                             )
                                                                                                         )
@@ -6011,7 +5943,6 @@
                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                    /* builtin: */
                                                                                                     \dv{SortString{}}("==")
                                                                                                 )
                                                                                             ),
@@ -6275,7 +6206,6 @@
                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                    /* builtin: */
                                                                                                     \dv{SortString{}}("=/=")
                                                                                                 )
                                                                                             ),
@@ -6412,7 +6342,6 @@
                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                    /* builtin: */
                                                                                                                                     \dv{SortBool{}}("true")
                                                                                                                                 )
                                                                                                                             )
@@ -6427,7 +6356,6 @@
                                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                    /* builtin: */
                                                                                                                                     \dv{SortString{}}("IN MAP")
                                                                                                                                 )
                                                                                                                             ),
@@ -6452,7 +6380,6 @@
                                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                                         /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                            /* builtin: */
                                                                                                                                             \dv{SortInt{}}("1")
                                                                                                                                         )
                                                                                                                                     )
@@ -6604,7 +6531,6 @@
                                                                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                                                            /* builtin: */
                                                                                                                                                                             \dv{SortBool{}}("false")
                                                                                                                                                                         )
                                                                                                                                                                     )
@@ -6619,7 +6545,6 @@
                                                                                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                                                            /* builtin: */
                                                                                                                                                                             \dv{SortString{}}("COMPARE")
                                                                                                                                                                         )
                                                                                                                                                                     ),
@@ -6750,13 +6675,11 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'returncode'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'assumeFailed'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortBool{}}("false")
                                             ),
                                             /* Fl Fn D Sfa Cl */
@@ -6767,7 +6690,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'generatedCounter'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     )
                                 )
@@ -6835,7 +6758,6 @@
                                         /* Sfa */
                                         \equals{SortBool{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortBool{}}("false"),
                                             /* Fl Fn D Sfa */
                                             Lbl'UndsEqlsEqls'Int'Unds'{}(
@@ -6851,7 +6773,6 @@
                                             /* Sfc */
                                             \equals{SortBool{}, SortGeneratedTopCell{}}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortBool{}}("true"),
                                                 /* Fl Fn D Sfc */
                                                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -7021,7 +6942,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         ),
@@ -7030,7 +6950,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         ),
@@ -7039,7 +6958,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         ),
@@ -7048,7 +6966,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortString{}}("InvalidMyAddr")
                                             )
                                         ),
@@ -7062,7 +6979,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortString{}}("InvalidSourceAddr")
                                             )
                                         ),
@@ -7071,7 +6987,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortString{}}("InvalidSenderAddr")
                                             )
                                         ),
@@ -7092,7 +7007,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         ),
@@ -7247,7 +7161,6 @@
                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                         /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortInt{}}("1")
                                                                                                         )
                                                                                                     )
@@ -7350,7 +7263,6 @@
                                                                     /* Fl Fn D Sfa Cli */
                                                                     /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                         /* Fl Fn D Sfa Cl */
-                                                                        /* builtin: */
                                                                         \dv{SortBool{}}("true")
                                                                     )
                                                                 )
@@ -7365,7 +7277,6 @@
                                                                     /* Fl Fn D Sfa Cl */
                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                         /* Fl Fn D Sfa Cl */
-                                                                        /* builtin: */
                                                                         \dv{SortString{}}("IN MAP")
                                                                     )
                                                                 ),
@@ -7390,7 +7301,6 @@
                                                                             /* Fl Fn D Sfa Cli */
                                                                             /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                /* builtin: */
                                                                                 \dv{SortInt{}}("1")
                                                                             )
                                                                         )
@@ -7542,7 +7452,6 @@
                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                             /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                /* builtin: */
                                                                                                                 \dv{SortBool{}}("false")
                                                                                                             )
                                                                                                         )
@@ -7557,7 +7466,6 @@
                                                                                                             /* Fl Fn D Sfa Cl */
                                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                /* builtin: */
                                                                                                                 \dv{SortString{}}("COMPARE")
                                                                                                             )
                                                                                                         ),
@@ -7665,8 +7573,7 @@
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
                                                                                                 /* Fl Fn D Sfa */
-                                                                                                /* builtin: */
-                                                                                                Lbl'Stop'List{}()
+                                                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -7686,7 +7593,6 @@
                                                                                                             /* Fl Fn D Sfa */
                                                                                                             VarI2:SortInt{},
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortInt{}}("1")
                                                                                                         )
                                                                                                     )
@@ -8211,7 +8117,6 @@
                                                                                             /* Fl Fn D Sfa Cl */
                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                /* builtin: */
                                                                                                 \dv{SortString{}}("==")
                                                                                             )
                                                                                         ),
@@ -8475,7 +8380,6 @@
                                                                                             /* Fl Fn D Sfa Cl */
                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                /* builtin: */
                                                                                                 \dv{SortString{}}("=/=")
                                                                                             )
                                                                                         ),
@@ -8612,7 +8516,6 @@
                                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                                             /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                /* builtin: */
                                                                                                                                 \dv{SortBool{}}("true")
                                                                                                                             )
                                                                                                                         )
@@ -8627,7 +8530,6 @@
                                                                                                                             /* Fl Fn D Sfa Cl */
                                                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                /* builtin: */
                                                                                                                                 \dv{SortString{}}("IN MAP")
                                                                                                                             )
                                                                                                                         ),
@@ -8652,7 +8554,6 @@
                                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                        /* builtin: */
                                                                                                                                         \dv{SortInt{}}("1")
                                                                                                                                     )
                                                                                                                                 )
@@ -8804,7 +8705,6 @@
                                                                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                                                                     /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                                                        /* builtin: */
                                                                                                                                                                         \dv{SortBool{}}("false")
                                                                                                                                                                     )
                                                                                                                                                                 )
@@ -8819,7 +8719,6 @@
                                                                                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                                                        /* builtin: */
                                                                                                                                                                         \dv{SortString{}}("COMPARE")
                                                                                                                                                                     )
                                                                                                                                                                 ),
@@ -9024,8 +8923,7 @@
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
                                                                         /* Fl Fn D Sfa */
-                                                                        /* builtin: */
-                                                                        Lbl'Stop'List{}()
+                                                                        /* InternalList: */ Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -9045,7 +8943,6 @@
                                                                                     /* Fl Fn D Sfa */
                                                                                     VarI2:SortInt{},
                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                    /* builtin: */
                                                                                     \dv{SortInt{}}("1")
                                                                                 )
                                                                             )
@@ -9061,12 +8958,11 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'returncode'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("1")
+                                            \dv{SortInt{}}("1")
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'assumeFailed'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortBool{}}("false")
                                         ),
                                         /* Fl Fn D Sfa Cl */
@@ -9076,7 +8972,6 @@
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortString{}, SortKItem{}}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortString{}}("=/=")
                                                 ),
                                                 /* Fl Fn D Sfa Cl */ dotk{}()
@@ -9085,8 +8980,7 @@
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'generatedCounter'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     )
                                 )
                             )
@@ -9153,7 +9047,7 @@
                                     /* Sfa */
                                     \equals{SortBool{}, SortGeneratedTopCell{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortBool{}}("false"),
+                                        \dv{SortBool{}}("false"),
                                         /* Fl Fn D Sfa */
                                         Lbl'UndsEqlsEqls'Int'Unds'{}(
                                             /* Fl Fn D Sfa */
@@ -9168,7 +9062,6 @@
                                         /* Sfc */
                                         \equals{SortBool{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortBool{}}("true"),
                                             /* Fl Fn D Sfc */
                                             Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
@@ -9319,7 +9212,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     ),
                                     /* Fl Fn D Sfa Cl */
@@ -9327,7 +9220,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     ),
                                     /* Fl Fn D Sfa Cl */
@@ -9335,7 +9228,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     ),
                                     /* Fl Fn D Sfa Cl */
@@ -9343,7 +9236,6 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortString{}}("InvalidMyAddr")
                                         )
                                     ),
@@ -9357,7 +9249,6 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortString{}}("InvalidSourceAddr")
                                         )
                                     ),
@@ -9366,7 +9257,6 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortString{}}("InvalidSenderAddr")
                                         )
                                     ),
@@ -9387,7 +9277,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     ),
                                     /* Fl Fn D Sfa Cl */
@@ -9541,7 +9431,6 @@
                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                        /* builtin: */
                                                                                                         \dv{SortInt{}}("1")
                                                                                                     )
                                                                                                 )
@@ -9769,7 +9658,6 @@
                                                                                         /* Fl Fn D Sfa Cli */
                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortBool{}}("false")
                                                                                         )
                                                                                     )
@@ -9784,7 +9672,6 @@
                                                                                         /* Fl Fn D Sfa Cl */
                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortString{}}("COMPARE")
                                                                                         )
                                                                                     ),
@@ -9887,8 +9774,7 @@
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
                                                                                                 /* Fl Fn D Sfa */
-                                                                                                /* builtin: */
-                                                                                                Lbl'Stop'List{}()
+                                                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
                                                                                             /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -9908,7 +9794,6 @@
                                                                                                             /* Fl Fn D Sfa */
                                                                                                             VarI2:SortInt{},
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortInt{}}("1")
                                                                                                         )
                                                                                                     )
@@ -10016,7 +9901,6 @@
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("1")
                                                     )
                                                 ),
@@ -10425,7 +10309,6 @@
                                                                                         /* Fl Fn D Sfa Cl */
                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortString{}}("==")
                                                                                         )
                                                                                     ),
@@ -10689,7 +10572,6 @@
                                                                                         /* Fl Fn D Sfa Cl */
                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortString{}}("=/=")
                                                                                         )
                                                                                     ),
@@ -10826,7 +10708,6 @@
                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                            /* builtin: */
                                                                                                                             \dv{SortBool{}}("true")
                                                                                                                         )
                                                                                                                     )
@@ -10841,7 +10722,6 @@
                                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                            /* builtin: */
                                                                                                                             \dv{SortString{}}("IN MAP")
                                                                                                                         )
                                                                                                                     ),
@@ -10866,7 +10746,6 @@
                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                    /* builtin: */
                                                                                                                                     \dv{SortInt{}}("1")
                                                                                                                                 )
                                                                                                                             )
@@ -11018,7 +10897,6 @@
                                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                    /* builtin: */
                                                                                                                                                                     \dv{SortBool{}}("false")
                                                                                                                                                                 )
                                                                                                                                                             )
@@ -11033,7 +10911,6 @@
                                                                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                                    /* builtin: */
                                                                                                                                                                     \dv{SortString{}}("COMPARE")
                                                                                                                                                                 )
                                                                                                                                                             ),
@@ -11238,8 +11115,7 @@
                                                                 /* Fl Fn D Sfc */
                                                                 /* Inj: */ inj{SortList{}, SortData{}}(
                                                                     /* Fl Fn D Sfa */
-                                                                    /* builtin: */
-                                                                    Lbl'Stop'List{}()
+                                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                                 ),
                                                                 /* Fl Fn D Sfc */
                                                                 /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -11259,7 +11135,6 @@
                                                                                 /* Fl Fn D Sfa */
                                                                                 VarI2:SortInt{},
                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                /* builtin: */
                                                                                 \dv{SortInt{}}("1")
                                                                             )
                                                                         )
@@ -11274,13 +11149,12 @@
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'returncode'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("1")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'assumeFailed'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortBool{}}("false")
+                                        \dv{SortBool{}}("false")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'trace'-GT-'{}(
@@ -11289,7 +11163,6 @@
                                             /* Fl Fn D Sfa Cli */
                                             /* Inj: */ inj{SortString{}, SortKItem{}}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortString{}}("=/=")
                                             ),
                                             /* Fl Fn D Sfa Cl */
@@ -11297,7 +11170,6 @@
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortString{}, SortKItem{}}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
                                                     \dv{SortString{}}("IN MAP")
                                                 ),
                                                 /* Fl Fn D Sfa Cl */ dotk{}()
@@ -11307,8 +11179,7 @@
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             )
                         )
@@ -11373,7 +11244,7 @@
                                 /* Sfa */
                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortBool{}}("false"),
+                                    \dv{SortBool{}}("false"),
                                     /* Fl Fn D Sfa */
                                     Lbl'UndsEqlsEqls'Int'Unds'{}(
                                         /* Fl Fn D Sfa */
@@ -11388,7 +11259,7 @@
                                     /* Sfc */
                                     \equals{SortBool{}, SortGeneratedTopCell{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortBool{}}("true"),
+                                        \dv{SortBool{}}("true"),
                                         /* Fl Fn D Sfc */
                                         Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                             /* Fl Fn D Sfc */
@@ -11512,24 +11383,21 @@
                                 Lbl'-LT-'mybalance'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     )
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'myamount'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     )
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'mynow'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     )
                                 ),
                                 /* Fl Fn D Sfa Cl */
@@ -11537,7 +11405,6 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */
                                         \dv{SortString{}}("InvalidMyAddr")
                                     )
                                 ),
@@ -11551,7 +11418,6 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */
                                         \dv{SortString{}}("InvalidSourceAddr")
                                     )
                                 ),
@@ -11560,7 +11426,6 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */
                                         \dv{SortString{}}("InvalidSenderAddr")
                                     )
                                 ),
@@ -11580,8 +11445,7 @@
                                 Lbl'-LT-'nonce'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     )
                                 ),
                                 /* Fl Fn D Sfa Cl */
@@ -11735,7 +11599,6 @@
                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                    /* builtin: */
                                                                                                     \dv{SortInt{}}("1")
                                                                                                 )
                                                                                             )
@@ -11862,8 +11725,7 @@
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
                                                             /* Fl Fn D Sfa */
-                                                            /* builtin: */
-                                                            Lbl'Stop'List{}()
+                                                            /* InternalList: */ Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -11883,7 +11745,6 @@
                                                                         /* Fl Fn D Sfa */
                                                                         VarI2:SortInt{},
                                                                         /* Fl Fn D Sfa Cl */
-                                                                        /* builtin: */
                                                                         \dv{SortInt{}}("1")
                                                                     )
                                                                 )
@@ -12283,7 +12144,6 @@
                                                                                     /* Fl Fn D Sfa Cl */
                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                        /* builtin: */
                                                                                         \dv{SortString{}}("==")
                                                                                     )
                                                                                 ),
@@ -12547,7 +12407,6 @@
                                                                                     /* Fl Fn D Sfa Cl */
                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                        /* builtin: */
                                                                                         \dv{SortString{}}("=/=")
                                                                                     )
                                                                                 ),
@@ -12684,7 +12543,6 @@
                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                     /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                        /* builtin: */
                                                                                                                         \dv{SortBool{}}("true")
                                                                                                                     )
                                                                                                                 )
@@ -12699,7 +12557,6 @@
                                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                        /* builtin: */
                                                                                                                         \dv{SortString{}}("IN MAP")
                                                                                                                     )
                                                                                                                 ),
@@ -12724,7 +12581,6 @@
                                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                                             /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                /* builtin: */
                                                                                                                                 \dv{SortInt{}}("1")
                                                                                                                             )
                                                                                                                         )
@@ -12876,7 +12732,6 @@
                                                                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                                                                             /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                                                /* builtin: */
                                                                                                                                                                 \dv{SortBool{}}("false")
                                                                                                                                                             )
                                                                                                                                                         )
@@ -12891,7 +12746,6 @@
                                                                                                                                                             /* Fl Fn D Sfa Cl */
                                                                                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                                                                /* builtin: */
                                                                                                                                                                 \dv{SortString{}}("COMPARE")
                                                                                                                                                             )
                                                                                                                                                         ),
@@ -13021,13 +12875,12 @@
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'returncode'-GT-'{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'assumeFailed'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortBool{}}("false")
+                                    \dv{SortBool{}}("false")
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'trace'-GT-'{}(
@@ -13036,7 +12889,6 @@
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortString{}, SortKItem{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */
                                             \dv{SortString{}}("=/=")
                                         ),
                                         /* Fl Fn D Sfa Cl */ dotk{}()
@@ -13045,8 +12897,7 @@
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'generatedCounter'-GT-'{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("0")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                             )
                         )
                     )
@@ -13110,8 +12961,7 @@
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
                             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortBool{}}("true"),
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                                 /* Fl Fn D Sfc */
                                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                     /* Fl Fn D Sfc */
@@ -13128,7 +12978,7 @@
                                 /* Sfa */
                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortBool{}}("true"),
+                                    \dv{SortBool{}}("true"),
                                     /* Fl Fn D Sfa */
                                     Lbl'UndsEqlsEqls'Int'Unds'{}(
                                         /* Fl Fn D Sfa */
@@ -13188,7 +13038,6 @@
                                                                 /* Fl Fn D Sfa */
                                                                 VarI2:SortInt{},
                                                                 /* Fl Fn D Sfa Cl */
-                                                                /* builtin: */
                                                                 \dv{SortInt{}}("1")
                                                             )
                                                         )
@@ -13220,7 +13069,7 @@
                                                 )
                                             ),
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ \dv{SortInt{}}("0")
+                                            \dv{SortInt{}}("0")
                                         )
                                     )
                                 )
@@ -13275,24 +13124,21 @@
                             Lbl'-LT-'mybalance'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'myamount'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'mynow'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             ),
                             /* Fl Fn D Sfa Cl */
@@ -13300,7 +13146,6 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */
                                     \dv{SortString{}}("InvalidMyAddr")
                                 )
                             ),
@@ -13314,7 +13159,6 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */
                                     \dv{SortString{}}("InvalidSourceAddr")
                                 )
                             ),
@@ -13323,7 +13167,6 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */
                                     \dv{SortString{}}("InvalidSenderAddr")
                                 )
                             ),
@@ -13343,8 +13186,7 @@
                             Lbl'-LT-'nonce'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             ),
                             /* Fl Fn D Sfa Cl */
@@ -13498,7 +13340,6 @@
                                                                                             /* Fl Fn D Sfa Cli */
                                                                                             /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                /* builtin: */
                                                                                                 \dv{SortInt{}}("1")
                                                                                             )
                                                                                         )
@@ -13643,8 +13484,7 @@
                                                                             /* Fl Fn D Sfc */
                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
                                                                                 /* Fl Fn D Sfa */
-                                                                                /* builtin: */
-                                                                                Lbl'Stop'List{}()
+                                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                                             ),
                                                                             /* Fl Fn D Sfc */
                                                                             /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -13664,7 +13504,6 @@
                                                                                             /* Fl Fn D Sfa */
                                                                                             VarI2:SortInt{},
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortInt{}}("1")
                                                                                         )
                                                                                     )
@@ -14147,7 +13986,6 @@
                                                                                 /* Fl Fn D Sfa Cl */
                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                    /* builtin: */
                                                                                     \dv{SortString{}}("==")
                                                                                 )
                                                                             ),
@@ -14411,7 +14249,6 @@
                                                                                 /* Fl Fn D Sfa Cl */
                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                    /* builtin: */
                                                                                     \dv{SortString{}}("=/=")
                                                                                 )
                                                                             ),
@@ -14548,7 +14385,6 @@
                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                    /* builtin: */
                                                                                                                     \dv{SortBool{}}("true")
                                                                                                                 )
                                                                                                             )
@@ -14563,7 +14399,6 @@
                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                    /* builtin: */
                                                                                                                     \dv{SortString{}}("IN MAP")
                                                                                                                 )
                                                                                                             ),
@@ -14588,7 +14423,6 @@
                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                         /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                            /* builtin: */
                                                                                                                             \dv{SortInt{}}("1")
                                                                                                                         )
                                                                                                                     )
@@ -14740,7 +14574,6 @@
                                                                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                                            /* builtin: */
                                                                                                                                                             \dv{SortBool{}}("false")
                                                                                                                                                         )
                                                                                                                                                     )
@@ -14755,7 +14588,6 @@
                                                                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                                                                            /* builtin: */
                                                                                                                                                             \dv{SortString{}}("COMPARE")
                                                                                                                                                         )
                                                                                                                                                     ),
@@ -14960,8 +14792,7 @@
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
                                                             /* Fl Fn D Sfa */
-                                                            /* builtin: */
-                                                            Lbl'Stop'List{}()
+                                                            /* InternalList: */ Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -14981,7 +14812,6 @@
                                                                         /* Fl Fn D Sfa */
                                                                         VarI2:SortInt{},
                                                                         /* Fl Fn D Sfa Cl */
-                                                                        /* builtin: */
                                                                         \dv{SortInt{}}("1")
                                                                     )
                                                                 )
@@ -14996,13 +14826,11 @@
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'returncode'-GT-'{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("1")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'assumeFailed'-GT-'{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortBool{}}("false")
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false")
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'trace'-GT-'{}(
@@ -15011,7 +14839,7 @@
                                     /* Fl Fn D Sfa Cli */
                                     /* Inj: */ inj{SortString{}, SortKItem{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortString{}}("==")
+                                        \dv{SortString{}}("==")
                                     ),
                                     /* Fl Fn D Sfa Cl */ dotk{}()
                                 )
@@ -15019,8 +14847,7 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'generatedCounter'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     )
                 )
@@ -15084,8 +14911,7 @@
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("true"),
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                             /* Fl Fn D Sfc */
                             Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                 /* Fl Fn D Sfc */
@@ -15100,8 +14926,7 @@
                         \and{SortGeneratedTopCell{}}(
                             /* Sfa */
                             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortBool{}}("true"),
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                                 /* Fl Fn D Sfa */
                                 Lbl'UndsEqlsEqls'Int'Unds'{}(
                                     /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
@@ -15126,7 +14951,6 @@
                                                         /* Fl Fn D Sfa */
                                                         VarI2:SortInt{},
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("1")
                                                     )
                                                 )
@@ -15157,8 +14981,7 @@
                                             )
                                         )
                                     ),
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 ),
                                 /* Sfc */
                                 \equals{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -15242,24 +15065,21 @@
                         Lbl'-LT-'mybalance'-GT-'{}(
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("0")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                             )
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'myamount'-GT-'{}(
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("0")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                             )
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'mynow'-GT-'{}(
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("0")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                             )
                         ),
                         /* Fl Fn D Sfa Cl */
@@ -15267,7 +15087,6 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */
                                 \dv{SortString{}}("InvalidMyAddr")
                             )
                         ),
@@ -15280,7 +15099,6 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */
                                 \dv{SortString{}}("InvalidSourceAddr")
                             )
                         ),
@@ -15289,7 +15107,6 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */
                                 \dv{SortString{}}("InvalidSenderAddr")
                             )
                         ),
@@ -15309,8 +15126,7 @@
                         Lbl'-LT-'nonce'-GT-'{}(
                             /* Fl Fn D Sfa Cl */
                             Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("0")
+                                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                             )
                         ),
                         /* Fl Fn D Sfa Cl */
@@ -15463,7 +15279,6 @@
                                                                                         /* Fl Fn D Sfa Cli */
                                                                                         /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                            /* builtin: */
                                                                                             \dv{SortInt{}}("1")
                                                                                         )
                                                                                     )
@@ -15588,8 +15403,7 @@
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
                                                     /* Fl Fn D Sfa */
-                                                    /* builtin: */
-                                                    Lbl'Stop'List{}()
+                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -15609,7 +15423,6 @@
                                                                 /* Fl Fn D Sfa */
                                                                 VarI2:SortInt{},
                                                                 /* Fl Fn D Sfa Cl */
-                                                                /* builtin: */
                                                                 \dv{SortInt{}}("1")
                                                             )
                                                         )
@@ -16009,7 +15822,6 @@
                                                                             /* Fl Fn D Sfa Cl */
                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                /* builtin: */
                                                                                 \dv{SortString{}}("==")
                                                                             )
                                                                         ),
@@ -16273,7 +16085,6 @@
                                                                             /* Fl Fn D Sfa Cl */
                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                /* builtin: */
                                                                                 \dv{SortString{}}("=/=")
                                                                             )
                                                                         ),
@@ -16410,7 +16221,6 @@
                                                                                                             /* Fl Fn D Sfa Cli */
                                                                                                             /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                /* builtin: */
                                                                                                                 \dv{SortBool{}}("true")
                                                                                                             )
                                                                                                         )
@@ -16425,7 +16235,6 @@
                                                                                                             /* Fl Fn D Sfa Cl */
                                                                                                             LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                 /* Fl Fn D Sfa Cl */
-                                                                                                                /* builtin: */
                                                                                                                 \dv{SortString{}}("IN MAP")
                                                                                                             )
                                                                                                         ),
@@ -16450,7 +16259,6 @@
                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                        /* builtin: */
                                                                                                                         \dv{SortInt{}}("1")
                                                                                                                     )
                                                                                                                 )
@@ -16602,7 +16410,6 @@
                                                                                                                                                     /* Fl Fn D Sfa Cli */
                                                                                                                                                     /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                                        /* builtin: */
                                                                                                                                                         \dv{SortBool{}}("false")
                                                                                                                                                     )
                                                                                                                                                 )
@@ -16617,7 +16424,6 @@
                                                                                                                                                     /* Fl Fn D Sfa Cl */
                                                                                                                                                     LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                                                                                        /* builtin: */
                                                                                                                                                         \dv{SortString{}}("COMPARE")
                                                                                                                                                     )
                                                                                                                                                 ),
@@ -16745,13 +16551,11 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'returncode'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'assumeFailed'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("false")
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false")
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'trace'-GT-'{}(
@@ -16759,8 +16563,7 @@
                             kseq{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortString{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortString{}}("==")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortString{}}("==")
                                 ),
                                 /* Fl Fn D Sfa Cl */ dotk{}()
                             )
@@ -16768,7 +16571,7 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'generatedCounter'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     )
                 )
             )
@@ -16830,8 +16633,7 @@
                 \and{SortGeneratedTopCell{}}(
                     /* Sfa */
                     \equals{SortBool{}, SortGeneratedTopCell{}}(
-                        /* Fl Fn D Sfa Cl */
-                        /* builtin: */ \dv{SortBool{}}("false"),
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
                         /* Fl Fn D Sfa */
                         Lbl'UndsEqlsEqls'Int'Unds'{}(
                             /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
@@ -16843,8 +16645,7 @@
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
                         \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("true"),
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                             /* Fl Fn D Sfc */
                             Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                 /* Fl Fn D Sfc */
@@ -16969,24 +16770,21 @@
                     Lbl'-LT-'mybalance'-GT-'{}(
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'myamount'-GT-'{}(
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Mutez'LParUndsRParUnds'MICHELSON-COMMON'Unds'Mutez'Unds'Int{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'mynow'-GT-'{}(
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Timestamp'LParUndsRParUnds'MICHELSON-COMMON'Unds'Timestamp'Unds'Int{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     ),
                     /* Fl Fn D Sfa Cl */
@@ -16994,7 +16792,7 @@
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                             /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortString{}}("InvalidMyAddr")
+                            \dv{SortString{}}("InvalidMyAddr")
                         )
                     ),
                     /* Fl Fn D Sfa Cl */
@@ -17006,7 +16804,6 @@
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                             /* Fl Fn D Sfa Cl */
-                            /* builtin: */
                             \dv{SortString{}}("InvalidSourceAddr")
                         )
                     ),
@@ -17015,7 +16812,6 @@
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Address'LParUndsRParUnds'MICHELSON-COMMON'Unds'Address'Unds'String{}(
                             /* Fl Fn D Sfa Cl */
-                            /* builtin: */
                             \dv{SortString{}}("InvalidSenderAddr")
                         )
                     ),
@@ -17035,8 +16831,7 @@
                     Lbl'-LT-'nonce'-GT-'{}(
                         /* Fl Fn D Sfa Cl */
                         Lbl'Hash'Nonce'LParUndsRParUnds'MICHELSON-COMMON'Unds'OperationNonce'Unds'Int{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("0")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     ),
                     /* Fl Fn D Sfa Cl */
@@ -17189,7 +16984,6 @@
                                                                                     /* Fl Fn D Sfa Cli */
                                                                                     /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                         /* Fl Fn D Sfa Cl */
-                                                                                        /* builtin: */
                                                                                         \dv{SortInt{}}("1")
                                                                                     )
                                                                                 )
@@ -17333,8 +17127,7 @@
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
                                                                         /* Fl Fn D Sfa */
-                                                                        /* builtin: */
-                                                                        Lbl'Stop'List{}()
+                                                                        /* InternalList: */ Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
                                                                     /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -17354,7 +17147,6 @@
                                                                                     /* Fl Fn D Sfa */
                                                                                     VarI2:SortInt{},
                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                    /* builtin: */
                                                                                     \dv{SortInt{}}("1")
                                                                                 )
                                                                             )
@@ -17836,7 +17628,6 @@
                                                                         /* Fl Fn D Sfa Cl */
                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                             /* Fl Fn D Sfa Cl */
-                                                                            /* builtin: */
                                                                             \dv{SortString{}}("==")
                                                                         )
                                                                     ),
@@ -18100,7 +17891,6 @@
                                                                         /* Fl Fn D Sfa Cl */
                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                             /* Fl Fn D Sfa Cl */
-                                                                            /* builtin: */
                                                                             \dv{SortString{}}("=/=")
                                                                         )
                                                                     ),
@@ -18237,7 +18027,6 @@
                                                                                                         /* Fl Fn D Sfa Cli */
                                                                                                         /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortBool{}}("true")
                                                                                                         )
                                                                                                     )
@@ -18252,7 +18041,6 @@
                                                                                                         /* Fl Fn D Sfa Cl */
                                                                                                         LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                             /* Fl Fn D Sfa Cl */
-                                                                                                            /* builtin: */
                                                                                                             \dv{SortString{}}("IN MAP")
                                                                                                         )
                                                                                                     ),
@@ -18277,7 +18065,6 @@
                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                 /* Inj: */ inj{SortInt{}, SortData{}}(
                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                    /* builtin: */
                                                                                                                     \dv{SortInt{}}("1")
                                                                                                                 )
                                                                                                             )
@@ -18429,7 +18216,6 @@
                                                                                                                                                 /* Fl Fn D Sfa Cli */
                                                                                                                                                 /* Inj: */ inj{SortBool{}, SortData{}}(
                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                    /* builtin: */
                                                                                                                                                     \dv{SortBool{}}("false")
                                                                                                                                                 )
                                                                                                                                             )
@@ -18444,7 +18230,6 @@
                                                                                                                                                 /* Fl Fn D Sfa Cl */
                                                                                                                                                 LblTRACE'LParUndsRParUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'String{}(
                                                                                                                                                     /* Fl Fn D Sfa Cl */
-                                                                                                                                                    /* builtin: */
                                                                                                                                                     \dv{SortString{}}("COMPARE")
                                                                                                                                                 )
                                                                                                                                             ),
@@ -18647,8 +18432,7 @@
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
                                                     /* Fl Fn D Sfa */
-                                                    /* builtin: */
-                                                    Lbl'Stop'List{}()
+                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortMap{}, SortData{}}(
@@ -18668,7 +18452,6 @@
                                                                 /* Fl Fn D Sfa */
                                                                 VarI2:SortInt{},
                                                                 /* Fl Fn D Sfa Cl */
-                                                                /* builtin: */
                                                                 \dv{SortInt{}}("1")
                                                             )
                                                         )
@@ -18683,12 +18466,11 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'returncode'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("1")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'assumeFailed'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */
-                        /* builtin: */ \dv{SortBool{}}("false")
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'trace'-GT-'{}(
@@ -18696,22 +18478,20 @@
                         kseq{}(
                             /* Fl Fn D Sfa Cli */
                             /* Inj: */ inj{SortString{}, SortKItem{}}(
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortString{}}("=/=")
+                                /* Fl Fn D Sfa Cl */ \dv{SortString{}}("=/=")
                             ),
                             /* Fl Fn D Sfa Cl */
                             kseq{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortString{}, SortKItem{}}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortString{}}("IN MAP")
+                                    \dv{SortString{}}("IN MAP")
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 kseq{}(
                                     /* Fl Fn D Sfa Cli */
                                     /* Inj: */ inj{SortString{}, SortKItem{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */
                                         \dv{SortString{}}("COMPARE")
                                     ),
                                     /* Fl Fn D Sfa Cl */ dotk{}()
@@ -18722,7 +18502,7 @@
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                 )
             )
         )

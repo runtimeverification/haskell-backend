@@ -294,7 +294,7 @@ data KoreExecOptions = KoreExecOptions
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     , koreMergeOptions    :: !(Maybe KoreMergeOptions)
     , rtsStatistics       :: !(Maybe FilePath)
-    , bugReport           :: !BugReport
+    , bugReportOption     :: !BugReportOption
     } deriving (GHC.Generic)
 
 -- | Command Line Argument Parser
@@ -335,7 +335,7 @@ parseKoreExecOptions startTime =
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
         <*> optional parseRtsStatistics
-        <*> parseBugReport
+        <*> parseBugReportOption
 
     parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
     parseDepthLimit = Limit <$> depth <|> pure Unlimited
@@ -558,10 +558,15 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, koreSolverOptions, bugReport } = execOptions
+    let KoreExecOptions
+            { koreLogOptions
+            , koreSolverOptions
+            , bugReportOption
+            }
+          = execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
-        withBugReport Main.exeName bugReport $ \tmpDir -> do
+        withBugReport Main.exeName bugReportOption $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
             go <* warnIfLowProductivity
                 & handle handleWithConfiguration

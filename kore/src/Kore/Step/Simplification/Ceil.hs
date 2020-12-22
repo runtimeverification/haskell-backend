@@ -39,6 +39,7 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+import Kore.Internal.InternalList
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -257,6 +258,9 @@ newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
         Builtin_ builtin -> do
             sideCondition <- Reader.ask
             makeEvaluateBuiltin sideCondition builtin
+        InternalList_ internal -> do
+            sideCondition <- Reader.ask
+            makeEvaluateInternalList sideCondition internal
         _ -> empty
 
 newConcatMapCeilSimplifier
@@ -336,16 +340,21 @@ makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
             }
   where
     Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
-    children <- mapM (makeEvaluateTerm sideCondition) (toList l)
+makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
+
+makeEvaluateInternalList
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> InternalList (TermLike variable)
+    -> simplifier (OrCondition variable)
+makeEvaluateInternalList sideCondition internal = do
+    children <- mapM (makeEvaluateTerm sideCondition) (toList internal)
     let
         ceils :: [OrCondition variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
-makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
 
 {-| This handles the case when we can't simplify a term's ceil.
 
@@ -397,11 +406,8 @@ makeSimplifiedCeil
         NotF _ -> False
         BottomF _ -> unexpectedError
         BuiltinF (Domain.BuiltinMap _) -> True
-        BuiltinF (Domain.BuiltinList _) -> True
         BuiltinF (Domain.BuiltinSet _) -> True
-        BuiltinF (Domain.BuiltinInt _) -> unexpectedError
-        BuiltinF (Domain.BuiltinBool _) -> unexpectedError
-        BuiltinF (Domain.BuiltinString _) -> unexpectedError
+        InternalListF _ -> True
         DomainValueF _ -> True
         FloorF _ -> False
         ForallF _ -> False
@@ -413,7 +419,10 @@ makeSimplifiedCeil
         RewritesF _ -> False
         TopF _ -> unexpectedError
         StringLiteralF _ -> unexpectedError
+        InternalBoolF _ -> unexpectedError
         InternalBytesF _ -> unexpectedError
+        InternalIntF _ -> unexpectedError
+        InternalStringF _ -> unexpectedError
         VariableF _ -> False
 
     unsimplified =

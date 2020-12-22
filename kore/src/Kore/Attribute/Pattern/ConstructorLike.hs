@@ -186,16 +186,12 @@ instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
   where
     synthetic =
         \case
-            BuiltinInt _    -> ConstructorLike . Just $ ConstructorLikeHead
-            BuiltinBool _   -> ConstructorLike . Just $ ConstructorLikeHead
-            BuiltinString _ -> ConstructorLike . Just $ ConstructorLikeHead
             (BuiltinMap InternalAc
                     {builtinAcChild = NormalizedMap builtinMapChild}
                 ) -> normalizedAcConstructorLike builtinMapChild
             (BuiltinSet InternalAc
                     {builtinAcChild = NormalizedSet builtinSetChild}
                 ) -> normalizedAcConstructorLike builtinSetChild
-            _               -> ConstructorLike Nothing
     {-# INLINE synthetic #-}
 
 normalizedAcConstructorLike

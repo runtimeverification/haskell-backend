@@ -17,7 +17,7 @@ import Control.Error
     )
 
 import Debug
-import Kore.Domain.Builtin
+import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
 import Kore.TopBottom
 
@@ -50,7 +50,7 @@ assertTop a
   | otherwise = (assertFailure . show) (debug a)
 
 expectBool :: HasCallStack => TermLike VariableName -> IO Bool
-expectBool (BuiltinBool_ internalBool) = return (builtinBoolValue internalBool)
+expectBool (InternalBool_ internalBool) = return (internalBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)
 
 expectJustT :: MonadIO io => HasCallStack => MaybeT io a -> io a

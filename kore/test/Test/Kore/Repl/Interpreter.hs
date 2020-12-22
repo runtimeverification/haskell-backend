@@ -72,9 +72,6 @@ import Kore.Step.RulePattern
     ( mkRewritingRule
     , rulePattern
     )
-import Kore.Step.Simplification.AndTerms
-    ( cannotUnifyDistinctDomainValues
-    )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Syntax.Module
     ( ModuleName (..)
@@ -341,8 +338,7 @@ unificationFailure =
         command = Try . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -358,8 +354,7 @@ unificationFailureWithName =
         command = Try . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -407,8 +402,7 @@ forceFailure =
         command = TryF . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -424,8 +418,7 @@ forceFailureWithName =
         command = TryF . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
