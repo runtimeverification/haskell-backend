@@ -100,7 +100,6 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( Unparse (..)
-    , unparseToString
     )
 import Pair
 import Pretty

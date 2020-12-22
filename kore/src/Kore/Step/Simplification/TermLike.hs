@@ -161,7 +161,6 @@ import Kore.TopBottom
     )
 import Kore.Unparser
     ( unparse
-    , unparseToString
     )
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Target
