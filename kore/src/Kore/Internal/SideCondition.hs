@@ -110,10 +110,12 @@ import qualified SQL
 
 {-| Side condition used in the evaluation context.
 
-It is not added to the result.
+It contains a predicate assumed to be true, and a table of term replacements,
+which is used when simplifying terms. The table is constructed from the predicate,
+see 'simplifyConjunctionByAssumption'.
 
-It is usually used to remove infeasible branches, but it may also be used for
-other purposes, say, to remove redundant parts of the result predicate.
+The predicate is usually used to remove infeasible branches, but it may also
+be used for other purposes, say, to remove redundant parts of the result predicate.
 -}
 data SideCondition variable =
     SideCondition
@@ -212,10 +214,15 @@ instance InternalVariable variable =>
 top :: InternalVariable variable => SideCondition variable
 top = SideCondition { assumedTrue = MultiAnd.top, replacements = mempty }
 
+-- TODO(ana.pantilie): Should we look into removing this?
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
 topTODO :: InternalVariable variable => SideCondition variable
 topTODO = top
 
+{- | A 'SideCondition' and a 'Condition' are combined by assuming
+their conjunction to be true, and creating a new table of replacements
+from the new predicate.
+ -}
 andCondition
     :: InternalVariable variable
     => SideCondition variable
@@ -260,7 +267,12 @@ fromPredicate
     -> SideCondition variable
 fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
 
--- TODO: docs
+{- | Removes the table of replacements. Should be used when
+the 'SideCondition' is necessary for simplification but
+the application of any replacements would give bad results.
+This can happen if the 'SideCondition' is created from the
+condition sent to be simplified.
+ -}
 emptyReplacements
     :: InternalVariable variable
     => SideCondition variable
@@ -303,7 +315,9 @@ toRepresentation =
     mkRepresentation
     . mapVariables @_ @VariableName (pure toVariableName)
 
--- TODO: docs
+{- | Looks up the term in the table. If it's not found, the
+original term is returned.
+ -}
 replaceTerm
     :: InternalVariable variable
     => SideCondition variable
@@ -312,6 +326,9 @@ replaceTerm
 replaceTerm SideCondition { replacements } original =
     HashMap.findWithDefault original original replacements
 
+{- | If the term isn't a key in the table of replacements
+then it cannot be replaced.
+ -}
 cannotReplace
     :: InternalVariable variable
     => SideCondition variable

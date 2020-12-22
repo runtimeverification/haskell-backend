@@ -45,8 +45,7 @@ import Kore.Substitute
     ( substitute
     )
 
-{-| Simplifies the pattern without a side-condition (i.e. it's top)
-and removes the exists quantifiers at the top.
+{-| Simplifies the pattern and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
     :: forall variable simplifier
@@ -72,7 +71,11 @@ simplify
     -> simplifier (OrPattern variable)
 simplify = makeEvaluate SideCondition.top
 
--- TODO: docs, when it can be used
+{- | Simplifies a 'Pattern' with a custom 'SideCondition'.
+This should only be used when it's certain that the
+'SideCondition' was not created from the 'Condition' of
+the 'Pattern'.
+ -}
 makeEvaluate
     :: InternalVariable variable
     => MonadSimplify simplifier
