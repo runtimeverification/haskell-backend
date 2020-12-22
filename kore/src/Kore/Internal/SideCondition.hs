@@ -158,7 +158,15 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             , Pretty.indent 4 (unparse . MultiAnd.toPredicate $ assumedTrue)
             , "Replacements:"
             ]
-            <> fmap (\(k, v) -> Pretty.lparen <> unparse k <> Pretty.comma <> unparse v <> Pretty.rparen) (HashMap.toList replacements)
+            <> HashMap.foldlWithKey' acc [] replacements
+      where
+        acc result key value =
+            result <>
+            [ Pretty.indent 4 "Key:"
+            , Pretty.indent 6 $ unparse key
+            , Pretty.indent 4 "Value:"
+            , Pretty.indent 6 $ unparse value
+            ]
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where

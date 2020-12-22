@@ -606,9 +606,6 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
         case Recursive.project term of
           (_ :< pat) -> unparse2 pat
 
-instance InternalVariable variable => Pretty.Pretty (TermLike variable) where
-    pretty = unparse
-
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)
 
