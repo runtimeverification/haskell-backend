@@ -119,8 +119,8 @@ be used for other purposes, say, to remove redundant parts of the result predica
 -}
 data SideCondition variable =
     SideCondition
-        { assumedTrue :: MultiAnd (Predicate variable)
-        , replacements :: HashMap (TermLike variable) (TermLike variable)
+        { assumedTrue :: !(MultiAnd (Predicate variable))
+        , replacements :: !(HashMap (TermLike variable) (TermLike variable))
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
