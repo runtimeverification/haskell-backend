@@ -26,6 +26,7 @@ import Kore.Equation
     ( Equation (..)
     , mkEquation
     )
+import qualified Kore.Equation as Equation
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -35,6 +36,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import Kore.Sort
     ( predicateSort
@@ -222,6 +227,8 @@ test_simplificationIntegration =
                                         (mkElemVar Mock.x)
                                     )
                                     (mkElemVar Mock.y)
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
                                 ]
                             )
                         ]
@@ -276,12 +283,16 @@ test_simplificationIntegration =
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
                                     (mkElemVar Mock.x)
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
                                 , conditionalEqualityPattern
                                     (Mock.functional10 (mkElemVar Mock.x))
                                     (makeNotPredicate
                                         (makeEqualsPredicate_ Mock.cf Mock.a)
                                     )
                                     (mkElemVar Mock.x)
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
                                 ]
                             )
                        ]
@@ -1025,6 +1036,9 @@ test_simplificationIntegrationUnification =
                                     , mkElemVar Mock.x
                                     ]
                                     (mkElemVar Mock.y)
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
+
                                 ]
                             )
                         ]
@@ -1050,6 +1064,7 @@ test_simplificationIntegrationUnification =
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
                                 requirement
+                                & Equation.mapVariables (pure mkRuleVariable)
                             ]
                           )
                         ]
@@ -1081,6 +1096,8 @@ test_simplificationIntegrationUnification =
                                     [mkElemVar Mock.x]
                                     (mkElemVar Mock.x)
                                     (makeEqualsPredicate_ Mock.cf Mock.a)
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
                                 , functionAxiomUnification
                                     Mock.functional10Symbol
                                     [mkElemVar Mock.x]
@@ -1088,6 +1105,8 @@ test_simplificationIntegrationUnification =
                                     (makeNotPredicate
                                         (makeEqualsPredicate_ Mock.cf Mock.a)
                                     )
+                                    & Equation.mapVariables
+                                        (pure mkRuleVariable)
                                 ]
                             )
                        ]
@@ -1124,6 +1143,7 @@ test_simplificationIntegrationUnification =
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
                                 requirement
+                                & Equation.mapVariables (pure mkRuleVariable)
                             ]
                           )
                         ]
@@ -1159,6 +1179,7 @@ test_simplificationIntegrationUnification =
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
                                 requirement
+                                & Equation.mapVariables (pure mkRuleVariable)
                             ]
                           )
                         ]
@@ -1193,6 +1214,7 @@ test_simplificationIntegrationUnification =
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
                                 requirement
+                                & Equation.mapVariables (pure mkRuleVariable)
                             ]
                           )
                         ]
@@ -1227,6 +1249,7 @@ test_simplificationIntegrationUnification =
                                 [mkElemVar Mock.x]
                                 (Mock.g Mock.a)
                                 requirement
+                                & Equation.mapVariables (pure mkRuleVariable)
                             ]
                           )
                         ]
@@ -1249,6 +1272,7 @@ conditionalEqualityPattern
 conditionalEqualityPattern left requires right =
     mkEquation Kore.Sort.predicateSort left right
     & Lens.set (field @"requires") requires
+
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -1450,7 +1474,7 @@ axiom
     :: TestTerm
     -> TestTerm
     -> TestPredicate
-    -> Equation VariableName
+    -> Equation RewritingVariableName
 axiom left right requires =
     Equation
         { left
@@ -1461,6 +1485,7 @@ axiom left right requires =
         , ensures = Predicate.makeTruePredicate_
         , attributes = Default.def
         }
+    & Equation.mapVariables (pure mkRuleVariable)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set.Set (TermLike Concrete) -> TestTerm

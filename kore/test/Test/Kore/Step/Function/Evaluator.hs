@@ -30,6 +30,9 @@ import Kore.Internal.TermLike
     , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Kore
@@ -96,15 +99,20 @@ g x = Application gSymbol [x]
 mkApplySymbol :: Application Symbol (TermLike VariableName) -> TermLike VariableName
 mkApplySymbol = synthesize . TermLike.ApplySymbolF
 
+mkApplySymbol'
+    :: Application Symbol (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+mkApplySymbol' = synthesize . TermLike.ApplySymbolF
+
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
 fEvaluator =
     Kore.simplificationEvaluation
     $ Equation.mkEquation sortR left right
   where
     sortR = TermLike.mkSortVariable (testId "R")
-    left = mkApplySymbol (f x)
+    left = mkApplySymbol' (f x)
     right = x
-    x = TermLike.mkElemVar Mock.x
+    x = TermLike.mkElemVar Mock.x'
 
 evaluateApplication
     :: Condition VariableName

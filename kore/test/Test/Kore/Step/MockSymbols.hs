@@ -111,6 +111,10 @@ import Kore.Syntax.Variable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRuleVariable
+    )
 import qualified Test.ConsistentKore as ConsistentKore
     ( CollectionSorts (..)
     , Setup (..)
@@ -676,6 +680,18 @@ pattern MockElementVariable base counter variableSort =
     , variableSort
     }
 
+type MockRewritingElementVariable = ElementVariable RewritingVariableName
+
+mkRewritingElementVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkRewritingElementVariable base counter variableSort =
+    Variable
+    { variableName =
+        ElementVariableName
+        $ mkRuleVariable VariableName { base, counter }
+    , variableSort
+    }
+
 type MockSetVariable = SetVariable VariableName
 
 pattern MockSetVariable
@@ -696,6 +712,8 @@ var_z_1 :: MockElementVariable
 var_z_1 = MockElementVariable (testId "z") (Just (Element 1)) testSort
 x :: MockElementVariable
 x = MockElementVariable (testId "x") mempty testSort
+x' :: MockRewritingElementVariable
+x' = mkRewritingElementVariable (testId "x") mempty testSort
 setX :: MockSetVariable
 setX = MockSetVariable (testId "@x") mempty testSort
 var_setX_0 :: MockSetVariable

@@ -52,6 +52,9 @@ import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.TermLike
     ( TermLike
     )
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -245,6 +248,7 @@ evalSimplifier verifiedModule simplifier = do
     initialize = do
         equations <-
             Equation.simplifyExtractedEquations
+            $ (Map.map . fmap . Equation.mapVariables $ pure mkRuleVariable)
             $ Equation.extractEquations verifiedModule'
         let
             builtinEvaluators, userEvaluators, simplifierAxioms

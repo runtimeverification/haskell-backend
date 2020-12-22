@@ -51,6 +51,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
@@ -391,11 +394,15 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    mkEvaluatorRegistry $ extractEquations testIndexedModule
+    mkEvaluatorRegistry
+    $ Map.map (fmap . Equation.mapVariables $ pure mkRuleVariable)
+    $ extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    partitionEquations <$> extractEquations testIndexedModule
+    partitionEquations
+    <$> Map.map (fmap . Equation.mapVariables $ pure mkRuleVariable)
+            (extractEquations testIndexedModule)
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule

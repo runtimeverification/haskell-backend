@@ -43,6 +43,9 @@ import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
@@ -102,15 +105,15 @@ identifyEquation axiom = do
 
 data PartitionedEquations =
     PartitionedEquations
-        { functionRules       :: ![Equation VariableName]
-        , simplificationRules :: ![Equation VariableName]
+        { functionRules       :: ![Equation RewritingVariableName]
+        , simplificationRules :: ![Equation RewritingVariableName]
         }
 
 -- | Filters and partitions a list of 'EqualityRule's to
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
 partitionEquations
-    :: [Equation VariableName]
+    :: [Equation RewritingVariableName]
     -> PartitionedEquations
 partitionEquations equations =
     PartitionedEquations
@@ -134,7 +137,7 @@ evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 
  -}
-ignoreEquation :: Equation VariableName -> Bool
+ignoreEquation :: Equation RewritingVariableName -> Bool
 ignoreEquation Equation { attributes }
   | isAssoc = True
   | isComm = True
@@ -153,7 +156,7 @@ ignoreEquation Equation { attributes }
 
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
-ignoreDefinition :: Equation VariableName -> Bool
+ignoreDefinition :: Equation RewritingVariableName -> Bool
 ignoreDefinition Equation { left } =
     assert isLeftFunctionLike False
   where

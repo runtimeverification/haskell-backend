@@ -49,6 +49,9 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -77,12 +80,13 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [Equation VariableName]
+    :: [Equation RewritingVariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
         let equations' =
-                Equation.mapVariables (pure fromVariableName)
+                Equation.mapVariables
+                    (pure $ fromVariableName . from @RewritingVariableName)
                 <$> equations
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
         result <-
@@ -135,11 +139,14 @@ attemptEquations accumulator equations =
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
-    :: Equation VariableName
+    :: Equation RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equation' = Equation.mapVariables (pure fromVariableName) equation
+        let equation' =
+                Equation.mapVariables
+                    (pure $ fromVariableName . from @RewritingVariableName)
+                    equation
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
         result <- Equation.attemptEquation condition term' equation'
         let apply = Equation.applyEquation condition equation'

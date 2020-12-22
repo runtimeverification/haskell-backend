@@ -418,8 +418,8 @@ normalizeExcept predicated =
                 , EvaluationStrategy.definitionEvaluation
                     [ Equation.mkEquation
                         (mkSortVariable "R")
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (mkElemVar Mock.x)
+                        (Mock.functional10 (mkElemVar Mock.x'))
+                        (mkElemVar Mock.x')
                     ]
                 )
             ]

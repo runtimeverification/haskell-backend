@@ -16,6 +16,7 @@ import Data.IORef
     , readIORef
     )
 
+import qualified Kore.Equation as Equation
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -35,6 +36,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkRuleVariable
+    )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -43,6 +47,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
 
 import Test.Kore.Equation.Application
     ( axiom
+    , axiom'
     , axiom_
     , concrete
     )
@@ -106,7 +111,7 @@ test_definitionEvaluation =
         actual <-
             evaluate
                 (definitionEvaluation
-                    [ axiom
+                    [ axiom'
                         (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.g (mkElemVar Mock.x))
                         makeTruePredicate_
@@ -156,7 +161,7 @@ test_definitionEvaluation =
         actual <-
             evaluate
                 (definitionEvaluation
-                    [ axiom
+                    [ axiom'
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         makeTruePredicate_
@@ -215,6 +220,7 @@ test_definitionEvaluation =
                     (Mock.functionalConstr10 (mkElemVar Mock.x))
                     (Mock.g (mkElemVar Mock.x))
                     & concrete [mkElemVar Mock.x]
+                    & Equation.mapVariables (pure mkRuleVariable)
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
@@ -341,7 +347,7 @@ test_firstFullEvaluation =
             evaluate
                 (firstFullEvaluation
                     [ definitionEvaluation
-                        [ axiom
+                        [ axiom'
                             (Mock.functionalConstr10 Mock.a)
                             (Mock.g Mock.a)
                             requirement
@@ -615,14 +621,14 @@ axiomEvaluatorWithRequires
     -> Predicate VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRequires left right requires =
-    simplificationEvaluation (axiom left right requires)
+    simplificationEvaluation (axiom' left right requires)
 
 axiomEvaluator
     :: TermLike VariableName
     -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    simplificationEvaluation (axiom left right makeTruePredicate_)
+    simplificationEvaluation (axiom' left right makeTruePredicate_)
 
 evaluate
     :: BuiltinAndAxiomSimplifier

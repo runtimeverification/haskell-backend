@@ -6,8 +6,12 @@ module Test.Kore.Equation.Application
     , symbolic
     , axiom
     , axiom_
+    , axiom'
+    , axiom'_
     , functionAxiomUnification
     , functionAxiomUnification_
+    , functionAxiomUnification'
+    , functionAxiomUnification'_
     ) where
 
 import Prelude.Kore
@@ -41,15 +45,19 @@ import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Symbolic
     ( Symbolic (..)
     )
+import qualified Kore.Equation as Equation
 import Kore.Equation.Application hiding
     ( attemptEquation
     )
-import qualified Kore.Equation.Application as Equation
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRuleVariable
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
@@ -548,6 +556,7 @@ test_applySubstitutionAndSimplify =
                 Mock.fSymbol
                 [mkElemVar Mock.z]
                 Mock.a
+                & Equation.mapVariables (pure mkRuleVariable)
             ]
           )
         ]
@@ -644,6 +653,21 @@ axiom_
     -> Equation'
 axiom_ left right = axiom left right (makeTruePredicate sortR)
 
+axiom'
+    :: TestTerm
+    -> TestTerm
+    -> TestPredicate
+    -> Equation RewritingVariableName
+axiom' left right requires =
+    axiom left right requires
+    & Equation.mapVariables (pure mkRuleVariable)
+
+axiom'_
+    :: TestTerm
+    -> TestTerm
+    -> Equation RewritingVariableName
+axiom'_ left right = axiom' left right (makeTruePredicate sortR)
+
 functionAxiomUnification
     :: Symbol
     -> [TestTerm]
@@ -683,6 +707,24 @@ functionAxiomUnification_
     -> Equation'
 functionAxiomUnification_ symbol args right =
     functionAxiomUnification symbol args right (makeTruePredicate sortR)
+
+functionAxiomUnification'
+    :: Symbol
+    -> [TestTerm]
+    -> TestTerm
+    -> TestPredicate
+    -> Equation RewritingVariableName
+functionAxiomUnification' symbol args right requires =
+    functionAxiomUnification symbol args right requires
+    & Equation.mapVariables (pure mkRuleVariable)
+
+functionAxiomUnification'_
+    :: Symbol
+    -> [TestTerm]
+    -> TestTerm
+    -> Equation RewritingVariableName
+functionAxiomUnification'_ symbol args right =
+    functionAxiomUnification' symbol args right (makeTruePredicate sortR)
 
 concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =

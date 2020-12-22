@@ -20,7 +20,9 @@ import Kore.Equation
     )
 -- TODO (thomas.tuegel): Remove private import
 import Kore.Equation.Registry
-import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( definitionEvaluation
     , firstFullEvaluation
@@ -60,7 +62,7 @@ mkEvaluator PartitionedEquations { functionRules, simplificationRules } =
             else Just $ definitionEvaluation functionRules
 
 mkEvaluatorRegistry
-    :: Map AxiomIdentifier [Equation VariableName]
+    :: Map AxiomIdentifier [Equation RewritingVariableName]
     -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
 mkEvaluatorRegistry =
     mapMaybe (mkEvaluator . partitionEquations)
