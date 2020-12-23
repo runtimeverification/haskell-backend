@@ -1333,15 +1333,14 @@ unparseClaimStateComponent transformation omitList =
     claimState ClaimStateTransformer
         { claimedTransformer =
             makeKoreReplOutput . unparseComponent
-        , remainingTransformer = \goal ->
-            makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
+        , remainingTransformer =
+            makeKoreReplOutput . unparseComponent
         , rewrittenTransformer =
             makeKoreReplOutput . unparseComponent
         , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseComponent goal)
-        , provenValue = makeAuxReplOutput "Reached bottom"
+        , provenValue = makeAuxReplOutput "Proven."
         }
   where
     unparseComponent =
@@ -1429,7 +1428,6 @@ graphParams = Graph.nonClusteredParams
             $ case ps of
                 Proven      -> toColorList green
                 Stuck _     -> toColorList red
-                Remaining _ -> toColorList red
                 _                               -> []
         ]
     }
