@@ -1439,7 +1439,7 @@ graphParams = Graph.nonClusteredParams
             lbl
     ruleIndex lbl =
         case headMay . toList $ lbl of
-            Nothing -> "Simpl/RD"
+            Nothing -> "CheckImplication"
             Just rule ->
                 Text.Lazy.pack (showRuleIdentifier rule)
     toColorList col = [Graph.Attr.WC col (Just 1.0)]

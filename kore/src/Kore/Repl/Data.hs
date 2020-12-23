@@ -475,8 +475,9 @@ helpText =
     <> entriesForHelp
     <>
     "\n\
-    \(*) If an edge is labeled as Simpl/RD it means that the target node\n\
-    \ was reached using either the SMT solver or the Remove Destination step.\n\
+    \(*) If an edge is labeled as CheckImplication it means that during that step\n\
+    \ the prover detected that the claim was either proven or that it could not be\
+    \ rewritten any further (stuck).\n\
     \    A green node represents the proof has completed on\
     \ that respective branch. \n\
     \    A red node represents a stuck configuration.\n\
