@@ -552,7 +552,7 @@ getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
         . claimState ClaimStateTransformer
             { claimedTransformer = const . Just $ UnevaluatedNode
-            , remainingTransformer = const . Just $ StuckNode
+            , remainingTransformer = const . Just $ UnevaluatedNode
             , rewrittenTransformer = const . Just $ UnevaluatedNode
             , stuckTransformer = const . Just $ StuckNode
             , provenValue = Nothing
