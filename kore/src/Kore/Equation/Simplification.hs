@@ -37,10 +37,12 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -51,9 +53,9 @@ See also: 'Kore.Equation.Registry.extractEquations'
 
  -}
 simplifyExtractedEquations
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Map identifier [Equation variable]
-    -> simplifier (Map identifier [Equation variable])
+    :: MonadSimplify simplifier
+    => Map identifier [Equation RewritingVariableName]
+    -> simplifier (Map identifier [Equation RewritingVariableName])
 simplifyExtractedEquations =
     (traverse . traverse) simplifyEquation
 
@@ -64,9 +66,9 @@ narrowly-defined criteria.
 
  -}
 simplifyEquation
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Equation variable
-    -> simplifier (Equation variable)
+    :: MonadSimplify simplifier
+    => Equation RewritingVariableName
+    -> simplifier (Equation RewritingVariableName)
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         let Equation
@@ -108,9 +110,9 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyTermLike
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyTermLike termLike =
     Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)
