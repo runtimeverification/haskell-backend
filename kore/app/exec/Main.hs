@@ -611,7 +611,7 @@ mainWithOptions execOptions = do
 
       | otherwise =
         koreRun execOptions
-    
+
     code :: FilePath -> IO ExitCode
     code tmpDir = go <* warnIfLowProductivity
                 & handle handleWithConfiguration
