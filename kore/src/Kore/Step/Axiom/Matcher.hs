@@ -61,6 +61,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
+import Kore.Internal.InternalList
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -118,18 +119,20 @@ instance Ord TermLikeClass where
 findClass :: Constraint variable -> TermLikeClass
 findClass (Constraint (Pair left _)) = findClassWorker left
   where
+    -- TODO (thomas.tuegel): Don't use pattern synonyms here!
     findClassWorker (Var_ _)           = Variables
     findClassWorker (ElemVar_ _)       = Variables
     findClassWorker (SetVar_ _)        = Variables
     findClassWorker (StringLiteral_ _) = ConcreteBuiltins
-    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
-    findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
-    findClassWorker (BuiltinString_ _) = ConcreteBuiltins
+    findClassWorker (InternalBytes_ _ _) = ConcreteBuiltins
+    findClassWorker (InternalInt_ _)   = ConcreteBuiltins
+    findClassWorker (InternalBool_ _)   = ConcreteBuiltins
+    findClassWorker (InternalString_ _) = ConcreteBuiltins
     findClassWorker (App_ symbol _) =
         if Symbol.isConstructor symbol
             then ConstructorAtTop
             else OtherTermLike
-    findClassWorker (BuiltinList_ _)   = ListBuiltin
+    findClassWorker (InternalList_ _)   = ListBuiltin
     findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
     findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
     findClassWorker _                  = OtherTermLike
@@ -226,11 +229,11 @@ matchEqualHeads
 -- Terminal patterns
 matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
     Monad.guard (string1 == string2)
-matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
+matchEqualHeads (Pair (InternalInt_ int1) (InternalInt_ int2)) =
     Monad.guard (int1 == int2)
-matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =
+matchEqualHeads (Pair (InternalBool_ bool1) (InternalBool_ bool2)) =
     Monad.guard (bool1 == bool2)
-matchEqualHeads (Pair (BuiltinString_ string1) (BuiltinString_ string2)) =
+matchEqualHeads (Pair (InternalString_ string1) (InternalString_ string2)) =
     Monad.guard (string1 == string2)
 matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
     return ()
@@ -326,26 +329,26 @@ matchBuiltinList
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
+matchBuiltinList (Pair (InternalList_ list1) (InternalList_ list2)) = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Monad.guard (null tail2)
     traverse_ push aligned
-matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
+matchBuiltinList (Pair (App_ symbol1 children1) (InternalList_ list2))
   | List.isSymbolConcat symbol1 = matchBuiltinListConcat children1 list2
 matchBuiltinList _ = empty
 
 matchBuiltinListConcat
     :: (MatchingVariable variable, Monad simplifier)
     => [TermLike variable]
-    -> Builtin.InternalList (TermLike variable)
+    -> InternalList (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 
-matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
+matchBuiltinListConcat [InternalList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     traverse_ push aligned
     push (Pair frame1 (mkBuiltinList tail2))
 
-matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
+matchBuiltinListConcat [frame1, InternalList_ list1] list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
     push (Pair frame1 (mkBuiltinList head2))
     traverse_ push aligned
@@ -683,42 +686,42 @@ liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (Pair (TermLike variable))
-            , Builtin.InternalList (TermLike variable)
+            ( InternalList (Pair (TermLike variable))
+            , InternalList (TermLike variable)
             )
 leftAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = list12 }
-        , internal1 { Builtin.builtinListChild = tail2 }
+        ( internal1 { internalListChild = list12 }
+        , internal1 { internalListChild = tail2 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 head2
     (head2, tail2) = Seq.splitAt (length list1) list2
 
 rightAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (TermLike variable)
-            , Builtin.InternalList (Pair (TermLike variable))
+            ( InternalList (TermLike variable)
+            , InternalList (Pair (TermLike variable))
             )
 rightAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = head2 }
-        , internal1 { Builtin.builtinListChild = list12 }
+        ( internal1 { internalListChild = head2 }
+        , internal1 { internalListChild = list12 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 

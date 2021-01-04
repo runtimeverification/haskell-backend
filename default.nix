@@ -2,6 +2,19 @@
 , release ? false
 , threaded ? !profiling
 , checkMaterialization ? false
+
+# Override `src` when this project is imported as a Git submodule:
+#
+# > ttuegel.cleanGitSubtree {
+# >   name = "kore";
+# >   src = ./parent/repo;
+# >   subDir = "path/to/submodule";
+# > };
+#
+# Use `cleanGitSubtree` whenever possible to preserve the same source code
+# layout as the kframework/kore repository (to enable cache re-use).
+#
+, src ? null
 }:
 
 let
@@ -15,19 +28,26 @@ let
     in import haskell-nix.sources.nixpkgs-2003 args;
   inherit (pkgs) lib;
 
+  ttuegel =
+    let
+      src = builtins.fetchGit {
+        url = "https://github.com/ttuegel/nix-lib";
+        rev = "66bb0ab890ff4d828a2dcfc7d5968465d0c7084f";
+      };
+    in import src { inherit pkgs; };
+in
+
+let
   project = pkgs.haskell-nix.stackProject {
-    src =
-      # Despite the haskell.nix documentation, do not use cleanGit!
-      # The kore repository is imported as a Git submodule, but cleanGit does 
-      # not support submodules.
-      let 
-        patterns = [
-          "/*"
-          "!/stack.yaml"
-          "!/kore"
-        ];
-      in
-        pkgs.nix-gitignore.gitignoreSourcePure patterns ./.;
+    src = ttuegel.cleanSourceWith {
+      name = "kore";
+      src = ttuegel.orElse src (ttuegel.cleanGitSubtree { src = ./.; });
+      ignore = [
+        "/*"
+        "!/stack.yaml"
+        "!/kore"
+      ];
+    };
     inherit checkMaterialization;
     materialized = ./nix/kore.nix.d;
     modules = [

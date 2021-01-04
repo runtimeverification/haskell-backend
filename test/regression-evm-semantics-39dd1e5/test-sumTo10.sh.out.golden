@@ -4,9 +4,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
     Lbl'-LT-'kevm'-GT-'{}(
         /* Fl Fn D Sfa Cl */ Lbl'-LT-'k'-GT-'{}(/* Fl Fn D Sfa Cl */ dotk{}()),
         /* Fl Fn D Sfa Cl */
-        Lbl'-LT-'exit-code'-GT-'{}(
-            /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
-        ),
+        Lbl'-LT-'exit-code'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")),
         /* Fl Fn D Sfa Cl */
         Lbl'-LT-'mode'-GT-'{}(
             /* Fl Fn D Sfa Cl */
@@ -29,11 +27,11 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'callStack'-GT-'{}(
-                    /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                    /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'interimStates'-GT-'{}(
-                    /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                    /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'touchedAccounts'-GT-'{}(
@@ -65,7 +63,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'callValue'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'wordStack'-GT-'{}(
@@ -78,28 +76,27 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'pc'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'gas'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'memoryUsed'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'callGas'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'static'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */
-                        /* builtin: */ \dv{SortBool{}}("false")
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'callDepth'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     )
                 ),
                 /* Fl Fn D Sfa */
@@ -110,16 +107,16 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa */
                     Lbl'-LT-'log'-GT-'{}(
-                        /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                        /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'refund'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     )
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'gasPrice'-GT-'{}(
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'origin'-GT-'{}(
@@ -128,33 +125,33 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'blockhashes'-GT-'{}(
-                    /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                    /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'block'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'previousHash'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'ommersHash'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'coinbase'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'stateRoot'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'transactionsRoot'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'receiptsRoot'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'logsBloom'-GT-'{}(
@@ -162,23 +159,23 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'difficulty'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'number'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'gasLimit'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'gasUsed'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'timestamp'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'extraData'-GT-'{}(
@@ -186,11 +183,11 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'mixHash'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'blockNonce'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'ommerBlockHeaders'-GT-'{}(
@@ -215,11 +212,11 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'txOrder'-GT-'{}(
-                    /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                    /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'txPending'-GT-'{}(
-                    /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                    /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'messages'-GT-'{}(
@@ -230,7 +227,5 @@ Lbl'-LT-'generatedTop'-GT-'{}(
         )
     ),
     /* Fl Fn D Sfa Cl */
-    Lbl'-LT-'generatedCounter'-GT-'{}(
-        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
-    )
+    Lbl'-LT-'generatedCounter'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0"))
 )

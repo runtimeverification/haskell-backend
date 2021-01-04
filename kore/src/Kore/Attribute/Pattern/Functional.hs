@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Functional
     ( Functional (..)
+    , alwaysFunctional
     ) where
 
 import Prelude.Kore
@@ -25,9 +26,6 @@ import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -36,18 +34,13 @@ import Kore.Syntax
 newtype Functional = Functional { isFunctional :: Bool }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-instance SOP.Generic Functional
-
-instance SOP.HasDatatypeInfo Functional
-
-instance Debug Functional
-
-instance Diff Functional
-
-instance NFData Functional
-
-instance Hashable Functional
+alwaysFunctional :: a -> Functional
+alwaysFunctional = const (Functional True)
+{-# INLINE alwaysFunctional #-}
 
 instance Synthetic Functional (And sort) where
     synthetic = const (Functional False)
@@ -143,7 +136,6 @@ instance Synthetic Functional (Builtin key) where
             {builtinAcChild = NormalizedMap builtinMapChild}
         )
       = normalizedAcFunctional builtinMapChild
-    synthetic builtin = fold builtin
     {-# INLINE synthetic #-}
 
 normalizedAcFunctional
@@ -182,11 +174,6 @@ instance Synthetic Functional (Const (SomeVariable variable)) where
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
 instance Synthetic Functional (Const StringLiteral) where
-    synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
--- | A 'Bytes' pattern is always 'Functional'.
-instance Synthetic Functional (Const InternalBytes) where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 

@@ -8,11 +8,11 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
         \and{SortGeneratedTopCell{}}(
             /* Spa */
             \equals{SortBool{}, SortGeneratedTopCell{}}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true"),
+                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                 /* Fl Fn D Spa */
                 Lbl'Unds-GT-Eqls'Int'Unds'{}(
                     /* Fl Fn D Sfa */ VarN:SortInt{},
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                 )
             ),
             /* Fl Fn D Spa */
@@ -40,7 +40,6 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                             /* Fl Fn D Sfa Cli */
                                             /* Inj: */ inj{SortInt{}, SortAExp{}}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         )
@@ -95,7 +94,6 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortInt{}, SortAExp{}}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("-1")
                                                     )
                                                 )
@@ -166,8 +164,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                 ),
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                 )
                             ),
                             /* Fl Fn D Spa */
@@ -189,7 +186,6 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                                                 /* Fl Fn D Sfa */
                                                 VarN:SortInt{},
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("1")
                                             ),
                                             /* Fl Fn D Sfa */ VarN:SortInt{}

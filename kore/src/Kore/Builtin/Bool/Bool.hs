@@ -30,7 +30,7 @@ import Data.Text
     ( Text
     )
 
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalBool
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -38,13 +38,12 @@ import qualified Kore.Internal.Pattern as Pattern
     ( fromTermLike
     )
 import Kore.Internal.TermLike
-    ( Concrete
-    , DomainValue (DomainValue)
+    ( DomainValue (DomainValue)
     , InternalVariable
     , Sort
     , TermLike
-    , mkBuiltin
     , mkDomainValue
+    , mkInternalBool
     , mkStringLiteral
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -71,18 +70,14 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    TermLike.markSimplified . mkBuiltin
+    TermLike.markSimplified . mkInternalBool
     $ asBuiltin builtinBoolSort builtinBoolValue
 
 asBuiltin
     :: Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
-    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
-asBuiltin builtinBoolSort builtinBoolValue =
-    Domain.BuiltinBool Domain.InternalBool
-        { builtinBoolSort
-        , builtinBoolValue
-        }
+    -> InternalBool
+asBuiltin = InternalBool
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -94,16 +89,16 @@ asBuiltin builtinBoolSort builtinBoolValue =
  -}
 asTermLike
     :: InternalVariable variable
-    => Domain.InternalBool  -- ^ builtin value to render
+    => InternalBool  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
     mkDomainValue DomainValue
-        { domainValueSort = builtinBoolSort
+        { domainValueSort = internalBoolSort
         , domainValueChild = mkStringLiteral literal
         }
   where
-    Domain.InternalBool { builtinBoolSort } = builtin
-    Domain.InternalBool { builtinBoolValue = bool } = builtin
+    InternalBool { internalBoolSort } = builtin
+    InternalBool { internalBoolValue = bool } = builtin
     literal
       | bool      = "true"
       | otherwise = "false"

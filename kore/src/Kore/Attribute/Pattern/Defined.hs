@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Defined
     ( Defined (..)
+    , alwaysDefined
     ) where
 
 import Prelude.Kore
@@ -25,9 +26,6 @@ import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -40,6 +38,9 @@ newtype Defined = Defined { isDefined :: Bool }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
+
+alwaysDefined :: a -> Defined
+alwaysDefined = const (Defined True)
 
 instance Synthetic Defined (And sort) where
     synthetic = const (Defined False)
@@ -138,7 +139,6 @@ instance Synthetic Defined (Builtin key) where
             {builtinAcChild = NormalizedMap builtinMapChild}
         )
       = normalizedAcDefined builtinMapChild
-    synthetic builtin = fold builtin
     {-# INLINE synthetic #-}
 
 normalizedAcDefined
@@ -166,31 +166,26 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
   where
     sameAsChildren = fold ac
 
-
 -- | A 'Top' pattern is always 'Defined'.
 instance Synthetic Defined (Top sort) where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
 instance Synthetic Defined (Const StringLiteral) where
-    synthetic = const (Defined True)
-    {-# INLINE synthetic #-}
-
--- | A 'Bytes' pattern is always 'Defined'.
-instance Synthetic Defined (Const InternalBytes) where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | An 'Inhabitant' pattern is always 'Defined'.
 instance Synthetic Defined Inhabitant where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | An element variable pattern is always 'Defined'.
 --   A set variable is not.
 instance Synthetic Defined (Const (SomeVariable variable)) where
-    synthetic (Const unifiedVariable)= Defined (isElementVariable unifiedVariable)
+    synthetic (Const unifiedVariable) =
+        Defined (isElementVariable unifiedVariable)
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined Inj where
