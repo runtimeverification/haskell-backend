@@ -529,9 +529,9 @@ writeOptionsAndKoreFiles
         (reportDirectory </> defaultDefinitionFilePath opts)
     for_ patternFileName
         $ flip copyFile (reportDirectory </> "pgm.kore")
-    --for_ outputFileName
+    -- for_ outputFileName
     --    $ flip copyFile (reportDirectory </> "result.kore")
-    _ <- error "Test."
+    -- _ <- error "Test."
     writeKoreSolverFiles koreSolverOptions reportDirectory
     for_ koreSearchOptions
         (writeKoreSearchFiles reportDirectory)
@@ -562,15 +562,14 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreLogOptions, koreSolverOptions, bugReport } = execOptions
+    let KoreExecOptions { koreSolverOptions, bugReport, outputFileName } = execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReport $ \tmpDir -> do
             writeOptionsAndKoreFiles tmpDir execOptions
-            go <* warnIfLowProductivity
-                & handle handleWithConfiguration
-                & handle handleSomeException
-                & runKoreLog tmpDir koreLogOptions
+            e <- code tmpDir
+            for_ outputFileName $ flip copyFile (tmpDir </> "result.kore")
+            return e
     let KoreExecOptions { rtsStatistics } = execOptions
     for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -579,6 +578,7 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+    KoreExecOptions { koreLogOptions } = execOptions
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
@@ -611,6 +611,12 @@ mainWithOptions execOptions = do
 
       | otherwise =
         koreRun execOptions
+    
+    code :: FilePath -> IO ExitCode
+    code tmpDir = go <* warnIfLowProductivity
+                & handle handleWithConfiguration
+                & handle handleSomeException
+                & runKoreLog tmpDir koreLogOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
