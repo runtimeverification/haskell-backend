@@ -108,7 +108,9 @@ import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
 import Data.Either
-    ( partitionEithers
+    ( fromLeft
+    , fromRight
+    , partitionEithers
     )
 import Data.Foldable
 import Data.Function
