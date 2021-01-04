@@ -562,7 +562,7 @@ main = do
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions { koreSolverOptions, bugReport, outputFileName } = execOptions
+    let KoreExecOptions { koreSolverOptions, bugReportOption, outputFileName } = execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
