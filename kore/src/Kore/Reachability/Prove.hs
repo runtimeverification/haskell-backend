@@ -50,6 +50,9 @@ import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
+import Data.Either
+    ( fromLeft
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
@@ -222,7 +225,7 @@ proveClaims
         & runExceptT
         & flip runStateT (MultiAnd.make stillProven)
     pure ProveClaimsResult
-        { stuckClaims = either id (const MultiAnd.top) result
+        { stuckClaims = fromLeft MultiAnd.top result
         , provenClaims
         }
   where
