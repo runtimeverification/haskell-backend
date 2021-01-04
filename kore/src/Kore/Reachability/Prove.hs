@@ -222,7 +222,7 @@ proveClaims
         & runExceptT
         & flip runStateT (MultiAnd.make stillProven)
     pure ProveClaimsResult
-        { stuckClaims = either id (const MultiAnd.top) result
+        { stuckClaims = fromLeft MultiAnd.top result
         , provenClaims
         }
   where
