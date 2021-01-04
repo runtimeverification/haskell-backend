@@ -69,6 +69,6 @@ noConstructorWithVariableSort symbolId =
 
 sortNeedsDomainValueAttributeMessage :: Text
 sortNeedsDomainValueAttributeMessage =
-    "Sorts used with domain value must have the '"
+    "Sorts used with domain value must have the "
     <> getId Attribute.HasDomainValues.hasDomainValuesId
-    <> "' " <> "attribute."
+    <> " " <> "attribute."
