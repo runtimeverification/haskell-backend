@@ -84,9 +84,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern InternalList_
     , Concrete
     , pattern ElemVar_
+    , pattern InternalList_
     , pattern InternalList_
     , Sort
     , TermLike

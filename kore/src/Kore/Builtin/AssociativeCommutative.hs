@@ -95,10 +95,10 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern InternalMap_
-    , pattern InternalSet_
     , pattern Defined_
     , pattern ElemVar_
+    , pattern InternalMap_
+    , pattern InternalSet_
     , TermLike
     , mkApplySymbol
     , mkElemVar

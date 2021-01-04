@@ -82,8 +82,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern InternalSet_
     , Concrete
+    , pattern InternalSet_
     , TermLike
     , mkSort
     , termLikeSort
