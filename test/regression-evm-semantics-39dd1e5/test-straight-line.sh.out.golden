@@ -62,8 +62,7 @@
                                                                 /* Fl Fn D Sfa */
                                                                 Lbl'-LT-'callStack'-GT-'{}(
                                                                     /* Fl Fn D Sfa */
-                                                                    /* builtin: */
-                                                                    Lbl'Stop'List{}()
+                                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                                 )
                                                             )
                                                         ),
@@ -74,8 +73,7 @@
                                                             /* Fl Fn D Sfa */
                                                             Lbl'-LT-'interimStates'-GT-'{}(
                                                                 /* Fl Fn D Sfa */
-                                                                /* builtin: */
-                                                                Lbl'Stop'List{}()
+                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                             )
                                                         )
                                                     ),
@@ -128,7 +126,6 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'callValue'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
@@ -136,7 +133,6 @@
                                                             /* Fl Fn D Sfa Cl */
                                                             Lbl'UndsColnUndsUnds'EVM-TYPES'Unds'WordStack'Unds'Int'Unds'WordStack{}(
                                                                 /* Fl Fn D Sfa Cl */
-                                                                /* builtin: */
                                                                 \dv{SortInt{}}("7"),
                                                                 /* Fl Fn D Sfa Cl */
                                                                 Lbl'Stop'WordStack'Unds'EVM-TYPES'Unds'WordStack{}()
@@ -151,37 +147,31 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'pc'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("67")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'gas'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("9991")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'memoryUsed'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'callGas'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'static'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortBool{}}("false")
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'callDepth'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
                                                             \dv{SortInt{}}("0")
                                                         )
                                                     )
@@ -202,13 +192,11 @@
                                                     /* Fl Fn D Sfa */
                                                     Lbl'-LT-'log'-GT-'{}(
                                                         /* Fl Fn D Sfa */
-                                                        /* builtin: */
-                                                        Lbl'Stop'List{}()
+                                                        /* InternalList: */ Lbl'Stop'List{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'refund'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
                                                         \dv{SortInt{}}("0")
                                                     )
                                                 )
@@ -221,7 +209,6 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'gasPrice'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */
                                                 \dv{SortInt{}}("0")
                                             )
                                         )
@@ -244,7 +231,7 @@
                                     /* Fl Fn D Sfa */
                                     Lbl'-LT-'blockhashes'-GT-'{}(
                                         /* Fl Fn D Sfa */
-                                        /* builtin: */ Lbl'Stop'List{}()
+                                        /* InternalList: */ Lbl'Stop'List{}()
                                     )
                                 )
                             ),
@@ -255,33 +242,27 @@
                                 Lbl'-LT-'block'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'previousHash'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'ommersHash'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'coinbase'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'stateRoot'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'transactionsRoot'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'receiptsRoot'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'logsBloom'-GT-'{}(
@@ -290,28 +271,23 @@
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'difficulty'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'number'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'gasLimit'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'gasUsed'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'timestamp'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'extraData'-GT-'{}(
@@ -320,13 +296,11 @@
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'mixHash'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'blockNonce'-GT-'{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ \dv{SortInt{}}("0")
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'ommerBlockHeaders'-GT-'{}(
@@ -358,8 +332,7 @@
                         /* Fl Fn D Sfa */ Var'Unds'11:SortExitCodeCell{},
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'exit-code'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("1")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                         )
                     )
                 ),
@@ -384,7 +357,7 @@
             /* Fl Fn D Sfa */ VarDotVar0:SortGeneratedCounterCell{},
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'generatedCounter'-GT-'{}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+                /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
             )
         )
     ),
@@ -403,11 +376,11 @@
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'txOrder'-GT-'{}(
-                /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'txPending'-GT-'{}(
-                /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
             ),
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'messages'-GT-'{}(

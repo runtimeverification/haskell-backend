@@ -56,16 +56,8 @@ simplifyBuiltin =
     \case
         Domain.BuiltinMap map' ->
             simplifyInternalMap normalizeInternalMap map'
-        Domain.BuiltinList list' ->
-            fmap mkBuiltin <$> simplifyInternalList list'
         Domain.BuiltinSet set' ->
             fmap mkBuiltin <$> simplifyInternalSet set'
-        Domain.BuiltinInt int ->
-            (return . pure . mkBuiltin) (Domain.BuiltinInt int)
-        Domain.BuiltinBool bool ->
-            (return . pure . mkBuiltin) (Domain.BuiltinBool bool)
-        Domain.BuiltinString string ->
-            (return . pure . mkBuiltin) (Domain.BuiltinString string)
 
 simplifyInternal
     :: (InternalVariable variable, Traversable t)
@@ -137,9 +129,3 @@ normalizeInternalSet
     -> Maybe (InternalSet (TermLike Concrete) (TermLike variable))
 normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
-
-simplifyInternalList
-    :: InternalVariable variable
-    => Domain.InternalList (OrPattern variable)
-    -> Logic (Conditional variable (Builtin (TermLike variable)))
-simplifyInternalList = (fmap . fmap) Domain.BuiltinList . simplifyInternal pure

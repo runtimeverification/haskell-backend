@@ -188,7 +188,7 @@ mainWithOptions
         }
   = do
     exitCode <-
-        withBugReport Main.exeName (BugReport Nothing) $ \tempDirectory ->
+        withBugReport Main.exeName BugReportOnError $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
             mvarLogAction <- newMVar actualLogAction
             let swapLogAction = swappableLogger mvarLogAction

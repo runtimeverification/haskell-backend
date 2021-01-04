@@ -63,7 +63,6 @@ import Kore.Attribute.Symbol
     ( StepperAttributes
     )
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Equation
     ( Equation
     )
@@ -81,6 +80,7 @@ import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -312,7 +312,7 @@ getExitCode indexedModule configs =
         return exitCode
   where
     extractExit = \case
-        Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
+        InternalInt_ InternalInt { internalIntValue = exit }
           | exit == 0 -> ExitSuccess
           | otherwise -> ExitFailure (fromInteger exit)
         _ -> ExitFailure 111
