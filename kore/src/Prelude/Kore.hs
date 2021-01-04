@@ -20,6 +20,7 @@ module Prelude.Kore
     , headMay
     -- * Either
     , either
+    , fromLeft, fromRight
     , isLeft, isRight
     , partitionEithers
     -- * Filterable
