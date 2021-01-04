@@ -50,6 +50,9 @@ import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
+import Data.Either
+    ( fromLeft
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
