@@ -34,6 +34,7 @@ import Kore.Debug
 import Kore.Internal.NormalizedAc
 import Kore.Sort
 import Kore.Unparser
+import qualified Pretty
 
 -- * Builtin Map
 
@@ -91,6 +92,18 @@ instance AcWrapper NormalizedMap where
 {- | Internal representation of the builtin @MAP.Map@ domain.
 -}
 type InternalMap key = InternalAc key NormalizedMap
+
+instance (Unparse key, Unparse child) => Unparse (InternalMap key child) where
+    unparse internalMap =
+        Pretty.hsep
+        [ "/* InternalMap: */"
+        , unparseInternalAc unparse unparse internalMap
+        ]
+    unparse2 internalMap =
+        Pretty.hsep
+        [ "/* InternalMap: */"
+        , unparseInternalAc unparse2 unparse2 internalMap
+        ]
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
 instance Synthetic Defined (InternalMap key) where

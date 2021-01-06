@@ -35,6 +35,7 @@ import Kore.Debug
 import Kore.Internal.NormalizedAc
 import Kore.Syntax
 import Kore.Unparser
+import qualified Pretty
 
 -- * Builtin Set
 
@@ -90,6 +91,18 @@ instance AcWrapper NormalizedSet where
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
 type InternalSet key = InternalAc key NormalizedSet
+
+instance (Unparse key, Unparse child) => Unparse (InternalSet key child) where
+    unparse internalMap =
+        Pretty.hsep
+        [ "/* InternalSet: */"
+        , unparseInternalAc unparse unparse internalMap
+        ]
+    unparse2 internalMap =
+        Pretty.hsep
+        [ "/* InternalSet: */"
+        , unparseInternalAc unparse2 unparse2 internalMap
+        ]
 
 instance Synthetic Sort (InternalSet key) where
     synthetic = builtinAcSort

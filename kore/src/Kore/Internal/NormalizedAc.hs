@@ -25,6 +25,7 @@ module Kore.Internal.NormalizedAc
     , normalizedAcDefined
     , normalizedAcConstructorLike
     , normalizedAcFunctional
+    , unparseInternalAc
     ) where
 
 import Prelude.Kore
@@ -404,16 +405,6 @@ instance (Debug (normalized key child))
 instance
     (Debug (normalized key child), Diff (normalized key child))
     => Diff (InternalAc key normalized child)
-
-instance
-    ( Unparse key
-    , Unparse child
-    , AcWrapper normalized
-    )
-    => Unparse (InternalAc key normalized child)
-  where
-    unparse = unparseInternalAc unparse unparse
-    unparse2 = unparseInternalAc unparse2 unparse2
 
 unparseInternalAc
     :: (AcWrapper normalized)
