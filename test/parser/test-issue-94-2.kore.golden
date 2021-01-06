@@ -7,4 +7,4 @@ Error:
   \and (test-issue-94-2.kore 15:30):
   \equals (test-issue-94-2.kore 16:46):
   (test-issue-94-2.kore 16:37, <implicitly defined entity>):
-    Expecting sort 'String{}' but got '#String{}'.
+    Expecting sort String{} but got #String{}.

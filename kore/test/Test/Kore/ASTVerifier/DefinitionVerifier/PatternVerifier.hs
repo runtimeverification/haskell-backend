@@ -185,7 +185,7 @@ test_patternVerifier =
     , failureTestsForObjectPattern
         "Object pattern - sort variable not defined"
         (ExpectedErrorMessage
-            "Sort variable 'ObjectSortVariable' not declared.")
+            "Sort variable ObjectSortVariable not declared.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
             , "\\exists 'ObjectVariable' (<test data>)"
@@ -210,7 +210,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForObjectPattern "Object pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
+            "Expecting sort anotherSort2{} but got ObjectSort{}.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"

@@ -163,7 +163,7 @@ test_sortUsage =
             , testConfigurationCaseBasedConfiguration = []
             }
         )
-        (ExpectedErrorMessage "Sort variable 's' not declared.")
+        (ExpectedErrorMessage "Sort variable s not declared.")
         (ErrorStack ["(<test data>)"])
         (TestedSort (objectVariableSort "s"))
         (NamePrefix "internal")
