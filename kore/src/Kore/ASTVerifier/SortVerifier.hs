@@ -33,7 +33,7 @@ verifySort _ declaredSortVariables (SortVariableSort variable)
     koreFailWithLocationsWhen
         (Set.notMember variable declaredSortVariables)
         [variableId]
-        ("Sort variable '" <> getId variableId <> "' not declared.")
+        ("Sort variable " <> getId variableId <> " not declared.")
     verifySuccess
   where
     variableId = getSortVariable variable
@@ -52,9 +52,9 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
     koreFailWithLocationsWhen
         (sortIsMeta && sortActualSorts sort /= [])
         [sortName]
-        (  "Malformed meta sort '"
+        (  "Malformed meta sort "
         <> sortId
-        <> "' with non-empty Parameter sorts."
+        <> " with non-empty Parameter sorts."
         )
     verifySuccess
   where

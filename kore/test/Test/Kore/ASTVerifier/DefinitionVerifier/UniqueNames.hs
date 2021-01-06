@@ -92,7 +92,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 's'."
+            "Duplicated name: s."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleSortSentence (SortName "s")
@@ -105,7 +105,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: '#a'."
+            "Duplicated name: #a."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "#a") stringSortName
@@ -118,7 +118,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 'a'."
+            "Duplicated name: a."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "a") (SortName "s")
@@ -132,7 +132,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: '#a'."
+            "Duplicated name: #a."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "#a") stringSortName
@@ -145,7 +145,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 'a'."
+            "Duplicated name: a."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleSymbolSentence (SymbolName "a") (SortName "s")
@@ -159,7 +159,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <implicitly defined entity>)"
             ]
-            "Duplicated name: '#String'."
+            "Duplicated name: #String."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "#String") stringSortName ]
@@ -170,7 +170,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 's'."
+            "Duplicated name: s."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "s") (SortName "s")
@@ -183,7 +183,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: '#a'."
+            "Duplicated name: #a."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "#a") stringSortName
@@ -196,7 +196,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 'a'."
+            "Duplicated name: a."
             )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleAliasSentence (AliasName "a") (SortName "s")
@@ -210,7 +210,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <implicitly defined entity>)"
             ]
-            "Duplicated name: '#String'."
+            "Duplicated name: #String."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleSymbolSentence
@@ -223,7 +223,7 @@ test_uniqueNames =
             [ "module 'MODULE'"
             , "(<test data>, <test data>)"
             ]
-            "Duplicated name: 's'."
+            "Duplicated name: s."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ simpleSymbolSentence (SymbolName "s") (SortName "s")
