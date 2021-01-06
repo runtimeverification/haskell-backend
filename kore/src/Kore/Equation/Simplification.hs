@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Equation.Simplification
     ( simplifyEquation
@@ -60,7 +61,9 @@ simplifyExtractedEquations
     -> simplifier (Map identifier [Equation variable])
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
-    return $ (fmap . fmap) (concatMap toList) results
+    return $ collectResults results
+  where
+    collectResults = (fmap . fmap) (concatMap toList)
 
 {- | Simplify an 'Equation' using only Matching Logic rules.
 
@@ -80,32 +83,30 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
-            argument' = (fmap . fmap) (TermLike.substitute subst) argument
             antiLeft' = (fmap . fmap) (TermLike.substitute subst) antiLeft
             right' = TermLike.substitute subst right
             ensures' = TermLike.substitute subst <$> ensures
         return Equation
             { left = TermLike.forgetSimplified left'
             , requires = Predicate.forgetSimplified requires'
-            , argument = Predicate.forgetSimplified <$> argument'
+            , argument = Nothing
             , antiLeft = Predicate.forgetSimplified <$> antiLeft'
             , right = TermLike.forgetSimplified right'
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes
             }
-        -- Unable to simplify the given equation, so we return the original equation
-        -- in the hope that we can do something with it later.
+    -- Unable to simplify the given equation, so we return the original equation
+    -- in the hope that we can do something with it later.
     & fromMaybeT (return equation)
     & Logic.observeAllT
     & fmap MultiAnd.make
   where
     fromMaybeT = flip maybeT return
     leftWithArgument =
-        case argument of
-            Just argument' ->
-                Pattern.fromTermAndPredicate left argument'
-            Nothing ->
-                Pattern.fromTermLike left
+        maybe
+            (Pattern.fromTermLike left)
+            (Pattern.fromTermAndPredicate left)
+            argument
     Equation
         { requires
         , argument
