@@ -7,6 +7,7 @@ module Kore.Reachability.ClaimState
     , extractUnproven
     , extractStuck
     , retractRewritable, isRewritable
+    , isRemaining
     , ClaimState (..)
     , claimState
     , ClaimStateTransformer (..)
@@ -100,6 +101,9 @@ retractRewritable _             = Nothing
 
 isRewritable :: ClaimState a -> Bool
 isRewritable = isJust . retractRewritable
+
+isRemaining :: ClaimState a -> Bool
+isRemaining = isJust . retractRewritable
 
 data ClaimStateTransformer a val =
     ClaimStateTransformer
