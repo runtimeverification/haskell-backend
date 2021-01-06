@@ -4,6 +4,7 @@ module Test.SMT
     , testCaseWithoutSMT
     , assertEqual'
     , runSMT
+    , runSMTWithConfig
     , runNoSMT
     ) where
 
@@ -55,7 +56,10 @@ assertEqual'
 assertEqual' str expect = liftIO . assertEqual str expect
 
 runSMT :: SMT () -> SMT a -> IO a
-runSMT userInit = flip runLoggerT mempty . SMT.runSMT SMT.defaultConfig userInit
+runSMT = runSMTWithConfig SMT.defaultConfig
+
+runSMTWithConfig :: SMT.Config -> SMT () -> SMT a -> IO a
+runSMTWithConfig config userInit = flip runLoggerT mempty . SMT.runSMT config userInit
 
 runNoSMT :: NoSMT a -> IO a
 runNoSMT = flip runLoggerT mempty . SMT.runNoSMT

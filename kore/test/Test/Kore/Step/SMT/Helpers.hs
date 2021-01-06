@@ -27,6 +27,7 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
     )
+import Data.Limit
 import Data.Reflection
     ( Given
     , give
@@ -67,6 +68,9 @@ import qualified Kore.Syntax.Sentence as SentenceAxiom
     )
 import SMT
     ( SMT
+    , Config (..)
+    , defaultConfig
+    , TimeOut (..)
     )
 import qualified SMT
 
@@ -74,7 +78,7 @@ import Test.Kore
     ( testId
     )
 import Test.Kore.Builtin.Builtin
-    ( runSMT
+    ( runSMTWithConfig
     )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Kore.Step.SMT.Builders
@@ -183,7 +187,10 @@ getSmtResult
         smtResult = do
             sequence_ actions
             SMT.check
-    runSMT preludeAction smtResult
+    runSMTWithConfig
+        defaultConfig {timeOut = TimeOut (Limit 100)}
+        preludeAction
+        smtResult
 
 assertSmtResult
     :: HasCallStack
