@@ -186,10 +186,13 @@ makeEvaluateTerm sideCondition ceilChild =
         mconcat
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
+        -- We must apply user-defined \ceil rule before built-in rules
+        -- because they may be more specific. In particular, Map and Set
+        -- \ceil conditions are reduced to Bool expressions using in_keys.
+        , newAxiomCeilSimplifier
         , newApplicationCeilSimplifier
         , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
-        , newAxiomCeilSimplifier
         ]
 
 newPredicateCeilSimplifier
