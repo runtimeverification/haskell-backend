@@ -510,7 +510,6 @@ writeOptionsAndKoreFiles
     opts@KoreExecOptions
         { definitionFileName
         , patternFileName
-        --, outputFileName
         , koreSolverOptions
         , koreSearchOptions
         , koreProveOptions
