@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Reachability.OnePathStrategy
     ( test_onePathStrategy
     ) where

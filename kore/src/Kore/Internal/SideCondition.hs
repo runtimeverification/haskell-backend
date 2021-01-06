@@ -4,6 +4,7 @@ License     : NCSA
 -}
 
 -- For instance Applicative:
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.SideCondition

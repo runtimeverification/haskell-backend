@@ -1,10 +1,10 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict               #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Debug
     (
