@@ -67,10 +67,10 @@ import qualified Kore.Syntax.Sentence as SentenceAxiom
     ( SentenceAxiom (..)
     )
 import SMT
-    ( SMT
-    , Config (..)
-    , defaultConfig
+    ( Config (..)
+    , SMT
     , TimeOut (..)
+    , defaultConfig
     )
 import qualified SMT
 
