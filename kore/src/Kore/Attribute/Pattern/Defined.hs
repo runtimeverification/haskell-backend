@@ -139,7 +139,6 @@ instance Synthetic Defined (Builtin key) where
             {builtinAcChild = NormalizedMap builtinMapChild}
         )
       = normalizedAcDefined builtinMapChild
-    synthetic builtin = fold builtin
     {-# INLINE synthetic #-}
 
 normalizedAcDefined

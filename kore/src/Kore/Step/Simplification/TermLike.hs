@@ -116,6 +116,9 @@ import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
 import qualified Kore.Step.Simplification.InternalInt as InternalInt
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalList as InternalList
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalString as InternalString
     ( simplify
     )
@@ -416,6 +419,8 @@ simplify sideCondition = \termLike ->
                 Bottom.simplify <$> simplifyChildren bottomF
             BuiltinF builtinF ->
                 Builtin.simplify <$> simplifyChildren builtinF
+            InternalListF internalF ->
+                InternalList.simplify <$> simplifyChildren internalF
             DomainValueF domainValueF ->
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF

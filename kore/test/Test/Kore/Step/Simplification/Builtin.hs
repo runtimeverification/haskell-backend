@@ -7,7 +7,6 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
 
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
@@ -34,10 +33,7 @@ import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testGroup "List"
-        [ becomes "\\bottom element" (mkList [bottom]) []
-        ]
-    , testGroup "Map"
+    [ testGroup "Map"
         [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
         , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
         , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
@@ -99,16 +95,6 @@ mkSet elements opaque =
             , concreteElements = Map.empty
             , opaque
             }
-        }
-
-mkList :: [child] -> Builtin child
-mkList children =
-    Domain.BuiltinList Domain.InternalList
-        { builtinListSort = Mock.listSort
-        , builtinListUnit = Mock.unitListSymbol
-        , builtinListElement = Mock.elementListSymbol
-        , builtinListConcat = Mock.concatListSymbol
-        , builtinListChild = Seq.fromList children
         }
 
 evaluate :: Builtin (OrPattern VariableName) -> OrPattern VariableName

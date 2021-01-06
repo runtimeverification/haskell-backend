@@ -47,8 +47,7 @@
                                                                 /* Fl Fn D Sfa */
                                                                 Lbl'-LT-'callStack'-GT-'{}(
                                                                     /* Fl Fn D Sfa */
-                                                                    /* builtin: */
-                                                                    Lbl'Stop'List{}()
+                                                                    /* InternalList: */ Lbl'Stop'List{}()
                                                                 )
                                                             )
                                                         ),
@@ -59,8 +58,7 @@
                                                             /* Fl Fn D Sfa */
                                                             Lbl'-LT-'interimStates'-GT-'{}(
                                                                 /* Fl Fn D Sfa */
-                                                                /* builtin: */
-                                                                Lbl'Stop'List{}()
+                                                                /* InternalList: */ Lbl'Stop'List{}()
                                                             )
                                                         )
                                                     ),
@@ -179,8 +177,7 @@
                                                     /* Fl Fn D Sfa */
                                                     Lbl'-LT-'log'-GT-'{}(
                                                         /* Fl Fn D Sfa */
-                                                        /* builtin: */
-                                                        Lbl'Stop'List{}()
+                                                        /* InternalList: */ Lbl'Stop'List{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'refund'-GT-'{}(
@@ -219,7 +216,7 @@
                                     /* Fl Fn D Sfa */
                                     Lbl'-LT-'blockhashes'-GT-'{}(
                                         /* Fl Fn D Sfa */
-                                        /* builtin: */ Lbl'Stop'List{}()
+                                        /* InternalList: */ Lbl'Stop'List{}()
                                     )
                                 )
                             ),
@@ -364,11 +361,11 @@
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'txOrder'-GT-'{}(
-                /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'txPending'-GT-'{}(
-                /* Fl Fn D Sfa */ /* builtin: */ Lbl'Stop'List{}()
+                /* Fl Fn D Sfa */ /* InternalList: */ Lbl'Stop'List{}()
             ),
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'messages'-GT-'{}(

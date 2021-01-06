@@ -192,7 +192,6 @@ instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
             (BuiltinSet InternalAc
                     {builtinAcChild = NormalizedSet builtinSetChild}
                 ) -> normalizedAcConstructorLike builtinSetChild
-            _               -> ConstructorLike Nothing
     {-# INLINE synthetic #-}
 
 normalizedAcConstructorLike

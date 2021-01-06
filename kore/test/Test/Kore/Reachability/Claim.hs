@@ -223,6 +223,18 @@ test_checkImplication =
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
         assertEqual "" [Implied] actual
+    , testCase "Stuck if RHS is \\bottom" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest = OrPattern.bottom
+            goal = mkGoal config dest []
+        actual <- checkImplication goal
+        assertEqual "" [NotImpliedStuck goal] actual
+    , testCase "Implied if both sides are \\bottom" $ do
+        let config = Pattern.bottom
+            dest = OrPattern.bottom
+            goal = mkGoal config dest []
+        actual <- checkImplication goal
+        assertEqual "" [Implied] actual
     ]
 
 test_simplifyRightHandSide :: [TestTree]
