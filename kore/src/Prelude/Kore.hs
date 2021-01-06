@@ -20,6 +20,7 @@ module Prelude.Kore
     , headMay
     -- * Either
     , either
+    , fromLeft, fromRight
     , isLeft, isRight
     , partitionEithers
     -- * Filterable
@@ -108,7 +109,9 @@ import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
 import Data.Either
-    ( partitionEithers
+    ( fromLeft
+    , fromRight
+    , partitionEithers
     )
 import Data.Foldable
 import Data.Function
