@@ -72,6 +72,7 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.InternalList
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     , sortInjection
@@ -1849,12 +1850,12 @@ builtinList
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
-    Internal.mkBuiltin $ Domain.BuiltinList Domain.InternalList
-        { builtinListSort = listSort
-        , builtinListUnit = unitListSymbol
-        , builtinListElement = elementListSymbol
-        , builtinListConcat = concatListSymbol
-        , builtinListChild = Seq.fromList child
+    Internal.mkBuiltinList InternalList
+        { internalListSort = listSort
+        , internalListUnit = unitListSymbol
+        , internalListElement = elementListSymbol
+        , internalListConcat = concatListSymbol
+        , internalListChild = Seq.fromList child
         }
 
 builtinSet

@@ -433,7 +433,7 @@ notUnifiableError
 notUnifiableError (DV_ _ _) = throwBottom "injected domain value"
 notUnifiableError (InternalBool_ _) = throwBottom "injected builtin bool"
 notUnifiableError (InternalInt_ _) = throwBottom "injected builtin int"
-notUnifiableError (BuiltinList_ _) = throwBottom "injected builtin list"
+notUnifiableError (InternalList_ _) = throwBottom "injected builtin list"
 notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
 notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
 notUnifiableError (InternalString_ _) = throwBottom "injected builtin string"
