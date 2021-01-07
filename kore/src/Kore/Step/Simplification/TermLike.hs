@@ -341,7 +341,7 @@ simplify sideCondition = \termLike ->
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
-        let doNotSimplify =
+        let ~doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
