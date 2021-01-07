@@ -96,6 +96,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike.TermLike as TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
@@ -217,7 +218,13 @@ exec
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)
-exec depthLimit breadthLimit verifiedModule strategy initialTerm =
+exec
+    depthLimit
+    breadthLimit
+    verifiedModule
+    strategy
+    (TermLike.mapVariables (pure mkConfigVariable) -> initialTerm)
+  =
     evalSimplifier verifiedModule' $ do
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
@@ -247,7 +254,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     ( limitedExecutionStrategy depthLimit
-                    , (ExecDepth 0, Start (mkRewritingPattern initialConfig))
+                    , (ExecDepth 0, Start initialConfig)
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
@@ -297,7 +304,10 @@ getExitCode
     -> OrPattern.OrPattern VariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
-getExitCode indexedModule configs =
+getExitCode
+    indexedModule
+    (OrPattern.mapVariables (pure mkConfigVariable) -> configs)
+  =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
         exitCodePatterns <-
@@ -346,7 +356,13 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike VariableName)
-search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfig
+search
+    depthLimit
+    breadthLimit
+    verifiedModule
+    (TermLike.mapVariables (pure mkConfigVariable) -> termLike)
+    searchPattern
+    searchConfig
   =
     evalSimplifier verifiedModule $ do
         initialized <- initializeAndSimplify verifiedModule
@@ -369,7 +385,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                     (transitionRule rewriteGroups All)
                     (limitedExecutionStrategy depthLimit)
         executionGraph <-
-            runStrategy' (Start $ mkRewritingPattern initialPattern)
+            runStrategy' (Start initialPattern)
         let
             match target config1 config2 =
                 Search.matchWith
