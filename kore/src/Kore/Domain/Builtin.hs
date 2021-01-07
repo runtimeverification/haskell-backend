@@ -9,7 +9,6 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Domain.Builtin
     ( Builtin (..)
     , builtinSort
-    , InternalList (..)
     --
     , Element (..)
     , Value (..)
@@ -59,9 +58,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Sequence
-    ( Seq
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -92,60 +88,7 @@ unparseConcat
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseConcat unitSymbol concatSymbol =
-    unparseAssoc' (unparse concatSymbol) applyUnit
-  where
-    applyUnit = unparse unitSymbol <> noArguments
-
--- * Builtin List
-
-{- | Internal representation of the builtin @LIST.List@ domain.
- -}
-data InternalList child =
-    InternalList
-        { builtinListSort :: !Sort
-        , builtinListUnit :: !Symbol
-        , builtinListElement :: !Symbol
-        , builtinListConcat :: !Symbol
-        , builtinListChild :: !(Seq child)
-        }
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Hashable child => Hashable (InternalList child) where
-    hashWithSalt salt builtin =
-        hashWithSalt salt (toList builtinListChild)
-      where
-        InternalList { builtinListChild } = builtin
-
-instance NFData child => NFData (InternalList child)
-
-instance Unparse child => Unparse (InternalList child) where
-    unparse builtinList =
-        unparseConcat
-            builtinListUnit
-            builtinListConcat
-            (element <$> toList builtinListChild)
-      where
-        element x = unparse builtinListElement <> arguments [x]
-        InternalList { builtinListChild } = builtinList
-        InternalList { builtinListUnit } = builtinList
-        InternalList { builtinListElement } = builtinList
-        InternalList { builtinListConcat } = builtinList
-
-    unparse2 builtinList =
-        unparseConcat
-            builtinListUnit
-            builtinListConcat
-            (element <$> toList builtinListChild)
-      where
-        element x = unparse2 builtinListElement <> arguments2 [x]
-        InternalList { builtinListChild } = builtinList
-        InternalList { builtinListUnit } = builtinList
-        InternalList { builtinListElement } = builtinList
-        InternalList { builtinListConcat } = builtinList
+    unparseConcat' (unparse unitSymbol) (unparse concatSymbol)
 
 -- * Builtin AC (associative-commutative) generic stuff
 
@@ -634,7 +577,6 @@ type InternalSet key child = InternalAc key NormalizedSet child
 
 data Builtin key child
     = BuiltinMap !(InternalMap key child)
-    | BuiltinList !(InternalList child)
     | BuiltinSet !(InternalSet key child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
@@ -653,7 +595,6 @@ builtinSort :: Builtin key child -> Sort
 builtinSort builtin =
     case builtin of
         BuiltinMap InternalAc { builtinAcSort } -> builtinAcSort
-        BuiltinList InternalList { builtinListSort } -> builtinListSort
         BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort
 
 instance Synthetic Sort (Builtin key) where

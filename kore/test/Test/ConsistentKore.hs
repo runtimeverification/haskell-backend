@@ -84,6 +84,7 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkBottom
     , mkBuiltin
+    , mkBuiltinList
     , mkCeil
     , mkElemVar
     , mkEquals
@@ -327,6 +328,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (InternalBytesF _) = term
     checkTermF (InternalIntF _) = term
     checkTermF (InternalStringF _) = term
+    checkTermF (InternalListF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
@@ -614,7 +616,6 @@ _checkAllBuiltinImplemented
     -> Domain.Builtin (TermLike Concrete) (TermLike variable)
 _checkAllBuiltinImplemented builtin =
     case builtin of
-        Domain.BuiltinList _ -> builtin
         Domain.BuiltinMap _ -> builtin
         Domain.BuiltinSet _ -> builtin
 
@@ -746,7 +747,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
             Gen.seq (Range.constant 0 5)
             (childGenerator listElementSort)
         return
-            (   mkBuiltin . BuiltinList.asBuiltin metadataTools listSort
+            (   mkBuiltinList . BuiltinList.asBuiltin metadataTools listSort
             <$> sequenceA elements
             )
 
