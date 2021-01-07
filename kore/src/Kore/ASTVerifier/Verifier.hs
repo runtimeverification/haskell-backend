@@ -133,7 +133,7 @@ lookupParsedModule name =
     Reader.asks (Map.lookup name . modules) >>= maybe notFound return
   where
     notFound =
-        koreFail ("Module '" ++ getModuleNameForError name ++ "' not found.")
+        koreFail ("Module " ++ getModuleNameForError name ++ " not found.")
 
 {- | Add the 'ModuleName' to the import stack.
 
