@@ -1422,8 +1422,8 @@ graphParams
          ()
          CommonClaimState
 graphParams gr = Graph.nonClusteredParams
-    { Graph.fmtEdge = \(_, resultNode, l) ->
-        [ Graph.textLabel (maybe "" (ruleIndex resultNode) l)
+    { Graph.fmtEdge = \(_, resN, l) ->
+        [ Graph.textLabel (maybe "" (ruleIndex resN) l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1441,13 +1441,15 @@ graphParams gr = Graph.nonClusteredParams
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
     ruleIndex resultNode lbl =
-        case headMay . toList $ lbl of
-            Nothing ->
-                if isRemaining resultNode
-                    then "Remaining"
-                    else "CheckImplication"
-            Just rule ->
-                Text.Lazy.pack (showRuleIdentifier rule)
+        let appliedRule = lbl & toList & headMay
+            labelWithoutRule
+              | isRemaining resultNode = "Remaining"
+              | otherwise = "CheckImplication"
+         in
+            maybe
+                labelWithoutRule
+                (Text.Lazy.pack . showRuleIdentifier)
+                appliedRule
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0

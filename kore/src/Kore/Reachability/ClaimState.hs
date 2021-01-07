@@ -103,7 +103,7 @@ isRewritable :: ClaimState a -> Bool
 isRewritable = isJust . retractRewritable
 
 isRemaining :: ClaimState a -> Bool
-isRemaining = isJust . retractRewritable
+isRemaining = isJust . extractRemaining
 
 data ClaimStateTransformer a val =
     ClaimStateTransformer
