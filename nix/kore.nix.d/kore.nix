@@ -7,7 +7,7 @@
   , errorHandler
   , config
   , ... }:
-  {
+  ({
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
@@ -1100,4 +1100,4 @@
       };
     } // rec {
     src = (pkgs.lib).mkDefault ./kore;
-    }
+    }) // { cabal-generator = "hpack"; }

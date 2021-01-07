@@ -46,9 +46,6 @@ let
         "/*"
         "!/stack.yaml"
         "!/kore"
-        # Don't use hpack inside Nix. The .cabal package description is always
-        # up-to-date.
-        "package.yaml"
       ];
     };
     inherit checkMaterialization;
