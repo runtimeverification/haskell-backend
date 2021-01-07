@@ -185,7 +185,7 @@ class
         :: Value normalized (TermLike variable) -> Attribute.Simplified
 
 instance TermWrapper NormalizedMap where
-    {- | Render a 'NormalizedMap' as a Builtin.
+    {- | Render a 'NormalizedMap' as an 'InternalAc'.
 
     The result sort must be hooked to the builtin @Map@ sort.
     -}
