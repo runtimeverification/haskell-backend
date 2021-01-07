@@ -1001,6 +1001,13 @@ tryAxiomClaimWorker mode ref = do
             NoResult ->
                 showUnificationFailure axiomOrClaim node
             SingleResult nextNode -> do
+                -- TODO: it looks like the idea that Remaining nodes are stuck
+                -- is implicit in less obvious places as well; I need to further
+                -- investigate
+                -- traceShowM $
+                --     let (_,_,s,_) = Graph.context (Strategy.graph graph) (unReplNode nextNode)
+                --      in Pretty.pretty s
+                -- showUnificationFailure axiomOrClaim node
                 updateExecutionGraph graph
                 field @"node" .= nextNode
             BranchResult _ ->
