@@ -256,7 +256,7 @@ instance TermWrapper NormalizedMap where
     simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
 instance TermWrapper NormalizedSet where
-    {- | Render a 'NormalizedSet' as a Builtin.
+    {- | Render a 'NormalizedSet' as an 'InternalAc'.
 
     The result sort must be hooked to the builtin @Set@ sort.
     -}
