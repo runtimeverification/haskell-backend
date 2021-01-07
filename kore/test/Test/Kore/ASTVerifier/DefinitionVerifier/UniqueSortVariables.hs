@@ -307,7 +307,7 @@ test_uniqueSortVariables =
             , "sort 's' declaration (<test data>)"
             , "(<test data>)"
             ]
-            "Duplicated sort variable: 'sv'."
+            "Duplicated sort variable: sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ sortSentenceWithSortParameters
@@ -324,7 +324,7 @@ test_uniqueSortVariables =
             , "alias '#a' declaration (<test data>)"
             , "(<test data>)"
             ]
-            "Duplicated sort variable: '#sv'."
+            "Duplicated sort variable: #sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ metaAliasSentenceWithSortParameters
@@ -342,7 +342,7 @@ test_uniqueSortVariables =
             , "alias 'a' declaration (<test data>)"
             , "(<test data>)"
             ]
-            "Duplicated sort variable: 'sv'."
+            "Duplicated sort variable: sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ asSentence
@@ -365,7 +365,7 @@ test_uniqueSortVariables =
             , "symbol '#a' declaration (<test data>)"
             , "(<test data>)"
             ]
-            "Duplicated sort variable: '#sv'."
+            "Duplicated sort variable: #sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ symbolSentenceWithSortParameters
@@ -383,7 +383,7 @@ test_uniqueSortVariables =
             , "symbol 'a' declaration (<test data>)"
             , "(<test data>)"
             ]
-            "Duplicated sort variable: 'sv'."
+            "Duplicated sort variable: sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ symbolSentenceWithSortParameters
@@ -399,7 +399,7 @@ test_uniqueSortVariables =
         "Axiom with two object sort parameters with same name"
         (Error
             ["module 'MODULE'", "axiom declaration", "(<test data>)"]
-            "Duplicated sort variable: 'sv'."
+            "Duplicated sort variable: sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters
@@ -413,7 +413,7 @@ test_uniqueSortVariables =
         "Axiom with two meta sort parameters with same name"
         (Error
             ["module 'MODULE'", "axiom declaration", "(<test data>)"]
-            "Duplicated sort variable: '#sv'."
+            "Duplicated sort variable: #sv."
         )
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ axiomSentenceWithSortParameters

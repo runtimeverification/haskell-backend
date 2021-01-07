@@ -17,6 +17,7 @@ module Test.Kore.Builtin.Builtin
     , verifyPattern
     , runStep
     , runSMT
+    , runSMTWithConfig
     ) where
 
 import Prelude.Kore
