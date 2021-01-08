@@ -6,21 +6,7 @@ License     : NCSA
 
 module Kore.Internal.Predicate
     ( Predicate -- Constructor not exported on purpose
-    , PredicateF
-        ( AndF
-        , BottomF
-        , CeilF
-        , EqualsF
-        , ExistsF
-        , FloorF
-        , ForallF
-        , IffF
-        , ImpliesF
-        , InF
-        , NotF
-        , OrF
-        , TopF
-        )
+    , PredicateF (..)
     , unparseWithSort
     , unparse2WithSort
     , fromPredicate
