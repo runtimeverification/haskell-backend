@@ -136,9 +136,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
-    )
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
@@ -529,9 +526,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 $ from $ makeCeilPredicate_ leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
-            simplifyConditionsWithSmt SideCondition.top configs'
-            >>= Logic.scatter
+            Logic.scatter configs'
             >>= Pattern.simplify
+            >>= SMT.Evaluator.filterMultiOr
             >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied
