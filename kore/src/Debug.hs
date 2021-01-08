@@ -334,7 +334,7 @@ fromCofreeT (CofreeT x) = SOP (Z (I x :* Nil))
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
     debugPrec as precOut =
         (parens (precOut >= 10) . Pretty.sep)
-        ["Data.Map.fromList", debug (Map.toList as)]
+        ["Data.Map.Strict.fromList", debug (Map.toList as)]
 
 instance (Debug k, Debug a) => Debug (HashMap k a) where
     debugPrec as precOut =
@@ -599,7 +599,7 @@ instance
         fmap wrapFromList $ diffPrec (Map.toList as) (Map.toList bs)
       where
         wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.Map.fromList" <+> diff' 10
+            parens (precOut >= 10) $ "Data.Map.Strict.fromList" <+> diff' 10
 
 instance
     ( Debug key, Debug value, Diff key, Diff value )
