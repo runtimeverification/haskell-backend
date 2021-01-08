@@ -84,7 +84,6 @@ import Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
-    , mkInternalList
     , mkCeil
     , mkElemVar
     , mkEquals
@@ -97,6 +96,7 @@ import Kore.Internal.TermLike
     , mkIn
     , mkInternalBool
     , mkInternalInt
+    , mkInternalList
     , mkInternalString
     , mkMu
     , mkNot
