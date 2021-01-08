@@ -528,9 +528,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 Pattern.andCondition left
                 $ from $ makeCeilPredicate_ leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
-            sideCondition' = SideCondition.emptyReplacements sideCondition
         stuck <-
-            simplifyConditionsWithSmt sideCondition' configs'
+            simplifyConditionsWithSmt SideCondition.top configs'
             >>= Logic.scatter
             >>= Pattern.simplify
             >>= Logic.scatter

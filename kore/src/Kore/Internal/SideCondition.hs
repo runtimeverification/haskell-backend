@@ -22,7 +22,6 @@ module Kore.Internal.SideCondition
     , replaceTerm
     , cannotReplace
     , simplifyConjunctionByAssumption
-    , emptyReplacements
     ) where
 
 import Prelude.Kore
@@ -268,19 +267,6 @@ fromPredicate
     -> SideCondition variable
 fromPredicate = from @(MultiAnd _) . MultiAnd.fromPredicate
 
-{- | Removes the table of replacements. Should be used when
-the 'SideCondition' is necessary for simplification but
-the application of any replacements would give bad results.
-This can happen if the 'SideCondition' is created from the
-condition sent to be simplified.
- -}
-emptyReplacements
-    :: InternalVariable variable
-    => SideCondition variable
-    -> SideCondition variable
-emptyReplacements sideCondition =
-    sideCondition { replacements = mempty }
-
 mapVariables
     :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
@@ -323,9 +309,9 @@ replaceTerm
     :: InternalVariable variable
     => SideCondition variable
     -> TermLike variable
-    -> TermLike variable
+    -> Maybe (TermLike variable)
 replaceTerm SideCondition { replacements } original =
-    HashMap.findWithDefault original original replacements
+    HashMap.lookup original replacements
 
 {- | If the term isn't a key in the table of replacements
 then it cannot be replaced.

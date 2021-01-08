@@ -204,12 +204,45 @@ simplify sideCondition = \termLike ->
         -> simplifier (t (OrPattern variable))
     simplifyChildren = traverse (simplifyTermLike sideCondition)
 
+    continueSimplification :: TermLike variable -> Maybe (TermLike variable)
+    continueSimplification original =
+        let isOriginalNotSimplified
+              | TermLike.isSimplified sideConditionRepresentation original =
+                  Nothing
+              | otherwise = Just original
+        in
+            SideCondition.replaceTerm sideCondition original
+            <|> isOriginalNotSimplified
+
+
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
-    simplifyInternalWorker
-      termLike@(SideCondition.replaceTerm sideCondition -> changedTerm)
-      | changedTerm == termLike
-      , TermLike.isSimplified sideConditionRepresentation termLike =
+    simplifyInternalWorker termLike
+      | Just termLike' <- continueSimplification termLike =
+        assertTermNotPredicate $ do
+            unfixedTermOr <- descendAndSimplify termLike'
+            let termOr = OrPattern.coerceSort
+                    (termLikeSort termLike')
+                    unfixedTermOr
+            returnIfSimplifiedOrContinue
+                termLike'
+                (OrPattern.toPatterns termOr)
+                (do
+                    termPredicateList <- Logic.observeAllT $ do
+                        termOrElement <- Logic.scatter termOr
+                        simplified <-
+                            simplifyCondition sideCondition termOrElement
+                        return (applyTermSubstitution simplified)
+
+                    returnIfSimplifiedOrContinue
+                        termLike'
+                        termPredicateList
+                        (do
+                            resultsList <- mapM resimplify termPredicateList
+                            return (MultiOr.mergeAll resultsList)
+                        )
+                )
+      | otherwise =
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -222,30 +255,6 @@ simplify sideCondition = \termLike ->
                     & Pattern.fromCondition (termLikeSort termLike)
                     & OrPattern.fromPattern
                     & pure
-      | otherwise =
-        assertTermNotPredicate $ do
-            unfixedTermOr <- descendAndSimplify changedTerm
-            let termOr = OrPattern.coerceSort
-                    (termLikeSort changedTerm)
-                    unfixedTermOr
-            returnIfSimplifiedOrContinue
-                changedTerm
-                (OrPattern.toPatterns termOr)
-                (do
-                    termPredicateList <- Logic.observeAllT $ do
-                        termOrElement <- Logic.scatter termOr
-                        simplified <-
-                            simplifyCondition sideCondition termOrElement
-                        return (applyTermSubstitution simplified)
-
-                    returnIfSimplifiedOrContinue
-                        changedTerm
-                        termPredicateList
-                        (do
-                            resultsList <- mapM resimplify termPredicateList
-                            return (MultiOr.mergeAll resultsList)
-                        )
-                )
       where
 
         resimplify :: Pattern variable -> simplifier (OrPattern variable)
