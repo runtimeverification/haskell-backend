@@ -42,7 +42,7 @@ syntactically equal (in the 'Eq' sense).
 
 Examples of patterns that are constructor-like:
 
-* 'BuiltinBool', 'BuiltinInt', 'BuiltinString', and 'InternalBytes'
+* 'InternalBool', 'InternalInt', 'InternalString', and 'InternalBytes'
 * 'StringLiteral'
 * constructors with constructor-like arguments
 * 'DomainValue' in a non-hooked sort
