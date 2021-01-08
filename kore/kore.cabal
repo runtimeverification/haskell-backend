@@ -1,13 +1,13 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.1.
 --
 -- see: https://github.com/sol/hpack
 --
 -- hash: 8a2a75936cbb3a30e992399f6af8b4656da42e36be194a4ec9eeb44f3a962e02
 
 name:           kore
-version:        0.36.0.0
+version:        0.37.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
