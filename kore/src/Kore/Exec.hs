@@ -236,7 +236,9 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     rewriteGroups = groupRewritesByPriority rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule rewriteGroups strategy & trackExecDepth)
+                            (transitionRule rewriteGroups strategy 
+                                & profTransitionRule
+                                & trackExecDepth)
                             instr
                             config
                         & runTransitionT
@@ -365,7 +367,8 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                     breadthLimit
                     -- search relies on exploring
                     -- the entire space of states.
-                    (transitionRule rewriteGroups All)
+                    (transitionRule rewriteGroups All
+                        & profTransitionRule)
                     (limitedExecutionStrategy depthLimit)
         executionGraph <-
             runStrategy' (Start $ mkRewritingPattern initialPattern)
