@@ -39,21 +39,21 @@ test_simplify =
         [Mock.a & Pattern.fromTermLike]
     , becomes "distributes \\or key" (mkMap [(a <> b, c)] [])
         [ mkMapAux [(Mock.a, Mock.c)] [] []
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         , mkMapAux [(Mock.b, Mock.c)] [] []
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         ]
     , becomes "distributes \\or value" (mkMap [(a, b <> c)] [])
         [ mkMapAux [(Mock.a, Mock.b)] [] []
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         , mkMapAux [(Mock.a, Mock.c)] [] []
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         ]
     , becomes "distributes \\or compound" (mkMap [(a, b)] [a <> b])
         [ mkMapAux [(Mock.a, Mock.b)] [] [Mock.a]
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         , mkMapAux [(Mock.a, Mock.b)] [] [Mock.b]
-            & mkBuiltinMap & Pattern.fromTermLike
+            & mkInternalMap & Pattern.fromTermLike
         ]
     , becomes "collects \\and"
         (mkMap
@@ -65,7 +65,7 @@ test_simplify =
             & fmap OrPattern.fromPattern
         )
         [Pattern.withCondition
-            (mkMapAux [(Mock.a, Mock.b)] [] [] & mkBuiltinMap)
+            (mkMapAux [(Mock.a, Mock.b)] [] [] & mkInternalMap)
             (ceila <> ceilb)
         ]
     ]

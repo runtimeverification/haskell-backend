@@ -47,7 +47,7 @@ normalizeInternalMap map' =
             -- wrapper around that term.
             getSingleOpaque normalizedMap
             -- Otherwise, inject the InternalMap into TermLike.
-            & fromMaybe (mkBuiltinMap normalizedMap)
+            & fromMaybe (mkInternalMap normalizedMap)
         _ -> mkBottom_
   where
     getSingleOpaque = asSingleOpaqueElem . getNormalizedAc

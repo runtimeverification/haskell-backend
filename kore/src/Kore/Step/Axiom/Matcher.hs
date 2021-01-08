@@ -404,7 +404,7 @@ matchBuiltinMap (Pair (InternalMap_ map1) (InternalMap_ map2)) =
     wrapTermLike unwrapped =
         map2
         & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
-        & mkBuiltinMap
+        & mkInternalMap
 matchBuiltinMap _ = empty
 
 matchInj
@@ -923,7 +923,7 @@ renormalizeBuiltins =
     case termLikeF of
         InternalMapF internalMap ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
-            & maybe bottom' mkBuiltinMap
+            & maybe bottom' mkInternalMap
         InternalSetF internalSet ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
             & maybe bottom' mkBuiltinSet

@@ -1827,7 +1827,7 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkBuiltinMap InternalAc
+    Internal.mkInternalMap InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol

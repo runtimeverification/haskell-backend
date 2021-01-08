@@ -125,7 +125,7 @@ newMapCeilSimplifier =
                 ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
-                & TermLike.mkBuiltinMap
+                & TermLike.mkInternalMap
                 & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
@@ -139,7 +139,7 @@ newMapCeilSimplifier =
                         element
         runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
-                TermLike.mkBuiltinMap
+                TermLike.mkInternalMap
                 mkNotMember
             )
             ceil

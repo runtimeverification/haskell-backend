@@ -198,7 +198,7 @@ instance TermWrapper NormalizedMap where
             }
 
     asInternal tools sort child =
-        TermLike.mkBuiltinMap (asInternalBuiltin tools sort child)
+        TermLike.mkInternalMap (asInternalBuiltin tools sort child)
 
     matchBuiltin (InternalMap_ internalMap) =
         Just (builtinAcChild internalMap)

@@ -60,7 +60,7 @@ module Kore.Internal.TermLike
     , mkInternalInt
     , mkInternalString
     , mkInternalList
-    , mkBuiltinMap
+    , mkInternalMap
     , mkBuiltinSet
     , mkCeil
     , mkDomainValue
@@ -1091,12 +1091,12 @@ mkInternalList = updateCallStack . synthesize . InternalListF
 
 {- | Construct a builtin map pattern.
  -}
-mkBuiltinMap
+mkInternalMap
     :: HasCallStack
     => InternalVariable variable
     => InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinMap = updateCallStack . synthesize . InternalMapF
+mkInternalMap = updateCallStack . synthesize . InternalMapF
 
 {- | Construct a builtin set pattern.
  -}
