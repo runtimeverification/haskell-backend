@@ -12,8 +12,6 @@ module Kore.Internal.Predicate
     , fromPredicate
     , fromPredicate_
     , makePredicate
-    , isFalse
-    , isTrue
     , makeTruePredicate
     , makeFalsePredicate
     , makeNotPredicate
@@ -30,7 +28,7 @@ module Kore.Internal.Predicate
     , makeMultipleAndPredicate
     , makeMultipleOrPredicate
     , makeMultipleExists
-    , makeMultipleForalls
+    , makeMultipleForall
     , getMultiAndPredicate
     , getMultiOrPredicate
     , NotPredicate
@@ -480,6 +478,10 @@ fromPredicate_
     -> TermLike variable
 fromPredicate_ = fromPredicate predicateSort
 
+{- | Simple type used to track whether a predicate building function performed
+    a simplification that changed the shape of the resulting term. This is
+    needed when these functions are called while traversing the Predicate tree.
+-}
 data HasChanged = Changed | NotChanged
     deriving (Show, Eq)
 
@@ -489,14 +491,6 @@ instance Semigroup HasChanged where
 
 instance Monoid HasChanged where
     mempty = NotChanged
-
-{-|'isFalse' checks whether a predicate is obviously bottom.
--}
-isFalse :: TopBottom patt => patt -> Bool
-isFalse = isBottom
-
-isTrue :: TopBottom patt => patt -> Bool
-isTrue = not . isBottom
 
 makeTruePredicate' ::
     InternalVariable variable
@@ -523,11 +517,13 @@ makeNotPredicate'
 makeNotPredicate' p
   | isTop p = (makeFalsePredicate, Changed)
   | isBottom p = (makeTruePredicate, Changed)
-  | otherwise = (synthesize $ NotF Not
-    { notSort = ()
-    , notChild = p
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ NotF Not
+        { notSort = ()
+        , notChild = p
+        }
+    , NotChanged
+    )
 
 makeNotPredicate
     :: InternalVariable variable
@@ -549,12 +545,14 @@ makeAndPredicate' p1 p2
   | isTop p1 = (p2, Changed)
   | isTop p2 = (p1, Changed)
   | p1 == p2 = (p1, Changed)
-  | otherwise = (synthesize $ AndF And
-    { andSort = ()
-    , andFirst = p1
-    , andSecond = p2
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ AndF And
+        { andSort = ()
+        , andFirst = p1
+        , andSecond = p2
+        }
+    , NotChanged
+    )
 
 makeAndPredicate
     :: InternalVariable variable
@@ -574,12 +572,14 @@ makeOrPredicate' p1 p2
   | isBottom p1 = (p2, Changed)
   | isBottom p2 = (p1, Changed)
   | p1 == p2 = (p1, Changed)
-  | otherwise = (synthesize $ OrF Or
-    { orSort = ()
-    , orFirst = p1
-    , orSecond = p2
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ OrF Or
+        { orSort = ()
+        , orFirst = p1
+        , orSecond = p2
+        }
+    , NotChanged
+    )
 
 makeOrPredicate
     :: InternalVariable variable
@@ -599,12 +599,14 @@ makeImpliesPredicate' p1 p2
   | isTop p1 = (p2, Changed)
   | isBottom p2 = (makeNotPredicate p1, Changed)
 --  | p1 == p2 = (makeTruePredicate, Changed)
-  | otherwise = (synthesize $ ImpliesF Implies
-    { impliesSort = ()
-    , impliesFirst = p1
-    , impliesSecond = p2
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ ImpliesF Implies
+        { impliesSort = ()
+        , impliesFirst = p1
+        , impliesSecond = p2
+        }
+    , NotChanged
+    )
 
 makeImpliesPredicate
     :: InternalVariable variable
@@ -624,12 +626,14 @@ makeIffPredicate' p1 p2
   | isBottom p2 = (makeNotPredicate p1, Changed)
   | isTop p2 = (p1, Changed)
 --  | p1 == p2 = (makeTruePredicate, Changed)
-  | otherwise = (synthesize $ IffF Iff
-    { iffSort = ()
-    , iffFirst = p1
-    , iffSecond = p2
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ IffF Iff
+        { iffSort = ()
+        , iffFirst = p1
+        , iffSecond = p2
+        }
+    , NotChanged
+    )
 
 makeIffPredicate
     :: InternalVariable variable
@@ -642,12 +646,14 @@ makeCeilPredicate'
     :: InternalVariable variable
     => TermLike variable
     -> (Predicate variable, HasChanged)
-makeCeilPredicate' t = (synthesize $ CeilF Ceil
-    { ceilOperandSort = ()
-    , ceilResultSort = ()
-    , ceilChild = t
-    }
-    , NotChanged)
+makeCeilPredicate' t =
+    ( synthesize $ CeilF Ceil
+        { ceilOperandSort = ()
+        , ceilResultSort = ()
+        , ceilChild = t
+        }
+    , NotChanged
+    )
 
 makeCeilPredicate
     :: InternalVariable variable
@@ -659,12 +665,14 @@ makeFloorPredicate'
     :: InternalVariable variable
     => TermLike variable
     -> (Predicate variable, HasChanged)
-makeFloorPredicate' t = (synthesize $ FloorF Floor
-    { floorOperandSort = ()
-    , floorResultSort = ()
-    , floorChild = t
-    }
-    , NotChanged)
+makeFloorPredicate' t =
+    ( synthesize $ FloorF Floor
+        { floorOperandSort = ()
+        , floorResultSort = ()
+        , floorChild = t
+        }
+    , NotChanged
+    )
 
 makeFloorPredicate
     :: InternalVariable variable
@@ -714,12 +722,14 @@ makeExistsPredicate'
 makeExistsPredicate' v p
   | isTop p = (p, Changed)
   | isBottom p = (p, Changed)
-  | otherwise = (synthesize $ ExistsF Exists
-    { existsSort = ()
-    , existsVariable = v
-    , existsChild = p
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ ExistsF Exists
+        { existsSort = ()
+        , existsVariable = v
+        , existsChild = p
+        }
+    , NotChanged
+    )
 
 makeExistsPredicate
     :: InternalVariable variable
@@ -736,12 +746,14 @@ makeForallPredicate'
 makeForallPredicate' v p
   | isTop p = (p, Changed)
   | isBottom p = (p, Changed)
-  | otherwise = (synthesize $ ForallF Forall
-    { forallSort = ()
-    , forallVariable = v
-    , forallChild = p
-    }
-    , NotChanged)
+  | otherwise =
+    ( synthesize $ ForallF Forall
+        { forallSort = ()
+        , forallVariable = v
+        , forallChild = p
+        }
+    , NotChanged
+    )
 
 makeForallPredicate
     :: InternalVariable variable
@@ -772,12 +784,12 @@ makeMultipleExists
 makeMultipleExists vars p =
     foldr makeExistsPredicate p vars
 
-makeMultipleForalls
+makeMultipleForall
     :: (Foldable f, InternalVariable variable)
     => f (ElementVariable variable)
     -> Predicate variable
     -> Predicate variable
-makeMultipleForalls vars p =
+makeMultipleForall vars p =
     foldr makeForallPredicate p vars
 
 getMultiAndPredicate

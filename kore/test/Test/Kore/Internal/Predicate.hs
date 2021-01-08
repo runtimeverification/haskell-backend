@@ -33,6 +33,10 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+
 type TestPredicate = Predicate VariableName
 
 test_predicate :: [TestTree]
@@ -72,20 +76,20 @@ test_predicate =
             )
             (makeNotPredicate pr1)
         )
-    , testCase "isFalsePredicate True"
+    , testCase "isBottom True"
         (assertEqual ""
             True
-            (Predicate.isFalse (makeFalsePredicate::Predicate VariableName))
+            (isBottom (makeFalsePredicate::Predicate VariableName))
         )
-    , testCase "isFalsePredicate False"
+    , testCase "isBottom False"
         (assertEqual ""
             False
-            (Predicate.isFalse (makeTruePredicate::Predicate VariableName))
+            (isBottom (makeTruePredicate::Predicate VariableName))
         )
-    , testCase "isFalsePredicate False for generic predicate"
+    , testCase "isBottom False for generic predicate"
         (assertEqual ""
             False
-            (Predicate.isFalse pr1)
+            (isBottom pr1)
         )
     , testCase "Multiple And"
         ( do
