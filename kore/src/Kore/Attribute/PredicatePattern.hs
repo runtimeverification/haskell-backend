@@ -17,7 +17,6 @@ module Kore.Attribute.PredicatePattern
     , traverseVariables
     , deleteFreeVariable
     , fromPattern
-    -- , fromPattern
     -- * Re-exports
     , module Kore.Attribute.Pattern.FreeVariables
     ) where
