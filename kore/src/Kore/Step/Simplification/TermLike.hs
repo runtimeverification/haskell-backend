@@ -204,21 +204,10 @@ simplify sideCondition = \termLike ->
         -> simplifier (t (OrPattern variable))
     simplifyChildren = traverse (simplifyTermLike sideCondition)
 
-    continueSimplification :: TermLike variable -> Maybe (TermLike variable)
-    continueSimplification original =
-        let isOriginalNotSimplified
-              | TermLike.isSimplified sideConditionRepresentation original =
-                  Nothing
-              | otherwise = Just original
-        in
-            SideCondition.replaceTerm sideCondition original
-            <|> isOriginalNotSimplified
-
-
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-      | Just termLike' <- continueSimplification termLike =
+      | Just termLike' <- continueSimplificationWith termLike =
         assertTermNotPredicate $ do
             unfixedTermOr <- descendAndSimplify termLike'
             let termOr = OrPattern.coerceSort
@@ -256,6 +245,15 @@ simplify sideCondition = \termLike ->
                     & OrPattern.fromPattern
                     & pure
       where
+        continueSimplificationWith :: TermLike variable -> Maybe (TermLike variable)
+        continueSimplificationWith original =
+            let isOriginalNotSimplified
+                  | TermLike.isSimplified sideConditionRepresentation original =
+                      Nothing
+                  | otherwise = Just original
+            in
+                SideCondition.replaceTerm sideCondition original
+                <|> isOriginalNotSimplified
 
         resimplify :: Pattern variable -> simplifier (OrPattern variable)
         resimplify result = do

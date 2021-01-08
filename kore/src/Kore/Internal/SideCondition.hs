@@ -114,6 +114,10 @@ It contains a predicate assumed to be true, and a table of term replacements,
 which is used when simplifying terms. The table is constructed from the predicate,
 see 'simplifyConjunctionByAssumption'.
 
+Warning! When simplifying a pattern, extra care should be taken that the
+'SideCondition' sent to the simplifier isn't created from the same 'Condition'
+which is sent to be simplified.
+
 The predicate is usually used to remove infeasible branches, but it may also
 be used for other purposes, say, to remove redundant parts of the result predicate.
 -}
@@ -302,8 +306,7 @@ toRepresentation =
     mkRepresentation
     . mapVariables @_ @VariableName (pure toVariableName)
 
-{- | Looks up the term in the table. If it's not found, the
-original term is returned.
+{- | Looks up the term in the table of replacements.
  -}
 replaceTerm
     :: InternalVariable variable
