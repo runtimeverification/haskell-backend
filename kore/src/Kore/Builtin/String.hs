@@ -15,6 +15,8 @@ builtin modules.
 @
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.String
     ( sort
     , assertSort

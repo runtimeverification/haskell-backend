@@ -14,6 +14,9 @@ builtin modules.
     import qualified Kore.Builtin.List as List
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.List
     ( sort
     , assertSort

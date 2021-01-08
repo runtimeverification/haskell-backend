@@ -1,13 +1,10 @@
 {-|
-Module      : Kore.Step.Axiom.Matcher
-Description : Matches free-form patterns which can be used when applying
-              Equals rules.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Axiom.Matcher
     ( MatchingVariable
     , MatchResult

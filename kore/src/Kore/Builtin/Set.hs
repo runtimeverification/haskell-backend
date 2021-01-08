@@ -12,6 +12,9 @@ builtin modules.
     import qualified Kore.Builtin.Set as Set
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Set
     ( sort
     , assertSort

@@ -1,8 +1,10 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.TermLike
     ( simplify
     ) where
@@ -338,7 +340,7 @@ simplify sideCondition = \termLike ->
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
-        let doNotSimplify =
+        let ~doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)

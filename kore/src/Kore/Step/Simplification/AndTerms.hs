@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.AndTerms
-Description : Unification and "and" simplification for terms.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.AndTerms
     ( termUnification
     , maybeTermAnd

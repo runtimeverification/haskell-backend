@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.ConstructorLike
     ( ConstructorLike (..)
     , ConstructorLikeHead (..)

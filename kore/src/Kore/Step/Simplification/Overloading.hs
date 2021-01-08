@@ -2,6 +2,9 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Overloading
     ( matchOverloading
     -- for testing purposes
@@ -273,7 +276,7 @@ unifyOverloadingVsOverloaded
     Monad.guard (isOverloaded overloadingHead)
     isSecondHeadConstructor <- isConstructorOrOverloaded overloadedHead
     Monad.guard isSecondHeadConstructor
-    let overloadedTerm' =
+    let ~overloadedTerm' =
             resolveOverloading injProto overloadingHead overloadedChildren
     if isOverloading overloadingHead overloadedHead
         then return $ Pair overloadingTerm overloadedTerm'

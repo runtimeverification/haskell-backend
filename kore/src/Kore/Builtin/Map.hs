@@ -12,6 +12,9 @@ builtin modules.
     import qualified Kore.Builtin.Map as Map
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Map
     ( sort
     , verifiers

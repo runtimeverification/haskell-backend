@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.Ceil
-Description : Tools for Ceil pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Ceil
     ( simplify
     , makeEvaluate
@@ -423,5 +421,5 @@ makeSimplifiedCeil
         . makeCeilPredicate_
         $ termLike
 
-    unexpectedError =
+    ~unexpectedError =
         error ("Unexpected term type: " ++ unparseToString termLike)

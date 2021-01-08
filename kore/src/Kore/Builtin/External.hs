@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.External
     ( externalize
     ) where

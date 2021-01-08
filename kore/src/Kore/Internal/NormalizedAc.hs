@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Internal.NormalizedAc
     ( AcWrapper (..)
     , wrapElement, unwrapElement

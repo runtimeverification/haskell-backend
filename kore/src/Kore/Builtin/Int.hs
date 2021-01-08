@@ -16,6 +16,7 @@ builtin modules.
  -}
 
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.Builtin.Int
     ( sort

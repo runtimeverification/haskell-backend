@@ -1,12 +1,9 @@
 {-|
-Module      : Kore.Step.SMT.Translate
-Description : Translates conditions to something that a SMT solver understands.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.SMT.Translate
     ( translatePredicateWith

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.AssociativeCommutative
     ( test_toNormalized_Map
     , test_matchBuiltin_Map

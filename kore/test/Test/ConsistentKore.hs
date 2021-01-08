@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.ConsistentKore
     ( CollectionSorts (..)
     , Setup (..)
@@ -262,7 +264,7 @@ termLikeGenImpl (Range.Size size) requestedSort = do
         nextGenerator =
             if size > 0
                 then termLikeGenImpl (Range.Size $ size - 1)
-                else error "Did not expect to generate terms here."
+                else \_ -> empty
     if null actualGenerators
         then return Nothing
         else do

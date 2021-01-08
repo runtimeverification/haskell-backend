@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.List.List
     ( sort
     , asBuiltin

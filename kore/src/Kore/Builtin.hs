@@ -13,6 +13,9 @@ This module is intended to be imported qualified.
     import qualified Kore.Builtin as Builtin
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.ApplicationVerifiers

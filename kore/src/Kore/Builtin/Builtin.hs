@@ -14,6 +14,9 @@ builtin modules.
     import qualified Kore.Builtin.Builtin as Builtin
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Builtin
     ( Function
       -- * Implementing builtin functions
@@ -368,7 +371,7 @@ lookupSymbolUnit tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingUnitAttribute =
+    ~missingUnitAttribute =
         verifierBug
         $ "missing 'unit' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -403,7 +406,7 @@ lookupSymbolElement tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingElementAttribute =
+    ~missingElementAttribute =
         verifierBug
         $ "missing 'element' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -438,7 +441,7 @@ lookupSymbolConcat tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingConcatAttribute =
+    ~missingConcatAttribute =
         verifierBug
         $ "missing 'concat' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -461,10 +464,13 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
   | isPredicateSort            = Nothing
   | SortVariableSort _ <- sort = Nothing
-  | otherwise                  = Just (getHook hook == Just builtinName)
+  | otherwise                  =
+    let
+        MetadataTools { sortAttributes } = tools
+        Attribute.Sort { hook } = sortAttributes sort
+    in
+        Just (getHook hook == Just builtinName)
   where
-    MetadataTools {sortAttributes} = tools
-    Attribute.Sort {hook} = sortAttributes sort
     isPredicateSort = sort == predicateSort
 
 

@@ -4,6 +4,7 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike.TermLike

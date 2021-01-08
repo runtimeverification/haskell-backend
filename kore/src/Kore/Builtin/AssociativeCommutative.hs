@@ -15,6 +15,7 @@ builtin modules.
 @
 -}
 
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Builtin.AssociativeCommutative
