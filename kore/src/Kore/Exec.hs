@@ -236,7 +236,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     rewriteGroups = groupRewritesByPriority rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule rewriteGroups strategy 
+                            (transitionRule rewriteGroups strategy
                                 & profTransitionRule
                                 & trackExecDepth)
                             instr
