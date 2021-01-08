@@ -125,8 +125,7 @@ import Pretty
     )
 import qualified Pretty
 
-{- | Class for things that can fill the @builtinAcChild@ value of a
-@InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
+{- | Any @TermWrapper@ may be inside of an 'InternalAc'.
 -}
 class
     AcWrapper (normalized :: Type -> Type -> Type)
