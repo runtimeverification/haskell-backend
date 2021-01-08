@@ -383,7 +383,7 @@ matchBuiltinSet (Pair (InternalSet_ set1) (InternalSet_ set2)) =
     wrapTermLike unwrapped =
         set2
         & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
-        & mkBuiltinSet
+        & mkInternalSet
 matchBuiltinSet _ = empty
 
 matchBuiltinMap
@@ -926,5 +926,5 @@ renormalizeBuiltins =
             & maybe bottom' mkInternalMap
         InternalSetF internalSet ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
-            & maybe bottom' mkBuiltinSet
+            & maybe bottom' mkInternalSet
         _ -> Recursive.embed base

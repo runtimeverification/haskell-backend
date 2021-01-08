@@ -1218,7 +1218,7 @@ builtinSet
     -> [TermLike variable]
     -> TermLike variable
 builtinSet elements opaque =
-    mkBuiltinSet InternalAc
+    mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol

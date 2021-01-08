@@ -38,21 +38,21 @@ test_simplify =
         [Mock.a & Pattern.fromTermLike]
     , becomes "distributes \\or element" (mkSet [a <> b] [])
         [ mkSetAux [Mock.a] [] []
-            & mkBuiltinSet & Pattern.fromTermLike
+            & mkInternalSet & Pattern.fromTermLike
         , mkSetAux [Mock.b] [] []
-            & mkBuiltinSet & Pattern.fromTermLike
+            & mkInternalSet & Pattern.fromTermLike
         ]
     , becomes "distributes \\or compound" (mkSet [a] [a <> b])
         [ mkSetAux [Mock.a] [] [Mock.a]
-            & mkBuiltinSet & Pattern.fromTermLike
+            & mkInternalSet & Pattern.fromTermLike
         , mkSetAux [Mock.a] [] [Mock.b]
-            & mkBuiltinSet & Pattern.fromTermLike
+            & mkInternalSet & Pattern.fromTermLike
         ]
     , becomes "collects \\and"
         (mkSet [Pattern.withCondition Mock.a ceila] []
             & fmap OrPattern.fromPattern
         )
-        [Pattern.withCondition (mkSetAux [Mock.a] [] [] & mkBuiltinSet) ceila]
+        [Pattern.withCondition (mkSetAux [Mock.a] [] [] & mkInternalSet) ceila]
     ]
   where
     a = OrPattern.fromTermLike Mock.a

@@ -48,7 +48,7 @@ normalizeInternalSet map' =
             -- wrapper around that term.
             getSingleOpaque normalizedSet
             -- Otherwise, inject the InternalSet into TermLike.
-            & fromMaybe (mkBuiltinSet normalizedSet)
+            & fromMaybe (mkInternalSet normalizedSet)
         _ -> mkBottom_
   where
     getSingleOpaque = asSingleOpaqueElem . getNormalizedAc

@@ -269,7 +269,7 @@ instance TermWrapper NormalizedSet where
             }
 
     asInternal tools sort child =
-        TermLike.mkBuiltinSet (asInternalBuiltin tools sort child)
+        TermLike.mkInternalSet (asInternalBuiltin tools sort child)
 
     matchBuiltin (InternalSet_ internalSet) =
         Just (builtinAcChild internalSet)

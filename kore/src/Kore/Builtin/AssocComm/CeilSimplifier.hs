@@ -98,7 +98,7 @@ newSetCeilSimplifier =
                 ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
-                & TermLike.mkBuiltinSet
+                & TermLike.mkInternalSet
                 & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
@@ -106,7 +106,7 @@ newSetCeilSimplifier =
                 & Predicate.markSimplifiedMaybeConditional Nothing
         runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
-                TermLike.mkBuiltinSet
+                TermLike.mkInternalSet
                 mkNotMember
             )
             ceil

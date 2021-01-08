@@ -1881,7 +1881,7 @@ framedSet
     -> [TermLike variable]
     -> TermLike variable
 framedSet elements opaque =
-    Internal.mkBuiltinSet InternalAc
+    Internal.mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
