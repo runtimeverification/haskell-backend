@@ -14,6 +14,28 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.37.0.0] - 2021-01-07
+
+### Added
+
+- Added option `--no-bug-report` to suppress generation of the bug report
+  archive. (#2311)
+- Check the validity of SMT declarations at initialization. (#2314)
+
+### Changed
+
+- Removed single-quote delimiters around Kore identifiers in validation error
+  messages. (#2316)
+- Relaxed the check on total functions to permit functions with undefined
+  arguments. (#2334)
+- The `--solver-transcript` option will cause an existing log file to be
+  overwritten, instead of appending to it. (#2307)
+
+### Fixed
+
+- Correctly check the final implication of claims where the right-hand side is
+  \bottom. (#2329)
+
 ## [0.36.0.0] - 2020-12-09
 
 ### Added
