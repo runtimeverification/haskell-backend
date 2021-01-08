@@ -447,7 +447,8 @@ pattern PredicateForall :: ElementVariable variable -> Predicate variable -> Pre
 pattern PredicateForall var p <- (Recursive.project -> _ :< ForallF (Forall () var p))
 
 
-{- | Return the 'TermLike' corresponding to the given 'Predicate'. -}
+{- | Return the 'TermLike' corresponding to the given 'Predicate'.
+-}
 fromPredicate
     :: InternalVariable variable
     => Sort
