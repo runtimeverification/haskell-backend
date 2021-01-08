@@ -598,7 +598,6 @@ instance
     diffPrec as bs =
         fmap wrapFromList $ diffPrec (Map.toList as) (Map.toList bs)
       where
-        -- TODO: why isn't this Data.Map.Strict.fromList?
         wrapFromList diff' precOut =
             parens (precOut >= 10) $ "Data.Map.fromList" <+> diff' 10
 
