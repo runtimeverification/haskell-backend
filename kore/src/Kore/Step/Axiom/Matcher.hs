@@ -360,11 +360,11 @@ matchBuiltinListConcat
 matchBuiltinListConcat [InternalList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     traverse_ push aligned
-    push (Pair frame1 (mkBuiltinList tail2))
+    push (Pair frame1 (mkInternalList tail2))
 
 matchBuiltinListConcat [frame1, InternalList_ list1] list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
-    push (Pair frame1 (mkBuiltinList head2))
+    push (Pair frame1 (mkInternalList head2))
     traverse_ push aligned
 
 matchBuiltinListConcat _ _ = empty

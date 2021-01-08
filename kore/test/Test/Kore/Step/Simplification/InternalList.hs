@@ -33,14 +33,14 @@ test_simplify :: [TestTree]
 test_simplify =
     [ becomes "\\bottom element" (mkList [bottom]) []
     , becomes "distributes \\or - 1" (mkList [a <> b])
-        [ mkList [Mock.a] & mkBuiltinList & Pattern.fromTermLike
-        , mkList [Mock.b] & mkBuiltinList & Pattern.fromTermLike
+        [ mkList [Mock.a] & mkInternalList & Pattern.fromTermLike
+        , mkList [Mock.b] & mkInternalList & Pattern.fromTermLike
         ]
     , becomes "distributes \\or - 2" (mkList [a <> b, a <> b])
-        [ mkList [Mock.a, Mock.a] & mkBuiltinList & Pattern.fromTermLike
-        , mkList [Mock.a, Mock.b] & mkBuiltinList & Pattern.fromTermLike
-        , mkList [Mock.b, Mock.b] & mkBuiltinList & Pattern.fromTermLike
-        , mkList [Mock.b, Mock.a] & mkBuiltinList & Pattern.fromTermLike
+        [ mkList [Mock.a, Mock.a] & mkInternalList & Pattern.fromTermLike
+        , mkList [Mock.a, Mock.b] & mkInternalList & Pattern.fromTermLike
+        , mkList [Mock.b, Mock.b] & mkInternalList & Pattern.fromTermLike
+        , mkList [Mock.b, Mock.a] & mkInternalList & Pattern.fromTermLike
         ]
     , becomes "collects \\and"
         (mkList
@@ -50,7 +50,7 @@ test_simplify =
             & fmap OrPattern.fromPattern
         )
         [Pattern.withCondition
-            (mkList [Mock.a, Mock.b] & mkBuiltinList)
+            (mkList [Mock.a, Mock.b] & mkInternalList)
             (ceila <> ceilb)
         ]
     ]

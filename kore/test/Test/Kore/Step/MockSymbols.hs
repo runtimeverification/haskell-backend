@@ -1851,7 +1851,7 @@ builtinList
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
-    Internal.mkBuiltinList InternalList
+    Internal.mkInternalList InternalList
         { internalListSort = listSort
         , internalListUnit = unitListSymbol
         , internalListElement = elementListSymbol

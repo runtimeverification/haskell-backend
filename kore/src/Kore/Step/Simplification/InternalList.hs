@@ -26,7 +26,7 @@ simplify
     -> OrPattern variable
 simplify =
     traverse (Logic.scatter >>> Compose)
-    >>> fmap mkBuiltinList
+    >>> fmap mkInternalList
     >>> getCompose
     >>> fmap (Pattern.syncSort >>> fmap markSimplified)
     >>> MultiOr.observeAll

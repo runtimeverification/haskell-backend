@@ -84,7 +84,7 @@ import Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
-    , mkBuiltinList
+    , mkInternalList
     , mkCeil
     , mkElemVar
     , mkEquals
@@ -735,7 +735,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
             Gen.seq (Range.constant 0 5)
             (childGenerator listElementSort)
         return
-            (   mkBuiltinList . BuiltinList.asBuiltin metadataTools listSort
+            (   mkInternalList . BuiltinList.asBuiltin metadataTools listSort
             <$> sequenceA elements
             )
 

@@ -95,7 +95,7 @@ asInternal
     -> Seq (TermLike variable)
     -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
-    mkBuiltinList (asBuiltin tools builtinListSort builtinListChild)
+    mkInternalList (asBuiltin tools builtinListSort builtinListChild)
 
 {- | Render a 'Seq' as a Builtin list pattern.
 -}
