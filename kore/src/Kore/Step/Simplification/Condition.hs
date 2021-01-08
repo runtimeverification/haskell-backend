@@ -155,7 +155,7 @@ simplifyConjunctions
     -> Changed (Predicate variable)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
     let sort = Predicate.predicateSort original
-     in case SideCondition.simplifyConjunctionByAssumption predicates of
+    in case SideCondition.simplifyConjunctionByAssumption predicates of
             Unchanged _ -> Unchanged original
             Changed (changed, _) ->
                 Changed (MultiAnd.toPredicateSorted sort changed)
