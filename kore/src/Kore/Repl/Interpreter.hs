@@ -993,10 +993,7 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
-            runStepperWithRule
-                (either mempty pure   axiomOrClaim)
-                (either pure   mempty axiomOrClaim)
-                node
+            tryApplyAxiomOrClaim axiomOrClaim node
         case result of
             NoResult ->
                 showUnificationFailure axiomOrClaim node
