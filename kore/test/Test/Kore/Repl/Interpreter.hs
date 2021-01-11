@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Repl.Interpreter
     ( test_replInterpreter
     ) where
