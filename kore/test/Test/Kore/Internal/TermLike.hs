@@ -180,7 +180,7 @@ mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
 
 test_orientSubstitution :: TestTree
 test_orientSubstitution =
-    testCase "qqOrient substitution" $ do
+    testCase "Orient substitution" $ do
         let toLeft :: SomeVariableName VariableName -> Bool
             toLeft (from -> vName :: VariableName) =
                 vName == unElementVariableName (variableName Mock.y)

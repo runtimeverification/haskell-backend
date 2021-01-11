@@ -102,6 +102,9 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( orientSubstitution
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.Id
@@ -297,21 +300,30 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
                 }
         _      -> return ()
     let predicate' =
-            Predicate.substitute substitution predicate
+            Predicate.substitute orientedSubstitution predicate
             & Predicate.mapVariables (pure Target.unTarget)
         equation' =
-            Equation.substitute substitution equation
+            Equation.substitute orientedSubstitution equation
             & Equation.mapVariables (pure Target.unTarget)
     return (equation', predicate')
   where
-    equationVariables = freeVariables equation & FreeVariables.toList
+    orientedSubstitution = orientSubstitution occursInEquation substitution
+
+    equationVariables = freeVariables equation
+
+    occursInEquation :: (SomeVariableName (Target variable) -> Bool)
+    occursInEquation =
+        (`Set.member` equationVariableNames)
+      where
+        equationVariableNames =
+            Set.map variableName (FreeVariables.toSet equationVariables)
 
     errors =
-        concatMap checkVariable equationVariables
+        concatMap checkVariable (FreeVariables.toList equationVariables)
         <> checkNonTargetVariables
 
     checkVariable Variable { variableName } =
-        case Map.lookup variableName substitution of
+        case Map.lookup variableName orientedSubstitution of
             Nothing -> [NotMatched variableName]
             Just termLike ->
                 checkConcreteVariable variableName termLike
@@ -333,7 +345,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     checkNonTargetVariables =
         NonMatchingSubstitution
-        <$> filter Target.isSomeNonTargetName (Map.keys substitution)
+        <$> filter Target.isSomeNonTargetName (Map.keys orientedSubstitution)
 
     Equation { attributes } = equation
     concretes =

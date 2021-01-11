@@ -162,7 +162,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
       where
         substitution :: [Assignment variable]
         substitution =
-            order <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
+            order
+            <&> \v -> Substitution.unsafeAssign v ((Map.!) substitutionMap v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
@@ -187,7 +188,7 @@ backSubstitute sorted =
     worker (Assignment variable termLike) = do
         termLike' <- applySubstitution termLike
         insertSubstitution variable termLike'
-        return $ Substitution.assign variable termLike'
+        return $ Substitution.unsafeAssign variable termLike'
     insertSubstitution variable termLike =
         State.modify' $ Map.insert (variableName variable) termLike
     applySubstitution termLike = do
