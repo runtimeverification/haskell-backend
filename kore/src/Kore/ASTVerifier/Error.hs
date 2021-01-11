@@ -44,9 +44,9 @@ noConstructorWithDomainValues :: Id -> Sort -> String
 noConstructorWithDomainValues symbolId sort =
     (show . Pretty.hsep)
         [ "Cannot define constructor"
-        , Pretty.squotes (unparse symbolId)
+        , unparse symbolId
         , "for sort"
-        , Pretty.squotes (unparse sort) <> Pretty.colon
+        , unparse sort <> Pretty.colon
         , "sort has domain values."
         ]
 
@@ -54,21 +54,21 @@ noConstructorInHookedSort :: Id -> Sort -> String
 noConstructorInHookedSort symbolId sort =
     (show . Pretty.hsep)
         [ "Cannot define constructor"
-        , Pretty.squotes (unparse symbolId)
+        , unparse symbolId
         , "for hooked sort"
-        , Pretty.squotes (unparse sort) <> Pretty.dot
+        , unparse sort <> Pretty.dot
         ]
 
 noConstructorWithVariableSort :: Id -> String
 noConstructorWithVariableSort symbolId =
     (show . Pretty.hsep)
         [ "Cannot define constructor"
-        , Pretty.squotes (unparse symbolId)
+        , unparse symbolId
         , "with variable result sort."
         ]
 
 sortNeedsDomainValueAttributeMessage :: Text
 sortNeedsDomainValueAttributeMessage =
-    "Sorts used with domain value must have the '"
+    "Sorts used with domain value must have the "
     <> getId Attribute.HasDomainValues.hasDomainValuesId
-    <> "' " <> "attribute."
+    <> " " <> "attribute."

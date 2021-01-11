@@ -1297,7 +1297,7 @@ duplicatedNameFailureTest message duplicatedName module1 module2 =
         message
         Error
             { errorContext = ["module 'M2'", "(<test data>, <test data>)"]
-            , errorError = "Duplicated name: '" ++ duplicatedName ++ "'."
+            , errorError = "Duplicated name: " ++ duplicatedName ++ "."
             }
         Definition
             { definitionAttributes = Attributes []
