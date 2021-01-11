@@ -562,9 +562,10 @@ mainWithOptions execOptions = do
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
-            writeOptionsAndKoreFiles tmpDir (execOptions
-                { outputFileName = Just (tmpDir </> "result.kore") })
-            e <- go <* warnIfLowProductivity
+            let execOptions' = execOptions {
+                    outputFileName = Just (tmpDir </> "result.kore") }
+            writeOptionsAndKoreFiles tmpDir execOptions'
+            e <- go execOptions' <* warnIfLowProductivity
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog tmpDir koreLogOptions
@@ -598,21 +599,21 @@ mainWithOptions execOptions = do
             ("// Last configuration:\n" <> unparse lastConfiguration)
         throwM someException
 
-    go :: Main ExitCode
-    go
+    go :: KoreExecOptions -> Main ExitCode
+    go eOpts
       | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
         if bmc
-            then koreBmc execOptions proveOptions
-            else koreProve execOptions proveOptions
+            then koreBmc eOpts proveOptions
+            else koreProve eOpts proveOptions
 
       | Just searchOptions <- koreSearchOptions =
-        koreSearch execOptions searchOptions
+        koreSearch eOpts searchOptions
 
       | Just mergeOptions <- koreMergeOptions =
-        koreMerge execOptions mergeOptions
+        koreMerge eOpts mergeOptions
 
       | otherwise =
-        koreRun execOptions
+        koreRun eOpts
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
