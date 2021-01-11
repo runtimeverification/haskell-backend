@@ -12,6 +12,7 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     , deduplicateSubstitution
     , simplifyAnds
     , simplificationMakeAnd
+    , orientSubstitution
     ) where
 
 import Prelude.Kore
@@ -84,12 +85,17 @@ import Kore.Internal.TermLike
     , Variable (..)
     , isSetVariable
     , mkAnd
+    , mkVar
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
     , simplifyTermLike
+    )
+import Kore.Syntax.Variable
+    ( retractElementVariable
+    , retractSetVariable
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
@@ -376,6 +382,42 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+
+orientSubstitution
+    :: forall variable
+    .  InternalVariable variable
+    => (SomeVariableName variable -> Bool)
+    {- ^ 'True' if the variable should be on the left-hand side
+        of the substitution
+    -}
+    -> Map (SomeVariableName variable) (TermLike variable)
+    -> Map (SomeVariableName variable) (TermLike variable)
+orientSubstitution
+    toLeft
+    substitution
+  =
+    let newSubstitution = Map.fromList . fmap order . Map.toList $ substitution
+    in
+        Map.map (TermLike.substitute newSubstitution) newSubstitution
+  where
+    order
+        :: (SomeVariableName variable, TermLike variable)
+        -> (SomeVariableName variable, TermLike variable)
+    order
+        ( xName, TermLike.Var_ y@(Variable yName ySort) )
+
+        | SomeVariableNameElement _ <- xName
+        , Just _ <- retractElementVariable y
+        , toLeft yName
+        , not $ toLeft xName
+        = (yName, mkVar $ Variable xName ySort)
+
+        | SomeVariableNameSet _ <- xName
+        , Just _ <- retractSetVariable y
+        , toLeft yName
+        , not $ toLeft xName
+        = (yName, mkVar $ Variable xName ySort)
+    order subst = subst
 
 data Private variable =
     Private
