@@ -18,7 +18,7 @@ module Kore.Repl.State
     , smoothOutGraph
     , getInterestingBranchingNode
     , getClaimStateAt, getRuleFor, getLabels, setLabels
-    , runStepper, runStepper'
+    , runStepper, runStepper', runStepperWithRule
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
@@ -530,6 +530,32 @@ runStepper' claims axioms node = do
                     _ -> SingleResult . ReplNode $ single
             nodes -> BranchResult $ fmap ReplNode nodes
 
+runStepperWithRule
+    :: MonadState ReplState (t m)
+    => MonadReader (Config m) (t m)
+    => Monad.Trans.MonadTrans t
+    => MonadSimplify m
+    => MonadIO m
+    => [SomeClaim]
+    -> [Axiom]
+    -> ReplNode
+    -> t m (ExecutionGraph, StepResult)
+runStepperWithRule claims axioms node = do
+    stepper <- asks stepper
+    mvar <- asks logger
+    gph <- getExecutionGraph
+    gr@Strategy.ExecutionGraph { graph = innerGraph } <-
+        liftSimplifierWithLogger mvar $ stepper claims axioms gph node
+    pure . (,) gr
+        $ case Graph.suc innerGraph (unReplNode node) of
+            []       -> NoResult
+            [single] ->
+                case getClaimState innerGraph single of
+                    (Stuck _, _)-> NoResult
+                    (Remaining _, _) -> NoResult
+                    _ -> SingleResult . ReplNode $ single
+            nodes -> BranchResult $ fmap ReplNode nodes
+
 runUnifier
     :: MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
@@ -560,6 +586,11 @@ getNodeState graph node =
         . Graph.lab'
         . Graph.context graph
         $ node
+
+getClaimState :: InnerGraph -> Graph.Node -> (CommonClaimState, Graph.Node)
+getClaimState graph node =
+    let claimState' = node & Graph.context graph & Graph.lab'
+    in  (claimState', node)
 
 nodeToGoal
     :: InnerGraph
