@@ -562,9 +562,15 @@ mainWithOptions execOptions = do
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
-            writeOptionsAndKoreFiles tmpDir execOptions
-            e <- code tmpDir
-            for_ outputFileName $ flip copyFile (tmpDir </> "result.kore")
+            writeOptionsAndKoreFiles tmpDir (execOptions
+                { outputFileName = Just (tmpDir </> "result.kore") })
+            e <- go <* warnIfLowProductivity
+                    & handle handleWithConfiguration
+                    & handle handleSomeException
+                    & runKoreLog tmpDir koreLogOptions
+            case outputFileName of
+                Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
+                Just fileName -> copyFile (tmpDir </> "result.kore") fileName
             return e
     let KoreExecOptions { rtsStatistics } = execOptions
     for_ rtsStatistics $ \filePath ->
@@ -607,12 +613,6 @@ mainWithOptions execOptions = do
 
       | otherwise =
         koreRun execOptions
-
-    code :: FilePath -> IO ExitCode
-    code tmpDir = go <* warnIfLowProductivity
-                & handle handleWithConfiguration
-                & handle handleSomeException
-                & runKoreLog tmpDir koreLogOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
