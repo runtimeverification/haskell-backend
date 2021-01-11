@@ -264,7 +264,7 @@ termLikeGenImpl (Range.Size size) requestedSort = do
         nextGenerator =
             if size > 0
                 then termLikeGenImpl (Range.Size $ size - 1)
-                else \_ -> empty
+                else const empty
     if null actualGenerators
         then return Nothing
         else do
