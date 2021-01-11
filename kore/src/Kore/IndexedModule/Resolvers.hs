@@ -285,16 +285,14 @@ resolveHookHandler builtinName results =
         [hookId] -> return hookId
         [] ->
             koreFail
-                ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
+                ("Builtin " ++ Text.unpack builtinName ++ " is not hooked.")
         hookIds ->
             koreFail
-                ("Builtin '" ++ Text.unpack builtinName
-                    ++ "' is hooked to multiple identifiers: "
+                ("Builtin " ++ Text.unpack builtinName
+                    ++ " is hooked to multiple identifiers: "
                     ++ List.intercalate ", "
-                        (squotes . getIdForError <$> hookIds)
+                        (getIdForError <$> hookIds)
                 )
-      where
-        squotes str = "'" ++ str ++ "'"
 
 resolveHooks
     :: IndexedModule patternType declAtts axiomAtts
