@@ -43,6 +43,7 @@ module Kore.Repl.Data
     , debugApplyEquationTransformer
     , debugEquationTransformer
     , entriesForHelp
+    , TryApplyRuleResult (..)
     ) where
 
 import Prelude.Kore
@@ -700,3 +701,10 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
                     (makeAuxReplOutput "No explanation given")
                     (getFirst explanation)
             r : rs -> Right (r :| rs)
+
+data TryApplyRuleResult
+    = DoesNotApply
+    | GetsProven
+    | OneResult ReplNode
+    | MultipleResults
+    deriving (Show, Eq)

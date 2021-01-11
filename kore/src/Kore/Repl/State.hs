@@ -514,16 +514,19 @@ runStepper'
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph, StepResult)
-runStepper' =
-    runStepperWith processSingleResult
+runStepper' claims axioms node =
+    runStepperWorker claims axioms node
+    & (fmap . fmap) processResult
   where
-    processSingleResult innerGraph single =
-        case getNodeState innerGraph single of
-            Nothing -> NoResult
-            Just (StuckNode, _) -> NoResult
-            _ -> SingleResult . ReplNode $ single
+    processResult [] = NoResult
+    processResult [(claimState', nextNode)] =
+       case claimState' of
+           Proven -> NoResult
+           Stuck _ -> NoResult
+           _ -> SingleResult . ReplNode $ nextNode
+    processResult (fmap snd -> nextNodes) =
+        BranchResult $ fmap ReplNode nextNodes
 
--- | Run a single step by trying to apply a single axiom or claim.
 tryApplyAxiomOrClaim
     :: MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
@@ -532,44 +535,45 @@ tryApplyAxiomOrClaim
     => MonadIO m
     => Either Axiom SomeClaim
     -> ReplNode
-    -> t m (ExecutionGraph, StepResult)
-tryApplyAxiomOrClaim axiomOrClaim =
-    runStepperWith
-        processSingleResult
+    -> t m (ExecutionGraph, TryApplyRuleResult)
+tryApplyAxiomOrClaim axiomOrClaim node =
+    runStepperWorker
         (either mempty pure axiomOrClaim)
         (either pure mempty axiomOrClaim)
+        node
+    & (fmap . fmap) processResult
   where
-    processSingleResult innerGraph single =
-        -- TODO: how should we handle Proven?
-        case getClaimState innerGraph single of
-            (Stuck _, _) -> NoResult
-            (Remaining _, _) -> NoResult
-            _ -> SingleResult . ReplNode $ single
+      processResult [] = DoesNotApply
+      processResult [(claimState', nextNode)] =
+          case claimState' of
+              Proven -> GetsProven
+              Stuck _ -> DoesNotApply
+              Remaining _ -> DoesNotApply
+              _ -> OneResult . ReplNode $ nextNode
+      processResult _ = MultipleResults
 
-runStepperWith
+type SuccessorNodes = [(CommonClaimState, Graph.Node)]
+
+runStepperWorker
     :: MonadState ReplState (t m)
     => MonadReader (Config m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => (InnerGraph -> Graph.Node -> StepResult)
-    -> [SomeClaim]
+    => [SomeClaim]
     -> [Axiom]
     -> ReplNode
-    -> t m (ExecutionGraph, StepResult)
-runStepperWith processSingleResult claims axioms node = do
+    -> t m (ExecutionGraph, SuccessorNodes)
+runStepperWorker claims axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         liftSimplifierWithLogger mvar $ stepper claims axioms gph node
-    pure . (,) gr $ processResults innerGraph
-  where
-    processResults innerGraph =
-        case Graph.suc innerGraph (unReplNode node) of
-            []       -> NoResult
-            [single] -> processSingleResult innerGraph single
-            nodes -> BranchResult $ fmap ReplNode nodes
+    let succesorNodes =
+            getClaimState innerGraph
+            <$> Graph.suc innerGraph (unReplNode node)
+    return (gr, succesorNodes)
 
 runUnifier
     :: MonadState ReplState (t m)

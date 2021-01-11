@@ -995,12 +995,16 @@ tryAxiomClaimWorker mode ref = do
         (graph, result) <-
             tryApplyAxiomOrClaim axiomOrClaim node
         case result of
-            NoResult ->
+            DoesNotApply ->
                 showUnificationFailure axiomOrClaim node
-            SingleResult nextNode -> do
+            GetsProven -> do
+                updateExecutionGraph graph
+                putStrLn'
+                    "The proof was proven without applying any rewrite rules."
+            OneResult nextNode -> do
                 updateExecutionGraph graph
                 field @"node" .= nextNode
-            BranchResult _ ->
+            MultipleResults ->
                 updateExecutionGraph graph
 
     runUnifier'
