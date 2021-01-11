@@ -10,7 +10,6 @@ module Kore.Internal.Substitution
     -- on purpose
     , Assignment
     , assign
-    , unsafeAssign
     , pattern Assignment
     , assignmentToPair
     , assignedVariable
@@ -19,7 +18,6 @@ module Kore.Internal.Substitution
     , singleSubstitutionToPredicate
     , UnwrappedSubstitution
     , mkUnwrappedSubstitution
-    , mkUnsafeUnwrappedSubstitution
     , unwrap
     , toMap
     , toMultiMap
@@ -134,13 +132,6 @@ assign
 assign variable term =
     uncurry Assignment_ $ curry normalOrder variable term
 
-unsafeAssign
-    :: SomeVariable variable
-    -> TermLike variable
-    -> Assignment variable
-unsafeAssign = Assignment_
-
-
 pattern Assignment
     :: SomeVariable variable
     -> TermLike variable
@@ -168,11 +159,6 @@ mkUnwrappedSubstitution
     => [(SomeVariable variable, TermLike variable)]
     -> [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
-
-mkUnsafeUnwrappedSubstitution
-    :: [(SomeVariable variable, TermLike variable)]
-    -> [Assignment variable]
-mkUnsafeUnwrappedSubstitution = fmap (uncurry unsafeAssign)
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
