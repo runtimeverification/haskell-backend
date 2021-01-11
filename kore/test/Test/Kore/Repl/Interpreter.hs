@@ -50,10 +50,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
-    , mkAnd
     , mkBottom_
     , mkElemVar
-    , mkTop_
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
@@ -117,6 +115,7 @@ test_replInterpreter =
     , unificationSuccess               `tests` "Try axiom that does unify"
     , forceFailure                     `tests` "TryF axiom that doesn't unify"
     , forceSuccess                     `tests` "TryF axiom that does unify"
+    , tryResultsInProven               `tests` "TryF axiom results in proven config"
     , proofStatus                      `tests` "Multi claim proof status"
     , logUpdatesState                  `tests` "Log command updates the state"
     , debugAttemptEquationUpdatesState `tests` "DebugAttemptEquation command updates the state"
@@ -439,6 +438,24 @@ forceSuccess = do
     continue `equals` Continue
     state `hasCurrentNode` ReplNode 1
 
+tryResultsInProven :: IO ()
+tryResultsInProven = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        axiom = mkAxiom zero one
+        axioms = [ axiom ]
+        claim = zeroToZero
+        command = TryF . ByIndex . Left $ AxiomIndex 0
+        expectedOutput =
+            makeAuxReplOutput
+                "The proof was proven without applying any rewrite rules."
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 0
+
 forceSuccessWithName :: IO ()
 forceSuccessWithName = do
     let
@@ -646,7 +663,7 @@ add1 =
 zeroToTen :: SomeClaim
 zeroToTen =
     OnePath . OnePathClaim
-    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+    $ claimWithName zero ten "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
@@ -654,7 +671,14 @@ zeroToTen =
 emptyClaim :: SomeClaim
 emptyClaim =
     OnePath . OnePathClaim
-    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+    $ claimWithName mkBottom_ mkBottom_ "emptyClaim"
+
+zeroToZero :: SomeClaim
+zeroToZero =
+    AllPath . AllPathClaim
+    $ claimWithName zero zero "0to0Claim"
+  where
+    zero = Int.asInternal intSort 0
 
 mkNamedAxiom
     :: TermLike VariableName
