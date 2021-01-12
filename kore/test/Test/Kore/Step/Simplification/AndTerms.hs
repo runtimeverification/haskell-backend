@@ -5,6 +5,7 @@ module Test.Kore.Step.Simplification.AndTerms
     , test_equalsTermsSimplification
     , test_functionAnd
     , test_Defined
+    , test_unify2102
     ) where
 
 import Prelude.Kore
@@ -64,6 +65,10 @@ import Kore.Syntax.Sentence
     )
 import qualified Kore.Unification.UnifierT as Monad.Unify
 
+import qualified Data.Foldable as Foldable
+import Kore.Unparser
+    ( unparseToString
+    )
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -1174,6 +1179,20 @@ test_andTermsSimplification =
             assertEqual "" expect actual
         ]
     ]
+
+test_unify2102 :: TestTree
+test_unify2102 =
+    testCase "2102" $ do
+    let input1 = sigma (sigma x x) (sigma y y)
+        input2 = sigma (sigma x y) (sigma y x)
+    actual <- unify input1 input2
+    traceM "\nResult: "
+    Foldable.traverse_ (traceM . unparseToString) actual
+    assertEqual "" () ()
+  where
+    sigma = Mock.functionalConstr20
+    x = mkElemVar Mock.x
+    y = mkElemVar Mock.y
 
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
