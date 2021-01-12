@@ -49,12 +49,10 @@ import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
-import qualified Kore.Variables.Target as Target
 import qualified Pretty
 
 import Test.Expect
@@ -78,10 +76,8 @@ attemptEquation
     -> Equation'
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
-    Equation.attemptEquation sideCondition termLike' equation
+    Equation.attemptEquation sideCondition termLike equation
     & runSimplifierSMT Mock.env
-  where
-    termLike' = TermLike.mapVariables Target.mkUnifiedNonTarget termLike
 
 assertNotMatched :: AttemptEquationError' -> Assertion
 assertNotMatched (WhileMatch _) = return ()
@@ -520,7 +516,7 @@ test_attemptEquationUnification =
 test_applySubstitutionAndSimplify :: [TestTree]
 test_applySubstitutionAndSimplify =
     [ testCase "Function application in argument doesn't get evaluated" $ do
-        let mockArgument :: Predicate (Target.Target VariableName)
+        let mockArgument :: Predicate VariableName
             mockArgument =
                 var1Term `makeInPredicate_` Mock.f var2Term
             expected =
@@ -551,11 +547,9 @@ test_applySubstitutionAndSimplify =
             ]
           )
         ]
-    var1 = mapElementVariable Target.mkUnifiedTarget Mock.x
-    someVar1 = mapElementVariable Target.mkUnifiedTarget Mock.x & inject
-    var1Term = mkElemVar var1
-    var2 = mapElementVariable Target.mkUnifiedTarget Mock.y
-    var2Term = mkElemVar var2
+    someVar1 = Mock.x & inject
+    var1Term = mkElemVar Mock.x
+    var2Term = mkElemVar Mock.y
 
 -- * Test data
 

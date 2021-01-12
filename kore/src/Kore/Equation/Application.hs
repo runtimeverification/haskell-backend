@@ -116,10 +116,6 @@ import Kore.TopBottom
 import Kore.Unparser
     ( Unparse (..)
     )
-import Kore.Variables.Target
-    ( Target
-    )
-import qualified Kore.Variables.Target as Target
 import Log
     ( Entry (..)
     , MonadLog
@@ -158,7 +154,7 @@ attemptEquation
     => MonadSimplify simplifier
     => InternalVariable variable
     => SideCondition variable
-    -> TermLike (Target variable)
+    -> TermLike variable
     -> Equation variable
     -> simplifier (AttemptEquationResult variable)
 attemptEquation sideCondition termLike equation =
@@ -182,20 +178,16 @@ attemptEquation sideCondition termLike equation =
                         & whileMatch
                     (equation', predicate) <-
                         applyAndSelectMatchResult matchResults
-                    let matchPredicate' =
-                            Predicate.mapVariables
-                                (pure Target.unTarget)
-                                matchPredicate
                     return
                         ( equation'
-                        , makeAndPredicate predicate matchPredicate'
+                        , makeAndPredicate predicate matchPredicate
                         )
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
         return $ Pattern.withCondition right $ from @(Predicate _) ensures
   where
-    equationRenamed = targetEquationVariables sideCondition termLike equation
+    equationRenamed = refreshVariables sideCondition termLike equation
     matchError =
         MatchError
         { matchTerm = termLike
@@ -206,7 +198,7 @@ attemptEquation sideCondition termLike equation =
         & MaybeT & noteT matchError
 
     applyAndSelectMatchResult
-        :: [MatchResult (Target variable)]
+        :: [MatchResult variable]
         -> ExceptT
             (AttemptEquationError variable)
             simplifier
@@ -237,13 +229,13 @@ applySubstitutionAndSimplify
     :: HasCallStack
     => MonadSimplify simplifier
     => InternalVariable variable
-    => Predicate (Target variable)
-    -> Maybe (Predicate (Target variable))
-    -> Map (SomeVariableName (Target variable)) (TermLike (Target variable))
+    => Predicate variable
+    -> Maybe (Predicate variable)
+    -> Map (SomeVariableName variable) (TermLike variable)
     -> ExceptT
-        (MatchError (Target variable))
+        (MatchError variable)
         simplifier
-        [MatchResult (Target variable)]
+        [MatchResult variable]
 applySubstitutionAndSimplify
     argument
     antiLeft
@@ -287,9 +279,9 @@ applyMatchResult
     :: forall monad variable
     .   Monad monad
     =>  InternalVariable variable
-    =>  Equation (Target variable)
-    ->  MatchResult (Target variable)
-    ->  ExceptT (ApplyMatchResultErrors (Target variable)) monad
+    =>  Equation variable
+    ->  MatchResult variable
+    ->  ExceptT (ApplyMatchResultErrors variable) monad
             (Equation variable, Predicate variable)
 applyMatchResult equation matchResult@(predicate, substitution) = do
     case errors of
@@ -301,17 +293,15 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         _      -> return ()
     let predicate' =
             Predicate.substitute orientedSubstitution predicate
-            & Predicate.mapVariables (pure Target.unTarget)
         equation' =
             Equation.substitute orientedSubstitution equation
-            & Equation.mapVariables (pure Target.unTarget)
     return (equation', predicate')
   where
     orientedSubstitution = orientSubstitution occursInEquation substitution
 
     equationVariables = freeVariables equation
 
-    occursInEquation :: (SomeVariableName (Target variable) -> Bool)
+    occursInEquation :: (SomeVariableName variable -> Bool)
     occursInEquation =
         (`Set.member` equationVariableNames)
       where
@@ -320,7 +310,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     errors =
         concatMap checkVariable (FreeVariables.toList equationVariables)
-        <> checkNonTargetVariables
+        <> checkNotInEquation
 
     checkVariable Variable { variableName } =
         case Map.lookup variableName orientedSubstitution of
@@ -343,9 +333,9 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
       | otherwise
       = empty
 
-    checkNonTargetVariables =
+    checkNotInEquation =
         NonMatchingSubstitution
-        <$> filter Target.isSomeNonTargetName (Map.keys orientedSubstitution)
+        <$> filter (not . occursInEquation) (Map.keys orientedSubstitution)
 
     Equation { attributes } = equation
     concretes =
@@ -412,37 +402,27 @@ checkRequires sideCondition predicate requires =
         . Simplifier.localSimplifierAxioms (const mempty)
     withAxioms = id
 
-{- | Make the 'Equation' variables distinct from the initial pattern.
-
-The variables are marked 'Target' and renamed to avoid any variables in the
-'SideCondition' or the 'TermLike'.
-
- -}
-targetEquationVariables
+refreshVariables
     :: forall variable
     .  InternalVariable variable
     => SideCondition variable
-    -> TermLike (Target variable)
+    -> TermLike variable
     -> Equation variable
-    -> Equation (Target variable)
-targetEquationVariables sideCondition initial =
+    -> Equation variable
+refreshVariables sideCondition initial =
     snd
     . Equation.refreshVariables avoiding
-    . Equation.mapVariables Target.mkUnifiedTarget
   where
     avoiding = sideConditionVariables <> freeVariables initial
-    sideConditionVariables =
-        FreeVariables.mapFreeVariables
-            Target.mkUnifiedNonTarget
-            $ freeVariables sideCondition
+    sideConditionVariables = freeVariables sideCondition
 
 -- * Errors
 
 {- | Errors that can occur during 'attemptEquation'.
  -}
 data AttemptEquationError variable
-    = WhileMatch !(MatchError (Target variable))
-    | WhileApplyMatchResult !(ApplyMatchResultErrors (Target variable))
+    = WhileMatch !(MatchError variable)
+    | WhileApplyMatchResult !(ApplyMatchResultErrors variable)
     | WhileCheckRequires !(CheckRequiresError variable)
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -457,27 +437,25 @@ mapAttemptEquationErrorVariables
 mapAttemptEquationErrorVariables adj =
     \case
         WhileMatch matchError ->
-            WhileMatch $ mapMatchErrorVariables adjTarget matchError
+            WhileMatch $ mapMatchErrorVariables adj matchError
         WhileApplyMatchResult applyMatchResultErrors ->
             WhileApplyMatchResult
             $ mapApplyMatchResultErrorsVariables
-                adjTarget
+                adj
                 applyMatchResultErrors
         WhileCheckRequires checkRequiresError ->
             WhileCheckRequires
             $ mapCheckRequiresErrorVariables adj checkRequiresError
-  where
-    adjTarget = fmap <$> adj
 
 whileMatch
     :: Functor monad
-    => ExceptT (MatchError (Target variable)) monad a
+    => ExceptT (MatchError variable) monad a
     -> ExceptT (AttemptEquationError variable) monad a
 whileMatch = withExceptT WhileMatch
 
 whileApplyMatchResult
     :: Functor monad
-    => ExceptT (ApplyMatchResultErrors (Target variable)) monad a
+    => ExceptT (ApplyMatchResultErrors variable) monad a
     -> ExceptT (AttemptEquationError variable) monad a
 whileApplyMatchResult = withExceptT WhileApplyMatchResult
 

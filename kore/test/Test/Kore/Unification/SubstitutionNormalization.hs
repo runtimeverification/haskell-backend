@@ -58,7 +58,7 @@ test_normalize =
                 { normalized = []
                 , denormalized = []
                 }
-        , test "qqlength 1, beside related substitution"
+        , test "length 1, beside related substitution"
             [(x, mkVar x), (z, mkVar x)]
             Normalization
                 { normalized =

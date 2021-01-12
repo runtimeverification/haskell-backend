@@ -116,7 +116,10 @@ attemptEquationAndAccumulateErrors condition term equation =
   where
     attemptEquation =
         ExceptRT . ExceptT
-        $ Equation.attemptEquation condition term equation
+        $ Equation.attemptEquation
+            condition
+            (TermLike.mapVariables (pure Target.unTarget) term)
+            equation
         >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
@@ -141,7 +144,11 @@ simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
         let equation' = Equation.mapVariables (pure fromVariableName) equation
             term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        result <- Equation.attemptEquation condition term' equation'
+        result <-
+            Equation.attemptEquation
+                condition
+                (TermLike.mapVariables (pure Target.unTarget) term')
+                equation'
         let apply = Equation.applyEquation condition equation'
         case result of
             Right applied -> do
