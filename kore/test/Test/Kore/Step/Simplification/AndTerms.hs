@@ -1183,7 +1183,7 @@ test_andTermsSimplification =
 test_unify2102 :: TestTree
 test_unify2102 =
     testCase "2102" $ do
-    let input1 = sigma (sigma x x) (sigma y y)
+    let input1 = sigma (sigma t t) (sigma u u)
         input2 = sigma (sigma x y) (sigma y x)
     actual <- unify input1 input2
     traceM "\nResult: "
@@ -1193,6 +1193,8 @@ test_unify2102 =
     sigma = Mock.functionalConstr20
     x = mkElemVar Mock.x
     y = mkElemVar Mock.y
+    t = mkElemVar Mock.u
+    u = mkElemVar Mock.t
 
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
