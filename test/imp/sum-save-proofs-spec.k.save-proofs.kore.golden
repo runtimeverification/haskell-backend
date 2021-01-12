@@ -108,8 +108,7 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                     /* Fl Fn D Spa */
                     Lbl'-LT-'state'-GT-'{}(
                         /* Fl Fn D Spa */
-                        /* builtin: */
-                        Lbl'Unds'Map'Unds'{}(
+                        /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortId{}, SortKItem{}}(

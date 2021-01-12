@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.Function
     ( Function (..)
     , alwaysFunction
@@ -19,7 +21,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
@@ -125,11 +126,6 @@ instance Synthetic Function (Or sort) where
 
 instance Synthetic Function (Rewrites sort) where
     synthetic = const (Function False)
-    {-# INLINE synthetic #-}
-
--- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
-instance Synthetic Function (Builtin key) where
-    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Function (Top sort) where

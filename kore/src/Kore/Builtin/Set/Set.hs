@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Set.Set
     ( asTermLike
     -- * Symbols
@@ -41,13 +43,13 @@ import qualified Kore.Attribute.Symbol as Attribute
     )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
     ( Error
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike as TermLike
 
 concatKey :: IsString s => s
@@ -142,7 +144,7 @@ isSymbolInclusion = Builtin.isSymbol inclusionKey
 asTermLike
     :: forall variable
     .  InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    => InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
@@ -152,7 +154,7 @@ asTermLike builtin =
             (map concreteElement (Map.toAscList concreteElements))
         )
         (AssocComm.VariableElements
-            (element . Domain.unwrapElement <$> elementsWithVariables)
+            (element . unwrapElement <$> elementsWithVariables)
         )
         (AssocComm.Opaque filteredSets)
   where
@@ -160,34 +162,28 @@ asTermLike builtin =
     filteredSets = filter (not . isEmptySet) opaque
 
     isEmptySet :: TermLike variable -> Bool
-    isEmptySet
-        (Builtin_
-            (Domain.BuiltinSet
-                Domain.InternalAc { builtinAcChild = wrappedChild }
-            )
-        )
-      =
-        Domain.unwrapAc wrappedChild == Domain.emptyNormalizedAc
+    isEmptySet (InternalSet_ InternalAc { builtinAcChild = wrappedChild }) =
+        unwrapAc wrappedChild == emptyNormalizedAc
     isEmptySet (App_ symbol _) = unitSymbol == symbol
     isEmptySet _ = False
 
-    Domain.InternalAc { builtinAcChild } = builtin
-    Domain.InternalAc { builtinAcUnit = unitSymbol } = builtin
-    Domain.InternalAc { builtinAcElement = elementSymbol } = builtin
-    Domain.InternalAc { builtinAcConcat = concatSymbol } = builtin
+    InternalAc { builtinAcChild } = builtin
+    InternalAc { builtinAcUnit = unitSymbol } = builtin
+    InternalAc { builtinAcElement = elementSymbol } = builtin
+    InternalAc { builtinAcConcat = concatSymbol } = builtin
 
-    normalizedAc = Domain.unwrapAc builtinAcChild
+    normalizedAc = unwrapAc builtinAcChild
 
-    Domain.NormalizedAc { elementsWithVariables } = normalizedAc
-    Domain.NormalizedAc { concreteElements } = normalizedAc
-    Domain.NormalizedAc { opaque } = normalizedAc
+    NormalizedAc { elementsWithVariables } = normalizedAc
+    NormalizedAc { concreteElements } = normalizedAc
+    NormalizedAc { opaque } = normalizedAc
 
     concreteElement
-        :: (TermLike Concrete, Domain.SetValue (TermLike variable))
+        :: (TermLike Concrete, SetValue (TermLike variable))
         -> TermLike variable
     concreteElement (key, value) = element (TermLike.fromConcrete key, value)
 
     element
-        :: (TermLike variable, Domain.SetValue (TermLike variable))
+        :: (TermLike variable, SetValue (TermLike variable))
         -> TermLike variable
-    element (key, Domain.SetValue) = mkApplySymbol elementSymbol [key]
+    element (key, SetValue) = mkApplySymbol elementSymbol [key]
