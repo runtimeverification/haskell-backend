@@ -237,7 +237,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
     , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
     , (EqualsT, \_ _ s -> Builtin.String.unifyStringEq s notSimplifier)
-    , (EqualsT, \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
+    , (BothT, \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
