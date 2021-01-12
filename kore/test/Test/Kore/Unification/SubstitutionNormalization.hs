@@ -296,6 +296,24 @@ test_normalize =
                 , denormalized = []
                 }
         ]
+    , testGroup "deduplication"
+        [ test "produces substitution"
+            [(t, mkVar x), (t, mkVar y)]
+            Normalization
+            { normalized = mkUnwrappedSubstitution [(t, mkVar y), (x, mkVar y)]
+            , denormalized = []
+            }
+        , test "applies substitution"
+            [ (t, mkVar x), (t, mkVar y)
+            , (u, mkVar x)
+            ]
+            Normalization
+            { normalized =
+                mkUnwrappedSubstitution
+                [(t, mkVar y), (u, mkVar y), (x, mkVar y)]
+            , denormalized = []
+            }
+        ]
     ]
   where
     test
@@ -323,7 +341,9 @@ test_normalize =
             let actual = normalize input
             assertEqual "" Nothing actual
 
-x, y, z, xs, ys :: SomeVariable VariableName
+t, u, x, y, z, xs, ys :: SomeVariable VariableName
+t = inject Mock.t
+u = inject Mock.u
 x = inject Mock.x
 y = inject Mock.y
 z = inject Mock.z
