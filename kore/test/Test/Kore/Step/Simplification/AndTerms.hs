@@ -22,6 +22,7 @@ import Data.Text
     ( Text
     )
 
+import Data.Text.Prettyprint.Doc.Internal
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
@@ -46,6 +47,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
+import Kore.Internal.Substitution
+    ( assignmentToPair
+    , unwrap
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.And
@@ -63,12 +68,12 @@ import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Sentence
     ( SentenceAlias
     )
+import Kore.Unification.SubstitutionNormalization
+    ( normalize
+    )
 import qualified Kore.Unification.UnifierT as Monad.Unify
 
 import qualified Data.Foldable as Foldable
-import Kore.Unparser
-    ( unparseToString
-    )
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -1185,11 +1190,15 @@ test_unify2102 =
     testCase "2102" $ do
     let input1 = sigma (sigma t t) (sigma u u)
         input2 = sigma (sigma x y) (sigma y x)
-    actual <- unify input1 input2
-    traceM "\nResult: "
-    Foldable.traverse_ (traceM . unparseToString) actual
+    unificationResult <- unify input1 input2
+    traceM "\nSubstitution result: "
+    Foldable.traverse_
+        (traceM . show . pretty . normalizeSubstitution . substitution)
+        unificationResult
     assertEqual "" () ()
   where
+    normalizeSubstitution =
+        normalize . Map.fromList . fmap assignmentToPair . unwrap
     sigma = Mock.functionalConstr20
     x = mkElemVar Mock.x
     y = mkElemVar Mock.y
