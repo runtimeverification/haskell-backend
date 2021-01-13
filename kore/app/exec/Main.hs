@@ -596,21 +596,25 @@ mainWithOptions execOptions = do
             ("// Last configuration:\n" <> unparse lastConfiguration)
         throwM someException
 
-    go :: KoreExecOptions -> Main ExitCode
-    go eOpts
-      | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
-        if bmc
-            then koreBmc eOpts proveOptions
-            else koreProve eOpts proveOptions
+go :: KoreExecOptions -> Main ExitCode
+go execOptions =
+  | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+    if bmc
+        then koreBmc execOptions proveOptions
+        else koreProve execOptions proveOptions
 
-      | Just searchOptions <- koreSearchOptions =
-        koreSearch eOpts searchOptions
+  | Just searchOptions <- koreSearchOptions =
+    koreSearch execOptions searchOptions
 
-      | Just mergeOptions <- koreMergeOptions =
-        koreMerge eOpts mergeOptions
+  | Just mergeOptions <- koreMergeOptions =
+    koreMerge execOptions mergeOptions
 
       | otherwise =
-        koreRun eOpts
+        koreRun execOptions
+  where
+    KoreExecOptions { koreProveOptions } = execOptions
+    KoreExecOptions { koreSearchOptions } = execOptions
+    KoreExecOptions { koreMergeOptions } = execOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
