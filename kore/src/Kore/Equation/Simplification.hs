@@ -12,10 +12,11 @@ module Kore.Equation.Simplification
 
 import Prelude.Kore
 
-import Control.Error
-    ( maybeT
-    )
 import qualified Control.Monad as Monad
+import Control.Monad.Trans.Except
+    ( runExceptT
+    , throwE
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -67,8 +68,13 @@ simplifyExtractedEquations = do
 
 {- | Simplify an 'Equation' using only Matching Logic rules.
 
-The original rule is returned unless the simplification result matches certain
-narrowly-defined criteria.
+It attempts to unify the argument of the equation, creating new
+equations where the argument is substituted in the rest of the
+resulting equations, and the argument is removed.
+
+If any of the patterns resulting from simplifying the term and the
+argument contain a predicate which is not null, 'simplifyEquation'
+is exited early and the original equation is returned.
 
  -}
 simplifyEquation
@@ -77,9 +83,14 @@ simplifyEquation
     -> simplifier (MultiAnd (Equation variable))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
-        simplified <- simplifyPattern leftWithArgument >>= Logic.scatter
+        simplifiedResults <-
+            simplifyPattern leftWithArgument
+        Monad.when
+            (any (not . isTop . predicate) simplifiedResults)
+            (throwE equation)
+        simplified <- lift $ Logic.scatter simplifiedResults
         let Conditional { term, predicate, substitution } = simplified
-        Monad.guard (isTop predicate)
+        Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst term
             requires' = TermLike.substitute subst <$> requires
@@ -95,18 +106,17 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes
             }
-    -- Unable to simplify the given equation, so we return the original equation
-    -- in the hope that we can do something with it later.
+    & returnOriginalIfAborted
     & Logic.observeAllT
-    & fromMaybeT (return [equation])
     & fmap MultiAnd.make
   where
-    fromMaybeT = flip maybeT return
     leftWithArgument =
         maybe
             (Pattern.fromTermLike left)
             (Pattern.fromTermAndPredicate left)
             argument
+    returnOriginalIfAborted =
+        fmap (either id id) . runExceptT
     Equation
         { requires
         , argument
