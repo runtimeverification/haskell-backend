@@ -575,9 +575,6 @@ mainWithOptions execOptions = do
         writeStats filePath =<< getStats
     exitWith exitCode
   where
-    KoreExecOptions { koreProveOptions } = execOptions
-    KoreExecOptions { koreSearchOptions } = execOptions
-    KoreExecOptions { koreMergeOptions } = execOptions
     KoreExecOptions { koreLogOptions } = execOptions
 
     handleSomeException :: SomeException -> Main ExitCode
