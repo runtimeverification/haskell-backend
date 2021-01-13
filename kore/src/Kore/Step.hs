@@ -13,7 +13,6 @@ module Kore.Step
     , TransitionRule
     , executionStrategy
     , extractProgramState
-    , profTransitionRule
     , transitionRule
     , groupRewritesByPriority
     , limitedExecutionStrategy
@@ -73,7 +72,6 @@ import Kore.Step.Strategy hiding
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import qualified Kore.Unification.Procedure as Unification
-import Prof
 
 {- | The program's state during symbolic execution.
 -}
@@ -148,19 +146,6 @@ data ExecutionMode = All | Any
  -}
 type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
-
-profTransitionRule
-    :: forall simplifier
-    .  MonadProf simplifier
-    => TransitionRule simplifier
-            (RewriteRule RewritingVariableName)
-            (ProgramState (Pattern RewritingVariableName))
-    -> TransitionRule simplifier
-            (RewriteRule RewritingVariableName)
-            (ProgramState (Pattern RewritingVariableName))
-profTransitionRule rule prim proofState = lift
-    (traceProf ":rewrite:" (runTransitionT (rule prim proofState)))
-        >>= Transition.scatter
 
 {- | Transition rule for primitive strategies in 'Prim'.
  -}

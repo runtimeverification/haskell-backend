@@ -185,6 +185,7 @@ import Logic
     , observeAllT
     )
 import qualified Logic
+import Prof
 import SMT
     ( MonadSMT
     , SMT
@@ -288,6 +289,15 @@ trackExecDepth transit prim (execDepth, execState) = do
 
     isRewrite Rewrite = True
     isRewrite _ = False
+
+profTransitionRule
+    :: forall monad rule state
+    .  MonadProf monad
+    => TransitionRule monad rule state
+    -> TransitionRule monad rule state
+profTransitionRule rule prim proofState = lift
+    (traceProf ":rewrite:" (runTransitionT (rule prim proofState)))
+        >>= Transition.scatter
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
