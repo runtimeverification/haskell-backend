@@ -54,17 +54,36 @@ test_simplifyEquation =
                     & MultiAnd.make
             actual <- simplify equation
             assertEqual "" expected actual
+        , testCase "Return original equation is any of the\
+                    \ predicates from the simplified patterns\
+                    \ is not \\top" $ do
+            let equation =
+                    functionAxiomUnification_
+                            Mock.fMapSymbol
+                            [mkOr symbolicMap xMap]
+                            c
+                expected = [equation] & MultiAnd.make
+            actual <- simplify equation
+            assertEqual "" expected actual
         ]
     -- TODO(ana.pantilie): after #2341 we should check that equations which
     --   don't have an 'argument' are not simplified
     ]
 
-a, b, c :: TermLike VariableName
+a, b, c, xMap, symbolicMap :: TermLike VariableName
 a = Mock.a
 b = Mock.b
 c = Mock.c
 f :: TermLike VariableName -> TermLike VariableName
 f = Mock.f
+xMap = mkElemVar Mock.xMap
+symbolicMap =
+    Mock.concatMap
+        (Mock.elementMap
+            (mkElemVar Mock.x)
+            (mkElemVar Mock.y)
+        )
+        xMap
 
 mkSimplifiedEquation
     :: TermLike VariableName
