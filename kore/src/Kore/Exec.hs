@@ -168,6 +168,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( runTransitionT
+    , scatter
     )
 import Kore.Syntax.Module
     ( ModuleName
@@ -297,7 +298,7 @@ profTransitionRule
     -> TransitionRule monad rule state
 profTransitionRule rule prim proofState = lift
     (traceProf ":rewrite:" (runTransitionT (rule prim proofState)))
-        >>= Transition.scatter
+        >>= scatter
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
