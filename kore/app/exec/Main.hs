@@ -597,7 +597,7 @@ mainWithOptions execOptions = do
         throwM someException
 
 go :: KoreExecOptions -> Main ExitCode
-go execOptions =
+go execOptions
   | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
     if bmc
         then koreBmc execOptions proveOptions
