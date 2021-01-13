@@ -149,8 +149,9 @@ data ExecutionMode = All | Any
 type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
 
-profTransitionRule :: forall simplifier
-    . MonadProf simplifier
+profTransitionRule
+    :: forall simplifier
+    .  MonadProf simplifier
     => TransitionRule simplifier
             (RewriteRule RewritingVariableName)
             (ProgramState (Pattern RewritingVariableName))
