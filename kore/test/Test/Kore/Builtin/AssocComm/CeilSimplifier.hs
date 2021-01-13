@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 
 module Test.Kore.Builtin.AssocComm.CeilSimplifier
@@ -18,8 +20,8 @@ import Test.Tasty
 import Kore.Builtin.AssocComm.CeilSimplifier
     ( generalizeMapElement
     )
-import Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
+import Kore.Internal.InternalMap
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -103,9 +105,9 @@ hprop_Builtin_Set :: Property
         (makeForallPredicate variable . makeCeilPredicate)
             (Mock.framedMap [(key', value')] [term])
       where
-        element = Domain.wrapElement (key, Domain.MapValue value)
+        element = wrapElement (key, MapValue value)
         (variable, element') = generalizeMapElement (freeVariables term) element
-        (key', Domain.MapValue value') = Domain.unwrapElement element'
+        (key', MapValue value') = unwrapElement element'
 
     mkNotMemberSet key term = makeCeilPredicate (Mock.framedSet [key] [term])
 

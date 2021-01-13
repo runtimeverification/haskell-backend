@@ -112,8 +112,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -154,8 +153,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'script'-GT-'{}(
@@ -1437,20 +1435,17 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'invs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Set{}()
+                                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* builtin: */
-                                                        /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                        /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                             /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                 /* Fl Fn D Sfa Cl */
@@ -1724,8 +1719,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -1766,8 +1760,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'script'-GT-'{}(
@@ -3273,20 +3266,17 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'invs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Set{}()
+                                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* builtin: */
-                                                        /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                        /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                             /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                 /* Fl Fn D Sfa Cl */
@@ -3543,8 +3533,7 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'knownaddrs'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -3585,8 +3574,7 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'bigmaps'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'script'-GT-'{}(
@@ -5015,20 +5003,17 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'invs'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'cutpoints'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Set{}()
+                                                    /* InternalSet: */ Lbl'Stop'Set{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 Lbl'-LT-'symbols'-GT-'{}(
                                                     /* Fl Fn D Sfc */
-                                                    /* builtin: */
-                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa Cl */
@@ -5262,7 +5247,7 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'knownaddrs'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -5303,7 +5288,7 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'bigmaps'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'script'-GT-'{}(
@@ -6590,18 +6575,17 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'invs'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'cutpoints'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Set{}()
+                                                /* InternalSet: */ Lbl'Stop'Set{}()
                                             ),
                                             /* Fl Fn D Sfc */
                                             Lbl'-LT-'symbols'-GT-'{}(
                                                 /* Fl Fn D Sfc */
-                                                /* builtin: */
-                                                /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                         /* Fl Fn D Sfa Cl */
@@ -6953,7 +6937,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'knownaddrs'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -6994,7 +6978,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'bigmaps'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'script'-GT-'{}(
@@ -7596,8 +7580,7 @@
                                                                 /* Fl Fn D Sfc */
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
-                                                                    /* builtin: */
-                                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                                         /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                             /* Fl Fn D Sfa Cl */
@@ -8757,18 +8740,17 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'invs'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'cutpoints'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Set{}()
+                                            /* InternalSet: */ Lbl'Stop'Set{}()
                                         ),
                                         /* Fl Fn D Sfc */
                                         Lbl'-LT-'symbols'-GT-'{}(
                                             /* Fl Fn D Sfc */
-                                            /* builtin: */
-                                            Lbl'Unds'Map'Unds'{}(
+                                            /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                                 /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -9216,7 +9198,7 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -9257,7 +9239,7 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'script'-GT-'{}(
@@ -9790,8 +9772,7 @@
                                                                 /* Fl Fn D Sfc */
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
-                                                                    /* builtin: */
-                                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                                         /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                             /* Fl Fn D Sfa Cl */
@@ -10942,18 +10923,17 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'invs'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Set{}()
+                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                     ),
                                     /* Fl Fn D Sfc */
                                     Lbl'-LT-'symbols'-GT-'{}(
                                         /* Fl Fn D Sfc */
-                                        /* builtin: */
-                                        Lbl'Unds'Map'Unds'{}(
+                                        /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -11378,7 +11358,7 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'knownaddrs'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -11418,7 +11398,7 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'bigmaps'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'script'-GT-'{}(
@@ -12770,18 +12750,17 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'invs'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'cutpoints'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Set{}()
+                                    /* InternalSet: */ Lbl'Stop'Set{}()
                                 ),
                                 /* Fl Fn D Sfc */
                                 Lbl'-LT-'symbols'-GT-'{}(
                                     /* Fl Fn D Sfc */
-                                    /* builtin: */
-                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                             /* Fl Fn D Sfa Cl */
@@ -13113,7 +13092,7 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'knownaddrs'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -13153,7 +13132,7 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'bigmaps'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'script'-GT-'{}(
@@ -13487,8 +13466,7 @@
                                                 /* Fl Fn D Sfc */
                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                     /* Fl Fn D Sfc */
-                                                    /* builtin: */
-                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa Cl */
@@ -14606,18 +14584,17 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'invs'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'cutpoints'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Set{}()
+                                /* InternalSet: */ Lbl'Stop'Set{}()
                             ),
                             /* Fl Fn D Sfc */
                             Lbl'-LT-'symbols'-GT-'{}(
                                 /* Fl Fn D Sfc */
-                                /* builtin: */
-                                Lbl'Unds'Map'Unds'{}(
+                                /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                     /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -15052,7 +15029,8 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'knownaddrs'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -15091,7 +15069,8 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'bigmaps'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'script'-GT-'{}(
@@ -16440,17 +16419,18 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'invs'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'cutpoints'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalSet: */ Lbl'Stop'Set{}()
                         ),
                         /* Fl Fn D Sfc */
                         Lbl'-LT-'symbols'-GT-'{}(
                             /* Fl Fn D Sfc */
-                            /* builtin: */
-                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                            /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                     /* Fl Fn D Sfa Cl */
@@ -16750,7 +16730,7 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'knownaddrs'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -16789,7 +16769,7 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'bigmaps'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'script'-GT-'{}(
@@ -17121,8 +17101,7 @@
                                         /* Fl Fn D Sfc */
                                         Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                             /* Fl Fn D Sfc */
-                                            /* builtin: */
-                                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                            /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                     /* Fl Fn D Sfa Cl */
@@ -18239,17 +18218,16 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'invs'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'cutpoints'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                     ),
                     /* Fl Fn D Sfc */
                     Lbl'-LT-'symbols'-GT-'{}(
                         /* Fl Fn D Sfc */
-                        /* builtin: */
-                        Lbl'Unds'Map'Unds'{}(
+                        /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(

@@ -4,6 +4,7 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike
@@ -11,7 +12,6 @@ module Kore.Internal.TermLike
     , TermLike (..)
     , Evaluated (..)
     , Defined (..)
-    , Builtin
     , extractAttributes
     , isSimplified
     , Pattern.isConstructorLike
@@ -58,13 +58,12 @@ module Kore.Internal.TermLike
     , mkBottom
     , mkInternalBytes
     , mkInternalBytes'
-    , mkBuiltin
     , mkInternalBool
     , mkInternalInt
     , mkInternalString
-    , mkBuiltinList
-    , mkBuiltinMap
-    , mkBuiltinSet
+    , mkInternalList
+    , mkInternalMap
+    , mkInternalSet
     , mkCeil
     , mkDomainValue
     , mkEquals
@@ -121,12 +120,11 @@ module Kore.Internal.TermLike
     , pattern App_
     , pattern Bottom_
     , pattern InternalBytes_
-    , pattern Builtin_
     , pattern InternalBool_
     , pattern InternalInt_
     , pattern InternalList_
-    , pattern BuiltinMap_
-    , pattern BuiltinSet_
+    , pattern InternalMap_
+    , pattern InternalSet_
     , pattern InternalString_
     , pattern Ceil_
     , pattern DV_
@@ -239,7 +237,6 @@ import Kore.Builtin.Endianness.Endianness
 import Kore.Builtin.Signedness.Signedness
     ( Signedness
     )
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -247,6 +244,8 @@ import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -362,8 +361,8 @@ hasConstructorLikeTop = \case
     InternalBool_ _ -> True
     InternalInt_ _ -> True
     InternalList_ _ -> True
-    BuiltinMap_ _ -> True
-    BuiltinSet_ _ -> True
+    InternalMap_ _ -> True
+    InternalSet_ _ -> True
     InternalString_ _ -> True
     StringLiteral_ _ -> True
     _ -> False
@@ -717,12 +716,13 @@ forceSortPredicate
         NuF _ -> illSorted forcedSort original
         ApplySymbolF _ -> illSorted forcedSort original
         ApplyAliasF _ -> illSorted forcedSort original
-        BuiltinF _ -> illSorted forcedSort original
         InternalBoolF _ -> illSorted forcedSort original
         InternalBytesF _ -> illSorted forcedSort original
         InternalIntF _ -> illSorted forcedSort original
         InternalStringF _ -> illSorted forcedSort original
         InternalListF _ -> illSorted forcedSort original
+        InternalMapF _ -> illSorted forcedSort original
+        InternalSetF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
         VariableF _ -> illSorted forcedSort original
@@ -1057,15 +1057,6 @@ mkCeil_
     -> TermLike variable
 mkCeil_ = updateCallStack . mkCeil predicateSort
 
-{- | Construct a builtin pattern.
- -}
-mkBuiltin
-    :: HasCallStack
-    => InternalVariable variable
-    => Domain.Builtin (TermLike Concrete) (TermLike variable)
-    -> TermLike variable
-mkBuiltin = updateCallStack . synthesize . BuiltinF
-
 {- | Construct an internal bool pattern.
  -}
 mkInternalBool
@@ -1095,30 +1086,30 @@ mkInternalString = updateCallStack . synthesize . InternalStringF . Const
 
 {- | Construct a builtin list pattern.
  -}
-mkBuiltinList
+mkInternalList
     :: HasCallStack
     => InternalVariable variable
     => InternalList (TermLike variable)
     -> TermLike variable
-mkBuiltinList = updateCallStack . synthesize . InternalListF
+mkInternalList = updateCallStack . synthesize . InternalListF
 
 {- | Construct a builtin map pattern.
  -}
-mkBuiltinMap
+mkInternalMap
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
+mkInternalMap = updateCallStack . synthesize . InternalMapF
 
 {- | Construct a builtin set pattern.
  -}
-mkBuiltinSet
+mkInternalSet
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    => InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
+mkInternalSet = updateCallStack . synthesize . InternalSetF
 
 {- | Construct a 'DomainValue' pattern.
  -}
@@ -1537,12 +1528,12 @@ mkDefined = worker
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
                 embed (worker <$> termF)
-            BuiltinF (Domain.BuiltinMap internalMap) ->
-                let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
-                in (mkDefined1 . embed) (BuiltinF map')
-            BuiltinF (Domain.BuiltinSet internalSet) ->
-                let set' = Domain.BuiltinSet (mkDefinedInternalAc internalSet)
-                in (mkDefined1 . embed) (BuiltinF set')
+            InternalMapF internalMap ->
+                let map' = mkDefinedInternalAc internalMap
+                in (mkDefined1 . embed) (InternalMapF map')
+            InternalSetF internalSet ->
+                let set' = mkDefinedInternalAc internalSet
+                in (mkDefined1 . embed) (InternalSetF set')
             EqualsF _ -> term
             ExistsF _ -> mkDefinedAtTop term
             FloorF _ -> term
@@ -1573,15 +1564,22 @@ mkDefined = worker
             InternalIntF _ -> term
             InternalStringF _ -> term
 
+    mkDefinedInternalAc
+        :: forall normalized
+        .  AcWrapper normalized
+        => Functor (Value normalized)
+        => Functor (Element normalized)
+        => InternalAc (TermLike Concrete) normalized (TermLike variable)
+        -> InternalAc (TermLike Concrete) normalized (TermLike variable)
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
       where
         mkDefinedNormalized =
-            Domain.unwrapAc
+            unwrapAc
             >>> Lens.over (field @"concreteElements") mkDefinedConcrete
             >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
             >>> Lens.over (field @"opaque") mkDefinedOpaque
-            >>> Domain.wrapAc
+            >>> wrapAc
         mkDefinedConcrete =
             (fmap . fmap) mkDefined
             . Map.mapKeys mkDefined
@@ -1757,10 +1755,6 @@ pattern DV_
     -> TermLike variable
     -> TermLike variable
 
-pattern Builtin_
-    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
-    -> TermLike variable
-
 pattern InternalBool_
     :: InternalBool
     -> TermLike variable
@@ -1773,12 +1767,12 @@ pattern InternalList_
     :: InternalList (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinMap_
-    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+pattern InternalMap_
+    :: InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinSet_
-    :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
+pattern InternalSet_
+    :: InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 
 pattern InternalString_ :: InternalString -> TermLike variable
@@ -1911,8 +1905,6 @@ pattern DV_ domainValueSort domainValueChild <-
         _ :< DomainValueF DomainValue { domainValueSort, domainValueChild }
     )
 
-pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
-
 pattern InternalBool_ internalBool <-
     (Recursive.project -> _ :< InternalBoolF (Const internalBool))
 
@@ -1925,9 +1917,11 @@ pattern InternalString_ internalString <-
 pattern InternalList_ internalList <-
     (Recursive.project -> _ :< InternalListF internalList)
 
-pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
+pattern InternalMap_ internalMap <-
+    (Recursive.project -> _ :< InternalMapF internalMap)
 
-pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
+pattern InternalSet_ internalSet <-
+    (Recursive.project -> _ :< InternalSetF internalSet)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->

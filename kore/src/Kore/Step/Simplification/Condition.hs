@@ -1,8 +1,10 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Condition
     ( create
     , simplify
@@ -67,14 +69,18 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern Builtin_
     , pattern Equals_
     , pattern Exists_
     , pattern Forall_
     , pattern Inj_
     , pattern InternalBool_
+    , pattern InternalBool_
     , pattern InternalBytes_
     , pattern InternalInt_
+    , pattern InternalList_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , pattern InternalString_
     , pattern InternalString_
     , pattern Mu_
     , pattern Nu_
@@ -392,10 +398,12 @@ retractLocalFunction =
             App_ symbol2 _
               | isConstructor symbol2 -> Just (Pair term1 term2)
             Inj_ _     -> Just (Pair term1 term2)
-            Builtin_ _ -> Just (Pair term1 term2)
             InternalInt_ _ -> Just (Pair term1 term2)
             InternalBytes_ _ _ -> Just (Pair term1 term2)
             InternalString_ _ -> Just (Pair term1 term2)
             InternalBool_ _ -> Just (Pair term1 term2)
+            InternalList_ _ -> Just (Pair term1 term2)
+            InternalMap_ _ -> Just (Pair term1 term2)
+            InternalSet_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing

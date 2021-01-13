@@ -109,12 +109,8 @@ import Kore.Internal.TermLike
     ( pattern And_
     , TermLike
     , VariableName
-    , mkElemVar
-    , mkElementVariable
-    , mkSort
     , mkSortVariable
     , mkTop
-    , noLocationId
     )
 import Kore.Log
     ( KoreLogOptions (..)
@@ -122,6 +118,7 @@ import Kore.Log
     , SomeEntry (..)
     , WithLog
     , logEntry
+    , logWarning
     , parseKoreLogOptions
     , runKoreLog
     , unparseKoreLogOptions
@@ -765,17 +762,15 @@ koreBmc execOptions proveOptions = do
                 graphSearch
         case checkResult of
             Bounded.Proved -> return success
-            Bounded.Unknown -> return unknown
+            Bounded.Unknown -> do
+                logWarning "The pattern does not terminate within the bound."
+                return success
             Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
     failure pat = (ExitFailure 1, pat)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
-    unknown =
-        ( ExitSuccess
-        , mkElemVar $ mkElementVariable "Unknown" (mkSort $ noLocationId "SortUnknown")
-        )
 
 koreMerge :: KoreExecOptions -> KoreMergeOptions -> Main ExitCode
 koreMerge execOptions mergeOptions = do

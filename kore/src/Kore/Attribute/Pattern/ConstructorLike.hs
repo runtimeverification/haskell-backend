@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.ConstructorLike
     ( ConstructorLike (..)
     , ConstructorLikeHead (..)
@@ -14,13 +16,11 @@ module Kore.Attribute.Pattern.ConstructorLike
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import Kore.Internal.Alias
     ( Alias
     )
@@ -44,7 +44,7 @@ syntactically equal (in the 'Eq' sense).
 
 Examples of patterns that are constructor-like:
 
-* 'BuiltinBool', 'BuiltinInt', 'BuiltinString', and 'InternalBytes'
+* 'InternalBool', 'InternalInt', 'InternalString', and 'InternalBytes'
 * 'StringLiteral'
 * constructors with constructor-like arguments
 * 'DomainValue' in a non-hooked sort
@@ -177,43 +177,6 @@ instance Synthetic ConstructorLike (Rewrites sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
-{- |
-A builtin value is not technically a constructor, but it is constructor-like for
-builtin domains, at least from the perspective of normalization (normalized
-means constructor-like here).
- -}
-instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
-  where
-    synthetic =
-        \case
-            (BuiltinMap InternalAc
-                    {builtinAcChild = NormalizedMap builtinMapChild}
-                ) -> normalizedAcConstructorLike builtinMapChild
-            (BuiltinSet InternalAc
-                    {builtinAcChild = NormalizedSet builtinSetChild}
-                ) -> normalizedAcConstructorLike builtinSetChild
-    {-# INLINE synthetic #-}
-
-normalizedAcConstructorLike
-    ::  ( HasConstructorLike key
-        , HasConstructorLike (Value collection ConstructorLike)
-        )
-    => NormalizedAc collection key ConstructorLike -> ConstructorLike
-normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
-    case ac of
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements
-            , opaque = []
-            }
-              | all pairIsConstructorLike concreteElementsList
-                -> ConstructorLike . Just $ ConstructorLikeHead
-              where
-                concreteElementsList = Map.toList concreteElements
-                pairIsConstructorLike (key, value) =
-                    assertConstructorLike "" key $ isConstructorLike value
-        _ -> ConstructorLike Nothing
-
 instance Synthetic ConstructorLike Inhabitant where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
@@ -261,13 +224,6 @@ class HasConstructorLike a where
 
 instance HasConstructorLike ConstructorLike where
     extractConstructorLike = id
-
-instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
-    extractConstructorLike (MapValue result) = result
-
-instance HasConstructorLike (Value NormalizedSet ConstructorLike) where
-    extractConstructorLike SetValue =
-        ConstructorLike . Just $ ConstructorLikeHead
 
 assertConstructorLike :: HasConstructorLike a => String -> a -> b -> b
 assertConstructorLike message a =

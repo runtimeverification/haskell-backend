@@ -16,6 +16,7 @@ builtin modules.
  -}
 
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE Strict    #-}
 
 module Kore.Builtin.Int
     ( sort
@@ -308,22 +309,22 @@ builtinFunctions =
     ]
   where
     unaryOperator name op =
-        ( name, Builtin.unaryOperator' extractIntDomainValue
+        ( name, Builtin.unaryOperator extractIntDomainValue
             asPattern name op )
     binaryOperator name op =
-        ( name, Builtin.binaryOperator' extractIntDomainValue
+        ( name, Builtin.binaryOperator extractIntDomainValue
             asPattern name op )
     comparator name op =
-        ( name, Builtin.binaryOperator' extractIntDomainValue
+        ( name, Builtin.binaryOperator extractIntDomainValue
             Bool.asPattern name op )
     partialUnaryOperator name op =
-        ( name, Builtin.unaryOperator' extractIntDomainValue
+        ( name, Builtin.unaryOperator extractIntDomainValue
             asPartialPattern name op )
     partialBinaryOperator name op =
-        ( name, Builtin.binaryOperator' extractIntDomainValue
+        ( name, Builtin.binaryOperator extractIntDomainValue
             asPartialPattern name op )
     partialTernaryOperator name op =
-        ( name, Builtin.ternaryOperator' extractIntDomainValue
+        ( name, Builtin.ternaryOperator extractIntDomainValue
             asPartialPattern name op )
 
 tdiv, tmod, ediv, emod, pow

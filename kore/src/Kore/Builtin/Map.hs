@@ -12,6 +12,9 @@ builtin modules.
     import qualified Kore.Builtin.Map as Map
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Map
     ( sort
     , verifiers
@@ -45,7 +48,6 @@ import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 
 import Kore.Attribute.Hook
     ( Hook (..)
@@ -64,11 +66,14 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+    ( Value (SetValue)
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
@@ -85,7 +90,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern Builtin_
+    , pattern InternalMap_
     , TermLike
     , termLikeSort
     )
@@ -224,14 +229,10 @@ expectBuiltinMap
     :: Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Ac.TermNormalizedAc Domain.NormalizedMap variable)
-expectBuiltinMap ctx (Builtin_ builtin) =
-    case builtin of
-        Domain.BuiltinMap Domain.InternalAc { builtinAcChild } ->
-            return builtinAcChild
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Domain value is not a map"
+    -> MaybeT m (Ac.TermNormalizedAc NormalizedMap variable)
+expectBuiltinMap _ (InternalMap_ internalMap) = do
+    let InternalAc { builtinAcChild } = internalMap
+    return builtinAcChild
 expectBuiltinMap _ _ = empty
 
 {- | Returns @empty@ if the argument is not a @NormalizedMap@ domain value
@@ -243,11 +244,11 @@ expectConcreteBuiltinMap
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Concrete) (Domain.MapValue (TermLike variable)))
+    -> MaybeT m (Map (TermLike Concrete) (MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
-    case Domain.unwrapAc _map of
-        Domain.NormalizedAc
+    case unwrapAc _map of
+        NormalizedAc
             { elementsWithVariables = []
             , concreteElements
             , opaque = []
@@ -260,7 +261,7 @@ as a function result.
 returnConcreteMap
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
-    -> Map (TermLike Concrete) (Domain.MapValue (TermLike variable))
+    -> Map (TermLike Concrete) (MapValue (TermLike variable))
     -> m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 
@@ -275,7 +276,7 @@ evalLookup resultSort [_map, _key] = do
             _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
             (return . maybeBottom)
-                (Domain.getMapValue <$> Map.lookup _key _map)
+                (getMapValue <$> Map.lookup _key _map)
     emptyMap <|> bothConcrete
     where
     maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
@@ -286,7 +287,7 @@ evalLookupOrDefault _ [_map, _key, _def] = do
     _key <- hoistMaybe $ Builtin.toKey _key
     _map <- expectConcreteBuiltinMap Map.lookupKey _map
     Map.lookup _key _map
-        & maybe _def Domain.getMapValue
+        & maybe _def getMapValue
         & Pattern.fromTermLike
         & return
 evalLookupOrDefault _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
@@ -296,14 +297,14 @@ evalElement :: Builtin.Function
 evalElement resultSort [_key, _value] =
     case Builtin.toKey _key of
         Just concrete ->
-            Map.singleton concrete (Domain.MapValue _value)
+            Map.singleton concrete (MapValue _value)
             & returnConcreteMap resultSort
             & TermLike.assertConstructorLikeKeys [_key]
         Nothing ->
-            (Ac.returnAc resultSort . Domain.wrapAc)
-            Domain.NormalizedAc
+            (Ac.returnAc resultSort . wrapAc)
+            NormalizedAc
                 { elementsWithVariables =
-                    [Domain.MapElement (_key, _value)]
+                    [MapElement (_key, _value)]
                 , concreteElements = Map.empty
                 , opaque = []
                 }
@@ -312,7 +313,7 @@ evalElement _ _ = Builtin.wrongArity Map.elementKey
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
 evalConcat resultSort [map1, map2] =
-    Ac.evalConcatNormalizedOrBottom @Domain.NormalizedMap
+    Ac.evalConcatNormalizedOrBottom @NormalizedMap
         resultSort
         (Ac.toNormalized map1)
         (Ac.toNormalized map2)
@@ -328,7 +329,7 @@ evalUpdate :: Builtin.Function
 evalUpdate resultSort [_map, _key, value] = do
     _key <- hoistMaybe $ Builtin.toKey _key
     _map <- expectConcreteBuiltinMap Map.updateKey _map
-    Map.insert _key (Domain.MapValue value) _map
+    Map.insert _key (MapValue value) _map
         & returnConcreteMap resultSort
         & TermLike.assertConstructorLikeKeys (_key : Map.keys _map)
 evalUpdate _ _ = Builtin.wrongArity Map.updateKey
@@ -367,8 +368,8 @@ evalInKeys resultSort arguments@[_key, _map] =
                 -- The key may be concrete or symbolic.
                 [ do
                     _key <- Builtin.toKey _key
-                    pure (Domain.isConcreteKeyOfAc _key _map)
-                , pure (Domain.isSymbolicKeyOfAc _key _map)
+                    pure (isConcreteKeyOfAc _key _map)
+                , pure (isSymbolicKeyOfAc _key _map)
                 ]
         Monad.guard inKeys
         -- We cannot decide if the key is absent because the Map is symbolic.
@@ -388,7 +389,7 @@ evalInclusion _ _ = Builtin.wrongArity Map.inclusionKey
 evalKeys :: Builtin.Function
 evalKeys resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.keysKey _map
-    fmap (const Domain.SetValue) _map
+    fmap (const SetValue) _map
         & Builtin.Set.returnConcreteSet resultSort
 evalKeys _ _ = Builtin.wrongArity Map.keysKey
 
@@ -445,7 +446,7 @@ evalSize _ _ = Builtin.wrongArity Map.sizeKey
 evalValues :: Builtin.Function
 evalValues resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.valuesKey _map
-    fmap Domain.getMapValue (Map.elems _map)
+    fmap getMapValue (Map.elems _map)
         & Seq.fromList
         & Builtin.List.returnList resultSort
 evalValues _ _ = Builtin.wrongArity Map.valuesKey
@@ -489,13 +490,13 @@ internalize tools termLike
   -- apply it if we know the term head is a constructor-like symbol.
   , App_ symbol _ <- termLike
   , isConstructorModulo_ symbol =
-    case Ac.toNormalized @Domain.NormalizedMap termLike of
+    case Ac.toNormalized @NormalizedMap termLike of
         Ac.Bottom                    -> TermLike.mkBottom sort'
         Ac.Normalized termNormalized
-          | let unwrapped = Domain.unwrapAc termNormalized
-          , null (Domain.elementsWithVariables unwrapped)
-          , null (Domain.concreteElements unwrapped)
-          , [singleOpaqueTerm] <- Domain.opaque unwrapped
+          | let unwrapped = unwrapAc termNormalized
+          , null (elementsWithVariables unwrapped)
+          , null (concreteElements unwrapped)
+          , [singleOpaqueTerm] <- opaque unwrapped
           ->
             -- When the 'normalized' term consists of a single opaque Map-sorted
             -- term, we should prefer to return only that term.
@@ -537,10 +538,7 @@ unifyEquals unifyEqualsChildren first second = do
         :: TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    unifyEquals0
-        (Builtin_ (Domain.BuiltinMap normalized1))
-        (Builtin_ (Domain.BuiltinMap normalized2))
-      = do
+    unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
             tools
@@ -570,7 +568,7 @@ unifyEquals unifyEqualsChildren first second = do
                         second
           where
             normalizedOrBottom
-                :: Ac.NormalizedOrBottom Domain.NormalizedMap variable
+                :: Ac.NormalizedOrBottom NormalizedMap variable
             normalizedOrBottom = Ac.toNormalized patt
 
 data InKeys term =
@@ -612,7 +610,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
   where
     normalizedOrBottom
        :: TermLike variable
-       -> Ac.NormalizedOrBottom Domain.NormalizedMap variable
+       -> Ac.NormalizedOrBottom NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
 
     defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
@@ -647,12 +645,12 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
       , Just inKeys@InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = do
-        let symbolicKeys = Domain.getSymbolicKeysOfAc normalizedMap
+        let symbolicKeys = getSymbolicKeysOfAc normalizedMap
             concreteKeys =
                 TermLike.fromConcrete
-                <$> Domain.getConcreteKeysOfAc normalizedMap
+                <$> getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
-            opaqueElements = Domain.opaque . Domain.unwrapAc $ normalizedMap
+            opaqueElements = opaque . unwrapAc $ normalizedMap
         if null mapKeys && null opaqueElements then
             return Pattern.top
         else do

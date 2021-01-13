@@ -35,7 +35,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'touchedAccounts'-GT-'{}(
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'callState'-GT-'{}(
@@ -45,7 +45,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'jumpDests'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'id'-GT-'{}(
@@ -72,7 +72,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'localMem'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'pc'-GT-'{}(
@@ -103,7 +103,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 Lbl'-LT-'substate'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'selfDestruct'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                     ),
                     /* Fl Fn D Sfa */
                     Lbl'-LT-'log'-GT-'{}(
@@ -203,12 +203,12 @@ Lbl'-LT-'generatedTop'-GT-'{}(
             Lbl'-LT-'network'-GT-'{}(
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'activeAccounts'-GT-'{}(
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                    /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                 ),
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'accounts'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
-                    /* builtin: */ Lbl'Stop'AccountCellMap{}()
+                    /* InternalMap: */ Lbl'Stop'AccountCellMap{}()
                 ),
                 /* Fl Fn D Sfa */
                 Lbl'-LT-'txOrder'-GT-'{}(
@@ -221,7 +221,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'messages'-GT-'{}(
                     /* Fl Fn D Sfa Cl */
-                    /* builtin: */ Lbl'Stop'MessageCellMap{}()
+                    /* InternalMap: */ Lbl'Stop'MessageCellMap{}()
                 )
             )
         )

@@ -1,12 +1,9 @@
 {-|
-Module      : Kore.Step.SMT.Translate
-Description : Translates conditions to something that a SMT solver understands.
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.SMT.Translate
     ( translatePredicateWith
@@ -180,7 +177,6 @@ translatePredicateWith translateTerm predicate =
             ApplySymbolF _ -> empty
             InjF _ -> empty
             ApplyAliasF _ -> empty
-            BuiltinF _ -> empty
             DomainValueF _ -> empty
             NextF _ -> empty
             RewritesF _ -> empty
@@ -191,6 +187,8 @@ translatePredicateWith translateTerm predicate =
             InternalIntF _ -> empty
             InternalStringF _ -> empty
             InternalListF _ -> empty
+            InternalMapF _ -> empty
+            InternalSetF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
             SignednessF _ -> empty
