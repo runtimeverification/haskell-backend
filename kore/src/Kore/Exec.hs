@@ -156,8 +156,7 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
-    ( MonadProf
-    , evalSimplifier
+    ( evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
