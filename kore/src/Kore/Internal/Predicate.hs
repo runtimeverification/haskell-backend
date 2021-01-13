@@ -495,8 +495,7 @@ instance Monoid HasChanged where
 makeTruePredicate' ::
     InternalVariable variable
     => (Predicate variable, HasChanged)
-makeTruePredicate' = (synthesize (TopF Top {topSort = ()})
-    , NotChanged)
+makeTruePredicate' = (synthesize (TopF Top {topSort = ()}), NotChanged)
 
 makeTruePredicate :: InternalVariable variable => Predicate variable
 makeTruePredicate = fst makeTruePredicate'
@@ -504,8 +503,11 @@ makeTruePredicate = fst makeTruePredicate'
 makeFalsePredicate' ::
     InternalVariable variable
     => (Predicate variable, HasChanged)
-makeFalsePredicate' = (synthesize $ BottomF Bottom {bottomSort = ()}
-    , NotChanged)
+makeFalsePredicate' =
+    ( synthesize
+        (BottomF Bottom {bottomSort = ()})
+    , NotChanged
+    )
 
 makeFalsePredicate :: InternalVariable variable => Predicate variable
 makeFalsePredicate = fst makeFalsePredicate'
@@ -598,7 +600,6 @@ makeImpliesPredicate' p1 p2
   | isTop p2 = (p2, Changed)
   | isTop p1 = (p2, Changed)
   | isBottom p2 = (makeNotPredicate p1, Changed)
---  | p1 == p2 = (makeTruePredicate, Changed)
   | otherwise =
     ( synthesize $ ImpliesF Implies
         { impliesSort = ()
@@ -625,7 +626,6 @@ makeIffPredicate' p1 p2
   | isTop p1 = (p2, Changed)
   | isBottom p2 = (makeNotPredicate p1, Changed)
   | isTop p2 = (p1, Changed)
---  | p1 == p2 = (makeTruePredicate, Changed)
   | otherwise =
     ( synthesize $ IffF Iff
         { iffSort = ()
