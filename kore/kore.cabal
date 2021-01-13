@@ -1,8 +1,10 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.1.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 0df17af74393ced21aa87b86912dded04a0210ce54a1933bc40b1da41640f7c6
 
 name:           kore
 version:        0.37.0.0
@@ -940,7 +942,9 @@ test-suite kore-test
       Test.Kore.Builtin.String
       Test.Kore.Contains
       Test.Kore.Equation.Application
+      Test.Kore.Equation.Common
       Test.Kore.Equation.Sentence
+      Test.Kore.Equation.Simplification
       Test.Kore.Error
       Test.Kore.Exec
       Test.Kore.IndexedModule.Error

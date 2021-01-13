@@ -55,7 +55,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 
 import Test.Kore
-import Test.Kore.Equation.Application
+import Test.Kore.Equation.Common
     ( functionAxiomUnification
     , functionAxiomUnification_
     )
