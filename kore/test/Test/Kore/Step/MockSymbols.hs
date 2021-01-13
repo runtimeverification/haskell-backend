@@ -64,6 +64,7 @@ import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
@@ -279,6 +280,8 @@ elementSetId :: Id
 elementSetId = testId "elementSet"
 unitSetId :: Id
 unitSetId = testId "unitSet"
+keqBoolId :: Id
+keqBoolId = testId "keqBool"
 sigmaId :: Id
 sigmaId = testId "sigma"
 anywhereId :: Id
@@ -653,6 +656,11 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
+
+keqBoolSymbol :: Symbol
+keqBoolSymbol =
+    symbol keqBoolId [testSort, testSort] boolSort
+    & function & functional & hook "KEQUAL.eq"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
@@ -1341,6 +1349,13 @@ unitList
     => TermLike variable
 unitList = Internal.mkApplySymbol unitListSymbol []
 
+keqBool
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+keqBool t1 t2 = Internal.mkApplySymbol keqBoolSymbol [t1, t2]
+
 sigma
     :: InternalVariable variable
     => HasCallStack
@@ -1457,6 +1472,7 @@ symbols =
     , lessIntSymbol
     , greaterEqIntSymbol
     , tdivIntSymbol
+    , keqBoolSymbol
     , sigmaSymbol
     , anywhereSymbol
     , subsubOverloadSymbol
@@ -2040,5 +2056,9 @@ builtinSimplifiers =
         ,   ( AxiomIdentifier.Application greaterEqIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            )
+        ,   ( AxiomIdentifier.Application keqBoolId
+            , builtinEvaluation
+                (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )
         ]
