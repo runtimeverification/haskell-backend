@@ -15,6 +15,8 @@ builtin modules.
 @
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.String
     ( sort
     , assertSort
@@ -393,10 +395,10 @@ builtinFunctions =
     ]
   where
     comparator name op =
-        ( name, Builtin.binaryOperator' extractStringDomainValue
+        ( name, Builtin.binaryOperator extractStringDomainValue
             Bool.asPattern name op )
     binaryOperator name op =
-        ( name, Builtin.binaryOperator' extractStringDomainValue
+        ( name, Builtin.binaryOperator extractStringDomainValue
             asPattern name op )
 
 {- | Match the @STRING.eq@ hooked symbol.

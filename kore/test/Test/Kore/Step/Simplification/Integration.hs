@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Integration
     ( test_simplificationIntegration
     , test_simplificationIntegrationUnification
@@ -9,7 +11,11 @@ module Test.Kore.Step.Simplification.Integration
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
+import Data.Align
+    ( align
+    )
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -21,11 +27,12 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Equation
     ( Equation (..)
     , mkEquation
     )
+import Kore.Internal.InternalSet
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -54,6 +61,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 
+import Test.Expect
 import Test.Kore
 import Test.Kore.Equation.Application
     ( functionAxiomUnification
@@ -750,7 +758,7 @@ test_simplificationIntegration =
             mw = mkElementVariable (testId "mw") Mock.subOthersort
             k = mkSetVariable (testId "k") Mock.setSort
 
-        let expected = OrPattern.fromPatterns
+        let expects =
                 [ Conditional
                     { term = mkTop Mock.stringSort
                     , predicate = makeAndPredicate
@@ -813,7 +821,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 ]
-        actual <- evaluate
+        actuals <- evaluate
             Conditional
                 { term = mkImplies
                     (mkCeil_
@@ -846,7 +854,11 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
-        assertEqual "" expected actual
+        for_ (align expects (Foldable.toList actuals)) $ \these -> do
+            (expect, actual) <- expectThese these
+            on (assertEqual "") term expect actual
+            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
+            on (assertEqual "") substitution expect actual
     , testCase "Ceil simplification" $ do
         actual <- evaluate
             Conditional
@@ -1466,7 +1478,7 @@ axiom left right requires =
 asInternal :: Set.Set (TermLike Concrete) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
-    . Map.fromSet (const Domain.SetValue)
+    . Map.fromSet (const SetValue)
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

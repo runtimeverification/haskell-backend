@@ -1,8 +1,10 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
+-}
 
- -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.InternalList
     ( simplify
     ) where
@@ -26,7 +28,7 @@ simplify
     -> OrPattern variable
 simplify =
     traverse (Logic.scatter >>> Compose)
-    >>> fmap mkBuiltinList
+    >>> fmap mkInternalList
     >>> getCompose
     >>> fmap (Pattern.syncSort >>> fmap markSimplified)
     >>> MultiOr.observeAll

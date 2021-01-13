@@ -105,6 +105,9 @@
 - ignore: {name: "Use >=>", within: [Test.ListT]}
 - ignore: {name: "Redundant id", within: [Test.ListT]}
 
+# LANGUAGE Strict
+- ignore: {name: "Redundant irrefutable pattern"}
+
 - ignore:
     name: Use camelCase
     within:
