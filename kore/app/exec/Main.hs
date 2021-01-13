@@ -553,6 +553,9 @@ main = do
             parserInfoModifiers
     for_ (localOptions options) mainWithOptions
 
+{- | Use the parsed 'KoreExecOptions' to set up output and logging, then
+dispatch the requested command.
+-}
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreSolverOptions, bugReportOption, outputFileName } = execOptions
@@ -562,10 +565,10 @@ mainWithOptions execOptions = do
             let execOptions' = execOptions {
                     outputFileName = Just (tmpDir </> "result.kore") }
             writeOptionsAndKoreFiles tmpDir execOptions'
-            e <- go execOptions' <* warnIfLowProductivity
-                    & handle handleWithConfiguration
-                    & handle handleSomeException
-                    & runKoreLog tmpDir koreLogOptions
+            e <- mainDispatch execOptions' <* warnIfLowProductivity
+                & handle handleWithConfiguration
+                & handle handleSomeException
+                & runKoreLog tmpDir koreLogOptions
             case outputFileName of
                 Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
                 Just fileName -> copyFile (tmpDir </> "result.kore") fileName
@@ -593,8 +596,10 @@ mainWithOptions execOptions = do
             ("// Last configuration:\n" <> unparse lastConfiguration)
         throwM someException
 
-go :: KoreExecOptions -> Main ExitCode
-go execOptions
+{- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
+-}
+mainDispatch :: KoreExecOptions -> Main ExitCode
+mainDispatch execOptions
   | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
     if bmc
         then koreBmc execOptions proveOptions
@@ -606,8 +611,8 @@ go execOptions
   | Just mergeOptions <- koreMergeOptions =
     koreMerge execOptions mergeOptions
 
-      | otherwise =
-        koreRun execOptions
+  | otherwise =
+    koreRun execOptions
   where
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
