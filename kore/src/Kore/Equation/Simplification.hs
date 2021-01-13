@@ -10,6 +10,9 @@ module Kore.Equation.Simplification
     , simplifyExtractedEquations
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import Control.Error
@@ -97,8 +100,8 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             }
     -- Unable to simplify the given equation, so we return the original equation
     -- in the hope that we can do something with it later.
-    & fromMaybeT (return equation)
     & Logic.observeAllT
+    & fromMaybeT (return [equation])
     & fmap MultiAnd.make
   where
     fromMaybeT = flip maybeT return
