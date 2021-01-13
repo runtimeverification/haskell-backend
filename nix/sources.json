@@ -36,6 +36,18 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "v3.2"
     },
+    "hpack": {
+        "branch": "0.33.0",
+        "description": "hpack: A modern format for Haskell packages",
+        "homepage": "",
+        "owner": "sol",
+        "repo": "hpack",
+        "rev": "4508926ee30f16246eb83b983294c31e66f768cc",
+        "sha256": "07h2369mrl28a4yzp46sadk915a87a9lz8wxnvxdi8lb4q9winig",
+        "type": "tarball",
+        "url": "https://github.com/sol/hpack/archive/4508926ee30f16246eb83b983294c31e66f768cc.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
