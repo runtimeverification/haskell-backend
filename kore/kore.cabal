@@ -1,8 +1,10 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.1.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 81b0390b6c8d7d7472223f88f60a1c5292a7ca867df3406ba2c0b72214ccc8e0
 
 name:           kore
 version:        0.37.0.0
