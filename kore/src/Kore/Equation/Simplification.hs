@@ -10,9 +10,6 @@ module Kore.Equation.Simplification
     , simplifyExtractedEquations
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import Control.Error
