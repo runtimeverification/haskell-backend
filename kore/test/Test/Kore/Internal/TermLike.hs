@@ -178,9 +178,9 @@ mkSubst
     -> Map (SomeVariableName variable) (TermLike variable)
 mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
 
-test_orientSubstitution :: TestTree
+test_orientSubstitution :: [TestTree]
 test_orientSubstitution =
-    testCase "Orient substitution" $ do
+    [ testCase "Orient substitution" $ do
         let toLeft :: SomeVariableName VariableName -> Bool
             toLeft (from -> vName :: VariableName) =
                 vName == unElementVariableName (variableName Mock.y)
@@ -197,10 +197,30 @@ test_orientSubstitution =
                     [ (inject $ variableName Mock.y, mkElemVar Mock.x)
                     , (inject $ variableName Mock.u, mkNot $ mkElemVar Mock.x)
                     ]
-        assertEqual
-            ""
+        assertEqual ""
             expect
             (orientSubstitution toLeft subst)
+    , testCase "Orient substitution - key collision" $ do
+        let toLeft :: SomeVariableName VariableName -> Bool
+            toLeft (from -> vName :: VariableName) =
+                vName == unElementVariableName (variableName Mock.y)
+
+            subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                Map.fromList
+                    [ (inject $ variableName Mock.x, mkElemVar Mock.y)
+                    , (inject $ variableName Mock.u, mkElemVar Mock.y)
+                    ]
+            expect =
+                Map.fromList
+                    [ (inject $ variableName Mock.y, mkElemVar Mock.x)
+                    , (inject $ variableName Mock.u, mkElemVar Mock.x)
+                    ]
+        assertEqual ""
+            expect
+            (orientSubstitution toLeft subst)
+    ]
 
 test_substitute :: [TestTree]
 test_substitute =
