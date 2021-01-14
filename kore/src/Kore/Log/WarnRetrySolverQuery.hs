@@ -20,9 +20,6 @@ import Kore.Internal.Variable
     , VariableName
     , toVariableName
     )
-import Kore.Unparser
-    ( unparse
-    )
 import Log
 import Pretty
     ( Pretty (..)
@@ -39,10 +36,10 @@ instance Pretty WarnRetrySolverQuery where
         Pretty.vsep $
         [ "The SMT solver initially failed to solve the following query:"
         , Pretty.indent 2 "Decide predicate:"
-        , Pretty.indent 4 (unparse predicate)
+        , Pretty.indent 4 (pretty predicate)
         , Pretty.indent 2 "with side conditions:"
         ]
-        <> fmap (Pretty.indent 4 . unparse) sideConditions
+        <> fmap (Pretty.indent 4 . pretty) sideConditions
         <> ["The SMT solver was reset and the query\
             \ was tried one more time."
            ]

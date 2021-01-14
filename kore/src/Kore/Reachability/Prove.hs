@@ -81,13 +81,10 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( getMultiAndPredicate
-    , unwrapPredicate
-    )
-import Kore.Internal.TermLike
-    ( pattern Ceil_
-    , pattern Not_
-    , TermLike (..)
+    ( Predicate
+    , pattern PredicateCeil
+    , pattern PredicateNot
+    , getMultiAndPredicate
     )
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
@@ -456,7 +453,7 @@ checkStuckConfiguration rule prim proofState = do
     for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
-        when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
+        when (any isNot_Ceil_ multiAndPredicate) $
             error . show . Pretty.vsep $
                 [ "Found '\\not(\\ceil(_))' in stuck configuration:"
                 , Pretty.pretty rule'
@@ -465,8 +462,8 @@ checkStuckConfiguration rule prim proofState = do
                 ]
     return proofState'
   where
-    isNot_Ceil_ :: TermLike variable -> Bool
-    isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
+    isNot_Ceil_ :: Predicate variable -> Bool
+    isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
     isNot_Ceil_ _ = False
 
 throwStuckClaim :: MonadError StuckClaims m => SomeClaim -> m x

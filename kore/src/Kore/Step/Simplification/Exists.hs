@@ -54,7 +54,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
-    , pattern Equals_
     , Exists (Exists)
     , SomeVariableName
     , Sort
@@ -72,9 +71,6 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Sort
-    ( predicateSort
-    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -199,7 +195,7 @@ makeEvaluate sideCondition variables original = do
                     normalized { Conditional.substitution = boundSubstitution }
                 if matched
                     then return normalized
-                        { Conditional.predicate = Predicate.makeTruePredicate_
+                        { Conditional.predicate = Predicate.makeTruePredicate
                         , Conditional.substitution = freeSubstitution
                         }
                     else makeEvaluateBoundRight
@@ -239,8 +235,7 @@ matchesToVariableSubstitution
 matchesToVariableSubstitution
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
-  | Equals_ _sort1 _sort2 first second <-
-        Predicate.fromPredicate predicateSort predicate
+  | Predicate.PredicateEquals first second <- predicate
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
@@ -250,8 +245,7 @@ matchesToVariableSubstitution
         Just (Predicate.PredicateTrue, results) ->
             return (singleVariableSubstitution variable results)
         _ -> return False
-
-matchesToVariableSubstitution _ _ = return False
+  | otherwise = return False
 
 singleVariableSubstitution
     :: InternalVariable variable

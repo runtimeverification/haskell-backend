@@ -14,8 +14,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate_
+    , makeCeilPredicate
+    , makeEqualsPredicate
     , makeIffPredicate
     , makeTruePredicate
     )
@@ -72,12 +72,12 @@ test_makeEvaluate =
                     , predicate =
                         makeIffPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate_ Mock.cf)
-                                (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+                                (makeCeilPredicate Mock.cf)
+                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
                             )
                             (makeAndPredicate
-                                (makeCeilPredicate_ Mock.cg)
-                                (makeEqualsPredicate_ (mkElemVar Mock.y) Mock.b)
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
                             )
                     , substitution = mempty
                     }
@@ -86,7 +86,7 @@ test_makeEvaluate =
             ( makeEvaluate
                 Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate_ Mock.cf
+                    , predicate = makeCeilPredicate Mock.cf
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -94,7 +94,7 @@ test_makeEvaluate =
                     }
                 Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate_ Mock.cg
+                    , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -122,7 +122,7 @@ test_makeEvaluate =
                                 )
                                 (mkEquals_ (mkElemVar Mock.y) Mock.b)
                             )
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -130,7 +130,7 @@ test_makeEvaluate =
             ( makeEvaluate
                 Conditional
                     { term = Mock.f Mock.a
-                    , predicate = makeCeilPredicate_ Mock.cf
+                    , predicate = makeCeilPredicate Mock.cf
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -138,7 +138,7 @@ test_makeEvaluate =
                     }
                 Conditional
                     { term = Mock.g Mock.b
-                    , predicate = makeCeilPredicate_ Mock.cg
+                    , predicate = makeCeilPredicate Mock.cg
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -185,7 +185,7 @@ termA :: Pattern VariableName
 termA =
     Conditional
         { term = Mock.a
-        , predicate = makeTruePredicate Mock.testSort
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 

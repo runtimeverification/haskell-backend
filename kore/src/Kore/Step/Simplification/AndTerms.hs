@@ -47,7 +47,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -349,7 +349,7 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
+    secondCeil <- makeEvaluateTermCeil sideCondition second
     case toList secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
@@ -419,8 +419,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                let sort = termLikeSort first
-                resultOr <- makeEvaluateTermCeil sideCondition sort second
+                resultOr <- makeEvaluateTermCeil sideCondition second
                 case toList resultOr of
                     [] -> do
                         explainBottom
@@ -680,7 +679,7 @@ functionAnd
     -> Maybe (Pattern variable)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
-    makeEqualsPredicate_ first' second'
+    makeEqualsPredicate first' second'
     & Predicate.markSimplified
     -- Ceil predicate not needed since first being
     -- bottom will make the entire term bottom. However,

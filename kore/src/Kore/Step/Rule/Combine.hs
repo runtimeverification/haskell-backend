@@ -38,10 +38,10 @@ import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeMultipleAndPredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
@@ -121,14 +121,14 @@ mergeRulePairPredicate
     )
   =
     makeMultipleAndPredicate
-        [ makeCeilPredicate_ (mkAnd right1 left2)
+        [ makeCeilPredicate (mkAnd right1 left2)
         , ensures1
         , requires2
         , antiLeftPredicate
         ]
   where
     antiLeftPredicate = case antiLeft2 of
-        Nothing -> makeTruePredicate_
+        Nothing -> makeTruePredicate
         Just antiLeft ->
             makeNotPredicate $ AntiLeft.antiLeftPredicate antiLeft right1
 
@@ -160,7 +160,7 @@ mergeRules (renameRulesVariables . toList -> rules) =
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
             Nothing -> return predicate
-            Just True -> return makeTruePredicate_
+            Just True -> return makeTruePredicate
             Just False -> empty
 
         let finalRule =

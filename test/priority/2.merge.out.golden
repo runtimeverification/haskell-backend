@@ -5,7 +5,6 @@
         /*  */ \not{SortGeneratedTopCell{}}(/*  */ priorityLE1{}()),
         /* Spa */
         \and{SortGeneratedTopCell{}}(
-            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
             /* Sfa */
             \and{SortGeneratedTopCell{}}(
                 /* Sfa */
@@ -17,7 +16,6 @@
                         /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("10")
                     )
                 ),
-                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
                 /* Spa */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfa */
