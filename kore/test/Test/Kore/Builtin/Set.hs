@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Builtin.Set
@@ -90,13 +92,9 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
-import Kore.Domain.Builtin
-    ( NormalizedAc
-    , NormalizedSet
-    )
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
@@ -184,7 +182,7 @@ test_unit :: [TestTree]
 test_unit =
     [ unitSet `becomes` asInternal Set.empty
         $ "unit() === /* builtin */ unit()"
-    , concatSet (mkElemVar xSet) unitSet `becomes` internalOpaque (mkElemVar xSet)
+    , concatSet (mkElemVar xSet) unitSet `becomes` mkElemVar xSet
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
@@ -199,9 +197,6 @@ test_unit =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
             assertEqual "" (Pattern.fromTermLike expect) actual
-
-    internalOpaque set =
-        asInternalNormalized (emptyNormalizedSet `with` OpaqueSet set)
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -1912,13 +1907,13 @@ unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
 asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const Domain.SetValue)
+    . Map.fromSet (const SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
     :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
     -> TermLike VariableName
-asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
+asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
 
@@ -1932,8 +1927,8 @@ normalizedSet
     -- ^ opaque terms
     -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
 normalizedSet elements opaque =
-    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
-        { elementsWithVariables = Domain.SetElement <$> elements
+    Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
+        { elementsWithVariables = SetElement <$> elements
         , concreteElements = Map.empty
         , opaque
         }

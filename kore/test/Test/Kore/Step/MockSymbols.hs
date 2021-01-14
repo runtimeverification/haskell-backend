@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
@@ -66,13 +68,14 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as Builtin.String
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     , sortInjection
@@ -150,6 +153,8 @@ eId :: Id
 eId = testId "e"
 fId :: Id
 fId = testId "f"
+fMapId :: Id
+fMapId = testId "fMap"
 fSort0Id :: Id
 fSort0Id = testId "fSort0"
 gId :: Id
@@ -500,6 +505,10 @@ functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
     symbol functionalTopConstr21Id [testSort, topSort] testSort
     & functional & constructor
+
+fMapSymbol :: Symbol
+fMapSymbol =
+    symbol fMapId [mapSort] testSort & function
 
 injective10Symbol :: Symbol
 injective10Symbol = symbol injective10Id [testSort] testSort & injective
@@ -1826,13 +1835,13 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
+    Internal.mkInternalMap InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcChild = NormalizedMap NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
@@ -1842,7 +1851,7 @@ framedMap elements opaque =
         (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
 
 builtinList
@@ -1850,7 +1859,7 @@ builtinList
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
-    Internal.mkBuiltinList InternalList
+    Internal.mkInternalList InternalList
         { internalListSort = listSort
         , internalListUnit = unitListSymbol
         , internalListElement = elementListSymbol
@@ -1880,13 +1889,13 @@ framedSet
     -> [TermLike variable]
     -> TermLike variable
 framedSet elements opaque =
-    Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
+    Internal.mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
         , builtinAcConcat = concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcChild = NormalizedSet NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
@@ -1895,8 +1904,8 @@ framedSet elements opaque =
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
-        & maybe (Left (key, Domain.SetValue)) Right
+            (,) <$> Internal.asConcrete key <*> pure SetValue
+        & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
         & partitionEithers
