@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.ConsistentKore
     ( CollectionSorts (..)
     , Setup (..)
@@ -43,7 +45,7 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
     )
 import Kore.Builtin.AssociativeCommutative as AssociativeCommutative
     ( TermWrapper
-    , asInternalBuiltin
+    , asInternal
     )
 import qualified Kore.Builtin.Bool.Bool as BuiltinBool
     ( asBuiltin
@@ -60,7 +62,6 @@ import Kore.Builtin.Map.Map as BuiltinMap
 import Kore.Builtin.Set.Set as BuiltinSet
     ( isSymbolElement
     )
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
@@ -71,6 +72,8 @@ import qualified Kore.Internal.Alias as Alias.DoNotUse
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
 import qualified Kore.Internal.Symbol as Internal
     ( Symbol (Symbol)
@@ -83,8 +86,6 @@ import Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
-    , mkBuiltin
-    , mkBuiltinList
     , mkCeil
     , mkElemVar
     , mkEquals
@@ -97,6 +98,7 @@ import Kore.Internal.TermLike
     , mkIn
     , mkInternalBool
     , mkInternalInt
+    , mkInternalList
     , mkInternalString
     , mkMu
     , mkNot
@@ -262,7 +264,7 @@ termLikeGenImpl (Range.Size size) requestedSort = do
         nextGenerator =
             if size > 0
                 then termLikeGenImpl (Range.Size $ size - 1)
-                else error "Did not expect to generate terms here."
+                else const empty
     if null actualGenerators
         then return Nothing
         else do
@@ -305,9 +307,6 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (BottomF _) = term
     checkTermF (CeilF _) = term
     checkTermF (DomainValueF _) = term
-    checkTermF (BuiltinF _) = term  -- the ones that are easy to generated are
-                                    -- supposed to be internalized in normal
-                                    -- use.
     checkTermF (EqualsF _) = term
     checkTermF (ExistsF _) = term
     checkTermF (FloorF _) = term
@@ -329,6 +328,8 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (InternalIntF _) = term
     checkTermF (InternalStringF _) = term
     checkTermF (InternalListF _) = term
+    checkTermF (InternalMapF _) = term
+    checkTermF (InternalSetF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
@@ -607,17 +608,6 @@ maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =
                         (error "Sort mismatch.")
                     return (Just (mkStringLiteral str))
                 }
-{- The only purpose of this function is to produce an error message when
-new cases are being added to Domain.Builtin, so that we don't forget to also
-change this file.
--}
-_checkAllBuiltinImplemented
-    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
-    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
-_checkAllBuiltinImplemented builtin =
-    case builtin of
-        Domain.BuiltinMap _ -> builtin
-        Domain.BuiltinSet _ -> builtin
 
 allBuiltinGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 allBuiltinGenerators = do
@@ -747,7 +737,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
             Gen.seq (Range.constant 0 5)
             (childGenerator listElementSort)
         return
-            (   mkBuiltinList . BuiltinList.asBuiltin metadataTools listSort
+            (   mkInternalList . BuiltinList.asBuiltin metadataTools listSort
             <$> sequenceA elements
             )
 
@@ -791,10 +781,10 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
     valueGenerator
         :: Sort
         -> (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.MapValue (TermLike VariableName)))
+        -> Gen (Maybe (MapValue (TermLike VariableName)))
     valueGenerator valueSort childGenerator = do
         maybeValue <- childGenerator valueSort
-        return (Domain.MapValue <$> maybeValue)
+        return (MapValue <$> maybeValue)
 
 -- TODO(virgil): Test that we are generating non-empty sets.
 maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
@@ -815,8 +805,8 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
                     acGenerator collectionSort elementSort valueGenerator
                 }
   where
-    valueGenerator :: a -> Gen (Maybe (Domain.SetValue (TermLike VariableName)))
-    valueGenerator _ = return (Just Domain.SetValue)
+    valueGenerator :: a -> Gen (Maybe (SetValue (TermLike VariableName)))
+    valueGenerator _ = return (Just SetValue)
 
 acGenerator
     :: forall normalized
@@ -824,7 +814,7 @@ acGenerator
     => Sort
     -> Sort
     ->  (  (Sort -> Gen (Maybe (TermLike VariableName)))
-        -> Gen (Maybe (Domain.Value normalized (TermLike VariableName)))
+        -> Gen (Maybe (Value normalized (TermLike VariableName)))
         )
     -> (Sort -> Gen (Maybe (TermLike VariableName)))
     -> Gen (Maybe (TermLike VariableName))
@@ -841,10 +831,10 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             )
     let concreteMapElem
             ::  ( Maybe (TermLike Concrete)
-                , Maybe (Domain.Value normalized (TermLike VariableName))
+                , Maybe (Value normalized (TermLike VariableName))
                 )
             -> Maybe
-                (TermLike Concrete, Domain.Value normalized (TermLike VariableName))
+                (TermLike Concrete, Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
             Map.fromList
@@ -859,14 +849,14 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
                 (not . nullFreeVariables . freeVariables')
                 (catMaybes (Set.toList mixedKeys))
     maybeVariablePairs <- mapM variablePair variableKeys
-    let variablePairs :: [Domain.Element normalized (TermLike VariableName)]
+    let variablePairs :: [Element normalized (TermLike VariableName)]
         variablePairs = catMaybes maybeVariablePairs
     (Setup {metadataTools}, _) <- Reader.ask
-    return $ Just . mkBuiltin $
-        AssociativeCommutative.asInternalBuiltin
+    return $ Just $
+        AssociativeCommutative.asInternal
             metadataTools
             mapSort
-            (Domain.wrapAc Domain.NormalizedAc
+            (wrapAc NormalizedAc
                 { elementsWithVariables = variablePairs
                 , concreteElements = concreteMap
                 , opaque = []
@@ -878,12 +868,12 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     freeVariables' = freeVariables
     variablePair
         :: TermLike VariableName
-        -> Gen (Maybe (Domain.Element normalized (TermLike VariableName)))
+        -> Gen (Maybe (Element normalized (TermLike VariableName)))
     variablePair key = do
         maybeValue <- valueGenerator childGenerator
         return $ do  -- maybe monad
             value <- maybeValue
-            return (Domain.wrapElement (key, value))
+            return (wrapElement (key, value))
 
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)

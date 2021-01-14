@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Bool
     ( sort
     , assertSort
@@ -165,9 +168,9 @@ builtinFunctions =
     ]
   where
     unaryOperator =
-        Builtin.unaryOperator' extractBoolDomainValue asPattern
+        Builtin.unaryOperator extractBoolDomainValue asPattern
     binaryOperator =
-        Builtin.binaryOperator' extractBoolDomainValue asPattern
+        Builtin.binaryOperator extractBoolDomainValue asPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 

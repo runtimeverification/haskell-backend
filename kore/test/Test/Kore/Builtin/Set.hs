@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Builtin.Set
@@ -90,13 +92,9 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
-import Kore.Domain.Builtin
-    ( NormalizedAc
-    , NormalizedSet
-    )
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
@@ -184,7 +182,7 @@ test_unit :: [TestTree]
 test_unit =
     [ unitSet `becomes` asInternal Set.empty
         $ "unit() === /* builtin */ unit()"
-    , concatSet (mkElemVar xSet) unitSet `becomes` internalOpaque (mkElemVar xSet)
+    , concatSet (mkElemVar xSet) unitSet `becomes` mkElemVar xSet
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
@@ -199,9 +197,6 @@ test_unit =
         testCase name $ do
             actual <- runNoSMT $ evaluate original
             assertEqual "" (Pattern.fromTermLike expect) actual
-
-    internalOpaque set =
-        asInternalNormalized (emptyNormalizedSet `with` OpaqueSet set)
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -432,7 +427,7 @@ test_difference_symbolic =
                 , builtinSet_ [x, zero]
                 ]
             expect =
-                makeMultipleAndPredicate (makeCeilPredicate setSort <$> args)
+                makeMultipleAndPredicate (makeCeilPredicate <$> args)
                 & Condition.fromPredicate
                 & Pattern.withCondition oneSingleton
         evalDifference (Just expect) args
@@ -442,7 +437,7 @@ test_difference_symbolic =
                 , builtinSet_ [x, y]
                 ]
             expect =
-                makeMultipleAndPredicate (makeCeilPredicate setSort <$> args)
+                makeMultipleAndPredicate (makeCeilPredicate <$> args)
                 & Condition.fromPredicate
                 & Pattern.withCondition (differenceSet oneSingleton ySingleton)
         evalDifference (Just expect) args
@@ -453,7 +448,7 @@ test_difference_symbolic =
                 ]
             expect =
                 makeMultipleAndPredicate
-                    (makeCeilPredicate setSort <$> tail args)
+                    (makeCeilPredicate <$> tail args)
                 & Condition.fromPredicate
                 & Pattern.withCondition (builtinSet_ [])
         evalDifference (Just expect) args
@@ -463,7 +458,7 @@ test_difference_symbolic =
                 , builtinSet_ [fx]
                 ]
             expect =
-                makeCeilPredicate setSort (head args)
+                makeCeilPredicate (head args)
                 & Condition.fromPredicate
                 & Pattern.withCondition oneSingleton
         evalDifference (Just expect) args
@@ -708,7 +703,7 @@ test_unifyFramingVariable =
             let
                 expect = Conditional
                     { term = asInternal concreteSet
-                    , predicate = makeTruePredicate setSort
+                    , predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap
                             [(inject frameVar, asInternal remainder)]
@@ -812,7 +807,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject setVar, asInternal Set.empty)
@@ -840,7 +835,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar, elemStepPattern) ]
@@ -875,7 +870,7 @@ test_unifySelectFromTwoElementSet =
                 expect1 =
                     Conditional
                         { term = set
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( inject setVar
@@ -887,7 +882,7 @@ test_unifySelectFromTwoElementSet =
                 expect2 =
                     Conditional
                         { term = set
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( inject setVar
@@ -938,7 +933,7 @@ test_unifySelectTwoFromTwoElementSet =
                         ]
                     return Conditional
                         { term = set
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject setVar, asInternal Set.empty)
@@ -985,7 +980,7 @@ test_unifyConcatElemVarVsElemSet =
                         ]
                     return Conditional
                         { term = expectedPatSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject setVar, setUnifier)
@@ -1032,7 +1027,7 @@ test_unifyConcatElemVarVsElemElem =
                         ]
                     return Conditional
                         { term = expectedPatSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject setVar, setUnifier)
@@ -1075,7 +1070,7 @@ test_unifyConcatElemElemVsElemConcrete =
                         ]
                     return Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, elemUnifier1)
@@ -1117,7 +1112,7 @@ test_unifyConcatElemElemVsElemElem =
                         ]
                     return Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, elemUnifier1)
@@ -1172,7 +1167,7 @@ test_unifyConcatElemConcatVsElemConcrete =
                         ]
                     return Conditional
                         { term = expectedPat
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, elemUnifier1)
@@ -1209,7 +1204,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, mkElemVar elementVar2) ]
@@ -1247,7 +1242,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, elemStepPattern2)
@@ -1293,7 +1288,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, elemStepPattern3)
@@ -1368,7 +1363,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, mkElemVar elementVar2) ]
@@ -1398,7 +1393,7 @@ test_unifyConcatElemVsElem =
                 expect =
                     [ Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, mkElemVar elementVar2) ]
@@ -1429,7 +1424,7 @@ test_unifyConcatElemVsElemConcrete1 =
                 expect =
                     [ Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, mkElemVar elementVar2) ]
@@ -1536,7 +1531,7 @@ test_unifyConcatElemVsElemVar =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject setVar, asInternal Set.empty)
@@ -1616,7 +1611,7 @@ test_unifyConcatElemElemVsElemConcatSet =
                         ]
                     return Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, firstUnifier)
@@ -1649,7 +1644,7 @@ test_unifyFnSelectFromSingleton =
                     [ Conditional
                         { term = singleton
                         , predicate =
-                            makeEqualsPredicate setSort
+                            makeEqualsPredicate
                                 elemStepPatt
                                 elementVarPatt
                         , substitution =
@@ -1731,7 +1726,7 @@ test_unifyMultipleIdenticalOpaqueSets =
                 expect =
                     [ Conditional
                         { term = expectedPat
-                        , predicate = makeTruePredicate setSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject elementVar1, mkElemVar elementVar2)
@@ -1778,7 +1773,7 @@ test_concretizeKeys =
                 mkPair intSort setSort
                     symbolicKey
                     (builtinSet_ [concreteKey])
-            , predicate = Predicate.makeTruePredicate (termLikeSort original)
+            , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (inject x, symbolicKey) ]
             }
@@ -1817,14 +1812,14 @@ test_concretizeKeysAxiom =
         RewriteRule RulePattern
             { left = mkPair intSort setSort x symbolicSet
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate_
+            , requires = Predicate.makeTruePredicate
             , rhs = injectTermIntoRHS x
             , attributes = Default.def
             }
     expected = MultiOr.make
         [ Conditional
             { term = symbolicKey
-            , predicate = makeTruePredicate intSort
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
         ]
@@ -1912,13 +1907,13 @@ unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
 asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
-    . Map.fromSet (const Domain.SetValue)
+    . Map.fromSet (const SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
     :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
     -> TermLike VariableName
-asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
+asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
 
@@ -1932,8 +1927,8 @@ normalizedSet
     -- ^ opaque terms
     -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
 normalizedSet elements opaque =
-    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
-        { elementsWithVariables = Domain.SetElement <$> elements
+    Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
+        { elementsWithVariables = SetElement <$> elements
         , concreteElements = Map.empty
         , opaque
         }

@@ -21,7 +21,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
 import Log
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 

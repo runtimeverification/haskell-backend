@@ -2,7 +2,6 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Internal.Predicate.makeAndPredicate */
         /* Sfc */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
@@ -20,8 +19,7 @@
             /* Sfc */
             \equals{SortMap{}, SortGeneratedTopCell{}}(
                 /* Fn Sfc */
-                /* builtin: */
-                Lbl'Unds'Map'Unds'{}(
+                /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
@@ -36,8 +34,7 @@
                     Var'Unds'DotVar3:SortMap{}
                 ),
                 /* Fn Sfc */
-                /* builtin: */
-                Lbl'Unds'Map'Unds'{}(
+                /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
@@ -82,8 +79,7 @@
                 /* Fn Sfc */
                 Lbl'-LT-'state'-GT-'{}(
                     /* Fn Sfc */
-                    /* builtin: */
-                    Lbl'Unds'Map'Unds'{}(
+                    /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                         /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                             /* Fl Fn D Sfc */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
@@ -114,8 +110,7 @@
             /* Fn Spa */
             Lbl'-LT-'state'-GT-'{}(
                 /* Fn Spa */
-                /* builtin: */
-                Lbl'Unds'Map'Unds'{}(
+                /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Spa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(

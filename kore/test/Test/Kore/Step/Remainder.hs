@@ -27,7 +27,7 @@ test_existentiallyQuantifyTarget =
 
 target :: Predicate RewritingVariableName
 target =
-    Predicate.makeEqualsPredicate_
+    Predicate.makeEqualsPredicate
         (mkElemVar $ mkElementConfigVariable Mock.x)
         (Mock.sigma
             (mkElemVar $ mkElementRuleVariable Mock.y)

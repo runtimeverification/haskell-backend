@@ -37,7 +37,6 @@ import Kore.Internal.TermLike
     , Symbol
     , TermLike
     , VariableName
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Sentence
@@ -161,25 +160,25 @@ matchEquation attributes termLike
             , attributes
             }
 
-    match (TermLike.Equals_ _ sort left right) =
+    match (TermLike.Equals_ _ _ left right) =
         pure Equation
-            { requires = Predicate.makeTruePredicate sort
+            { requires = Predicate.makeTruePredicate
             , argument = Nothing
             , antiLeft = Nothing
             , left
             , right
-            , ensures = Predicate.makeTruePredicate sort
+            , ensures = Predicate.makeTruePredicate
             , attributes
             }
 
     match left@(TermLike.Ceil_ _ sort _) =
         pure Equation
-            { requires = Predicate.makeTruePredicate sort
+            { requires = Predicate.makeTruePredicate
             , argument = Nothing
             , antiLeft = Nothing
             , left
             , right = TermLike.mkTop sort
-            , ensures = Predicate.makeTruePredicate sort
+            , ensures = Predicate.makeTruePredicate
             , attributes
             }
 
@@ -188,7 +187,5 @@ matchEquation attributes termLike
     -- If the ensures and requires are the same, then the ensures is redundant.
     removeRedundantEnsures equation@Equation { requires, ensures }
       | ensures == requires =
-        return equation { ensures = Predicate.makeTruePredicate sort }
+        return equation { ensures = Predicate.makeTruePredicate }
       | otherwise = return equation
-      where
-        sort = termLikeSort (Predicate.unwrapPredicate ensures)

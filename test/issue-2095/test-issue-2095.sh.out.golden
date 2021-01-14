@@ -16,7 +16,6 @@
                             \or{SortGeneratedTopCell{}}(
                                 /* Spc */
                                 \or{SortGeneratedTopCell{}}(
-                                    /* Created: Kore.Internal.Conditional.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
                                         /* Sfc */
@@ -113,8 +112,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -155,8 +153,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'script'-GT-'{}(
@@ -1438,20 +1435,17 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'invs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Set{}()
+                                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* builtin: */
-                                                        /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                        /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                             /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                 /* Fl Fn D Sfa Cl */
@@ -1534,10 +1528,8 @@
                                             )
                                         )
                                     ),
-                                    /* Created: Kore.Internal.Conditional.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                         /* Sfc */
                                         \and{SortGeneratedTopCell{}}(
                                             /* Sfc */
@@ -1563,7 +1555,6 @@
                                                     )
                                                 )
                                             ),
-                                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                             /* Spc */
                                             \and{SortGeneratedTopCell{}}(
                                                 /* Sfc */
@@ -1581,7 +1572,6 @@
                                                         Var'QuesUnds'3:SortMap{}
                                                     )
                                                 ),
-                                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                                 /* Spc */
                                                 \and{SortGeneratedTopCell{}}(
                                                     /* Sfc */
@@ -1729,8 +1719,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -1771,8 +1760,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'script'-GT-'{}(
@@ -3278,20 +3266,17 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'invs'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Map{}()
+                                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                                     ),
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Set{}()
+                                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* builtin: */
-                                                        /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                        /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                             /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                 /* Fl Fn D Sfa Cl */
@@ -3375,10 +3360,8 @@
                                         )
                                     )
                                 ),
-                                /* Created: Kore.Internal.Conditional.makeAndPredicate */
                                 /* Spc */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                     /* Sfc */
                                     \and{SortGeneratedTopCell{}}(
                                         /* Sfc */
@@ -3404,53 +3387,51 @@
                                                 )
                                             )
                                         ),
-                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                         /* Spc */
                                         \and{SortGeneratedTopCell{}}(
                                             /* Sfc */
-                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                \dv{SortBool{}}("true"),
-                                                /* Fl Fn D Sfc */
-                                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                /* Fn Sfc */
+                                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'3:SortMap{},
+                                                    /* Fl Fn D Sfa Cli */
+                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                        /* Fl Fn D Sfa Cl */
+                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                    ),
                                                     /* Fl Fn D Sfc */
-                                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
                                                         /* Fl Fn D Sfa */
                                                         Var'QuesUnds'1:SortInt{}
                                                     ),
+                                                    /* Fl Fn D Sfa Cli */
+                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                        /* Fl Fn D Sfa Cl */
+                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                    )
+                                                ),
+                                                /* Fl Fn D Sfa */
+                                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
                                                     /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'3:SortMap{}
+                                                    VarV:SortData{}
                                                 )
                                             ),
-                                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                             /* Spc */
                                             \and{SortGeneratedTopCell{}}(
                                                 /* Sfc */
-                                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                    /* Fn Sfc */
-                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{},
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        ),
+                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    \dv{SortBool{}}("true"),
+                                                    /* Fl Fn D Sfc */
+                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa */
                                                             Var'QuesUnds'1:SortInt{}
                                                         ),
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        )
-                                                    ),
-                                                    /* Fl Fn D Sfa */
-                                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
                                                         /* Fl Fn D Sfa */
-                                                        VarV:SortData{}
+                                                        Var'QuesUnds'3:SortMap{}
                                                     )
                                                 ),
                                                 /* Sfc */
@@ -3552,8 +3533,7 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'knownaddrs'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -3594,8 +3574,7 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'bigmaps'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'script'-GT-'{}(
@@ -5024,20 +5003,17 @@
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'invs'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Map{}()
+                                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                                 ),
                                                 /* Fl Fn D Sfa Cl */
                                                 Lbl'-LT-'cutpoints'-GT-'{}(
                                                     /* Fl Fn D Sfa Cl */
-                                                    /* builtin: */
-                                                    Lbl'Stop'Set{}()
+                                                    /* InternalSet: */ Lbl'Stop'Set{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 Lbl'-LT-'symbols'-GT-'{}(
                                                     /* Fl Fn D Sfc */
-                                                    /* builtin: */
-                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa Cl */
@@ -5121,10 +5097,8 @@
                                     )
                                 )
                             ),
-                            /* Created: Kore.Internal.Conditional.makeAndPredicate */
                             /* Spc */
                             \and{SortGeneratedTopCell{}}(
-                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                 /* Sfc */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Sfc */
@@ -5150,24 +5124,8 @@
                                             )
                                         )
                                     ),
-                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfc */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("true"),
-                                            /* Fl Fn D Sfc */
-                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{}
-                                            )
-                                        ),
                                         /* Sfc */
                                         \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
@@ -5191,6 +5149,21 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                 )
+                                            )
+                                        ),
+                                        /* Sfc */
+                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            \dv{SortBool{}}("true"),
+                                            /* Fl Fn D Sfc */
+                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'3:SortMap{}
                                             )
                                         )
                                     )
@@ -5274,7 +5247,7 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'knownaddrs'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -5315,7 +5288,7 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'bigmaps'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'script'-GT-'{}(
@@ -6602,18 +6575,17 @@
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'invs'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Map{}()
+                                                /* InternalMap: */ Lbl'Stop'Map{}()
                                             ),
                                             /* Fl Fn D Sfa Cl */
                                             Lbl'-LT-'cutpoints'-GT-'{}(
                                                 /* Fl Fn D Sfa Cl */
-                                                /* builtin: */ Lbl'Stop'Set{}()
+                                                /* InternalSet: */ Lbl'Stop'Set{}()
                                             ),
                                             /* Fl Fn D Sfc */
                                             Lbl'-LT-'symbols'-GT-'{}(
                                                 /* Fl Fn D Sfc */
-                                                /* builtin: */
-                                                /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                         /* Fl Fn D Sfa Cl */
@@ -6696,10 +6668,8 @@
                                 )
                             )
                         ),
-                        /* Created: Kore.Internal.Conditional.makeAndPredicate */
                         /* Spc */
                         \and{SortGeneratedTopCell{}}(
-                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                             /* Sfc */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
@@ -6725,7 +6695,6 @@
                                         )
                                     )
                                 ),
-                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                 /* Spc */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Sfc */
@@ -6752,74 +6721,70 @@
                                             )
                                         )
                                     ),
-                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfa */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("false"),
-                                            /* Fl Fn D Sfa */
-                                            Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                        /* Sfc */
+                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                            /* Fn Sfc */
+                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'4:SortInt{},
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'1:SortInt{}
-                                            )
-                                        ),
-                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                        /* Spc */
-                                        \and{SortGeneratedTopCell{}}(
-                                            /* Sfc */
-                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                \dv{SortBool{}}("true"),
+                                                Var'QuesUnds'3:SortMap{},
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                ),
                                                 /* Fl Fn D Sfc */
-                                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                    /* Fl Fn D Sfc */
-                                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'1:SortInt{}
-                                                    ),
+                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
                                                     /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'3:SortMap{}
+                                                    Var'QuesUnds'1:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                 )
                                             ),
-                                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                            /* Fl Fn D Sfc */
+                                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortData{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    VarI2:SortInt{}
+                                                )
+                                            )
+                                        ),
+                                        /* Spc */
+                                        \and{SortGeneratedTopCell{}}(
+                                            /* Sfa */
+                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortBool{}}("false"),
+                                                /* Fl Fn D Sfa */
+                                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'4:SortInt{},
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                )
+                                            ),
                                             /* Spc */
                                             \and{SortGeneratedTopCell{}}(
                                                 /* Sfc */
-                                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                    /* Fn Sfc */
-                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{},
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        ),
+                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    \dv{SortBool{}}("true"),
+                                                    /* Fl Fn D Sfc */
+                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa */
                                                             Var'QuesUnds'1:SortInt{}
                                                         ),
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        )
-                                                    ),
-                                                    /* Fl Fn D Sfc */
-                                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            VarI2:SortInt{}
-                                                        )
+                                                        /* Fl Fn D Sfa */
+                                                        Var'QuesUnds'3:SortMap{}
                                                     )
                                                 ),
-                                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                                 /* Spc */
                                                 \and{SortGeneratedTopCell{}}(
                                                     /* Sfc */
@@ -6972,7 +6937,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'knownaddrs'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -7013,7 +6978,7 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'bigmaps'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'script'-GT-'{}(
@@ -7615,8 +7580,7 @@
                                                                 /* Fl Fn D Sfc */
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
-                                                                    /* builtin: */
-                                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                                         /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                             /* Fl Fn D Sfa Cl */
@@ -8776,18 +8740,17 @@
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'invs'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Map{}()
+                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                         ),
                                         /* Fl Fn D Sfa Cl */
                                         Lbl'-LT-'cutpoints'-GT-'{}(
                                             /* Fl Fn D Sfa Cl */
-                                            /* builtin: */ Lbl'Stop'Set{}()
+                                            /* InternalSet: */ Lbl'Stop'Set{}()
                                         ),
                                         /* Fl Fn D Sfc */
                                         Lbl'-LT-'symbols'-GT-'{}(
                                             /* Fl Fn D Sfc */
-                                            /* builtin: */
-                                            Lbl'Unds'Map'Unds'{}(
+                                            /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                                 /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                     /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -8986,10 +8949,8 @@
                             )
                         )
                     ),
-                    /* Created: Kore.Internal.Conditional.makeAndPredicate */
                     /* Spc */
                     \and{SortGeneratedTopCell{}}(
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Sfc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
@@ -9014,7 +8975,6 @@
                                     )
                                 )
                             ),
-                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                             /* Spc */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
@@ -9041,104 +9001,100 @@
                                         )
                                     )
                                 ),
-                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                 /* Spc */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfa */
-                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        \dv{SortBool{}}("false"),
-                                        /* Fl Fn D Sfa */
-                                        Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                    /* Sfc */
+                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                        /* Fn Sfc */
+                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                             /* Fl Fn D Sfa */
-                                            Var'QuesUnds'4:SortInt{},
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'1:SortInt{}
+                                            Var'QuesUnds'3:SortMap{},
+                                            /* Fl Fn D Sfa Cli */
+                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                            ),
+                                            /* Fl Fn D Sfc */
+                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'1:SortInt{}
+                                            ),
+                                            /* Fl Fn D Sfa Cli */
+                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                            )
+                                        ),
+                                        /* Fl Fn D Sfc */
+                                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                            /* Fl Fn D Sfc */
+                                            /* Inj: */ inj{SortInt{}, SortData{}}(
+                                                /* Fl Fn D Sfa */
+                                                VarI2:SortInt{}
+                                            )
                                         )
                                     ),
-                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
                                         /* Sfc */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("true"),
-                                            /* Fl Fn D Sfc */
-                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
+                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                            /* Fn Sfc */
+                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{}
-                                            )
-                                        ),
-                                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                                        /* Spc */
-                                        \and{SortGeneratedTopCell{}}(
-                                            /* Sfc */
-                                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                /* Fn Sfc */
-                                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'3:SortMap{},
-                                                    /* Fl Fn D Sfa Cli */
-                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                    ),
-                                                    /* Fl Fn D Sfc */
-                                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'1:SortInt{}
-                                                    ),
-                                                    /* Fl Fn D Sfa Cli */
-                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                    )
+                                                Var'QuesUnds'3:SortMap{},
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
-                                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                    /* Fl Fn D Sfc */
-                                                    /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                        /* Fl Fn D Sfa */
-                                                        VarI2:SortInt{}
-                                                    )
+                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'4:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                 )
                                             ),
-                                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
+                                            /* Fl Fn D Sfa */
+                                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                /* Fl Fn D Sfa */
+                                                VarV0:SortData{}
+                                            )
+                                        ),
+                                        /* Spc */
+                                        \and{SortGeneratedTopCell{}}(
+                                            /* Sfa */
+                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortBool{}}("false"),
+                                                /* Fl Fn D Sfa */
+                                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'4:SortInt{},
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                )
+                                            ),
                                             /* Spc */
                                             \and{SortGeneratedTopCell{}}(
                                                 /* Sfc */
-                                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                    /* Fn Sfc */
-                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{},
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        ),
+                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    \dv{SortBool{}}("true"),
+                                                    /* Fl Fn D Sfc */
+                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                                         /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'4:SortInt{}
+                                                            Var'QuesUnds'1:SortInt{}
                                                         ),
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        )
-                                                    ),
-                                                    /* Fl Fn D Sfa */
-                                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                                         /* Fl Fn D Sfa */
-                                                        VarV0:SortData{}
+                                                        Var'QuesUnds'3:SortMap{}
                                                     )
                                                 ),
                                                 /* Sfc */
@@ -9242,7 +9198,7 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'knownaddrs'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -9283,7 +9239,7 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'bigmaps'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'script'-GT-'{}(
@@ -9816,8 +9772,7 @@
                                                                 /* Fl Fn D Sfc */
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
-                                                                    /* builtin: */
-                                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                                         /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                                             /* Fl Fn D Sfa Cl */
@@ -10968,18 +10923,17 @@
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'invs'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Map{}()
+                                        /* InternalMap: */ Lbl'Stop'Map{}()
                                     ),
                                     /* Fl Fn D Sfa Cl */
                                     Lbl'-LT-'cutpoints'-GT-'{}(
                                         /* Fl Fn D Sfa Cl */
-                                        /* builtin: */ Lbl'Stop'Set{}()
+                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                     ),
                                     /* Fl Fn D Sfc */
                                     Lbl'-LT-'symbols'-GT-'{}(
                                         /* Fl Fn D Sfc */
-                                        /* builtin: */
-                                        Lbl'Unds'Map'Unds'{}(
+                                        /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -11185,10 +11139,8 @@
                         )
                     )
                 ),
-                /* Created: Kore.Internal.Conditional.makeAndPredicate */
                 /* Spc */
                 \and{SortGeneratedTopCell{}}(
-                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     /* Sfc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
@@ -11212,7 +11164,6 @@
                                 )
                             )
                         ),
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Spc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
@@ -11238,97 +11189,93 @@
                                     )
                                 )
                             ),
-                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                             /* Spc */
                             \and{SortGeneratedTopCell{}}(
-                                /* Sfa */
-                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortBool{}}("false"),
-                                    /* Fl Fn D Sfa */
-                                    Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                /* Sfc */
+                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                    /* Fn Sfc */
+                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                         /* Fl Fn D Sfa */
-                                        Var'QuesUnds'4:SortInt{},
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
+                                        Var'QuesUnds'3:SortMap{},
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        ),
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
+                                        ),
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        )
+                                    ),
+                                    /* Fl Fn D Sfc */
+                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                            /* Fl Fn D Sfa */ VarI2:SortInt{}
+                                        )
                                     )
                                 ),
-                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                 /* Spc */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Sfc */
-                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        \dv{SortBool{}}("true"),
-                                        /* Fl Fn D Sfc */
-                                        Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'1:SortInt{}
-                                            ),
+                                        LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
+                                        /* Fn Sfc */
+                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                             /* Fl Fn D Sfa */
-                                            Var'QuesUnds'3:SortMap{}
+                                            Var'QuesUnds'3:SortMap{},
+                                            /* Fl Fn D Sfa Cli */
+                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                            ),
+                                            /* Fl Fn D Sfc */
+                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'4:SortInt{}
+                                            ),
+                                            /* Fl Fn D Sfa Cli */
+                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                            )
                                         )
                                     ),
-                                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfc */
-                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                            /* Fn Sfc */
-                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Sfa */
+                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            \dv{SortBool{}}("false"),
+                                            /* Fl Fn D Sfa */
+                                            Lbl'UndsEqlsEqls'Int'Unds'{}(
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{},
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                ),
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                )
-                                            ),
-                                            /* Fl Fn D Sfc */
-                                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    VarI2:SortInt{}
-                                                )
+                                                Var'QuesUnds'4:SortInt{},
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'1:SortInt{}
                                             )
                                         ),
                                         /* Sfc */
-                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
-                                            /* Fn Sfc */
-                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{},
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                ),
+                                            \dv{SortBool{}}("true"),
+                                            /* Fl Fn D Sfc */
+                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                                 /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                     /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'4:SortInt{}
+                                                    Var'QuesUnds'1:SortInt{}
                                                 ),
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                )
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'3:SortMap{}
                                             )
                                         )
                                     )
@@ -11411,7 +11358,7 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'knownaddrs'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -11451,7 +11398,7 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'bigmaps'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'script'-GT-'{}(
@@ -12803,18 +12750,17 @@
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'invs'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Map{}()
+                                    /* InternalMap: */ Lbl'Stop'Map{}()
                                 ),
                                 /* Fl Fn D Sfa Cl */
                                 Lbl'-LT-'cutpoints'-GT-'{}(
                                     /* Fl Fn D Sfa Cl */
-                                    /* builtin: */ Lbl'Stop'Set{}()
+                                    /* InternalSet: */ Lbl'Stop'Set{}()
                                 ),
                                 /* Fl Fn D Sfc */
                                 Lbl'-LT-'symbols'-GT-'{}(
                                     /* Fl Fn D Sfc */
-                                    /* builtin: */
-                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                             /* Fl Fn D Sfa Cl */
@@ -12903,10 +12849,8 @@
                     )
                 )
             ),
-            /* Created: Kore.Internal.Conditional.makeAndPredicate */
             /* Spc */
             \and{SortGeneratedTopCell{}}(
-                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                 /* Sfc */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfc */
@@ -12930,7 +12874,6 @@
                             )
                         )
                     ),
-                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
@@ -12956,69 +12899,66 @@
                                 )
                             )
                         ),
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Spc */
                         \and{SortGeneratedTopCell{}}(
                             /* Sfc */
-                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                                /* Fl Fn D Sfc */
-                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                /* Fn Sfc */
+                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    ),
                                     /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
                                         /* Fl Fn D Sfa */
                                         Var'QuesUnds'1:SortInt{}
                                     ),
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    )
+                                ),
+                                /* Fl Fn D Sfc */
+                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                    /* Fl Fn D Sfc */
+                                    /* Inj: */ inj{SortInt{}, SortData{}}(
+                                        /* Fl Fn D Sfa */ VarI2:SortInt{}
+                                    )
                                 )
                             ),
-                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
                             /* Spc */
                             \and{SortGeneratedTopCell{}}(
-                                /* Sfa */
+                                /* Sfc */
                                 \equals{SortBool{}, SortGeneratedTopCell{}}(
                                     /* Fl Fn D Sfa Cl */
                                     \dv{SortBool{}}("true"),
-                                    /* Fl Fn D Sfa */
-                                    Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                    /* Fl Fn D Sfc */
+                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
+                                        ),
                                         /* Fl Fn D Sfa */
-                                        Var'QuesUnds'4:SortInt{},
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
+                                        Var'QuesUnds'3:SortMap{}
                                     )
                                 ),
-                                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                                 /* Spc */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfc */
-                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                        /* Fn Sfc */
-                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                    /* Sfa */
+                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        \dv{SortBool{}}("true"),
+                                        /* Fl Fn D Sfa */
+                                        Lbl'UndsEqlsEqls'Int'Unds'{}(
                                             /* Fl Fn D Sfa */
-                                            Var'QuesUnds'3:SortMap{},
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                            ),
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'1:SortInt{}
-                                            ),
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                            )
-                                        ),
-                                        /* Fl Fn D Sfc */
-                                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                /* Fl Fn D Sfa */
-                                                VarI2:SortInt{}
-                                            )
+                                            Var'QuesUnds'4:SortInt{},
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
                                         )
                                     ),
                                     /* Sfc */
@@ -13152,7 +13092,7 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'knownaddrs'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -13192,7 +13132,7 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'bigmaps'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'script'-GT-'{}(
@@ -13526,8 +13466,7 @@
                                                 /* Fl Fn D Sfc */
                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                     /* Fl Fn D Sfc */
-                                                    /* builtin: */
-                                                    /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                                    /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                         /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                             /* Fl Fn D Sfa Cl */
@@ -14645,18 +14584,17 @@
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'invs'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Map{}()
+                                /* InternalMap: */ Lbl'Stop'Map{}()
                             ),
                             /* Fl Fn D Sfa Cl */
                             Lbl'-LT-'cutpoints'-GT-'{}(
                                 /* Fl Fn D Sfa Cl */
-                                /* builtin: */ Lbl'Stop'Set{}()
+                                /* InternalSet: */ Lbl'Stop'Set{}()
                             ),
                             /* Fl Fn D Sfc */
                             Lbl'-LT-'symbols'-GT-'{}(
                                 /* Fl Fn D Sfc */
-                                /* builtin: */
-                                Lbl'Unds'Map'Unds'{}(
+                                /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                     /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
@@ -14853,10 +14791,8 @@
                 )
             )
         ),
-        /* Created: Kore.Internal.Conditional.makeAndPredicate */
         /* Spc */
         \and{SortGeneratedTopCell{}}(
-            /* Created: Kore.Internal.Predicate.makeAndPredicate */
             /* Sfc */
             \and{SortGeneratedTopCell{}}(
                 /* Sfc */
@@ -14880,7 +14816,6 @@
                         )
                     )
                 ),
-                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                 /* Spc */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfc */
@@ -14906,85 +14841,30 @@
                             )
                         )
                     ),
-                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
-                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                            /* Fl Fn D Sfc */
-                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                        \equals{SortInt{}, SortGeneratedTopCell{}}(
+                            /* Fn Sfc */
+                            Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
                                 /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                                ),
-                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
-                            )
-                        ),
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                        /* Spc */
-                        \and{SortGeneratedTopCell{}}(
-                            /* Sfa */
-                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                                /* Fl Fn D Sfa */
-                                Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                                )
-                            ),
-                            /* Created: Kore.Internal.Predicate.makeAndPredicate */
-                            /* Spc */
-                            \and{SortGeneratedTopCell{}}(
-                                /* Sfc */
-                                \equals{SortInt{}, SortGeneratedTopCell{}}(
-                                    /* Fn Sfc */
-                                    Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
+                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
+                                    /* Fl Fn D Sfc */
+                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
                                         /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                            /* Fl Fn D Sfc */
-                                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Lbl'UndsPlus'Int'Unds'{}(
-                                                        /* Fl Fn D Sfa */
-                                                        VarI2:SortInt{},
-                                                        /* Fl Fn D Sfa Cl */
-                                                        \dv{SortInt{}}("1")
-                                                    )
-                                                )
-                                            )
-                                        ),
-                                        /* Fn Sfc */
-                                        /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                            /* Fn Sfc */
-                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                            /* Fl Fn D Sfa */
+                                            Lbl'UndsPlus'Int'Unds'{}(
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{},
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                ),
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'4:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                )
+                                                VarI2:SortInt{},
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortInt{}}("1")
                                             )
                                         )
-                                    ),
-                                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                                    )
                                 ),
-                                /* Sfc */
-                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                /* Fn Sfc */
+                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
                                     /* Fn Sfc */
                                     Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                         /* Fl Fn D Sfa */
@@ -14996,21 +14876,78 @@
                                         ),
                                         /* Fl Fn D Sfc */
                                         /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                             /* Fl Fn D Sfa */
-                                            Var'QuesUnds'1:SortInt{}
+                                            Var'QuesUnds'4:SortInt{}
                                         ),
                                         /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
                                             /* Fl Fn D Sfa Cl */
                                             Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                         )
+                                    )
+                                )
+                            ),
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                        ),
+                        /* Spc */
+                        \and{SortGeneratedTopCell{}}(
+                            /* Sfc */
+                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                /* Fn Sfc */
+                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                     ),
                                     /* Fl Fn D Sfc */
-                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'1:SortInt{}
+                                    ),
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    )
+                                ),
+                                /* Fl Fn D Sfc */
+                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                    /* Fl Fn D Sfc */
+                                    /* Inj: */ inj{SortInt{}, SortData{}}(
+                                        /* Fl Fn D Sfa */ VarI2:SortInt{}
+                                    )
+                                )
+                            ),
+                            /* Spc */
+                            \and{SortGeneratedTopCell{}}(
+                                /* Sfc */
+                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    \dv{SortBool{}}("true"),
+                                    /* Fl Fn D Sfc */
+                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                         /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortData{}}(
-                                            /* Fl Fn D Sfa */ VarI2:SortInt{}
-                                        )
+                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
+                                        ),
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{}
+                                    )
+                                ),
+                                /* Sfa */
+                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    \dv{SortBool{}}("true"),
+                                    /* Fl Fn D Sfa */
+                                    Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'4:SortInt{},
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'1:SortInt{}
                                     )
                                 )
                             )
@@ -15092,7 +15029,8 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'knownaddrs'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -15131,7 +15069,8 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'bigmaps'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'script'-GT-'{}(
@@ -16480,17 +16419,18 @@
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'invs'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalMap: */ Lbl'Stop'Map{}()
                         ),
                         /* Fl Fn D Sfa Cl */
                         Lbl'-LT-'cutpoints'-GT-'{}(
-                            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                            /* Fl Fn D Sfa Cl */
+                            /* InternalSet: */ Lbl'Stop'Set{}()
                         ),
                         /* Fl Fn D Sfc */
                         Lbl'-LT-'symbols'-GT-'{}(
                             /* Fl Fn D Sfc */
-                            /* builtin: */
-                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                            /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                     /* Fl Fn D Sfa Cl */
@@ -16577,10 +16517,8 @@
             )
         )
     ),
-    /* Created: Kore.Internal.Conditional.makeAndPredicate */
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Internal.Predicate.makeAndPredicate */
         /* Sfc */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
@@ -16604,7 +16542,6 @@
                     )
                 )
             ),
-            /* Created: Kore.Internal.Predicate.makeAndPredicate */
             /* Spc */
             \and{SortGeneratedTopCell{}}(
                 /* Sfc */
@@ -16628,94 +16565,90 @@
                         )
                     )
                 ),
-                /* Created: Kore.Internal.Predicate.makeAndPredicate */
                 /* Spc */
                 \and{SortGeneratedTopCell{}}(
-                    /* Sfa */
-                    \equals{SortBool{}, SortGeneratedTopCell{}}(
-                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
-                        /* Fl Fn D Sfa */
-                        Lbl'UndsEqlsEqls'Int'Unds'{}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
-                            /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                    /* Sfc */
+                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                        /* Fn Sfc */
+                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                            /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                            /* Fl Fn D Sfa Cli */
+                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                /* Fl Fn D Sfa Cl */
+                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                            ),
+                            /* Fl Fn D Sfc */
+                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                            ),
+                            /* Fl Fn D Sfa Cli */
+                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                /* Fl Fn D Sfa Cl */
+                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                            )
+                        ),
+                        /* Fl Fn D Sfc */
+                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                            /* Fl Fn D Sfc */
+                            /* Inj: */ inj{SortInt{}, SortData{}}(
+                                /* Fl Fn D Sfa */ VarI2:SortInt{}
+                            )
                         )
                     ),
-                    /* Created: Kore.Internal.Predicate.makeAndPredicate */
                     /* Spc */
                     \and{SortGeneratedTopCell{}}(
                         /* Sfc */
-                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                            /* Fl Fn D Sfc */
-                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                            /* Fn Sfc */
+                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                                /* Fl Fn D Sfa Cli */
+                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                 ),
-                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                                ),
+                                /* Fl Fn D Sfa Cli */
+                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                )
+                            ),
+                            /* Fl Fn D Sfc */
+                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortData{}}(
+                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Fl Fn D Sfa */
+                                    VarI3:SortInt{}
+                                )
                             )
                         ),
-                        /* Created: Kore.Internal.Predicate.makeAndPredicate */
                         /* Spc */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfc */
-                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                /* Fn Sfc */
-                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    ),
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    )
-                                ),
-                                /* Fl Fn D Sfc */
-                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortData{}}(
-                                        /* Fl Fn D Sfa */ VarI2:SortInt{}
-                                    )
+                            /* Sfa */
+                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
+                                /* Fl Fn D Sfa */
+                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
                                 )
                             ),
                             /* Sfc */
-                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                /* Fn Sfc */
-                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    ),
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'4:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    )
-                                ),
+                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                                 /* Fl Fn D Sfc */
-                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                     /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortData{}}(
-                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                         /* Fl Fn D Sfa */
-                                        VarI3:SortInt{}
-                                    )
+                                        Var'QuesUnds'1:SortInt{}
+                                    ),
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                                 )
                             )
                         )
@@ -16797,7 +16730,7 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'knownaddrs'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'sourceaddr'-GT-'{}(
@@ -16836,7 +16769,7 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'bigmaps'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'script'-GT-'{}(
@@ -17168,8 +17101,7 @@
                                         /* Fl Fn D Sfc */
                                         Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                             /* Fl Fn D Sfc */
-                                            /* builtin: */
-                                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                            /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
                                                     /* Fl Fn D Sfa Cl */
@@ -18286,17 +18218,16 @@
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'invs'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
                     ),
                     /* Fl Fn D Sfa Cl */
                     Lbl'-LT-'cutpoints'-GT-'{}(
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                        /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
                     ),
                     /* Fl Fn D Sfc */
                     Lbl'-LT-'symbols'-GT-'{}(
                         /* Fl Fn D Sfc */
-                        /* builtin: */
-                        Lbl'Unds'Map'Unds'{}(
+                        /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(

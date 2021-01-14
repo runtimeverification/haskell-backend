@@ -137,7 +137,7 @@ import Kore.Variables.Fresh hiding
     ( refreshVariables'
     )
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -215,13 +215,13 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
             [ "left:"
             , Pretty.indent 4 (unparse left)
             , "requires:"
-            , Pretty.indent 4 (unparse requires)
+            , Pretty.indent 4 (pretty requires)
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
             , Pretty.indent 4 (unparse right)
             , "ensures:"
-            , Pretty.indent 4 (unparse ensures)
+            , Pretty.indent 4 (pretty ensures)
             ]
       where
         RulePattern
@@ -247,7 +247,7 @@ rulePattern left right =
     RulePattern
         { left
         , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate (TermLike.termLikeSort left)
+        , requires = Predicate.makeTruePredicate
         , rhs = termToRHS right
         , attributes = Default.def
         }
@@ -305,12 +305,11 @@ lhsToTerm
     -> Predicate variable
     -> TermLike variable
 lhsToTerm left Nothing requires =
-    TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+    TermLike.mkAnd (Predicate.fromPredicate_ requires) left
 lhsToTerm left (Just antiLeft) requires =
     TermLike.mkAnd
         (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-
+        (TermLike.mkAnd (Predicate.fromPredicate_ requires) left)
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS
@@ -321,7 +320,7 @@ injectTermIntoRHS right =
     RHS
     { existentials = []
     , right
-    , ensures = Predicate.makeTruePredicate (TermLike.termLikeSort right)
+    , ensures = Predicate.makeTruePredicate
     }
 
 -- | Parses a term representing a RHS into a RHS

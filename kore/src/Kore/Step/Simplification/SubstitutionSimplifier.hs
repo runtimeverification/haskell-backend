@@ -218,7 +218,7 @@ deduplicateSubstitution
             , Map (SomeVariable variable) (TermLike variable)
             )
 deduplicateSubstitution sideCondition makeAnd' =
-    worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
       | problems <- getProblems m, (not . null) problems =

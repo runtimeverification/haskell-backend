@@ -21,7 +21,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeFloorPredicate_
+    ( makeFloorPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
@@ -96,6 +96,6 @@ makeEvaluateNonBoolFloor patt =
   where
     (term, condition) = Pattern.splitTerm patt
     floorCondition =
-        makeFloorPredicate_ term
+        makeFloorPredicate term
         & Predicate.markSimplified
         & Condition.fromPredicate

@@ -22,9 +22,9 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTruePredicate
@@ -45,10 +45,10 @@ import Test.Tasty.HUnit.Ext
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
     [ testCase "Identity for top" $ do
-        actual <- runSimplifyPredicates makeTruePredicate_ OrPattern.top
+        actual <- runSimplifyPredicates makeTruePredicate OrPattern.top
         assertEqual "" OrPattern.top actual
     , testCase "Identity for bottom" $ do
-        actual <- runSimplifyPredicates makeTruePredicate_ OrPattern.bottom
+        actual <- runSimplifyPredicates makeTruePredicate OrPattern.bottom
         assertEqual "" OrPattern.bottom actual
     , testCase "Filters with SMT" $ do
         let expected = OrPattern.fromPatterns
@@ -59,7 +59,7 @@ test_orPatternSimplification =
                     }
                 ]
         actual <- runSimplifyPredicates
-            makeTruePredicate_
+            makeTruePredicate
             ( OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
@@ -78,7 +78,7 @@ test_orPatternSimplification =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -87,7 +87,7 @@ test_orPatternSimplification =
             ( OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 , Conditional
@@ -105,7 +105,7 @@ test_orPatternSimplification =
 
 positive :: TermLike VariableName -> Predicate VariableName
 positive u =
-    makeEqualsPredicate Mock.testSort
+    makeEqualsPredicate
         (Mock.builtinBool False)
         (Mock.lessInt
             (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
@@ -114,7 +114,7 @@ positive u =
 
 negative :: TermLike VariableName -> Predicate VariableName
 negative u =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (Mock.greaterEqInt
             (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)

@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.AndTerms
-Description : Unification and "and" simplification for terms.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.AndTerms
     ( termUnification
     , maybeTermAnd
@@ -49,7 +47,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -351,7 +349,7 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = lift $ do -- MonadUnify
-    secondCeil <- makeEvaluateTermCeil sideCondition (termLikeSort first) second
+    secondCeil <- makeEvaluateTermCeil sideCondition second
     case toList secondCeil of
         [] -> return Pattern.top
         [ Conditional { predicate = PredicateTrue, substitution } ]
@@ -421,8 +419,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                let sort = termLikeSort first
-                resultOr <- makeEvaluateTermCeil sideCondition sort second
+                resultOr <- makeEvaluateTermCeil sideCondition second
                 case toList resultOr of
                     [] -> do
                         explainBottom
@@ -593,28 +590,10 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
-    term1@(Builtin_ _)
-    term2@(App_ secondHead _)
-    | Symbol.isConstructor secondHead =
-      error (unlines [ "Cannot handle builtin and Constructor:"
-                     , unparseToString term1
-                     , unparseToString term2
-                     ]
-            )
-domainValueAndConstructorErrors
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
     | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
-                     , unparseToString term1
-                     , unparseToString term2
-                     ]
-            )
-domainValueAndConstructorErrors
-    term1@(App_ firstHead _)
-    term2@(Builtin_ _)
-    | Symbol.isConstructor firstHead =
-      error (unlines [ "Cannot handle Constructor and builtin:"
                      , unparseToString term1
                      , unparseToString term2
                      ]
@@ -700,7 +679,7 @@ functionAnd
     -> Maybe (Pattern variable)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
-    makeEqualsPredicate_ first' second'
+    makeEqualsPredicate first' second'
     & Predicate.markSimplified
     -- Ceil predicate not needed since first being
     -- bottom will make the entire term bottom. However,
