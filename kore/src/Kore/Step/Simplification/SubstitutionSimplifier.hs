@@ -383,13 +383,14 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
+{- | Finds all the X = Y pairs and, whenever the provided function returns True
+for Y and False for X, it swaps the order to Y = X, but making sure the
+substitution is still normalized.
+-}
 orientSubstitution
     :: forall variable
     .  InternalVariable variable
     => (SomeVariableName variable -> Bool)
-    {- ^ 'True' if the variable should be on the left-hand side
-        of the substitution
-    -}
     -> Map (SomeVariableName variable) (TermLike variable)
     -> Map (SomeVariableName variable) (TermLike variable)
 orientSubstitution
