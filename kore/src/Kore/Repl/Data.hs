@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl.Data
     ( ReplCommand (..)
@@ -43,6 +44,7 @@ module Kore.Repl.Data
     , debugApplyEquationTransformer
     , debugEquationTransformer
     , entriesForHelp
+    , TryApplyRuleResult (..)
     ) where
 
 import Prelude.Kore
@@ -475,8 +477,11 @@ helpText =
     <> entriesForHelp
     <>
     "\n\
-    \(*) If an edge is labeled as Simpl/RD it means that the target node\n\
-    \ was reached using either the SMT solver or the Remove Destination step.\n\
+    \(*) If an edge is labeled CheckImplication it means that during that step\n\
+    \ the prover detected that the claim was either proven or that it could not be\
+    \ rewritten any further (stuck).\n\
+    \    When the application of a rewrite rule results in a remainder and no other\
+    \ rewrite rules apply, then the edge pointing to the remaining state is labeled Remaining.\n\
     \    A green node represents the proof has completed on\
     \ that respective branch. \n\
     \    A red node represents a stuck configuration.\n\
@@ -697,3 +702,10 @@ runUnifierWithExplanation (UnifierWithExplanation unifier) =
                     (makeAuxReplOutput "No explanation given")
                     (getFirst explanation)
             r : rs -> Right (r :| rs)
+
+data TryApplyRuleResult
+    = DoesNotApply
+    | GetsProven
+    | OneResult ReplNode
+    | MultipleResults
+    deriving (Show, Eq)
