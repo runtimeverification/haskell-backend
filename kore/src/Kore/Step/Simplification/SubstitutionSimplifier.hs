@@ -396,28 +396,58 @@ orientSubstitution
     toLeft
     substitution
   =
-    let newSubstitution = Map.fromList . fmap order . Map.toList $ substitution
+    let listSubstitution = Map.toList substitution
     in
-        Map.map (TermLike.substitute newSubstitution) newSubstitution
+        foldr go substitution listSubstitution
   where
-    order
+    go initialPair@(initialKey, _) substitutionInProgress
+      | ordered initialPair = substitutionInProgress
+      | otherwise
+      =
+        let (newKey, newValue) = swapVars initialPair
+        in
+            case Map.lookup newKey substitutionInProgress of
+                Nothing ->
+                    substitutionInProgress
+                    & Map.delete initialKey
+                    & Map.map
+                        (TermLike.substitute (Map.singleton newKey newValue))
+                    & Map.insert newKey newValue
+                Just already ->
+                    substitutionInProgress
+                    & Map.delete newKey
+                    & Map.map
+                        (TermLike.substitute (Map.singleton newKey newValue))
+                    & Map.insert newKey newValue
+                    & Map.map
+                        (TermLike.substitute (Map.singleton initialKey already))
+                    & Map.insert initialKey already
+
+    swapVars
         :: (SomeVariableName variable, TermLike variable)
         -> (SomeVariableName variable, TermLike variable)
-    order
-        ( xName, TermLike.Var_ y@(Variable yName ySort) )
+    swapVars ( xName, TermLike.Var_ (Variable yName ySort) ) =
+        (yName, mkVar $ Variable xName ySort)
+    swapVars subst = subst
+
+    ordered
+        :: (SomeVariableName variable, TermLike variable)
+        -> Bool
+    ordered
+        ( xName, TermLike.Var_ y@(Variable yName _) )
 
         | SomeVariableNameElement _ <- xName
         , Just _ <- retractElementVariable y
         , toLeft yName
         , not $ toLeft xName
-        = (yName, mkVar $ Variable xName ySort)
+        = False
 
         | SomeVariableNameSet _ <- xName
         , Just _ <- retractSetVariable y
         , toLeft yName
         , not $ toLeft xName
-        = (yName, mkVar $ Variable xName ySort)
-    order subst = subst
+        = False
+    ordered _ = True
 
 data Private variable =
     Private
