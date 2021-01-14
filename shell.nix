@@ -39,6 +39,15 @@ let
   };
   inherit (stylish-haskell-project.stylish-haskell.components.exes) stylish-haskell;
 
+  hpack-project = default.pkgs.haskell-nix.cabalProject {
+    src = sources."hpack";
+    # Change the compiler when updating our own resolver.
+    compiler-nix-name = "ghc8101";
+    inherit checkMaterialization;
+    materialized = ./nix/hpack.nix.d;
+  };
+  inherit (hpack-project.hpack.components.exes) hpack;
+
 in
 
 shellFor {
@@ -46,7 +55,7 @@ shellFor {
     [
       gnumake yq z3
       ghcide hie-bios
-      ghcid hlint stylish-haskell
+      ghcid hlint hpack stylish-haskell
       cabal-install stack
     ];
 }

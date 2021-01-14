@@ -1,8 +1,10 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.TermLike
     ( simplify
     ) where
@@ -68,9 +70,6 @@ import qualified Kore.Step.Simplification.Application as Application
 import qualified Kore.Step.Simplification.Bottom as Bottom
     ( simplify
     )
-import qualified Kore.Step.Simplification.Builtin as Builtin
-    ( simplify
-    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( simplify
     )
@@ -117,6 +116,12 @@ import qualified Kore.Step.Simplification.InternalInt as InternalInt
     ( simplify
     )
 import qualified Kore.Step.Simplification.InternalList as InternalList
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalMap as InternalMap
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalSet as InternalSet
     ( simplify
     )
 import qualified Kore.Step.Simplification.InternalString as InternalString
@@ -335,7 +340,7 @@ simplify sideCondition = \termLike ->
 
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
-        let doNotSimplify =
+        let ~doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
@@ -414,10 +419,12 @@ simplify sideCondition = \termLike ->
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF
-            BuiltinF builtinF ->
-                Builtin.simplify <$> simplifyChildren builtinF
             InternalListF internalF ->
                 InternalList.simplify <$> simplifyChildren internalF
+            InternalMapF internalMapF ->
+                InternalMap.simplify <$> simplifyChildren internalMapF
+            InternalSetF internalSetF ->
+                InternalSet.simplify <$> simplifyChildren internalSetF
             DomainValueF domainValueF ->
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
