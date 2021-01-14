@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 219
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl.Parser
     ( commandParser
