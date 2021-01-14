@@ -41,7 +41,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 
-import Test.Kore.Equation.Application
+import Test.Kore.Equation.Common
     ( axiom
     , axiom_
     , concrete

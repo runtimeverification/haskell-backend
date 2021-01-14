@@ -946,7 +946,9 @@ test-suite kore-test
       Test.Kore.Builtin.String
       Test.Kore.Contains
       Test.Kore.Equation.Application
+      Test.Kore.Equation.Common
       Test.Kore.Equation.Sentence
+      Test.Kore.Equation.Simplification
       Test.Kore.Error
       Test.Kore.Exec
       Test.Kore.IndexedModule.Error

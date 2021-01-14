@@ -2,45 +2,23 @@ module Test.Kore.Equation.Application
     ( test_attemptEquation
     , test_attemptEquationUnification
     , test_applySubstitutionAndSimplify
-    , concrete
-    , symbolic
-    , axiom
-    , axiom_
-    , functionAxiomUnification
-    , functionAxiomUnification_
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
 import Control.Monad.Trans.Except
     ( runExceptT
     )
-import Data.Generics.Product
-    ( field
-    )
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import GHC.Natural
-    ( intToNatural
-    )
 
-import Data.Sup
-    ( Sup (..)
-    )
-import Kore.Attribute.Axiom.Concrete
-    ( Concrete (..)
-    )
-import Kore.Attribute.Axiom.Symbolic
-    ( Symbolic (..)
-    )
 import Kore.Equation.Application hiding
     ( attemptEquation
     )
@@ -58,9 +36,7 @@ import qualified Kore.Variables.Target as Target
 import qualified Pretty
 
 import Test.Expect
-import Test.Kore
-    ( testId
-    )
+import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
@@ -68,7 +44,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type Equation' = Equation VariableName
 type AttemptEquationError' = AttemptEquationError VariableName
 type AttemptEquationResult' = AttemptEquationResult VariableName
 
@@ -624,74 +599,6 @@ andNot, orNot
     -> TestPredicate
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
-
--- * Helpers
-
-axiom
-    :: TestTerm
-    -> TestTerm
-    -> TestPredicate
-    -> Equation'
-axiom left right requires =
-    (mkEquation left right) { requires }
-
-axiom_
-    :: TestTerm
-    -> TestTerm
-    -> Equation'
-axiom_ left right = axiom left right makeTruePredicate
-
-functionAxiomUnification
-    :: Symbol
-    -> [TestTerm]
-    -> TestTerm
-    -> TestPredicate
-    -> Equation'
-functionAxiomUnification symbol args right requires =
-    case args of
-        [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
-        _  -> (mkEquation left right) { requires, argument }
-  where
-    left = mkApplySymbol symbol variables
-    sorts = fmap termLikeSort args
-    variables = generateVariables (intToNatural (length args)) sorts
-    generateVariables n sorts' =
-        fmap makeElementVariable (zip [0..n - 1] sorts')
-    argument =
-        Just
-        $ foldr1 makeAndPredicate
-        $ fmap (uncurry makeInPredicate)
-        $ zip variables args
-    makeElementVariable (num, sort) =
-        mkElementVariable' (testId "funcVar") num sort
-        & mkElemVar
-    mkElementVariable' base counter variableSort =
-        Variable
-            { variableName =
-                ElementVariableName
-                    VariableName { base, counter = Just (Element counter) }
-            , variableSort
-            }
-
-functionAxiomUnification_
-    :: Symbol
-    -> [TestTerm]
-    -> TestTerm
-    -> Equation'
-functionAxiomUnification_ symbol args right =
-    functionAxiomUnification symbol args right makeTruePredicate
-
-concrete :: [TestTerm] -> Equation' -> Equation'
-concrete vars =
-    Lens.set
-        (field @"attributes" . field @"concrete")
-        (Concrete $ foldMap freeVariables vars)
-
-symbolic :: [TestTerm] -> Equation' -> Equation'
-symbolic vars =
-    Lens.set
-        (field @"attributes" . field @"symbolic")
-        (Symbolic $ foldMap freeVariables vars)
 
 -- * Test cases
 

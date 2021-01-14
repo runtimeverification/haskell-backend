@@ -107,7 +107,7 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
-import Test.Kore.Equation.Application
+import Test.Kore.Equation.Common
     ( axiom
     , axiom_
     , functionAxiomUnification

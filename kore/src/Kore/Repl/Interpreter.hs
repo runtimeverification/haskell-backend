@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl.Interpreter
     ( replInterpreter
@@ -192,6 +193,7 @@ import Kore.Reachability
     , isTrusted
     , makeTrusted
     )
+import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -995,17 +997,18 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
-            runStepper'
-                (either mempty pure   axiomOrClaim)
-                (either pure   mempty axiomOrClaim)
-                node
+            tryApplyAxiomOrClaim axiomOrClaim node
         case result of
-            NoResult ->
+            DoesNotApply ->
                 showUnificationFailure axiomOrClaim node
-            SingleResult nextNode -> do
+            GetsProven -> do
+                updateExecutionGraph graph
+                putStrLn'
+                    "The proof was proven without applying any rewrite rules."
+            OneResult nextNode -> do
                 updateExecutionGraph graph
                 field @"node" .= nextNode
-            BranchResult _ ->
+            MultipleResults ->
                 updateExecutionGraph graph
 
     runUnifier'
@@ -1336,15 +1339,14 @@ prettyClaimStateComponent transformation omitList =
     claimState ClaimStateTransformer
         { claimedTransformer =
             makeKoreReplOutput . prettyComponent
-        , remainingTransformer = \goal ->
-            makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (prettyComponent goal)
+        , remainingTransformer =
+            makeKoreReplOutput . prettyComponent
         , rewrittenTransformer =
             makeKoreReplOutput . prettyComponent
         , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (prettyComponent goal)
-        , provenValue = makeAuxReplOutput "Reached bottom"
+        , provenValue = makeAuxReplOutput "Proven."
         }
   where
     prettyComponent =
@@ -1390,9 +1392,10 @@ showDotGraph
     => From axiom RuleIndex
     => Gr CommonClaimState (Maybe (Seq axiom))
     -> IO ()
-showDotGraph =
+showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
-        . Graph.graphToDot graphParams
+    . Graph.graphToDot (graphParams gr)
+    $ gr
 
 saveDotGraph
     :: From axiom AttrLabel.Label
@@ -1409,7 +1412,7 @@ saveDotGraph gr format file =
         void
         $ Graph.addExtension
             (Graph.runGraphviz
-                (Graph.graphToDot graphParams gr)
+                (Graph.graphToDot (graphParams gr) gr)
             )
             format
             path
@@ -1417,15 +1420,16 @@ saveDotGraph gr format file =
 graphParams
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Graph.GraphvizParams
+    => Gr CommonClaimState (Maybe (Seq axiom))
+    -> Graph.GraphvizParams
          Graph.Node
          CommonClaimState
          (Maybe (Seq axiom))
          ()
          CommonClaimState
-graphParams = Graph.nonClusteredParams
-    { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (maybe "" ruleIndex l)
+graphParams gr = Graph.nonClusteredParams
+    { Graph.fmtEdge = \(_, resN, l) ->
+        [ Graph.textLabel (maybe "" (ruleIndex resN) l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1433,8 +1437,7 @@ graphParams = Graph.nonClusteredParams
             $ case ps of
                 Proven      -> toColorList green
                 Stuck _     -> toColorList red
-                Remaining _ -> toColorList red
-                _                               -> []
+                _           -> []
         ]
     }
   where
@@ -1443,14 +1446,22 @@ graphParams = Graph.nonClusteredParams
             (Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
-    ruleIndex lbl =
-        case headMay . toList $ lbl of
-            Nothing -> "Simpl/RD"
-            Just rule ->
-                Text.Lazy.pack (showRuleIdentifier rule)
+    ruleIndex resultNode lbl =
+        let appliedRule = lbl & toList & headMay
+            labelWithoutRule
+              | isRemaining resultNode = "Remaining"
+              | otherwise = "CheckImplication"
+         in
+            maybe
+                labelWithoutRule
+                (Text.Lazy.pack . showRuleIdentifier)
+                appliedRule
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0
+    isRemaining n =
+        let (_, _, state, _) = Graph.context gr n
+         in ClaimState.isRemaining state
 
 showAliasError :: AliasError -> String
 showAliasError =

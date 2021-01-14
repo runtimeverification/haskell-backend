@@ -60,7 +60,7 @@ import Kore.Step.Simplification.Simplify
 
 import Test.Expect
 import Test.Kore
-import Test.Kore.Equation.Application
+import Test.Kore.Equation.Common
     ( functionAxiomUnification
     , functionAxiomUnification_
     )
