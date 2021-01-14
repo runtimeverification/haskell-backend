@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # entr.sh: Run a command when project files change.
 
@@ -15,6 +15,6 @@ last=2  # last exit code
 # This way, the script exits if the user interrupts it (for example).
 while test "$last" -eq 2
 do
-    fd '(package.yaml|.*.hs)' | entr -d -s "$@"
+    fd '(package.yaml|.*.hs)' | entr -d -s "${@:-./hooks.sh}"
     last=$?
 done

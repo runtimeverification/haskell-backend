@@ -64,10 +64,11 @@ For setting up a development environment, we recommend:
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
-- [entr] and [fd] for running `./hooks.sh` to keep important files up-to-date.
+- [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
 
-If using Cabal for development, we recommend to keep `./hooks.sh` running in the background
-to keep important files (such as package descriptions) up-to-date.
+We recommend to keep `./entr.sh` running in the background
+to keep important files (such as package descriptions) up-to-date,
+especially if the developer is using Cabal.
 
 ### Running a language server
 
