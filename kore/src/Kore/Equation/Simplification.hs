@@ -73,7 +73,7 @@ equations where the argument is substituted in the rest of the
 resulting equations, and the argument is removed.
 
 If any of the patterns resulting from simplifying the term and the
-argument contain a predicate which is not null, 'simplifyEquation'
+argument contain a predicate which is not 'Top', 'simplifyEquation'
 is exited early and the original equation is returned.
 
  -}
