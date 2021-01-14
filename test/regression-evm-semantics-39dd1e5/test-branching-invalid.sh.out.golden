@@ -84,8 +84,7 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'touchedAccounts'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
-                                                            Lbl'Stop'Set{}()
+                                                            /* InternalSet: */ Lbl'Stop'Set{}()
                                                         )
                                                     )
                                                 ),
@@ -105,8 +104,7 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'jumpDests'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
-                                                            /* concrete element: */ LblSetItem{}(
+                                                            /* InternalSet: */ /* concrete element: */ LblSetItem{}(
                                                                 /* Fl Fn D Sfa Cli */
                                                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                                     /* Fl Fn D Sfa Cl */
@@ -142,8 +140,7 @@
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'localMem'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
-                                                            /* builtin: */
-                                                            Lbl'Stop'Map{}()
+                                                            /* InternalMap: */ Lbl'Stop'Map{}()
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
                                                         Lbl'-LT-'pc'-GT-'{}(
@@ -187,8 +184,7 @@
                                                     /* Fl Fn D Sfa Cl */
                                                     Lbl'-LT-'selfDestruct'-GT-'{}(
                                                         /* Fl Fn D Sfa Cl */
-                                                        /* builtin: */
-                                                        Lbl'Stop'Set{}()
+                                                        /* InternalSet: */ Lbl'Stop'Set{}()
                                                     ),
                                                     /* Fl Fn D Sfa */
                                                     Lbl'-LT-'log'-GT-'{}(
@@ -369,11 +365,12 @@
         Lbl'-LT-'network'-GT-'{}(
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'activeAccounts'-GT-'{}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Set{}()
+                /* Fl Fn D Sfa Cl */ /* InternalSet: */ Lbl'Stop'Set{}()
             ),
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'accounts'-GT-'{}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'AccountCellMap{}()
+                /* Fl Fn D Sfa Cl */
+                /* InternalMap: */ Lbl'Stop'AccountCellMap{}()
             ),
             /* Fl Fn D Sfa */
             Lbl'-LT-'txOrder'-GT-'{}(
@@ -385,7 +382,8 @@
             ),
             /* Fl Fn D Sfa Cl */
             Lbl'-LT-'messages'-GT-'{}(
-                /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'MessageCellMap{}()
+                /* Fl Fn D Sfa Cl */
+                /* InternalMap: */ Lbl'Stop'MessageCellMap{}()
             )
         )
     )

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
@@ -35,12 +37,12 @@ import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
-import Kore.Domain.Builtin
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -1143,10 +1145,10 @@ builtinMap children =
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+        , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
+                Map.fromList (Bifunctor.second MapValue <$> children)
             , opaque = []
             }
         }
@@ -1218,21 +1220,21 @@ builtinSet
     -> [TermLike variable]
     -> TermLike variable
 builtinSet elements opaque =
-    mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
+    mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
         , builtinAcConcat = concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcChild = NormalizedSet NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
         }
   where
     asKey key =
-        (,) <$> Builtin.toKey key <*> pure Domain.SetValue
-        & maybe (Left (key, Domain.SetValue)) Right
+        (,) <$> Builtin.toKey key <*> pure SetValue
+        & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asKey <$> toList elements
         & partitionEithers

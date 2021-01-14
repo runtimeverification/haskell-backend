@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.AssocComm.CeilSimplifier
     ( newSetCeilSimplifier
     , newMapCeilSimplifier
@@ -31,15 +33,8 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.Domain.Builtin
-    ( AcWrapper
-    , Element
-    , MapElement
-    , NormalizedAc (..)
-    , Value (MapValue)
-    , emptyNormalizedAc
-    )
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -81,7 +76,7 @@ import Kore.Variables.Fresh
     )
 
 type BuiltinAssocComm normalized variable =
-    Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
+    InternalAc (TermLike Concrete) normalized (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
@@ -97,15 +92,15 @@ newSetCeilSimplifier
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm Domain.NormalizedSet variable)
+            (BuiltinAssocComm NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
-                ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
+                ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
-                & TermLike.mkBuiltinSet
+                & TermLike.mkInternalSet
                 & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
@@ -113,7 +108,7 @@ newSetCeilSimplifier =
                 & Predicate.markSimplifiedMaybeConditional Nothing
         runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
-                TermLike.mkBuiltinSet
+                TermLike.mkInternalSet
                 mkNotMember
             )
             ceil
@@ -124,15 +119,15 @@ newMapCeilSimplifier
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm Domain.NormalizedMap variable)
+            (BuiltinAssocComm NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
         let mkInternalAc normalizedAc =
-                ceilChild { Domain.builtinAcChild = Domain.wrapAc normalizedAc }
+                ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
-                & TermLike.mkBuiltinMap
+                & TermLike.mkInternalMap
                 & makeCeilPredicate ceilResultSort
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
@@ -146,7 +141,7 @@ newMapCeilSimplifier =
                         element
         runCeilSimplifier
             (newBuiltinAssocCommCeilSimplifier
-                TermLike.mkBuiltinMap
+                TermLike.mkInternalMap
                 mkNotMember
             )
             ceil
@@ -167,8 +162,8 @@ generalizeMapElement
 generalizeMapElement freeVariables' element =
     (variable, element')
   where
-    (key, MapValue value) = Domain.unwrapElement element
-    element' = Domain.wrapElement (key, MapValue $ TermLike.mkElemVar variable)
+    (key, MapValue value) = unwrapElement element
+    element' = wrapElement (key, MapValue $ TermLike.mkElemVar variable)
     avoiding =
         TermLike.freeVariables key <> freeVariables'
         & FreeVariables.toNames
@@ -182,8 +177,8 @@ newBuiltinAssocCommCeilSimplifier
     .   InternalVariable variable
     =>  MonadReader (SideCondition variable) simplifier
     =>  MonadSimplify simplifier
-    =>  Traversable (Domain.Value normalized)
-    =>  Domain.AcWrapper normalized
+    =>  Traversable (Value normalized)
+    =>  AcWrapper normalized
     =>  MkBuiltinAssocComm normalized variable
     ->  MkNotMember normalized variable
     ->  CeilSimplifier simplifier
@@ -191,10 +186,10 @@ newBuiltinAssocCommCeilSimplifier
             (OrCondition variable)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } -> do
-        let internalAc@Domain.InternalAc { builtinAcChild } = ceilChild
+        let internalAc@InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
-        let normalizedAc = Domain.unwrapAc builtinAcChild
-            Domain.NormalizedAc
+        let normalizedAc = unwrapAc builtinAcChild
+            NormalizedAc
                 { elementsWithVariables = abstractElements
                 , concreteElements
                 , opaque
@@ -207,8 +202,8 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 -> MultiAnd (OrCondition variable)
             defineOpaquePair opaque1 opaque2 =
                 internalAc
-                    { Domain.builtinAcChild =
-                        Domain.wrapAc
+                    { builtinAcChild =
+                        wrapAc
                         emptyNormalizedAc { opaque = [opaque1, opaque2] }
                     }
                 & mkBuiltin
@@ -236,9 +231,9 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         let abstractKeys, concreteKeys
                 :: [TermLike variable]
             abstractValues, concreteValues, allValues
-                :: [Domain.Value normalized (TermLike variable)]
+                :: [Value normalized (TermLike variable)]
             (abstractKeys, abstractValues) =
-                unzip (Domain.unwrapElement <$> abstractElements)
+                unzip (unwrapElement <$> abstractElements)
             concreteKeys = TermLike.fromConcrete <$> Map.keys concreteElements
             concreteValues = Map.elems concreteElements
             allValues = concreteValues <> abstractValues
@@ -250,7 +245,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             defineOpaque = makeEvaluateTerm
 
             defineValue
-                ::  Domain.Value normalized (TermLike variable)
+                ::  Value normalized (TermLike variable)
                 ->  MaybeT simplifier (MultiAnd (OrCondition variable))
             defineValue = foldlM worker mempty
               where
@@ -307,7 +302,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
 
     notMember
         :: TermLike variable
-        -> Domain.Element normalized (TermLike variable)
+        -> Element normalized (TermLike variable)
         -> MultiAnd (OrCondition variable)
     notMember termLike element =
         mkNotMember element termLike
@@ -333,7 +328,7 @@ foldElements =
             concreteElements' =
                 concreteElements normalizedAc
                 & Map.toList
-                & map Domain.wrapConcreteElement
+                & map wrapConcreteElement
             symbolicElements' = elementsWithVariables normalizedAc
         in
             concreteElements' <> symbolicElements'
@@ -349,4 +344,4 @@ fromElement element
   | otherwise
   = emptyNormalizedAc { elementsWithVariables = [element] }
   where
-    (symbolicKey, value) = Domain.unwrapElement element
+    (symbolicKey, value) = unwrapElement element

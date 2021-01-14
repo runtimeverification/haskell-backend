@@ -14,12 +14,14 @@ builtin modules.
     import qualified Kore.Builtin.List as List
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.List
     ( sort
     , assertSort
     , verifiers
     , builtinFunctions
-    , Builtin
     , returnList
     , asPattern
     , asInternal
@@ -85,15 +87,15 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
-    , Builtin
     , Concrete
     , pattern ElemVar_
+    , pattern InternalList_
     , pattern InternalList_
     , Sort
     , TermLike
     , pattern Var_
     , mkApplySymbol
-    , mkBuiltinList
+    , mkInternalList
     , mkSort
     , termLikeSort
     )
@@ -500,7 +502,7 @@ unifyEquals
                     internal2
             suffixUnified <- simplifyChild frame2 listSuffix1
             let result =
-                    TermLike.markSimplified (mkBuiltinList internal1)
+                    TermLike.markSimplified (mkInternalList internal1)
                     <$ prefixUnified
                     <* suffixUnified
             return result
@@ -532,7 +534,7 @@ unifyEquals
                     internal1 { internalListChild = suffix1 }
                     internal2
             let result =
-                    mkBuiltinList internal1
+                    mkInternalList internal1
                     <$ prefixUnified
                     <* suffixUnified
             return result
@@ -592,7 +594,7 @@ unifyEquals
       | otherwise =
         unifyEqualsFramedRightRight symbol internal2 frame2 internal1 frame1
       where
-        initial = mkApplySymbol symbol [mkBuiltinList internal1, frame1]
+        initial = mkApplySymbol symbol [mkInternalList internal1, frame1]
         InternalList { internalListSort } = internal1
         InternalList { internalListChild = list1 } = internal1
         InternalList { internalListChild = list2 } = internal2
@@ -636,7 +638,7 @@ unifyEquals
       | otherwise =
         unifyEqualsFramedLeftLeft symbol frame2 internal2 frame1 internal1
       where
-        initial = mkApplySymbol symbol [frame1, mkBuiltinList internal1]
+        initial = mkApplySymbol symbol [frame1, mkInternalList internal1]
         InternalList { internalListSort } = internal1
         InternalList { internalListChild = list1 } = internal1
         InternalList { internalListChild = list2 } = internal2

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Step.Simplification.AndTerms
@@ -22,9 +24,9 @@ import Data.Text
     )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
@@ -1225,7 +1227,7 @@ test_equalsTermsSimplification =
                 Ac.asInternalConcrete
                     Mock.metadataTools
                     Mock.setSort
-                    (Map.fromSet (const Domain.SetValue) set)
+                    (Map.fromSet (const SetValue) set)
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])

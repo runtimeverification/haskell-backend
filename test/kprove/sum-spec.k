@@ -5,17 +5,13 @@ requires "verification.k"
 module SUM-INVARIANT
   imports VERIFICATION
 
-rule
-    <k>
-     loop
-    =>
-     .K
-    ...</k>
-  <state>
+  claim
+    <k> loop => .K ... </k>
+    <state>
       n   |-> (N:Int => 0)
       sum |-> (S:Int => S +Int ((N +Int 1) *Int N))
-  </state>
-requires N >=Int 0
+    </state>
+  requires N >=Int 0
 
 endmodule
 

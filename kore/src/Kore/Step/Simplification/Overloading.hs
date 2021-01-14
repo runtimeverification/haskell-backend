@@ -2,6 +2,9 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Overloading
     ( matchOverloading
     -- for testing purposes
@@ -273,7 +276,7 @@ unifyOverloadingVsOverloaded
     Monad.guard (isOverloaded overloadingHead)
     isSecondHeadConstructor <- isConstructorOrOverloaded overloadedHead
     Monad.guard isSecondHeadConstructor
-    let overloadedTerm' =
+    let ~overloadedTerm' =
             resolveOverloading injProto overloadingHead overloadedChildren
     if isOverloading overloadingHead overloadedHead
         then return $ Pair overloadingTerm overloadedTerm'
@@ -434,8 +437,8 @@ notUnifiableError (DV_ _ _) = throwBottom "injected domain value"
 notUnifiableError (InternalBool_ _) = throwBottom "injected builtin bool"
 notUnifiableError (InternalInt_ _) = throwBottom "injected builtin int"
 notUnifiableError (InternalList_ _) = throwBottom "injected builtin list"
-notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
-notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
+notUnifiableError (InternalMap_ _) = throwBottom "injected builtin map"
+notUnifiableError (InternalSet_ _) = throwBottom "injected builtin set"
 notUnifiableError (InternalString_ _) = throwBottom "injected builtin string"
 notUnifiableError _ = notApplicable
 
