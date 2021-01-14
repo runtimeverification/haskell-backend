@@ -74,7 +74,7 @@ resulting equations, and the argument is removed.
 
 If any of the patterns resulting from simplifying the term and the
 argument contain a predicate which is not 'Top', 'simplifyEquation'
-is exited early and the original equation is returned.
+returns the original equation.
 
  -}
 simplifyEquation
