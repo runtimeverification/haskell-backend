@@ -241,6 +241,7 @@
           "Kore/Internal/InternalMap"
           "Kore/Internal/InternalSet"
           "Kore/Internal/InternalString"
+          "Kore/Internal/Key"
           "Kore/Internal/MultiAnd"
           "Kore/Internal/MultiOr"
           "Kore/Internal/NormalizedAc"
