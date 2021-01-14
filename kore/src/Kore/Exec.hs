@@ -295,9 +295,12 @@ profTransitionRule
     .  MonadProf monad
     => TransitionRule monad rule state
     -> TransitionRule monad rule state
-profTransitionRule rule prim proofState = lift
-    (traceProf ":rewrite:" (runTransitionT (rule prim proofState)))
-        >>= scatter
+profTransitionRule rule prim proofState = 
+    case prim of
+        Rewrite ->
+            lift (traceProf ":rewrite:" (runTransitionT (rule prim proofState)))
+            >>= scatter
+        _ -> rule prim proofState
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
