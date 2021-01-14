@@ -26,9 +26,9 @@ import Test.Tasty.HUnit.Ext
 
 test_simplifyEquation :: [TestTree]
 test_simplifyEquation =
-    [ testGroup "Unification equations: in all cases the argument gets\
-                \ simplified and substituted into the left term; the argument\
-                \ is then removed."
+    [ testGroup "Unify arguments"
+        -- In all cases the argument gets simplified and substituted into the left term;
+        -- the argument is then removed.
         [ testCase "Variable gets substituted in simplified equation" $ do
             let equation =
                     functionAxiomUnification_
