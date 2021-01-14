@@ -64,6 +64,10 @@ For setting up a development environment, we recommend:
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
+- [entr] and [fd] for running `./hooks.sh` to keep important files up-to-date.
+
+If using Cabal for development, we recommend to keep `./hooks.sh` running in the background
+to keep important files (such as package descriptions) up-to-date.
 
 ### Running a language server
 
@@ -117,3 +121,5 @@ This script is also run by an automatic workflow.
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
 [Nix]: https://nixos.org
+[entr]: https://github.com/eradman/entr
+[fd]: https://github.com/sharkdp/fd
