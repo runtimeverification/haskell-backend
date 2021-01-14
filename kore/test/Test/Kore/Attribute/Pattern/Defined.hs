@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Pattern.Defined
     ( test_instance_Synthetic
     ) where
@@ -10,7 +12,7 @@ import Test.Tasty.HUnit
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -145,7 +147,6 @@ test_instance_Synthetic =
       | otherwise   = isn't
 
     asSetBuiltin
-        :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) Defined
-        -> Domain.Builtin (TermLike Concrete) Defined
-    asSetBuiltin =
-        Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc
+        :: NormalizedAc NormalizedSet (TermLike Concrete) Defined
+        -> InternalAc (TermLike Concrete) NormalizedSet Defined
+    asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

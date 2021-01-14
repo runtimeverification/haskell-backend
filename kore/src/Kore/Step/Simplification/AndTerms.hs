@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.AndTerms
-Description : Unification and "and" simplification for terms.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.AndTerms
     ( termUnification
     , maybeTermAnd
@@ -239,7 +237,7 @@ andEqualsFunctions notSimplifier =
     , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
     , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
     , (EqualsT, \_ _ s -> Builtin.String.unifyStringEq s notSimplifier)
-    , (EqualsT, \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
+    , (BothT,   \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
     , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
     , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
     , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
@@ -593,28 +591,10 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
-    term1@(Builtin_ _)
-    term2@(App_ secondHead _)
-    | Symbol.isConstructor secondHead =
-      error (unlines [ "Cannot handle builtin and Constructor:"
-                     , unparseToString term1
-                     , unparseToString term2
-                     ]
-            )
-domainValueAndConstructorErrors
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
     | Symbol.isConstructor firstHead =
       error (unlines [ "Cannot handle Constructor and DomainValue:"
-                     , unparseToString term1
-                     , unparseToString term2
-                     ]
-            )
-domainValueAndConstructorErrors
-    term1@(App_ firstHead _)
-    term2@(Builtin_ _)
-    | Symbol.isConstructor firstHead =
-      error (unlines [ "Cannot handle Constructor and builtin:"
                      , unparseToString term1
                      , unparseToString term2
                      ]

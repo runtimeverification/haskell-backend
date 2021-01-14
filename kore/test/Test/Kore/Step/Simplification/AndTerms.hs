@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Step.Simplification.AndTerms
@@ -22,9 +24,9 @@ import Data.Text
     )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
@@ -1173,7 +1175,43 @@ test_andTermsSimplification =
             actual <- unify input1 input2
             assertEqual "" expect actual
         ]
+
+    , testGroup "KEquals"
+        [ testCase "Equal unification" $ do
+            let input1 = Mock.keqBool (cf xVar) a
+                input2 = Mock.builtinBool False
+                expected = [Condition.top]
+            Just actual <- simplifyEquals mempty input1 input2
+            assertEqual "" expected actual
+        , testCase "And unification" $ do
+            let input1 = Mock.keqBool (cf xVar) a
+                input2 = Mock.builtinBool False
+                expected = [Pattern.top]
+            actual <- simplify input1 input2
+            assertEqual "" expected actual
+        , testCase "And unification fails if pattern\
+                    \ is not function-like" $ do
+            let input1 = Mock.keqBool (TermLike.mkOr a (cf xVar)) b
+                input2 = Mock.builtinBool False
+                expected =
+                    TermLike.mkAnd input1 input2
+                    & Pattern.fromTermLike
+                    & pure
+            actual <- simplify input1 input2
+            assertEqual "" expected actual
+        , testCase "Equal unification fails if pattern\
+                    \ is not function-like" $ do
+            let input1 = Mock.keqBool (TermLike.mkOr a (cf xVar)) b
+                input2 = Mock.builtinBool False
+            actual <- simplifyEquals mempty input1 input2
+            assertEqual "" Nothing actual
+        ]
     ]
+  where
+    xVar = mkElemVar Mock.x
+    cf = Mock.functionalConstr10
+    a = Mock.a
+    b = Mock.b
 
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
@@ -1225,7 +1263,7 @@ test_equalsTermsSimplification =
                 Ac.asInternalConcrete
                     Mock.metadataTools
                     Mock.setSort
-                    (Map.fromSet (const Domain.SetValue) set)
+                    (Map.fromSet (const SetValue) set)
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])

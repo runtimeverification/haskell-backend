@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.AssociativeCommutative
     ( test_toNormalized_Map
     , test_matchBuiltin_Map
@@ -10,15 +12,8 @@ import Prelude.Kore
 import Test.Tasty
 
 import Kore.Builtin.AssociativeCommutative
-import Kore.Domain.Builtin
-    ( AcWrapper (..)
-    , NormalizedAc (..)
-    , NormalizedMap (..)
-    , NormalizedSet (..)
-    , Value (..)
-    , emptyNormalizedAc
-    , wrapElement
-    )
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Step.MockSymbols as Mock
