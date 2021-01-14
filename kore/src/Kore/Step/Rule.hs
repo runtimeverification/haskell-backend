@@ -337,7 +337,7 @@ termToAxiomPattern attributes pat =
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate
                     , rhs = injectTermIntoRHS rhs
                     , attributes
                     }

@@ -19,9 +19,9 @@ import Data.Text
 
 import Kore.Internal.Predicate
     ( Predicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
     )
 import Kore.Internal.Substitution
     ( Substitution
@@ -150,22 +150,22 @@ testVar ident =
 type TestPredicate = Predicate VariableName
 
 pT :: TestPredicate
-pT = makeTruePredicate_
+pT = makeTruePredicate
 
 pm :: TestPredicate
 pm =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ testVar "left")
         (mkElemVar $ testVar "right")
 
 pM :: TestPredicate
 pM =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ testVar "LEFT")
         (mkElemVar $ testVar "RIGHT")
 
 p_ :: TestPredicate
-p_ = makeFalsePredicate_
+p_ = makeFalsePredicate
 
 type TestSubstitution = Substitution VariableName
 

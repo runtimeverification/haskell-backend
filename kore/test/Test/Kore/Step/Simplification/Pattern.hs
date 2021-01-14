@@ -21,9 +21,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeExistsPredicate
     , makeImpliesPredicate
     , makeNotPredicate
@@ -53,9 +53,9 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (makeAndPredicate
-                        (makeCeilPredicate Mock.testSort fOfX)
+                        (makeCeilPredicate fOfX)
                         (makeExistsPredicate Mock.y
-                            (makeCeilPredicate Mock.testSort fOfY)
+                            (makeCeilPredicate fOfY)
                         )
                     )
         actual <-
@@ -63,11 +63,11 @@ test_Pattern_simplify =
                 (Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (makeAndPredicate
-                        (makeCeilPredicate Mock.testSort fOfX)
+                        (makeCeilPredicate fOfX)
                         (makeExistsPredicate Mock.y
                             (makeAndPredicate
-                                (makeCeilPredicate Mock.testSort fOfX)
-                                (makeCeilPredicate Mock.testSort fOfY)
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate fOfY)
                             )
                         )
                     )
@@ -78,10 +78,10 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     ( MultiAnd.toPredicate . MultiAnd.make $
-                    [ makeCeilPredicate Mock.testSort fOfX
-                    , makeCeilPredicate Mock.testSort fOfY
-                    , makeCeilPredicate Mock.testSort gOfX
-                    , makeEqualsPredicate_ fOfX gOfX
+                    [ makeCeilPredicate fOfX
+                    , makeCeilPredicate fOfY
+                    , makeCeilPredicate gOfX
+                    , makeEqualsPredicate fOfX gOfX
                     ]
                     )
         actual <-
@@ -92,13 +92,13 @@ test_Pattern_simplify =
                         (Mock.constr10 gOfX)
                     )
                     ( MultiAnd.toPredicate . MultiAnd.make $
-                    [ makeCeilPredicate_ fOfX
+                    [ makeCeilPredicate fOfX
                     , makeImpliesPredicate
-                        (makeCeilPredicate_ fOfX)
-                        (makeCeilPredicate_ gOfX)
+                        (makeCeilPredicate fOfX)
+                        (makeCeilPredicate gOfX)
                     , makeImpliesPredicate
-                        (makeCeilPredicate_ gOfX)
-                        (makeCeilPredicate_ fOfY)
+                        (makeCeilPredicate gOfX)
+                        (makeCeilPredicate fOfY)
                     ]
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
@@ -107,9 +107,9 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                      (makeAndPredicate
-                         (makeCeilPredicate Mock.testSort fOfX)
+                         (makeCeilPredicate fOfX)
                          (makeExistsPredicate Mock.x
-                             (makeCeilPredicate Mock.testSort fOfX)
+                             (makeCeilPredicate fOfX)
                          )
                      )
         actual <-
@@ -117,8 +117,8 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (makeAndPredicate
-                        (makeCeilPredicate_ fOfX)
-                        (makeExistsPredicate Mock.x (makeCeilPredicate_ fOfX))
+                        (makeCeilPredicate fOfX)
+                        (makeExistsPredicate Mock.x (makeCeilPredicate fOfX))
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
     , testCase "Contradictions result in bottom" $ do
@@ -127,8 +127,8 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (makeAndPredicate
-                        (makeCeilPredicate_ fOfX)
-                        (mkNot <$> makeCeilPredicate_ fOfX)
+                        (makeCeilPredicate fOfX)
+                        (makeNotPredicate $ makeCeilPredicate fOfX)
                     )
         assertEqual "" mempty actual
     , testCase "Simplifies Implies - Positive" $ do
@@ -136,9 +136,9 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (MultiAnd.toPredicate . MultiAnd.make $
-                    [ makeCeilPredicate Mock.testSort fOfX
-                    , makeCeilPredicate Mock.testSort gOfX
-                    , makeEqualsPredicate_ fOfX gOfX
+                    [ makeCeilPredicate fOfX
+                    , makeCeilPredicate gOfX
+                    , makeEqualsPredicate fOfX gOfX
                     ]
                     )
         actual <-
@@ -149,10 +149,10 @@ test_Pattern_simplify =
                         (Mock.constr10 gOfX)
                     )
                     (makeAndPredicate
-                        (makeCeilPredicate_ fOfX)
+                        (makeCeilPredicate fOfX)
                         (makeImpliesPredicate
-                            (makeCeilPredicate_ fOfX)
-                            (makeCeilPredicate_ gOfX)
+                            (makeCeilPredicate fOfX)
+                            (makeCeilPredicate gOfX)
                         )
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
@@ -161,8 +161,8 @@ test_Pattern_simplify =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     (makeAndPredicate
-                        (makeEqualsPredicate Mock.testSort fOfX gOfX)
-                        (makeNotPredicate $ makeCeilPredicate Mock.testSort fOfX)
+                        (makeEqualsPredicate fOfX gOfX)
+                        (makeNotPredicate $ makeCeilPredicate fOfX)
                     )
         actual <-
             simplify $
@@ -172,10 +172,10 @@ test_Pattern_simplify =
                         (Mock.constr10 gOfX)
                     )
                     (makeAndPredicate
-                        (makeNotPredicate $ makeCeilPredicate_ fOfX)
+                        (makeNotPredicate $ makeCeilPredicate fOfX)
                         (makeImpliesPredicate
-                            (makeCeilPredicate_ fOfX)
-                            (makeCeilPredicate_ gOfX)
+                            (makeCeilPredicate fOfX)
+                            (makeCeilPredicate gOfX)
                         )
                     )
         assertEqual "" (OrPattern.fromPattern expect) actual
@@ -200,31 +200,31 @@ test_Pattern_simplify_equalityterm =
                     [ Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
                         (MultiAnd.toPredicate . MultiAnd.make $
-                        [ makeCeilPredicate Mock.testSort Mock.cf
-                        , makeCeilPredicate Mock.testSort Mock.cg
-                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                        [ makeCeilPredicate Mock.cf
+                        , makeCeilPredicate Mock.cg
+                        , makeEqualsPredicate Mock.cf Mock.cg
                         , makeImpliesPredicate
-                            (makeCeilPredicate Mock.testSort Mock.ch)
-                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                            (makeCeilPredicate Mock.ch)
+                            (makeEqualsPredicate Mock.cf Mock.ch)
                         ]
                         )
                     , Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
                         (MultiAnd.toPredicate . MultiAnd.make $
-                        [ makeCeilPredicate Mock.testSort Mock.cf
-                        , makeCeilPredicate Mock.testSort Mock.ch
-                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                        [ makeCeilPredicate Mock.cf
+                        , makeCeilPredicate Mock.ch
+                        , makeEqualsPredicate Mock.cf Mock.ch
                         , makeImpliesPredicate
-                            (makeCeilPredicate Mock.testSort Mock.cg)
-                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                            (makeCeilPredicate Mock.cg)
+                            (makeEqualsPredicate Mock.cf Mock.cg)
                         ]
                         )
                     , Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
                         (MultiAnd.toPredicate . MultiAnd.make $
-                        [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
-                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
-                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
+                        [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                        , makeNotPredicate $ makeCeilPredicate Mock.cg
+                        , makeNotPredicate $ makeCeilPredicate Mock.ch
                         ]
                         )
                     ]
@@ -237,18 +237,18 @@ test_Pattern_simplify_equalityterm =
                     [ Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
                         (MultiAnd.toPredicate . MultiAnd.make $
-                        [ makeCeilPredicate Mock.testSort Mock.cf
-                        , makeCeilPredicate Mock.testSort Mock.ch
-                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
-                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
+                        [ makeCeilPredicate Mock.cf
+                        , makeCeilPredicate Mock.ch
+                        , makeEqualsPredicate Mock.cf Mock.ch
+                        , makeNotPredicate $ makeCeilPredicate Mock.cg
                         ]
                         )
                     , Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
                         (MultiAnd.toPredicate . MultiAnd.make $
-                        [ makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cf
-                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.cg
-                        , makeNotPredicate $ makeCeilPredicate Mock.testSort Mock.ch
+                        [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                        , makeNotPredicate $ makeCeilPredicate Mock.cg
+                        , makeNotPredicate $ makeCeilPredicate Mock.ch
                         ]
                         )
                     ]
@@ -259,15 +259,15 @@ test_Pattern_simplify_equalityterm =
                     (Mock.functionalConstr10 Mock.ch)
         assertBidirectionalEqualityResult first second expected
     , testCase "f vs g[x = a] or h" $ do
-        let definedF = makeCeilPredicate Mock.testSort Mock.cf
-            definedG = makeCeilPredicate Mock.testSort Mock.cg
+        let definedF = makeCeilPredicate Mock.cf
+            definedG = makeCeilPredicate Mock.cg
             predicateSubstitution =
-                makeEqualsPredicate Mock.testSort (mkElemVar Mock.x) Mock.a
+                makeEqualsPredicate (mkElemVar Mock.x) Mock.a
             definedGWithSubstitution =
                 makeAndPredicate
                     definedG
                     predicateSubstitution
-            definedH = makeCeilPredicate Mock.testSort Mock.ch
+            definedH = makeCeilPredicate Mock.ch
             expected =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -276,10 +276,10 @@ test_Pattern_simplify_equalityterm =
                             (MultiAnd.toPredicate . MultiAnd.make)
                             [ definedF
                             , definedG
-                            , makeEqualsPredicate Mock.testSort Mock.cf Mock.cg
+                            , makeEqualsPredicate Mock.cf Mock.cg
                             , makeImpliesPredicate
                                 definedH
-                                (makeEqualsPredicate Mock.testSort Mock.cf Mock.ch)
+                                (makeEqualsPredicate Mock.cf Mock.ch)
                             ]
                         , substitution = Substitution.unsafeWrap
                             [(inject Mock.x, Mock.a)]
@@ -289,10 +289,10 @@ test_Pattern_simplify_equalityterm =
                         (MultiAnd.toPredicate . MultiAnd.make $
                         [ definedF
                         , definedH
-                        , makeEqualsPredicate Mock.testSort Mock.cf Mock.ch
+                        , makeEqualsPredicate Mock.cf Mock.ch
                         , makeImpliesPredicate
                             definedGWithSubstitution
-                            (makeEqualsPredicate Mock.testSort Mock.cf Mock.cg)
+                            (makeEqualsPredicate Mock.cf Mock.cg)
                         ]
                         )
                     , Pattern.fromTermAndPredicate
@@ -310,7 +310,7 @@ test_Pattern_simplify_equalityterm =
                 . OrPattern.fromPatterns $
                     [ Conditional
                         { term = Mock.cg
-                        , predicate = Predicate.makeTruePredicate Mock.testSort
+                        , predicate = Predicate.makeTruePredicate
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
@@ -318,7 +318,7 @@ test_Pattern_simplify_equalityterm =
                         }
                     , Conditional
                         { term = Mock.ch
-                        , predicate = Predicate.makeTruePredicate Mock.testSort
+                        , predicate = Predicate.makeTruePredicate
                         , substitution = mempty
                         }
                     ]
@@ -367,7 +367,7 @@ notTop = termLike (mkNot mkTop_)
 orAs = termLike (mkOr Mock.a Mock.a)
 -- | Term is defined, but predicate is \bottom.
 bottomLike =
-    (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate_ }
+    (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
 
 simplify :: Pattern VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier Mock.env . Pattern.simplify SideCondition.top

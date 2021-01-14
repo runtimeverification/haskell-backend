@@ -77,7 +77,7 @@ test_refreshRule =
                         { left =
                             Pattern.fromTermAndPredicate
                                 (mkElemVar y)
-                                ( Predicate.makeCeilPredicate_
+                                ( Predicate.makeCeilPredicate
                                     (mkElemVar z)
                                 )
                         }
@@ -92,12 +92,12 @@ testRulePattern =
             -- Include an implicitly-quantified variable.
             Pattern.fromTermAndPredicate
                 (mkElemVar x)
-                (Predicate.makeCeilPredicate_ (mkElemVar z))
+                (Predicate.makeCeilPredicate (mkElemVar z))
         , existentials = [y]
         , right =
             Pattern.fromTermAndPredicate
                 (mkElemVar y)
-                (Predicate.makeCeilPredicate_ (mkElemVar t))
+                (Predicate.makeCeilPredicate (mkElemVar t))
             & OrPattern.fromPattern
         , attributes = def
         }

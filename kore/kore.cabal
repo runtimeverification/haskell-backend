@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3120f5e24384393d150b1db1b680ac8a0c5d310317b293ba3f29f6848b8c6af7
+-- hash: 14a9c3fb13f5926dbd7132316a785e05c02d496c072bab9f8bd7533b1cbc8d41
 
 name:           kore
 version:        0.37.0.0
@@ -90,6 +90,7 @@ library
       Kore.Attribute.Pattern.Function
       Kore.Attribute.Pattern.Functional
       Kore.Attribute.Pattern.Simplified
+      Kore.Attribute.PredicatePattern
       Kore.Attribute.Priority
       Kore.Attribute.ProductionID
       Kore.Attribute.RuleIndex

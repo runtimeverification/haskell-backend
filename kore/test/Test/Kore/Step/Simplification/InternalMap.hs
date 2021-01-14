@@ -21,7 +21,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.InternalMap
@@ -76,10 +76,10 @@ test_simplify =
     b = OrPattern.fromTermLike Mock.b
     c = OrPattern.fromTermLike Mock.c
     ceila =
-        makeCeilPredicate_ (Mock.f Mock.a)
+        makeCeilPredicate(Mock.f Mock.a)
         & Condition.fromPredicate
     ceilb =
-        makeCeilPredicate_ (Mock.f Mock.b)
+        makeCeilPredicate (Mock.f Mock.b)
         & Condition.fromPredicate
     bottom = OrPattern.fromPatterns [Pattern.bottom]
     becomes

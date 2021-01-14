@@ -95,13 +95,13 @@ newSetCeilSimplifier
             (BuiltinAssocComm NormalizedSet variable)
             (OrCondition variable)
 newSetCeilSimplifier =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element) { opaque = [termLike] }
                 & TermLike.mkInternalSet
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -122,13 +122,13 @@ newMapCeilSimplifier
             (BuiltinAssocComm NormalizedMap variable)
             (OrCondition variable)
 newMapCeilSimplifier =
-    CeilSimplifier $ \ceil@Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
                 ceilChild { builtinAcChild = wrapAc normalizedAc }
             mkNotMember element termLike =
                 mkInternalAc (fromElement element') { opaque = [termLike] }
                 & TermLike.mkInternalMap
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -185,7 +185,7 @@ newBuiltinAssocCommCeilSimplifier
             (BuiltinAssocComm normalized variable)
             (OrCondition variable)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
-    CeilSimplifier $ \Ceil { ceilResultSort, ceilChild } -> do
+    CeilSimplifier $ \Ceil { ceilChild } -> do
         let internalAc@InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
         let normalizedAc = unwrapAc builtinAcChild
@@ -207,7 +207,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                         emptyNormalizedAc { opaque = [opaque1, opaque2] }
                     }
                 & mkBuiltin
-                & makeCeilPredicate ceilResultSort
+                & makeCeilPredicate
                 -- TODO (thomas.tuegel): Do not mark this simplified.
                 -- Marking here may prevent user-defined axioms from applying.
                 -- At present, we wouldn't apply such an axiom, anyway.
@@ -240,7 +240,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
                 :: TermLike variable -> MaybeT simplifier (OrCondition variable)
-            makeEvaluateTerm = makeEvaluateTermCeil sideCondition ceilResultSort
+            makeEvaluateTerm = makeEvaluateTermCeil sideCondition
             defineAbstractKey = makeEvaluateTerm
             defineOpaque = makeEvaluateTerm
 

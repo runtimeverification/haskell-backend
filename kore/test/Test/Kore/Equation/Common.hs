@@ -45,13 +45,13 @@ axiom
     -> TestPredicate
     -> Equation'
 axiom left right requires =
-    (mkEquation sortR left right) { requires }
+    (mkEquation left right) { requires }
 
 axiom_
     :: TestTerm
     -> TestTerm
     -> Equation'
-axiom_ left right = axiom left right (makeTruePredicate sortR)
+axiom_ left right = axiom left right makeTruePredicate
 
 functionAxiomUnification
     :: Symbol
@@ -61,8 +61,8 @@ functionAxiomUnification
     -> Equation'
 functionAxiomUnification symbol args right requires =
     case args of
-        [] -> (mkEquation sortR (mkApplySymbol symbol []) right) { requires }
-        _  -> (mkEquation sortR left right) { requires, argument }
+        [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation left right) { requires, argument }
   where
     left = mkApplySymbol symbol variables
     sorts = fmap termLikeSort args
@@ -72,7 +72,7 @@ functionAxiomUnification symbol args right requires =
     argument =
         Just
         $ foldr1 makeAndPredicate
-        $ fmap (uncurry (makeInPredicate sortR))
+        $ fmap (uncurry makeInPredicate)
         $ zip variables args
     makeElementVariable (num, sort) =
         mkElementVariable' (testId "funcVar") num sort
@@ -91,7 +91,7 @@ functionAxiomUnification_
     -> TestTerm
     -> Equation'
 functionAxiomUnification_ symbol args right =
-    functionAxiomUnification symbol args right (makeTruePredicate sortR)
+    functionAxiomUnification symbol args right makeTruePredicate
 
 concrete :: [TestTerm] -> Equation' -> Equation'
 concrete vars =
