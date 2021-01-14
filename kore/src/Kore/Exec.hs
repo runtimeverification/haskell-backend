@@ -290,6 +290,8 @@ trackExecDepth transit prim (execDepth, execState) = do
     isRewrite Rewrite = True
     isRewrite _ = False
 
+{- | Add profiling markers to a 'TransitionRule'.
+-}
 profTransitionRule
     :: forall monad rule state
     .  MonadProf monad
