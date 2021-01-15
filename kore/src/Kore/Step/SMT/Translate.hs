@@ -69,12 +69,25 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
-import Kore.Internal.Predicate
+import Kore.Internal.Predicate hiding
+    ( AndF
+    , BottomF
+    , CeilF
+    , EqualsF
+    , ExistsF
+    , FloorF
+    , ForallF
+    , IffF
+    , ImpliesF
+    , InF
+    , NotF
+    , OrF
+    , TopF
+    )
 import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
     )
-import qualified Kore.Sort as Sort
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -123,8 +136,7 @@ translatePredicateWith
     -> Translator variable m SExpr
 translatePredicateWith translateTerm predicate =
     translatePredicatePattern
-    $ unwrapPredicate
-    $ coerceSort Sort.predicateSort predicate
+    $ fromPredicate_ predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
     translatePredicatePattern pat =

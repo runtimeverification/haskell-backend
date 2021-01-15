@@ -56,11 +56,11 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -85,6 +85,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
+    ( InjSimplifier
+    , mkInjSimplifier
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -104,7 +107,7 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
-import Test.Kore.Equation.Application
+import Test.Kore.Equation.Common
     ( axiom
     , axiom_
     , functionAxiomUnification
@@ -121,12 +124,7 @@ import Test.Tasty.HUnit.Ext
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
     [ testCase "Simple evaluation" $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -140,12 +138,7 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Simple evaluation (builtin branch)" $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -160,12 +153,7 @@ test_functionIntegration =
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
       $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -186,12 +174,7 @@ test_functionIntegration =
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
       $ do
-        let expect =
-                Conditional
-                    { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike (Mock.g Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -210,12 +193,7 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates inside functions" $ do
-        let expect =
-                Conditional
-                    { term = Mock.functional11 (Mock.functional11 Mock.c)
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
+        let expect = Pattern.fromTermLike $ Mock.functional11 (Mock.functional11 Mock.c)
         actual <-
             evaluate
                 (Map.singleton
@@ -229,15 +207,9 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates 'or'" $ do
-        let expect =
-                Conditional
-                    { term =
-                        mkOr
+        let expect = Pattern.fromTermLike $ mkOr
                             (Mock.functional11 (Mock.functional11 Mock.c))
                             (Mock.functional11 (Mock.functional11 Mock.d))
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
         actual <-
             evaluate
                 (Map.singleton
@@ -256,17 +228,11 @@ test_functionIntegration =
         assertEqual "" expect actual
 
     , testCase "Evaluates on multiple branches" $ do
-        let expect =
-                Conditional
-                    { term =
-                        Mock.functional11
+        let expect = Pattern.fromTermLike $ Mock.functional11
                             (Mock.functional20
                                 (Mock.functional11 Mock.c)
                                 (Mock.functional11 Mock.c)
                             )
-                    , predicate = makeTruePredicate Mock.testSort
-                    , substitution = mempty
-                    }
         actual <-
             evaluate
                 (Map.singleton
@@ -288,7 +254,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.f Mock.d
-                    , predicate = makeCeilPredicate Mock.testSort
+                    , predicate = makeCeilPredicate
                         (Mock.plain10 Mock.e)
                     , substitution = mempty
                     }
@@ -299,7 +265,7 @@ test_functionIntegration =
                     ( appliedMockEvaluator Conditional
                         { term   = Mock.d
                         , predicate =
-                            makeCeilPredicate_
+                            makeCeilPredicate
                                 (Mock.plain10 Mock.e)
                         , substitution = mempty
                         }
@@ -314,8 +280,8 @@ test_functionIntegration =
                     { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.testSort (Mock.f Mock.a))
-                            (makeCeilPredicate_ (Mock.g Mock.a))
+                            (makeCeilPredicate (Mock.f Mock.a))
+                            (makeCeilPredicate (Mock.g Mock.a))
                     , substitution = mempty
                     }
         actual <-
@@ -324,14 +290,14 @@ test_functionIntegration =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ (Mock.g Mock.a)
+                            , predicate = makeCeilPredicate (Mock.g Mock.a)
                             , substitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ (Mock.f Mock.a)
+                            , predicate = makeCeilPredicate (Mock.f Mock.a)
                             , substitution = mempty
                             }
                         )
@@ -349,7 +315,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.f Mock.e
-                    , predicate = makeEqualsPredicate Mock.testSort
+                    , predicate = makeEqualsPredicate
                         Mock.e (Mock.f Mock.e)
                     , substitution = mempty
                     }
@@ -363,7 +329,7 @@ test_functionIntegration =
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate =
-                                makeEqualsPredicate_ (Mock.f Mock.e) Mock.e
+                                makeEqualsPredicate (Mock.f Mock.e) Mock.e
                             , substitution = mempty
                             }
                         )
@@ -376,7 +342,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.f Mock.e
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [   ( inject Mock.var_x_1
                             , Mock.a
@@ -392,7 +358,7 @@ test_functionIntegration =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         , appliedMockEvaluator Conditional
                             { term = Mock.cg
-                            , predicate = makeTruePredicate_
+                            , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
                                 [   ( inject Mock.x
                                     , mkElemVar Mock.z
@@ -403,7 +369,7 @@ test_functionIntegration =
                     ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeTruePredicate_
+                            , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
                                 [   ( inject Mock.x
                                     , Mock.a
@@ -425,8 +391,8 @@ test_functionIntegration =
                 Conditional
                     { term = Mock.a
                     , predicate = makeAndPredicate
-                        (makeCeilPredicate Mock.testSort Mock.cf)
-                        (makeCeilPredicate Mock.testSort
+                        (makeCeilPredicate Mock.cf)
+                        (makeCeilPredicate
                             (Mock.plain10 Mock.cf)
                         )
                     , substitution = Substitution.unsafeWrap
@@ -441,7 +407,7 @@ test_functionIntegration =
                         , appliedMockEvaluator Conditional
                             { term = Mock.a
                             , predicate =
-                                makeCeilPredicate_
+                                makeCeilPredicate
                                     (mkAnd
                                         (Mock.constr20
                                             (Mock.plain10 Mock.cf)
@@ -474,7 +440,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -496,7 +462,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -510,12 +476,12 @@ test_functionIntegration =
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
-                                    , predicate = makeTruePredicate_
+                                    , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.c
-                                    , predicate = makeTruePredicate_
+                                    , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
                                 ]
@@ -524,7 +490,7 @@ test_functionIntegration =
                                 [ axiom
                                     (Mock.f (mkElemVar Mock.y))
                                     Mock.a
-                                    makeTruePredicate_
+                                    makeTruePredicate
                                 ]
                             )
                         )
@@ -537,7 +503,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -553,7 +519,7 @@ test_functionIntegration =
                                 [ axiom
                                     (Mock.f (mkElemVar Mock.y))
                                     Mock.a
-                                    makeTruePredicate_
+                                    makeTruePredicate
                                 ]
                             )
                         )
@@ -583,7 +549,7 @@ test_functionIntegration =
                                 [ axiom
                                     (Mock.f (mkElemVar Mock.y))
                                     Mock.a
-                                    (makeCeilPredicate_ Mock.cf)
+                                    (makeCeilPredicate Mock.cf)
                                 , axiom_ (Mock.f (mkElemVar Mock.y)) Mock.b
                                 ]
                             )
@@ -600,7 +566,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -620,7 +586,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -641,7 +607,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -669,7 +635,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.g Mock.c
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -694,7 +660,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.functional11 (Mock.functional11 Mock.c)
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -717,7 +683,7 @@ test_functionIntegrationUnification =
                         mkOr
                             (Mock.functional11 (Mock.functional11 Mock.c))
                             (Mock.functional11 (Mock.functional11 Mock.d))
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -747,7 +713,7 @@ test_functionIntegrationUnification =
                                 (Mock.functional11 Mock.c)
                                 (Mock.functional11 Mock.c)
                             )
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -774,8 +740,8 @@ test_functionIntegrationUnification =
                     { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.testSort (Mock.f Mock.a))
-                            (makeCeilPredicate_ (Mock.g Mock.a))
+                            (makeCeilPredicate (Mock.f Mock.a))
+                            (makeCeilPredicate (Mock.g Mock.a))
                     , substitution = mempty
                     }
         actual <-
@@ -784,14 +750,14 @@ test_functionIntegrationUnification =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ (Mock.g Mock.a)
+                            , predicate = makeCeilPredicate (Mock.g Mock.a)
                             , substitution = mempty
                             }
                         )
                     ,   ( AxiomIdentifier.Application Mock.cgId
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
-                            , predicate = makeCeilPredicate_ (Mock.f Mock.a)
+                            , predicate = makeCeilPredicate (Mock.f Mock.a)
                             , substitution = mempty
                             }
                         )
@@ -810,7 +776,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.f Mock.e
-                    , predicate = makeEqualsPredicate Mock.testSort
+                    , predicate = makeEqualsPredicate
                         Mock.e (Mock.f Mock.e)
                     , substitution = mempty
                     }
@@ -824,7 +790,7 @@ test_functionIntegrationUnification =
                         , appliedMockEvaluator Conditional
                             { term = Mock.e
                             , predicate =
-                                makeEqualsPredicate_ (Mock.f Mock.e) Mock.e
+                                makeEqualsPredicate (Mock.f Mock.e) Mock.e
                             , substitution = mempty
                             }
                         )
@@ -837,7 +803,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -859,7 +825,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -873,12 +839,12 @@ test_functionIntegrationUnification =
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
-                                    , predicate = makeTruePredicate_
+                                    , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.c
-                                    , predicate = makeTruePredicate_
+                                    , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
                                 ]
@@ -887,7 +853,7 @@ test_functionIntegrationUnification =
                                 [ functionAxiomUnification
                                     Mock.fSymbol [mkElemVar Mock.y]
                                     Mock.a
-                                    makeTruePredicate_
+                                    makeTruePredicate
                                 ]
                             )
                         )
@@ -900,7 +866,7 @@ test_functionIntegrationUnification =
         let expect =
                 Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
         actual <-
@@ -916,7 +882,7 @@ test_functionIntegrationUnification =
                                 [ functionAxiomUnification
                                     Mock.fSymbol [mkElemVar Mock.y]
                                     Mock.a
-                                    makeTruePredicate_
+                                    makeTruePredicate
                                 ]
                             )
                         )
@@ -1305,7 +1271,7 @@ natSimplifiersUnification =
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
 requiresBottom :: Equation VariableName -> Equation VariableName
-requiresBottom equation = equation { requires = makeEqualsPredicate_ zero one }
+requiresBottom equation = equation { requires = makeEqualsPredicate zero one }
 
 {- | Add an unsatisfiable @\\equals@ requirement to the 'Equation'.
 
@@ -1318,8 +1284,8 @@ requiresFatalEquals equation =
     equation
         { requires =
             makeAndPredicate
-                (makeEqualsPredicate_ (fatal zero) one)
-                (makeEqualsPredicate_ zero         one)
+                (makeEqualsPredicate (fatal zero) one)
+                (makeEqualsPredicate zero         one)
         }
 
 {- | Add an unsatisfiable @\\in@ requirement to the 'Equation'.
@@ -1333,8 +1299,8 @@ requiresFatalIn equation =
     equation
         { requires =
             makeAndPredicate
-                (makeEqualsPredicate_ (fatal zero) one)
-                (makeCeilPredicate_ (mkAnd zero one))
+                (makeEqualsPredicate (fatal zero) one)
+                (makeCeilPredicate (mkAnd zero one))
         }
 
 {- | Test short-circuiting evaluation of function requirements.
@@ -1607,7 +1573,7 @@ updateListSimplifier =
     axiom
         (updateList (updateList varL u v) x y)
         (updateList varL u y)
-        (makeEqualsPredicate_ (Builtin.keqBool (injK u) (injK x)) (mkBool True))
+        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
   where
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
     injK = Builtin.inj Builtin.kSort
@@ -1698,7 +1664,7 @@ updateMapSimplifier =
     axiom
         (updateMap (updateMap mMapTerm u v) x y)
         (updateMap mMapTerm u y)
-        (makeEqualsPredicate_ (Builtin.keqBool (injK u) (injK x)) (mkBool True))
+        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
   where
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
     injK = Builtin.inj Builtin.kSort
@@ -1790,7 +1756,7 @@ axiomEvaluator
     -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    simplificationEvaluation (axiom left right makeTruePredicate_)
+    simplificationEvaluation (axiom left right makeTruePredicate)
 
 axiomEvaluatorUnification
     :: Symbol
@@ -1799,7 +1765,7 @@ axiomEvaluatorUnification
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorUnification symbol args right =
     simplificationEvaluation
-        (functionAxiomUnification symbol args right makeTruePredicate_)
+        (functionAxiomUnification symbol args right makeTruePredicate)
 
 appliedMockEvaluator
     :: Pattern VariableName -> BuiltinAndAxiomSimplifier

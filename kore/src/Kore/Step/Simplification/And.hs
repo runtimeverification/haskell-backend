@@ -1,7 +1,6 @@
 {-|
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
 
 module Kore.Step.Simplification.And
@@ -67,18 +66,14 @@ import Kore.Unification.UnifierT
 import Logic
 
 {- | Simplify a conjunction of 'OrPattern'.
-
 To do that, it first distributes the terms, making it an Or of And patterns,
 each And having 'Pattern's as children, then it simplifies each of
 those.
-
 Since an Pattern is of the form term /\ predicate /\ substitution,
 making an and between two Patterns roughly means and-ing each of their
 components separately.
-
 This means that a bottom component anywhere makes the result bottom, while
 top can always be ignored.
-
 When we 'and' two terms:
 by Proposition 5.24 from (1),
     x and functional-pattern = functional-pattern and [x=phi]
@@ -115,9 +110,7 @@ simplify notSimplifier sideCondition orPatterns =
         makeEvaluate notSimplifier sideCondition patterns
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
-
 See the comment for 'simplify' to find more details.
-
 -}
 makeEvaluate
     :: forall variable simplifier
@@ -218,9 +211,7 @@ partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith f = partitionEithers . fmap f
 
 {- | Simplify the conjunction (@\\and@) of two terms.
-
 The comment for 'simplify' describes all the special cases handled by this.
-
 -}
 termAnd
     :: forall variable simplifier

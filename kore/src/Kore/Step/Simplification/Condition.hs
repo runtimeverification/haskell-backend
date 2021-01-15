@@ -31,6 +31,7 @@ import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( sortOn
     )
+import qualified GHC.Generics as GHC
 
 import Changed
 import Kore.Attribute.Synthetic
@@ -50,9 +51,12 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makePredicate
-    , predicateSort
-    , unwrapPredicate
+    , pattern PredicateEquals
+    , pattern PredicateExists
+    , pattern PredicateForall
+    , pattern PredicateNot
+    , makeFalsePredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -79,13 +83,10 @@ import Kore.Internal.TermLike
     , pattern InternalString_
     , pattern InternalString_
     , pattern Mu_
-    , pattern Not_
     , pattern Nu_
     , TermLike
     , Variable (..)
-    , mkBottom
-    , mkTop
-    , termLikeSort
+    , mkEquals_
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
@@ -185,7 +186,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ unwrapPredicate predicate
+        $ Predicate.fromPredicate_ predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (OrPattern.map eraseTerm patternOr)
@@ -204,11 +205,16 @@ simplifyConjunctions
     => Predicate variable
     -> Changed (Predicate variable)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
-    let sort = predicateSort original
-     in case simplifyConjunctionByAssumption predicates of
-            Unchanged _ -> Unchanged original
-            Changed changed ->
-                Changed (MultiAnd.toPredicateSorted sort changed)
+    case simplifyConjunctionByAssumption predicates of
+        Unchanged _ -> Unchanged original
+        Changed changed ->
+            Changed (MultiAnd.toPredicate changed)
+
+data DoubleMap variable = DoubleMap
+    { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
+    , predMap :: HashMap (Predicate variable) (Predicate variable)
+    }
+    deriving (Eq, GHC.Generic, Show)
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
@@ -223,10 +229,9 @@ simplifyConjunctionByAssumption
     -> Changed (MultiAnd (Predicate variable))
 simplifyConjunctionByAssumption (toList -> andPredicates) =
     fmap MultiAnd.make
-    $ flip evalStateT HashMap.empty
+    $ flip evalStateT (DoubleMap HashMap.empty HashMap.empty)
     $ for (sortBySize andPredicates)
-    $ \predicate' -> do
-        let original = Predicate.unwrapPredicate predicate'
+    $ \original -> do
         result <- applyAssumptions original
         assume result
         return result
@@ -235,7 +240,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     -- which could contain it, because the containing clause is necessarily
     -- larger.
     sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortOn (size . from)
+    sortBySize = sortOn predSize
 
     size :: TermLike variable -> Int
     size =
@@ -245,63 +250,105 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
+    predSize :: Predicate variable -> Int
+    predSize =
+        Recursive.fold $ \(_ :< predF) ->
+            case predF of
+                Predicate.CeilF ceil_ -> 1 + sum (size <$> ceil_)
+                Predicate.EqualsF equals_ -> 1 + sum (size <$> equals_)
+                Predicate.FloorF floor_ -> 1 + sum (size <$> floor_)
+                Predicate.InF in_ -> 1 + sum (size <$> in_)
+                _ -> 1 + sum predF
+
     assume
-        :: Predicate variable
-        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
-    assume predicate1 =
+        :: Predicate variable ->
+        StateT (DoubleMap variable) Changed ()
+    assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
         assumePredicate =
-            case termLike of
-                Not_ _ notChild ->
+            case predicate of
+                PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    HashMap.insert notChild (mkBottom sort)
+                    Lens.over (field @"predMap") $
+                        HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    HashMap.insert termLike (mkTop sort)
+                    Lens.over (field @"predMap") $
+                        HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
-            case retractLocalFunction termLike of
-                Just (Pair term1 term2) -> HashMap.insert term1 term2
+            case predicate of
+                PredicateEquals t1 t2 ->
+                    case retractLocalFunction (mkEquals_ t1 t2) of
+                        Just (Pair t1' t2') ->
+                            Lens.over (field @"termLikeMap") $
+                                HashMap.insert t1' t2'
+                        _ -> id
                 _ -> id
 
-        termLike = Predicate.unwrapPredicate predicate1
-        sort = termLikeSort termLike
-
     applyAssumptions
-        ::  TermLike variable
-        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
-                (Predicate variable)
+        ::  Predicate variable
+        ->  StateT (DoubleMap variable) Changed (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        lift $ fmap
-            (unsafeMakePredicate assumptions replaceIn)
-            (applyAssumptionsWorker assumptions replaceIn)
-
-    unsafeMakePredicate replacements original result =
-        case makePredicate result of
-            -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
-            -- should make it impossible to have an error here.
-            Left err ->
-                (error . show . Pretty.vsep . map (either id (Pretty.indent 4)))
-                [ Left "Replacing"
-                , Right (Pretty.vsep (unparse <$> HashMap.keys replacements))
-                , Left "in"
-                , Right (unparse original)
-                , Right (Pretty.pretty err)
-                ]
-            Right p -> p
+        lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
+        :: DoubleMap variable
+        -> Predicate variable
+        -> Changed (Predicate variable)
+    applyAssumptionsWorker assumptions original
+      | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
+
+      | HashMap.null (termLikeMap assumptions') &&
+        HashMap.null (predMap assumptions') = Unchanged original
+
+      | otherwise = (case replaceIn of
+          Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
+          Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
+          Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
+          Predicate.InF in_ -> Predicate.InF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
+          _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
+        )
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
+
+      where
+        _ :< replaceIn = Recursive.project original
+
+        assumptions'
+          | PredicateExists var _ <- original = restrictAssumptions (inject var)
+          | PredicateForall var _ <- original = restrictAssumptions (inject var)
+          | otherwise = assumptions
+
+        restrictAssumptions Variable { variableName } =
+            Lens.over (field @"termLikeMap")
+            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
+            $
+            Lens.over (field @"predMap")
+            (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
+            assumptions
+          where
+            wouldNotCapture = not . Predicate.hasFreeVariable variableName
+            wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
+
+    applyAssumptionsWorkerTerm
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorker assumptions original
+    applyAssumptionsWorkerTerm assumptions original
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        traverse (applyAssumptionsWorker assumptions') replaceIn
+        traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.

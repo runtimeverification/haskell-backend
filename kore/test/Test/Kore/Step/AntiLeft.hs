@@ -24,7 +24,7 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeExistsPredicate
     , makeOrPredicate
     )
@@ -58,7 +58,7 @@ newtype AntiLeftTerm = AntiLeftTerm {_getAntileftTerm :: TermLike VariableName}
 test_antiLeft :: [TestTree]
 test_antiLeft =
     [ testCase "Simple antiLeft" $ do
-        let expect = makeCeilPredicate_ (mkAnd Mock.cf Mock.a)
+        let expect = makeCeilPredicate (mkAnd Mock.cf Mock.a)
         actual <- parseAndApply
             (AntiLeftTerm
                 (applyAliasToNoArgs "A"
@@ -72,8 +72,8 @@ test_antiLeft =
         assertEqual "" expect actual
     , testCase "AntiLeft with requires" $ do
         let expect = makeAndPredicate
-                (makeCeilPredicate Mock.testSort Mock.cg)
-                (makeCeilPredicate_ (mkAnd Mock.cf Mock.a))
+                (makeCeilPredicate Mock.cg)
+                (makeCeilPredicate (mkAnd Mock.cf Mock.a))
         actual <- parseAndApply
             (AntiLeftTerm
                 (applyAliasToNoArgs "A"
@@ -89,8 +89,8 @@ test_antiLeft =
         assertEqual "" expect actual
     , testCase "AntiLeft multiple rules" $ do
         let expect = makeOrPredicate
-                (makeCeilPredicate_ (mkAnd Mock.cf Mock.a))
-                (makeCeilPredicate_ (mkAnd Mock.cf Mock.b))
+                (makeCeilPredicate (mkAnd Mock.cf Mock.a))
+                (makeCeilPredicate (mkAnd Mock.cf Mock.b))
         actual <- parseAndApply
             (AntiLeftTerm
                 (applyAliasToNoArgs "A"
@@ -107,8 +107,8 @@ test_antiLeft =
         assertEqual "" expect actual
     , testCase "Recursive antiLeft" $ do
         let expect = makeOrPredicate
-                (makeCeilPredicate_ (mkAnd Mock.cf Mock.a))
-                (makeCeilPredicate_ (mkAnd Mock.cf Mock.b))
+                (makeCeilPredicate (mkAnd Mock.cf Mock.a))
+                (makeCeilPredicate (mkAnd Mock.cf Mock.b))
         actual <- parseAndApply
             (AntiLeftTerm
                 (applyAliasToNoArgs "A"
@@ -130,7 +130,7 @@ test_antiLeft =
         assertEqual "" expect actual
     , testCase "Quantified antiLeft" $ do
         let expect = makeExistsPredicate Mock.var_x_0
-                (makeCeilPredicate_
+                (makeCeilPredicate
                     (mkAnd
                         (Mock.g (mkElemVar Mock.x))
                         (Mock.f (mkElemVar Mock.var_x_0))

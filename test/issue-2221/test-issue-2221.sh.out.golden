@@ -11,7 +11,6 @@
         /* Fl Fn D Sfa Cl */
         Lbl'-LT-'size'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"))
     ),
-    /* Created: Kore.Internal.Predicate.makeAndPredicate */
     /* Spa */
     \and{SortGeneratedTopCell{}}(
         /* Spa */

@@ -29,12 +29,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     )
-import qualified Kore.Internal.Predicate as Predicate
-    ( coerceSort
-    )
-import Kore.Internal.TermLike
-    ( termLikeSort
-    )
 import Kore.Reachability
     ( AllPathClaim (..)
     , OnePathClaim (..)
@@ -103,8 +97,7 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
                 rulePattern
                     { RulePattern.left = term
                     , RulePattern.requires =
-                        Predicate.coerceSort (termLikeSort term)
-                        $ makeAndPredicate predicate requires'
+                        makeAndPredicate predicate requires'
                     }
 
 instance SimplifyRuleLHS ClaimPattern

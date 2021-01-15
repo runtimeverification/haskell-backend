@@ -25,6 +25,9 @@ import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( fullySimplified
     , setSimplified
     )
+import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern
+    ( setSimplified
+    )
 import Kore.Internal.Condition
     ( Condition
     )
@@ -48,6 +51,7 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( Predicate
+    , PredicateF (..)
     )
 import Kore.Internal.Substitution
     ( Substitution
@@ -66,6 +70,8 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Step.SMT.Declaration.All as SMT.AST
+    ( declare
+    )
 import Logic
     ( LogicT
     )
@@ -98,7 +104,18 @@ simplifiedTerm =
         :< patt
 
 simplifiedPredicate :: Predicate variable -> Predicate variable
-simplifiedPredicate = fmap simplifiedTerm
+simplifiedPredicate =
+    Recursive.unfold (simplifiedWorker . Recursive.project)
+  where
+    simplifiedWorker (attrs :< patt) =
+        Attribute.PPattern.setSimplified Attribute.Pattern.fullySimplified attrs
+        :< (case patt of
+            CeilF ceil' -> CeilF (simplifiedTerm <$> ceil')
+            FloorF floor' -> FloorF (simplifiedTerm <$> floor')
+            EqualsF equals' -> EqualsF (simplifiedTerm <$> equals')
+            InF in' -> InF (simplifiedTerm <$> in')
+            _ -> patt
+        )
 
 simplifiedSubstitution
     :: InternalVariable variable

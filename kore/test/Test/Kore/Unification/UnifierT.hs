@@ -74,7 +74,7 @@ test_simplifyCondition =
     , testCase "x = f(x)" $ do
         let x = inject Mock.x
             expect =
-                Predicate.makeEqualsPredicate_ (mkVar x) (Mock.f (mkVar x))
+                Predicate.makeEqualsPredicate (mkVar x) (Mock.f (mkVar x))
                 & OrCondition.fromPredicate
             denormalized =
                 Substitution.mkUnwrappedSubstitution
@@ -98,7 +98,7 @@ test_simplifyCondition =
   where
     existsPredicate =
         Predicate.makeMultipleExists [Mock.y, Mock.z]
-        $ Predicate.makeEqualsPredicate_
+        $ Predicate.makeEqualsPredicate
             (mkElemVar Mock.x)
             (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))
 
@@ -196,7 +196,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate_
+                            Predicate.makeEqualsPredicate
                                 Mock.a
                                 (Mock.f Mock.a)
                         , substitution = Substitution.unsafeWrap
@@ -224,7 +224,7 @@ test_mergeAndNormalizeSubstitutions =
             f = Mock.f
             y = mkElemVar Mock.y
         let denormCondition =
-                Predicate.makeEqualsPredicate_ y (f y)
+                Predicate.makeEqualsPredicate y (f y)
                 & Condition.fromPredicate
             substCondition =
                 Substitution.assign (inject Mock.x) (ctor (f y))
@@ -244,7 +244,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=y] + [y=constructor(x)]  === error
         $ do
             let expect =
-                    [ Predicate.makeEqualsPredicate_
+                    [ Predicate.makeEqualsPredicate
                         (mkElemVar Mock.x)
                         (mkAnd
                             (Mock.constr10 (mkElemVar Mock.x))
@@ -267,7 +267,7 @@ test_mergeAndNormalizeSubstitutions =
 
     , testCase "Non-ctor circular dependency" $ do
         let denormCondition =
-                Predicate.makeEqualsPredicate_
+                Predicate.makeEqualsPredicate
                     (mkElemVar Mock.y)
                     (Mock.f (mkElemVar Mock.y))
                 & Condition.fromPredicate
@@ -315,7 +315,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
+                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
                             [ (inject Mock.x, Mock.constr10 Mock.cf) ]
                         }
@@ -324,7 +324,7 @@ test_mergeAndNormalizeSubstitutions =
                 normalize
                     Conditional
                         { term = ()
-                        , predicate = Predicate.makeTruePredicate_
+                        , predicate = Predicate.makeTruePredicate
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
                             [ (inject Mock.x, Mock.constr10 Mock.cf)
@@ -340,7 +340,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate_
+                            Predicate.makeCeilPredicate
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
                             [ (inject Mock.x, Mock.constr10 Mock.a)
@@ -353,7 +353,7 @@ test_mergeAndNormalizeSubstitutions =
                     Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate_
+                            Predicate.makeCeilPredicate
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
@@ -417,7 +417,6 @@ normalizeExcept predicated =
             [   ( Axiom.Identifier.Application Mock.functional10Id
                 , EvaluationStrategy.definitionEvaluation
                     [ Equation.mkEquation
-                        (mkSortVariable "R")
                         (Mock.functional10 (mkElemVar Mock.x))
                         (mkElemVar Mock.x)
                     ]

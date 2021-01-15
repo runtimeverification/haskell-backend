@@ -86,11 +86,11 @@ testRulePattern =
             , maybeInner = Nothing
             , leftHands = []
             }
-        , requires = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
+        , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
         , rhs = RHS
             { existentials = [Mock.y]
             , right = mkElemVar Mock.y
-            , ensures = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
+            , ensures = Predicate.makeCeilPredicate (mkElemVar Mock.t)
             }
         , attributes = def
         }

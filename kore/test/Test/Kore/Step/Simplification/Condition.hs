@@ -22,9 +22,9 @@ import Kore.Internal.OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate_
-    , makeTruePredicate_
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -82,7 +82,7 @@ test_simplify_local_functions =
     fInt = Mock.fInt (mkElemVar Mock.xInt)
     fBool = Mock.fBool (mkElemVar Mock.xBool)
     fString = Mock.fString (mkElemVar Mock.xString)
-    defined = makeCeilPredicate_ f & Condition.fromPredicate
+    defined = makeCeilPredicate f & Condition.fromPredicate
 
     a = Mock.a
     b = Mock.b
@@ -99,8 +99,8 @@ test_simplify_local_functions =
     strOne = Mock.builtinString "one"
     strTwo = Mock.builtinString "two"
 
-    mkLocalDefn func (Left t)  = makeEqualsPredicate_ t func
-    mkLocalDefn func (Right t) = makeEqualsPredicate_ func t
+    mkLocalDefn func (Left t)  = makeEqualsPredicate t func
+    mkLocalDefn func (Right t) = makeEqualsPredicate func t
 
     test name func eitherC1 eitherC2 =
         testCase name $ do
@@ -125,7 +125,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.f Mock.a)
                             (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
@@ -138,7 +138,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.f (mkElemVar Mock.x))
                             (Mock.g (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
@@ -153,7 +153,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             Mock.functional00
                             Mock.functional01
                     , substitution = Substitution.unsafeWrap
@@ -166,7 +166,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.constr10 (mkElemVar Mock.x))
                             (Mock.constr10 (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
@@ -180,7 +180,7 @@ test_predicateSimplification =
         let expect =
                 Conditional
                     { term = ()
-                    , predicate = makeEqualsPredicate_ Mock.a Mock.functional00
+                    , predicate = makeEqualsPredicate Mock.a Mock.functional00
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.functional00)
                         , (inject Mock.y, Mock.functional01)
@@ -204,7 +204,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.f (mkElemVar Mock.x))
                             (Mock.f (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
@@ -218,7 +218,7 @@ test_predicateSimplification =
         let expect =
                 Conditional
                     { term = ()
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
                         [ (inject Mock.x, Mock.a)
                         , (inject Mock.y, Mock.b)
@@ -238,7 +238,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.constr10 (mkElemVar Mock.x))
                             (Mock.f (mkElemVar Mock.y))
                     , substitution = Substitution.unsafeWrap
@@ -252,7 +252,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.f Mock.a)
                             (Mock.g Mock.a)
                     , substitution = Substitution.unsafeWrap
@@ -276,11 +276,11 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate_
+                            (makeEqualsPredicate
                                 (Mock.constr10 (mkElemVar Mock.x))
                                 (Mock.f (mkElemVar Mock.y))
                             )
-                            (makeEqualsPredicate_
+                            (makeEqualsPredicate
                                 (Mock.f (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                             )
@@ -295,7 +295,7 @@ test_predicateSimplification =
                 Conditional
                     { term = ()
                     , predicate =
-                        makeEqualsPredicate_
+                        makeEqualsPredicate
                             (Mock.g Mock.a)
                             (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
@@ -320,11 +320,11 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate_
+                            (makeEqualsPredicate
                                 (Mock.constr10 (mkElemVar Mock.x))
                                 (Mock.f (mkElemVar Mock.y))
                             )
-                            (makeEqualsPredicate_
+                            (makeEqualsPredicate
                                 (Mock.f (mkElemVar Mock.x))
                                 (Mock.g Mock.a)
                             )

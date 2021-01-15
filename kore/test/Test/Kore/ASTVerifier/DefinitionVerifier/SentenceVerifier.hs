@@ -101,7 +101,7 @@ patternFreeVarInRHS =
         { left =
             Pattern.fromTermAndPredicate
                 (mkTop Mock.testSort)
-                (makeTruePredicate Mock.testSort)
+                makeTruePredicate
         , existentials = []
         , right =
             Pattern.fromTermAndPredicate
@@ -110,7 +110,7 @@ patternFreeVarInRHS =
                     & mkElementRuleVariable
                     )
                 )
-                (makeTruePredicate Mock.testSort)
+                makeTruePredicate
             & OrPattern.fromPattern
         , attributes = Default.def
         }
@@ -125,7 +125,7 @@ patternNoFreeVarInRHS =
         { left =
             Pattern.fromTermAndPredicate
                 (mkTop Mock.testSort)
-                (makeTruePredicate Mock.testSort)
+                makeTruePredicate
         , existentials =
             [ mkElementVariable "x" Mock.testSort
             & mkElementRuleVariable
@@ -137,7 +137,7 @@ patternNoFreeVarInRHS =
                     & mkElementRuleVariable
                     )
                 )
-                (makeTruePredicate Mock.testSort)
+                makeTruePredicate
             & OrPattern.fromPattern
         , attributes = Default.def
         }
