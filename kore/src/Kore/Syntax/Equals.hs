@@ -21,6 +21,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
@@ -45,6 +48,19 @@ data Equals sort child = Equals
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance Pretty child => Pretty (Equals Sort child) where
+    pretty
+        Equals
+            { equalsOperandSort
+            , equalsResultSort
+            , equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> parameters [equalsOperandSort, equalsResultSort]
+        <> arguments' (pretty <$> [equalsFirst, equalsSecond])
+
 instance Unparse child => Unparse (Equals Sort child) where
     unparse
         Equals
@@ -56,6 +72,37 @@ instance Unparse child => Unparse (Equals Sort child) where
       =
         "\\equals"
         <> parameters [equalsOperandSort, equalsResultSort]
+        <> arguments [equalsFirst, equalsSecond]
+
+    unparse2
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      = Pretty.parens (Pretty.fillSep
+            [ "\\equals"
+            , unparse2 equalsFirst
+            , unparse2 equalsSecond
+            ])
+
+instance Pretty child => Pretty (Equals () child) where
+    pretty
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> arguments' (pretty <$> [equalsFirst, equalsSecond])
+
+instance Unparse child => Unparse (Equals () child) where
+    unparse
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
         <> arguments [equalsFirst, equalsSecond]
 
     unparse2

@@ -42,6 +42,7 @@ module Kore.Internal.TermLike
     , refreshElementBinder
     , refreshSetBinder
     , depth
+    , makeSortsAgree
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort
@@ -184,6 +185,7 @@ module Kore.Internal.TermLike
     , module Variable
     -- * For testing
     , mkDefinedAtTop
+    , containsSymbolWithId
     ) where
 
 import Prelude.Kore
@@ -262,6 +264,7 @@ import Kore.Syntax.Ceil
 import Kore.Syntax.Definition hiding
     ( Alias
     , Symbol
+    , symbolConstructor
     )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.DomainValue
@@ -2124,3 +2127,11 @@ applyModality modality term =
             mkApplyAlias (wAF sort) [term]
   where
     sort = termLikeSort term
+
+containsSymbolWithId :: String -> TermLike variable -> Bool
+containsSymbolWithId symId term
+    | App_ sym _ <- term
+    , getId (symbolConstructor sym) == Text.pack symId = True
+    | otherwise = any
+        (containsSymbolWithId symId)
+        (Cofree.tailF $ Recursive.project term)

@@ -60,6 +60,9 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.

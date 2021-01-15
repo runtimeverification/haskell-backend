@@ -2,7 +2,6 @@
 \rewrites{SortGeneratedTopCell{}}(
     /* Spc */
     \and{SortGeneratedTopCell{}}(
-        /* Created: Kore.Internal.Predicate.makeAndPredicate */
         /* Sfc */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
