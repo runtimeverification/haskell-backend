@@ -1462,8 +1462,8 @@ mkInternalBytes
 mkInternalBytes sort value =
     updateCallStack . synthesize . InternalBytesF . Const
         $ InternalBytes
-            { bytesSort = sort
-            , bytesValue = value
+            { internalBytesSort = sort
+            , internalBytesValue = value
             }
 
 mkInternalBytes'
@@ -1900,9 +1900,9 @@ pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
 
 pattern InternalBytes_ :: Sort -> ByteString -> TermLike variable
-pattern InternalBytes_ bytesSort bytesValue <-
+pattern InternalBytes_ internalBytesSort internalBytesValue <-
     (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
-        { bytesSort, bytesValue }
+        { internalBytesSort, internalBytesValue }
     ))
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-

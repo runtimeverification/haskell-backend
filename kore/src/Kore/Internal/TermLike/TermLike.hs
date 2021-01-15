@@ -793,8 +793,8 @@ instance
             EndiannessF (Const endianness) -> locationFromAst endianness
             InternalBoolF (Const InternalBool { internalBoolSort }) ->
                 locationFromAst internalBoolSort
-            InternalBytesF (Const InternalBytes { bytesSort }) ->
-                locationFromAst bytesSort
+            InternalBytesF (Const InternalBytes { internalBytesSort }) ->
+                locationFromAst internalBytesSort
             InternalIntF (Const InternalInt { internalIntSort }) ->
                 locationFromAst internalIntSort
             InternalStringF (Const InternalString { internalStringSort }) ->
