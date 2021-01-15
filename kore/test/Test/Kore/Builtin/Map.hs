@@ -290,8 +290,8 @@ test_removeAll =
             when (set == Set.empty) discard
             let key = Set.elemAt 0 set
                 diffSet = Set.delete key set
-                patSet = builtinSet_ set & fromConcrete
-                patDiffSet = builtinSet_ diffSet & fromConcrete
+                patSet = mkSet_ set & fromConcrete
+                patDiffSet = mkSet_ diffSet & fromConcrete
                 patKey = fromConcrete key
                 patRemoveAll1 = removeAllMap map' patSet
                 patRemoveAll2 = removeAllMap
@@ -422,7 +422,7 @@ test_keysUnit =
             let
                 patUnit = unitMap
                 patKeys = keysMap patUnit
-                patExpect = builtinSet_ Set.empty
+                patExpect = mkSet_ Set.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
@@ -436,7 +436,7 @@ test_keysElement =
             key <- forAll genIntegerKey
             val <- forAll genIntegerPattern
             let patMap = asTermLike $ Map.singleton key val
-                patKeys = builtinSet_ (Set.singleton $ from key) & fromConcrete
+                patKeys = mkSet_ (Set.singleton $ from key) & fromConcrete
                 patSymbolic = keysMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
@@ -451,7 +451,7 @@ test_keys =
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
             let keys1 = Map.keysSet map1 & Set.map from
-                patConcreteKeys = builtinSet_ keys1 & fromConcrete
+                patConcreteKeys = mkSet_ keys1 & fromConcrete
                 patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
@@ -1227,23 +1227,23 @@ test_concretizeKeysAxiom =
 
 test_renormalize :: [TestTree]
 test_renormalize =
-    [ unchanged "abstract key is unchanged" (mkMap [(x, v)] [] [])
+    [ unchanged "abstract key is unchanged" (mkMap' [(x, v)] [] [])
     , becomes "concrete key is normalized"
-        (mkMap [(from k1, v)] [] [])
-        (mkMap [] [(k1, v)] [])
+        (mkMap' [(from k1, v)] [] [])
+        (mkMap' [] [(k1, v)] [])
     , becomes "opaque child is flattened"
-        (mkMap [] [(k1, v)] [mkMap [] [(k2, v)] []])
-        (mkMap [] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [] [(k2, v)] []])
+        (mkMap' [] [(k1, v), (k2, v)] [])
     , becomes "child is flattened and normalized"
-        (mkMap [] [(k1, v)] [mkMap [(from k2, v)] [] []])
-        (mkMap [] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [(from k2, v)] [] []])
+        (mkMap' [] [(k1, v), (k2, v)] [])
     , becomes "grandchild is flattened and normalized"
-        (mkMap [] [(k1, v)] [mkMap [(x, v)] [] [mkMap [(from k2, v)] [] []]])
-        (mkMap [(x, v)] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [(x, v)] [] [mkMap' [(from k2, v)] [] []]])
+        (mkMap' [(x, v)] [(k1, v), (k2, v)] [])
     , denorm "duplicate key in map"
-        (mkMap [(from k1, v), (from k1, v)] [] [])
+        (mkMap' [(from k1, v), (from k1, v)] [] [])
     , denorm "duplicate key in child"
-        (mkMap [(from k1, v)] [] [mkMap [(from k1, v)] [] []])
+        (mkMap' [(from k1, v)] [] [mkMap' [(from k1, v)] [] []])
     ]
   where
     x = mkIntVar (testId "x")
@@ -1279,7 +1279,7 @@ test_renormalize =
     denorm name origin =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
-    mkMap
+    mkMap'
         :: [(TermLike VariableName, TermLike VariableName)]
         -- ^ abstract elements
         -> [(Key, TermLike VariableName)]
@@ -1287,7 +1287,7 @@ test_renormalize =
         -> [NormalizedMap Key (TermLike VariableName)]
         -- ^ opaque terms
         -> NormalizedMap Key (TermLike VariableName)
-    mkMap abstract concrete opaque =
+    mkMap' abstract concrete opaque =
         wrapAc NormalizedAc
             { elementsWithVariables = MapElement <$> abstract
             , concreteElements =
