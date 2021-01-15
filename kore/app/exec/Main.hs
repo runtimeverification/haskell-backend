@@ -553,30 +553,32 @@ main = do
             parserInfoModifiers
     for_ (localOptions options) mainWithOptions
 
+{- | Use the parsed 'KoreExecOptions' to set up output and logging, then
+dispatch the requested command.
+-}
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
-    let KoreExecOptions
-            { koreLogOptions
-            , koreSolverOptions
-            , bugReportOption
-            }
-          = execOptions
+    let KoreExecOptions { koreSolverOptions, bugReportOption, outputFileName } = execOptions
     ensureSmtPreludeExists koreSolverOptions
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tmpDir -> do
-            writeOptionsAndKoreFiles tmpDir execOptions
-            go <* warnIfLowProductivity
+            let execOptions' = execOptions {
+                    outputFileName = Just (tmpDir </> "result.kore") }
+            writeOptionsAndKoreFiles tmpDir execOptions'
+            e <- mainDispatch execOptions' <* warnIfLowProductivity
                 & handle handleWithConfiguration
                 & handle handleSomeException
                 & runKoreLog tmpDir koreLogOptions
+            case outputFileName of
+                Nothing -> readFile (tmpDir </> "result.kore") >>= putStr
+                Just fileName -> copyFile (tmpDir </> "result.kore") fileName
+            return e
     let KoreExecOptions { rtsStatistics } = execOptions
     for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
   where
-    KoreExecOptions { koreProveOptions } = execOptions
-    KoreExecOptions { koreSearchOptions } = execOptions
-    KoreExecOptions { koreMergeOptions } = execOptions
+    KoreExecOptions { koreLogOptions } = execOptions
 
     handleSomeException :: SomeException -> Main ExitCode
     handleSomeException someException = do
@@ -594,21 +596,27 @@ mainWithOptions execOptions = do
             ("// Last configuration:\n" <> unparse lastConfiguration)
         throwM someException
 
-    go :: Main ExitCode
-    go
-      | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
-        if bmc
-            then koreBmc execOptions proveOptions
-            else koreProve execOptions proveOptions
+{- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
+-}
+mainDispatch :: KoreExecOptions -> Main ExitCode
+mainDispatch execOptions
+  | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+    if bmc
+        then koreBmc execOptions proveOptions
+        else koreProve execOptions proveOptions
 
-      | Just searchOptions <- koreSearchOptions =
-        koreSearch execOptions searchOptions
+  | Just searchOptions <- koreSearchOptions =
+    koreSearch execOptions searchOptions
 
-      | Just mergeOptions <- koreMergeOptions =
-        koreMerge execOptions mergeOptions
+  | Just mergeOptions <- koreMergeOptions =
+    koreMerge execOptions mergeOptions
 
-      | otherwise =
-        koreRun execOptions
+  | otherwise =
+    koreRun execOptions
+  where
+    KoreExecOptions { koreProveOptions } = execOptions
+    KoreExecOptions { koreSearchOptions } = execOptions
+    KoreExecOptions { koreMergeOptions } = execOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
