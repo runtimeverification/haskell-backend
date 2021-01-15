@@ -57,6 +57,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.DomainValue
     ( DomainValue (..)
     )
+import Kore.Syntax.StringLiteral
 import Kore.Syntax.Variable
     ( Concrete
     )
@@ -157,6 +158,7 @@ data KeyF child
     | InternalMapF    !(InternalMap Key child)
     | InternalSetF    !(InternalSet Key child)
     | InternalStringF !(Const InternalString child)
+    | StringLiteralF  !(Const StringLiteral child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -184,6 +186,7 @@ instance Synthetic Sort KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
 
 instance Synthetic Functional KeyF where
     synthetic = \case
@@ -197,6 +200,8 @@ instance Synthetic Functional KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
+
 
 instance Synthetic Function KeyF where
     synthetic = \case
@@ -210,6 +215,8 @@ instance Synthetic Function KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
+
 
 instance Synthetic Defined KeyF where
     synthetic = \case
@@ -223,6 +230,7 @@ instance Synthetic Defined KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
 
 instance Synthetic ConstructorLike KeyF where
     synthetic = \case
@@ -236,6 +244,7 @@ instance Synthetic ConstructorLike KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
 
 instance Synthetic Simplified KeyF where
     synthetic = \case
@@ -249,6 +258,7 @@ instance Synthetic Simplified KeyF where
         InternalMapF internalMap -> synthetic internalMap
         InternalSetF internalSet -> synthetic internalSet
         InternalStringF internalString -> synthetic internalString
+        StringLiteralF stringLiteral -> synthetic stringLiteral
 
 instance From InternalBool (KeyF child) where
     from = InternalBoolF . Const

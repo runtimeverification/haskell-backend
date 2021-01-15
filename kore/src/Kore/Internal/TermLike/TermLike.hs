@@ -516,6 +516,7 @@ instance From (KeyF child) (TermLikeF variable child) where
     from (Key.InternalMapF internalMap) = InternalMapF internalMap
     from (Key.InternalListF internalList) = InternalListF internalList
     from (Key.InternalBytesF internalBytes) = InternalBytesF internalBytes
+    from (Key.StringLiteralF stringLiteral) = StringLiteralF stringLiteral
     {-# INLINE from #-}
 
 {- | @TermLike@ is a term-like Kore pattern.
@@ -746,6 +747,8 @@ retractKey =
                     sequence (Key.InternalMapF internalMap)
                 InternalSetF internalSet ->
                     sequence (Key.InternalSetF internalSet)
+                StringLiteralF stringLiteral ->
+                    sequence (Key.StringLiteralF stringLiteral)
                 _ -> empty
         pure (Recursive.embed (attrs' :< keyF))
 
