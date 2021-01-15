@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.1.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -954,6 +954,7 @@ test-suite kore-test
       Test.Kore.IndexedModule.SortGraph
       Test.Kore.Internal.ApplicationSorts
       Test.Kore.Internal.Condition
+      Test.Kore.Internal.Key
       Test.Kore.Internal.MultiAnd
       Test.Kore.Internal.OrCondition
       Test.Kore.Internal.OrPattern
