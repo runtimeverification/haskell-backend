@@ -175,6 +175,9 @@ import Kore.Variables.Target
     , unTarget
     )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -494,7 +497,7 @@ ensureSimplifiedCondition repr termLike condition
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified condition, but found:"
-        , Pretty.indent 4 (unparse condition)
+        , Pretty.indent 4 (pretty condition)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]

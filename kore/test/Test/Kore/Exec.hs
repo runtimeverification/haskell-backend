@@ -47,7 +47,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate_
+    ( makeTruePredicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -298,7 +298,7 @@ searchVar = mkElemVar $ mkElementVariable (testId "V") mySort
 searchPattern :: Pattern VariableName
 searchPattern = Conditional
     { term = searchVar
-    , predicate = makeTruePredicate_
+    , predicate = makeTruePredicate
     , substitution = mempty
     }
 
@@ -446,7 +446,7 @@ rewriteAxiomPriority lhsName rhsName priority antiLeft =
     $ RewriteRule RulePattern
         { left = applyToNoArgs mySort lhsName
         , antiLeft
-        , requires = makeTruePredicate_
+        , requires = makeTruePredicate
         , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
         , attributes = def
         }

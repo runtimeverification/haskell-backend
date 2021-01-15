@@ -31,9 +31,9 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
@@ -111,7 +111,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = fOfA
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(inject Mock.x, fOfA)]
                         }
@@ -122,7 +122,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = fOfA
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap [(inject Mock.x, fOfA)]
                         }
@@ -135,7 +135,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = Mock.injective10 fOfA
-                        , predicate = makeEqualsPredicate Mock.testSort
+                        , predicate = makeEqualsPredicate
                             fOfA
                             gOfA
                         , substitution = mempty
@@ -176,7 +176,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = Mock.sortInjection10 Mock.cfSort0
-                        , predicate = makeEqualsPredicate Mock.testSort
+                        , predicate = makeEqualsPredicate
                             Mock.cfSort0
                             Mock.cgSort0
                         , substitution = mempty
@@ -304,7 +304,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionOtherToTop
                                Mock.aOtherSort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -323,7 +323,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionOtherToTop
                                Mock.aOtherSort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -342,7 +342,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionSubSubToTop
                                 Mock.aSubSubsort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -436,7 +436,6 @@ test_andTermsSimplification =
                         expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate
-                                Mock.testSort
                                 Mock.cf
                                 Mock.cg
                             , substitution = mempty
@@ -522,7 +521,7 @@ test_andTermsSimplification =
 
         , testCase "not equal values" $ do
             let expect =
-                    makeEqualsPredicate_ fOfA gOfA
+                    makeEqualsPredicate fOfA gOfA
                     & Condition.fromPredicate
                     & Pattern.withCondition fOfA
             (actualAnd, actualUnify) <- simplifyUnify fOfA gOfA
@@ -843,7 +842,7 @@ test_andTermsSimplification =
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
                 expect =
-                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    makeEqualsPredicate Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
                     & Pattern.withCondition concrete
             actual <- simplifyUnify concrete symbolic
@@ -877,7 +876,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         -- TODO: This predicate should have `listSort`;
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(inject x, Mock.builtinList [Mock.b])]
                         }
@@ -897,7 +896,7 @@ test_andTermsSimplification =
                 expect =
                     Pattern.fromTermLike expectTerm
                     `Conditional.andPredicate`
-                        makeCeilPredicate Mock.listSort expectTerm
+                        makeCeilPredicate expectTerm
                 x = mkElemVar $ mkElementVariable "x" Mock.testSort
                 l = mkElemVar $ mkElementVariable "y" Mock.listSort
                 -- List unification does not fully succeed because the
@@ -915,7 +914,7 @@ test_andTermsSimplification =
                 expect =
                     [ Conditional
                         { term = Mock.builtinList [Mock.a]
-                        , predicate = makeTruePredicate Mock.listSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(inject x, Mock.builtinList [Mock.a])]
                         }
@@ -1092,7 +1091,7 @@ test_andTermsSimplification =
                     Conditional
                         { term = Mock.injective10 fOfA
                         , predicate =
-                            makeEqualsPredicate Mock.testSort fOfA gOfA
+                            makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
                         }
                 x = mkVariable "x"
@@ -1213,7 +1212,7 @@ test_equalsTermsSimplification =
         let expected = Just
                 [ Conditional
                     { term = ()
-                    , predicate = makeCeilPredicate Mock.testSort Mock.cf
+                    , predicate = makeCeilPredicate Mock.cf
                     , substitution =
                         Substitution.unsafeWrap [(inject Mock.x, Mock.cf)]
                     }
@@ -1238,7 +1237,6 @@ test_equalsTermsSimplification =
                     , Condition.assign (inject Mock.xSet)
                         (asInternal $ Set.fromList xSetValue)
                     ]
-                    & Condition.coerceSort Mock.setSort
                     & pure
         actual <- simplifyEquals
             Map.empty
@@ -1253,7 +1251,7 @@ test_equalsTermsSimplification =
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
                 expect =
-                    makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
+                    makeEqualsPredicate Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
             assertEqual "" (Just [expect]) actual
@@ -1267,7 +1265,7 @@ test_equalsTermsSimplification =
             assertEqual "" (Just [expect]) actual
         , testCase "key not in singleton Map" $ do
             let expect =
-                    makeEqualsPredicate_
+                    makeEqualsPredicate
                         (mkElemVar Mock.x)
                         (mkElemVar Mock.y)
                     & makeNotPredicate
@@ -1288,16 +1286,16 @@ test_equalsTermsSimplification =
                         foldr1
                             makeAndPredicate
                             [ makeNotPredicate
-                                $ makeEqualsPredicate_
+                                $ makeEqualsPredicate
                                     (mkElemVar Mock.x)
                                     (mkElemVar Mock.y)
                             , makeNotPredicate
-                                $ makeEqualsPredicate_
+                                $ makeEqualsPredicate
                                     (mkElemVar Mock.x)
                                     (mkElemVar Mock.z)
                             -- Definedness condition
                             , makeNotPredicate
-                                $ makeEqualsPredicate_
+                                $ makeEqualsPredicate
                                     (mkElemVar Mock.y)
                                     (mkElemVar Mock.z)
                             ]
@@ -1320,16 +1318,16 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate_
+                                ( makeCeilPredicate
                                     (Mock.f (mkElemVar Mock.x))
                                 )
-                                ( makeEqualsPredicate_
+                                ( makeEqualsPredicate
                                     (mkElemVar Mock.y)
                                     ( Mock.f (mkElemVar Mock.x) )
                                 )
                             )
                         )
-                        ( makeCeilPredicate_
+                        ( makeCeilPredicate
                             (Mock.f (mkElemVar Mock.x))
                         )
                     & Condition.fromPredicate
@@ -1356,7 +1354,7 @@ test_functionAnd =
             expect =
                 Pattern.withCondition (f x)
                 $ Condition.fromPredicate
-                $ makeEqualsPredicate_ (f x) (f y)
+                $ makeEqualsPredicate (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
@@ -1381,11 +1379,11 @@ test_Defined =
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
             , testCase "\\equals(partial, defined)" $ do
-                let expect = Just [Condition.topOf Mock.testSort]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty partial defined
                 assertEqual "" expect actual
             , testCase "\\equals(defined, partial)" $ do
-                let expect = Just [Condition.topOf Mock.testSort]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty defined partial
                 assertEqual "" expect actual
             ]
@@ -1394,7 +1392,6 @@ test_Defined =
             variable = mkElemVar Mock.x
             condition =
                 Condition.assign (inject Mock.x) defined
-                & Condition.coerceSort Mock.testSort
         in
             [ testCase "\\and" $ do
                 let expect = [Pattern.withCondition defined condition]
@@ -1413,7 +1410,7 @@ test_Defined =
             -- TODO (thomas.tuegel): condition should use defined1 instead of
             -- function1.
             condition =
-                makeEqualsPredicate Mock.testSort function1 function2
+                makeEqualsPredicate function1 function2
                 & Condition.fromPredicate
         in
             [ testCase "\\and" $ do
@@ -1433,7 +1430,6 @@ test_Defined =
             set2 = Mock.builtinSet [mkElemVar Mock.t, mkElemVar Mock.u]
             defined1 = mkDefined set1
             conditions =
-                map (Condition.coerceSort Mock.setSort)
                 [ mconcat
                     [ Condition.assign (inject Mock.t) (mkDefined fx)
                     , Condition.assign (inject Mock.u) (mkDefined fy)
@@ -1475,7 +1471,6 @@ test_Defined =
                     [mkElemVar Mock.m]
             defined1 = mkDefined map1
             conditions =
-                map (Condition.coerceSort Mock.mapSort)
                 [ mconcat
                     [ Condition.assign (inject Mock.t) (mkElemVar Mock.x)
                     , Condition.assign (inject Mock.u) (mkDefined fOfA)

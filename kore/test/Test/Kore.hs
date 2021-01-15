@@ -545,8 +545,8 @@ predicateChildGen childGen quantifierSort patternSort' =
     Gen.recursive
         Gen.choice
         -- non-recursive generators
-        [ pure Predicate.makeFalsePredicate_
-        , pure Predicate.makeTruePredicate_
+        [ pure Predicate.makeFalsePredicate
+        , pure Predicate.makeTruePredicate
         , predicateChildGenCeil
         , predicateChildGenEquals
         , predicateChildGenFloor
@@ -582,12 +582,12 @@ predicateChildGen childGen quantifierSort patternSort' =
         Predicate.makeImpliesPredicate
             <$> go patternSort'
             <*> go patternSort'
-    predicateChildGenCeil = Predicate.makeCeilPredicate_ <$> childGen
-    predicateChildGenFloor = Predicate.makeFloorPredicate_ <$> childGen
+    predicateChildGenCeil = Predicate.makeCeilPredicate <$> childGen
+    predicateChildGenFloor = Predicate.makeFloorPredicate <$> childGen
     predicateChildGenEquals =
-        Predicate.makeEqualsPredicate_ <$> childGen <*> childGen
+        Predicate.makeEqualsPredicate <$> childGen <*> childGen
     predicateChildGenIn =
-        Predicate.makeInPredicate_ <$> childGen <*> childGen
+        Predicate.makeInPredicate <$> childGen <*> childGen
     predicateChildGenNot =
         Predicate.makeNotPredicate
             <$> go patternSort'

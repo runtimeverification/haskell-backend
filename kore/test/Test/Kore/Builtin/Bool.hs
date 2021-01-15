@@ -263,11 +263,11 @@ test_contradiction :: TestTree
 test_contradiction =
     testCase "x andBool y = true ∧ x andBool y = false" $ do
         let clause0 =
-                makeEqualsPredicate boolSort
+                makeEqualsPredicate
                     _True
                     (andThenBool (mkVar x) (mkVar y))
             clause1 =
-                makeEqualsPredicate boolSort
+                makeEqualsPredicate
                     _False
                     (andThenBool (mkVar x) (mkVar y))
             condition =

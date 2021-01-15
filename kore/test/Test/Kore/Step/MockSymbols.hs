@@ -153,6 +153,8 @@ eId :: Id
 eId = testId "e"
 fId :: Id
 fId = testId "f"
+fMapId :: Id
+fMapId = testId "fMap"
 fSort0Id :: Id
 fSort0Id = testId "fSort0"
 gId :: Id
@@ -503,6 +505,10 @@ functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
     symbol functionalTopConstr21Id [testSort, topSort] testSort
     & functional & constructor
+
+fMapSymbol :: Symbol
+fMapSymbol =
+    symbol fMapId [mapSort] testSort & function
 
 injective10Symbol :: Symbol
 injective10Symbol = symbol injective10Id [testSort] testSort & injective

@@ -385,9 +385,9 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
             empty
 
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | TermLike.isDefinedPattern termLike = Condition.top
       | otherwise =
-        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+        Condition.fromPredicate (makeCeilPredicate termLike)
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments
 

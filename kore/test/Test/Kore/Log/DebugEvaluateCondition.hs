@@ -26,5 +26,5 @@ test_instance_Table_DebugEvaluateCondition =
         [DebugEvaluateCondition (predicate :| sideConditions)]
 
 predicate1, predicate2 :: Predicate VariableName
-predicate1 = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
-predicate2 = makeEqualsPredicate_ (Mock.g Mock.a) (Mock.h Mock.c)
+predicate1 = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+predicate2 = makeEqualsPredicate (Mock.g Mock.a) (Mock.h Mock.c)

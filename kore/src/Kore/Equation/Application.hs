@@ -651,11 +651,11 @@ instance InternalVariable variable => Pretty (CheckRequiresError variable) where
     pretty checkRequiresError =
         Pretty.vsep
         [ "could not infer the equation requirement:"
-        , Pretty.indent 4 (unparse equationRequires)
+        , Pretty.indent 4 (pretty equationRequires)
         , "and the matching requirement:"
-        , Pretty.indent 4 (unparse matchPredicate)
+        , Pretty.indent 4 (pretty matchPredicate)
         , "from the side condition:"
-        , Pretty.indent 4 (unparse sideCondition)
+        , Pretty.indent 4 (pretty sideCondition)
         ]
       where
         CheckRequiresError { matchPredicate, equationRequires, sideCondition } =
