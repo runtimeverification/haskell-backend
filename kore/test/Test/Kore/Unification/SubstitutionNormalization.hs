@@ -12,12 +12,12 @@ import Data.Map.Strict
     ( Map
     )
 
-import Kore.Internal.TermLike
-import Kore.Unification.SubstitutionNormalization
-
 import Kore.Internal.Substitution
     ( mkUnwrappedSubstitution
     )
+import Kore.Internal.TermLike
+import Kore.Unification.SubstitutionNormalization
+
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 

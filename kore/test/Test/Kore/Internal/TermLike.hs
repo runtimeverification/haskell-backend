@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.TermLike
     ( test_substitute
     , test_refreshVariables
@@ -56,13 +56,13 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( orientSubstitution
+    )
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
 
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( orientSubstitution
-    )
 import Test.Kore hiding
     ( symbolGen
     )

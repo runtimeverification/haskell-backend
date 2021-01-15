@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Equation.Application
     ( test_attemptEquation
     , test_attemptEquationUnification

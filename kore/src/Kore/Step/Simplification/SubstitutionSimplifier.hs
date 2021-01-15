@@ -4,6 +4,7 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , substitutionSimplifier
