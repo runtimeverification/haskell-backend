@@ -94,7 +94,7 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             Var_ _ -> True
             _      -> False
 
-    renamingCycle =
+    ~renamingCycle =
         error
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
