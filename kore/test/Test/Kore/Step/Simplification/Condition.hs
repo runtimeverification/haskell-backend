@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Condition
     ( test_simplify_local_functions
     , test_predicateSimplification
+    , test_simplifyConjunctionByAssumptions
     ) where
 
 import Prelude.Kore
@@ -15,6 +16,7 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Condition as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -24,6 +26,8 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeNotPredicate
     , makeTruePredicate
     )
 import Kore.Internal.SideCondition
@@ -333,6 +337,20 @@ test_predicateSimplification =
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
+    ]
+
+test_simplifyConjunctionByAssumptions :: [TestTree]
+test_simplifyConjunctionByAssumptions =
+    [ testCase "Simplifies contradiction" $ do
+        let condition =
+                makeEqualsPredicate
+                    (mkElemVar Mock.x)
+                    Mock.a
+            predicates =
+                MultiAnd.make [condition, makeNotPredicate condition]
+            expected = makeFalsePredicate & MultiAnd.singleton
+            actual = Condition.simplifyConjunctionByAssumption predicates & extract
+        assertEqual "" expected actual
     ]
 
 simplify :: Condition VariableName -> IO (OrCondition VariableName)
