@@ -160,13 +160,13 @@ test_attemptEquation =
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
-                $ makeEqualsPredicate Mock.testSort
+                $ makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.y))
                     (Mock.functional10 (mkElemVar Mock.y))
             initial = mkElemVar Mock.y
@@ -177,25 +177,25 @@ test_attemptEquation =
     , testCase "equation requirement" $ do
         let
             requires =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional10 (mkElemVar Mock.x))
                     (Mock.functional11 (mkElemVar Mock.x))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
             expect1 =
                 WhileCheckRequires CheckRequiresError
-                { matchPredicate = makeTruePredicate_
+                { matchPredicate = makeTruePredicate
                 , equationRequires = requires1
                 , sideCondition = SideCondition.top
                 }
         attemptEquation SideCondition.top initial equation
             >>= expectLeft >>= assertEqual "" expect1
         let requires2 =
-                makeEqualsPredicate sortR
+                makeEqualsPredicate
                     (Mock.functional10 Mock.a)
                     (Mock.functional11 Mock.a)
             sideCondition2 =
@@ -208,7 +208,7 @@ test_attemptEquation =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                $ Condition.topOf Mock.testSort
+                Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
@@ -216,7 +216,7 @@ test_attemptEquation =
     , testCase "rule a => b ensures \\bottom" $ do
         let expect =
                 Pattern.withCondition Mock.b
-                $ Condition.bottomOf Mock.testSort
+                Condition.bottom
             initial = Mock.a
         attemptEquation SideCondition.top initial equationEnsuresBottom
             >>= expectRight >>= assertEqual "" expect
@@ -224,8 +224,8 @@ test_attemptEquation =
     , testCase "rule a => b requires \\bottom" $ do
         let expect =
                 WhileCheckRequires CheckRequiresError
-                    { matchPredicate = makeTruePredicate_
-                    , equationRequires = makeFalsePredicate sortR
+                    { matchPredicate = makeTruePredicate
+                    , equationRequires = makeFalsePredicate
                     , sideCondition = SideCondition.top
                     }
             initial = Mock.a
@@ -280,7 +280,7 @@ test_attemptEquation =
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (axiom (f x) (g x) (makeFalsePredicate sortR))
+        (axiom (f x) (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
     , notMatched "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
@@ -321,7 +321,7 @@ test_attemptEquation =
     , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
         let initial = tdivInt xInt xInt
             sideCondition =
-                makeCeilPredicate_ initial
+                makeCeilPredicate initial
                 & SideCondition.fromPredicate
             expect = Pattern.fromTermLike initial
         attemptEquation sideCondition initial equationId
@@ -393,7 +393,7 @@ test_attemptEquationUnification =
     , testCase "rule a => \\bottom" $ do
         let expect =
                 Pattern.withCondition (mkBottom Mock.testSort)
-                $ Condition.topOf Mock.testSort
+                Condition.top
             initial = Mock.a
         attemptEquation SideCondition.top initial equationBottom
             >>= expectRight >>= assertEqual "" expect
@@ -448,7 +448,7 @@ test_attemptEquationUnification =
         SideCondition.top
         (sigma x x)
     , requiresNotMet "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        (functionAxiomUnification fSymbol [x] (g x) (makeFalsePredicate sortR))
+        (functionAxiomUnification fSymbol [x] (g x) makeFalsePredicate)
         SideCondition.top
         (f x)
     , notInstantiated "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
@@ -497,9 +497,9 @@ test_applySubstitutionAndSimplify =
     [ testCase "Function application in argument doesn't get evaluated" $ do
         let mockArgument :: Predicate (Target.Target VariableName)
             mockArgument =
-                var1Term `makeInPredicate_` Mock.f var2Term
+                var1Term `makeInPredicate` Mock.f var2Term
             expected =
-                ( makeCeilPredicate_ (Mock.f var2Term)
+                ( makeCeilPredicate (Mock.f var2Term)
                 , variableName someVar1 `subst` Mock.f var2Term
                 )
         (Right [actual]) <-
@@ -535,21 +535,21 @@ test_applySubstitutionAndSimplify =
 -- * Test data
 
 equationId :: Equation'
-equationId = mkEquation sortR (mkElemVar Mock.x) (mkElemVar Mock.x)
+equationId = mkEquation (mkElemVar Mock.x) (mkElemVar Mock.x)
 
 equationRequiresBottom :: Equation'
 equationRequiresBottom =
-    (mkEquation sortR Mock.a Mock.b)
-        { requires = makeFalsePredicate sortR }
+    (mkEquation Mock.a Mock.b)
+        { requires = makeFalsePredicate }
 
 equationEnsuresBottom :: Equation'
 equationEnsuresBottom =
-    (mkEquation sortR Mock.a Mock.b)
-        { ensures = makeFalsePredicate sortR }
+    (mkEquation Mock.a Mock.b)
+        { ensures = makeFalsePredicate }
 
 equationBottom :: Equation'
 equationBottom =
-    mkEquation sortR Mock.a (mkBottom Mock.testSort)
+    mkEquation Mock.a (mkBottom Mock.testSort)
 
 f, g :: TestTerm -> TestTerm
 f = Mock.functionalConstr10
@@ -586,7 +586,7 @@ tdivInt = Mock.tdivInt
 
 positive :: TestTerm -> TestPredicate
 positive u' =
-    makeEqualsPredicate Mock.testSort
+    makeEqualsPredicate
         (Mock.lessInt
             (Mock.fTestFunctionalInt u')  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)

@@ -136,10 +136,10 @@ equalsXB :: TestPattern
 equalsXB = fromPredicate equalsXB_
 
 equalsXA_ :: TestPredicate
-equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
 equalsXB_ :: TestPredicate
-equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: TestPattern
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_

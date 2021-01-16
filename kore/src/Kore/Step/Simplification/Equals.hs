@@ -34,7 +34,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -42,7 +42,6 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Sort as Sort
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -321,7 +320,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate_ firstTerm secondTerm
+                    $ makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
 
@@ -362,10 +361,10 @@ makeEvaluateTermsToPredicate first second sideCondition
             return
                 $ OrCondition.fromCondition . Condition.fromPredicate
                 $ Predicate.markSimplified
-                $ makeEqualsPredicate_ first second
+                $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort first
-            secondCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort second
+            firstCeilOr <- makeEvaluateTermCeil sideCondition first
+            secondCeilOr <- makeEvaluateTermCeil sideCondition second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
@@ -436,7 +435,7 @@ termEqualsAnd p1 p2 =
                 Logic.scatter
             . sequence
         equalsPattern =
-            makeEqualsPredicate_ first second
+            makeEqualsPredicate first second
             & Predicate.markSimplified
             & Condition.fromPredicate
             -- Although the term will eventually be discarded, the sub-term

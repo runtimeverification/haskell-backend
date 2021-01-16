@@ -16,6 +16,8 @@ import Data.Functor.Foldable
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
+    ( Identity (runIdentity)
+    )
 import Data.Map.Strict
     ( Map
     )

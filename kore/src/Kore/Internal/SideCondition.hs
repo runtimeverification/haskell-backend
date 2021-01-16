@@ -20,7 +20,9 @@ module Kore.Internal.SideCondition
     , toPredicate
     , toRepresentation
     , replaceTerm
-    , cannotReplace
+    , replacePredicate
+    , cannotReplaceTerm
+    , cannotReplacePredicate
     , simplifyConjunctionByAssumption
     ) where
 
@@ -29,6 +31,7 @@ import Prelude.Kore
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Lens as Lens
 import Control.Monad.State.Strict
     ( StateT
     , runStateT
@@ -36,6 +39,9 @@ import Control.Monad.State.Strict
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
+    ( field
+    )
 import Data.HashMap.Strict
     ( HashMap
     )
@@ -65,6 +71,14 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
     )
+import Kore.Internal.Predicate
+    ( pattern PredicateEquals
+    , pattern PredicateExists
+    , pattern PredicateForall
+    , pattern PredicateNot
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -85,12 +99,8 @@ import Kore.Internal.TermLike
     , pattern InternalSet_
     , pattern InternalString_
     , pattern Mu_
-    , pattern Not_
     , pattern Nu_
     , TermLike
-    , mkBottom
-    , mkTop
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
@@ -125,8 +135,12 @@ be used for other purposes, say, to remove redundant parts of the result predica
 -}
 data SideCondition variable =
     SideCondition
-        { assumedTrue :: !(MultiAnd (Predicate variable))
-        , replacements :: !(HashMap (TermLike variable) (TermLike variable))
+        { assumedTrue
+            :: !(MultiAnd (Predicate variable))
+        , termReplacements
+            :: !(HashMap (TermLike variable) (TermLike variable))
+        , predicateReplacements
+            :: !(HashMap (Predicate variable) (Predicate variable))
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -136,59 +150,68 @@ data SideCondition variable =
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _ _) =
+    isTop sideCondition@(SideCondition _ _ _) =
         isTop assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
-    isBottom sideCondition@(SideCondition _ _) =
+    isBottom sideCondition@(SideCondition _ _ _) =
         isBottom assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables sideCondition@(SideCondition _ _) =
+    freeVariables sideCondition@(SideCondition _ _ _) =
         freeVariables assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
 
-instance InternalVariable variable => Unparse (SideCondition variable) where
-    unparse = unparse . toPredicate
-    unparse2 = unparse2 . toPredicate
-
 instance InternalVariable variable => Pretty (SideCondition variable) where
-    pretty SideCondition { assumedTrue, replacements } =
+    pretty
+        SideCondition
+            { assumedTrue
+            , termReplacements
+            , predicateReplacements
+            }
+      =
         Pretty.vsep $
             [ "Assumed true condition:"
-            , Pretty.indent 4 (unparse . MultiAnd.toPredicate $ assumedTrue)
-            , "Replacements:"
+            , Pretty.indent 4 (Pretty.pretty . MultiAnd.toPredicate $ assumedTrue)
+            , "Term replacements:"
             ]
-            <> HashMap.foldlWithKey' acc [] replacements
+            <> HashMap.foldlWithKey' (acc unparse) [] termReplacements
+            <> [ "Term replacements:" ]
+            <> HashMap.foldlWithKey' (acc Pretty.pretty) [] predicateReplacements
       where
-        acc result key value =
+        acc showFunc result key value =
             result <>
             [ Pretty.indent 4 "Key:"
-            , Pretty.indent 6 $ unparse key
+            , Pretty.indent 6 $ showFunc key
             , Pretty.indent 4 "Value:"
-            , Pretty.indent 6 $ unparse value
+            , Pretty.indent 6 $ showFunc value
             ]
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
-    from condition@(SideCondition _ _) = assumedTrue condition
+    from condition@(SideCondition _ _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance InternalVariable variable =>
     From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
     from multiAnd =
-        let (assumedTrue, replacements) =
+        -- TODO: refactor a little
+        let ( assumedTrue, DoubleMap termReplacements predicateReplacements ) =
                   simplifyConjunctionByAssumption multiAnd
                   & extract
-         in SideCondition { assumedTrue, replacements }
+         in SideCondition
+            { assumedTrue
+            , termReplacements
+            , predicateReplacements
+            }
     {-# INLINE from #-}
 
 instance
@@ -218,7 +241,12 @@ instance InternalVariable variable =>
     {-# INLINE from #-}
 
 top :: InternalVariable variable => SideCondition variable
-top = SideCondition { assumedTrue = MultiAnd.top, replacements = mempty }
+top =
+    SideCondition
+        { assumedTrue = MultiAnd.top
+        , termReplacements = mempty
+        , predicateReplacements = mempty
+        }
 
 -- TODO(ana.pantilie): Should we look into removing this?
 -- | A 'top' 'Condition' for refactoring which should eventually be removed.
@@ -238,11 +266,16 @@ andCondition
     sideCondition
     (from @(Condition _) @(MultiAnd _) -> newCondition)
   =
+    -- TODO: refactor a little
     let combinedConditions = oldCondition <> newCondition
-        (assumedTrue, replacements) =
+        (assumedTrue, DoubleMap termReplacements predicateReplacements) =
             simplifyConjunctionByAssumption combinedConditions
             & extract
-     in SideCondition { assumedTrue, replacements }
+     in SideCondition
+        { assumedTrue
+        , termReplacements
+        , predicateReplacements
+        }
   where
     SideCondition { assumedTrue = oldCondition } = sideCondition
 
@@ -262,7 +295,7 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _ _) =
+toPredicate condition@(SideCondition _ _ _) =
     MultiAnd.toPredicate assumedTrue
   where
     SideCondition { assumedTrue } = condition
@@ -278,17 +311,24 @@ mapVariables
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _ _) =
+mapVariables adj condition@(SideCondition _ _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
-        replacements' =
-            mapKeysAndValues (TermLike.mapVariables adj) replacements
+        termReplacements' =
+            mapKeysAndValues (TermLike.mapVariables adj) termReplacements
+        predicateReplacements' =
+            mapKeysAndValues (Predicate.mapVariables adj) predicateReplacements
      in SideCondition
             { assumedTrue = assumedTrue'
-            , replacements = replacements'
+            , termReplacements = termReplacements'
+            , predicateReplacements = predicateReplacements'
             }
   where
-    SideCondition { assumedTrue, replacements } = condition
+    SideCondition
+        { assumedTrue
+        , termReplacements
+        , predicateReplacements
+        } = condition
     mapKeysAndValues f hashMap =
         HashMap.fromList
         $ Bifunctor.bimap f f
@@ -315,19 +355,47 @@ replaceTerm
     => SideCondition variable
     -> TermLike variable
     -> Maybe (TermLike variable)
-replaceTerm SideCondition { replacements } original =
-    HashMap.lookup original replacements
+replaceTerm SideCondition { termReplacements } original =
+    HashMap.lookup original termReplacements
+
+{- | Looks up the predicate in the table of replacements.
+ -}
+replacePredicate
+    :: InternalVariable variable
+    => SideCondition variable
+    -> Predicate variable
+    -> Maybe (Predicate variable)
+replacePredicate SideCondition { predicateReplacements } original =
+    HashMap.lookup original predicateReplacements
 
 {- | If the term isn't a key in the table of replacements
 then it cannot be replaced.
  -}
-cannotReplace
+cannotReplaceTerm
     :: InternalVariable variable
     => SideCondition variable
     -> TermLike variable
     -> Bool
-cannotReplace SideCondition { replacements } term =
-    HashMap.lookup term replacements & isNothing
+cannotReplaceTerm SideCondition { termReplacements } term =
+    HashMap.lookup term termReplacements & isNothing
+
+{- | If the predicate isn't a key in the table of replacements
+then it cannot be replaced.
+ -}
+cannotReplacePredicate
+    :: InternalVariable variable
+    => SideCondition variable
+    -> Predicate variable
+    -> Bool
+cannotReplacePredicate SideCondition { predicateReplacements } predicate =
+    HashMap.lookup predicate predicateReplacements & isNothing
+
+data DoubleMap variable = DoubleMap
+    { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
+    , predMap :: HashMap (Predicate variable) (Predicate variable)
+    }
+    deriving (Eq, GHC.Generic, Show)
+
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
@@ -341,14 +409,13 @@ simplifyConjunctionByAssumption
     => MultiAnd (Predicate variable)
     -> Changed
         ( MultiAnd (Predicate variable)
-        , HashMap (TermLike variable) (TermLike variable)
+        , DoubleMap variable
         )
 simplifyConjunctionByAssumption (toList -> andPredicates) =
     (fmap . Bifunctor.first) MultiAnd.make
-    $ flip runStateT HashMap.empty
+    $ flip runStateT (DoubleMap HashMap.empty HashMap.empty)
     $ for (sortBySize andPredicates)
-    $ \predicate' -> do
-        let original = Predicate.unwrapPredicate predicate'
+    $ \original -> do
         result <- applyAssumptions original
         assume result
         return result
@@ -357,7 +424,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     -- which could contain it, because the containing clause is necessarily
     -- larger.
     sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortOn (size . from)
+    sortBySize = sortOn predSize
 
     size :: TermLike variable -> Int
     size =
@@ -367,63 +434,105 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
+    predSize :: Predicate variable -> Int
+    predSize =
+        Recursive.fold $ \(_ :< predF) ->
+            case predF of
+                Predicate.CeilF ceil_ -> 1 + sum (size <$> ceil_)
+                Predicate.EqualsF equals_ -> 1 + sum (size <$> equals_)
+                Predicate.FloorF floor_ -> 1 + sum (size <$> floor_)
+                Predicate.InF in_ -> 1 + sum (size <$> in_)
+                _ -> 1 + sum predF
+
     assume
-        :: Predicate variable
-        -> StateT (HashMap (TermLike variable) (TermLike variable)) Changed ()
-    assume predicate1 =
+        :: Predicate variable ->
+        StateT (DoubleMap variable) Changed ()
+    assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
         assumePredicate =
-            case termLike of
-                Not_ _ notChild ->
+            case predicate of
+                PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    HashMap.insert notChild (mkBottom sort)
+                    Lens.over (field @"predMap") $
+                        HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    HashMap.insert termLike (mkTop sort)
+                    Lens.over (field @"predMap") $
+                        HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
-            case retractLocalFunction termLike of
-                Just (Pair term1 term2) -> HashMap.insert term1 term2
+            case predicate of
+                PredicateEquals t1 t2 ->
+                    case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
+                        Just (Pair t1' t2') ->
+                            Lens.over (field @"termLikeMap") $
+                                HashMap.insert t1' t2'
+                        _ -> id
                 _ -> id
 
-        termLike = Predicate.unwrapPredicate predicate1
-        sort = termLikeSort termLike
-
     applyAssumptions
-        ::  TermLike variable
-        ->  StateT (HashMap (TermLike variable) (TermLike variable)) Changed
-                (Predicate variable)
+        ::  Predicate variable
+        ->  StateT (DoubleMap variable) Changed (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
-        lift $ fmap
-            (unsafeMakePredicate assumptions replaceIn)
-            (applyAssumptionsWorker assumptions replaceIn)
-
-    unsafeMakePredicate replacements original result =
-        case Predicate.makePredicate result of
-            -- TODO (ttuegel): https://github.com/kframework/kore/issues/1442
-            -- should make it impossible to have an error here.
-            Left err ->
-                (error . show . Pretty.vsep . map (either id (Pretty.indent 4)))
-                [ Left "Replacing"
-                , Right (Pretty.vsep (unparse <$> HashMap.keys replacements))
-                , Left "in"
-                , Right (unparse original)
-                , Right (Pretty.pretty err)
-                ]
-            Right p -> p
+        lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
+        :: DoubleMap variable
+        -> Predicate variable
+        -> Changed (Predicate variable)
+    applyAssumptionsWorker assumptions original
+      | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
+
+      | HashMap.null (termLikeMap assumptions') &&
+        HashMap.null (predMap assumptions') = Unchanged original
+
+      | otherwise = (case replaceIn of
+          Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
+          Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
+          Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
+          Predicate.InF in_ -> Predicate.InF <$> traverse
+            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
+          _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
+        )
+        & getChanged
+        -- The next line ensures that if the result is Unchanged, any allocation
+        -- performed while computing that result is collected.
+        & maybe (Unchanged original) (Changed . synthesize)
+
+      where
+        _ :< replaceIn = Recursive.project original
+
+        assumptions'
+          | PredicateExists var _ <- original = restrictAssumptions (inject var)
+          | PredicateForall var _ <- original = restrictAssumptions (inject var)
+          | otherwise = assumptions
+
+        restrictAssumptions Variable { variableName } =
+            Lens.over (field @"termLikeMap")
+            (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
+            $
+            Lens.over (field @"predMap")
+            (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
+            assumptions
+          where
+            wouldNotCapture = not . Predicate.hasFreeVariable variableName
+            wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
+
+    applyAssumptionsWorkerTerm
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorker assumptions original
+    applyAssumptionsWorkerTerm assumptions original
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original
 
       | otherwise =
-        traverse (applyAssumptionsWorker assumptions') replaceIn
+        traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
         & getChanged
         -- The next line ensures that if the result is Unchanged, any allocation
         -- performed while computing that result is collected.

@@ -26,10 +26,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTruePredicate
@@ -55,7 +55,7 @@ test_attemptEquations =
     [ testCase "Stops attempting equations at first successful result" $ do
         counter <- newIORef (0 :: Int)
         let condition =
-                SideCondition.assumeTruePredicate makeTruePredicate_
+                SideCondition.assumeTruePredicate makeTruePredicate
             term = Mock.functionalConstr10 Mock.a
             equations =
                 [ notApplicable1, applicable, notApplicable2, applicable
@@ -76,17 +76,17 @@ test_attemptEquations =
         axiom
           (Mock.functionalConstr10 (mkElemVar Mock.x))
           Mock.a
-          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
+          (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
     notApplicable1 =
         axiom
           (Mock.functionalConstr10 (mkElemVar Mock.x))
           Mock.c
-          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c)
+          (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
     notApplicable2 =
         axiom
           (Mock.functionalConstr10 (mkElemVar Mock.x))
           Mock.b
-          (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b)
+          (makeEqualsPredicate (mkElemVar Mock.x) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -97,7 +97,7 @@ test_definitionEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.c
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -109,7 +109,7 @@ test_definitionEvaluation =
                     [ axiom
                         (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.g (mkElemVar Mock.x))
-                        makeTruePredicate_
+                        makeTruePredicate
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
@@ -118,7 +118,7 @@ test_definitionEvaluation =
     Uncomment this if we ever go back to having remainders for functions.
 
     , testCase "Evaluation with remainder" $ do
-        let requirement = makeEqualsPredicate Mock.testSort
+        let requirement = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             expect =
@@ -159,7 +159,7 @@ test_definitionEvaluation =
                     [ axiom
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
-                        makeTruePredicate_
+                        makeTruePredicate
                     ]
                 )
                 (Mock.functionalConstr10 Mock.b)
@@ -172,7 +172,7 @@ test_definitionEvaluation =
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
-            requirement1 = makeEqualsPredicate Mock.testSort
+            requirement1 = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             requirement2 = makeNotPredicate requirement1
@@ -233,7 +233,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.c
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -256,7 +256,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -285,7 +285,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -330,13 +330,13 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.b
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
                         }
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         actual <-
             evaluate
                 (firstFullEvaluation
@@ -354,7 +354,7 @@ test_firstFullEvaluation =
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
     , testCase "Apply with top configuration" $ do
-        let requirement = makeEqualsPredicate Mock.testSort
+        let requirement = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
         let expect =
@@ -363,7 +363,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -385,7 +385,7 @@ test_firstFullEvaluation =
                 requirement
         assertEqual "" expect actual
     , testCase "Don't apply due to top configuration" $ do
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         let not_requirement = makeNotPredicate requirement
         let expect =
                 AttemptedAxiom.Applied
@@ -393,7 +393,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.b
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -419,7 +419,7 @@ test_firstFullEvaluation =
     simplification.
 
     , testCase "Error with multiple results" $ do
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         assertErrorIO
             (assertSubstring ""
                 (  "Unexpected simplification result with more than one "
@@ -454,7 +454,7 @@ test_simplifierWithFallback =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -478,7 +478,7 @@ test_simplifierWithFallback =
     Uncomment this if we ever go back to having remainders for equality axioms.
 
     , testCase "Uses first with remainder" $ do
-        let requirement = makeEqualsPredicate Mock.testSort
+        let requirement = makeEqualsPredicate
                 (Mock.f Mock.a)
                 (Mock.g Mock.b)
             expect =
@@ -527,7 +527,7 @@ test_simplifierWithFallback =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -576,7 +576,7 @@ test_builtinEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate Mock.testSort
+                                , predicate = makeTruePredicate
                                 , substitution = mempty
                                 }
                             ]
@@ -622,14 +622,14 @@ axiomEvaluator
     -> TermLike VariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    simplificationEvaluation (axiom left right makeTruePredicate_)
+    simplificationEvaluation (axiom left right makeTruePredicate)
 
 evaluate
     :: BuiltinAndAxiomSimplifier
     -> TermLike VariableName
     -> IO CommonAttemptedAxiom
 evaluate simplifier term =
-    evaluateWithPredicate simplifier term makeTruePredicate_
+    evaluateWithPredicate simplifier term makeTruePredicate
 
 evaluateWithPredicate
     :: BuiltinAndAxiomSimplifier

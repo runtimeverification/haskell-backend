@@ -14,7 +14,6 @@ import Kore.Internal.TermLike
 
 import Test.Kore.Equation.Common
     ( functionAxiomUnification_
-    , sortR
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -90,7 +89,7 @@ mkSimplifiedEquation
     -> TermLike VariableName
     -> Equation VariableName
 mkSimplifiedEquation leftTerm rightTerm =
-    mkEquation sortR leftTerm rightTerm
+    mkEquation leftTerm rightTerm
 
 simplify
     :: Equation VariableName

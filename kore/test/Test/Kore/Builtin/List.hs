@@ -292,7 +292,7 @@ test_concatSymbolic =
 
             expect = Conditional
                         { term = patConcatY
-                        , predicate = makeTruePredicate listSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             from @(Map (SomeVariable VariableName) _)
                             $ Map.fromList
@@ -309,7 +309,7 @@ test_concatSymbolic =
 
             expect' = Conditional
                         { term = patConcatY'
-                        , predicate = makeTruePredicate listSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             from @(Map (SomeVariable VariableName) _)
                             $ Map.fromList
@@ -350,7 +350,7 @@ test_concatSymbolicDifferentLengths =
                     { term =
                         patElemY `concatList`
                         (patElemX2 `concatList` patSymbolicXs)
-                    , predicate = makeTruePredicate listSort
+                    , predicate = makeTruePredicate
                     , substitution =
                         from @(Map (SomeVariable VariableName) _)
                         $ Map.fromList

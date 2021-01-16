@@ -30,8 +30,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate_
-    , makeEqualsPredicate_
+    , makeCeilPredicate
+    , makeEqualsPredicate
     , makeForallPredicate
     , makeNotPredicate
     )
@@ -92,38 +92,38 @@ hprop_Builtin_Set :: Property
 
     defineMapElement (key, val) =
         -- symbolic keys are defined
-        [ makeCeilPredicate_ key | (not . isConcrete) key ]
+        [ makeCeilPredicate key | (not . isConcrete) key ]
         ++
         -- symbolic values are defined
-        [ makeCeilPredicate_ val | (not . isConcrete) val ]
+        [ makeCeilPredicate val | (not . isConcrete) val ]
 
     defineSetElement key =
         -- symbolic keys are defined
-        [ makeCeilPredicate_ key | (not . isConcrete) key ]
+        [ makeCeilPredicate key | (not . isConcrete) key ]
 
     mkNotMemberMap (key, value) term =
-        (makeForallPredicate variable . makeCeilPredicate_)
+        (makeForallPredicate variable . makeCeilPredicate)
             (Mock.framedMap [(key', value')] [term])
       where
         element = wrapElement (key, MapValue value)
         (variable, element') = generalizeMapElement (freeVariables term) element
         (key', MapValue value') = unwrapElement element'
 
-    mkNotMemberSet key term = makeCeilPredicate_ (Mock.framedSet [key] [term])
+    mkNotMemberSet key term = makeCeilPredicate (Mock.framedSet [key] [term])
 
     testsMap =
         [
             let
                 original = Mock.framedMap [(cKey1, sVal1)] []
-                expect = [makeCeilPredicate_ sVal1]
+                expect = [makeCeilPredicate sVal1]
             in
                 test "values with concrete keys are defined" original expect
         ,
             let
                 original = Mock.framedMap [(sKey2, sVal2)] []
                 expect =
-                    [ makeCeilPredicate_ sKey2
-                    , makeCeilPredicate_ sVal2
+                    [ makeCeilPredicate sKey2
+                    , makeCeilPredicate sVal2
                     ]
             in
                 test "values with symbolic keys are defined" original expect
@@ -142,14 +142,14 @@ hprop_Builtin_Set :: Property
         ,
             let
                 original = Mock.framedMap [sElt1] []
-                expect = [makeCeilPredicate_ sKey1]
+                expect = [makeCeilPredicate sKey1]
             in
                 test "symbolic keys are defined" original expect
         ,
             let
                 original = Mock.framedMap [cElt1, sElt1] []
                 expect =
-                    [ makeCeilPredicate_ sKey1
+                    [ makeCeilPredicate sKey1
                     , makeNotEqualsPredicate cKey1 sKey1
                     ]
             in
@@ -158,8 +158,8 @@ hprop_Builtin_Set :: Property
             let
                 original = Mock.framedMap [sElt1, sElt2] []
                 expect =
-                    [ makeCeilPredicate_ sKey1
-                    , makeCeilPredicate_ sKey2
+                    [ makeCeilPredicate sKey1
+                    , makeCeilPredicate sKey2
                     , makeNotEqualsPredicate sKey1 sKey2
                     ]
             in
@@ -169,7 +169,7 @@ hprop_Builtin_Set :: Property
                 original = Mock.framedMap [cElt1] [opaqueMap1]
                 expect =
                     [ mkNotMemberMap cElt1 opaqueMap1
-                    , makeCeilPredicate_ opaqueMap1
+                    , makeCeilPredicate opaqueMap1
                     ]
             in
                 test "concrete keys are not in the frame" original expect
@@ -178,8 +178,8 @@ hprop_Builtin_Set :: Property
                 original = Mock.framedMap [sElt1] [opaqueMap1]
                 expect =
                     [ mkNotMemberMap sElt1 opaqueMap1
-                    , makeCeilPredicate_ sKey1
-                    , makeCeilPredicate_ opaqueMap1
+                    , makeCeilPredicate sKey1
+                    , makeCeilPredicate opaqueMap1
                     ]
             in
                 test "symbolic keys are not in the frame" original expect
@@ -188,7 +188,7 @@ hprop_Builtin_Set :: Property
                 original =
                     Mock.framedMap [] [opaqueMap1, opaqueMap2, opaqueMap3]
                 expect =
-                    map makeCeilPredicate_
+                    map makeCeilPredicate
                         [ Mock.framedMap [] [opaqueMap1, opaqueMap2]
                         , Mock.framedMap [] [opaqueMap1, opaqueMap3]
                         , Mock.framedMap [] [opaqueMap2, opaqueMap3]
@@ -216,14 +216,14 @@ hprop_Builtin_Set :: Property
         ,
             let
                 original = Mock.framedSet [sKey1] []
-                expect = [makeCeilPredicate_ sKey1]
+                expect = [makeCeilPredicate sKey1]
             in
                 test "symbolic keys are defined" original expect
         ,
             let
                 original = Mock.framedSet [cKey1, sKey1] []
                 expect =
-                    [ makeCeilPredicate_ sKey1
+                    [ makeCeilPredicate sKey1
                     , makeNotEqualsPredicate cKey1 sKey1
                     ]
             in
@@ -232,8 +232,8 @@ hprop_Builtin_Set :: Property
             let
                 original = Mock.framedSet [sKey1, sKey2] []
                 expect =
-                    [ makeCeilPredicate_ sKey1
-                    , makeCeilPredicate_ sKey2
+                    [ makeCeilPredicate sKey1
+                    , makeCeilPredicate sKey2
                     , makeNotEqualsPredicate sKey1 sKey2
                     ]
             in
@@ -241,14 +241,14 @@ hprop_Builtin_Set :: Property
         ,
             let
                 original = Mock.framedSet [cKey1] [opaqueSet1]
-                expect = map makeCeilPredicate_ [original, opaqueSet1]
+                expect = map makeCeilPredicate [original, opaqueSet1]
             in
                 test "concrete keys are not in the frame" original expect
         ,
             let
                 original = Mock.framedSet [sKey1] [opaqueSet1]
                 expect =
-                    map makeCeilPredicate_ [original, sKey1, opaqueSet1]
+                    map makeCeilPredicate [original, sKey1, opaqueSet1]
             in
                 test "symbolic keys are not in the frame" original expect
         ,
@@ -256,7 +256,7 @@ hprop_Builtin_Set :: Property
                 original =
                     Mock.framedSet [] [opaqueSet1, opaqueSet2, opaqueSet3]
                 expect =
-                    map makeCeilPredicate_
+                    map makeCeilPredicate
                         [ Mock.framedSet [] [opaqueSet1, opaqueSet2]
                         , Mock.framedSet [] [opaqueSet1, opaqueSet3]
                         , Mock.framedSet [] [opaqueSet2, opaqueSet3]
@@ -304,7 +304,7 @@ propertyBuiltinAssocComm
     let -- | Elements are defined
         expectDefinedElements = elements >>= defineElement
         -- | Opaque operands are defined
-        expectDefinedOpaques = makeCeilPredicate_ <$> opaques
+        expectDefinedOpaques = makeCeilPredicate <$> opaques
         -- | Keys are distinct
         expectDistinctKeys =
             [ uncurry makeNotEqualsPredicate $ minMax key1 key2
@@ -321,7 +321,7 @@ propertyBuiltinAssocComm
             ]
         -- | Opaque operands are distinct
         expectDistinctOpaques =
-            [ makeCeilPredicate_ $ mkAssocComm [] [opaque1, opaque2]
+            [ makeCeilPredicate $ mkAssocComm [] [opaque1, opaque2]
             | (opaque1, opaque2) <- zipWithTails (,) opaques
             ]
         expectPredicates =
@@ -343,7 +343,7 @@ makeNotEqualsPredicate
     -> TermLike VariableName
     -> Predicate VariableName
 makeNotEqualsPredicate x y =
-    (makeNotPredicate . uncurry makeEqualsPredicate_) (minMax x y)
+    (makeNotPredicate . uncurry makeEqualsPredicate) (minMax x y)
 
 makeEvaluate :: TermLike VariableName -> IO (MultiAnd (Predicate VariableName))
 makeEvaluate termLike = do

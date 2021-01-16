@@ -90,8 +90,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeMultipleOrPredicate
-    , unwrapPredicate
+    ( fromPredicate_
+    , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
@@ -391,7 +391,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
         return
             . forceSort patternSort
             . getRewritingTerm
-            . unwrapPredicate
+            . fromPredicate_
             $ orPredicate
   where
     patternSort = termLikeSort termLike

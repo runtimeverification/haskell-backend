@@ -212,6 +212,9 @@ import Kore.Unparser
     , unparse
     , unparseToString
     )
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
@@ -600,7 +603,7 @@ showClaimStateComponent name transformer maybeNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
             putStrLn' $ name <> " at node " <> show node <> " is:"
-            unparseClaimStateComponent
+            prettyClaimStateComponent
                 transformer
                 omit
                 config
@@ -1324,30 +1327,31 @@ showRewriteRule rule =
     makeKoreReplOutput (unparseToString rule)
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
--- | Unparses a strategy node, using an omit list to hide specified children.
-unparseClaimStateComponent
+-- | Pretty prints a strategy node, using an omit list to hide specified children.
+prettyClaimStateComponent
     :: (SomeClaim -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonClaimState
     -- ^ pattern
     -> ReplOutput
-unparseClaimStateComponent transformation omitList =
+prettyClaimStateComponent transformation omitList =
     claimState ClaimStateTransformer
         { claimedTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , remainingTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , rewrittenTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
+            <> makeKoreReplOutput (prettyComponent goal)
         , provenValue = makeAuxReplOutput "Proven."
         }
   where
-    unparseComponent =
-        unparseToString . fmap hide . getRewritingPattern . transformation
+    prettyComponent =
+        unparseToString . fmap hide . getRewritingPattern
+            . transformation
     hide
         :: TermLike VariableName
         -> TermLike VariableName

@@ -30,7 +30,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , unwrapPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -134,7 +133,7 @@ simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
         $ simplifyTermLike sideCondition
-        $ unwrapPredicate predicate
+        $ Predicate.fromPredicate_ predicate
     -- Despite using lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (OrPattern.map eraseTerm patternOr)
@@ -153,8 +152,7 @@ simplifyConjunctions
     => Predicate variable
     -> Changed (Predicate variable)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
-    let sort = Predicate.predicateSort original
-    in case SideCondition.simplifyConjunctionByAssumption predicates of
+    case SideCondition.simplifyConjunctionByAssumption predicates of
             Unchanged _ -> Unchanged original
             Changed (changed, _) ->
-                Changed (MultiAnd.toPredicateSorted sort changed)
+                Changed (MultiAnd.toPredicate changed)

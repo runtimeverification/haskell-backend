@@ -45,7 +45,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( cannotReplace
+    ( cannotReplaceTerm
     , mapVariables
     , replaceTerm
     , toRepresentation
@@ -176,6 +176,9 @@ import Kore.Variables.Target
     , unTarget
     )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -318,14 +321,14 @@ simplify sideCondition = \termLike ->
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultTerm
             && resultSubstitutionIsEmpty
-            && SideCondition.cannotReplace sideCondition (Pattern.term result)
+            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultPredicate
-            && SideCondition.cannotReplace sideCondition (Pattern.term result)
+            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
-            && SideCondition.cannotReplace sideCondition (Pattern.term result)
+            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return
                 (OrPattern.fromTermLike
                     (TermLike.markSimplifiedConditional
@@ -507,7 +510,7 @@ ensureSimplifiedCondition repr termLike condition
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified condition, but found:"
-        , Pretty.indent 4 (unparse condition)
+        , Pretty.indent 4 (pretty condition)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]

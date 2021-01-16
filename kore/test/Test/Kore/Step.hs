@@ -144,7 +144,7 @@ test_stepStrategy =
                             Pattern.fromTermAndPredicate
                                 xTerm
                                 ( makeNotPredicate
-                                    $ makeEqualsPredicate Mock.testSort
+                                    $ makeEqualsPredicate
                                         xTerm
                                         Mock.a
                                 )
@@ -186,7 +186,7 @@ test_stepStrategy =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr10 (Mock.f xTerm))
                                 ( makeNotPredicate
-                                    $ makeEqualsPredicate Mock.testSort
+                                    $ makeEqualsPredicate
                                         Mock.a
                                         (Mock.f xTerm)
                                 )
@@ -197,16 +197,16 @@ test_stepStrategy =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr11 (Mock.g (mkElemVar Mock.var_x_0)))
                                 (makeAndPredicate
-                                    ( makeEqualsPredicate Mock.testSort
+                                    ( makeEqualsPredicate
                                         Mock.a
                                         (Mock.f xTerm)
                                     )
                                     ( makeNotPredicate
                                         (makeAndPredicate
-                                            ( makeCeilPredicate Mock.testSort
+                                            ( makeCeilPredicate
                                                 (Mock.g Mock.b)
                                             )
-                                            (makeEqualsPredicate Mock.testSort
+                                            (makeEqualsPredicate
                                                 (Mock.g Mock.b)
                                                 (Mock.g (mkElemVar Mock.var_x_0))
                                             )
@@ -218,13 +218,13 @@ test_stepStrategy =
                             Pattern.fromTermAndPredicate
                                 Mock.c
                                 (makeAndPredicate
-                                    (makeCeilPredicate Mock.testSort (Mock.g Mock.b))
+                                    (makeCeilPredicate (Mock.g Mock.b))
                                     (makeAndPredicate
-                                        (makeEqualsPredicate Mock.testSort
+                                        (makeEqualsPredicate
                                             Mock.a
                                             (Mock.f xTerm)
                                         )
-                                        (makeEqualsPredicate Mock.testSort
+                                        (makeEqualsPredicate
                                             (Mock.g Mock.b)
                                             (Mock.g (mkElemVar Mock.var_x_0))
                                         )

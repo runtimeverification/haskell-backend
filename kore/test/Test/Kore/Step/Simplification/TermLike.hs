@@ -97,7 +97,7 @@ test_simplify_sideConditionReplacements =
     a = Mock.a
     b = Mock.b
     c = Mock.c
-    equals = makeEqualsPredicate Mock.testSort
+    equals = makeEqualsPredicate
     and' = makeAndPredicate
 
 simplifyWithSideCondition

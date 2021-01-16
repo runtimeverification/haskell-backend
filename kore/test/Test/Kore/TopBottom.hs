@@ -95,14 +95,14 @@ test_Predicate =
     isBottom :: Predicate VariableName -> Bool
     isBottom = TopBottom.isBottom
 
-    top     = Predicate.makeTruePredicate_
-    bottom  = Predicate.makeFalsePredicate_
-    ceil    = Predicate.makeCeilPredicate_  Mock.a
-    floor   = Predicate.makeFloorPredicate_ Mock.a
-    equalsA = Predicate.makeEqualsPredicate_ (AST.mkElemVar Mock.x) Mock.a
-    equalsB = Predicate.makeEqualsPredicate_ (AST.mkElemVar Mock.x) Mock.b
-    inA     = Predicate.makeInPredicate_     (AST.mkElemVar Mock.x) Mock.a
-    inB     = Predicate.makeInPredicate_     (AST.mkElemVar Mock.x) Mock.b
+    top     = Predicate.makeTruePredicate
+    bottom  = Predicate.makeFalsePredicate
+    ceil    = Predicate.makeCeilPredicate  Mock.a
+    floor   = Predicate.makeFloorPredicate Mock.a
+    equalsA = Predicate.makeEqualsPredicate (AST.mkElemVar Mock.x) Mock.a
+    equalsB = Predicate.makeEqualsPredicate (AST.mkElemVar Mock.x) Mock.b
+    inA     = Predicate.makeInPredicate     (AST.mkElemVar Mock.x) Mock.a
+    inB     = Predicate.makeInPredicate     (AST.mkElemVar Mock.x) Mock.b
     exists  = Predicate.makeExistsPredicate Mock.x equalsA
     forall  = Predicate.makeForallPredicate Mock.x equalsA
     and     = Predicate.makeAndPredicate     equalsA equalsB
