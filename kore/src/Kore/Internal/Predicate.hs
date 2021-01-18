@@ -48,6 +48,7 @@ module Kore.Internal.Predicate
     , forgetSimplified
     , wrapPredicate
     , containsSymbolWithIdPred
+    , remakePredicate
     , pattern PredicateTrue
     , pattern PredicateFalse
     , pattern PredicateAnd
@@ -1169,3 +1170,73 @@ containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =
         CeilF   x -> any (containsSymbolWithId symId) x
         FloorF  x -> any (containsSymbolWithId symId) x
         _ -> any (containsSymbolWithIdPred symId) predicate
+
+-- function used to apply the basic simplifications performed as
+-- part of Predicate make functions
+remakePredicate
+    :: forall variable
+    . InternalVariable variable
+    => Predicate variable
+    -> Predicate variable
+remakePredicate = fst . remakePredicateWorker
+  where
+    remakePredicateWorker
+        :: Predicate variable
+        -> (Predicate variable, HasChanged)
+    remakePredicateWorker =
+        Recursive.elgot remakePredicateBottomUp remakePredicateTopDown
+
+    remakePredicateBottomUp
+        :: Base (Predicate variable) (Predicate variable, HasChanged)
+        -> (Predicate variable, HasChanged)
+    remakePredicateBottomUp predWithChanged =
+        let att :< pat = fst <$> predWithChanged
+
+            childChanged :: HasChanged
+            childChanged = foldMap snd predWithChanged
+
+            oldSimplified = Attribute.simplifiedAttribute att
+            (predicate, topChanged) = case pat of
+                TopF _ -> makeTruePredicate'
+                BottomF _ -> makeFalsePredicate'
+                AndF p -> makeAndPredicate' (andFirst p) (andSecond p)
+                OrF p -> makeOrPredicate' (orFirst p) (orSecond p)
+                IffF p -> makeIffPredicate' (iffFirst p) (iffSecond p)
+                ImpliesF p
+                    -> makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
+                NotF p -> makeNotPredicate' (notChild p)
+                ExistsF p
+                    -> makeExistsPredicate' (existsVariable p) (existsChild p)
+                ForallF p
+                    -> makeForallPredicate' (forallVariable p) (forallChild p)
+                _ -> (synthesize pat, NotChanged)
+        in case topChanged <> childChanged of
+            Changed -> (predicate, Changed)
+            NotChanged ->
+                (setSimplified oldSimplified predicate, NotChanged)
+
+    remakePredicateTopDown
+        :: Predicate variable
+        -> Either
+            (Predicate variable, HasChanged)
+            (Base (Predicate variable) (Predicate variable))
+    remakePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
+        case pat of
+            CeilF Ceil { ceilChild } -> setSmp
+                    $ makeCeilPredicate' ceilChild
+            FloorF Floor { floorChild } -> setSmp
+                    $ makeFloorPredicate' floorChild
+            EqualsF Equals { equalsFirst, equalsSecond } -> setSmp
+                    $ makeEqualsPredicate' equalsFirst equalsSecond
+            InF In { inContainedChild, inContainingChild } -> setSmp
+                    $ makeInPredicate' inContainedChild inContainingChild
+            _ -> Right projected
+      where
+        {-| Set the simplified attribute of the old TermLike if the term has
+            not changed nontrivially
+        -}
+        setSmp (p, Changed) = Left (p, Changed)
+        setSmp (p, NotChanged) =
+            Left (setSimplified oldSimplified p, NotChanged)
+
+        oldSimplified = Attribute.simplifiedAttribute att
