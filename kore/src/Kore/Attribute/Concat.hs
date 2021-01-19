@@ -14,12 +14,17 @@ module Kore.Attribute.Concat
 import Prelude.Kore
 
 import Data.Default
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser
+import Kore.Debug
 
 -- | @Concat@ represents the @concat@ attribute.
 newtype Concat = Concat { getConcat :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup Concat where
     (<>) a@(Concat (Just _)) _ = a

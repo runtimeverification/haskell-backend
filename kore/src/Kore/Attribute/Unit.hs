@@ -14,12 +14,17 @@ module Kore.Attribute.Unit
 import Prelude.Kore
 
 import Data.Default
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser
+import Kore.Debug
 
 -- | @Unit@ represents the @unit@ attribute.
 newtype Unit = Unit { getUnit :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup Unit where
     (<>) a@(Unit (Just _)) _ = a

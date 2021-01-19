@@ -10,12 +10,17 @@ module Kore.Attribute.Element
 import Prelude.Kore
 
 import Data.Default
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser
+import Kore.Debug
 
 -- | @Element@ represents the @element@ attribute.
 newtype Element = Element { getElement :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
+    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 instance Semigroup Element where
     (<>) a@(Element (Just _))  _ = a

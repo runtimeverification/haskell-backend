@@ -74,7 +74,9 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
+import Kore.Attribute.Element
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -91,6 +93,7 @@ import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
+import Kore.Attribute.Unit
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -122,6 +125,9 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
+    , unitHook      :: !Unit
+    , concatHook    :: !Concat
+    , elementHook   :: !Element
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -148,6 +154,9 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
+        >=> typed @Unit (parseAttribute attr)
+        >=> typed @Concat (parseAttribute attr)
+        >=> typed @Element (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -165,6 +174,9 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
+            , from . unitHook
+            , from . concatHook
+            , from . elementHook
             ]
 
 type StepperAttributes = Symbol
@@ -185,6 +197,9 @@ defaultSymbolAttributes =
         , klabel        = def
         , symbolKywd    = def
         , noEvaluators  = def
+        , unitHook      = def
+        , concatHook    = def
+        , elementHook   = def
         }
 
 -- | See also: 'defaultSymbolAttributes'
