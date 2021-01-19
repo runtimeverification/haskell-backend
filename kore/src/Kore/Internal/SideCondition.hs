@@ -46,6 +46,10 @@ import Data.HashMap.Strict
     ( HashMap
     )
 import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
 import Data.List
     ( sortOn
     )
@@ -141,6 +145,8 @@ data SideCondition variable =
             :: !(HashMap (TermLike variable) (TermLike variable))
         , predicateReplacements
             :: !(HashMap (Predicate variable) (Predicate variable))
+        , definedTerms
+            :: !(HashSet (TermLike variable))
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -153,18 +159,18 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _ _ _) =
+    isTop sideCondition@(SideCondition _ _ _ _) =
         isTop assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
-    isBottom sideCondition@(SideCondition _ _ _) =
+    isBottom sideCondition@(SideCondition _ _ _ _) =
         isBottom assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables sideCondition@(SideCondition _ _ _) =
+    freeVariables sideCondition@(SideCondition _ _ _ _) =
         freeVariables assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
@@ -196,7 +202,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
-    from condition@(SideCondition _ _ _) = assumedTrue condition
+    from condition@(SideCondition _ _ _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance InternalVariable variable =>
@@ -211,6 +217,7 @@ instance InternalVariable variable =>
             { assumedTrue
             , termReplacements
             , predicateReplacements
+            , definedTerms = mempty
             }
     {-# INLINE from #-}
 
@@ -246,6 +253,7 @@ top =
         { assumedTrue = MultiAnd.top
         , termReplacements = mempty
         , predicateReplacements = mempty
+        , definedTerms = mempty
         }
 
 -- TODO(ana.pantilie): Should we look into removing this?
@@ -275,9 +283,10 @@ andCondition
         { assumedTrue
         , termReplacements
         , predicateReplacements
+        , definedTerms
         }
   where
-    SideCondition { assumedTrue = oldCondition } = sideCondition
+    SideCondition { assumedTrue = oldCondition, definedTerms } = sideCondition
 
 assumeTrueCondition
     :: InternalVariable variable
@@ -295,7 +304,7 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _ _ _) =
+toPredicate condition@(SideCondition _ _ _ _) =
     MultiAnd.toPredicate assumedTrue
   where
     SideCondition { assumedTrue } = condition
@@ -311,23 +320,27 @@ mapVariables
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _) =
+mapVariables adj condition@(SideCondition _ _ _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
         termReplacements' =
             mapKeysAndValues (TermLike.mapVariables adj) termReplacements
         predicateReplacements' =
             mapKeysAndValues (Predicate.mapVariables adj) predicateReplacements
+        definedTerms' =
+            HashSet.map (TermLike.mapVariables adj) definedTerms
      in SideCondition
             { assumedTrue = assumedTrue'
             , termReplacements = termReplacements'
             , predicateReplacements = predicateReplacements'
+            , definedTerms = definedTerms'
             }
   where
     SideCondition
         { assumedTrue
         , termReplacements
         , predicateReplacements
+        , definedTerms
         } = condition
     mapKeysAndValues f hashMap =
         HashMap.fromList
