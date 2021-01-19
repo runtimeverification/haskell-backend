@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14a9c3fb13f5926dbd7132316a785e05c02d496c072bab9f8bd7533b1cbc8d41
+-- hash: 59860e708a0a03b2d8b6c3d00bc16959b0737bb4e1b44ab499ce43142b4d2e63
 
 name:           kore
 version:        0.37.0.0
@@ -70,7 +70,9 @@ library
       Kore.Attribute.Axiom.Symbolic
       Kore.Attribute.Axiom.Unit
       Kore.Attribute.Comm
+      Kore.Attribute.Concat
       Kore.Attribute.Constructor
+      Kore.Attribute.Element
       Kore.Attribute.Function
       Kore.Attribute.Functional
       Kore.Attribute.Hook
@@ -101,12 +103,9 @@ library
       Kore.Attribute.Smtlib.Smthook
       Kore.Attribute.Smtlib.Smtlib
       Kore.Attribute.Sort
-      Kore.Attribute.Sort.Concat
       Kore.Attribute.Sort.Constructors
       Kore.Attribute.Sort.ConstructorsBuilder
-      Kore.Attribute.Sort.Element
       Kore.Attribute.Sort.HasDomainValues
-      Kore.Attribute.Sort.Unit
       Kore.Attribute.SortInjection
       Kore.Attribute.Source
       Kore.Attribute.SourceLocation
@@ -120,6 +119,7 @@ library
       Kore.Attribute.Synthetic
       Kore.Attribute.Trusted
       Kore.Attribute.UniqueId
+      Kore.Attribute.Unit
       Kore.BugReport
       Kore.Builtin
       Kore.Builtin.AssocComm.AssocComm

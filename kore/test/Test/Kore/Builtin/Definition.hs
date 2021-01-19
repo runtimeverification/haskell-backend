@@ -20,12 +20,12 @@ import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-import qualified Kore.Attribute.Sort.Concat as Sort
-import qualified Kore.Attribute.Sort.Element as Sort
+import qualified Kore.Attribute.Concat as Sort
+import qualified Kore.Attribute.Element as Sort
 import Kore.Attribute.Sort.HasDomainValues
     ( hasDomainValuesAttribute
     )
-import qualified Kore.Attribute.Sort.Unit as Sort
+import qualified Kore.Attribute.Unit as Sort
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Subsort
     ( subsortAttribute

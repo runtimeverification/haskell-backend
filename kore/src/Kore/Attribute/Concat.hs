@@ -1,12 +1,12 @@
 {-|
-Module      : Kore.Attribute.Sort.Concat
-Description : Concat sort attribute
+Module      : Kore.Attribute.Concat
+Description : Concat attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
-module Kore.Attribute.Sort.Concat
+module Kore.Attribute.Concat
     ( Concat (..)
     , concatId, concatSymbol, concatAttribute
     ) where
@@ -17,7 +17,7 @@ import Data.Default
 
 import Kore.Attribute.Parser
 
--- | @Concat@ represents the @concat@ attribute for sorts.
+-- | @Concat@ represents the @concat@ attribute.
 newtype Concat = Concat { getConcat :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 

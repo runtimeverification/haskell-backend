@@ -1,12 +1,12 @@
 {-|
-Module      : Kore.Attribute.Sort.Unit
-Description : Unit sort attribute
+Module      : Kore.Attribute.Unit
+Description : Unit attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
-module Kore.Attribute.Sort.Unit
+module Kore.Attribute.Unit
     ( Unit (..)
     , unitId, unitSymbol, unitAttribute
     ) where
@@ -17,7 +17,7 @@ import Data.Default
 
 import Kore.Attribute.Parser
 
--- | @Unit@ represents the @unit@ attribute for sorts.
+-- | @Unit@ represents the @unit@ attribute.
 newtype Unit = Unit { getUnit :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 

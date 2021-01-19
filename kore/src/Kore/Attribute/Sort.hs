@@ -23,12 +23,12 @@ import Kore.Attribute.Parser hiding
     ( Sort
     )
 import Kore.Attribute.Smtlib.Smtlib
-import Kore.Attribute.Sort.Concat
-import Kore.Attribute.Sort.Element
+import Kore.Attribute.Concat
+import Kore.Attribute.Element
 import Kore.Attribute.Sort.HasDomainValues
     ( HasDomainValues
     )
-import Kore.Attribute.Sort.Unit
+import Kore.Attribute.Unit
 
 data Sort =
     Sort

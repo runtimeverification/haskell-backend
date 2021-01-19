@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Attribute.Sort.Element
+module Kore.Attribute.Element
     ( Element (..)
     , elementId, elementSymbol, elementAttribute
     ) where
@@ -13,7 +13,7 @@ import Data.Default
 
 import Kore.Attribute.Parser
 
--- | @Element@ represents the @element@ attribute for sorts.
+-- | @Element@ represents the @element@ attribute.
 newtype Element = Element { getElement :: Maybe SymbolOrAlias }
     deriving (Generic, Eq, Ord, Show)
 

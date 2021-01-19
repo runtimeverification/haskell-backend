@@ -12,7 +12,7 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.Attribute.Sort.Unit
+import Kore.Attribute.Unit
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
 

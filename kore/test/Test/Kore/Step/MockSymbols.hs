@@ -50,12 +50,12 @@ import Kore.Attribute.Pattern.ConstructorLike
     ( isConstructorLike
     )
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute
+import qualified Kore.Attribute.Concat as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
-import qualified Kore.Attribute.Sort.Element as Attribute
-import qualified Kore.Attribute.Sort.Unit as Attribute
+import qualified Kore.Attribute.Element as Attribute
+import qualified Kore.Attribute.Unit as Attribute
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
