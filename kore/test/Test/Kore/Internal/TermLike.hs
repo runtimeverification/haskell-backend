@@ -55,10 +55,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
-import Kore.Internal.TermLike
-import Kore.Step.Simplification.SubstitutionSimplifier
+import Kore.Internal.Substitution
     ( orientSubstitution
     )
+import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
@@ -214,8 +214,8 @@ test_orientSubstitution =
                     ]
             expect =
                 Map.fromList
-                    [ (inject $ variableName Mock.y, mkElemVar Mock.x)
-                    , (inject $ variableName Mock.u, mkElemVar Mock.x)
+                    [ (inject $ variableName Mock.y, mkElemVar Mock.u)
+                    , (inject $ variableName Mock.x, mkElemVar Mock.u)
                     ]
         assertEqual ""
             expect

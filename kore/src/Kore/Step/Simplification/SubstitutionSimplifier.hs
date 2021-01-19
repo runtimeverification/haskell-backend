@@ -13,7 +13,6 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     , deduplicateSubstitution
     , simplifyAnds
     , simplificationMakeAnd
-    , orientSubstitution
     ) where
 
 import Prelude.Kore
@@ -86,17 +85,12 @@ import Kore.Internal.TermLike
     , Variable (..)
     , isSetVariable
     , mkAnd
-    , mkVar
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
     , simplifyTermLike
-    )
-import Kore.Syntax.Variable
-    ( retractElementVariable
-    , retractSetVariable
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.SubstitutionNormalization
@@ -383,74 +377,6 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
-
-{- | Finds all the X = Y pairs and, whenever the provided function returns True
-for Y and False for X, it swaps the order to Y = X, but making sure the
-substitution is still normalized.
--}
-orientSubstitution
-    :: forall variable
-    .  InternalVariable variable
-    => (SomeVariableName variable -> Bool)
-    -> Map (SomeVariableName variable) (TermLike variable)
-    -> Map (SomeVariableName variable) (TermLike variable)
-orientSubstitution
-    toLeft
-    substitution
-  =
-    let listSubstitution = Map.toList substitution
-    in
-        foldr go substitution listSubstitution
-  where
-    go initialPair@(initialKey, _) substitutionInProgress
-      | ordered initialPair = substitutionInProgress
-      | otherwise
-      =
-        let (newKey, newValue) = swapVars initialPair
-        in
-            case Map.lookup newKey substitutionInProgress of
-                Nothing ->
-                    substitutionInProgress
-                    & Map.delete initialKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                Just already ->
-                    substitutionInProgress
-                    & Map.delete newKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                    & Map.map
-                        (TermLike.substitute (Map.singleton initialKey already))
-                    & Map.insert initialKey already
-
-    swapVars
-        :: (SomeVariableName variable, TermLike variable)
-        -> (SomeVariableName variable, TermLike variable)
-    swapVars ( xName, TermLike.Var_ (Variable yName ySort) ) =
-        (yName, mkVar $ Variable xName ySort)
-    swapVars subst = subst
-
-    ordered
-        :: (SomeVariableName variable, TermLike variable)
-        -> Bool
-    ordered
-        ( xName, TermLike.Var_ y@(Variable yName _) )
-
-        | SomeVariableNameElement _ <- xName
-        , Just _ <- retractElementVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-
-        | SomeVariableNameSet _ <- xName
-        , Just _ <- retractSetVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-    ordered _ = True
-
 data Private variable =
     Private
         { accum :: !(Condition variable)

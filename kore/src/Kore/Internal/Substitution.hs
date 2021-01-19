@@ -47,6 +47,7 @@ module Kore.Internal.Substitution
     , mkNormalization
     , applyNormalized
     , substitute
+    , orientSubstitution
     ) where
 
 import Prelude.Kore hiding
@@ -647,6 +648,73 @@ variables
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) =
     foldMap (Set.singleton . assignedVariable) subst
+
+{- | Finds all the X = Y pairs and, whenever the provided function returns True
+for Y and False for X, it swaps the order to Y = X, but making sure the
+substitution is still normalized.
+-}
+orientSubstitution
+    :: forall variable
+    .  InternalVariable variable
+    => (SomeVariableName variable -> Bool)
+    -> Map (SomeVariableName variable) (TermLike variable)
+    -> Map (SomeVariableName variable) (TermLike variable)
+orientSubstitution
+    toLeft
+    substitution
+  =
+    let listSubstitution = Map.toList substitution
+    in
+        foldl' go substitution listSubstitution
+  where
+    go substitutionInProgress initialPair@(initialKey, _)
+      | ordered initialPair = substitutionInProgress
+      | otherwise
+      =
+        let (newKey, newValue) = swapVars initialPair
+        in
+            case Map.lookup newKey substitutionInProgress of
+                Nothing ->
+                    substitutionInProgress
+                    & Map.delete initialKey
+                    & Map.map
+                        (TermLike.substitute (Map.singleton newKey newValue))
+                    & Map.insert newKey newValue
+                Just already ->
+                    substitutionInProgress
+                    & Map.delete newKey
+                    & Map.map
+                        (TermLike.substitute (Map.singleton newKey newValue))
+                    & Map.insert newKey newValue
+                    & Map.map
+                        (TermLike.substitute (Map.singleton initialKey already))
+                    & Map.insert initialKey already
+
+    swapVars
+        :: (SomeVariableName variable, TermLike variable)
+        -> (SomeVariableName variable, TermLike variable)
+    swapVars ( xName, TermLike.Var_ (Variable yName ySort) ) =
+        (yName, mkVar $ Variable xName ySort)
+    swapVars subst = subst
+
+    ordered
+        :: (SomeVariableName variable, TermLike variable)
+        -> Bool
+    ordered
+        ( xName, TermLike.Var_ y@(Variable yName _) )
+
+        | SomeVariableNameElement _ <- xName
+        , Just _ <- retractElementVariable y
+        , toLeft yName
+        , not $ toLeft xName
+        = False
+
+        | SomeVariableNameSet _ <- xName
+        , Just _ <- retractSetVariable y
+        , toLeft yName
+        , not $ toLeft xName
+        = False
+    ordered _ = True
 
 {- | The result of /normalizing/ a substitution.
 

@@ -148,11 +148,10 @@ simplificationEvaluation
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
         let equation' = Equation.mapVariables (pure fromVariableName) equation
-            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
         result <-
             Equation.attemptEquation
                 condition
-                (TermLike.mapVariables (pure Target.unTarget) term')
+                term
                 equation'
         let apply = Equation.applyEquation condition equation'
         case result of

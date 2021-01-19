@@ -103,9 +103,6 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( orientSubstitution
-    )
 import qualified Kore.Step.SMT.Evaluator as SMT
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.Id
@@ -298,16 +295,16 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
             Equation.substitute orientedSubstitution equation
     return (equation', predicate')
   where
-    orientedSubstitution = orientSubstitution occursInEquation substitution
+    orientedSubstitution = Substitution.orientSubstitution occursInEquation substitution
 
     equationVariables = freeVariables equation
 
     occursInEquation :: (SomeVariableName variable -> Bool)
-    occursInEquation =
-        (`Set.member` equationVariableNames)
-      where
-        equationVariableNames =
-            Set.map variableName (FreeVariables.toSet equationVariables)
+    occursInEquation = \someVariableName ->
+        Set.member someVariableName equationVariableNames
+
+    equationVariableNames =
+        Set.map variableName (FreeVariables.toSet equationVariables)
 
     errors =
         concatMap checkVariable (FreeVariables.toList equationVariables)
