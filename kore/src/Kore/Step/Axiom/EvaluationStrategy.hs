@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
@@ -123,7 +125,10 @@ attemptEquationAndAccumulateErrors condition term equation =
   where
     attemptEquation =
         ExceptRT . ExceptT
-        $ Equation.attemptEquation condition term equation
+        $ Equation.attemptEquation
+            condition
+            (TermLike.mapVariables (pure Target.unTarget) term)
+            equation
         >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
@@ -150,8 +155,7 @@ simplificationEvaluation equation =
                 Equation.mapVariables
                     (pure $ fromVariableName . from @RewritingVariableName)
                     equation
-            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        result <- Equation.attemptEquation condition term' equation'
+        result <- Equation.attemptEquation condition term equation'
         let apply = Equation.applyEquation condition equation'
         case result of
             Right applied -> do
