@@ -23,6 +23,8 @@ module Kore.Internal.SideCondition
     , replacePredicate
     , cannotReplaceTerm
     , cannotReplacePredicate
+    , assumeDefined
+    , fromDefinedTerms
     , simplifyConjunctionByAssumption
     ) where
 
@@ -181,6 +183,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             { assumedTrue
             , termReplacements
             , predicateReplacements
+            , definedTerms
             }
       =
         Pretty.vsep $
@@ -191,6 +194,8 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             <> HashMap.foldlWithKey' (acc unparse) [] termReplacements
             <> [ "Term replacements:" ]
             <> HashMap.foldlWithKey' (acc Pretty.pretty) [] predicateReplacements
+            <> [ "Assumed to be defined:" ]
+            <> (unparse <$> HashSet.toList definedTerms)
       where
         acc showFunc result key value =
             result <>
@@ -352,6 +357,13 @@ fromCondition
     => Condition variable
     -> SideCondition variable
 fromCondition = fromPredicate . Condition.toPredicate
+
+fromDefinedTerms
+    :: InternalVariable variable
+    => HashSet (TermLike variable)
+    -> SideCondition variable
+fromDefinedTerms definedTerms =
+    top { definedTerms }
 
 toRepresentation
     :: InternalVariable variable
@@ -604,3 +616,67 @@ retractLocalFunction =
             InternalSet_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing
+
+assumeDefined
+    :: forall variable
+    .  InternalVariable variable
+    => TermLike variable
+    -> SideCondition variable
+assumeDefined term =
+    assumeDefinedWorker term
+    & fromDefinedTerms
+  where
+    -- TODO: maybe use recursion schemes here
+    assumeDefinedWorker
+        :: TermLike variable
+        -> HashSet (TermLike variable)
+    assumeDefinedWorker term' =
+        case term' of
+            TermLike.And_ _ child1 child2 ->
+                let result1 = assumeDefinedWorker child1
+                    result2 = assumeDefinedWorker child2
+                 in asSet term' <> result1 <> result2
+            TermLike.App_ _ children ->
+                 asSet term' <> foldMap assumeDefinedWorker children
+            TermLike.ApplyAlias_ _ _ -> asSet term'
+            TermLike.Bottom_ _ ->
+                error
+                    "Internal error: cannot assume\
+                    \ a \\bottom pattern is defined."
+            TermLike.Ceil_ _ _ child ->
+                asSet term' <> assumeDefinedWorker child
+            TermLike.DV_ _ _ -> asSet term'
+            TermLike.InternalBool_ _ -> asSet term'
+            TermLike.InternalInt_ _ -> asSet term'
+            TermLike.InternalString_ _ -> asSet term'
+            TermLike.InternalList_ _ -> undefined
+            TermLike.InternalMap_ _ -> undefined
+            TermLike.InternalSet_ _ -> undefined
+            TermLike.Equals_ _ _ _ _ -> asSet term'
+            TermLike.Exists_ _ _ _ -> asSet term'
+            TermLike.Floor_ _ _ _ -> asSet term'
+            TermLike.Forall_ _ _ child ->
+                asSet term' <> assumeDefinedWorker child
+            TermLike.Iff_ _ _ _ -> asSet term'
+            TermLike.Implies_ _ _ _ -> asSet term'
+            TermLike.In_ _ _ child1 child2 ->
+                let result1 = assumeDefinedWorker child1
+                    result2 = assumeDefinedWorker child2
+                 in asSet term' <> result1 <> result2
+            TermLike.Mu_ _ _ -> asSet term'
+            TermLike.Next_ _ _ -> asSet term'
+            TermLike.Not_ _ _ -> asSet term'
+            TermLike.Nu_ _ _ -> asSet term'
+            TermLike.Or_ _ _ _ -> asSet term'
+            TermLike.Rewrites_ _ _ _ -> asSet term'
+            TermLike.Top_ _ -> asSet term'
+            TermLike.Var_ _ -> asSet term'
+            TermLike.ElemVar_ _ -> asSet term'
+            TermLike.SetVar_ _ -> asSet term'
+            TermLike.StringLiteral_ _ -> asSet term'
+            TermLike.Evaluated_ _ -> asSet term'
+            TermLike.Defined_ _ -> asSet term'
+            _ -> undefined
+    asSet newTerm
+      | TermLike.isDefinedPattern newTerm = mempty
+      | otherwise = HashSet.singleton newTerm
