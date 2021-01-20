@@ -14,16 +14,16 @@ builtin modules.
     import qualified Kore.Builtin.Builtin as Builtin
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Builtin
     ( Function
       -- * Implementing builtin functions
     , notImplemented
     , unaryOperator
-    , unaryOperator'
     , binaryOperator
-    , binaryOperator'
     , ternaryOperator
-    , ternaryOperator'
     , functionEvaluator
     , applicationEvaluator
     , verifierBug
@@ -47,11 +47,9 @@ module Kore.Builtin.Builtin
 
 import Prelude.Kore
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Functor.Foldable as Recursive
 import Data.Text
     ( Text
     )
@@ -95,7 +93,7 @@ import Kore.Internal.Pattern as Pattern
     , withCondition
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
+    ( makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -162,44 +160,6 @@ appliedFunction epat =
  -}
 unaryOperator
     :: forall a b
-    .   (forall variable. Text -> Builtin (TermLike variable) -> a)
-    -- ^ Parse operand
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
-unaryOperator extractVal asPattern ctx op =
-    functionEvaluator unaryOperator0
-  where
-    get :: Builtin (TermLike variable) -> a
-    get = extractVal ctx
-
-    unaryOperator0 :: Function
-    unaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [BuiltinF a] -> do
-                -- Apply the operator to a domain value
-                let r = op (get a)
-                return (asPattern resultSort r)
-            [_] -> empty
-            _ -> wrongArity (Text.unpack ctx)
-
-{- | Construct a builtin unary operator.
-
-  The operand type may differ from the result type.
-
-  The function is skipped if its arguments are not domain values.
-  It is an error if the wrong number of arguments is given; this must be checked
-  during verification.
-
- -}
-unaryOperator'
-    :: forall a b
     .   (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Parse operand
     ->  (forall variable
@@ -211,7 +171,7 @@ unaryOperator'
     -> (a -> b)
     -- ^ Operation on builtin types
     -> BuiltinAndAxiomSimplifier
-unaryOperator' extractVal asPattern ctx op =
+unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
     get :: TermLike variable -> Maybe a
@@ -238,7 +198,7 @@ unaryOperator' extractVal asPattern ctx op =
   during verification.
 
  -}
-binaryOperator'
+binaryOperator
     :: forall a b
     .  (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Extract domain value
@@ -251,7 +211,7 @@ binaryOperator'
     -> (a -> a -> b)
     -- ^ Operation on builtin types
     -> BuiltinAndAxiomSimplifier
-binaryOperator' extractVal asPattern ctx op =
+binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
     get :: TermLike variable -> Maybe a
@@ -267,83 +227,6 @@ binaryOperator' extractVal asPattern ctx op =
             [_, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
-{- | Construct a builtin binary operator.
-
-  Both operands have the same builtin type, which may be different from the
-  result type.
-
-  The function is skipped if its arguments are not domain values.
-  It is an error if the wrong number of arguments is given; this must be checked
-  during verification.
-
- -}
-binaryOperator
-    :: forall a b
-    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
-    -- ^ Extract domain value
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
-binaryOperator extractVal asPattern ctx op =
-    functionEvaluator binaryOperator0
-  where
-    get :: Builtin (TermLike variable) -> a
-    get = extractVal ctx
-    binaryOperator0 :: Function
-    binaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [BuiltinF a, BuiltinF b] -> do
-                -- Apply the operator to two domain values
-                let r = op (get a) (get b)
-                return (asPattern resultSort r)
-            [_, _] -> empty
-            _ -> wrongArity (Text.unpack ctx)
-
-{- | Construct a builtin ternary operator.
-
-  All three operands have the same builtin type, which may be different from the
-  result type.
-
-  The function is skipped if its arguments are not domain values.
-  It is an error if the wrong number of arguments is given; this must be checked
-  during verification.
-
- -}
-ternaryOperator'
-    :: forall a b
-    .  (forall variable. Text -> TermLike variable -> Maybe a)
-    -- ^ Extract domain value
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> a -> a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
-ternaryOperator' extractVal asPattern ctx op =
-    functionEvaluator ternaryOperator0
-  where
-    get :: TermLike variable -> Maybe a
-    get = extractVal ctx
-
-    ternaryOperator0 :: Function
-    ternaryOperator0 resultSort children =
-        case children of
-            [get -> Just a, get -> Just b, get -> Just c] -> do
-                -- Apply the operator to three domain values
-                let r = op a b c
-                return (asPattern resultSort r)
-            [_, _, _] -> empty
-            _ -> wrongArity (Text.unpack ctx)
-
 {- | Construct a builtin ternary operator.
 
   All three operands have the same builtin type, which may be different from the
@@ -356,7 +239,7 @@ ternaryOperator' extractVal asPattern ctx op =
  -}
 ternaryOperator
     :: forall a b
-    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
+    .  (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Extract domain value
     ->  (forall variable
         . InternalVariable variable => Sort -> b -> Pattern variable
@@ -370,14 +253,15 @@ ternaryOperator
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
-    get :: Builtin (TermLike variable) -> a
+    get :: TermLike variable -> Maybe a
     get = extractVal ctx
+
     ternaryOperator0 :: Function
     ternaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
+        case children of
+            [get -> Just a, get -> Just b, get -> Just c] -> do
                 -- Apply the operator to three domain values
-                let r = op (get a) (get b) (get c)
+                let r = op a b c
                 return (asPattern resultSort r)
             [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
@@ -487,7 +371,7 @@ lookupSymbolUnit tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingUnitAttribute =
+    ~missingUnitAttribute =
         verifierBug
         $ "missing 'unit' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -522,7 +406,7 @@ lookupSymbolElement tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingElementAttribute =
+    ~missingElementAttribute =
         verifierBug
         $ "missing 'element' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -557,7 +441,7 @@ lookupSymbolConcat tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingConcatAttribute =
+    ~missingConcatAttribute =
         verifierBug
         $ "missing 'concat' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -580,10 +464,13 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
   | isPredicateSort            = Nothing
   | SortVariableSort _ <- sort = Nothing
-  | otherwise                  = Just (getHook hook == Just builtinName)
+  | otherwise                  =
+    let
+        MetadataTools { sortAttributes } = tools
+        Attribute.Sort { hook } = sortAttributes sort
+    in
+        Just (getHook hook == Just builtinName)
   where
-    MetadataTools {sortAttributes} = tools
-    Attribute.Sort {hook} = sortAttributes sort
     isPredicateSort = sort == predicateSort
 
 
@@ -624,13 +511,12 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     orCondition <-
         makeEvaluateTermCeil
             SideCondition.topTODO
-            predicateSort
             unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Predicate.markSimplified $ makeEqualsPredicate_ a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

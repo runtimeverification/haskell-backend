@@ -88,8 +88,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeMultipleOrPredicate
-    , unwrapPredicate
+    ( fromPredicate_
+    , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
@@ -158,8 +158,7 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.Simplification.Data
-    ( MonadProf
-    , evalSimplifier
+    ( evalSimplifier
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -170,6 +169,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Transition
     ( runTransitionT
+    , scatter
     )
 import Kore.Syntax.Module
     ( ModuleName
@@ -187,6 +187,7 @@ import Logic
     , observeAllT
     )
 import qualified Logic
+import Prof
 import SMT
     ( MonadSMT
     , SMT
@@ -244,7 +245,9 @@ exec
                     rewriteGroups = groupRewritesByPriority rewriteRules
                     transit instr config =
                         Strategy.transitionRule
-                            (transitionRule rewriteGroups strategy & trackExecDepth)
+                            (transitionRule rewriteGroups strategy
+                                & profTransitionRule
+                                & trackExecDepth)
                             instr
                             config
                         & runTransitionT
@@ -294,6 +297,24 @@ trackExecDepth transit prim (execDepth, execState) = do
 
     isRewrite Rewrite = True
     isRewrite _ = False
+
+{- | Add profiling markers to a 'TransitionRule'.
+-}
+profTransitionRule
+    :: forall monad rule state
+    .  MonadProf monad
+    => TransitionRule monad rule state
+    -> TransitionRule monad rule state
+profTransitionRule rule prim proofState =
+    case prim of
+        Rewrite -> Just ":rewrite:"
+        Simplify -> Just ":simplify:"
+        Begin -> Nothing
+    & \case
+        Just marker -> lift (traceProf marker (runTransitionT go)) >>= scatter
+        Nothing -> go
+  where
+    go = rule prim proofState
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode
@@ -382,7 +403,8 @@ search
                     breadthLimit
                     -- search relies on exploring
                     -- the entire space of states.
-                    (transitionRule rewriteGroups All)
+                    (transitionRule rewriteGroups All
+                        & profTransitionRule)
                     (limitedExecutionStrategy depthLimit)
         executionGraph <-
             runStrategy' (Start initialPattern)
@@ -407,7 +429,7 @@ search
         return
             . forceSort patternSort
             . getRewritingTerm
-            . unwrapPredicate
+            . fromPredicate_
             $ orPredicate
   where
     patternSort = termLikeSort termLike

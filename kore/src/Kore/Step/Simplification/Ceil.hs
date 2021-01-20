@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.Ceil
-Description : Tools for Ceil pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Ceil
     ( simplify
     , makeEvaluate
@@ -34,12 +32,13 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -55,7 +54,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -185,11 +184,13 @@ makeEvaluateTerm sideCondition ceilChild =
         mconcat
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
+        -- We must apply user-defined \ceil rule before built-in rules
+        -- because they may be more specific. In particular, Map and Set
+        -- \ceil conditions are reduced to Bool expressions using in_keys.
+        , newAxiomCeilSimplifier
         , newApplicationCeilSimplifier
         , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
-        , newAxiomCeilSimplifier
-        , newConcatMapCeilSimplifier
         ]
 
 newPredicateCeilSimplifier
@@ -224,7 +225,6 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
             let mkChildCeil =
                     makeEvaluateTermCeil
                         sideCondition
-                        Sort.predicateSort
             simplifiedChildren <- mapM mkChildCeil children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
@@ -245,7 +245,7 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
             input { ceilChild = inj }
                 & evaluateCeilInj
                 & ceilChild
-                & makeEvaluateTermCeil sideCondition Sort.predicateSort
+                & makeEvaluateTermCeil sideCondition
         _ -> empty
 
 newBuiltinCeilSimplifier
@@ -255,24 +255,15 @@ newBuiltinCeilSimplifier
     => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
-        Builtin_ builtin -> do
-            sideCondition <- Reader.ask
-            makeEvaluateBuiltin sideCondition builtin
         InternalList_ internal -> do
             sideCondition <- Reader.ask
             makeEvaluateInternalList sideCondition internal
-        _ -> empty
-
-newConcatMapCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
-    => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
-newConcatMapCeilSimplifier = CeilSimplifier $ \input ->
-    case ceilChild input of
-        Builtin_ builtin -> do
+        InternalMap_ internalMap -> do
             sideCondition <- Reader.ask
-            makeEvaluateConcatMap sideCondition builtin
+            makeEvaluateInternalMap sideCondition internalMap
+        InternalSet_ internalSet -> do
+            sideCondition <- Reader.ask
+            makeEvaluateInternalSet sideCondition internalSet
         _ -> empty
 
 newAxiomCeilSimplifier
@@ -300,47 +291,45 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             ++ "and programming errors."
             )
 
-makeEvaluateConcatMap
+makeEvaluateInternalMap
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> Builtin (TermLike variable)
+    -> InternalMap (TermLike Concrete) (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
+makeEvaluateInternalMap sideCondition internalMap =
     runCeilSimplifierWith
         AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
             , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
+            , ceilChild = internalMap
             }
   where
-    Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateConcatMap _ _ = empty
+    InternalAc { builtinAcSort } = internalMap
 
 {-| Evaluates the ceil of a domain value.
 -}
-makeEvaluateBuiltin
+makeEvaluateInternalSet
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> Builtin (TermLike variable)
+    -> InternalSet (TermLike Concrete) (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
+makeEvaluateInternalSet sideCondition internalSet =
     runCeilSimplifierWith
         AssocComm.newSetCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
             , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
+            , ceilChild = internalSet
             }
   where
-    Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
+    InternalAc { builtinAcSort } = internalSet
 
 makeEvaluateInternalList
     :: forall variable simplifier
@@ -405,9 +394,6 @@ makeSimplifiedCeil
         InF _ -> False
         NotF _ -> False
         BottomF _ -> unexpectedError
-        BuiltinF (Domain.BuiltinMap _) -> True
-        BuiltinF (Domain.BuiltinSet _) -> True
-        InternalListF _ -> True
         DomainValueF _ -> True
         FloorF _ -> False
         ForallF _ -> False
@@ -422,14 +408,17 @@ makeSimplifiedCeil
         InternalBoolF _ -> unexpectedError
         InternalBytesF _ -> unexpectedError
         InternalIntF _ -> unexpectedError
+        InternalListF _ -> True
+        InternalMapF _ -> True
+        InternalSetF _ -> True
         InternalStringF _ -> unexpectedError
         VariableF _ -> False
 
     unsimplified =
         OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
-        . makeCeilPredicate_
+        . makeCeilPredicate
         $ termLike
 
-    unexpectedError =
+    ~unexpectedError =
         error ("Unexpected term type: " ++ unparseToString termLike)

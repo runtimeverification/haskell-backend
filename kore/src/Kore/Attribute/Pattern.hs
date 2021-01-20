@@ -38,9 +38,27 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
+    ( Created (..)
+    , hasKnownCreator
+    )
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables hiding
-    ( freeVariables
+    ( Defined (..)
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , HasFreeVariables
+    , bindVariable
+    , bindVariables
+    , emptyFreeVariables
+    , freeVariable
+    , getFreeElementVariables
+    , isFreeVariable
+    , mapFreeVariables
+    , nullFreeVariables
+    , toList
+    , toNames
+    , toSet
+    , traverseFreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
     ( freeVariables

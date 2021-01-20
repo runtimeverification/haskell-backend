@@ -92,7 +92,7 @@ termB = Pattern.fromTermLike Mock.b
 aImpliesB :: TestPattern
 aImpliesB = Conditional
     { term = mkImplies Mock.a Mock.b
-    , predicate = Predicate.makeTruePredicate_
+    , predicate = Predicate.makeTruePredicate
     , substitution = mempty
     }
 
@@ -106,13 +106,13 @@ equalsXC :: TestPattern
 equalsXC = Pattern.fromPredicateSorted Mock.testSort equalsXC_
 
 equalsXA_ :: TestPredicate
-equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
 equalsXB_ :: TestPredicate
-equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 equalsXC_ :: TestPredicate
-equalsXC_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.c
+equalsXC_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.c
 
 impliesEqualsXAEqualsXB :: TestPattern
 impliesEqualsXAEqualsXB =

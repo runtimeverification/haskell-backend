@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Map
     ( test_lookupUnit
     , test_lookupUpdate
@@ -86,10 +88,7 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
-import Kore.Domain.Builtin
-    ( NormalizedMap (..)
-    )
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
@@ -777,7 +776,7 @@ test_unifyEmptyWithEmpty =
     expect =
         Conditional
             { term = emptyMapDV
-            , predicate = makeTruePredicate mapSort
+            , predicate = makeTruePredicate
             , substitution = Substitution.unsafeWrap []
             }
 
@@ -829,7 +828,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -863,7 +862,7 @@ test_unifySelectSingletonFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
@@ -891,7 +890,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject keyVar, key)
@@ -926,7 +925,7 @@ test_unifySelectFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [(key2, value2)])
@@ -937,7 +936,7 @@ test_unifySelectFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [(key1, value1)])
@@ -980,7 +979,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -993,7 +992,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -1031,7 +1030,7 @@ test_unifySameSymbolicKey =
                 expect1 =
                     Conditional
                         { term = mapValue
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject mapVar, asInternal [])
@@ -1071,13 +1070,13 @@ test_unifySameSymbolicKeySymbolicOpaque =
                     $ mkElemVar mapVar2
                 mapValueFromVar mapVar =
                     Ac.asInternal testMetadataTools mapSort
-                    $ Domain.wrapAc Domain.NormalizedAc
+                    $ wrapAc NormalizedAc
                         { elementsWithVariables =
-                            [Domain.MapElement (mkElemVar keyVar2, value2)]
+                            [MapElement (mkElemVar keyVar2, value2)]
                         , concreteElements =
                             Map.singleton
                                 (unsafeAsConcrete key1)
-                                (Domain.MapValue value1)
+                                (MapValue value1)
                         , opaque = [mkElemVar mapVar]
                         }
                 mapValue = mapValueFromVar mapVar1
@@ -1085,7 +1084,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                 expect1 =
                     Conditional
                         { term = unifiedMap
-                        , predicate = makeTruePredicate mapSort
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject minMapVar, mkElemVar maxMapVar)
@@ -1175,7 +1174,7 @@ test_concretizeKeys =
     expected =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
-            , predicate = Predicate.makeTruePredicate (termLikeSort original)
+            , predicate = Predicate.makeTruePredicate
             , substitution =
                 Substitution.unsafeWrap [(inject v, val), (inject x, key)]
             }
@@ -1217,14 +1216,14 @@ test_concretizeKeysAxiom =
         RewriteRule RulePattern
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate_
+            , requires = Predicate.makeTruePredicate
             , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
     expected = MultiOr.make
         [ Conditional
             { term = val
-            , predicate = makeTruePredicate intSort
+            , predicate = makeTruePredicate
             , substitution = mempty
             }
         ]
@@ -1292,10 +1291,10 @@ test_renormalize =
         -- ^ opaque terms
         -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
     mkMap abstract concrete opaque =
-        Domain.wrapAc Domain.NormalizedAc
-            { elementsWithVariables = Domain.MapElement <$> abstract
+        wrapAc NormalizedAc
+            { elementsWithVariables = MapElement <$> abstract
             , concreteElements =
-                Map.fromList (Bifunctor.second Domain.MapValue <$> concrete)
+                Map.fromList (Bifunctor.second MapValue <$> concrete)
             , opaque =
                 Ac.asInternal testMetadataTools mapSort <$> opaque
             }
@@ -1391,16 +1390,16 @@ test_inKeys =
                 let (term, condition) = splitTerm result
                 assertTop (substitution condition)
                 let expectPredicate
-                      | null predicates = makeTruePredicate boolSort
+                      | null predicates = makeTruePredicate
                       | otherwise = makeMultipleAndPredicate predicates
                     predicates =
                         catMaybes
                         [ do
                             (guard . not) (isDefinedPattern termKey)
-                            pure (makeCeilPredicate boolSort termKey)
+                            pure (makeCeilPredicate termKey)
                         , do
                             (guard . not) (isDefinedPattern termMap)
-                            pure (makeCeilPredicate boolSort termMap)
+                            pure (makeCeilPredicate termMap)
                         ]
                 assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term
@@ -1434,9 +1433,9 @@ asPattern :: Map (TermLike Concrete) (TermLike VariableName) -> Pattern Variable
 asPattern concreteMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
-    $ Domain.wrapAc Domain.NormalizedAc
+    $ wrapAc NormalizedAc
         { elementsWithVariables = []
-        , concreteElements = Domain.MapValue <$> concreteMap
+        , concreteElements = MapValue <$> concreteMap
         , opaque = []
         }
 
@@ -1445,8 +1444,8 @@ asVariablePattern
 asVariablePattern variableMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
-    $ Domain.wrapAc Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+    $ wrapAc NormalizedAc
+        { elementsWithVariables = MapElement <$> Map.toList variableMap
         , concreteElements = Map.empty
         , opaque = []
         }
@@ -1455,8 +1454,8 @@ asVariableInternal
     :: Map (TermLike VariableName) (TermLike VariableName) -> TermLike VariableName
 asVariableInternal variableMap =
     Ac.asInternal testMetadataTools mapSort
-    $ Domain.wrapAc Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+    $ wrapAc NormalizedAc
+        { elementsWithVariables = MapElement <$> Map.toList variableMap
         , concreteElements = Map.empty
         , opaque = []
         }
@@ -1467,8 +1466,8 @@ asInternal
     -> TermLike VariableName
 asInternal elements =
     Ac.asInternal testMetadataTools mapSort
-    $ Domain.wrapAc Domain.NormalizedAc
-        { elementsWithVariables = Domain.wrapElement <$> abstractElements
+    $ wrapAc NormalizedAc
+        { elementsWithVariables = wrapElement <$> abstractElements
         , concreteElements
         , opaque = []
         }
@@ -1477,7 +1476,7 @@ asInternal elements =
         (,) <$> Builtin.toKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
 
 unsafeAsConcrete :: TermLike VariableName -> TermLike Concrete
@@ -1497,8 +1496,8 @@ normalizedMap
     -- ^ opaque terms
     -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
 normalizedMap elements opaque =
-    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
-        { elementsWithVariables = Domain.MapElement <$> elements
+    Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
+        { elementsWithVariables = MapElement <$> elements
         , concreteElements = Map.empty
         , opaque
         }

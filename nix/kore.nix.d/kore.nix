@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.36.0.0"; };
+      identifier = { name = "kore"; version = "0.37.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -149,6 +149,7 @@
           "Kore/Attribute/Pattern/Function"
           "Kore/Attribute/Pattern/Functional"
           "Kore/Attribute/Pattern/Simplified"
+          "Kore/Attribute/PredicatePattern"
           "Kore/Attribute/Priority"
           "Kore/Attribute/ProductionID"
           "Kore/Attribute/RuleIndex"
@@ -214,7 +215,6 @@
           "Kore/Builtin/Symbols"
           "Kore/Builtin/Verifiers"
           "Kore/Debug"
-          "Kore/Domain/Builtin"
           "Kore/Equation"
           "Kore/Equation/Application"
           "Kore/Equation/Equation"
@@ -239,9 +239,12 @@
           "Kore/Internal/InternalBytes"
           "Kore/Internal/InternalInt"
           "Kore/Internal/InternalList"
+          "Kore/Internal/InternalMap"
+          "Kore/Internal/InternalSet"
           "Kore/Internal/InternalString"
           "Kore/Internal/MultiAnd"
           "Kore/Internal/MultiOr"
+          "Kore/Internal/NormalizedAc"
           "Kore/Internal/OrCondition"
           "Kore/Internal/OrPattern"
           "Kore/Internal/Pattern"
@@ -334,7 +337,6 @@
           "Kore/Step/Simplification/AndTerms"
           "Kore/Step/Simplification/Application"
           "Kore/Step/Simplification/Bottom"
-          "Kore/Step/Simplification/Builtin"
           "Kore/Step/Simplification/Ceil"
           "Kore/Step/Simplification/CeilSimplifier"
           "Kore/Step/Simplification/Condition"
@@ -356,6 +358,8 @@
           "Kore/Step/Simplification/InternalBytes"
           "Kore/Step/Simplification/InternalInt"
           "Kore/Step/Simplification/InternalList"
+          "Kore/Step/Simplification/InternalMap"
+          "Kore/Step/Simplification/InternalSet"
           "Kore/Step/Simplification/InternalString"
           "Kore/Step/Simplification/Mu"
           "Kore/Step/Simplification/Next"
@@ -973,7 +977,9 @@
             "Test/Kore/Builtin/String"
             "Test/Kore/Contains"
             "Test/Kore/Equation/Application"
+            "Test/Kore/Equation/Common"
             "Test/Kore/Equation/Sentence"
+            "Test/Kore/Equation/Simplification"
             "Test/Kore/Error"
             "Test/Kore/Exec"
             "Test/Kore/IndexedModule/Error"
@@ -1034,7 +1040,6 @@
             "Test/Kore/Step/Simplification/AndTerms"
             "Test/Kore/Step/Simplification/Application"
             "Test/Kore/Step/Simplification/Bottom"
-            "Test/Kore/Step/Simplification/Builtin"
             "Test/Kore/Step/Simplification/Ceil"
             "Test/Kore/Step/Simplification/Condition"
             "Test/Kore/Step/Simplification/DomainValue"
@@ -1048,6 +1053,8 @@
             "Test/Kore/Step/Simplification/Integration"
             "Test/Kore/Step/Simplification/IntegrationProperty"
             "Test/Kore/Step/Simplification/InternalList"
+            "Test/Kore/Step/Simplification/InternalMap"
+            "Test/Kore/Step/Simplification/InternalSet"
             "Test/Kore/Step/Simplification/Next"
             "Test/Kore/Step/Simplification/Not"
             "Test/Kore/Step/Simplification/Or"

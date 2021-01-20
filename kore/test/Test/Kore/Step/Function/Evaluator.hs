@@ -41,9 +41,6 @@ import Kore.Syntax.Application
     ( Application (..)
     )
 
-import Test.Kore
-    ( testId
-    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 
@@ -107,9 +104,8 @@ mkApplySymbol' = synthesize . TermLike.ApplySymbolF
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
 fEvaluator =
     Kore.simplificationEvaluation
-    $ Equation.mkEquation sortR left right
+    $ Equation.mkEquation left right
   where
-    sortR = TermLike.mkSortVariable (testId "R")
     left = mkApplySymbol' (f x)
     right = x
     x = TermLike.mkElemVar Mock.x'

@@ -46,6 +46,7 @@ let
         "/*"
         "!/stack.yaml"
         "!/kore"
+        "*.cabal"
       ];
     };
     inherit checkMaterialization;

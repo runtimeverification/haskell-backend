@@ -270,7 +270,7 @@ instance
         -- Never mark this as simplified since we want to be able to rebuild the
         -- substitution sometimes (e.g. not(not(subst)) and when simplifying
         -- claims).
-        Predicate.makeEqualsPredicate_ (TermLike.mkVar var) patt
+        Predicate.makeEqualsPredicate (TermLike.mkVar var) patt
 
 instance
     InternalVariable variable
