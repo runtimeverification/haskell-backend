@@ -740,6 +740,28 @@ pattern MockSetVariable base counter variableSort =
     , variableSort
     }
 
+type MockRewritingSetVariable = SetVariable RewritingVariableName
+
+mkRuleSetVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkRuleSetVariable base counter variableSort =
+    Variable
+    { variableName
+        = SetVariableName
+        $ mkRuleVariable VariableName { base, counter }
+    , variableSort
+    }
+
+mkConfigSetVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkConfigSetVariable base counter variableSort =
+    Variable
+    { variableName =
+        SetVariableName
+        $ mkConfigVariable VariableName { base, counter }
+    , variableSort
+    }    
+
 var_x_0 :: MockElementVariable
 var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
 var_x_1 :: MockElementVariable
@@ -756,6 +778,10 @@ xConfig :: MockRewritingElementVariable
 xConfig = mkConfigElementVariable (testId "x") mempty testSort
 setX :: MockSetVariable
 setX = MockSetVariable (testId "@x") mempty testSort
+setXRule :: MockRewritingSetVariable
+setXRule = mkRuleSetVariable (testId "@x") mempty testSort
+setXConfig :: MockRewritingSetVariable
+setXConfig = mkConfigSetVariable (testId "@x") mempty testSort
 var_setX_0 :: MockSetVariable
 var_setX_0 = MockSetVariable (testId "@x") (Just (Element 0)) testSort
 x0 :: MockElementVariable
@@ -768,6 +794,10 @@ yConfig :: MockRewritingElementVariable
 yConfig = mkConfigElementVariable (testId "y") mempty testSort
 setY :: MockSetVariable
 setY = MockSetVariable (testId "@y") mempty testSort
+setYRule :: MockRewritingSetVariable
+setYRule = mkRuleSetVariable (testId "@y") mempty testSort
+setYConfig :: MockRewritingSetVariable
+setYConfig = mkConfigSetVariable (testId "@y") mempty testSort
 z :: MockElementVariable
 z = MockElementVariable (testId "z") mempty testSort
 zRule :: MockRewritingElementVariable

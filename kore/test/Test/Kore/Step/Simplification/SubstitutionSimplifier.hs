@@ -27,6 +27,7 @@ import Kore.Unification.SubstitutionNormalization
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
     ( substitutionSimplifier
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
@@ -178,9 +179,12 @@ test_SubstitutionSimplifier =
     test
         :: HasCallStack
         => TestName
-        -> [(SomeVariable VariableName, TermLike VariableName)]
+        ->  [   ( SomeVariable RewritingVariableName
+                , TermLike RewritingVariableName
+                )
+            ]
         -- ^ Test input
-        -> [Normalization VariableName]
+        -> [Normalization RewritingVariableName]
         -- ^ Expected normalized, denormalized outputs
         -> TestTree
     test
@@ -222,25 +226,30 @@ test_SubstitutionSimplifier =
                     (allNormalized actualSubstitutions)
             ]
 
-x, y, z, xs, ys :: SomeVariable VariableName
-x = inject Mock.x
-y = inject Mock.y
-z = inject Mock.z
-xs = inject Mock.setX
-ys = inject Mock.setY
+x, y, z, xs, ys :: SomeVariable RewritingVariableName
+x = inject Mock.xConfig
+y = inject Mock.yConfig
+z = inject Mock.zConfig
+xs = inject Mock.setXConfig
+ys = inject Mock.setYConfig
 
-a, b, c :: TermLike VariableName
+a, b, c :: TermLike RewritingVariableName
 a = Mock.a
 b = Mock.b
 c = Mock.c
 
-f, g, h, constr1 :: TermLike VariableName -> TermLike VariableName
+f, g, h, constr1
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 f = Mock.f
 g = Mock.g
 h = Mock.h
 constr1 = Mock.constr10
 
-sigma :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+sigma
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sigma = Mock.sigma
 
 testSort :: Sort
