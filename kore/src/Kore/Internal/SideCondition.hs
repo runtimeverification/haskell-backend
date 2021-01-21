@@ -20,9 +20,7 @@ module Kore.Internal.SideCondition
     , toPredicate
     , toRepresentation
     , replaceTerm
-    , replacePredicate
     , cannotReplaceTerm
-    , cannotReplacePredicate
     , simplifyConjunctionByAssumption
     ) where
 
@@ -137,10 +135,8 @@ data SideCondition variable =
     SideCondition
         { assumedTrue
             :: !(MultiAnd (Predicate variable))
-        , termReplacements
+        , replacements
             :: !(HashMap (TermLike variable) (TermLike variable))
-        , predicateReplacements
-            :: !(HashMap (Predicate variable) (Predicate variable))
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -153,18 +149,18 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
 instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _ _ _) =
+    isTop sideCondition@(SideCondition _ _) =
         isTop assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
-    isBottom sideCondition@(SideCondition _ _ _) =
+    isBottom sideCondition@(SideCondition _ _) =
         isBottom assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables sideCondition@(SideCondition _ _ _) =
+    freeVariables sideCondition@(SideCondition _ _) =
         freeVariables assumedTrue
       where
         SideCondition { assumedTrue } = sideCondition
@@ -173,8 +169,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
     pretty
         SideCondition
             { assumedTrue
-            , termReplacements
-            , predicateReplacements
+            , replacements
             }
       =
         Pretty.vsep $
@@ -182,9 +177,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             , Pretty.indent 4 (Pretty.pretty . MultiAnd.toPredicate $ assumedTrue)
             , "Term replacements:"
             ]
-            <> HashMap.foldlWithKey' (acc unparse) [] termReplacements
-            <> [ "Term replacements:" ]
-            <> HashMap.foldlWithKey' (acc Pretty.pretty) [] predicateReplacements
+            <> HashMap.foldlWithKey' (acc unparse) [] replacements
       where
         acc showFunc result key value =
             result <>
@@ -196,21 +189,26 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
-    from condition@(SideCondition _ _ _) = assumedTrue condition
+    from condition@(SideCondition _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance InternalVariable variable =>
     From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
     from multiAnd =
-        -- TODO: refactor a little
         let ( assumedTrue, DoubleMap termReplacements predicateReplacements ) =
                   simplifyConjunctionByAssumption multiAnd
                   & extract
+            predicateReplacementsAsTerms =
+                mapKeysAndValues
+                    Predicate.fromPredicate_
+                    predicateReplacements
+            replacements =
+                termReplacements
+                <> predicateReplacementsAsTerms
          in SideCondition
             { assumedTrue
-            , termReplacements
-            , predicateReplacements
+            , replacements
             }
     {-# INLINE from #-}
 
@@ -244,8 +242,7 @@ top :: InternalVariable variable => SideCondition variable
 top =
     SideCondition
         { assumedTrue = MultiAnd.top
-        , termReplacements = mempty
-        , predicateReplacements = mempty
+        , replacements = mempty
         }
 
 -- TODO(ana.pantilie): Should we look into removing this?
@@ -266,15 +263,20 @@ andCondition
     sideCondition
     (from @(Condition _) @(MultiAnd _) -> newCondition)
   =
-    -- TODO: refactor a little
     let combinedConditions = oldCondition <> newCondition
         (assumedTrue, DoubleMap termReplacements predicateReplacements) =
             simplifyConjunctionByAssumption combinedConditions
             & extract
+        predicateReplacementsAsTerms =
+            mapKeysAndValues
+                Predicate.fromPredicate_
+                predicateReplacements
+        replacements =
+            termReplacements
+            <> predicateReplacementsAsTerms
      in SideCondition
         { assumedTrue
-        , termReplacements
-        , predicateReplacements
+        , replacements
         }
   where
     SideCondition { assumedTrue = oldCondition } = sideCondition
@@ -295,7 +297,7 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _ _ _) =
+toPredicate condition@(SideCondition _ _) =
     MultiAnd.toPredicate assumedTrue
   where
     SideCondition { assumedTrue } = condition
@@ -311,28 +313,32 @@ mapVariables
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _) =
+mapVariables adj condition@(SideCondition _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
-        termReplacements' =
-            mapKeysAndValues (TermLike.mapVariables adj) termReplacements
-        predicateReplacements' =
-            mapKeysAndValues (Predicate.mapVariables adj) predicateReplacements
+        replacements' =
+            mapKeysAndValues (TermLike.mapVariables adj) replacements
      in SideCondition
             { assumedTrue = assumedTrue'
-            , termReplacements = termReplacements'
-            , predicateReplacements = predicateReplacements'
+            , replacements = replacements'
             }
   where
     SideCondition
         { assumedTrue
-        , termReplacements
-        , predicateReplacements
+        , replacements
         } = condition
-    mapKeysAndValues f hashMap =
-        HashMap.fromList
-        $ Bifunctor.bimap f f
-        <$> HashMap.toList hashMap
+
+-- | Utility function for mapping on the keys and values of a 'HashMap'.
+mapKeysAndValues
+    :: Eq b
+    => Hashable b
+    => (a -> b)
+    -> HashMap a a
+    -> HashMap b b
+mapKeysAndValues f hashMap =
+    HashMap.fromList
+    $ Bifunctor.bimap f f
+    <$> HashMap.toList hashMap
 
 fromCondition
     :: InternalVariable variable
@@ -355,18 +361,8 @@ replaceTerm
     => SideCondition variable
     -> TermLike variable
     -> Maybe (TermLike variable)
-replaceTerm SideCondition { termReplacements } original =
-    HashMap.lookup original termReplacements
-
-{- | Looks up the predicate in the table of replacements.
- -}
-replacePredicate
-    :: InternalVariable variable
-    => SideCondition variable
-    -> Predicate variable
-    -> Maybe (Predicate variable)
-replacePredicate SideCondition { predicateReplacements } original =
-    HashMap.lookup original predicateReplacements
+replaceTerm SideCondition { replacements } original =
+    HashMap.lookup original replacements
 
 {- | If the term isn't a key in the table of replacements
 then it cannot be replaced.
@@ -376,26 +372,14 @@ cannotReplaceTerm
     => SideCondition variable
     -> TermLike variable
     -> Bool
-cannotReplaceTerm SideCondition { termReplacements } term =
-    HashMap.lookup term termReplacements & isNothing
-
-{- | If the predicate isn't a key in the table of replacements
-then it cannot be replaced.
- -}
-cannotReplacePredicate
-    :: InternalVariable variable
-    => SideCondition variable
-    -> Predicate variable
-    -> Bool
-cannotReplacePredicate SideCondition { predicateReplacements } predicate =
-    HashMap.lookup predicate predicateReplacements & isNothing
+cannotReplaceTerm SideCondition { replacements } term =
+    HashMap.lookup term replacements & isNothing
 
 data DoubleMap variable = DoubleMap
     { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
     , predMap :: HashMap (Predicate variable) (Predicate variable)
     }
     deriving (Eq, GHC.Generic, Show)
-
 
 {- | Simplify the conjunction of 'Predicate' clauses by assuming each is true.
 The conjunction is simplified by the identity:
