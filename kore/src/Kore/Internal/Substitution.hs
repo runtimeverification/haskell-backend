@@ -669,8 +669,7 @@ orientSubstitution
   where
     go substitutionInProgress initialPair@(initialKey, _)
       | ordered initialPair = substitutionInProgress
-      | otherwise
-      =
+      | otherwise =
         let (newKey, newValue) = swapVars initialPair
         in
             case Map.lookup newKey substitutionInProgress of
