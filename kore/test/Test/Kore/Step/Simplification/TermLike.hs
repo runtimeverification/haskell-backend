@@ -19,13 +19,14 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Function.Memo as Memo
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import qualified Logic
-
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import qualified Logic
+
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
@@ -35,7 +36,9 @@ test_simplify =
       $ simplifyEvaluated $ mkEvaluated $ Mock.f Mock.a
     ]
 
-simplifyEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyEvaluated
+    :: TermLike RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 simplifyEvaluated original =
     runSimplifier env . getTestSimplifier
     $ TermLike.simplify SideCondition.top original
