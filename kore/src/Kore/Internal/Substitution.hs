@@ -659,10 +659,7 @@ orientSubstitution
     => (SomeVariableName variable -> Bool)
     -> Map (SomeVariableName variable) (TermLike variable)
     -> Map (SomeVariableName variable) (TermLike variable)
-orientSubstitution
-    toLeft
-    substitution
-  =
+orientSubstitution toLeft substitution =
     let listSubstitution = Map.toList substitution
     in
         foldl' go substitution listSubstitution
