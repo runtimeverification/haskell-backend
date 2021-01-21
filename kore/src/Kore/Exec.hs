@@ -764,7 +764,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
             return result
 
         trustedClaims :: [SomeClaim]
-        trustedClaims = fmap extractClaims maybeTrustedModule & fromMaybe []
+        trustedClaims = maybe [] extractClaims maybeTrustedModule
 
     mapM_ logChangedClaim changedSpecClaims
 
