@@ -236,8 +236,7 @@ finalizeRulesParallel toRule finalizeApplied initialVariables initial unifiedRul
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & (fmap . fmap) assertRemainderPattern
-        & fmap OrPattern.fromPatterns
+        & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
     return Step.Results
         { results = Seq.fromList results
         , remainders
@@ -257,8 +256,7 @@ finalizeSequence toRule finalizeApplied initialVariables initial unifiedRules = 
     remainders <-
         applyRemainder initial remainder
         & Logic.observeAllT
-        & (fmap . fmap) assertRemainderPattern
-        & fmap OrPattern.fromPatterns
+        & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
     return Step.Results
         { results = Seq.fromList $ fold results
         , remainders
