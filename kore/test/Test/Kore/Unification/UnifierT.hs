@@ -32,6 +32,9 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Simplification.Condition as Condition
@@ -40,7 +43,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import qualified Logic
 
@@ -283,11 +285,11 @@ test_mergeAndNormalizeSubstitutions =
                 & pure
         actual <-
             merge
-                [   ( inject Mock.xConfig 
+                [   ( inject Mock.xConfig
                     , mkElemVar Mock.yConfig
                     )
                 ]
-                [   ( inject Mock.yConfig 
+                [   ( inject Mock.yConfig
                     , Mock.f (mkElemVar Mock.xConfig)
                     )
                 ]

@@ -17,14 +17,16 @@ import Control.Monad.Catch
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import Kore.Internal.TermLike
-import qualified Kore.Step.Function.Memo as Memo
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
-import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
+import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import qualified Kore.Step.Function.Memo as Memo
+import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Logic
 
 import qualified Test.Kore.Step.MockSymbols as Mock
