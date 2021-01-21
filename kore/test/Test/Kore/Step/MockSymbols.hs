@@ -758,6 +758,10 @@ xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
+yMap :: MockElementVariable
+yMap = MockElementVariable (testId "yMap") mempty mapSort
+zMap :: MockElementVariable
+zMap = MockElementVariable (testId "zMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
@@ -1851,7 +1855,15 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkInternalMap InternalAc
+    framedInternalMap elements opaque & Internal.mkInternalMap
+
+framedInternalMap
+    :: InternalVariable variable
+    => [(TermLike variable, TermLike variable)]
+    -> [TermLike variable]
+    -> InternalMap (TermLike Concrete) (TermLike variable)
+framedInternalMap elements opaque =
+    InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol

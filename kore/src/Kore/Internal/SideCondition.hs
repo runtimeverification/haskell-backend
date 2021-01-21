@@ -25,6 +25,7 @@ module Kore.Internal.SideCondition
     , cannotReplacePredicate
     , assumeDefined
     , fromDefinedTerms
+    , generateNormalizedAcs
     , simplifyConjunctionByAssumption
     ) where
 
@@ -672,14 +673,18 @@ assumeDefined term =
                     definedMaps =
                         generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
-                 in foldMap assumeDefinedWorker definedElems <> definedMaps
+                 in foldMap assumeDefinedWorker definedElems
+                    <> asSet term'
+                    <> definedMaps
             TermLike.InternalSet_ internalSet ->
                 let definedElems =
                         getDefinedElementsOfAc internalSet
                     definedSets =
                         generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
-                 in foldMap assumeDefinedWorker definedElems <> definedSets
+                 in foldMap assumeDefinedWorker definedElems
+                    <> asSet term'
+                    <> definedSets
             TermLike.Equals_ _ _ _ _ -> asSet term'
             TermLike.Exists_ _ _ _ -> asSet term'
             TermLike.Floor_ _ _ _ -> asSet term'
@@ -724,104 +729,111 @@ assumeDefined term =
             <> HashSet.fromList concreteKeys
             <> HashSet.fromList opaqueElems
 
-    -- | Generates the minimal set of defined collections from which
-    -- definedness of any sub collection can be inferred.
-    generateNormalizedAcs
-        :: forall normalized
-        .  Ord (Element normalized (TermLike variable))
-        => Ord (Value normalized (TermLike variable))
-        => Ord (normalized (TermLike Concrete) (TermLike variable))
-        => Hashable (normalized (TermLike Concrete) (TermLike variable))
-        => AcWrapper normalized
-        => InternalAc (TermLike Concrete) normalized (TermLike variable)
-        -> HashSet (InternalAc (TermLike Concrete) normalized (TermLike variable))
-    generateNormalizedAcs internalAc =
-        let symbolicPairs =
-                [(x,y) | x <- symbolicElems, y <- symbolicElems , x /= y]
-                & nubOrdBy applyComm
-            concretePairs =
-                [(x,y) | x <- concreteElems, y <- concreteElems, x /= y]
-                & nubOrdBy applyComm
-            opaquePairs =
-                [(x,y) | x <- opaqueElems, y <- opaqueElems, x /= y]
-                & nubOrdBy applyComm
-            symbolicConcrete =
-                (,) <$> symbolicElems <*> concreteElems
-            symbolicOpaque =
-                (,) <$> symbolicElems <*> opaqueElems
-            concreteOpaque =
-                (,) <$> concreteElems <*> opaqueElems
-         in HashSet.fromList (symbolicToAc <$> symbolicPairs)
-            <> HashSet.fromList (concreteToAc <$> concretePairs)
-            <> HashSet.fromList (opaqueToAc <$> opaquePairs)
-            <> HashSet.fromList (symbolicConcreteToAc <$> symbolicConcrete)
-            <> HashSet.fromList (symbolicOpaqueToAc <$> symbolicOpaque)
-            <> HashSet.fromList (concreteOpaqueToAc <$> concreteOpaque)
-      where
-        InternalAc
-            { builtinAcChild
-            , builtinAcSort
-            , builtinAcUnit
-            , builtinAcConcat
-            , builtinAcElement
-            } = internalAc
-        symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
-        concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
-        opaqueElems = opaque . unwrapAc $ builtinAcChild
-        applyComm p1 p2
-          | p1 == p2 = EQ
-          | swap p1 == p2 = EQ
-          | otherwise = compare p1 p2
-        symbolicToAc (symbolic1, symbolic2) =
-            let symbolicAc =
-                    emptyNormalizedAc
-                        { elementsWithVariables = [symbolic1, symbolic2]
-                        }
-                    & wrapAc
-             in toInternalAc symbolicAc
-        concreteToAc (concrete1, concrete2) =
-            let concreteAc =
-                    emptyNormalizedAc
-                        { concreteElements = [concrete1, concrete2] & Map.fromList
-                        }
-                    & wrapAc
-             in toInternalAc concreteAc
-        opaqueToAc (opaque1, opaque2) =
-            let opaqueAc =
-                    emptyNormalizedAc
-                        { opaque = [opaque1, opaque2]
-                        }
-                    & wrapAc
-             in toInternalAc opaqueAc
-        symbolicConcreteToAc (symbolic, concrete) =
-            let symbolicConcreteAc =
-                    emptyNormalizedAc
-                        { elementsWithVariables = [symbolic]
-                        , concreteElements = [concrete] & Map.fromList
-                        }
-                    & wrapAc
-             in toInternalAc symbolicConcreteAc
-        symbolicOpaqueToAc (symbolic, opaque') =
-            let symbolicOpaqueAc =
-                    emptyNormalizedAc
-                        { elementsWithVariables = [symbolic]
-                        , opaque = [opaque']
-                        }
-                    & wrapAc
-             in toInternalAc symbolicOpaqueAc
-        concreteOpaqueToAc (concrete, opaque') =
-            let concreteOpaqueAc =
-                    emptyNormalizedAc
-                        { concreteElements = [concrete] & Map.fromList
-                        , opaque = [opaque']
-                        }
-                    & wrapAc
-             in toInternalAc concreteOpaqueAc
-        toInternalAc normalized =
-             InternalAc
-                 { builtinAcChild = normalized
-                 , builtinAcUnit
-                 , builtinAcElement
-                 , builtinAcSort
-                 , builtinAcConcat
-                 }
+-- | Generates the minimal set of defined collections from which
+-- definedness of any sub collection can be inferred.
+generateNormalizedAcs
+    :: forall normalized variable
+    .  InternalVariable variable
+    => Ord (Element normalized (TermLike variable))
+    => Ord (Value normalized (TermLike variable))
+    => Ord (normalized (TermLike Concrete) (TermLike variable))
+    => Hashable (normalized (TermLike Concrete) (TermLike variable))
+    => AcWrapper normalized
+    => InternalAc (TermLike Concrete) normalized (TermLike variable)
+    -> HashSet (InternalAc (TermLike Concrete) normalized (TermLike variable))
+generateNormalizedAcs internalAc
+  | numberOfElements <= 2 = mempty
+  | otherwise =
+    let symbolicPairs =
+            [(x,y) | x <- symbolicElems, y <- symbolicElems , x /= y]
+            & nubOrdBy applyComm
+        concretePairs =
+            [(x,y) | x <- concreteElems, y <- concreteElems, x /= y]
+            & nubOrdBy applyComm
+        opaquePairs =
+            [(x,y) | x <- opaqueElems, y <- opaqueElems, x /= y]
+            & nubOrdBy applyComm
+        symbolicConcrete =
+            (,) <$> symbolicElems <*> concreteElems
+        symbolicOpaque =
+            (,) <$> symbolicElems <*> opaqueElems
+        concreteOpaque =
+            (,) <$> concreteElems <*> opaqueElems
+     in HashSet.fromList (symbolicToAc <$> symbolicPairs)
+        <> HashSet.fromList (concreteToAc <$> concretePairs)
+        <> HashSet.fromList (opaqueToAc <$> opaquePairs)
+        <> HashSet.fromList (symbolicConcreteToAc <$> symbolicConcrete)
+        <> HashSet.fromList (symbolicOpaqueToAc <$> symbolicOpaque)
+        <> HashSet.fromList (concreteOpaqueToAc <$> concreteOpaque)
+  where
+    InternalAc
+        { builtinAcChild
+        , builtinAcSort
+        , builtinAcUnit
+        , builtinAcConcat
+        , builtinAcElement
+        } = internalAc
+    numberOfElements =
+        length symbolicElems
+        + length concreteElems
+        + length opaqueElems
+    symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
+    concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
+    opaqueElems = opaque . unwrapAc $ builtinAcChild
+    applyComm p1 p2
+      | p1 == p2 = EQ
+      | swap p1 == p2 = EQ
+      | otherwise = compare p1 p2
+    symbolicToAc (symbolic1, symbolic2) =
+        let symbolicAc =
+                emptyNormalizedAc
+                    { elementsWithVariables = [symbolic1, symbolic2]
+                    }
+                & wrapAc
+         in toInternalAc symbolicAc
+    concreteToAc (concrete1, concrete2) =
+        let concreteAc =
+                emptyNormalizedAc
+                    { concreteElements = [concrete1, concrete2] & Map.fromList
+                    }
+                & wrapAc
+         in toInternalAc concreteAc
+    opaqueToAc (opaque1, opaque2) =
+        let opaqueAc =
+                emptyNormalizedAc
+                    { opaque = [opaque1, opaque2]
+                    }
+                & wrapAc
+         in toInternalAc opaqueAc
+    symbolicConcreteToAc (symbolic, concrete) =
+        let symbolicConcreteAc =
+                emptyNormalizedAc
+                    { elementsWithVariables = [symbolic]
+                    , concreteElements = [concrete] & Map.fromList
+                    }
+                & wrapAc
+         in toInternalAc symbolicConcreteAc
+    symbolicOpaqueToAc (symbolic, opaque') =
+        let symbolicOpaqueAc =
+                emptyNormalizedAc
+                    { elementsWithVariables = [symbolic]
+                    , opaque = [opaque']
+                    }
+                & wrapAc
+         in toInternalAc symbolicOpaqueAc
+    concreteOpaqueToAc (concrete, opaque') =
+        let concreteOpaqueAc =
+                emptyNormalizedAc
+                    { concreteElements = [concrete] & Map.fromList
+                    , opaque = [opaque']
+                    }
+                & wrapAc
+         in toInternalAc concreteOpaqueAc
+    toInternalAc normalized =
+         InternalAc
+             { builtinAcChild = normalized
+             , builtinAcUnit
+             , builtinAcElement
+             , builtinAcSort
+             , builtinAcConcat
+             }
