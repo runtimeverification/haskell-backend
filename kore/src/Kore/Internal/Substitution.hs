@@ -686,9 +686,7 @@ orientSubstitution
     -- ^ Normalized substitution
     -> Map (SomeVariableName variable) (TermLike variable)
 orientSubstitution toLeft substitution =
-    let listSubstitution = Map.toList substitution
-    in
-        foldl' go substitution listSubstitution
+    foldl' go substitution $ Map.toList substitution
   where
     go substitutionInProgress initialPair@(initialKey, _)
       | ordered initialPair = substitutionInProgress
