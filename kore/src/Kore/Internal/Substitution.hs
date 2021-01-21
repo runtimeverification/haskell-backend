@@ -671,7 +671,9 @@ orientSubstitution
     :: forall variable
     .  InternalVariable variable
     => (SomeVariableName variable -> Bool)
+    -- ^ Orientation: Is the named variable preferred on the left-hand side of variable-renaming substitution pairs?
     -> Map (SomeVariableName variable) (TermLike variable)
+    -- ^ Normalized substitution
     -> Map (SomeVariableName variable) (TermLike variable)
 orientSubstitution toLeft substitution =
     let listSubstitution = Map.toList substitution
