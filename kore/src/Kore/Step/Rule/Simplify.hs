@@ -56,9 +56,6 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import Kore.Syntax.Variable
-    ( VariableName
-    )
 import Logic
     ( LogicT
     )
@@ -72,7 +69,7 @@ class SimplifyRuleLHS rule where
         => rule
         -> simplifier (MultiAnd rule)
 
-instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
+instance SimplifyRuleLHS (RulePattern RewritingVariableName)
   where
     simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
         let lhsWithPredicate = Pattern.fromTermLike left
@@ -85,7 +82,8 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
         RulePattern {left} = rule
 
         setRuleLeft
-            :: RulePattern variable
+            :: InternalVariable variable
+            => RulePattern variable
             -> Pattern variable
             -> RulePattern variable
         setRuleLeft
@@ -131,7 +129,7 @@ instance SimplifyRuleLHS ClaimPattern
                             (Condition.eraseConditionalTerm left')
                     }
 
-instance SimplifyRuleLHS (RewriteRule VariableName) where
+instance SimplifyRuleLHS (RewriteRule RewritingVariableName) where
     simplifyRuleLhs =
         fmap (MultiAnd.map RewriteRule)
         . simplifyRuleLhs

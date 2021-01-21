@@ -54,7 +54,7 @@ import Kore.Reachability
     , simplify
     )
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    (mkRuleVariable,  RewritingVariableName
     , getRewritingVariable
     )
 import Kore.Step.ClaimPattern
@@ -63,7 +63,8 @@ import Kore.Step.ClaimPattern
     )
 import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
-    ( RewriteRule
+    ( RewriteRule (..)
+    , mapRuleVariables
     )
 import Kore.Step.Simplification.Data
     ( Env (..)
@@ -178,8 +179,10 @@ test_simplifyRule_RewriteRule =
         :: RuleBase base (RewriteRule VariableName)
         => base VariableName
         -> base VariableName
-        -> RewriteRule VariableName
-    rewritesToWithSortRewriteRule = Common.rewritesToWithSort
+        -> RewriteRule RewritingVariableName
+    rewritesToWithSortRewriteRule base1 base2 =
+        Common.rewritesToWithSort base1 base2
+        & mapRuleVariables (pure mkRuleVariable)
 
     x = mkElemVar Mock.x
 

@@ -12,7 +12,7 @@
                     /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                     /* Fl Fn D Sfa */
                     Lbl'Unds-LT-'Int'Unds'{}(
-                        /* Fl Fn D Sfa */ VarX0:SortInt{},
+                        /* Fl Fn D Sfa */ RuleVarX0:SortInt{},
                         /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("10")
                     )
                 ),
@@ -25,7 +25,7 @@
                             /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                             /* Fl Fn D Sfa */
                             Lbl'Unds-GT-'Int'Unds'{}(
-                                /* Fl Fn D Sfa */ VarX0:SortInt{},
+                                /* Fl Fn D Sfa */ RuleVarX0:SortInt{},
                                 /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("8")
                             )
                         )
@@ -37,7 +37,7 @@
                             /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                             /* Fl Fn D Sfa */
                             Lbl'Unds-LT-'Int'Unds'{}(
-                                /* Fl Fn D Sfa */ VarX0:SortInt{},
+                                /* Fl Fn D Sfa */ RuleVarX0:SortInt{},
                                 /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("6")
                             )
                         )
@@ -54,13 +54,14 @@
                         /* Inj: */ inj{SortS{}, SortKItem{}}(
                             /* Fl Fn D Spa */
                             Lblstart'LParUndsRParUnds'PRIORITY'Unds'S'Unds'Int{}(
-                                /* Fl Fn D Sfa */ VarX0:SortInt{}
+                                /* Fl Fn D Sfa */ RuleVarX0:SortInt{}
                             )
                         ),
-                        /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortK{}
+                        /* Fl Fn D Sfa */ RuleVar'Unds'DotVar3:SortK{}
                     )
                 ),
-                /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortGeneratedCounterCell{}
+                /* Fl Fn D Sfa */
+                RuleVar'Unds'DotVar2:SortGeneratedCounterCell{}
             )
         )
     ),
@@ -74,9 +75,9 @@
                 /* Inj: */ inj{SortS{}, SortKItem{}}(
                     /* Fl Fn D Sfa Cl */ Lblone'Unds'PRIORITY'Unds'S{}()
                 ),
-                /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortK{}
+                /* Fl Fn D Sfa */ RuleVar'Unds'DotVar3:SortK{}
             )
         ),
-        /* Fl Fn D Sfa */ Var'Unds'DotVar2:SortGeneratedCounterCell{}
+        /* Fl Fn D Sfa */ RuleVar'Unds'DotVar2:SortGeneratedCounterCell{}
     )
 )
