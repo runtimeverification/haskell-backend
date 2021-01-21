@@ -652,18 +652,9 @@ assumeDefined term =
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
             TermLike.App_ _ children ->
-                 asSet term' <> foldMap assumeDefinedWorker children
-            TermLike.ApplyAlias_ _ _ -> asSet term'
-            TermLike.Bottom_ _ ->
-                error
-                    "Internal error: cannot assume\
-                    \ a \\bottom pattern is defined."
+                asSet term' <> foldMap assumeDefinedWorker children
             TermLike.Ceil_ _ _ child ->
                 asSet term' <> assumeDefinedWorker child
-            TermLike.DV_ _ _ -> asSet term'
-            TermLike.InternalBool_ _ -> asSet term'
-            TermLike.InternalInt_ _ -> asSet term'
-            TermLike.InternalString_ _ -> asSet term'
             TermLike.InternalList_ internalList ->
                 asSet term'
                 <> foldMap assumeDefinedWorker (internalListChild internalList)
@@ -685,30 +676,16 @@ assumeDefined term =
                  in foldMap assumeDefinedWorker definedElems
                     <> asSet term'
                     <> definedSets
-            TermLike.Equals_ _ _ _ _ -> asSet term'
-            TermLike.Exists_ _ _ _ -> asSet term'
-            TermLike.Floor_ _ _ _ -> asSet term'
             TermLike.Forall_ _ _ child ->
                 asSet term' <> assumeDefinedWorker child
-            TermLike.Iff_ _ _ _ -> asSet term'
-            TermLike.Implies_ _ _ _ -> asSet term'
             TermLike.In_ _ _ child1 child2 ->
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.Mu_ _ _ -> asSet term'
-            TermLike.Next_ _ _ -> asSet term'
-            TermLike.Not_ _ _ -> asSet term'
-            TermLike.Nu_ _ _ -> asSet term'
-            TermLike.Or_ _ _ _ -> asSet term'
-            TermLike.Rewrites_ _ _ _ -> asSet term'
-            TermLike.Top_ _ -> asSet term'
-            TermLike.Var_ _ -> asSet term'
-            TermLike.ElemVar_ _ -> asSet term'
-            TermLike.SetVar_ _ -> asSet term'
-            TermLike.StringLiteral_ _ -> asSet term'
-            TermLike.Evaluated_ _ -> asSet term'
-            TermLike.Defined_ _ -> asSet term'
+            TermLike.Bottom_ _ ->
+                error
+                    "Internal error: cannot assume\
+                    \ a \\bottom pattern is defined."
             _ -> asSet term'
     asSet newTerm
       | TermLike.isDefinedPattern newTerm = mempty
@@ -730,7 +707,8 @@ assumeDefined term =
             <> HashSet.fromList opaqueElems
 
 -- | Generates the minimal set of defined collections from which
--- definedness of any sub collection can be inferred.
+-- definedness of any sub collection can be inferred. The resulting
+-- set will not contain the input collection itself.
 generateNormalizedAcs
     :: forall normalized variable
     .  InternalVariable variable

@@ -45,6 +45,106 @@ test_assumeDefined =
                 & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term = Mock.framedMap [] []
+            expected = fromDefinedTerms mempty
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.framedMap
+                    [(Mock.a, Mock.a)]
+                    []
+            expected = fromDefinedTerms mempty
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.framedMap
+                    [(Mock.plain00, Mock.a)]
+                    []
+            expected =
+                [ term
+                , Mock.plain00
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.framedMap
+                    []
+                    [mkElemVar Mock.xMap]
+            expected = fromDefinedTerms mempty
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.framedMap
+                    [ (mkElemVar Mock.x, Mock.a)
+                    , (Mock.f Mock.plain00, Mock.b)
+                    ]
+                    []
+            expected =
+                [ term
+                , Mock.plain00
+                , Mock.f Mock.plain00
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "TESTING" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.framedMap
+                    [ (mkElemVar Mock.x, Mock.a)
+                    , (Mock.f Mock.plain00, Mock.b)
+                    , (Mock.c, Mock.d)
+                    ]
+                    [mkElemVar Mock.xMap]
+            expected =
+                [ term
+                , Mock.plain00
+                , Mock.f Mock.plain00
+                , Mock.framedMap
+                    [ (mkElemVar Mock.x, Mock.a)
+                    , (Mock.f Mock.plain00, Mock.b)
+                    ]
+                    []
+                , Mock.framedMap
+                    [ (mkElemVar Mock.x, Mock.a)
+                    , (Mock.c, Mock.d)
+                    ]
+                    []
+                , Mock.framedMap
+                    [ (mkElemVar Mock.x, Mock.a)
+                    ]
+                    [mkElemVar Mock.xMap]
+                , Mock.framedMap
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    , (Mock.c, Mock.d)
+                    ]
+                    []
+                , Mock.framedMap
+                    [ (Mock.f Mock.plain00, Mock.b)
+                    ]
+                    [mkElemVar Mock.xMap]
+                , Mock.framedMap
+                    [ (Mock.c, Mock.d)
+                    ]
+                    [mkElemVar Mock.xMap]
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
     ]
 
 test_generateNormalizedAcs :: [TestTree]
