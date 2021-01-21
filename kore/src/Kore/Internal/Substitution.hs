@@ -657,21 +657,31 @@ A variable-renaming substitution is a pair of the form
 X:S = Y:S
 @
 
-In a normalized substitution, the variable on the left-hand side of each substitution pair may not appear in any other substitution pair. The order of a variable-renaming pair is logically irrelevant, but often we have a preference for which of @X@ and @Y@ should appear on the left-hand side (that is, we have a preferred /orientation/).
+In a normalized substitution, the variable on the left-hand side of each
+substitution pair may not appear in any other substitution pair. The order of a
+variable-renaming pair is logically irrelevant, but often we have a preference
+for which of @X@ and @Y@ should appear on the left-hand side (that is, we have a
+preferred /orientation/).
 
-@orientSubstitution@ applies an orientation to a normalized substitution and yields a normalized substitution. The orientation is expressed as a function
+@orientSubstitution@ applies an orientation to a normalized substitution and
+yields a normalized substitution. The orientation is expressed as a function
 
 @
 SomeVariableName variable -> Bool
 @
 
-returning `True` when the named variable is preferred on the left-hand side of a variable-renaming substitution pair. Each variable-renaming pair is oriented so that the variable on the left-hand side is a preferred variable, if possible. @orientSubstitution@ does not alter substitution pairs where both or neither variable is preferred for the left-hand side.
+returning `True` when the named variable is preferred on the left-hand side of a
+variable-renaming substitution pair. Each variable-renaming pair is oriented so
+that the variable on the left-hand side is a preferred variable, if possible.
+@orientSubstitution@ does not alter substitution pairs where both or neither
+variable is preferred for the left-hand side.
 -}
 orientSubstitution
     :: forall variable
     .  InternalVariable variable
     => (SomeVariableName variable -> Bool)
-    -- ^ Orientation: Is the named variable preferred on the left-hand side of variable-renaming substitution pairs?
+    -- ^ Orientation: Is the named variable preferred on the left-hand side of
+    -- variable-renaming substitution pairs?
     -> Map (SomeVariableName variable) (TermLike variable)
     -- ^ Normalized substitution
     -> Map (SomeVariableName variable) (TermLike variable)
