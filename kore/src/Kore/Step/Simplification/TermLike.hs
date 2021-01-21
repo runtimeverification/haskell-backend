@@ -46,8 +46,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( mapVariables
-    , toRepresentation
+    ( toRepresentation
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -156,12 +155,6 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-import Kore.Syntax.Variable
-    ( AdjSomeVariableName (..)
-    , ElementVariableName (..)
-    , SetVariableName (..)
-    , Variable (..)
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -169,11 +162,6 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Variables.Binding as Binding
-import Kore.Variables.Target
-    ( Target (..)
-    , targetIfEqual
-    , unTarget
-    )
 import qualified Logic
 import Pretty
     ( Pretty (..)
@@ -377,40 +365,9 @@ simplify sideCondition = \termLike ->
             ExistsF exists -> do
                 simplifiedChildren <-
                     simplifyChildren (refresh exists)
-                targetedResults <-
-                    Exists.simplify
-                        (targetSideCondition sideCondition)
-                        (targetSimplifiedChildren simplifiedChildren)
-                let unTargetedResults =
-                        MultiOr.map (Pattern.mapVariables (pure unTarget)) targetedResults
-                return unTargetedResults
+                Exists.simplify sideCondition simplifiedChildren
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
-                targetSideCondition
-                    :: SideCondition variable
-                    -> SideCondition (Target variable)
-                targetSideCondition =
-                    SideCondition.mapVariables
-                        AdjSomeVariableName
-                        { adjSomeVariableNameElement =
-                            ElementVariableName
-                            (targetIfEqual existsVariableName)
-                        , adjSomeVariableNameSet = SetVariableName NonTarget
-                        }
-                targetSimplifiedChildren
-                    :: TermLike.Exists
-                        TermLike.Sort
-                        variable
-                        (OrPattern variable)
-                    -> TermLike.Exists
-                        TermLike.Sort
-                        (Target variable)
-                        (OrPattern (Target variable))
-                targetSimplifiedChildren =
-                    Lens.over Binding.existsBinder OrPattern.targetBinder
-                existsVariableName =
-                    (unElementVariableName . variableName)
-                        (TermLike.existsVariable exists)
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
