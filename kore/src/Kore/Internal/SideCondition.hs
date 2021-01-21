@@ -672,14 +672,14 @@ assumeDefined term =
                     definedMaps =
                         generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
-                 in definedElems <> definedMaps
+                 in foldMap assumeDefinedWorker definedElems <> definedMaps
             TermLike.InternalSet_ internalSet ->
                 let definedElems =
                         getDefinedElementsOfAc internalSet
                     definedSets =
                         generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
-                 in definedElems <> definedSets
+                 in foldMap assumeDefinedWorker definedElems <> definedSets
             TermLike.Equals_ _ _ _ _ -> asSet term'
             TermLike.Exists_ _ _ _ -> asSet term'
             TermLike.Floor_ _ _ _ -> asSet term'
