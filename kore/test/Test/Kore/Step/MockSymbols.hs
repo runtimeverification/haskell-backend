@@ -118,6 +118,7 @@ import qualified SMT.SimpleSMT as SMT
 
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , mkConfigVariable
     , mkRuleVariable
     )
 import qualified Test.ConsistentKore as ConsistentKore
@@ -710,13 +711,22 @@ pattern MockElementVariable base counter variableSort =
 
 type MockRewritingElementVariable = ElementVariable RewritingVariableName
 
-mkRewritingElementVariable
+mkRuleElementVariable
     :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
-mkRewritingElementVariable base counter variableSort =
+mkRuleElementVariable base counter variableSort =
     Variable
     { variableName =
         ElementVariableName
         $ mkRuleVariable VariableName { base, counter }
+    , variableSort
+    }
+mkConfigElementVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkConfigElementVariable base counter variableSort =
+    Variable
+    { variableName =
+        ElementVariableName
+        $ mkConfigVariable VariableName { base, counter }
     , variableSort
     }
 
@@ -740,8 +750,10 @@ var_z_1 :: MockElementVariable
 var_z_1 = MockElementVariable (testId "z") (Just (Element 1)) testSort
 x :: MockElementVariable
 x = MockElementVariable (testId "x") mempty testSort
-x' :: MockRewritingElementVariable
-x' = mkRewritingElementVariable (testId "x") mempty testSort
+xRule :: MockRewritingElementVariable
+xRule = mkRuleElementVariable (testId "x") mempty testSort
+xConfig :: MockRewritingElementVariable
+xConfig = mkConfigElementVariable (testId "x") mempty testSort
 setX :: MockSetVariable
 setX = MockSetVariable (testId "@x") mempty testSort
 var_setX_0 :: MockSetVariable
@@ -750,8 +762,10 @@ x0 :: MockElementVariable
 x0 = MockElementVariable (testId "x0") mempty testSort0
 y :: MockElementVariable
 y = MockElementVariable (testId "y") mempty testSort
-y' :: MockRewritingElementVariable
-y' = mkRewritingElementVariable (testId "x") mempty testSort
+yRule :: MockRewritingElementVariable
+yRule = mkRuleElementVariable (testId "x") mempty testSort
+yConfig :: MockRewritingElementVariable
+yConfig = mkConfigElementVariable (testId "y") mempty testSort
 setY :: MockSetVariable
 setY = MockSetVariable (testId "@y") mempty testSort
 z :: MockElementVariable
@@ -778,8 +792,10 @@ xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
-xMap' :: MockRewritingElementVariable
-xMap' = mkRewritingElementVariable (testId "xMap") mempty mapSort
+xMapRule :: MockRewritingElementVariable
+xMapRule = mkRuleElementVariable (testId "xMap") mempty mapSort
+xMapConfig :: MockRewritingElementVariable
+xMapConfig = mkConfigElementVariable (testId "xMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
