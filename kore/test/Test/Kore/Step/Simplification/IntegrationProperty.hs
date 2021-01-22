@@ -56,9 +56,12 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified SMT
 
-import Kore.Unparser
-import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
+import Kore.Unparser
 import Test.ConsistentKore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification

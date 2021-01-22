@@ -33,7 +33,9 @@ import Kore.Internal.TermLike
     ( TermLike
     , mkElemVar
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.OrPattern
 
 import qualified Test.Kore.Step.MockSymbols as Mock
