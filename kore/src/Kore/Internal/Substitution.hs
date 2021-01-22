@@ -711,6 +711,7 @@ orientSubstitution toLeft substitution =
                 & Map.map (TermLike.substitute newPair)
                 -- Insert Y = X pair.
                 & Map.insert newKey newValue
+                -- TODO: This might need to be reordered.
                 -- Apply X = T to the right-hand side of all pairs.
                 & Map.map
                     (TermLike.substitute (Map.singleton initialKey already))
