@@ -832,18 +832,34 @@ xMapConfig :: MockRewritingElementVariable
 xMapConfig = mkConfigElementVariable (testId "xMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
+xRuleSubSort :: MockRewritingElementVariable
+xRuleSubSort = mkRuleElementVariable (testId "xSubSort") mempty subSort
+xConfigSubSort :: MockRewritingElementVariable
+xConfigSubSort = mkConfigElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
 xSubSubSort =
     MockElementVariable (testId "xSubSubSort") mempty subSubsort
 xSubOtherSort :: MockElementVariable
 xSubOtherSort =
     MockElementVariable (testId "xSubOtherSort") mempty subOthersort
+xRuleSubOtherSort :: MockRewritingElementVariable
+xRuleSubOtherSort =
+    mkRuleElementVariable (testId "xSubOtherSort") mempty subOthersort
+xConfigSubOtherSort :: MockRewritingElementVariable
+xConfigSubOtherSort =
+    mkConfigElementVariable (testId "xSubOtherSort") mempty subOthersort
 xOtherSort :: MockElementVariable
 xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 xStringMetaSort :: MockSetVariable
 xStringMetaSort = MockSetVariable (testId "xStringMetaSort") mempty stringMetaSort
+xRuleStringMetaSort :: MockRewritingSetVariable
+xRuleStringMetaSort =
+    mkRuleSetVariable (testId "xStringMetaSort") mempty stringMetaSort
+xConfigStringMetaSort :: MockRewritingSetVariable
+xConfigStringMetaSort =
+    mkConfigSetVariable (testId "xStringMetaSort") mempty stringMetaSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =

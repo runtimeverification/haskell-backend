@@ -103,12 +103,16 @@ test_regressionGeneratedTerms =
                         (mkEquals
                             Mock.subSubsort
                             (mkCeil stringMetaSort
-                                (mkCeil Mock.boolSort (mkExists Mock.xSubOtherSort Mock.b))
+                                (mkCeil
+                                    Mock.boolSort
+                                    (mkExists Mock.xConfigSubOtherSort Mock.b)
+                                )
                             )
                             (mkNu
-                                Mock.xStringMetaSort
+                                Mock.xConfigStringMetaSort
                                 (mkForall
-                                    Mock.xSubSort (mkSetVar Mock.xStringMetaSort)
+                                    Mock.xConfigSubSort
+                                    (mkSetVar Mock.xConfigStringMetaSort)
                                 )
                             )
                         )
