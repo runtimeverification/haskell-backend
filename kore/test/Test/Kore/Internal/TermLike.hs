@@ -209,6 +209,34 @@ test_orientSubstitution =
                 , (Mock.u, mkElemVar Mock.t)
                 ]
         assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.x, mkElemVar Mock.y)
+                , (Mock.t, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.x, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys - negated" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.u)
+                , (Mock.x, mkElemVar Mock.u)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.u, mkElemVar Mock.x)
+                , (Mock.t, mkElemVar Mock.x)
+                ]
+        assertEqual "" expect (orientSubstitution (not . toLeft) subst)
     ]
   where
     mkSubsts = Map.fromList . map (Bifunctor.first (inject . variableName))
