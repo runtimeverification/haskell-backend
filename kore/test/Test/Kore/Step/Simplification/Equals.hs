@@ -46,6 +46,7 @@ import Kore.Step.Simplification.Equals
     , makeEvaluateTermsToPredicate
     , simplify
     )
+import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -287,7 +288,7 @@ test_equalsSimplification_Or_Pattern =
         let definedF = makeCeilPredicate Mock.cf
             definedG = makeCeilPredicate Mock.cg
             predicateSubstitution =
-                makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a
             definedGWithSubstitution =
                 makeAndPredicate
                     definedG
@@ -309,7 +310,7 @@ test_equalsSimplification_Or_Pattern =
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.x, Mock.a)]
+                            [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.ch
@@ -333,7 +334,7 @@ test_equalsSimplification_Or_Pattern =
                                 (makeEqualsPredicate Mock.cf Mock.ch)
                             ]
                         , substitution = Substitution.unsafeWrap
-                            [(inject Mock.x, Mock.a)]
+                            [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = mkTop_
@@ -607,9 +608,9 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(inject Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap [(inject Mock.xConfig, functionalOfA)]
                 }
-                (mkElemVar Mock.x)
+                (mkElemVar Mock.xConfig)
                 functionalOfA
         )
     , testCase "equals(functional, x) becomes a substitution"
@@ -618,10 +619,11 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(inject Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap
+                        [(inject Mock.xConfig, functionalOfA)]
                 }
                 functionalOfA
-                (mkElemVar Mock.x)
+                (mkElemVar Mock.xConfig)
         )
     , testCase "equals(x, function) becomes a substitution + ceil"
         (assertTermEquals
@@ -629,9 +631,9 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
                 , substitution =
-                    Substitution.unsafeWrap [(inject Mock.x, fOfA)]
+                    Substitution.unsafeWrap [(inject Mock.xConfig, fOfA)]
                 }
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
             fOfA
         )
     , testCase "equals(function, x) becomes a substitution + ceil"
@@ -640,20 +642,20 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
                 , substitution =
-                    Substitution.unsafeWrap [(inject Mock.x, fOfA)]
+                    Substitution.unsafeWrap [(inject Mock.xConfig, fOfA)]
                 }
             fOfA
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
         )
     , testCase "equals(x, constructor) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
                 , predicate =
-                    makeEqualsPredicate (mkElemVar Mock.x) constructor1OfA
+                    makeEqualsPredicate (mkElemVar Mock.xConfig) constructor1OfA
                 , substitution = mempty
                 }
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
             constructor1OfA
         )
     , testCase "equals(constructor, x) becomes a predicate"
@@ -661,31 +663,32 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate =
-                    makeEqualsPredicate constructor1OfA (mkElemVar Mock.x)
+                    makeEqualsPredicate constructor1OfA (mkElemVar Mock.xConfig)
                 , substitution = mempty
                 }
             constructor1OfA
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
         )
     , testCase "equals(x, something) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate = makeEqualsPredicate (mkElemVar Mock.x) plain1OfA
+                , predicate = makeEqualsPredicate (mkElemVar Mock.xConfig) plain1OfA
                 , substitution = mempty
                 }
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
             plain1OfA
         )
     , testCase "equals(something, x) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate = makeEqualsPredicate plain1OfA (mkElemVar Mock.x)
+                , predicate =
+                        makeEqualsPredicate plain1OfA (mkElemVar Mock.xConfig)
                 , substitution = mempty
                 }
             plain1OfA
-            (mkElemVar Mock.x)
+            (mkElemVar Mock.xConfig)
         )
     , testCase "equals(function, constructor) is not simplifiable"
         (assertTermEquals
@@ -704,16 +707,16 @@ test_equalsSimplification_TermLike =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution =
-                        Substitution.unsafeWrap [(inject Mock.x, Mock.b)]
+                        Substitution.unsafeWrap [(inject Mock.xConfig, Mock.b)]
                     }
                 (Mock.builtinMap [(Mock.a, Mock.b)])
-                (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
             )
         , testCase "concrete Map, different keys"
             (assertTermEquals
                 Condition.bottomCondition
                 (Mock.builtinMap [(Mock.a, Mock.b)])
-                (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
+                (Mock.builtinMap [(Mock.b, mkElemVar Mock.xConfig)])
             )
         , testCase "concrete Map with framed Map"
             (assertTermEqualsMulti
@@ -731,9 +734,9 @@ test_equalsSimplification_TermLike =
                                 (makeCeilPredicate
                                     (Mock.concatMap
                                         (Mock.builtinMap
-                                            [(Mock.a, mkElemVar Mock.x)]
+                                            [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
-                                        (mkElemVar Mock.m)
+                                        (mkElemVar Mock.mConfig)
                                     )
                                 )
                             )
@@ -747,15 +750,15 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, fOfA)
-                        , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (inject Mock.xConfig, fOfA)
+                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                    (mkElemVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
+                    (mkElemVar Mock.mConfig)
                 )
             )
         , testCase "concrete Map with framed Map"
@@ -773,9 +776,9 @@ test_equalsSimplification_TermLike =
                             (makeNotPredicate
                                 (makeCeilPredicate
                                     (Mock.concatMap
-                                        (mkElemVar Mock.m)
+                                        (mkElemVar Mock.mConfig)
                                         (Mock.builtinMap
-                                            [(Mock.a, mkElemVar Mock.x)]
+                                            [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                     )
                                 )
@@ -790,15 +793,15 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, fOfA)
-                        , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (inject Mock.xConfig, fOfA)
+                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
-                    (mkElemVar Mock.m)
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                    (mkElemVar Mock.mConfig)
+                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                 )
             )
         , testCase "framed Map with concrete Map"
@@ -817,9 +820,9 @@ test_equalsSimplification_TermLike =
                                 (makeCeilPredicate
                                     (Mock.concatMap
                                         (Mock.builtinMap
-                                            [(Mock.a, mkElemVar Mock.x)]
+                                            [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
-                                        (mkElemVar Mock.m)
+                                        (mkElemVar Mock.mConfig)
                                     )
                                 )
                             )
@@ -833,14 +836,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, fOfA)
-                        , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (inject Mock.xConfig, fOfA)
+                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 ]
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                    (mkElemVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
+                    (mkElemVar Mock.mConfig)
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
@@ -859,9 +862,9 @@ test_equalsSimplification_TermLike =
                             (makeNotPredicate
                                 (makeCeilPredicate
                                     (Mock.concatMap
-                                        (mkElemVar Mock.m)
+                                        (mkElemVar Mock.mConfig)
                                         (Mock.builtinMap
-                                            [(Mock.a, mkElemVar Mock.x)]
+                                            [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                     )
                                 )
@@ -876,14 +879,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, fOfA)
-                        , (inject Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (inject Mock.xConfig, fOfA)
+                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 ]
                 (Mock.concatMap
-                    (mkElemVar Mock.m)
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                    (mkElemVar Mock.mConfig)
+                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
@@ -919,7 +922,13 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let x = mkElementVariable "x" Mock.listSort
+            let x = --mkElementVariable "x" Mock.listSort
+                    Variable
+                        { variableName =
+                            ElementVariableName
+                                (mkConfigVariable $ mkVariableName "x")
+                        , variableSort = Mock.listSort
+                        }
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
@@ -955,8 +964,8 @@ test_equalsSimplification_TermLike =
 assertBidirectionalEqualityResult
     :: String
     -> String
-    -> OrPattern VariableName
-    -> Equals Sort (OrPattern VariableName)
+    -> OrPattern RewritingVariableName
+    -> Equals Sort (OrPattern RewritingVariableName)
     -> IO ()
 assertBidirectionalEqualityResult
     firstName
@@ -992,17 +1001,17 @@ assertBidirectionalEqualityResult
 
 assertTermEquals
     :: HasCallStack
-    => Condition VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    => Condition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO ()
 assertTermEquals = assertTermEqualsGeneric
 
 assertTermEqualsGeneric
     :: HasCallStack
-    => Condition VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    => Condition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Assertion
 assertTermEqualsGeneric expectPure =
     assertTermEqualsMultiGeneric [expectPure]
@@ -1010,17 +1019,17 @@ assertTermEqualsGeneric expectPure =
 
 assertTermEqualsMulti
     :: HasCallStack
-    => [Condition VariableName]
-    -> TermLike VariableName
-    -> TermLike VariableName
+    => [Condition RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO ()
 assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
 assertTermEqualsMultiGeneric
     :: HasCallStack
-    => [Condition VariableName]
-    -> TermLike VariableName
-    -> TermLike VariableName
+    => [Condition RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Assertion
 assertTermEqualsMultiGeneric expectPure first second = do
     let expectExpanded =
@@ -1037,7 +1046,8 @@ assertTermEqualsMultiGeneric expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern :: TermLike VariableName -> Pattern VariableName
+    termToPattern
+        :: TermLike RewritingVariableName -> Pattern RewritingVariableName
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -1046,7 +1056,8 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Condition VariableName -> Pattern VariableName
+    predSubstToPattern
+        :: Condition RewritingVariableName -> Pattern RewritingVariableName
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -1060,48 +1071,48 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , substitution = substitution
             }
 
-fOfA :: TermLike VariableName
+fOfA :: TermLike RewritingVariableName
 fOfA = Mock.f Mock.a
 
-fOfB :: TermLike VariableName
+fOfB :: TermLike RewritingVariableName
 fOfB = Mock.f Mock.b
 
-gOfA :: TermLike VariableName
+gOfA :: TermLike RewritingVariableName
 gOfA = Mock.g Mock.a
 
-gOfB :: TermLike VariableName
+gOfB :: TermLike RewritingVariableName
 gOfB = Mock.g Mock.b
 
-hOfA :: TermLike VariableName
+hOfA :: TermLike RewritingVariableName
 hOfA = Mock.h Mock.a
 
-hOfB :: TermLike VariableName
+hOfB :: TermLike RewritingVariableName
 hOfB = Mock.h Mock.b
 
-functionalOfA :: TermLike VariableName
+functionalOfA :: TermLike RewritingVariableName
 functionalOfA = Mock.functional10 Mock.a
 
-constructor1OfA :: TermLike VariableName
+constructor1OfA :: TermLike RewritingVariableName
 constructor1OfA = Mock.constr10 Mock.a
 
-constructor2OfA :: TermLike VariableName
+constructor2OfA :: TermLike RewritingVariableName
 constructor2OfA = Mock.constr11 Mock.a
 
-functionalConstructor1OfA :: TermLike VariableName
+functionalConstructor1OfA :: TermLike RewritingVariableName
 functionalConstructor1OfA = Mock.functionalConstr10 Mock.a
 
-functionalConstructor2OfA :: TermLike VariableName
+functionalConstructor2OfA :: TermLike RewritingVariableName
 functionalConstructor2OfA = Mock.functionalConstr11 Mock.a
 
-plain1OfA :: TermLike VariableName
+plain1OfA :: TermLike RewritingVariableName
 plain1OfA = Mock.plain10 Mock.a
 
 testSort :: Sort
 testSort = Mock.testSort
 
 evaluateOr
-    :: Equals Sort (OrPattern VariableName)
-    -> IO (OrPattern VariableName)
+    :: Equals Sort (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluateOr =
     runSimplifier mockEnv
     . simplify SideCondition.top
@@ -1110,9 +1121,9 @@ evaluateOr =
     mockEnv = Mock.env
 
 evaluate
-    :: Pattern VariableName
-    -> Pattern VariableName
-    -> IO (OrPattern VariableName)
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 evaluate first second =
     runSimplifier mockEnv
     $ makeEvaluate
@@ -1123,9 +1134,9 @@ evaluate first second =
     mockEnv = Mock.env
 
 evaluateTermsGeneric
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> IO (OrCondition VariableName)
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO (OrCondition RewritingVariableName)
 evaluateTermsGeneric first second =
     runSimplifier mockEnv
     $ makeEvaluateTermsToPredicate
