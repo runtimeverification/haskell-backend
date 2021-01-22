@@ -37,7 +37,9 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.SourceLocation
     ( SourceLocation (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     )

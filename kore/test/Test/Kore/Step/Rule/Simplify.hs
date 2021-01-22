@@ -54,8 +54,9 @@ import Kore.Reachability
     , simplify
     )
 import Kore.Rewriting.RewritingVariable
-    (mkRuleVariable,  RewritingVariableName
+    ( RewritingVariableName
     , getRewritingVariable
+    , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
     ( ClaimPattern (..)

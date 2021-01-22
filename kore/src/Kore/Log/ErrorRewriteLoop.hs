@@ -26,7 +26,9 @@ import GHC.Stack
 import Kore.Attribute.Axiom
     ( Axiom (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( RewriteRule
     , RulePattern (..)

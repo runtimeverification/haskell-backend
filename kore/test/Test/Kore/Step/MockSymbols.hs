@@ -760,7 +760,7 @@ mkConfigSetVariable base counter variableSort =
         SetVariableName
         $ mkConfigVariable VariableName { base, counter }
     , variableSort
-    }    
+    }
 
 var_x_0 :: MockElementVariable
 var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
