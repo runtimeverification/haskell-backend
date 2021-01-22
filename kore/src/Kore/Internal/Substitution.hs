@@ -691,15 +691,15 @@ orientSubstitution toLeft substitution =
     go substitutionInProgress initialPair@(initialKey, _)
       | Just (newKey, newValue) <- retractReorderedPair initialPair =
         -- Re-orienting X = Y as Y = X.
-        case Map.lookup newKey substitutionInProgress of
+        let newPair = Map.singleton newKey newValue
+        in case Map.lookup newKey substitutionInProgress of
             Nothing ->
                 -- There is no other Y = X substitution in the map.
                 substitutionInProgress
                 -- Remove X = Y pair.
                 & Map.delete initialKey
                 -- Apply Y = X to the right-hand side of all pairs.
-                & Map.map
-                    (TermLike.substitute (Map.singleton newKey newValue))
+                & Map.map (TermLike.substitute newPair)
                 -- Insert Y = X pair.
                 & Map.insert newKey newValue
             Just already ->
@@ -708,8 +708,7 @@ orientSubstitution toLeft substitution =
                 -- Remove Y = T.
                 & Map.delete newKey
                 -- Apply Y = X to the right-hand side of all pairs.
-                & Map.map
-                    (TermLike.substitute (Map.singleton newKey newValue))
+                & Map.map (TermLike.substitute newPair)
                 -- Insert Y = X pair.
                 & Map.insert newKey newValue
                 -- Apply X = T to the right-hand side of all pairs.
