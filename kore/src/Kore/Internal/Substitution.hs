@@ -689,52 +689,54 @@ orientSubstitution toLeft substitution =
     foldl' go substitution $ Map.toList substitution
   where
     go substitutionInProgress initialPair@(initialKey, _)
-      | ordered initialPair = substitutionInProgress
-      | otherwise =
-        let (newKey, newValue) = swapVars initialPair
-        in
-            case Map.lookup newKey substitutionInProgress of
-                Nothing ->
-                    substitutionInProgress
-                    & Map.delete initialKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                Just already ->
-                    substitutionInProgress
-                    & Map.delete newKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                    & Map.map
-                        (TermLike.substitute (Map.singleton initialKey already))
-                    & Map.insert initialKey already
+      | Just (newKey, newValue) <- retractReorderedPair initialPair =
+        -- Re-orienting X = Y as Y = X.
+        case Map.lookup newKey substitutionInProgress of
+            Nothing ->
+                -- There is no other Y = X substitution in the map.
+                substitutionInProgress
+                -- Remove X = Y pair.
+                & Map.delete initialKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map
+                    (TermLike.substitute (Map.singleton newKey newValue))
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+            Just already ->
+                -- There is a substitution Y = T in the map.
+                substitutionInProgress
+                -- Remove Y = T.
+                & Map.delete newKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map
+                    (TermLike.substitute (Map.singleton newKey newValue))
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+                -- Apply X = T to the right-hand side of all pairs.
+                & Map.map
+                    (TermLike.substitute (Map.singleton initialKey already))
+                -- Insert X = T pair.
+                & Map.insert initialKey already
+      | otherwise = substitutionInProgress
 
-    swapVars
+    retractReorderedPair
         :: (SomeVariableName variable, TermLike variable)
-        -> (SomeVariableName variable, TermLike variable)
-    swapVars ( xName, TermLike.Var_ (Variable yName ySort) ) =
-        (yName, mkVar $ Variable xName ySort)
-    swapVars subst = subst
+        -> Maybe (SomeVariableName variable, TermLike variable)
+    retractReorderedPair (xName, TermLike.Var_ (Variable yName ySort))
+      | isSameMultiplicity xName yName
+      , toLeft yName
+      , not (toLeft xName)
+      = Just (yName, TermLike.mkVar (Variable xName ySort))
+    retractReorderedPair _ = Nothing
 
-    ordered
-        :: (SomeVariableName variable, TermLike variable)
+    isSameMultiplicity
+        :: SomeVariableName variable
+        -> SomeVariableName variable
         -> Bool
-    ordered
-        ( xName, TermLike.Var_ y@(Variable yName _) )
-
-        | SomeVariableNameElement _ <- xName
-        , Just _ <- retractElementVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-
-        | SomeVariableNameSet _ <- xName
-        , Just _ <- retractSetVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-    ordered _ = True
+    isSameMultiplicity x y
+      | SomeVariableNameElement _ <- x, SomeVariableNameElement _ <- y = True
+      | SomeVariableNameSet     _ <- x, SomeVariableNameSet     _ <- y = True
+      | otherwise = False
 
 {- | The result of /normalizing/ a substitution.
 
