@@ -12,6 +12,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
 import Kore.Sort
+import Kore.Syntax.Application
 
 import Test.Kore
     ( Gen
@@ -50,6 +51,9 @@ symbolAttributeGen =
         <*> klabelAttributeGen
         <*> symbolKywdAttributeGen
         <*> noEvaluatorsAttributeGen
+        <*> unitHookAttributeGen
+        <*> elementHookAttributeGen
+        <*> concatHookAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -89,3 +93,12 @@ symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
 
 noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
 noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
+
+unitHookAttributeGen :: Gen (Attribute.Unit SymbolOrAlias)
+unitHookAttributeGen = pure Default.def
+
+elementHookAttributeGen :: Gen (Attribute.Element SymbolOrAlias)
+elementHookAttributeGen = pure Default.def
+
+concatHookAttributeGen :: Gen (Attribute.Concat SymbolOrAlias)
+concatHookAttributeGen = pure Default.def

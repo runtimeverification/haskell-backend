@@ -76,7 +76,7 @@ import Kore.Variables.Fresh
     )
 
 type BuiltinAssocComm normalized variable =
-    InternalAc (TermLike Concrete) normalized (TermLike variable)
+    InternalAc normalized (TermLike Concrete) (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable

@@ -53,6 +53,9 @@ module Kore.Attribute.Symbol
     , NoEvaluators (..)
     , noEvaluatorsAttribute
     -- * Derived attributes
+    , Unit (..)
+    , Element (..)
+    , Concat (..)
     , isConstructorLike
     , isFunctional
     , isFunction
@@ -84,6 +87,7 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Parser
     ( Attributes
     , ParseAttributes (..)
+    , SymbolOrAlias (..)
     )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
@@ -125,9 +129,9 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
-    , unitHook      :: !Unit
-    , concatHook    :: !Concat
-    , elementHook   :: !Element
+    , unitHook      :: !(Unit SymbolOrAlias)
+    , elementHook   :: !(Element SymbolOrAlias)
+    , concatHook    :: !(Concat SymbolOrAlias)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -154,9 +158,9 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
-        >=> typed @Unit (parseAttribute attr)
-        >=> typed @Concat (parseAttribute attr)
-        >=> typed @Element (parseAttribute attr)
+        >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -175,8 +179,8 @@ instance From Symbol Attributes where
             , from . symbolKywd
             , from . noEvaluators
             , from . unitHook
-            , from . concatHook
             , from . elementHook
+            , from . concatHook
             ]
 
 type StepperAttributes = Symbol
@@ -198,8 +202,8 @@ defaultSymbolAttributes =
         , symbolKywd    = def
         , noEvaluators  = def
         , unitHook      = def
-        , concatHook    = def
         , elementHook   = def
+        , concatHook    = def
         }
 
 -- | See also: 'defaultSymbolAttributes'

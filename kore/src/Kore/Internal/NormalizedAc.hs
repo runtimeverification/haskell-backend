@@ -12,6 +12,7 @@ module Kore.Internal.NormalizedAc
     , NormalizedAc (..)
     , nullAc
     , emptyNormalizedAc
+    , emptyInternalAc
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
     , lookupSymbolicKeyOfAc
@@ -39,6 +40,7 @@ import qualified Control.Lens as Lens
 import Control.Lens.Iso
     ( Iso'
     )
+import Data.Default
 import Data.Kind
     ( Type
     )
@@ -49,9 +51,12 @@ import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Concat as Att
+import qualified Kore.Attribute.Element as Att
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
+import qualified Kore.Attribute.Unit as Att
 import Kore.Debug
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
@@ -117,7 +122,7 @@ wrapConcreteElement
 wrapConcreteElement = from
 
 unparsedChildren
-    :: forall ann child key normalized
+    :: forall ann child normalized key
     .  AcWrapper normalized
     => Symbol
     -> (key -> Pretty.Doc ann)
@@ -351,7 +356,7 @@ instance
     )
     => Diff (NormalizedAc collection key child)
 
-emptyNormalizedAc :: NormalizedAc key valueWrapper child
+emptyNormalizedAc :: NormalizedAc valueWrapper key child
 emptyNormalizedAc = NormalizedAc
     { elementsWithVariables = []
     , concreteElements = Map.empty
@@ -359,7 +364,7 @@ emptyNormalizedAc = NormalizedAc
     }
 
 asSingleOpaqueElem
-    :: NormalizedAc key valueWrapper child
+    :: NormalizedAc valueWrapper key child
     -> Maybe child
 asSingleOpaqueElem
     NormalizedAc
@@ -374,15 +379,14 @@ asSingleOpaqueElem
       Just singleOpaqueElem
     | otherwise =  Nothing
 
--- TODO (thomas.tuegel): Change order of parameters.
 {- | Internal representation of associative-commutative builtin terms.
 -}
-data InternalAc key (normalized :: Type -> Type -> Type) child =
+data InternalAc (normalized :: Type -> Type -> Type) key child =
     InternalAc
         { builtinAcSort :: !Sort
-        , builtinAcUnit :: !Symbol
-        , builtinAcElement :: !Symbol
-        , builtinAcConcat :: !Symbol
+        , builtinAcUnit :: !(Att.Unit Symbol)
+        , builtinAcElement :: !(Att.Element Symbol)
+        , builtinAcConcat :: !(Att.Concat Symbol)
         , builtinAcChild :: normalized key child
         }
     deriving (Eq, Ord, Show)
@@ -391,7 +395,7 @@ data InternalAc key (normalized :: Type -> Type -> Type) child =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Hashable (normalized key child)
-    => Hashable (InternalAc key normalized child)
+    => Hashable (InternalAc normalized key child)
   where
     hashWithSalt salt builtin =
         hashWithSalt salt builtinAcChild
@@ -399,24 +403,42 @@ instance Hashable (normalized key child)
         InternalAc { builtinAcChild } = builtin
 
 instance (NFData (normalized key child))
-    => NFData (InternalAc key normalized child)
+    => NFData (InternalAc normalized key child)
 
 instance (Debug (normalized key child))
-    => Debug (InternalAc key normalized child)
+    => Debug (InternalAc normalized key child)
 
 instance
     (Debug (normalized key child), Diff (normalized key child))
-    => Diff (InternalAc key normalized child)
+    => Diff (InternalAc normalized key child)
+
+emptyInternalAc
+    :: (AcWrapper normalized)
+    => Sort
+    -> InternalAc normalized key child
+emptyInternalAc sort = InternalAc
+    { builtinAcSort = sort
+    , builtinAcUnit = def
+    , builtinAcElement = def
+    , builtinAcConcat = def
+    , builtinAcChild = wrapAc emptyNormalizedAc
+    }
 
 unparseInternalAc
     :: (AcWrapper normalized)
     => (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
-    -> InternalAc key normalized child
+    -> InternalAc normalized key child
     -> Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
-    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat)
-    $ unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
+    unparseConcat'
+        (unparse $ Att.fromUnit builtinAcUnit)
+        (unparse $ Att.fromConcat builtinAcConcat)
+    $ unparsedChildren
+        (Att.fromElement builtinAcElement)
+        keyUnparser
+        childUnparser
+        builtinAcChild
   where
     InternalAc { builtinAcChild } = builtinAc
     InternalAc { builtinAcUnit } = builtinAc

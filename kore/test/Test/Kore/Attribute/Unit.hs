@@ -1,4 +1,4 @@
-module Test.Kore.Attribute.Sort.Unit
+module Test.Kore.Attribute.Unit
     ( test_Unit
     , test_Attributes
     , test_duplicate
@@ -18,13 +18,13 @@ import Kore.Syntax.Pattern
 
 import Test.Kore.Attribute.Parser
 
-parseUnit :: Attributes -> Parser Unit
+parseUnit :: Attributes -> Parser (Unit SymbolOrAlias)
 parseUnit = parseAttributes
 
 test_Unit :: TestTree
 test_Unit =
     testCase "[unit{}(unit{}())] :: Unit"
-    $ expectSuccess Unit { getUnit = Just unitSymbol }
+    $ expectSuccess (toUnit unitSymbol)
     $ parseUnit $ Attributes [ unitAttribute unitSymbol ]
 
 test_Attributes :: TestTree

@@ -8,8 +8,6 @@ License     : NCSA
 
 module Kore.Builtin.AssocComm.AssocComm
     ( asTermLike
-    , UnitSymbol(..)
-    , ConcatSymbol(..)
     , ConcreteElements (..)
     , VariableElements (..)
     , Opaque (..)
@@ -19,6 +17,8 @@ import Prelude.Kore
 
 import qualified Data.List as List
 
+import Kore.Attribute.Concat
+import Kore.Attribute.Unit
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -54,10 +54,10 @@ deriving instance
     => Show (NormalizedOrBottom collection variable)
 
 -- | Wrapper for giving names to arguments.
-newtype UnitSymbol = UnitSymbol {getUnitSymbol :: Symbol}
+-- newtype UnitSymbol = UnitSymbol {getUnitSymbol :: Symbol}
 
 -- | Wrapper for giving names to arguments.
-newtype ConcatSymbol = ConcatSymbol {getConcatSymbol :: Symbol}
+-- newtype ConcatSymbol = ConcatSymbol {getConcatSymbol :: Symbol}
 
 -- | Wrapper for giving names to arguments.
 newtype ConcreteElements variable =
@@ -76,15 +76,15 @@ newtype Opaque variable =
 asTermLike
     :: forall variable
     .  InternalVariable variable
-    => UnitSymbol
-    -> ConcatSymbol
+    => Unit Symbol
+    -> Concat Symbol
     -> ConcreteElements variable
     -> VariableElements variable
     -> Opaque variable
     -> TermLike variable
 asTermLike
-    (UnitSymbol unitSymbol)
-    (ConcatSymbol concatSymbol)
+    unitSym
+    concatSym
     (ConcreteElements concreteElements)
     (VariableElements variableElements)
     (Opaque opaque)
@@ -92,7 +92,7 @@ asTermLike
     case splitLastInit concreteElements of
         Nothing -> case splitLastInit opaque of
             Nothing -> case splitLastInit variableElements of
-                Nothing -> mkApplySymbol unitSymbol []
+                Nothing -> mkApplySymbol (fromUnit unitSym) []
                 Just (ves, ve) -> addTerms ves ve
             Just (opaqs, opaq) ->
                 addTerms variableElements (addTerms opaqs opaq)
@@ -105,7 +105,7 @@ asTermLike
     addTerms terms term = List.foldr concat' term terms
 
     concat' :: TermLike variable -> TermLike variable -> TermLike variable
-    concat' map1 map2 = mkApplySymbol concatSymbol [map1, map2]
+    concat' map1 map2 = mkApplySymbol (fromConcat concatSym) [map1, map2]
 
 splitLastInit :: [a] -> Maybe ([a], a)
 splitLastInit [] = Nothing

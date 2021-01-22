@@ -138,5 +138,5 @@ test_instance_Synthetic =
 
     asSetBuiltin
         :: NormalizedAc NormalizedSet (TermLike Concrete) Functional
-        -> InternalAc (TermLike Concrete) NormalizedSet Functional
+        -> InternalAc NormalizedSet (TermLike Concrete) Functional
     asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

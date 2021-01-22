@@ -10,6 +10,9 @@ import Test.Tasty
 
 import qualified Data.Map.Strict as Map
 
+import Kore.Attribute.Concat
+import Kore.Attribute.Element
+import Kore.Attribute.Unit
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
 import Kore.Internal.OrPattern
@@ -105,9 +108,9 @@ mkMapAux
 mkMapAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.mapSort
-        , builtinAcUnit = Mock.unitMapSymbol
-        , builtinAcElement = Mock.elementMapSymbol
-        , builtinAcConcat = Mock.concatMapSymbol
+        , builtinAcUnit = toUnit Mock.unitMapSymbol
+        , builtinAcElement = toElement Mock.elementMapSymbol
+        , builtinAcConcat = toConcat Mock.concatMapSymbol
         , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = MapElement <$> elements
             , concreteElements = MapValue <$> Map.fromList concreteElements

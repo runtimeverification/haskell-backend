@@ -59,11 +59,20 @@ import qualified Data.Reflection as Reflection
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Concat as Att hiding
+    ( concatSymbol
+    )
+import qualified Kore.Attribute.Element as Att hiding
+    ( elementSymbol
+    )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
     )
 import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
+    ( Symbol (..)
+    )
+import qualified Kore.Attribute.Unit as Att hiding
+    ( unitSymbol
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
@@ -92,7 +101,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.Symbol
-    ( Symbol
+    ( Symbol (..)
+    , toSymbolOrAlias
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -108,6 +118,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
+    , sameSort
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Variable
@@ -140,7 +151,7 @@ class
         :: SmtMetadataTools Attribute.Symbol
         -> Sort
         -> normalized (TermLike Concrete) child
-        -> InternalAc (TermLike Concrete) normalized child
+        -> InternalAc normalized (TermLike Concrete) child
 
     -- TODO (thomas.tuegel): Use From.
     {- | Render a normalized value (e.g. 'NormalizedSet') as a 'TermLike'.
@@ -192,9 +203,9 @@ instance TermWrapper NormalizedMap where
     asInternalBuiltin tools builtinAcSort builtinAcChild =
         InternalAc
             { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcUnit = Att.toUnit $ Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Att.toElement $ Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Att.toConcat $ Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
 
@@ -255,6 +266,96 @@ instance TermWrapper NormalizedMap where
 
     simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
+
+toNormalizedInternalMap
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+toNormalizedInternalMap termLike =
+    case toNormalizedInternalMapWorker termLike of
+        Just internal
+          | InternalAc { builtinAcChild } <- internal
+          , NormalizedMap { getNormalizedMap } <- builtinAcChild
+          , Just singleOpaqueTerm <- asSingleOpaqueElem getNormalizedMap
+            -> singleOpaqueTerm
+          | otherwise -> TermLike.mkInternalMap internal
+        Nothing -> TermLike.mkBottom (termLikeSort termLike)
+  where
+    toNormalizedInternalMapWorker
+        :: HasCallStack
+        => InternalVariable variable
+        => TermLike variable
+        -> Maybe (InternalMap (TermLike Concrete) (TermLike variable))
+    toNormalizedInternalMapWorker (InternalMap_ internal) =
+        setAsChild <$> renormalize builtinAcChild
+      where
+        InternalAc { builtinAcChild } = internal
+        setAsChild renormalized = internal {builtinAcChild = renormalized}
+    toNormalizedInternalMapWorker term@(App_ symbol args)
+      | Map.isSymbolUnit symbol =
+        case args of
+            [] -> Just (emptyInternalAc (termLikeSort term))
+                { builtinAcUnit = Att.toUnit symbol
+                }
+            _ -> Builtin.wrongArity "MAP.unit"
+      | Map.isSymbolElement symbol =
+        case args of
+            [key, value] ->
+                Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+                { builtinAcElement = Att.toElement symbol
+                , builtinAcChild = wrapAc $ case Builtin.toKey key of
+                    Just key' -> emptyNormalizedAc
+                        { concreteElements =
+                            Map.singleton key' (MapValue value)
+                        }
+                    _ -> emptyNormalizedAc
+                        { elementsWithVariables = [MapElement (key, value)]
+                        }
+                }
+            _ -> Builtin.wrongArity "MAP.element"
+      | Map.isSymbolConcat symbol =
+        case args of
+            [map1, map2] -> do
+                internal1 <- toNormalizedInternalMapWorker map1
+                internal2 <- toNormalizedInternalMapWorker map2
+                normalized <- concatNormalized
+                    (builtinAcChild internal1)
+                    (builtinAcChild internal2)
+                let internal = InternalAc
+                        { builtinAcSort = sameSort
+                            (builtinAcSort internal1)
+                            (builtinAcSort internal2)
+                        , builtinAcUnit = Att.mergeUnit
+                            (builtinAcUnit internal1)
+                            (builtinAcUnit internal2)
+                        , builtinAcElement = Att.mergeElement
+                            (builtinAcElement internal1)
+                            (builtinAcElement internal2)
+                        , builtinAcConcat = Att.mergeConcat
+                            ( Att.mergeConcat
+                                (builtinAcConcat internal1)
+                                (builtinAcConcat internal2)
+                            )
+                            (Att.toConcat symbol)
+                        , builtinAcChild = normalized
+                        }
+                    !_unitMatch = Att.mergeUnit
+                        (toSymbolOrAlias <$> builtinAcUnit internal)
+                        (Attribute.unitHook $ symbolAttributes symbol)
+                    !_elementMatch = Att.mergeElement
+                        (toSymbolOrAlias <$> builtinAcElement internal)
+                        (Attribute.elementHook $ symbolAttributes symbol)
+                return internal
+            _ -> Builtin.wrongArity "MAP.concat"
+    toNormalizedInternalMapWorker (Defined_ child) =
+        toNormalizedInternalMapWorker child
+    toNormalizedInternalMapWorker term =
+        Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+            { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+            }
+
+
 instance TermWrapper NormalizedSet where
     {- | Render a 'NormalizedSet' as an 'InternalAc'.
 
@@ -263,9 +364,12 @@ instance TermWrapper NormalizedSet where
     asInternalBuiltin tools builtinAcSort builtinAcChild =
         InternalAc
             { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcUnit = Att.toUnit
+                $ Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Att.toElement
+                $ Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Att.toConcat
+                $ Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
 
@@ -731,8 +835,8 @@ unifyEqualsNormalized
     -> TermLike variable
     -> TermLike variable
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> InternalAc (TermLike Concrete) normalized (TermLike variable)
-    -> InternalAc (TermLike Concrete) normalized (TermLike variable)
+    -> InternalAc normalized (TermLike Concrete) (TermLike variable)
+    -> InternalAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT unifier (Pattern variable)
 unifyEqualsNormalized
     tools
@@ -1147,7 +1251,7 @@ addAllDisjoint bottomWithExplanation existing elements =
         Just result -> return result
 
 unifyCommonElements
-    :: forall key normalized unifier variable
+    :: forall normalized key unifier variable
     .   ( AcWrapper normalized
         , MonadUnify unifier
         , InternalVariable variable

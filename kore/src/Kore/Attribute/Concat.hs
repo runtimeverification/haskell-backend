@@ -8,6 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Concat
     ( Concat (..)
+    , mergeConcat, toConcat, fromConcat
     , concatId, concatSymbol, concatAttribute
     ) where
 
@@ -18,27 +19,35 @@ import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser
 import Kore.Debug
+import Kore.Unparser
 
 -- | @Concat@ represents the @concat@ attribute.
-newtype Concat = Concat { getConcat :: Maybe SymbolOrAlias }
+newtype Concat symbol = Concat { getConcat :: Maybe symbol }
     deriving (Generic, Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Semigroup Concat where
-    (<>) a@(Concat (Just _)) _ = a
-    (<>) _                     b = b
+mergeConcat :: (Eq symbol , Unparse symbol)
+    => Concat symbol -> Concat symbol -> Concat symbol
+mergeConcat (Concat Nothing) b = b
+mergeConcat a (Concat Nothing) = a
+mergeConcat a@(Concat (Just aSymbol)) (Concat (Just bSymbol))
+      | aSymbol == bSymbol = a
+      | otherwise = error $
+        "Concat symbol mismatch error! Foun both "
+        ++ unparseToString aSymbol
+        ++ " and "
+        ++ unparseToString bSymbol
+        ++ " inside term."
 
-instance Monoid Concat where
-    mempty = Concat { getConcat = Nothing }
+instance Default (Concat symbol) where
+    def = Concat { getConcat = Nothing }
 
-instance Default Concat where
-    def = mempty
+instance NFData symbol => NFData (Concat symbol)
 
-instance NFData Concat
-
-instance ParseAttributes Concat where
+instance ParseAttributes (Concat SymbolOrAlias) where
     parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Concat { getConcat }
@@ -51,11 +60,18 @@ instance ParseAttributes Concat where
         withApplication' = withApplication concatId
         failDuplicate' = failDuplicate concatId
 
-instance From Concat Attributes where
+instance From (Concat SymbolOrAlias) Attributes where
     from =
         maybe def toAttribute . getConcat
       where
         toAttribute = from @AttributePattern . concatAttribute
+
+toConcat :: symbol -> Concat symbol
+toConcat sym = Concat { getConcat = Just sym }
+
+fromConcat :: Concat symbol -> symbol
+fromConcat Concat {getConcat = Just sym} = sym
+fromConcat _ = error "There is no concat symbol to extract"
 
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id

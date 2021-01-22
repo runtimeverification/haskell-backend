@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 59860e708a0a03b2d8b6c3d00bc16959b0737bb4e1b44ab499ce43142b4d2e63
+-- hash: 9c365955f7ea8ef709084c67c86d17f54f657c527ff917745515c0c91beac3cb
 
 name:           kore
 version:        0.37.0.0
@@ -914,7 +914,6 @@ test-suite kore-test
       Test.Kore.Attribute.Smtlib
       Test.Kore.Attribute.Sort.ConstructorsBuilder
       Test.Kore.Attribute.Sort.HasDomainValues
-      Test.Kore.Attribute.Sort.Unit
       Test.Kore.Attribute.SortInjection
       Test.Kore.Attribute.Subsort
       Test.Kore.Attribute.Symbol
@@ -925,6 +924,7 @@ test-suite kore-test
       Test.Kore.Attribute.Symbol.SymbolKywd
       Test.Kore.Attribute.Trusted
       Test.Kore.Attribute.UniqueId
+      Test.Kore.Attribute.Unit
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier

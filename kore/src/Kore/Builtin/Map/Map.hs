@@ -50,8 +50,14 @@ import Data.String
     ( IsString
     )
 
+import Kore.Attribute.Element hiding
+    ( elementSymbol
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
+    )
+import Kore.Attribute.Unit hiding
+    ( unitSymbol
     )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
@@ -227,8 +233,8 @@ asTermLike
     -> TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
-        (AssocComm.UnitSymbol unitSymbol)
-        (AssocComm.ConcatSymbol concatSymbol)
+        unitSymbol
+        concatSymbol
         (AssocComm.ConcreteElements
             (map concreteElement (Map.toAscList concreteElements))
         )
@@ -243,7 +249,7 @@ asTermLike builtin =
     isEmptyMap :: TermLike variable -> Bool
     isEmptyMap (InternalMap_ InternalAc { builtinAcChild = wrappedChild }) =
         unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = unitSymbol == symbol
+    isEmptyMap (App_ symbol _) = unitSymbol == toUnit symbol
     isEmptyMap _ = False
 
     InternalAc { builtinAcChild } = builtin
@@ -266,4 +272,4 @@ asTermLike builtin =
         :: (TermLike variable, MapValue (TermLike variable))
         -> TermLike variable
     element (key, MapValue value) =
-        mkApplySymbol elementSymbol [key, value]
+        mkApplySymbol (fromElement elementSymbol) [key, value]

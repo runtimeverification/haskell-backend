@@ -8,6 +8,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Unit
     ( Unit (..)
+    , mergeUnit, toUnit, fromUnit
     , unitId, unitSymbol, unitAttribute
     ) where
 
@@ -18,27 +19,35 @@ import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser
 import Kore.Debug
+import Kore.Unparser
 
 -- | @Unit@ represents the @unit@ attribute.
-newtype Unit = Unit { getUnit :: Maybe SymbolOrAlias }
+newtype Unit symbol = Unit { getUnit :: Maybe symbol }
     deriving (Generic, Eq, Ord, Show)
+    deriving (Foldable, Functor, Traversable)
     deriving anyclass (Hashable)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Semigroup Unit where
-    (<>) a@(Unit (Just _)) _ = a
-    (<>) _                     b = b
+mergeUnit :: (Eq symbol , Unparse symbol)
+    => Unit symbol -> Unit symbol -> Unit symbol
+mergeUnit (Unit Nothing) b = b
+mergeUnit a (Unit Nothing) = a
+mergeUnit a@(Unit (Just aSymbol)) (Unit (Just bSymbol))
+      | aSymbol == bSymbol = a
+      | otherwise = error $
+        "Unit symbol mismatch error! Foun both "
+        ++ unparseToString aSymbol
+        ++ " and "
+        ++ unparseToString bSymbol
+        ++ " inside term."
 
-instance Monoid Unit where
-    mempty = Unit { getUnit = Nothing }
+instance Default (Unit symbol) where
+    def = Unit { getUnit = Nothing }
 
-instance Default Unit where
-    def = mempty
+instance NFData symbol => NFData (Unit symbol)
 
-instance NFData Unit
-
-instance ParseAttributes Unit where
+instance ParseAttributes (Unit SymbolOrAlias) where
     parseAttribute = withApplication' parseApplication
       where
         parseApplication params args Unit { getUnit }
@@ -51,11 +60,18 @@ instance ParseAttributes Unit where
         withApplication' = withApplication unitId
         failDuplicate' = failDuplicate unitId
 
-instance From Unit Attributes where
+instance From (Unit SymbolOrAlias) Attributes where
     from =
         maybe def toAttribute . getUnit
       where
         toAttribute = from @AttributePattern . unitAttribute
+
+toUnit :: symbol -> Unit symbol
+toUnit sym = Unit { getUnit = Just sym }
+
+fromUnit :: Unit symbol -> symbol
+fromUnit Unit {getUnit = Just sym} = sym
+fromUnit _ = error "There is no unit symbol to extract"
 
 -- | Kore identifier representing the @unit@ attribute symbol.
 unitId :: Id
