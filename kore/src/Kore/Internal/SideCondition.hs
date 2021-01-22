@@ -68,9 +68,7 @@ import Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
-    )
-import Kore.Internal.Predicate
-    ( pattern PredicateEquals
+    , pattern PredicateEquals
     , pattern PredicateExists
     , pattern PredicateForall
     , pattern PredicateNot
