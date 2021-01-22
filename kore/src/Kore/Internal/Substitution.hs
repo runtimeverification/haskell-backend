@@ -711,8 +711,19 @@ orientSubstitution toLeft substitution =
                 & Map.map (TermLike.substitute newPair)
                 -- Insert Y = X pair.
                 & Map.insert newKey newValue
-                -- TODO: This might need to be reordered.
-                -- Apply X = T to the right-hand side of all pairs.
+                -- Apply X = T to the right-hand side of all pairs. This
+                -- substitution never needs to be reoriented, but the reason why
+                -- is subtle:
+                -- 1. The Y = T substitution came from another swapped pair. It
+                --    was not present in the original substitution: the original
+                --    substitution was normalized, and the substitution we are
+                --    reorienting now had Y on the right-hand side, so Y was not
+                --    on the left-hand side of any pair in the original
+                --    subsitution.
+                -- 2. If Y = T came from another swapped pair, then T is not a
+                --    preferred variable.
+                -- 3. We just checked that X is not a preferred variable.
+                -- 4. Therefore, X = T is a valid orientation.
                 & Map.map
                     (TermLike.substitute (Map.singleton initialKey already))
                 -- Insert X = T pair.
