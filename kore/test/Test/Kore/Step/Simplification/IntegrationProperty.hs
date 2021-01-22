@@ -57,6 +57,8 @@ import Kore.Step.Simplification.Simplify
 import qualified SMT
 
 import Kore.Unparser
+import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
+import qualified Kore.Internal.TermLike as TermLike
 import Test.ConsistentKore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -69,10 +71,11 @@ test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
+        let term' = TermLike.mapVariables (pure mkConfigVariable) term
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString term, " ***** "]
         simplified <- catch
-            (evaluateT (Pattern.fromTermLike term))
+            (evaluateT (Pattern.fromTermLike term'))
             (exceptionHandler term)
         (===) True (OrPattern.isSimplified sideRepresentation simplified)
   where
@@ -127,17 +130,19 @@ test_regressionGeneratedTerms =
 
 evaluateT
     :: MonadTrans t
-    => Pattern VariableName
-    -> t SMT.NoSMT (OrPattern VariableName)
+    => Pattern RewritingVariableName
+    -> t SMT.NoSMT (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
 
-evaluate :: Pattern VariableName -> SMT.NoSMT (OrPattern VariableName)
+evaluate
+    :: Pattern RewritingVariableName
+    -> SMT.NoSMT (OrPattern RewritingVariableName)
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> Pattern VariableName
-    -> SMT.NoSMT (OrPattern VariableName)
+    -> Pattern RewritingVariableName
+    -> SMT.NoSMT (OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
     Simplification.runSimplifier env . Pattern.simplify SideCondition.top
   where
