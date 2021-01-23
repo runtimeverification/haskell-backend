@@ -597,27 +597,31 @@ checkedSimplifiedFromChildren termLikeF =
 termLikeSort :: TermLike variable -> Sort
 termLikeSort = Attribute.patternSort . extractAttributes
 
+myApo :: (CofreeF f a b -> (Bool, CofreeF f a b)) -> CofreeF f a b -> CofreeF f a b
+myApo f c =
+    let (e, c') = f c in
+        if e then myApo f c' else c'
+
 -- | Attempts to modify p to have sort s.
 forceSort
     :: (InternalVariable variable, HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLike variable
-forceSort forcedSort =
+forceSort forcedSort term@(TermLike cof) =
     if forcedSort == predicateSort
-        then id
-        else Recursive.apo forceSortWorker
+        then term
+        else TermLike $ myApo forceSortWorker cof
   where
-    forceSortWorker original@(Recursive.project -> attrs :< pattern') =
-        (:<)
-            (attrs { Attribute.patternSort = forcedSort })
-            (case attrs of
-                Attribute.Pattern { patternSort = sort }
-                  | sort == forcedSort    -> Left <$> pattern'
-                  | sort == predicateSort ->
-                    forceSortPredicate forcedSort original
-                  | otherwise             -> illSorted forcedSort original
-            )
+    forceSortWorker original@(attrs :< pattern') =
+        let attrs' = attrs { Attribute.patternSort = forcedSort } in
+        case attrs of
+            Attribute.Pattern { patternSort = sort }
+              | sort == forcedSort -> (False, attrs' :< pattern')
+              | sort == predicateSort ->
+                  let (b,pattern'') = forceSortPredicate2 forcedSort (TermLike original) in
+                      (b, attrs' :< pattern'')
+              | otherwise -> illSorted forcedSort (TermLike original)
 
 {-| Attempts to modify the pattern to have the given sort, ignoring the
 previous sort and without assuming that the pattern's sorts are consistent.
@@ -709,6 +713,82 @@ forceSortPredicate
             where
             exists'' = exists' { existsSort = forcedSort }
         ForallF forall' -> ForallF (Right <$> forall'')
+            where
+            forall'' = forall' { forallSort = forcedSort }
+        -- Rigid: These patterns should never have sort _PREDICATE{}.
+        MuF _ -> illSorted forcedSort original
+        NuF _ -> illSorted forcedSort original
+        ApplySymbolF _ -> illSorted forcedSort original
+        ApplyAliasF _ -> illSorted forcedSort original
+        InternalBoolF _ -> illSorted forcedSort original
+        InternalBytesF _ -> illSorted forcedSort original
+        InternalIntF _ -> illSorted forcedSort original
+        InternalStringF _ -> illSorted forcedSort original
+        InternalListF _ -> illSorted forcedSort original
+        InternalMapF _ -> illSorted forcedSort original
+        InternalSetF _ -> illSorted forcedSort original
+        DomainValueF _ -> illSorted forcedSort original
+        StringLiteralF _ -> illSorted forcedSort original
+        VariableF _ -> illSorted forcedSort original
+        InhabitantF _ -> illSorted forcedSort original
+        EndiannessF _ -> illSorted forcedSort original
+        SignednessF _ -> illSorted forcedSort original
+        InjF _ -> illSorted forcedSort original
+
+forceSortPredicate2
+    :: (InternalVariable variable, HasCallStack)
+    => Sort
+    -> TermLike variable
+    -> (Bool,TermLikeF variable (TermLike variable)) -- True = Right = Recurse; False = Left = Terminate
+forceSortPredicate2
+    forcedSort
+    original@(Recursive.project -> _ :< pattern')
+  =
+    case pattern' of
+        -- Recurse
+        EvaluatedF evaluated -> (True, EvaluatedF evaluated)
+        DefinedF defined -> (True, DefinedF defined)
+        -- Predicates: Force sort and stop.
+        BottomF bottom' -> (False, BottomF bottom' { bottomSort = forcedSort })
+        TopF top' -> (False, TopF top' { topSort = forcedSort })
+        CeilF ceil' -> (False, CeilF ceil'')
+            where
+            ceil'' = ceil' { ceilResultSort = forcedSort }
+        FloorF floor' -> (False, FloorF floor'')
+            where
+            floor'' = floor' { floorResultSort = forcedSort }
+        EqualsF equals' -> (False, EqualsF equals'')
+            where
+            equals'' = equals' { equalsResultSort = forcedSort }
+        InF in' -> (False, InF in'')
+            where
+            in'' = in' { inResultSort = forcedSort }
+        -- Connectives: Force sort and recurse.
+        AndF and' -> (True, AndF and'')
+            where
+            and'' = and' { andSort = forcedSort }
+        OrF or' -> (True, OrF or'')
+            where
+            or'' = or' { orSort = forcedSort }
+        IffF iff' -> (True, IffF iff'')
+            where
+            iff'' = iff' { iffSort = forcedSort }
+        ImpliesF implies' -> (True, ImpliesF implies'')
+            where
+            implies'' = implies' { impliesSort = forcedSort }
+        NotF not' -> (True, NotF not'')
+            where
+            not'' = not' { notSort = forcedSort }
+        NextF next' -> (True, NextF next'')
+            where
+            next'' = next' { nextSort = forcedSort }
+        RewritesF rewrites' -> (True, RewritesF rewrites'')
+            where
+            rewrites'' = rewrites' { rewritesSort = forcedSort }
+        ExistsF exists' -> (True, ExistsF exists'')
+            where
+            exists'' = exists' { existsSort = forcedSort }
+        ForallF forall' -> (True, ForallF forall'')
             where
             forall'' = forall' { forallSort = forcedSort }
         -- Rigid: These patterns should never have sort _PREDICATE{}.
