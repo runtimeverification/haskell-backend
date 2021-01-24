@@ -14,6 +14,30 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.38.0.0] - 2021-01-24
+
+### Added
+
+- Add profiling traces for rewriting and simplification during ordinary
+  execution. (#2331)
+
+### Changed
+
+- Apply symbolic simplification rules to hook `KEQUAL.eq` under `\and` and
+  `\equals`. (#2346)
+- Include `result.kore` in output with `--bug-report`. (#2018)
+- Predicates have a distinguished internal representation. (#2099)
+- Unification problems in the argument positions of equations are solved during
+  initialization. (#2326)
+
+### Fixed
+
+- `kore-repl` no longer reports all remaining states (after rewriting) as stuck.
+  (#2335)
+- The bounded model checker returns `\top` when the property holds up to the
+  specified bound, but emits a warning if the bound was reached before execution
+  finished. (#2342)
+
 ## [0.37.0.0] - 2021-01-07
 
 ### Added
