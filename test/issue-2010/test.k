@@ -6,7 +6,7 @@ module TEST
                       | "None"
     syntax MaybeInt ::= f() [function, functional, no-evaluators]
 
-    configuration <k> f() </k>
+    configuration <k> $PGM:MaybeInt </k>
 
     rule <k> None => true ... </k>
     rule <k> Some I => I ... </k>
