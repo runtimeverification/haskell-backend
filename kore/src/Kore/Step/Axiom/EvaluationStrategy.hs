@@ -151,11 +151,12 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equation' =
-                Equation.mapVariables
-                    (pure $ fromVariableName . from @RewritingVariableName)
-                    equation
-        result <- Equation.attemptEquation condition term equation'
+        let equation' = Equation.mapVariables (pure $ fromVariableName . from @RewritingVariableName) equation
+        result <-
+            Equation.attemptEquation
+                condition
+                term
+                equation'
         let apply = Equation.applyEquation condition equation'
         case result of
             Right applied -> do

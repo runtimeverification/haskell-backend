@@ -657,76 +657,97 @@ A variable-renaming substitution is a pair of the form
 X:S = Y:S
 @
 
-In a normalized substitution, the variable on the left-hand side of each substitution pair may not appear in any other substitution pair. The order of a variable-renaming pair is logically irrelevant, but often we have a preference for which of @X@ and @Y@ should appear on the left-hand side (that is, we have a preferred /orientation/).
+In a normalized substitution, the variable on the left-hand side of each
+substitution pair may not appear in any other substitution pair. The order of a
+variable-renaming pair is logically irrelevant, but often we have a preference
+for which of @X@ and @Y@ should appear on the left-hand side (that is, we have a
+preferred /orientation/).
 
-@orientSubstitution@ applies an orientation to a normalized substitution and yields a normalized substitution. The orientation is expressed as a function
+@orientSubstitution@ applies an orientation to a normalized substitution and
+yields a normalized substitution. The orientation is expressed as a function
 
 @
 SomeVariableName variable -> Bool
 @
 
-returning `True` when the named variable is preferred on the left-hand side of a variable-renaming substitution pair. Each variable-renaming pair is oriented so that the variable on the left-hand side is a preferred variable, if possible. @orientSubstitution@ does not alter substitution pairs where both or neither variable is preferred for the left-hand side.
+returning `True` when the named variable is preferred on the left-hand side of a
+variable-renaming substitution pair. Each variable-renaming pair is oriented so
+that the variable on the left-hand side is a preferred variable, if possible.
+@orientSubstitution@ does not alter substitution pairs where both or neither
+variable is preferred for the left-hand side.
 -}
 orientSubstitution
     :: forall variable
     .  InternalVariable variable
     => (SomeVariableName variable -> Bool)
-    -- ^ Orientation: Is the named variable preferred on the left-hand side of variable-renaming substitution pairs?
+    -- ^ Orientation: Is the named variable preferred on the left-hand side of
+    -- variable-renaming substitution pairs?
     -> Map (SomeVariableName variable) (TermLike variable)
     -- ^ Normalized substitution
     -> Map (SomeVariableName variable) (TermLike variable)
 orientSubstitution toLeft substitution =
-    let listSubstitution = Map.toList substitution
-    in
-        foldl' go substitution listSubstitution
+    foldl' go substitution $ Map.toList substitution
   where
     go substitutionInProgress initialPair@(initialKey, _)
-      | ordered initialPair = substitutionInProgress
-      | otherwise =
-        let (newKey, newValue) = swapVars initialPair
-        in
-            case Map.lookup newKey substitutionInProgress of
-                Nothing ->
-                    substitutionInProgress
-                    & Map.delete initialKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                Just already ->
-                    substitutionInProgress
-                    & Map.delete newKey
-                    & Map.map
-                        (TermLike.substitute (Map.singleton newKey newValue))
-                    & Map.insert newKey newValue
-                    & Map.map
-                        (TermLike.substitute (Map.singleton initialKey already))
-                    & Map.insert initialKey already
+      | Just (newKey, newValue) <- retractReorderedPair initialPair =
+        -- Re-orienting X = Y as Y = X.
+        let newPair = Map.singleton newKey newValue
+        in case Map.lookup newKey substitutionInProgress of
+            Nothing ->
+                -- There is no other Y = X substitution in the map.
+                substitutionInProgress
+                -- Remove X = Y pair.
+                & Map.delete initialKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map (TermLike.substitute newPair)
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+            Just already ->
+                -- There is a substitution Y = T in the map.
+                substitutionInProgress
+                -- Remove Y = T.
+                & Map.delete newKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map (TermLike.substitute newPair)
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+                -- Apply X = T to the right-hand side of all pairs. This
+                -- substitution never needs to be reoriented, but the reason why
+                -- is subtle:
+                -- 1. The Y = T substitution came from another swapped pair. It
+                --    was not present in the original substitution: the original
+                --    substitution was normalized, and the substitution we are
+                --    reorienting now had Y on the right-hand side, so Y was not
+                --    on the left-hand side of any pair in the original
+                --    subsitution.
+                -- 2. If Y = T came from another swapped pair, then T is not a
+                --    preferred variable.
+                -- 3. We just checked that X is not a preferred variable.
+                -- 4. Therefore, X = T is a valid orientation.
+                & Map.map
+                    (TermLike.substitute (Map.singleton initialKey already))
+                -- Insert X = T pair.
+                & Map.insert initialKey already
+      | otherwise = substitutionInProgress
 
-    swapVars
+    retractReorderedPair
         :: (SomeVariableName variable, TermLike variable)
-        -> (SomeVariableName variable, TermLike variable)
-    swapVars ( xName, TermLike.Var_ (Variable yName ySort) ) =
-        (yName, mkVar $ Variable xName ySort)
-    swapVars subst = subst
+        -> Maybe (SomeVariableName variable, TermLike variable)
+    retractReorderedPair (xName, TermLike.Var_ (Variable yName ySort))
+      | isSameMultiplicity xName yName
+      , toLeft yName
+      , not (toLeft xName)
+      = Just (yName, TermLike.mkVar (Variable xName ySort))
+    retractReorderedPair _ = Nothing
 
-    ordered
-        :: (SomeVariableName variable, TermLike variable)
+    isSameMultiplicity
+        :: SomeVariableName variable
+        -> SomeVariableName variable
         -> Bool
-    ordered
-        ( xName, TermLike.Var_ y@(Variable yName _) )
-
-        | SomeVariableNameElement _ <- xName
-        , Just _ <- retractElementVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-
-        | SomeVariableNameSet _ <- xName
-        , Just _ <- retractSetVariable y
-        , toLeft yName
-        , not $ toLeft xName
-        = False
-    ordered _ = True
+    isSameMultiplicity x y
+      | SomeVariableNameElement _ <- x, SomeVariableNameElement _ <- y = True
+      | SomeVariableNameSet     _ <- x, SomeVariableNameSet     _ <- y = True
+      | otherwise = False
 
 {- | The result of /normalizing/ a substitution.
 

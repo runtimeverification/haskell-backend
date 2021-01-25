@@ -23,6 +23,7 @@ import Test.Tasty
 
 import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
+import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Identity
     ( runIdentity
     )
@@ -180,47 +181,70 @@ mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
 
 test_orientSubstitution :: [TestTree]
 test_orientSubstitution =
-    [ testCase "Orient substitution" $ do
-        let toLeft :: SomeVariableName VariableName -> Bool
-            toLeft (from -> vName :: VariableName) =
-                vName == unElementVariableName (variableName Mock.y)
-
-            subst, expect
+    [ testCase "Applies reversed substitution" $ do
+        let subst, expect
                 :: Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
-                Map.fromList
-                    [ (inject $ variableName Mock.x, mkElemVar Mock.y)
-                    , (inject $ variableName Mock.u, mkNot $ mkElemVar Mock.y)
-                    ]
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, Mock.f $ mkElemVar Mock.y)
+                ]
             expect =
-                Map.fromList
-                    [ (inject $ variableName Mock.y, mkElemVar Mock.x)
-                    , (inject $ variableName Mock.u, mkNot $ mkElemVar Mock.x)
-                    ]
-        assertEqual ""
-            expect
-            (orientSubstitution toLeft subst)
-    , testCase "Orient substitution - key collision" $ do
-        let toLeft :: SomeVariableName VariableName -> Bool
-            toLeft (from -> vName :: VariableName) =
-                vName == unElementVariableName (variableName Mock.y)
-
-            subst, expect
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, Mock.f $ mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Duplicate keys" $ do
+        let subst, expect
                 :: Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
-                Map.fromList
-                    [ (inject $ variableName Mock.x, mkElemVar Mock.y)
-                    , (inject $ variableName Mock.u, mkElemVar Mock.y)
-                    ]
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, mkElemVar Mock.y)
+                ]
             expect =
-                Map.fromList
-                    [ (inject $ variableName Mock.y, mkElemVar Mock.u)
-                    , (inject $ variableName Mock.x, mkElemVar Mock.u)
-                    ]
-        assertEqual ""
-            expect
-            (orientSubstitution toLeft subst)
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.x, mkElemVar Mock.y)
+                , (Mock.t, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.x, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys - negated" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.u)
+                , (Mock.x, mkElemVar Mock.u)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.u, mkElemVar Mock.x)
+                , (Mock.t, mkElemVar Mock.x)
+                ]
+        assertEqual "" expect (orientSubstitution (not . toLeft) subst)
     ]
+  where
+    mkSubsts = Map.fromList . map (Bifunctor.first (inject . variableName))
+
+    toLeft :: SomeVariableName VariableName -> Bool
+    toLeft someVariableName =
+        someVariableName == inject (variableName Mock.x)
+        || someVariableName == inject (variableName Mock.y)
 
 test_substitute :: [TestTree]
 test_substitute =
