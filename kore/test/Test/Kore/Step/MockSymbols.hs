@@ -820,12 +820,24 @@ ySet :: MockElementVariable
 ySet = MockElementVariable (testId "ySet") mempty setSort
 xInt :: MockElementVariable
 xInt = MockElementVariable (testId "xInt") mempty intSort
+xRuleInt :: MockRewritingElementVariable
+xRuleInt = mkRuleElementVariable (testId "xInt") mempty intSort
+xConfigInt :: MockRewritingElementVariable
+xConfigInt = mkConfigElementVariable (testId "xInt") mempty intSort
 yInt :: MockElementVariable
 yInt = MockElementVariable (testId "yInt") mempty intSort
 xBool :: MockElementVariable
 xBool = MockElementVariable (testId "xBool") mempty boolSort
+xRuleBool :: MockRewritingElementVariable
+xRuleBool = mkRuleElementVariable (testId "xBool") mempty boolSort
+xConfigBool :: MockRewritingElementVariable
+xConfigBool = mkConfigElementVariable (testId "xBool") mempty boolSort
 xString :: MockElementVariable
 xString = MockElementVariable (testId "xString") mempty stringSort
+xRuleString :: MockRewritingElementVariable
+xRuleString = mkRuleElementVariable (testId "xString") mempty stringSort
+xConfigString :: MockRewritingElementVariable
+xConfigString = mkConfigElementVariable (testId "xString") mempty stringSort
 xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
