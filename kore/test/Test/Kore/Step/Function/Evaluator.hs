@@ -27,7 +27,6 @@ import Kore.Internal.TermLike
     ( Application
     , Symbol
     , TermLike
-    , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
@@ -54,8 +53,8 @@ test_evaluateApplication =
     evaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> TermLike VariableName
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
         -> TestTree
     evaluates name origin expect =
         makeTest
@@ -65,8 +64,8 @@ test_evaluateApplication =
     notEvaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> (TermLike VariableName -> TermLike VariableName)
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> (TermLike RewritingVariableName -> TermLike RewritingVariableName)
         -> TestTree
     notEvaluates name origin mkExpect =
         makeTest
@@ -77,8 +76,8 @@ test_evaluateApplication =
     makeTest
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> OrPattern VariableName
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> OrPattern RewritingVariableName
         -> TestTree
     makeTest name origin expect =
         testCase name $ do
@@ -93,7 +92,9 @@ f, g :: child -> Application Symbol child
 f x = Application fSymbol [x]
 g x = Application gSymbol [x]
 
-mkApplySymbol :: Application Symbol (TermLike VariableName) -> TermLike VariableName
+mkApplySymbol
+    :: Application Symbol (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 mkApplySymbol = synthesize . TermLike.ApplySymbolF
 
 mkApplySymbol'
@@ -111,9 +112,9 @@ fEvaluator =
     x = TermLike.mkElemVar Mock.xRule
 
 evaluateApplication
-    :: Condition VariableName
-    -> Application Symbol (TermLike VariableName)
-    -> IO (OrPattern VariableName)
+    :: Condition RewritingVariableName
+    -> Application Symbol (TermLike RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluateApplication predicate =
     Test.runSimplifier env
     . Kore.evaluateApplication SideCondition.top predicate
