@@ -526,7 +526,7 @@ test_unifyAnd_Fn =
             expect =
                 Conditional
                     { term = dv
-                    , predicate = makeEqualsPredicate intSort dv fnPat
+                    , predicate = makeEqualsPredicate dv fnPat
                     , substitution = mempty
                     }
         actual <- evaluateT $ mkAnd dv fnPat
@@ -561,7 +561,7 @@ test_unifyIntEq =
         let term1 = Test.Bool.asInternal False
             term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
-                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
+                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.fromCondition_
@@ -572,7 +572,7 @@ test_unifyIntEq =
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -587,12 +587,12 @@ test_unifyIntEq =
             actual <- unifyIntEq term1 term2
             -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
             -- inconsistency.
-            let expect' = expect { predicate = makeTruePredicate intSort }
+            let expect' = expect { predicate = makeTruePredicate }
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -603,7 +603,7 @@ test_unifyIntEq =
                     (addInt (mkElemVar y) (asInternal 1))
             term2 = Test.Bool.asInternal False
             expect =
-                makeEqualsPredicate_
+                makeEqualsPredicate
                     (addInt (mkElemVar x) (asInternal 1))
                     (addInt (mkElemVar y) (asInternal 1))
                 & makeNotPredicate
@@ -616,7 +616,7 @@ test_unifyIntEq =
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -653,11 +653,11 @@ test_contradiction :: TestTree
 test_contradiction =
     testCase "x + y = 0 ∧ x + y = 1" $ do
         let clause0 =
-                makeEqualsPredicate intSort
+                makeEqualsPredicate
                     (asInternal 0)
                     (addInt x y)
             clause1 =
-                makeEqualsPredicate intSort
+                makeEqualsPredicate
                     (asInternal 1)
                     (addInt x y)
             condition =

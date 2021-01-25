@@ -39,6 +39,11 @@ instance Unparse (Top Sort child) where
 
     unparse2 _ = "\\top"
 
+instance Unparse (Top () child) where
+    unparse _ = "\\top" <> noArguments
+
+    unparse2 _ = "\\top"
+
 instance Synthetic (FreeVariables variable) (Top sort) where
     synthetic = const emptyFreeVariables
     {-# INLINE synthetic #-}

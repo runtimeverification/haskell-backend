@@ -50,8 +50,8 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Unparser
-    ( Unparse (..)
+import Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 import qualified SQL
@@ -80,7 +80,10 @@ instance
 
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
-    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+    toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
+
+instance InternalVariable variable => Pretty (SideCondition variable) where
+    pretty = pretty . toPredicate
 
 instance TopBottom (SideCondition variable) where
     isTop sideCondition@(SideCondition _) =
@@ -96,10 +99,6 @@ instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
     freeVariables (SideCondition multiAnd) =
         freeVariables multiAnd
-
-instance InternalVariable variable => Unparse (SideCondition variable) where
-    unparse = unparse . toPredicate
-    unparse2 = unparse2 . toPredicate
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where

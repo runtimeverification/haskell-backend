@@ -26,13 +26,13 @@ test_fromSentenceAxiom =
     [ testCase "⌈I1 / I2⌉" $ do
         let term = Mock.tdivInt varI1 varI2
             original = mkCeil sortR term
-            equation = mkEquation sortR (mkCeil sortR term) (mkTop sortR)
+            equation = mkEquation (mkCeil sortR term) (mkTop sortR)
         assertions original equation
     , testCase "I1 < I2 = I2 >= I1" $ do
         let left = Mock.lessInt varI1 varI2
             right = Mock.greaterEqInt varI2 varI1
             original = mkEquals sortR left right
-            equation = mkEquation sortR left right
+            equation = mkEquation left right
         assertions original equation
     , testCase "⌈f(x))⌉ → f(x) = g(x) ∧ ⌈h(x)⌉" $ do
         let requires = mkCeil sortR (Mock.f Mock.a)
@@ -43,7 +43,7 @@ test_fromSentenceAxiom =
                 mkImplies requires
                 $ mkAnd (mkEquals sortR left right) ensures
             equation =
-                (mkEquation sortR left right)
+                (mkEquation left right)
                     { requires = wrapPredicate requires
                     , ensures = wrapPredicate ensures
                     }
@@ -60,7 +60,7 @@ test_fromSentenceAxiom =
                 mkImplies (mkAnd requires argument')
                 $ mkAnd (mkEquals sortR left right) ensures
             equation =
-                (mkEquation sortR left right)
+                (mkEquation left right)
                     { requires = wrapPredicate requires
                     , argument = Just $ wrapPredicate argument
                     , ensures = wrapPredicate ensures
@@ -70,7 +70,6 @@ test_fromSentenceAxiom =
   where
     sortVariableR = SortVariable (testId "R")
     sortR = SortVariableSort sortVariableR
-    toTermLike = from @(Equation VariableName) @(TermLike VariableName)
     assertions
         :: HasCallStack
         => TermLike VariableName
@@ -79,7 +78,9 @@ test_fromSentenceAxiom =
     assertions original equation = do
         actual <- expectRight $ test original
         assertEqual "Expected equation" equation actual
-        assertEqual "Expected original pattern" original (toTermLike actual)
+        assertEqual "Expected original pattern"
+            original
+            (toTermLike (termLikeSort original) actual)
     test original = fromSentenceAxiom (def, mkAxiom [sortVariableR] original)
 
 varI1, varI2 :: TermLike VariableName

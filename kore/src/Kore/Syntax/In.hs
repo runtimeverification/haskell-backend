@@ -66,6 +66,27 @@ instance Unparse child => Unparse (In Sort child) where
             , unparse2 inContainingChild
             ])
 
+instance Unparse child => Unparse (In () child) where
+    unparse
+        In
+            { inContainedChild
+            , inContainingChild
+            }
+      =
+        "\\in"
+        <> arguments [inContainedChild, inContainingChild]
+
+    unparse2
+        In
+            { inContainedChild
+            , inContainingChild
+            }
+      = Pretty.parens (Pretty.fillSep
+            [ "\\in"
+            , unparse2 inContainedChild
+            , unparse2 inContainingChild
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
     synthetic = fold
     {-# INLINE synthetic #-}

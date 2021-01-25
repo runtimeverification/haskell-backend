@@ -56,6 +56,20 @@ instance
             ])
 
 instance
+    (Unparse variable, Unparse child) => Unparse (Forall () variable child)
+  where
+    unparse Forall { forallVariable, forallChild } =
+        "\\forall"
+        <> arguments' [unparse forallVariable, unparse forallChild]
+
+    unparse2 Forall { forallVariable, forallChild } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\forall"
+            , unparse2SortedVariable forallVariable
+            , unparse2 forallChild
+            ])
+
+instance
     Ord variable =>
     Synthetic (FreeVariables variable) (Forall sort variable)
   where

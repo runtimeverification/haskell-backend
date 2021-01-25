@@ -48,6 +48,14 @@ instance Unparse child => Unparse (Not Sort child) where
     unparse2 Not { notChild } =
         Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
 
+instance Unparse child => Unparse (Not () child) where
+    unparse Not { notChild } =
+        "\\not"
+        <> arguments [notChild]
+
+    unparse2 Not { notChild } =
+        Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
+
 instance TopBottom child => TopBottom (Not sort child) where
     isTop = isBottom . notChild
     isBottom = isTop . notChild

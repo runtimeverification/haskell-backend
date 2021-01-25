@@ -37,6 +37,9 @@ import SMT
     ( NoSMT
     )
 
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -138,7 +141,7 @@ test_KEqual =
 
 test_KIte :: [TestTree]
 test_KIte =
-    [ testCaseWithoutSMT "ite true" $ do
+    [ testCaseWithoutSMT "true" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal False
@@ -150,7 +153,7 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithoutSMT "ite false" $ do
+    , testCaseWithoutSMT "false" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal True
@@ -159,6 +162,14 @@ test_KIte =
                     (Test.Bool.asInternal False)
                     (inj kSort $ Test.Bool.asInternal False)
                     (inj kSort $ Test.Bool.asInternal True)
+        actual <- evaluate original
+        assertEqual' "" expect actual
+    , testCaseWithoutSMT "abstract" $ do
+        let original = kiteK x y z
+            expect = Pattern.fromTermLike original
+            x = mkElemVar $ mkElementVariable (testId "x") boolSort
+            y = mkElemVar $ mkElementVariable (testId "y") kSort
+            z = mkElemVar $ mkElementVariable (testId "z") kSort
         actual <- evaluate original
         assertEqual' "" expect actual
     ]

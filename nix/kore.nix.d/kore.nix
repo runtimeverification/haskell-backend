@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.37.0.0"; };
+      identifier = { name = "kore"; version = "0.38.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -149,6 +149,7 @@
           "Kore/Attribute/Pattern/Function"
           "Kore/Attribute/Pattern/Functional"
           "Kore/Attribute/Pattern/Simplified"
+          "Kore/Attribute/PredicatePattern"
           "Kore/Attribute/Priority"
           "Kore/Attribute/ProductionID"
           "Kore/Attribute/RuleIndex"
@@ -977,7 +978,9 @@
             "Test/Kore/Builtin/String"
             "Test/Kore/Contains"
             "Test/Kore/Equation/Application"
+            "Test/Kore/Equation/Common"
             "Test/Kore/Equation/Sentence"
+            "Test/Kore/Equation/Simplification"
             "Test/Kore/Error"
             "Test/Kore/Exec"
             "Test/Kore/IndexedModule/Error"

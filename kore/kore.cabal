@@ -1,11 +1,13 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: eac138f2417f14078622dc2c81b71095ab3dd5943d181634e3fedee2ff136924
 
 name:           kore
-version:        0.37.0.0
+version:        0.38.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -88,6 +90,7 @@ library
       Kore.Attribute.Pattern.Function
       Kore.Attribute.Pattern.Functional
       Kore.Attribute.Pattern.Simplified
+      Kore.Attribute.PredicatePattern
       Kore.Attribute.Priority
       Kore.Attribute.ProductionID
       Kore.Attribute.RuleIndex
@@ -944,7 +947,9 @@ test-suite kore-test
       Test.Kore.Builtin.String
       Test.Kore.Contains
       Test.Kore.Equation.Application
+      Test.Kore.Equation.Common
       Test.Kore.Equation.Sentence
+      Test.Kore.Equation.Simplification
       Test.Kore.Error
       Test.Kore.Exec
       Test.Kore.IndexedModule.Error

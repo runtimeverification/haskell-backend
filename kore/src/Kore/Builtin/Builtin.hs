@@ -92,7 +92,7 @@ import Kore.Internal.Pattern as Pattern
     , withCondition
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
+    ( makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
@@ -493,13 +493,12 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     orCondition <-
         makeEvaluateTermCeil
             SideCondition.topTODO
-            predicateSort
             unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Predicate.markSimplified $ makeEqualsPredicate_ a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

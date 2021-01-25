@@ -54,7 +54,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -225,7 +225,6 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
             let mkChildCeil =
                     makeEvaluateTermCeil
                         sideCondition
-                        Sort.predicateSort
             simplifiedChildren <- mapM mkChildCeil children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
@@ -246,7 +245,7 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
             input { ceilChild = inj }
                 & evaluateCeilInj
                 & ceilChild
-                & makeEvaluateTermCeil sideCondition Sort.predicateSort
+                & makeEvaluateTermCeil sideCondition
         _ -> empty
 
 newBuiltinCeilSimplifier
@@ -418,7 +417,7 @@ makeSimplifiedCeil
     unsimplified =
         OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
-        . makeCeilPredicate_
+        . makeCeilPredicate
         $ termLike
 
     ~unexpectedError =

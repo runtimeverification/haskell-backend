@@ -40,7 +40,7 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeMultipleExists
     , makeMultipleOrPredicate
     , makeOrPredicate
@@ -80,8 +80,7 @@ import Kore.Syntax.Variable
     , mapElementVariable
     )
 import Kore.Variables.Fresh
-    ( FreshPartialOrd
-    , refreshElementVariable
+    ( refreshElementVariable
     )
 
 {-| The part of an antileft pattern corresponding to a single rule.
@@ -178,7 +177,7 @@ instance
         AntiLeftLhs { existentials, predicate, term } = antiLeft
 
 mapVariables
-    :: (Ord variable1, FreshPartialOrd variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> AntiLeft variable1
     -> AntiLeft variable2
@@ -192,7 +191,7 @@ mapVariables adj antiLeft@(AntiLeft _ _ _) =
     AntiLeft {aliasTerm, maybeInner, leftHands} = antiLeft
 
 mapVariablesLeft
-    :: (Ord variable1, FreshPartialOrd variable2)
+    :: (InternalVariable variable1, InternalVariable variable2)
     => AdjSomeVariableName (variable1 -> variable2)
     -> AntiLeftLhs variable1
     -> AntiLeftLhs variable2
@@ -384,7 +383,7 @@ antiLeftHandsPredicate antiLefts termLike =
             existentials
             (makeAndPredicate
                 predicate
-                (makeCeilPredicate_ (mkAnd termLike term))
+                (makeCeilPredicate (mkAnd termLike term))
             )
       where
         used :: Set (SomeVariableName variable)

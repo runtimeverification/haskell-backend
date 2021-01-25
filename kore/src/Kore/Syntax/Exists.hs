@@ -56,6 +56,20 @@ instance
             ])
 
 instance
+    (Unparse variable, Unparse child) => Unparse (Exists () variable child)
+  where
+    unparse Exists { existsVariable, existsChild } =
+        "\\exists"
+        <> arguments' [unparse existsVariable, unparse existsChild]
+
+    unparse2 Exists { existsVariable, existsChild } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\exists"
+            , unparse2SortedVariable existsVariable
+            , unparse2 existsChild
+            ])
+
+instance
     Ord variable =>
     Synthetic (FreeVariables variable) (Exists sort variable)
   where

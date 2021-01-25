@@ -299,7 +299,7 @@ evalIn resultSort [_elem, _set] = do
     returnIfTrueAndDefined result setTerm
       | result = do
         let condition =
-                Conditional.fromPredicate $ makeCeilPredicate resultSort setTerm
+                Conditional.fromPredicate $ makeCeilPredicate setTerm
             trueWithCondition =
                 Pattern.andCondition
                     (asExpandedBoolPattern result)
@@ -348,7 +348,7 @@ evalDifference
             _set2 <- expectBuiltinSet ctx _set2
             let definedArgs =
                     filter (not . TermLike.isDefinedPattern) args
-                    & map (makeCeilPredicate resultSort)
+                    & map makeCeilPredicate
                     & makeMultipleAndPredicate
                     & Conditional.fromPredicate
             let NormalizedAc

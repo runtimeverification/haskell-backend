@@ -88,7 +88,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -524,7 +524,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left
-                $ from $ makeCeilPredicate_ leftTerm
+                $ from $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
             simplifyConditionsWithSmt sideCondition configs'
@@ -615,7 +615,7 @@ simplify' lensClaimPattern claim = do
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
             let definedConfig =
                     Pattern.andCondition (mkDefined <$> config)
-                    $ from $ makeCeilPredicate_ (Conditional.term config)
+                    $ from $ makeCeilPredicate (Conditional.term config)
             configs <-
                 simplifyTopConfiguration definedConfig
                 >>= SMT.Evaluator.filterMultiOr

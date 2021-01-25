@@ -82,7 +82,7 @@ test_refreshRule =
                         { left =
                             Pattern.fromTermAndPredicate
                                 (mkElemVar y)
-                                ( Predicate.makeCeilPredicate_
+                                ( Predicate.makeCeilPredicate
                                     (mkElemVar z)
                                 )
                         }
@@ -94,7 +94,7 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "does not capture free variables from the substitution" $ do
         let dummy = Pattern.fromCondition_
-                (fromPredicate Predicate.makeTruePredicate_)
+                (fromPredicate Predicate.makeTruePredicate)
             right = OrPattern.fromTermLike (mkElemVar y)
             imp = mkImplication () dummy right [x]
             newImp = substitute
@@ -111,13 +111,13 @@ testRulePattern =
             -- Include an implicitly-quantified variable.
             Pattern.fromTermAndPredicate
                 (mkElemVar x)
-                (Predicate.makeCeilPredicate_ (mkElemVar z))
+                (Predicate.makeCeilPredicate (mkElemVar z))
         , modality = ()
         , existentials = [y]
         , right =
             Pattern.fromTermAndPredicate
                 (mkElemVar y)
-                (Predicate.makeCeilPredicate_ (mkElemVar t))
+                (Predicate.makeCeilPredicate (mkElemVar t))
             & OrPattern.fromPattern
         , attributes = def
         }

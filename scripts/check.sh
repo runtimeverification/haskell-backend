@@ -6,8 +6,6 @@ export PATH="$HOME/.local/bin${PATH:+:}$PATH"
 
 export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 
-source $TOP/scripts/run-on-haskell.include.sh
-
 if ! $TOP/scripts/git-assert-clean.sh
 then
     echo >&2 "Please commit your changes!"

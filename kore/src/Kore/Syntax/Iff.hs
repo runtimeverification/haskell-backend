@@ -52,6 +52,18 @@ instance Unparse child => Unparse (Iff Sort child) where
             , unparse2 iffSecond
             ])
 
+instance Unparse child => Unparse (Iff () child) where
+    unparse Iff { iffFirst, iffSecond } =
+        "\\iff"
+        <> arguments [iffFirst, iffSecond]
+
+    unparse2 Iff { iffFirst, iffSecond } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\iff"
+            , unparse2 iffFirst
+            , unparse2 iffSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Iff sort) where
     synthetic = fold
     {-# INLINE synthetic #-}

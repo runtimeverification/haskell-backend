@@ -60,7 +60,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
@@ -260,7 +260,7 @@ unifyIfThenElse unifyChildren a b =
     worker a b <|> worker b a
   where
     takeCondition value condition' =
-        makeCeilPredicate_ (mkAnd (Bool.asInternal sort value) condition')
+        makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
         & Condition.fromPredicate
       where
         sort = termLikeSort condition'

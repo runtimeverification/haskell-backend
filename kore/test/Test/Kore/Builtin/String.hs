@@ -416,7 +416,7 @@ test_unifyStringEq =
         let term1 = Test.Bool.asInternal False
             term2 = eqString (mkElemVar x) (mkElemVar y)
             expect =
-                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
+                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.fromCondition_
@@ -427,7 +427,7 @@ test_unifyStringEq =
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -440,12 +440,12 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            let expect' = expect { predicate = makeTruePredicate stringSort }
+            let expect' = expect { predicate = makeTruePredicate }
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -482,11 +482,11 @@ test_contradiction :: TestTree
 test_contradiction =
     testCase "concatString(x, y) = \"zero\" ∧ concatString(x, y) = \"one\"" $ do
         let clause0 =
-                makeEqualsPredicate boolSort
+                makeEqualsPredicate
                     (asInternal "zero")
                     (concatString (mkElemVar x) (mkElemVar y))
             clause1 =
-                makeEqualsPredicate boolSort
+                makeEqualsPredicate
                     (asInternal "one")
                     (concatString (mkElemVar x) (mkElemVar y))
             condition =

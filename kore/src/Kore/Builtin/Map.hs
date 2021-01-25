@@ -100,7 +100,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
-import qualified Kore.Sort as Sort
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Sentence
@@ -340,9 +339,9 @@ evalInKeys resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | TermLike.isDefinedPattern termLike = Condition.top
       | otherwise =
-        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+        Condition.fromPredicate (makeCeilPredicate termLike)
 
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments
@@ -616,7 +615,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
 
     defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
     defineTerm termLike =
-        makeEvaluateTermCeil SideCondition.topTODO Sort.predicateSort termLike
+        makeEvaluateTermCeil SideCondition.topTODO termLike
         >>= Unify.scatter
         & lift
 
