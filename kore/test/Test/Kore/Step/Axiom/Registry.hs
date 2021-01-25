@@ -52,7 +52,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    (RewritingVariableName,  mkRuleVariable
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)

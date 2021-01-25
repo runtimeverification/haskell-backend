@@ -32,6 +32,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRuleVariable
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
     )
@@ -40,11 +44,10 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import Kore.Step.Simplification.Application
 import Kore.Step.Simplification.Simplify
-import Kore.Rewriting.RewritingVariable (mkRuleVariable, RewritingVariableName)
-import qualified Kore.Syntax.Variable as Variable
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
+import qualified Kore.Syntax.Variable as Variable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
