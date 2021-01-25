@@ -501,7 +501,7 @@ test_applySubstitutionAndSimplify =
                 )
         (Right [actual]) <-
             applySubstitutionAndSimplify
-                mockArgument
+                (Just mockArgument)
                 Nothing
                 mempty
             & runExceptT
