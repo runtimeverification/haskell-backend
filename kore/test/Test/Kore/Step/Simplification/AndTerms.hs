@@ -49,6 +49,11 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    , mkElementConfigVariable
+    )
 import Kore.Step.Simplification.And
     ( termAnd
     )
@@ -60,7 +65,6 @@ import Kore.Step.Simplification.Equals
     ( termEquals
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Rewriting.RewritingVariable (mkElementConfigVariable, mkConfigVariable, RewritingVariableName)
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Sentence
     ( SentenceAlias
@@ -1514,7 +1518,7 @@ test_Defined =
             set1 = Mock.builtinSet [fx, fy]
             set2 =
                 Mock.builtinSet
-                    [ mkElemVar Mock.tConfig 
+                    [ mkElemVar Mock.tConfig
                     , mkElemVar Mock.uConfig
                     ]
             defined1 = mkDefined set1

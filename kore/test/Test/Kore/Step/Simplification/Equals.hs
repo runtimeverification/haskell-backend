@@ -41,12 +41,15 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
     , simplify
     )
-import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock

@@ -26,8 +26,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.And
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Step.Simplification.Not as Not
 
 import Test.Kore.Step.MockSymbols

@@ -39,7 +39,8 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Step.AntiLeft
-    (mapVariables,  AntiLeft
+    ( AntiLeft
+    , mapVariables
     )
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
@@ -58,6 +59,10 @@ import Kore.Unparser
     ( unparseToString
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Test.Kore
     ( testId
     )
@@ -67,7 +72,6 @@ import Test.Kore.Step.Simplification
     , runSimplifierSMT
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 
 class RewriteRuleBase base where
     rewritesTo
