@@ -1295,10 +1295,10 @@ test_equalsTermsSimplification =
                     { term = ()
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.unsafeWrap [(inject Mock.x, Mock.cf)]
+                        Substitution.unsafeWrap [(inject Mock.xConfig, Mock.cf)]
                     }
                 ]
-        actual <- simplifyEquals Map.empty (mkElemVar Mock.x) Mock.cf
+        actual <- simplifyEquals Map.empty (mkElemVar Mock.xConfig) Mock.cf
         assertEqual "" expected actual
 
     , testCase "handles set ambiguity" $ do
@@ -1314,16 +1314,16 @@ test_equalsTermsSimplification =
                     , (Mock.b, [Mock.a])
                     ]
                 mconcat
-                    [ Condition.assign (inject Mock.x) xValue
-                    , Condition.assign (inject Mock.xSet)
+                    [ Condition.assign (inject Mock.xConfig) xValue
+                    , Condition.assign (inject Mock.xConfigSet)
                         (asInternal $ Set.fromList xSetValue)
                     ]
                     & pure
         actual <- simplifyEquals
             Map.empty
             (Mock.concatSet
-                (Mock.elementSet (mkElemVar Mock.x))
-                (mkElemVar Mock.xSet)
+                (Mock.elementSet (mkElemVar Mock.xConfig))
+                (mkElemVar Mock.xConfigSet)
             )
             (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqual "" expected actual
@@ -1343,13 +1343,16 @@ test_equalsTermsSimplification =
                 simplifyEquals
                     mempty
                     (Mock.builtinBool False)
-                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
+                    (Mock.inKeysMap
+                        (mkElemVar Mock.xConfig)
+                        (Mock.builtinMap [])
+                    )
             assertEqual "" (Just [expect]) actual
         , testCase "key not in singleton Map" $ do
             let expect =
                     makeEqualsPredicate
-                        (mkElemVar Mock.x)
-                        (mkElemVar Mock.y)
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.yConfig)
                     & makeNotPredicate
                     & Condition.fromPredicate
             actual <-
@@ -1357,9 +1360,9 @@ test_equalsTermsSimplification =
                     mempty
                     ( Mock.builtinBool False )
                     ( Mock.inKeysMap
-                        ( mkElemVar Mock.x)
+                        ( mkElemVar Mock.xConfig)
                         ( Mock.builtinMap
-                            [ ( mkElemVar Mock.y, Mock.a ) ]
+                            [ ( mkElemVar Mock.yConfig, Mock.a ) ]
                         )
                     )
             assertEqual "" (Just [expect]) actual
@@ -1369,17 +1372,17 @@ test_equalsTermsSimplification =
                             makeAndPredicate
                             [ makeNotPredicate
                                 $ makeEqualsPredicate
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.y)
+                                    (mkElemVar Mock.xConfig)
+                                    (mkElemVar Mock.yConfig)
                             , makeNotPredicate
                                 $ makeEqualsPredicate
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.z)
+                                    (mkElemVar Mock.xConfig)
+                                    (mkElemVar Mock.zConfig)
                             -- Definedness condition
                             , makeNotPredicate
                                 $ makeEqualsPredicate
-                                    (mkElemVar Mock.y)
-                                    (mkElemVar Mock.z)
+                                    (mkElemVar Mock.yConfig)
+                                    (mkElemVar Mock.zConfig)
                             ]
                         & Condition.fromPredicate
                 actual <-
@@ -1387,10 +1390,10 @@ test_equalsTermsSimplification =
                         mempty
                         (Mock.builtinBool False)
                         ( Mock.inKeysMap
-                            ( mkElemVar Mock.x )
+                            ( mkElemVar Mock.xConfig )
                             ( Mock.builtinMap
-                                [ ( mkElemVar Mock.y, Mock.a )
-                                , ( mkElemVar Mock.z, Mock.a )
+                                [ ( mkElemVar Mock.yConfig, Mock.a )
+                                , ( mkElemVar Mock.zConfig, Mock.a )
                                 ]
                             )
                         )
@@ -1401,16 +1404,16 @@ test_equalsTermsSimplification =
                         ( makeNotPredicate
                             ( makeAndPredicate
                                 ( makeCeilPredicate
-                                    (Mock.f (mkElemVar Mock.x))
+                                    (Mock.f (mkElemVar Mock.xConfig))
                                 )
                                 ( makeEqualsPredicate
-                                    (mkElemVar Mock.y)
-                                    ( Mock.f (mkElemVar Mock.x) )
+                                    (mkElemVar Mock.yConfig)
+                                    ( Mock.f (mkElemVar Mock.xConfig) )
                                 )
                             )
                         )
                         ( makeCeilPredicate
-                            (Mock.f (mkElemVar Mock.x))
+                            (Mock.f (mkElemVar Mock.xConfig))
                         )
                     & Condition.fromPredicate
             actual <-
@@ -1418,9 +1421,9 @@ test_equalsTermsSimplification =
                     mempty
                     (Mock.builtinBool False)
                     ( Mock.inKeysMap
-                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.f (mkElemVar Mock.xConfig) )
                         ( Mock.builtinMap
-                            [ (mkElemVar Mock.y, Mock.a ) ]
+                            [ (mkElemVar Mock.yConfig, Mock.a ) ]
                         )
                     )
             assertEqual "" (Just [expect]) actual
@@ -1705,11 +1708,10 @@ simplify first second =
     mockEnv = Mock.env
 
 simplifyEquals
-    :: InternalVariable variable
-    => BuiltinAndAxiomSimplifierMap
-    -> TermLike variable
-    -> TermLike variable
-    -> IO (Maybe [Condition variable])
+    :: BuiltinAndAxiomSimplifierMap
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO (Maybe [Condition RewritingVariableName])
 simplifyEquals simplifierAxioms first second =
     (fmap . fmap) toList
     $ runSimplifier mockEnv
