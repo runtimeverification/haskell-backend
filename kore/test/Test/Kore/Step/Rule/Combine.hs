@@ -39,7 +39,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Step.AntiLeft
-    ( AntiLeft
+    (mapVariables,  AntiLeft
     )
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( parse
@@ -67,10 +67,13 @@ import Test.Kore.Step.Simplification
     , runSimplifierSMT
     )
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 
 class RewriteRuleBase base where
     rewritesTo
-        :: base VariableName -> base VariableName -> RewriteRule VariableName
+        :: base RewritingVariableName
+        -> base RewritingVariableName
+        -> RewriteRule RewritingVariableName
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
@@ -93,9 +96,9 @@ instance RewriteRuleBase TermLike where
         Pair (t1, makeTruePredicate) `rewritesTo` Pair (t2, makeTruePredicate)
 
 withAntiLeft
-    :: RewriteRule VariableName
-    -> AntiLeft VariableName
-    -> RewriteRule VariableName
+    :: RewriteRule RewritingVariableName
+    -> AntiLeft RewritingVariableName
+    -> RewriteRule RewritingVariableName
 withAntiLeft (RewriteRule rule) antiLeft =
     RewriteRule rule {RulePattern.antiLeft = Just antiLeft}
 
@@ -182,14 +185,16 @@ test_combineRulesPredicate =
     , testCase "Three rules case" $
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate (mkAnd Mock.a (mkElemVar Mock.var_x_0))
-                    , makeCeilPredicate (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    [ makeCeilPredicate
+                        (mkAnd Mock.a (mkElemVar Mock.var_xConfig_0))
+                    , makeCeilPredicate
+                        (mkAnd Mock.b (mkElemVar Mock.var_xConfig_1))
                     ]
 
             actual = mergeRulesPredicate
-                [ mkElemVar Mock.x `rewritesTo` Mock.a
-                , mkElemVar Mock.x `rewritesTo` Mock.b
-                , mkElemVar Mock.x `rewritesTo` Mock.c
+                [ mkElemVar Mock.xConfig `rewritesTo` Mock.a
+                , mkElemVar Mock.xConfig `rewritesTo` Mock.b
+                , mkElemVar Mock.xConfig `rewritesTo` Mock.c
                 ]
         in assertEqual "" expected actual
     , testCase "Anti Left" $ do
@@ -204,28 +209,30 @@ test_combineRulesPredicate =
             )
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate (mkAnd Mock.a (mkElemVar Mock.var_x_0))
+                    [ makeCeilPredicate
+                        (mkAnd Mock.a (mkElemVar Mock.var_xConfig_0))
                     , makeNotPredicate
                         (makeAndPredicate
                             (makeEqualsPredicate Mock.cf Mock.cg)
                             (makeCeilPredicate (mkAnd Mock.a Mock.ch))
                         )
-                    , makeCeilPredicate (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    , makeCeilPredicate
+                        (mkAnd Mock.b (mkElemVar Mock.var_xConfig_1))
                     ]
 
             actual = mergeRulesPredicate
-                [ mkElemVar Mock.x `rewritesTo` Mock.a
-                , mkElemVar Mock.x `rewritesTo` Mock.b
-                    `withAntiLeft` antiLeft
-                , mkElemVar Mock.x `rewritesTo` Mock.c
+                [ mkElemVar Mock.xConfig `rewritesTo` Mock.a
+                , mkElemVar Mock.xConfig `rewritesTo` Mock.b
+                    `withAntiLeft` mapVariables (pure mkConfigVariable) antiLeft
+                , mkElemVar Mock.xConfig `rewritesTo` Mock.c
                 ]
         assertEqual "" expected actual
     ]
   where
-    x :: TermLike VariableName
-    x = mkElemVar Mock.x
-    x_0 :: TermLike VariableName
-    x_0 = mkElemVar Mock.var_x_0
+    x :: TermLike RewritingVariableName
+    x = mkElemVar Mock.xConfig
+    x_0 :: TermLike RewritingVariableName
+    x_0 = mkElemVar Mock.var_xConfig_0
 
 test_combineRules :: [TestTree]
 test_combineRules =
@@ -324,9 +331,9 @@ test_combineRules =
         assertEqual "" expected actual
     ]
   where
-    x = mkElemVar Mock.x
-    x0 = mkElemVar Mock.var_x_0
-    y = mkElemVar Mock.y
+    x = mkElemVar Mock.xConfig
+    x0 = mkElemVar Mock.var_xConfig_0
+    y = mkElemVar Mock.yConfig
 
 test_combineRulesGrouped :: [TestTree]
 test_combineRulesGrouped =
@@ -361,9 +368,9 @@ test_combineRulesGrouped =
         assertEqual "" expected actual
     ]
   where
-    x = mkElemVar Mock.x
-    y = mkElemVar Mock.y
-    z = mkElemVar Mock.z
+    x = mkElemVar Mock.xConfig
+    y = mkElemVar Mock.yConfig
+    z = mkElemVar Mock.zConfig
 
 applyAlias :: Text -> TermLike VariableName -> TermLike VariableName
 applyAlias name aliasRight =
@@ -378,24 +385,24 @@ applyAlias name aliasRight =
         []
 
 runMergeRules
-    :: [RewriteRule VariableName]
-    -> IO [RewriteRule VariableName]
+    :: [RewriteRule RewritingVariableName]
+    -> IO [RewriteRule RewritingVariableName]
 runMergeRules (rule : rules) =
     runSimplifier Mock.env
     $ mergeRules (rule :| rules)
 runMergeRules [] = error "Unexpected empty list of rules."
 
 runMergeRulesSMT
-    :: [RewriteRule VariableName]
-    -> IO [RewriteRule VariableName]
+    :: [RewriteRule RewritingVariableName]
+    -> IO [RewriteRule RewritingVariableName]
 runMergeRulesSMT (rule : rules) =
     runSimplifierSMT Mock.env
     $ mergeRules (rule :| rules)
 runMergeRulesSMT [] = error "Unexpected empty list of rules."
 
 runMergeRulesGrouped
-    :: [RewriteRule VariableName]
-    -> IO [RewriteRule VariableName]
+    :: [RewriteRule RewritingVariableName]
+    -> IO [RewriteRule RewritingVariableName]
 runMergeRulesGrouped (rule : rules) =
     runSimplifier Mock.env
     $ mergeRulesConsecutiveBatches 2 (rule :| rules)

@@ -764,8 +764,16 @@ mkConfigSetVariable base counter variableSort =
 
 var_x_0 :: MockElementVariable
 var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
+var_xRule_0 :: MockRewritingElementVariable
+var_xRule_0 = mkRuleElementVariable (testId "x") (Just (Element 0)) testSort
+var_xConfig_0 :: MockRewritingElementVariable
+var_xConfig_0 = mkConfigElementVariable (testId "x") (Just (Element 0)) testSort
 var_x_1 :: MockElementVariable
 var_x_1 = MockElementVariable (testId "x") (Just (Element 1)) testSort
+var_xRule_1 :: MockRewritingElementVariable
+var_xRule_1 = mkRuleElementVariable (testId "x") (Just (Element 1)) testSort
+var_xConfig_1 :: MockRewritingElementVariable
+var_xConfig_1 = mkConfigElementVariable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: MockElementVariable
 var_y_1 = MockElementVariable (testId "y") (Just (Element 1)) testSort
 var_z_1 :: MockElementVariable
