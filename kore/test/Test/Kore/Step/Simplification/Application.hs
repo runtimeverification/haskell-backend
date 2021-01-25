@@ -40,6 +40,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import Kore.Step.Simplification.Application
 import Kore.Step.Simplification.Simplify
+import Kore.Rewriting.RewritingVariable (mkRuleVariable, RewritingVariableName)
+import qualified Kore.Syntax.Variable as Variable
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -156,8 +158,8 @@ test_applicationSimplification =
                                     )
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (inject Mock.x, fOfA)
-                                , (inject Mock.y, gOfA)
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.yConfig, gOfA)
                                 ]
                             }
                         ]
@@ -172,7 +174,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -181,7 +183,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
@@ -203,6 +205,7 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
+                        & Variable.mapElementVariable (pure mkRuleVariable)
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -216,14 +219,15 @@ test_applicationSimplification =
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (inject z', gOfB)
-                                    , (inject Mock.x, fOfA)
-                                    , (inject Mock.y, gOfA)
+                                    , (inject Mock.xConfig, fOfA)
+                                    , (inject Mock.yConfig, gOfA)
                                     ]
                             }
                         ]
             actual <-
                 let
                     result
+                        -- TODO (Andrei): This won't need to be polymorphic
                         :: forall variable
                         .  InternalVariable variable
                         => AttemptedAxiom variable
@@ -242,7 +246,10 @@ test_applicationSimplification =
                         }
                       where
                         zvar :: ElementVariable variable
-                        zvar = fmap from <$> z'
+                        zvar =
+                            fmap
+                                (from . from @RewritingVariableName @VariableName)
+                            <$> z'
                 in
                     evaluate
                         (Map.singleton
@@ -261,7 +268,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -270,7 +277,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
@@ -332,8 +339,8 @@ makeApplication symbol patterns =
 evaluate
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Application Symbol (OrPattern VariableName)
-    -> IO (OrPattern VariableName)
+    -> Application Symbol (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env { simplifierAxioms }
