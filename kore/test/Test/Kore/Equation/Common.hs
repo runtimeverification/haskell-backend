@@ -135,13 +135,21 @@ functionAxiomUnification'_
 functionAxiomUnification'_ symbol args right =
     functionAxiomUnification' symbol args right makeTruePredicate
 
-concrete :: [TestTerm] -> Equation' -> Equation'
+-- TODO (Andrei): Fix this to `RewritingVariableName`
+concrete
+    :: InternalVariable variable
+    => [TermLike variable]
+    -> Equation variable
+    -> Equation variable 
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")
         (Concrete $ foldMap freeVariables vars)
 
-symbolic :: [TestTerm] -> Equation' -> Equation'
+symbolic
+    :: [TermLike RewritingVariableName]
+    -> Equation RewritingVariableName
+    -> Equation RewritingVariableName
 symbolic vars =
     Lens.set
         (field @"attributes" . field @"symbolic")

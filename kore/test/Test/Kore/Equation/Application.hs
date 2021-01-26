@@ -9,6 +9,8 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Sup (Sup(..))
+import GHC.Natural (intToNatural)
 import Control.Monad
     ( (>=>)
     )
@@ -27,9 +29,9 @@ import Kore.Equation.Application hiding
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
@@ -38,21 +40,27 @@ import Kore.Step.Axiom.Registry
 import qualified Pretty
 
 import Test.Expect
-import Test.Kore.Equation.Common
+import Test.Kore.Equation.Common hiding
+    ( axiom
+    , axiom_
+    , functionAxiomUnification
+    , functionAxiomUnification_
+    )
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import Test.Kore (testId)
 
-type AttemptEquationError' = AttemptEquationError VariableName
-type AttemptEquationResult' = AttemptEquationResult VariableName
+type AttemptEquationError' = AttemptEquationError RewritingVariableName
+type AttemptEquationResult' = AttemptEquationResult RewritingVariableName
 
 attemptEquation
-    :: TestSideCondition
-    -> TestTerm
-    -> Equation'
+    :: SideCondition RewritingVariableName 
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition termLike equation
@@ -161,15 +169,15 @@ test_attemptEquation =
         let
             ensures =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.x))
-                    (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
                 $ makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.y))
-                    (Mock.functional10 (mkElemVar Mock.y))
-            initial = mkElemVar Mock.y
+                    (Mock.functional11 (mkElemVar Mock.yConfig))
+                    (Mock.functional10 (mkElemVar Mock.yConfig))
+            initial = mkElemVar Mock.yConfig
             equation = equationId { ensures }
         attemptEquation SideCondition.top initial equation
             >>= expectRight >>= assertEqual "" expect
@@ -178,8 +186,8 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional10 (mkElemVar Mock.x))
-                    (Mock.functional11 (mkElemVar Mock.x))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
@@ -495,7 +503,7 @@ test_attemptEquationUnification =
 test_applySubstitutionAndSimplify :: [TestTree]
 test_applySubstitutionAndSimplify =
     [ testCase "Function application in argument doesn't get evaluated" $ do
-        let mockArgument :: Predicate VariableName
+        let mockArgument :: Predicate RewritingVariableName
             mockArgument =
                 var1Term `makeInPredicate` Mock.f var2Term
             expected =
@@ -521,69 +529,74 @@ test_applySubstitutionAndSimplify =
         [ (AxiomIdentifier.Application Mock.fId
           , [ functionAxiomUnification_
                 Mock.fSymbol
-                [mkElemVar Mock.z]
+                [mkElemVar Mock.zConfig]
                 Mock.a
-                & Equation.mapVariables (pure mkRuleVariable)
             ]
           )
         ]
-    someVar1 = Mock.x & inject
-    var1Term = mkElemVar Mock.x
-    var2Term = mkElemVar Mock.y
+    someVar1 = Mock.xConfig & inject
+    var1Term = mkElemVar Mock.xConfig
+    var2Term = mkElemVar Mock.yConfig
 
 -- * Test data
 
-equationId :: Equation'
-equationId = mkEquation (mkElemVar Mock.x) (mkElemVar Mock.x)
+equationId :: Equation RewritingVariableName
+equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
 
-equationRequiresBottom :: Equation'
+equationRequiresBottom :: Equation RewritingVariableName
 equationRequiresBottom =
     (mkEquation Mock.a Mock.b)
         { requires = makeFalsePredicate }
 
-equationEnsuresBottom :: Equation'
+equationEnsuresBottom :: Equation RewritingVariableName
 equationEnsuresBottom =
     (mkEquation Mock.a Mock.b)
         { ensures = makeFalsePredicate }
 
-equationBottom :: Equation'
+equationBottom :: Equation RewritingVariableName
 equationBottom =
     mkEquation Mock.a (mkBottom Mock.testSort)
 
-f, g :: TestTerm -> TestTerm
+f, g :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
 fSymbol :: Symbol
 fSymbol = Mock.functionalConstr10Symbol
 
-cf :: TestTerm
+cf :: TermLike RewritingVariableName
 cf = Mock.cf
 
-sigma :: TestTerm -> TestTerm -> TestTerm
+sigma
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sigma = Mock.functionalConstr20
 
 sigmaSymbol :: Symbol
 sigmaSymbol = Mock.functionalConstr20Symbol
 
-string :: Text -> TestTerm
+string :: Text -> TermLike RewritingVariableName
 string = Mock.builtinString
 
-x, xString, xInt, y, z :: TestTerm
-x = mkElemVar Mock.x
-xInt = mkElemVar Mock.xInt
-xString = mkElemVar Mock.xString
-y = mkElemVar Mock.y
-z = mkElemVar Mock.z
+x, xString, xInt, y, z :: TermLike RewritingVariableName
+x = mkElemVar Mock.xRule
+xInt = mkElemVar Mock.xRuleInt
+xString = mkElemVar Mock.xRuleString
+y = mkElemVar Mock.yRule
+z = mkElemVar Mock.zRule
 
-a, b :: TestTerm
+a, b :: TermLike RewritingVariableName
 a = Mock.a
 b = Mock.b
 
-tdivInt :: TestTerm -> TestTerm -> TestTerm
+tdivInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 tdivInt = Mock.tdivInt
 
-positive :: TestTerm -> TestPredicate
+positive :: TermLike RewritingVariableName ->  Predicate RewritingVariableName 
 positive u' =
     makeEqualsPredicate
         (Mock.lessInt
@@ -593,9 +606,9 @@ positive u' =
         (Mock.builtinBool False)
 
 andNot, orNot
-    :: TestPredicate
-    -> TestPredicate
-    -> TestPredicate
+    :: Predicate RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Predicate RewritingVariableName
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 
@@ -604,19 +617,19 @@ orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 withAttemptEquationResult
     :: (AttemptEquationResult' -> Assertion)
     -> TestName
-    -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> Equation RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
 
 applies
     :: TestName
-    -> Equation'
-    -> TestSideCondition
-    -> TestTerm
-    -> TestPattern
+    -> Equation RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Pattern RewritingVariableName
     -> TestTree
 applies testName equation sideCondition initial expect =
     withAttemptEquationResult
@@ -628,26 +641,83 @@ applies testName equation sideCondition initial expect =
 
 notMatched
     :: TestName
-    -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> Equation RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
-    -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> Equation RewritingVariableName
+    -> SideCondition RewritingVariableName 
+    -> TermLike RewritingVariableName
     -> TestTree
 notInstantiated =
     withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
 
 requiresNotMet
     :: TestName
-    -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> Equation RewritingVariableName 
+    -> SideCondition RewritingVariableName 
+    -> TermLike RewritingVariableName
     -> TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
+
+-- TODO (Andrei): Probably replace `Common.axiom` with this
+
+axiom
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
+axiom left right requires =
+    (mkEquation left right) { requires }
+
+axiom_
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
+axiom_ left right = axiom left right makeTruePredicate
+
+functionAxiomUnification
+    :: Symbol
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
+functionAxiomUnification symbol args right requires =
+    case args of
+        [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
+        _  -> (mkEquation left right) { requires, argument }
+  where
+    left = mkApplySymbol symbol variables
+    sorts = fmap termLikeSort args
+    variables = generateVariables (intToNatural (length args)) sorts
+    generateVariables n sorts' =
+        fmap makeElementVariable (zip [0..n - 1] sorts')
+    argument =
+        Just
+        $ foldr1 makeAndPredicate
+        $ fmap (uncurry makeInPredicate)
+        $ zip variables args
+    makeElementVariable (num, sort) =
+        mkElementVariable' (testId "funcVar") num sort
+        & mkElemVar
+    mkElementVariable' base counter variableSort =
+        Variable
+            { variableName =
+                ElementVariableName
+                    $ mkRuleVariable
+                    $ VariableName { base, counter = Just (Element counter) }
+            , variableSort
+            }
+
+functionAxiomUnification_
+    :: Symbol
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
+functionAxiomUnification_ symbol args right =
+    functionAxiomUnification symbol args right makeTruePredicate

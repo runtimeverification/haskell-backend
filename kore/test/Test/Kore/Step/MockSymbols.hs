@@ -797,7 +797,7 @@ x0 = MockElementVariable (testId "x0") mempty testSort0
 y :: MockElementVariable
 y = MockElementVariable (testId "y") mempty testSort
 yRule :: MockRewritingElementVariable
-yRule = mkRuleElementVariable (testId "x") mempty testSort
+yRule = mkRuleElementVariable (testId "y") mempty testSort
 yConfig :: MockRewritingElementVariable
 yConfig = mkConfigElementVariable (testId "y") mempty testSort
 setY :: MockSetVariable
