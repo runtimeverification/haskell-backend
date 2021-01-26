@@ -100,15 +100,15 @@ main = handleTop $ do
             let KoreParserOptions { patternOpt } = koreParserOptions
             for_ patternOpt $ \patternOptions -> do
                 let PatternOptions { mainModuleName } = patternOptions
-                indexedModule <-
-                    lookupMainModule
-                        (ModuleName mainModuleName)
-                        indexedModules
-                    & lift
                 let PatternOptions { patternFileNames } = patternOptions
                 for_ patternFileNames $ \patternFileName -> do
                     parsedPattern <- mainPatternParse patternFileName
                     when willVerify $ do
+                        indexedModule <-
+                            lookupMainModule
+                                (ModuleName mainModuleName)
+                                indexedModules
+                            & lift
                         _ <- mainPatternVerify indexedModule parsedPattern
                         return ()
                     let KoreParserOptions { willPrintPattern } =
