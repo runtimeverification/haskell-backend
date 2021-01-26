@@ -702,9 +702,10 @@ assumeDefined term =
                 getConcreteKeysOfAc normalizedAc
                 & fmap TermLike.fromConcrete
             opaqueElems = opaque (unwrapAc normalizedAc)
-         in HashSet.fromList symbolicKeys
-            <> HashSet.fromList concreteKeys
-            <> HashSet.fromList opaqueElems
+         in HashSet.fromList
+            $ symbolicKeys
+            <> concreteKeys
+            <> opaqueElems
 
 -- | Generates the minimal set of defined collections from which
 -- definedness of any sub collection can be inferred. The resulting
@@ -722,27 +723,20 @@ generateNormalizedAcs
 generateNormalizedAcs internalAc
   | numberOfElements <= 2 = mempty
   | otherwise =
-    let symbolicPairs =
-            [(x,y) | x <- symbolicElems, y <- symbolicElems , x /= y]
-            & nubOrdBy applyComm
-        concretePairs =
-            [(x,y) | x <- concreteElems, y <- concreteElems, x /= y]
-            & nubOrdBy applyComm
-        opaquePairs =
-            [(x,y) | x <- opaqueElems, y <- opaqueElems, x /= y]
-            & nubOrdBy applyComm
-        symbolicConcrete =
-            (,) <$> symbolicElems <*> concreteElems
-        symbolicOpaque =
-            (,) <$> symbolicElems <*> opaqueElems
-        concreteOpaque =
-            (,) <$> concreteElems <*> opaqueElems
-     in HashSet.fromList (symbolicToAc <$> symbolicPairs)
-        <> HashSet.fromList (concreteToAc <$> concretePairs)
-        <> HashSet.fromList (opaqueToAc <$> opaquePairs)
-        <> HashSet.fromList (symbolicConcreteToAc <$> symbolicConcrete)
-        <> HashSet.fromList (symbolicOpaqueToAc <$> symbolicOpaque)
-        <> HashSet.fromList (concreteOpaqueToAc <$> concreteOpaque)
+    let symbolicPairs = pairWiseElemsOfSameType symbolicElems
+        concretePairs = pairWiseElemsOfSameType concreteElems
+        opaquePairs   = pairWiseElemsOfSameType opaqueElems
+        symbolicConcrete = (,) <$> symbolicElems <*> concreteElems
+        symbolicOpaque   = (,) <$> symbolicElems <*> opaqueElems
+        concreteOpaque   = (,) <$> concreteElems <*> opaqueElems
+     in [ symbolicToAc <$> symbolicPairs
+        , concreteToAc <$> concretePairs
+        , opaqueToAc <$> opaquePairs
+        , symbolicConcreteToAc <$> symbolicConcrete
+        , symbolicOpaqueToAc <$> symbolicOpaque
+        , concreteOpaqueToAc <$> concreteOpaque
+        ]
+        & concat & HashSet.fromList
   where
     InternalAc
         { builtinAcChild
@@ -751,13 +745,16 @@ generateNormalizedAcs internalAc
         , builtinAcConcat
         , builtinAcElement
         } = internalAc
+    symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
+    concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
+    opaqueElems = opaque . unwrapAc $ builtinAcChild
     numberOfElements =
         length symbolicElems
         + length concreteElems
         + length opaqueElems
-    symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
-    concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
-    opaqueElems = opaque . unwrapAc $ builtinAcChild
+    pairWiseElemsOfSameType elems =
+        [ (x, y) | x <- elems, y <- elems, x /= y ]
+        & nubOrdBy applyComm
     applyComm p1 p2
       | p1 == p2 = EQ
       | swap p1 == p2 = EQ
