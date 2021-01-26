@@ -53,7 +53,7 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 {- | Options for parsing and verifying a pattern.
  -}
 data PatternOptions = PatternOptions
-    { patternFileName     :: !FilePath
+    { patternFileNames    :: ![FilePath]
     -- ^ name of file containing a pattern to parse and verify
     , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
@@ -77,10 +77,12 @@ data KoreParserOptions = KoreParserOptions
 
 parsePatternOptions :: Parser PatternOptions
 parsePatternOptions = PatternOptions
-    <$> strOption
-        (  metavar "PATTERN_FILE"
-        <> long "pattern"
-        <> help "Kore pattern source file to parse [and verify]. Needs --module.")
+    <$> some (
+            strOption
+            (  metavar "PATTERN_FILE"
+            <> long "pattern"
+            <> help "Kore pattern source file to parse [and verify]. Needs --module.")
+        )
     <*> strOption
         (  metavar "MODULE"
         <> long "module"
