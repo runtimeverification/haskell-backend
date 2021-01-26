@@ -95,12 +95,13 @@ mkSetAux concreteElements elements opaque =
             { elementsWithVariables = SetElement <$> elements
             , concreteElements =
                 concreteElements
-                & map (retractKey >>> fromJust)
-                & map (\x -> (x, SetValue))
+                & map (retractKey >>> fromJust >>> mkSetValue)
                 & Map.fromList
             , opaque
             }
         }
+  where
+    mkSetValue = \x -> (x, SetValue)
 
 evaluate
     :: InternalSet Key (OrPattern VariableName)
