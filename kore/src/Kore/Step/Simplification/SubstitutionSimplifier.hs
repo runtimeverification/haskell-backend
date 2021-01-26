@@ -4,6 +4,7 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , substitutionSimplifier
@@ -376,7 +377,6 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
-
 data Private variable =
     Private
         { accum :: !(Condition variable)
