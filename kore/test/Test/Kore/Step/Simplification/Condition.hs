@@ -87,7 +87,6 @@ test_simplify_local_functions =
     fBool = Mock.fBool (mkElemVar Mock.xBool)
     fString = Mock.fString (mkElemVar Mock.xString)
     defined = makeCeilPredicate f & Condition.fromPredicate
-    definedFg = makeCeilPredicate fg & Condition.fromPredicate
 
     a = Mock.a
     b = Mock.b
@@ -128,7 +127,7 @@ test_simplify_local_functions =
                 equals2 =
                     mkLocalDefn (applyDefined2 eitherFunc) eitherC2
                         & Condition.fromPredicate
-                condition = definedFg <> equals1 <> definedFg <> equals2
+                condition = equals1 <> equals2
             actual <- simplify condition
             assertBool "Expected \\bottom" $ isBottom actual
 
