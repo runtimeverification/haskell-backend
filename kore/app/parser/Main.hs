@@ -8,6 +8,7 @@ import Control.Monad.Catch
     , handle
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
@@ -100,16 +101,17 @@ main = handleTop $ do
             let KoreParserOptions { patternOpt } = koreParserOptions
             for_ patternOpt $ \patternOptions -> do
                 let PatternOptions { mainModuleName } = patternOptions
+                indexedModule <- if willVerify then Just <$>
+                    ( lookupMainModule
+                        (ModuleName mainModuleName)
+                        indexedModules
+                    & lift )
+                    else return Nothing
                 let PatternOptions { patternFileNames } = patternOptions
                 for_ patternFileNames $ \patternFileName -> do
                     parsedPattern <- mainPatternParse patternFileName
                     when willVerify $ do
-                        indexedModule <-
-                            lookupMainModule
-                                (ModuleName mainModuleName)
-                                indexedModules
-                            & lift
-                        _ <- mainPatternVerify indexedModule parsedPattern
+                        _ <- mainPatternVerify (fromJust indexedModule) parsedPattern
                         return ()
                     let KoreParserOptions { willPrintPattern } =
                             koreParserOptions
