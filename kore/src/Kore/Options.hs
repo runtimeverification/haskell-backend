@@ -94,19 +94,19 @@ parseKoreParserOptions =
     KoreParserOptions
     <$> argument str
         (  metavar "FILE"
-        <> help "Kore source file to parse [and verify]" )
+        <> help "Kore source file to parse and (optionally) validate." )
     <*> optional parsePatternOptions
     <*> enableDisableFlag "print-definition"
         True False False
-        "printing parsed definition to stdout [default disabled]"
+        "Print the parsed definition. [default: disabled]"
     <*> enableDisableFlag "print-pattern"
         True False False
-        "printing parsed pattern to stdout [default disabled]"
+        "Print the parsed pattern. [default: disabled]"
     <*> enableDisableFlag "verify"
         True False True
-        "Verify well-formedness of parsed definition [default enabled]"
+        "Verify well-formedness of parsed definition and pattern(s).\
+        \ [default: enabled]"
     <*> enableDisableFlag "appkore"
         True False False
-        (  "printing parsed definition in applicative Kore syntax "
-        ++ "[default disabled]"
-        )
+        "Print the valid definition in applicative Kore syntax.\
+        \ (Requires --verify.) [default: disabled]"
