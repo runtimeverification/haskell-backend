@@ -120,12 +120,12 @@ main = handleTop $ do
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
-mainDefinitionParse :: String -> Main ParsedDefinition
+mainDefinitionParse :: FilePath -> Main ParsedDefinition
 mainDefinitionParse = mainParse parseKoreDefinition
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
-mainPatternParse :: String -> Main ParsedPattern
+mainPatternParse :: FilePath -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
 -- | IO action verifies well-formedness of Kore definition and prints
