@@ -56,12 +56,16 @@ import qualified Kore.Attribute.Element as Att
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
+import qualified Kore.Attribute.Symbol as SymAtt
 import qualified Kore.Attribute.Unit as Att
 import Kore.Debug
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
 import Kore.Sort
+import Kore.Syntax.Application
+    ( SymbolOrAlias
+    )
 import Kore.Unparser
 import Pretty
     ( (<+>)
@@ -124,7 +128,7 @@ wrapConcreteElement = from
 unparsedChildren
     :: forall ann child normalized key
     .  AcWrapper normalized
-    => Symbol
+    => SymbolOrAlias
     -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> normalized key child
@@ -432,10 +436,10 @@ unparseInternalAc
     -> Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
     unparseConcat'
-        (unparse $ Att.fromUnit builtinAcUnit)
+        (unparse $ Att.fromUnit unitSymbolOrAlias)
         (unparse $ Att.fromConcat builtinAcConcat)
     $ unparsedChildren
-        (Att.fromElement builtinAcElement)
+        (Att.fromElement elementSymbolOrAlias)
         keyUnparser
         childUnparser
         builtinAcChild
@@ -444,6 +448,17 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
     InternalAc { builtinAcUnit } = builtinAc
     InternalAc { builtinAcElement } = builtinAc
     InternalAc { builtinAcConcat } = builtinAc
+    (concatUnit, concatElement) = case Att.getConcat builtinAcConcat of
+        Nothing -> (def, def)
+        Just concatSymbol -> let concatAtts = symbolAttributes concatSymbol
+            in (SymAtt.unitHook concatAtts, SymAtt.elementHook concatAtts)
+    unitSymbolOrAlias = Att.mergeUnit
+        (toSymbolOrAlias <$> builtinAcUnit)
+        concatUnit
+    elementSymbolOrAlias = Att.mergeElement
+        (toSymbolOrAlias <$> builtinAcElement)
+        concatElement
+
 
 normalizedAcDefined
     :: (Foldable (Element collection), Foldable (Value collection))

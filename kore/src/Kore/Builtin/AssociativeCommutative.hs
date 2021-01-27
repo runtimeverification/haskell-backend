@@ -342,12 +342,6 @@ toNormalizedInternalMap termLike =
                             (Att.toConcat symbol)
                         , builtinAcChild = normalized
                         }
-                    !_unitMatch = Att.mergeUnit
-                        (toSymbolOrAlias <$> builtinAcUnit internal)
-                        (Attribute.unitHook $ symbolAttributes symbol)
-                    !_elementMatch = Att.mergeElement
-                        (toSymbolOrAlias <$> builtinAcElement internal)
-                        (Attribute.elementHook $ symbolAttributes symbol)
                 return internal
             _ -> Builtin.wrongArity "MAP.concat"
     toNormalizedInternalMapWorker (Defined_ child) =
@@ -502,12 +496,6 @@ toNormalizedInternalSet termLike =
                             (Att.toConcat symbol)
                         , builtinAcChild = normalized
                         }
-                    !_unitMatch = Att.mergeUnit
-                        (toSymbolOrAlias <$> builtinAcUnit internal)
-                        (Attribute.unitHook $ symbolAttributes symbol)
-                    !_elementMatch = Att.mergeElement
-                        (toSymbolOrAlias <$> builtinAcElement internal)
-                        (Attribute.elementHook $ symbolAttributes symbol)
                 return internal
             _ -> Builtin.wrongArity "SET.concat"
     toNormalizedInternalSetWorker (Defined_ child) =
