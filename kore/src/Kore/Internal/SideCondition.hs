@@ -24,6 +24,7 @@ module Kore.Internal.SideCondition
     , cannotReplaceTerm
     , cannotReplacePredicate
     , assumeDefined
+    , isDefined
     , fromDefinedTerms
     , generateNormalizedAcs
     , simplifyConjunctionByAssumption
@@ -633,6 +634,14 @@ retractLocalFunction =
             _          -> Nothing
     go _ _ = Nothing
 
+{- | Assumes a 'TermLike' to be defined. If not always defined,
+it will be stored in the `SideCondition` together with any subterms
+resulting from the implication that the original term is defined.
+
+For maps and sets: this will generate and store a minimal set
+of sub-collections from which the definedness of any sub-collection
+can be inferred.
+-}
 assumeDefined
     :: forall variable
     .  InternalVariable variable
@@ -707,9 +716,40 @@ assumeDefined term =
             <> concreteKeys
             <> opaqueElems
 
--- | Generates the minimal set of defined collections from which
--- definedness of any sub collection can be inferred. The resulting
--- set will not contain the input collection itself.
+{- | Checks if a 'TermLike' is defined. It may always be defined,
+or be defined in the context of the `SideCondition`.
+-}
+isDefined
+    :: InternalVariable variable
+    => SideCondition variable
+    -> TermLike variable
+    -> Bool
+isDefined SideCondition { definedTerms } term =
+    TermLike.isDefinedPattern term
+    || HashSet.member term definedTerms
+    || isDefinedAc
+  where
+    isDefinedAc =
+        case term of
+            TermLike.InternalMap_ internalMap ->
+                let subMaps =
+                        generateNormalizedAcs internalMap
+                        & HashSet.map TermLike.mkInternalMap
+                 in subMaps `isNonEmptySubset` definedTerms
+            TermLike.InternalSet_ internalSet ->
+                let subSets =
+                        generateNormalizedAcs internalSet
+                        & HashSet.map TermLike.mkInternalSet
+                 in subSets `isNonEmptySubset` definedTerms
+            _ -> False
+    isNonEmptySubset subset set
+      | null subset = False
+      | otherwise = all (`HashSet.member` set) subset
+
+{- | Generates the minimal set of defined collections
+from which definedness of any sub collection can be inferred.
+The resulting set will not contain the input collection itself.
+-}
 generateNormalizedAcs
     :: forall normalized variable
     .  InternalVariable variable
