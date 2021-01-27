@@ -104,7 +104,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.Symbol
     ( Symbol (..)
-    , toSymbolOrAlias
     )
 import Kore.Internal.TermLike
     ( pattern App_

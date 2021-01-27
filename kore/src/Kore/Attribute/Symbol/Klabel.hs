@@ -13,7 +13,6 @@ import Prelude.Kore
 
 import Data.Text
     ( Text
-    , unpack
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
