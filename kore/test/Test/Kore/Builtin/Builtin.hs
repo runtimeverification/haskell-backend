@@ -237,7 +237,7 @@ testEnv =
         , overloadSimplifier = testOverloadSimplifier
         }
 
-simplify :: TermLike VariableName -> IO [Pattern VariableName]
+simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]
 simplify =
     id
     . runNoSMT
