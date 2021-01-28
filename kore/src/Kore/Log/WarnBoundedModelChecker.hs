@@ -11,11 +11,11 @@ module Kore.Log.WarnBoundedModelChecker
 
 import Prelude.Kore
 
+import Kore.Attribute.SourceLocation
+import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( ImplicationRule
     )
-import Kore.Internal.TermLike
-import Kore.Attribute.SourceLocation
 --import Kore.Log.InfoProofDepth
 --import Kore.Reachability.SomeClaim
 import Log

@@ -126,11 +126,11 @@ import Kore.Log
 import Kore.Log.ErrorException
     ( errorException
     )
-import Kore.Logig.WarnBoundedModelChecker
-    ( warnBoundedModelChecker
-    )
 import Kore.Log.WarnIfLowProductivity
     ( warnIfLowProductivity
+    )
+import Kore.Logig.WarnBoundedModelChecker
+    ( warnBoundedModelChecker
     )
 import qualified Kore.ModelChecker.Bounded as Bounded
     ( CheckResult (..)
