@@ -319,16 +319,16 @@ simplify sideCondition = \termLike ->
             -> simplifier (OrPattern variable)
         returnIfResultSimplifiedOrContinue originalTerm result continuation
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultTerm
-            && resultSubstitutionIsEmpty
-            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
+          , isTop resultTerm
+          , resultSubstitutionIsEmpty
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultPredicate
-            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
+          , isTop resultPredicate
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
-            && SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return
                 (OrPattern.fromTermLike
                     (TermLike.markSimplifiedConditional
