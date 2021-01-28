@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveLift              #-}
 {-# LANGUAGE NoDuplicateRecordFields #-}
+{-# LANGUAGE Strict                  #-}
 {-# LANGUAGE TemplateHaskell         #-}
 
 module VersionInfo
@@ -30,6 +31,7 @@ import System.FilePath
     , (</>)
     )
 
+-- | Information about the current version of Kore.
 data VersionInfo =
     VersionInfo
     { gitHash :: !String
@@ -42,6 +44,7 @@ data VersionInfo =
 
 instance FromJSON VersionInfo
 
+-- | Produce (at compile-time) information about the current version of Kore.
 versionInfo :: Q Exp
 versionInfo = do
     packageRoot <- getPackageRoot
@@ -63,6 +66,12 @@ versionInfo = do
             }
         |]
 
+{- | Find the root of the package.
+
+@getPackageRoot@ looks upward from the current file (i.e. the file into which it
+is spliced) to find the root directory of the package.
+
+-}
 getPackageRoot :: Q FilePath
 getPackageRoot = do
     bot <- takeDirectory . TH.loc_filename <$> TH.location
