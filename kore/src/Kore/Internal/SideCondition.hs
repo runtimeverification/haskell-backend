@@ -441,7 +441,10 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                         HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
-                PredicateEquals t1 t2 ->
+                PredicateEquals
+                    (TermLike.unDefined -> t1)
+                    (TermLike.unDefined -> t2)
+                  ->
                     case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
@@ -505,7 +508,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorkerTerm assumptions original
+    applyAssumptionsWorkerTerm assumptions (TermLike.unDefined -> original)
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original
