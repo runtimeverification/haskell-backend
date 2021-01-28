@@ -112,7 +112,16 @@ import Kore.Internal.TermLike
     , mkSortVariable
     , mkTop
     )
-
+import Kore.Log
+    ( KoreLogOptions (..)
+    , LogMessage
+    , SomeEntry (..)
+    , WithLog
+    , logEntry
+    , parseKoreLogOptions
+    , runKoreLog
+    , unparseKoreLogOptions
+    )
 import Kore.Log.ErrorException
     ( errorException
     )
