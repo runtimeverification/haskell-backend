@@ -91,7 +91,8 @@ main = handleTop $ do
                 else pure Nothing
             let KoreParserOptions { willPrintDefinition } = koreParserOptions
             let KoreParserOptions { appKore } = koreParserOptions
-            when willPrintDefinition $ putDebug parsedDefinition
+            when (willPrintDefinition && not appKore)
+                $ putDebug parsedDefinition
             when appKore $ for_ indexedModules printAppKore
             pure indexedModules
 
