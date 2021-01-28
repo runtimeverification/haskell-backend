@@ -471,15 +471,15 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
       | otherwise =
           case replaceIn of
-              Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
-                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
-              Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
-                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
-              Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
-                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
-              Predicate.InF in_ -> Predicate.InF <$> traverse
-                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
-              _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
+              Predicate.CeilF ceil_ ->
+                  Predicate.CeilF <$> traverse applyTermAssumptions ceil_
+              Predicate.FloorF floor_ ->
+                  Predicate.FloorF <$> traverse applyTermAssumptions floor_
+              Predicate.EqualsF equals_ ->
+                  Predicate.EqualsF <$> traverse applyTermAssumptions equals_
+              Predicate.InF in_ ->
+                  Predicate.InF <$> traverse applyTermAssumptions in_
+              _ -> traverse applyPredicateAssumptions replaceIn
           & getChanged
           -- The next line ensures that if the result is Unchanged, any allocation
           -- performed while computing that result is collected.
@@ -487,6 +487,10 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
       where
         _ :< replaceIn = Recursive.project original
+
+        applyTermAssumptions =
+            applyAssumptionsWorkerTerm (termLikeMap assumptions')
+        applyPredicateAssumptions = applyAssumptionsWorker assumptions'
 
         assumptions'
           | PredicateExists var _ <- original = restrictAssumptions (inject var)
