@@ -16,8 +16,6 @@ import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( ImplicationRule
     )
---import Kore.Log.InfoProofDepth
---import Kore.Reachability.SomeClaim
 import Log
 import Pretty
     ( Pretty
