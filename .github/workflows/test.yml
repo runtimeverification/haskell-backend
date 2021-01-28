@@ -116,6 +116,14 @@ jobs:
           path: ${{ steps.locate-stack-root.outputs.stack-root }}
           key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('stack.yaml.lock') }}
 
+      - name: Build dependencies
+        run: |
+          stack build --only-dependencies
+          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+            git diff
+            exit 1
+          fi
+
       - name: Build project
         run: stack build --pedantic
 
