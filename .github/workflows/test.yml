@@ -134,3 +134,29 @@ jobs:
 
       - name: Run hlint
         run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
+
+  stylish-haskell:
+    name: 'stylish-haskell'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install stylish-haskell
+        run: |
+          cd $(mktemp -d)
+          wget https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          tar xaf stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          sudo mv stylish-haskell-v0.11.0.0-linux-x86_64/stylish-haskell /usr/local/bin/
+          stylish-haskell --version
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - name: Format with stylish-haskell
+        run: stylish-haskell -i -r kore
+
+      - name: Check for changes
+        run: |
+          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+            git diff
+            exit 1
+          fi
