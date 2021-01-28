@@ -11,20 +11,13 @@ export TOP  # so that sub-makes do not invoke git again
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
-K_RELEASE_TAR = $(BUILD_DIR)/k-nightly.tar.gz
-K_RELEASE_TAR_URL = https://github.com/kframework/k/releases/download/$(shell cat $(TOP)/deps/k_release)/k-nightly.tar.gz
-K_RELEASE_DEFAULT = $(BUILD_DIR)/k
-K_RELEASE ?= $(K_RELEASE_DEFAULT)
-K_RELEASE_BIN = $(K_RELEASE)/bin
-K_RELEASE_LIB = $(K_RELEASE)/lib
 
 # The kernel JAR is used as a build timestamp.
-K = $(K_RELEASE_LIB)/kframework/java/kernel-1.0-SNAPSHOT.jar
-KOMPILE = $(K_RELEASE_BIN)/kompile
-KRUN = $(K_RELEASE_BIN)/krun
+KOMPILE = kompile
+KRUN = krun
 export KRUN
-KPROVE = $(K_RELEASE_BIN)/kprove
-KBMC = $(K_RELEASE_BIN)/kbmc
+KPROVE = kprove
+KBMC = kbmc
 
 KOMPILE_OPTS = --backend haskell
 KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
@@ -34,8 +27,6 @@ export KPROVE_OPTS
 KPROVE_REPL_OPTS = --haskell-backend-command $(KORE_REPL)
 export KPROVE_REPL_OPTS
 
-HS_TOP = $(TOP)/kore
-HS_SOURCE_DIRS = $(HS_TOP)/src $(HS_TOP)/app $(HS_TOP)/test $(HS_TOP)/bench
 STACK_BUILD = build --pedantic $(STACK_BUILD_OPTS)
 
 STACK = stack --allow-different-user
@@ -65,13 +56,3 @@ $(KORE_REPL):
 
 $(KORE_PARSER):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
-
-$(K_RELEASE_DEFAULT)/lib/kframework/java/kernel-1.0-SNAPSHOT.jar:
-	mkdir -p $(BUILD_DIR)
-	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
-	curl --location --output $(K_RELEASE_TAR) $(K_RELEASE_TAR_URL)
-	mkdir -p $(K_RELEASE_DEFAULT)
-	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
-	cp $(TOP)/src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
-	$(KRUN) --version
-	test -f $@
