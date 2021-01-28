@@ -191,7 +191,7 @@ instance InternalVariable variable =>
     From (MultiAnd (Predicate variable)) (SideCondition variable)
   where
     from multiAnd =
-        let ( assumedTrue, DoubleMap termReplacements predicateReplacements ) =
+        let ( assumedTrue, Assumptions termReplacements predicateReplacements ) =
                   simplifyConjunctionByAssumption multiAnd
                   & extract
             predicateReplacementsAsTerms =
@@ -259,7 +259,7 @@ andCondition
     (from @(Condition _) @(MultiAnd _) -> newCondition)
   =
     let combinedConditions = oldCondition <> newCondition
-        (assumedTrue, DoubleMap termReplacements predicateReplacements) =
+        (assumedTrue, Assumptions termReplacements predicateReplacements) =
             simplifyConjunctionByAssumption combinedConditions
             & extract
         predicateReplacementsAsTerms =
@@ -370,9 +370,9 @@ cannotReplaceTerm
 cannotReplaceTerm SideCondition { replacements } term =
     HashMap.lookup term replacements & isNothing
 
-data DoubleMap variable = DoubleMap
+data Assumptions variable = Assumptions
     { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
-    , predMap :: HashMap (Predicate variable) (Predicate variable)
+    , predicateMap :: HashMap (Predicate variable) (Predicate variable)
     }
     deriving (Eq, GHC.Generic, Show)
 
@@ -388,11 +388,11 @@ simplifyConjunctionByAssumption
     => MultiAnd (Predicate variable)
     -> Changed
         ( MultiAnd (Predicate variable)
-        , DoubleMap variable
+        , Assumptions variable
         )
 simplifyConjunctionByAssumption (toList -> andPredicates) =
     (fmap . Bifunctor.first) MultiAnd.make
-    $ flip runStateT (DoubleMap HashMap.empty HashMap.empty)
+    $ flip runStateT (Assumptions HashMap.empty HashMap.empty)
     $ for (sortBySize andPredicates)
     $ \original -> do
         result <- applyAssumptions original
@@ -424,8 +424,8 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 _ -> 1 + sum predF
 
     assume
-        :: Predicate variable ->
-        StateT (DoubleMap variable) Changed ()
+        :: Predicate variable
+        -> StateT (Assumptions variable) Changed ()
     assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
@@ -433,11 +433,11 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
             case predicate of
                 PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    Lens.over (field @"predMap") $
+                    Lens.over (field @"predicateMap") $
                         HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    Lens.over (field @"predMap") $
+                    Lens.over (field @"predicateMap") $
                         HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
@@ -451,36 +451,36 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
     applyAssumptions
         ::  Predicate variable
-        ->  StateT (DoubleMap variable) Changed (Predicate variable)
+        ->  StateT (Assumptions variable) Changed (Predicate variable)
     applyAssumptions replaceIn = do
         assumptions <- State.get
         lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
-        :: DoubleMap variable
+        :: Assumptions variable
         -> Predicate variable
         -> Changed (Predicate variable)
     applyAssumptionsWorker assumptions original
-      | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
+      | Just result <- HashMap.lookup original (predicateMap assumptions) = Changed result
 
-      | HashMap.null (termLikeMap assumptions') &&
-        HashMap.null (predMap assumptions') = Unchanged original
+      | HashMap.null (termLikeMap assumptions')
+      , HashMap.null (predicateMap assumptions') = Unchanged original
 
-      | otherwise = (case replaceIn of
-          Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
-          Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
-          Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
-          Predicate.InF in_ -> Predicate.InF <$> traverse
-            (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
-          _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
-        )
-        & getChanged
-        -- The next line ensures that if the result is Unchanged, any allocation
-        -- performed while computing that result is collected.
-        & maybe (Unchanged original) (Changed . synthesize)
+      | otherwise =
+          case replaceIn of
+              Predicate.CeilF ceil_ -> Predicate.CeilF <$> traverse
+                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) ceil_
+              Predicate.FloorF floor_ -> Predicate.FloorF <$> traverse
+                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) floor_
+              Predicate.EqualsF equals_ -> Predicate.EqualsF <$> traverse
+                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) equals_
+              Predicate.InF in_ -> Predicate.InF <$> traverse
+                (applyAssumptionsWorkerTerm (termLikeMap assumptions')) in_
+              _ -> traverse (applyAssumptionsWorker assumptions') replaceIn
+          & getChanged
+          -- The next line ensures that if the result is Unchanged, any allocation
+          -- performed while computing that result is collected.
+          & maybe (Unchanged original) (Changed . synthesize)
 
       where
         _ :< replaceIn = Recursive.project original
@@ -494,7 +494,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
             Lens.over (field @"termLikeMap")
             (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
             $
-            Lens.over (field @"predMap")
+            Lens.over (field @"predicateMap")
             (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
             assumptions
           where
