@@ -24,23 +24,6 @@ RUN curl -sSL https://raw.githubusercontent.com/commercialhaskell/stack/v$STACK/
 USER $USER_ID:$GROUP_ID
 WORKDIR /home/user
 
-ARG Z3=4.8.8
-RUN    wget https://github.com/Z3Prover/z3/releases/download/z3-$Z3/z3-$Z3-x64-ubuntu-16.04.zip \
-    && unzip z3-$Z3-x64-ubuntu-16.04.zip \
-    && rm z3-$Z3-x64-ubuntu-16.04.zip \
-    && mv z3-$Z3-x64-ubuntu-16.04 z3
-ENV PATH=/home/user/z3/bin:$PATH
-
-ARG HLINT=3.2
-RUN    curl https://github.com/ndmitchell/hlint/releases/download/v$HLINT/hlint-$HLINT-x86_64-linux.tar.gz -sSfL | tar xzf - \
-    && mv hlint-$HLINT hlint
-ENV PATH=/home/user/hlint:$PATH
-
-ARG STYLISH_HASKELL=0.11.0.0
-RUN    curl https://github.com/jaspervdj/stylish-haskell/releases/download/v$STYLISH_HASKELL/stylish-haskell-v$STYLISH_HASKELL-linux-x86_64.tar.gz -sSfL | tar xzf - \
-    && mv stylish-haskell-v$STYLISH_HASKELL-linux-x86_64 stylish-haskell
-ENV PATH=/home/user/stylish-haskell:$PATH
-
 ADD --chown=user:user stack.yaml .tmp-haskell/
 ADD --chown=user:user kore/package.yaml .tmp-haskell/kore/
 RUN cd .tmp-haskell && stack build --only-snapshot --test --bench --haddock
