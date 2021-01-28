@@ -532,7 +532,7 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike VariableName))
+    -> smt (Bounded.CheckResult (TermLike VariableName) (ImplicationRule VariableName))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initializeAndSimplify definitionModule

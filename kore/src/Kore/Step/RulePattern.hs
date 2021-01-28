@@ -507,6 +507,9 @@ newtype ImplicationRule variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance From (ImplicationRule variable) Attribute.SourceLocation where
+    from (ImplicationRule rule) = from rule
+
 instance
     InternalVariable variable
     => Unparse (ImplicationRule variable)

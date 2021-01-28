@@ -126,6 +126,9 @@ import Kore.Log
 import Kore.Log.ErrorException
     ( errorException
     )
+import Kore.Logig.WarnBoundedModelChecker
+    ( warnBoundedModelChecker
+    )
 import Kore.Log.WarnIfLowProductivity
     ( warnIfLowProductivity
     )
@@ -770,8 +773,8 @@ koreBmc execOptions proveOptions = do
                 graphSearch
         case checkResult of
             Bounded.Proved -> return success
-            Bounded.Unknown -> do
-                logWarning "The pattern does not terminate within the bound."
+            Bounded.Unknown claim -> do
+                warnBoundedModelChecker claim
                 return success
             Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)

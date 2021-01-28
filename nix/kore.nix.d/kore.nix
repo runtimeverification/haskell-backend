@@ -281,6 +281,7 @@
           "Kore/Log/KoreLogOptions"
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
+          "Kore/Log/WarnBoundedModelChecker"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnRetrySolverQuery"
