@@ -20,13 +20,6 @@ pipeline {
         }
       }
     }
-    stage('Check') {
-      steps {
-        sh '''
-          ./scripts/check.sh
-        '''
-      }
-    }
     stage('Dependencies') {
       steps {
         sh '''
