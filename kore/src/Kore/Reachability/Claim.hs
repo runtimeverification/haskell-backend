@@ -104,10 +104,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-{- import Kore.Log.WarnStuckClaimState
-    ( warnStuckClaimStateTermsNotUnifiable
-    , warnStuckClaimStateTermsUnifiable
-    ) -}
 import Kore.Reachability.ClaimState hiding
     ( claimState
     )

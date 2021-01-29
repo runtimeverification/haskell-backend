@@ -46,12 +46,11 @@ instance Pretty WarnStuckClaimState where
             , Pretty.pretty (from claim :: SourceLocation)
             ]
 
-
 instance Entry WarnStuckClaimState where
     entrySeverity _ = Warning
     helpDoc _ = "distinguish the ways a proof can become stuck"
 
-warnStuckClaimStateTermsUnifiable ::  MonadLog log => SomeClaim -> log ()
+warnStuckClaimStateTermsUnifiable :: MonadLog log => SomeClaim -> log ()
 warnStuckClaimStateTermsUnifiable = logEntry . TermsUnifiableStuck
 
 warnStuckClaimStateTermsNotUnifiable :: MonadLog log => SomeClaim -> log ()
