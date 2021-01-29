@@ -42,9 +42,98 @@ test_assumeDefined =
             term =
                 mkAnd
                     Mock.plain00
-                    (Mock.plain10 Mock.a)
+                    (Mock.f Mock.a)
             expected =
-                [term, Mock.plain00, Mock.plain10 Mock.a]
+                [term, Mock.plain00, Mock.f Mock.a]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "App: implies subterms are defined" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.f (Mock.functional10 (Mock.g Mock.plain00))
+            expected =
+                [term, Mock.g Mock.plain00, Mock.plain00]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "Ceil: implies subterms are defined" $ do
+        let term :: TermLike VariableName
+            term = mkCeil_ Mock.plain00
+            expected =
+                [term, Mock.plain00]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "List: empty list is always defined" $ do
+        let term :: TermLike VariableName
+            term = Mock.builtinList []
+            expected = fromDefinedTerms mempty
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "List: implies subterms are defined" $ do
+        let term :: TermLike VariableName
+            term =
+                Mock.builtinList
+                    [ Mock.plain00
+                    , Mock.plain00
+                    , Mock.a
+                    , Mock.f (Mock.g Mock.a)
+                    ]
+            expected =
+                [ term
+                , Mock.plain00
+                , Mock.f (Mock.g Mock.a)
+                , Mock.g Mock.a
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "Forall: implies subterms are defined" $ do
+        let term :: TermLike VariableName
+            term =
+                mkForall
+                    Mock.x
+                    (mkForall
+                        Mock.y
+                        (mkAnd
+                            (Mock.f (mkElemVar Mock.x))
+                            (Mock.g (mkElemVar Mock.y))
+                        )
+                    )
+            expected =
+                [ term
+                , mkForall
+                    Mock.y
+                    (mkAnd
+                        (Mock.f (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.y))
+                    )
+                , mkAnd
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g (mkElemVar Mock.y))
+                , Mock.f (mkElemVar Mock.x)
+                , Mock.g (mkElemVar Mock.y)
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined term
+        assertEqual "" expected actual
+    , testCase "In: implies subterms are defined" $ do
+        let term :: TermLike VariableName
+            term =
+                mkIn_
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.functional10 (Mock.g Mock.a))
+            expected =
+                [ term
+                , Mock.f (mkElemVar Mock.x)
+                , Mock.g Mock.a
+                ]
                 & HashSet.fromList
                 & fromDefinedTerms
             actual = assumeDefined term
@@ -54,7 +143,7 @@ test_assumeDefined =
             term =
                 mkOr
                     Mock.plain00
-                    (Mock.plain10 Mock.a)
+                    (Mock.f Mock.a)
             expected =
                 [term]
                 & HashSet.fromList
@@ -159,7 +248,25 @@ test_assumeDefined =
 
 test_isDefined :: [TestTree]
 test_isDefined =
-    [ testCase "Singleton: always defined key implies\
+    [ testCase "A functional symbol with always defined children\
+                \ is always defined" $ do
+        let term :: TermLike VariableName
+            term = Mock.functional20 Mock.a (mkElemVar Mock.x)
+            sideCondition = top
+            actual = isDefined sideCondition term
+        assertEqual "" True actual
+    , testCase "A functional symbol application is assumed defined if\
+                \ its subterms are assumed defined" $ do
+        let term :: TermLike VariableName
+            term = Mock.functional20 Mock.plain00 (Mock.f Mock.a)
+            sideCondition =
+                [ Mock.plain00
+                , Mock.f Mock.a
+                ]
+                & HashSet.fromList & fromDefinedTerms
+            actual = isDefined sideCondition term
+        assertEqual "" True actual
+    , testCase "Singleton: always defined key implies\
                 \ always defined collection" $ do
         let collection =
                 Collection

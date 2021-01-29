@@ -100,6 +100,7 @@ import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
     ( isConstructor
     , isFunction
+    , isFunctional
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -646,8 +647,9 @@ assumeDefined term =
                 let result1 = assumeDefinedWorker child1
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
-            TermLike.App_ _ children ->
-                asSet term' <> foldMap assumeDefinedWorker children
+            TermLike.App_ symbol children ->
+                checkFunctional symbol term'
+                <> foldMap assumeDefinedWorker children
             TermLike.Ceil_ _ _ child ->
                 asSet term' <> assumeDefinedWorker child
             TermLike.InternalList_ internalList ->
@@ -685,6 +687,9 @@ assumeDefined term =
     asSet newTerm
       | TermLike.isDefinedPattern newTerm = mempty
       | otherwise = HashSet.singleton newTerm
+    checkFunctional symbol newTerm
+      | isFunctional symbol = mempty
+      | otherwise = asSet newTerm
 
     getDefinedElementsOfAc
         :: forall normalized
@@ -710,8 +715,9 @@ isDefined
     => SideCondition variable
     -> TermLike variable
     -> Bool
-isDefined SideCondition { definedTerms } term =
+isDefined sideCondition@SideCondition { definedTerms } term =
     TermLike.isDefinedPattern term
+    || isFunctionalSymbol term
     || HashSet.member term definedTerms
     || isDefinedAc
   where
@@ -728,9 +734,16 @@ isDefined SideCondition { definedTerms } term =
                         & HashSet.map TermLike.mkInternalSet
                  in subSets `isNonEmptySubset` definedTerms
             _ -> False
+
     isNonEmptySubset subset set
       | null subset = False
       | otherwise = all (`HashSet.member` set) subset
+
+    isFunctionalSymbol (App_ symbol children)
+      | isFunctional symbol =
+          all (isDefined sideCondition) children
+      | otherwise = False
+    isFunctionalSymbol _ = False
 
 {- | Generates the minimal set of defined collections
 from which definedness of any sub collection can be inferred.
