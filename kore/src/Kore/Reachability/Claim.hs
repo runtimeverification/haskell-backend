@@ -104,10 +104,10 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-import Kore.Log.WarnStuckClaimState
+{- import Kore.Log.WarnStuckClaimState
     ( warnStuckClaimStateTermsNotUnifiable
     , warnStuckClaimStateTermsUnifiable
-    )
+    ) -}
 import Kore.Reachability.ClaimState hiding
     ( claimState
     )
@@ -302,10 +302,12 @@ transitionRule
     :: forall m claim
     .  MonadSimplify m
     => Claim claim
-    => [claim]
+    => (claim -> Strategy.TransitionT (AppliedRule claim) m ())
+    -> (claim -> Strategy.TransitionT (AppliedRule claim) m ())
+    -> [claim]
     -> [[Rule claim]]
     -> TransitionRule m (AppliedRule claim) (ClaimState claim)
-transitionRule claims axiomGroups = transitionRuleWorker
+transitionRule wSCSTU wSCSTNU claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
@@ -329,11 +331,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
-                warnStuckClaimStateTermsUnifiable
+                wSCSTU claim
                 pure (Stuck a)
             NotImplied a
               | isRemainder claimState -> do
-                warnStuckClaimStateTermsNotUnifiable
+                wSCSTNU claim
                 pure (Stuck a)
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState

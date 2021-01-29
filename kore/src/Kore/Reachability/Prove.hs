@@ -90,6 +90,7 @@ import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState
@@ -408,7 +409,10 @@ transitionRule'
     -> CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState ->
     deepseq proofState
-        (transitionRule claims axiomGroups
+        (transitionRule
+            warnStuckClaimStateTermsUnifiable
+            warnStuckClaimStateTermsNotUnifiable
+            claims axiomGroups
             & profTransitionRule
             & withConfiguration
             & withDebugClaimState
