@@ -427,9 +427,7 @@ mainPatternVerify verifiedModule patt = do
 lookupMainModule
     :: Monad monad
     => ModuleName
-    -> Map.Map
-        ModuleName
-        (VerifiedModule Attribute.Symbol)
+    -> Map.Map ModuleName (VerifiedModule Attribute.Symbol)
     -> monad (VerifiedModule Attribute.Symbol)
 lookupMainModule name modules =
     case Map.lookup name modules of
