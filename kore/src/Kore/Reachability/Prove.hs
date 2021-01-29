@@ -409,10 +409,8 @@ transitionRule'
     -> CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState ->
     deepseq proofState
-        (transitionRule
-            warnStuckClaimStateTermsUnifiable
-            warnStuckClaimStateTermsNotUnifiable
-            claims axiomGroups
+        (transitionRule claims axiomGroups
+            & withWarnings
             & profTransitionRule
             & withConfiguration
             & withDebugClaimState
@@ -423,6 +421,28 @@ transitionRule' claims axioms = \prim proofState ->
         prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+withWarnings
+    :: forall m
+    .  MonadSimplify m
+    =>  CommonTransitionRule m
+    -> CommonTransitionRule m
+withWarnings rule prim claimState =
+    case prim of
+        Prim.CheckImplication  ->
+            case ClaimState.retractRewritable claimState of
+                Just claim -> do
+                    result <- checkImplication claim & Logic.lowerLogicT
+                    case result of
+                        Implied -> rule prim claimState
+                        NotImpliedStuck _ -> do
+                            warnStuckClaimStateTermsUnifiable claim
+                            rule prim claimState
+                        NotImplied _ -> do
+                            warnStuckClaimStateTermsNotUnifiable claim
+                            rule prim claimState
+                Nothing -> pure claimState
+        _ -> rule prim claimState
 
 profTransitionRule
     :: forall m

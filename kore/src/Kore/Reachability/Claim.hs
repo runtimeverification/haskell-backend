@@ -302,12 +302,10 @@ transitionRule
     :: forall m claim
     .  MonadSimplify m
     => Claim claim
-    => (claim -> Strategy.TransitionT (AppliedRule claim) m ())
-    -> (claim -> Strategy.TransitionT (AppliedRule claim) m ())
-    -> [claim]
+    => [claim]
     -> [[Rule claim]]
     -> TransitionRule m (AppliedRule claim) (ClaimState claim)
-transitionRule wSCSTU wSCSTNU claims axiomGroups = transitionRuleWorker
+transitionRule claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim
@@ -331,11 +329,9 @@ transitionRule wSCSTU wSCSTNU claims axiomGroups = transitionRuleWorker
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
-                wSCSTU claim
                 pure (Stuck a)
             NotImplied a
               | isRemainder claimState -> do
-                wSCSTNU claim
                 pure (Stuck a)
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState
