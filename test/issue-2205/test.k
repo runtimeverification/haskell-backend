@@ -1,6 +1,6 @@
 module TEST
     imports INT
-    configuration <k> init </k>
+    configuration <k> $PGM:KItem </k>
     syntax KItem ::= "init" | "one" | "two"
     rule <k> init => ?_:Int </k>
     rule <k> 1 => one </k>

@@ -8,6 +8,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 module Kore.Unification.SubstitutionNormalization
     ( Normalization (..)
     , normalize
@@ -92,7 +94,7 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             Var_ _ -> True
             _      -> False
 
-    renamingCycle =
+    ~renamingCycle =
         error
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
@@ -162,7 +164,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
       where
         substitution :: [Assignment variable]
         substitution =
-            order <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
+            order
+            <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
