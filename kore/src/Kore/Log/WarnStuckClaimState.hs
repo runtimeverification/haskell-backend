@@ -36,7 +36,7 @@ data WarnStuckClaimState
 
 instance Pretty WarnStuckClaimState where
     pretty (TermsUnifiableStuck claim) =
-        Pretty.hsep 
+        Pretty.hsep
             [ "The proof has reached the final configuration, but the claimed implication is not valid. Location:"
             , Pretty.pretty (from claim :: SourceLocation)
             ]
@@ -45,7 +45,7 @@ instance Pretty WarnStuckClaimState where
             [ "The claim cannot be rewritten further, and the claimed implication is not valid."
             , Pretty.pretty (from claim :: SourceLocation)
             ]
-        
+
 
 instance Entry WarnStuckClaimState where
     entrySeverity _ = Warning
