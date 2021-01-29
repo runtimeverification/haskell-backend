@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Rule
     ( simplifyRulePattern
     , simplifyRewriteRule
@@ -22,9 +24,6 @@ import Kore.Internal.Predicate
     ( pattern PredicateTrue
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( TermLike
@@ -144,4 +143,4 @@ simplifyPattern
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)
+    $ Pattern.simplify (Pattern.fromTermLike termLike)
