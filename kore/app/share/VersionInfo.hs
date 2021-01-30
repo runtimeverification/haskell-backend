@@ -14,6 +14,7 @@ import Data.Aeson
     ( FromJSON
     )
 import qualified Data.Aeson as Aeson
+import qualified Data.List as List
 import qualified Development.GitRev as GitRev
 import qualified GHC.Generics as GHC
 import Language.Haskell.TH
@@ -27,7 +28,10 @@ import Language.Haskell.TH.Syntax
 import qualified Language.Haskell.TH.Syntax as TH
 import qualified System.Directory as Directory
 import System.FilePath
-    ( takeDirectory
+    ( isRelative
+    , joinPath
+    , splitDirectories
+    , takeDirectory
     , (</>)
     )
 
@@ -75,18 +79,28 @@ is spliced) to find the root directory of the package.
 getPackageRoot :: Q FilePath
 getPackageRoot = do
     bot <- takeDirectory . TH.loc_filename <$> TH.location
-    TH.runIO $ findPackageRoot bot bot
+    let parents = getParents bot
+    TH.runIO $ findPackageRoot bot parents
   where
     isProjectRoot here = Directory.doesFileExist (here </> "package.yaml")
 
+    getParents bottom =
+        bottom
+        & splitDirectories
+        & List.inits
+        & reverse
+        & map joinPath
+        & filter (sameRelativity bottom)
+
+    sameRelativity bottom = \here -> isRelative bottom == isRelative here
+
     -- Find the root directory of the current package. This module file can
     -- be moved safely because the package root is found at build time.
-    findPackageRoot bot here
-      | null here =
+    findPackageRoot bot [] =
         fail ("Could not find package.yaml above " ++ bot)
-      | otherwise = do
+    findPackageRoot bot (here : heres) = do
         foundRoot <- isProjectRoot here
         if foundRoot then Directory.makeAbsolute here else goUp
       where
-        goUp = findPackageRoot bot (takeDirectory here)
+        goUp = findPackageRoot bot heres
 
