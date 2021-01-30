@@ -1,17 +1,17 @@
-    #Not ( {
-      'QuesUnds'0 %Int 2
-    #Equals
-      1
-    } )
-  #And
     <generatedTop>
       <k>
-        'QuesUnds'0:Int ~> .
+        ?_0:Int ~> .
       </k>
       <exitcode>
         0
       </exitcode>
     </generatedTop>
+  #And
+    #Not ( {
+      ?_0:Int %Int 2
+    #Equals
+      1
+    } )
 #Or
     <generatedTop>
       <k>
@@ -23,7 +23,7 @@
     </generatedTop>
   #And
     {
-      'QuesUnds'0 %Int 2
+      ?_0:Int %Int 2
     #Equals
       1
     }
