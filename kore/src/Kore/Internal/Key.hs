@@ -63,7 +63,7 @@ import Kore.Syntax.Variable
     )
 import Kore.Unparser
 
-{- | @Key@ is the type of patterns that may be keys of maps and sets.
+{- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
  -}
 newtype Key = Key { getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key }
     deriving (Show)
