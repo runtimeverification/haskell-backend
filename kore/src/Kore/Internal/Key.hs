@@ -216,7 +216,6 @@ instance Synthetic Function KeyF where
         InternalStringF internalString -> synthetic internalString
         StringLiteralF stringLiteral -> synthetic stringLiteral
 
-
 instance Synthetic Defined KeyF where
     synthetic = \case
         ApplySymbolF application -> synthetic application
