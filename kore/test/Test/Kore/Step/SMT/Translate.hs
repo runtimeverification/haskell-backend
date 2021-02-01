@@ -11,6 +11,7 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import qualified Data.HashSet as HashSet
 import Data.Reflection
     ( give
     )
@@ -181,20 +182,25 @@ test_translatePredicateWith =
             translatingPred (peq Mock.plain00 Mock.a)
         `yields`
             var 0
-    -- -- This should fail because we don't know if it is defined.
+    -- This should fail because we don't know if it is defined.
     -- , testCase "function(x)" $
-    --     translatingPatt (Mock.functionSMT x) & fails
+    --     translatingPatt SideCondition.top (Mock.functionSMT x) & fails
     -- -- This should fail because we don't know if it is defined.
     -- , testCase "functional(function(x))" $
-    --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
-    -- , testCase "function(x), where function(x) is defined" $
-    --         translatingPatt (defined (function x))
-    --     `yields`
-    --         functionSMT (var 0)
-    -- , testCase "functional(function(x)) where function(x) is defined" $
-    --         translatingPatt (defined (functional (function x)))
-    --     `yields`
-    --         functionalSMT (functionSMT (var 0))
+    --     translatingPatt
+    --         SideCondition.top
+    --         (Mock.functionalSMT (Mock.functionSMT x))
+    --     & fails
+    , testCase "function(x), where function(x) is defined" $
+            translatingPatt (defined (function x)) (function x)
+        `yields`
+            functionSMT (var 0)
+    , testCase "functional(function(x)) where function(x) is defined" $
+            translatingPatt
+                (defined (functional (function x)))
+                (functional (function x))
+        `yields`
+            functionalSMT (functionSMT (var 0))
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -204,10 +210,10 @@ test_translatePredicateWith =
     smtTrue = Atom "true"
     var :: Integer -> SExpr
     var i = Atom $ "<" <> Text.pack (show i) <> ">"
-    -- function = Mock.functionSMT
-    -- functional = Mock.functionalSMT
-    -- functionSMT sexpr = List [Atom "functionSMT", sexpr]
-    -- functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
+    function = Mock.functionSMT
+    functional = Mock.functionalSMT
+    functionSMT sexpr = List [Atom "functionSMT", sexpr]
+    functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
     pleq = Mock.lessInt
     peq = Predicate.makeEqualsPredicate
     pand = Predicate.makeAndPredicate
@@ -221,6 +227,10 @@ test_translatePredicateWith =
     existst i p = existsQ [List [var i, Atom "|HB_testSort|"]] p
     fun i p = SMT.SimpleSMT.List (var i : p)
     sdiv i j = List [Atom "div", i, j]
+    defined term =
+        term
+        & HashSet.singleton
+        & SideCondition.fromDefinedTerms
 
 translatePredicate
     :: HasCallStack
