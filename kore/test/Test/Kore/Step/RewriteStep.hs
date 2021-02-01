@@ -1094,7 +1094,6 @@ applyRewriteRulesParallel
     -> IO Results'
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
-        Unification.unificationProcedure
         (mkRewritingRule <$> rules)
         (mkRewritingPattern $ simplifiedPattern initial)
     & runSimplifierSMT Mock.env
@@ -1108,7 +1107,6 @@ applyClaimsSequence
 applyClaimsSequence initial claims =
     Step.applyClaimsSequence
         AllPathClaim
-        Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         claims
     & runSimplifierSMT Mock.env
@@ -1525,7 +1523,6 @@ applyRewriteRulesSequence
     -> IO Results'
 applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
-        Unification.unificationProcedure
         (mkRewritingPattern $ simplifiedPattern initial)
         (mkRewritingRule <$> rules)
     & runSimplifierSMT Mock.env

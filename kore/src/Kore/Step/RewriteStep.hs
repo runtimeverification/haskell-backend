@@ -68,13 +68,13 @@ import Kore.Step.Simplification.Simplify
 import Kore.Step.Step
     ( Result
     , Results
-    , UnificationProcedure (..)
     , UnifiedRule
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , unifyRules
     )
+import Kore.Unification.Procedure
 import Logic
     ( LogicT
     )
@@ -284,13 +284,12 @@ applyWithFinalizer
     => Rule.UnifyingRuleVariable rule ~ RewritingVariableName
     => From rule SourceLocation
     => Finalizer rule simplifier
-    -> UnificationProcedure simplifier
     -> [rule]
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> simplifier (Results rule)
-applyWithFinalizer finalize unificationProcedure rules initial = do
+applyWithFinalizer finalize rules initial = do
     results <- unifyRules unificationProcedure initial rules
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
@@ -307,8 +306,7 @@ See also: 'applyRewriteRule'
 applyRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
-    => UnificationProcedure simplifier
-    -> [RulePattern RewritingVariableName]
+    => [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
@@ -323,18 +321,16 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel
     :: forall simplifier
     .  MonadSimplify simplifier
-    => UnificationProcedure simplifier
-    -> [RewriteRule RewritingVariableName]
+    => [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
-    unificationProcedure
     (map getRewriteRule -> rules)
     initial
   = do
-    results <- applyRulesParallel unificationProcedure rules initial
+    results <- applyRulesParallel rules initial
     assertFunctionLikeResults (term initial) results
     return results
 
@@ -347,8 +343,7 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
-    => UnificationProcedure simplifier
-    -> [RulePattern RewritingVariableName]
+    => [RulePattern RewritingVariableName]
     -- ^ Rewrite rules
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
@@ -363,18 +358,16 @@ See also: 'applyRewriteRulesParallel'
 applyRewriteRulesSequence
     :: forall simplifier
     .  MonadSimplify simplifier
-    => UnificationProcedure simplifier
-    -> Pattern RewritingVariableName
+    => Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> [RewriteRule RewritingVariableName]
     -- ^ Rewrite rules
     -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
-    unificationProcedure
     initialConfig
     (map getRewriteRule -> rules)
   = do
-    results <- applyRulesSequence unificationProcedure rules initialConfig
+    results <- applyRulesSequence rules initialConfig
     assertFunctionLikeResults (term initialConfig) results
     return results
 
@@ -383,17 +376,15 @@ applyClaimsSequence
     .  MonadSimplify simplifier
     => UnifyingRuleWithRepresentation ClaimPattern goal
     => (ClaimPattern -> goal)
-    -> UnificationProcedure simplifier
     -> Pattern RewritingVariableName
     -- ^ Configuration being rewritten
     -> [ClaimPattern]
     -- ^ Rewrite rules
     -> simplifier (Results ClaimPattern)
-applyClaimsSequence mkClaim unificationProcedure initialConfig claims = do
+applyClaimsSequence mkClaim initialConfig claims = do
     results <-
         applyWithFinalizer
             (finalizeSequence mkClaim finalizeAppliedClaim)
-            unificationProcedure
             claims
             initialConfig
     assertFunctionLikeResults (term initialConfig) results

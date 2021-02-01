@@ -152,7 +152,6 @@ import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( Unparse (..)
     )
@@ -284,7 +283,6 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
             results <-
                 Step.applyClaimsSequence
                     mkClaim
-                    Unification.unificationProcedure
                     config
                     (Lens.view lensClaimPattern <$> claims)
                     & lift
@@ -656,8 +654,7 @@ derivePar'
     -> claim
     -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
-    deriveWith lensRulePattern mkRule
-    $ Step.applyRewriteRulesParallel Unification.unificationProcedure
+    deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
 
 type Deriver monad =
         [RewriteRule RewritingVariableName]
@@ -700,8 +697,7 @@ deriveSeq'
     -> claim
     -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
-    deriveWith lensRulePattern mkRule . flip
-    $ Step.applyRewriteRulesSequence Unification.unificationProcedure
+    deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 
 deriveResults
     :: Step.UnifyingRuleVariable representation ~ RewritingVariableName

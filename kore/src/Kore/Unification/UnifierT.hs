@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Unification.UnifierT
     ( UnifierT (..)
     , runUnifierT
@@ -91,6 +93,7 @@ runUnifierT
 runUnifierT notSimplifier =
     observeAllT
     . evalEnvUnifierT notSimplifier
+{-# SCC runUnifierT #-}
 
 evalEnvUnifierT
     :: MonadSimplify m
@@ -103,3 +106,4 @@ evalEnvUnifierT notSimplifier =
   where
     conditionSimplifier =
         ConditionSimplifier.create (substitutionSimplifier notSimplifier)
+{-# SCC evalEnvUnifierT #-}
