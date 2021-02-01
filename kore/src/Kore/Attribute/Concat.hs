@@ -39,11 +39,11 @@ mergeConcat a (Concat Nothing) = a
 mergeConcat a@(Concat (Just aSymbol)) (Concat (Just bSymbol))
       | aSymbol == bSymbol = a
       | otherwise = error $
-        "Concat symbol mismatch error! Foun both "
+        "Concat symbol mismatch error! Found both "
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term."
+        ++ " inside term. This is a bug in the Haskell backend."
 
 instance Default (Concat symbol) where
     def = Concat { getConcat = Nothing }

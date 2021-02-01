@@ -35,11 +35,11 @@ mergeElement a (Element Nothing) = a
 mergeElement a@(Element (Just aSymbol)) (Element (Just bSymbol))
       | aSymbol == bSymbol = a
       | otherwise = error $
-        "Element symbol mismatch error! Foun both "
+        "Element symbol mismatch error! Found both "
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term."
+        ++ " inside term.  This is a bug in the Haskell backend."
 
 instance Default (Element symbol) where
     def = Element { getElement = Nothing }

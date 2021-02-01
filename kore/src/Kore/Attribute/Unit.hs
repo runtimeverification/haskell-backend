@@ -39,11 +39,11 @@ mergeUnit a (Unit Nothing) = a
 mergeUnit a@(Unit (Just aSymbol)) (Unit (Just bSymbol))
       | aSymbol == bSymbol = a
       | otherwise = error $
-        "Unit symbol mismatch error! Foun both "
+        "Unit symbol mismatch error! Found both "
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term."
+        ++ " inside term. This is a bug in the Haskell backend."
 
 instance Default (Unit symbol) where
     def = Unit { getUnit = Nothing }
