@@ -875,6 +875,9 @@ xConfigSubSort = mkConfigElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
 xSubSubSort =
     MockElementVariable (testId "xSubSubSort") mempty subSubsort
+xConfigSubSubSort :: MockRewritingElementVariable
+xConfigSubSubSort =
+    mkConfigElementVariable (testId "xSubSubSort") mempty subSubsort
 xSubOtherSort :: MockElementVariable
 xSubOtherSort =
     MockElementVariable (testId "xSubOtherSort") mempty subOthersort
@@ -888,6 +891,8 @@ xOtherSort :: MockElementVariable
 xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
+xConfigTopSort :: MockRewritingElementVariable
+xConfigTopSort = mkConfigElementVariable (testId "xTopSort") mempty topSort
 xStringMetaSort :: MockSetVariable
 xStringMetaSort = MockSetVariable (testId "xStringMetaSort") mempty stringMetaSort
 xRuleStringMetaSort :: MockRewritingSetVariable
@@ -910,11 +915,31 @@ makeSomeVariable name variableSort =
       | Text.head name == '@' = inject . SetVariableName
       | otherwise = inject . ElementVariableName
 
+makeSomeConfigVariable :: Text -> Sort -> SomeVariable RewritingVariableName
+makeSomeConfigVariable name variableSort =
+    Variable
+    { variableSort
+    , variableName
+    }
+  where
+    variableName =
+        injectVariableName
+        $ mkConfigVariable VariableName { base = testId name, counter = mempty }
+    injectVariableName
+      | Text.head name == '@' = inject . SetVariableName
+      | otherwise = inject . ElementVariableName
+
 makeTestSomeVariable :: Text -> SomeVariable VariableName
 makeTestSomeVariable = (`makeSomeVariable` testSort)
 
+makeTestSomeConfigVariable :: Text -> SomeVariable RewritingVariableName
+makeTestSomeConfigVariable = (`makeSomeConfigVariable` testSort)
+
 mkTestSomeVariable :: Text -> TermLike VariableName
 mkTestSomeVariable = Internal.mkVar . makeTestSomeVariable
+
+mkTestSomeConfigVariable :: Text -> TermLike RewritingVariableName
+mkTestSomeConfigVariable = Internal.mkVar . makeTestSomeConfigVariable
 
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []
