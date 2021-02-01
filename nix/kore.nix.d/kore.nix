@@ -958,7 +958,6 @@
             "Test/Kore/BugReport"
             "Test/Kore/Builtin"
             "Test/Kore/Builtin/AssocComm/CeilSimplifier"
-            "Test/Kore/Builtin/AssociativeCommutative"
             "Test/Kore/Builtin/Bool"
             "Test/Kore/Builtin/Builtin"
             "Test/Kore/Builtin/Definition"
