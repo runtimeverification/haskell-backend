@@ -30,6 +30,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -221,7 +222,7 @@ assertRefuted :: HasCallStack => Predicate VariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.Evaluator.decidePredicate (prop :| [])
+        SMT.Evaluator.decidePredicate SideCondition.top (prop :| [])
         & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 

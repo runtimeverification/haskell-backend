@@ -20,6 +20,10 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -222,23 +226,35 @@ translatePredicate
     :: HasCallStack
     => Predicate VariableName
     -> Translator VariableName NoSMT SExpr
-translatePredicate = Evaluator.translatePredicate Mock.metadataTools
+translatePredicate =
+    Evaluator.translatePredicate SideCondition.top Mock.metadataTools
 
 translatePattern
     :: HasCallStack
-    => TermLike VariableName
+    => SideCondition VariableName
+    -> TermLike VariableName
     -> Translator VariableName NoSMT SExpr
-translatePattern =
+translatePattern sideCondition =
     give Mock.metadataTools
-    $ SMT.translatePattern Evaluator.translateTerm Mock.testSort
+    $ SMT.translatePattern
+        sideCondition
+        Evaluator.translateTerm
+        Mock.testSort
 
 translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
 
-translatingPatt :: HasCallStack => TermLike VariableName -> IO (Maybe SExpr)
-translatingPatt =
-    Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePattern
+translatingPatt
+    :: HasCallStack
+    => SideCondition VariableName
+    -> TermLike VariableName
+    -> IO (Maybe SExpr)
+translatingPatt sideCondition =
+    Test.SMT.runNoSMT
+    . runMaybeT
+    . evalTranslator
+    . translatePattern sideCondition
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)

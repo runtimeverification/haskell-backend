@@ -59,6 +59,9 @@ import Data.Text
     ( Text
     )
 import qualified GHC.Generics as GHC
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 
 import Kore.Attribute.Hook
 import Kore.Attribute.Smtlib
@@ -84,6 +87,7 @@ import Kore.Internal.Predicate hiding
     , OrF
     , TopF
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation
     ( warnSymbolSMTRepresentation
@@ -131,15 +135,23 @@ translatePredicateWith
         , MonadLog m
         , InternalVariable variable
         )
-    => TranslateTerm variable m
+    => SideCondition variable
+    -> TranslateTerm variable m
     -> Predicate variable
     -> Translator variable m SExpr
-translatePredicateWith translateTerm predicate =
+translatePredicateWith sideCondition translateTerm predicate =
     translatePredicatePattern
     $ fromPredicate_ predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
-    translatePredicatePattern pat =
+    translatePredicatePattern pat
+      | SideCondition.isDefined sideCondition pat =
+          withDefinednessAssumption
+          $ translatePredicatePatternWorker pat
+      | otherwise = translatePredicatePatternWorker pat
+
+    translatePredicatePatternWorker :: p -> Translator variable m SExpr
+    translatePredicatePatternWorker pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
             -- Logical connectives: translate as connectives
@@ -210,7 +222,7 @@ translatePredicateWith translateTerm predicate =
             -- Attempt to translate patterns in builtin sorts, or failing that,
             -- as predicates.
             (<|>)
-                (translatePattern translateTerm equalsOperandSort child)
+                (translatePattern sideCondition translateTerm equalsOperandSort child)
                 (translatePredicatePattern child)
 
     translatePredicateIff Iff { iffFirst, iffSecond } =
@@ -278,11 +290,12 @@ translatePattern
     .  Given (SmtMetadataTools Attribute.Symbol)
     => MonadLog monad
     => InternalVariable variable
-    => TranslateTerm variable monad
+    => SideCondition variable
+    -> TranslateTerm variable monad
     -> Sort
     -> TermLike variable
     -> Translator variable monad SExpr
-translatePattern translateTerm sort pat =
+translatePattern sideCondition translateTerm sort pat =
     case getHook of
         Just builtinSort
           | builtinSort == Builtin.Bool.sort -> translateBool pat
@@ -354,7 +367,7 @@ translatePattern translateTerm sort pat =
         translateInterpretedApplication = do
             let translated = translateSymbol applicationSymbolOrAlias
             sexpr <- maybe warnAndDiscard return translated
-            children <- zipWithM (translatePattern translateTerm)
+            children <- zipWithM (translatePattern sideCondition translateTerm)
                 applicationChildrenSorts
                 applicationChildren
             return $ shortenSExpr (applySExpr sexpr children)
