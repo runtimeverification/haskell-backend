@@ -341,7 +341,6 @@
           "Kore/Step/Simplification/CeilSimplifier"
           "Kore/Step/Simplification/Condition"
           "Kore/Step/Simplification/Data"
-          "Kore/Step/Simplification/Defined"
           "Kore/Step/Simplification/DomainValue"
           "Kore/Step/Simplification/Equals"
           "Kore/Step/Simplification/Exists"
