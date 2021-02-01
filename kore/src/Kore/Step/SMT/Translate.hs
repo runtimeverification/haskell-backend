@@ -315,7 +315,15 @@ translatePattern sideCondition translateTerm sort pat =
 
     -- | Translate a functional pattern in the builtin Int sort for SMT.
     translateInt :: TermLike variable -> Translator variable monad SExpr
-    translateInt pat' =
+    translateInt pat'
+      | SideCondition.isDefined sideCondition pat' =
+          withDefinednessAssumption
+          $ translateIntWorker pat'
+      | otherwise =
+          translateIntWorker pat'
+
+    translateIntWorker :: TermLike variable -> Translator variable monad SExpr
+    translateIntWorker pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tInt pat'
             InternalIntF (Const InternalInt { internalIntValue }) ->
@@ -326,7 +334,15 @@ translatePattern sideCondition translateTerm sort pat =
 
     -- | Translate a functional pattern in the builtin Bool sort for SMT.
     translateBool :: TermLike variable -> Translator variable monad SExpr
-    translateBool pat' =
+    translateBool pat'
+      | SideCondition.isDefined sideCondition pat' =
+          withDefinednessAssumption
+          $ translateBoolWorker pat'
+      | otherwise =
+          translateBoolWorker pat'
+
+    translateBoolWorker :: TermLike variable -> Translator variable monad SExpr
+    translateBoolWorker pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
             InternalBoolF (Const InternalBool { internalBoolValue }) ->
