@@ -148,10 +148,6 @@ test_translatePredicateWith =
         yields
             (translatingPred (peq n (Mock.tdivInt n m)))
             (var 0 `eq` (var 0 `sdiv` var 1))
-    , testCase "X:Int = \\defined X:Int /Int Y:Int" $
-        yields
-            (translatingPred (peq n (TermLike.mkDefined $ Mock.tdivInt n m)))
-            (var 0 `eq` (var 0 `sdiv` var 1))
     , testCase "erases predicate sorts" $ do
         -- Two inputs: the same \ceil in different outer sorts.
         let input1 = pceil (Mock.tdivInt n m)
@@ -187,14 +183,14 @@ test_translatePredicateWith =
     -- -- This should fail because we don't know if it is defined.
     -- , testCase "functional(function(x))" $
     --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
-    , testCase "function(x), where function(x) is defined" $
-            translatingPatt (defined (function x))
-        `yields`
-            functionSMT (var 0)
-    , testCase "functional(function(x)) where function(x) is defined" $
-            translatingPatt (defined (functional (function x)))
-        `yields`
-            functionalSMT (functionSMT (var 0))
+    -- , testCase "function(x), where function(x) is defined" $
+    --         translatingPatt (defined (function x))
+    --     `yields`
+    --         functionSMT (var 0)
+    -- , testCase "functional(function(x)) where function(x) is defined" $
+    --         translatingPatt (defined (functional (function x)))
+    --     `yields`
+    --         functionalSMT (functionSMT (var 0))
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -204,11 +200,10 @@ test_translatePredicateWith =
     smtTrue = Atom "true"
     var :: Integer -> SExpr
     var i = Atom $ "<" <> Text.pack (show i) <> ">"
-    function = Mock.functionSMT
-    functional = Mock.functionalSMT
-    defined = TermLike.mkDefined
-    functionSMT sexpr = List [Atom "functionSMT", sexpr]
-    functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
+    -- function = Mock.functionSMT
+    -- functional = Mock.functionalSMT
+    -- functionSMT sexpr = List [Atom "functionSMT", sexpr]
+    -- functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
     pleq = Mock.lessInt
     peq = Predicate.makeEqualsPredicate
     pand = Predicate.makeAndPredicate

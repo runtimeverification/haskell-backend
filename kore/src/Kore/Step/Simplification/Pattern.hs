@@ -7,6 +7,7 @@ License     : NCSA
 
 module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
+    , simplifyTopConfigurationDefined
     , simplify
     , makeEvaluate
     ) where
@@ -29,6 +30,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
+    , assumeDefined
     , top
     )
 import Kore.Internal.Substitution
@@ -36,6 +38,7 @@ import Kore.Internal.Substitution
     )
 import Kore.Internal.TermLike
     ( pattern Exists_
+    , TermLike
     )
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
@@ -63,6 +66,23 @@ simplifyTopConfiguration patt = do
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
         removeTopExists p {term = quantified}
     removeTopExists p = p
+
+simplifyTopConfigurationDefined
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => Pattern variable
+    -> TermLike variable
+    -> simplifier (OrPattern variable)
+simplifyTopConfigurationDefined patt defined = do
+    simplified <- makeEvaluate sideCondition patt
+    return (OrPattern.map removeTopExists simplified)
+  where
+    removeTopExists :: Pattern variable -> Pattern variable
+    removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
+        removeTopExists p {term = quantified}
+    removeTopExists p = p
+    sideCondition = SideCondition.assumeDefined defined
 
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}

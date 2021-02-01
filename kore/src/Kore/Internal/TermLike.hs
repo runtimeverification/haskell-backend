@@ -92,8 +92,8 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
-    , mkDefined
-    , unDefined
+    -- , mkDefined
+    -- , unDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_
@@ -147,7 +147,6 @@ module Kore.Internal.TermLike
     , pattern SetVar_
     , pattern StringLiteral_
     , pattern Evaluated_
-    , pattern Defined_
     , pattern Endianness_
     , pattern Signedness_
     , pattern Inj_
@@ -184,7 +183,6 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Top
     , module Variable
     -- * For testing
-    , mkDefinedAtTop
     , containsSymbolWithId
     ) where
 
@@ -667,7 +665,6 @@ forceSortPredicate
     case pattern' of
         -- Recurse
         EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
-        DefinedF defined -> DefinedF (Right <$> defined)
         -- Predicates: Force sort and stop.
         BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
         TopF top' -> TopF top' { topSort = forcedSort }
@@ -1482,124 +1479,6 @@ mkEvaluated
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
--- | 'mkDefined' will wrap the 'TermLike' in a 'Defined' node based on
--- the available information about the term. When possible, it will recurse
--- to distribute the 'Defined' wrapper.
-mkDefined
-    :: forall variable
-    .  HasCallStack
-    => InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-mkDefined = worker
-  where
-    mkDefined1 term
-      | isDefinedPattern term = term
-      | otherwise = mkDefinedAtTop term
-
-    syntheticDefined
-        :: (Synthetic Attribute.Defined f)
-        => f (TermLike variable) -> Attribute.Defined
-    syntheticDefined fTermLike =
-        synthetic (Attribute.defined . Cofree.headF . getTermLike <$> fTermLike)
-
-    worker
-        :: TermLike variable
-        -> TermLike variable
-    worker term
-      | isDefinedPattern term = term
-      | otherwise =
-        let (attrs :< termF) = Recursive.project term
-            embed termF' =
-                Recursive.embed (attrs' :< termF')
-              where
-                attrs' = attrs { Attribute.defined = syntheticDefined termF' }
-        in case termF of
-            AndF _ -> (mkDefined1 . embed) (worker <$> termF)
-            ApplySymbolF _ -> (mkDefined1 . embed) (worker <$> termF)
-            ApplyAliasF _ -> mkDefined1 term
-            BottomF _ ->
-                error
-                    "Internal error: cannot mark\
-                    \ a \\bottom pattern as defined."
-            CeilF _ -> term
-            DomainValueF _  -> term
-            InternalListF _ ->
-                -- mkDefinedAtTop is not needed because the list is always
-                -- defined if its elements are all defined.
-                embed (worker <$> termF)
-            InternalMapF internalMap ->
-                let map' = mkDefinedInternalAc internalMap
-                in (mkDefined1 . embed) (InternalMapF map')
-            InternalSetF internalSet ->
-                let set' = mkDefinedInternalAc internalSet
-                in (mkDefined1 . embed) (InternalSetF set')
-            EqualsF _ -> term
-            ExistsF _ -> mkDefinedAtTop term
-            FloorF _ -> term
-            ForallF _ -> (mkDefined1 . embed) (worker <$> termF)
-            IffF _ -> mkDefined1 term
-            ImpliesF _ -> mkDefined1 term
-            InF _ -> term
-            MuF _ -> mkDefined1 term
-            NextF _ -> mkDefined1 term
-            NotF _ -> mkDefined1 term
-            NuF _ -> mkDefined1 term
-            OrF _ -> mkDefined1 term
-            RewritesF _ -> mkDefined1 term
-            TopF _ -> term
-            VariableF (Const someVariable) ->
-                if isElementVariable someVariable
-                    then term
-                    else mkDefined1 term
-            StringLiteralF _ -> term
-            EvaluatedF (Evaluated child) -> worker child
-            DefinedF _ -> term
-            EndiannessF _ -> term
-            SignednessF _ -> term
-            InjF _ -> mkDefined1 term
-            InhabitantF _ -> mkDefined1 term
-            InternalBoolF _ -> term
-            InternalBytesF _ -> term
-            InternalIntF _ -> term
-            InternalStringF _ -> term
-
-    mkDefinedInternalAc
-        :: forall normalized
-        .  AcWrapper normalized
-        => Functor (Value normalized)
-        => Functor (Element normalized)
-        => InternalAc (TermLike Concrete) normalized (TermLike variable)
-        -> InternalAc (TermLike Concrete) normalized (TermLike variable)
-    mkDefinedInternalAc internalAc =
-        Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
-      where
-        mkDefinedNormalized =
-            unwrapAc
-            >>> Lens.over (field @"concreteElements") mkDefinedConcrete
-            >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
-            >>> Lens.over (field @"opaque") mkDefinedOpaque
-            >>> wrapAc
-        mkDefinedConcrete =
-            (fmap . fmap) mkDefined
-            . Map.mapKeys mkDefined
-        mkDefinedAbstract = (fmap . fmap) mkDefined
-        mkDefinedOpaque = map mkDefined
-
--- | Apply the 'Defined' wrapper to the top of any 'TermLike'.
-mkDefinedAtTop :: Ord variable => TermLike variable -> TermLike variable
-mkDefinedAtTop = synthesize . DefinedF . Defined
-
-{- | Remove (recursively) the 'Defined' wrappers throughout a 'TermLike'.
- -}
-unDefined :: TermLike variable -> TermLike variable
-unDefined =
-    Recursive.unfold $ \termLike ->
-        let attrs :< termLikeF = Recursive.project termLike in
-        case termLikeF of
-            DefinedF defined -> Recursive.project (getDefined defined)
-            _ -> attrs :< termLikeF
-
 {- | Construct an 'Endianness' pattern.
  -}
 mkEndianness
@@ -1865,8 +1744,6 @@ pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
-pattern Defined_ :: TermLike variable -> TermLike variable
-
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -2017,9 +1894,6 @@ pattern StringLiteral_ str <-
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))
-
-pattern Defined_ child <-
-    (Recursive.project -> _ :< DefinedF (Defined child))
 
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-

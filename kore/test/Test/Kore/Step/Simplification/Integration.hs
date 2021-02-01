@@ -974,39 +974,7 @@ test_simplificationIntegration =
 
         actual <- evaluate patt
         assertEqual "" expected actual
-    , testCase "Defined is kept after simplification" $ do
-        let patt =
-                mkOr
-                    (Mock.f (mkElemVar Mock.x))
-                    (Mock.g Mock.a)
-                & mkDefined
-                & Pattern.fromTermLike
-            expected =
-                OrPattern.fromPatterns
-                [ mkElemVar Mock.x
-                    & Pattern.fromTermLike
-                , defined (Mock.g Mock.a)
-                    & Pattern.fromTermLike
-                ]
-        actual <-
-            evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [ (AxiomIdentifier.Application Mock.fId
-                          , [ axiom
-                                (Mock.f (mkElemVar Mock.x))
-                                (mkElemVar Mock.x)
-                                makeTruePredicate
-                            ]
-                          )
-                        ]
-                    )
-                )
-                patt
-        assertEqual "" expected actual
     ]
-  where
-    defined = mkDefinedAtTop
 
 test_simplificationIntegrationUnification :: [TestTree]
 test_simplificationIntegrationUnification =

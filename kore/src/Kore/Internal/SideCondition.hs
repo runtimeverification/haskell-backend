@@ -453,7 +453,6 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         Recursive.fold $ \(_ :< termLikeF) ->
             case termLikeF of
                 TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
-                TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
     predSize :: Predicate variable -> Int
@@ -484,10 +483,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                         HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
-                PredicateEquals
-                    (TermLike.unDefined -> t1)
-                    (TermLike.unDefined -> t2)
-                  ->
+                PredicateEquals t1 t2 ->
                     case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
@@ -555,7 +551,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorkerTerm assumptions (TermLike.unDefined -> original)
+    applyAssumptionsWorkerTerm assumptions original
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original

@@ -6,7 +6,6 @@ module Test.Kore.Step.Simplification.AndTerms
     ( test_andTermsSimplification
     , test_equalsTermsSimplification
     , test_functionAnd
-    , test_Defined
     ) where
 
 import Prelude.Kore
@@ -16,7 +15,6 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
@@ -1394,152 +1392,6 @@ test_functionAnd =
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
-    ]
-
-test_Defined :: [TestTree]
-test_Defined =
-    [ testGroup "exact matching" $
-        let partial = Mock.f Mock.a
-            defined = mkDefined partial
-        in
-            [ testCase "\\and(partial, defined)" $ do
-                -- equalAndEquals returns the first argument
-                let expect = [Pattern.fromTermLike partial]
-                (actualAnd, actualUnify) <- simplifyUnify partial defined
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\and(defined, partial)" $ do
-                -- equalAndEquals returns the first argument
-                let expect = [Pattern.fromTermLike defined]
-                (actualAnd, actualUnify) <- simplifyUnify defined partial
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\equals(partial, defined)" $ do
-                let expect = Just [Condition.top]
-                actual <- simplifyEquals mempty partial defined
-                assertEqual "" expect actual
-            , testCase "\\equals(defined, partial)" $ do
-                let expect = Just [Condition.top]
-                actual <- simplifyEquals mempty defined partial
-                assertEqual "" expect actual
-            ]
-    , testGroup "variable with function" $
-        let defined = mkDefined (Mock.f Mock.a)
-            variable = mkElemVar Mock.x
-            condition =
-                Condition.assign (inject Mock.x) defined
-        in
-            [ testCase "\\and" $ do
-                let expect = [Pattern.withCondition defined condition]
-                (actualAnd, actualUnify) <- simplifyUnify defined variable
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\equals" $ do
-                let expect = Just [condition]
-                actual <- simplifyEquals mempty defined variable
-                assertEqual "" expect actual
-            ]
-    , testGroup "functions" $
-        let function1 = Mock.f Mock.a
-            function2 = Mock.g Mock.b
-            defined1 = mkDefined function1
-            -- TODO (thomas.tuegel): condition should use defined1 instead of
-            -- function1.
-            condition =
-                makeEqualsPredicate function1 function2
-                & Condition.fromPredicate
-        in
-            [ testCase "\\and" $ do
-                let expect = [Pattern.withCondition function1 condition]
-                (actualAnd, actualUnify) <- simplifyUnify defined1 function2
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\equals" $ do
-                let expect = Just [condition]
-                actual <- simplifyEquals mempty defined1 function2
-                assertEqual "" expect actual
-            ]
-    , testGroup "Sets" $
-        let fx = Mock.f (mkElemVar Mock.x)
-            fy = Mock.f (mkElemVar Mock.y)
-            set1 = Mock.builtinSet [fx, fy]
-            set2 = Mock.builtinSet [mkElemVar Mock.t, mkElemVar Mock.u]
-            defined1 = mkDefined set1
-            conditions =
-                [ mconcat
-                    [ Condition.assign (inject Mock.t) (mkDefined fx)
-                    , Condition.assign (inject Mock.u) (mkDefined fy)
-                    ]
-                , mconcat
-                    [ Condition.assign (inject Mock.t) (mkDefined fy)
-                    , Condition.assign (inject Mock.u) (mkDefined fx)
-                    ]
-                ]
-        in
-            [ testCase "\\and(defined, _)" $ do
-                let expect = Pattern.withCondition defined1 <$> conditions
-                (actualAnd, actualUnify) <- simplifyUnify defined1 set2
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\and(_, defined)" $ do
-                let expect = Pattern.withCondition defined1 <$> conditions
-                (actualAnd, actualUnify) <- simplifyUnify set2 defined1
-                assertEqual "" expect actualAnd
-                assertEqual "" expect actualUnify
-            , testCase "\\equals(defined, _)" $ do
-                let expect = Just conditions
-                actual <- simplifyEquals mempty defined1 set2
-                assertEqual "" expect actual
-            , testCase "\\equals(_, defined)" $ do
-                let expect = Just conditions
-                actual <- simplifyEquals mempty set2 defined1
-                assertEqual "" expect actual
-            ]
-    , testGroup "Maps" $
-        let map1 =
-                Mock.builtinMap
-                    [ (mkElemVar Mock.x, fOfA)
-                    , (mkElemVar Mock.y, fOfB)
-                    ]
-            map2 =
-                Mock.framedMap
-                    [(mkElemVar Mock.t, mkElemVar Mock.u)]
-                    [mkElemVar Mock.m]
-            defined1 = mkDefined map1
-            conditions =
-                [ mconcat
-                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.x)
-                    , Condition.assign (inject Mock.u) (mkDefined fOfA)
-                    , Condition.assign (inject Mock.m)
-                        (Mock.builtinMap [(mkElemVar Mock.y, mkDefined fOfB)])
-                    ]
-                , mconcat
-                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.y)
-                    , Condition.assign (inject Mock.u) (mkDefined fOfB)
-                    , Condition.assign (inject Mock.m)
-                        (Mock.builtinMap [(mkElemVar Mock.x, mkDefined fOfA)])
-                    ]
-                ]
-        in
-            [ testCase "\\and(defined, _)" $ do
-                let expect = Pattern.withCondition defined1 <$> conditions
-                (actualAnd, actualUnify) <- simplifyUnify defined1 map2
-                assertEqual "" (List.sort expect) (List.sort actualAnd)
-                assertEqual "" (List.sort expect) (List.sort actualUnify)
-            , testCase "\\and(_, defined)" $ do
-                let expect = Pattern.withCondition defined1 <$> conditions
-                (actualAnd, actualUnify) <- simplifyUnify map2 defined1
-                assertEqual "" (List.sort expect) (List.sort actualAnd)
-                assertEqual "" (List.sort expect) (List.sort actualUnify)
-            , testCase "\\equals(defined, _)" $ do
-                let expect = Just conditions
-                actual <- simplifyEquals mempty defined1 map2
-                assertEqual "" (List.sort <$> expect) actual
-            , testCase "\\equals(_, defined)" $ do
-                let expect = Just conditions
-                actual <- simplifyEquals mempty map2 defined1
-                assertEqual "" (List.sort <$> expect) actual
-            ]
     ]
 
 fOfA :: TermLike VariableName

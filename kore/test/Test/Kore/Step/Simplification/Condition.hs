@@ -76,13 +76,9 @@ test_simplify_local_functions =
     , test "contradiction: \"one\" = f(x) ∧ f(x) = \"two\"" fString (Left  strOne) (Right strTwo)
     , test "contradiction: \"one\" = f(x) ∧ \"two\" = f(x)" fString (Left  strOne) (Left  strTwo)
     , test "contradiction: f(x) = \"one\" ∧ \"two\" = f(x)" fString (Right strOne) (Left  strTwo)
-    -- Ignore Defined marker
-    , testDefined "contradiction: f(g(x)) = a ∧ f(g(x)) = b" (Right fg) (Right a) (Right b)
-    , testDefined "contradiction: f(g(x)) = a ∧ f(g(x)) = b" (Left fg) (Right a) (Right b)
     ]
   where
     f = Mock.f (mkElemVar Mock.x)
-    fg = Mock.f (Mock.g (mkElemVar Mock.x))
     fInt = Mock.fInt (mkElemVar Mock.xInt)
     fBool = Mock.fBool (mkElemVar Mock.xBool)
     fString = Mock.fString (mkElemVar Mock.xString)
@@ -106,28 +102,11 @@ test_simplify_local_functions =
     mkLocalDefn func (Left t)  = makeEqualsPredicate t func
     mkLocalDefn func (Right t) = makeEqualsPredicate func t
 
-    applyDefined1 (Left func) = mkDefined func
-    applyDefined1 (Right func) = func
-    applyDefined2 (Left func) = func
-    applyDefined2 (Right func) = mkDefined func
-
     test name func eitherC1 eitherC2 =
         testCase name $ do
             let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
                 equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
                 condition = defined <> equals1 <> defined <> equals2
-            actual <- simplify condition
-            assertBool "Expected \\bottom" $ isBottom actual
-
-    testDefined name eitherFunc eitherC1 eitherC2 =
-        testCase name $ do
-            let equals1 =
-                    mkLocalDefn (applyDefined1 eitherFunc) eitherC1
-                        & Condition.fromPredicate
-                equals2 =
-                    mkLocalDefn (applyDefined2 eitherFunc) eitherC2
-                        & Condition.fromPredicate
-                condition = equals1 <> equals2
             actual <- simplify condition
             assertBool "Expected \\bottom" $ isBottom actual
 

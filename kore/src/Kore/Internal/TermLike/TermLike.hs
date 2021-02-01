@@ -214,7 +214,6 @@ data TermLikeF variable child
     | EndiannessF     !(Const Endianness child)
     | SignednessF     !(Const Signedness child)
     | InjF            !(Inj child)
-    | DefinedF        !(Defined child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -267,7 +266,6 @@ instance
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Sort (TermLikeF variable) where
     synthetic =
@@ -306,7 +304,6 @@ instance Synthetic Sort (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Pattern.Functional (TermLikeF variable) where
     synthetic =
@@ -345,7 +342,6 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Pattern.Function (TermLikeF variable) where
     synthetic =
@@ -384,7 +380,6 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Pattern.Defined (TermLikeF variable) where
     synthetic =
@@ -423,7 +418,6 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Pattern.Simplified (TermLikeF variable) where
     synthetic =
@@ -462,7 +456,6 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
     synthetic =
@@ -501,7 +494,6 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
-            DefinedF defined -> synthetic defined
 
 {- | @TermLike@ is a term-like Kore pattern.
 
@@ -745,8 +737,6 @@ instance
                 locationFromAst builtinAcSort
             InternalSetF InternalAc { builtinAcSort } ->
                 locationFromAst builtinAcSort
-            DefinedF Defined { getDefined } ->
-                locationFromAst getDefined
 
 instance AstWithLocation variable => AstWithLocation (TermLike variable)
   where
@@ -801,7 +791,6 @@ traverseVariablesF adj =
         EndiannessF endianness -> pure (EndiannessF endianness)
         SignednessF signedness -> pure (SignednessF signedness)
         InjF inj -> pure (InjF inj)
-        DefinedF childP -> pure (DefinedF childP)
   where
     trElemVar = traverse $ traverseElementVariableName adj
     trSetVar = traverse $ traverseSetVariableName adj
