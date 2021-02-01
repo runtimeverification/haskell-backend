@@ -44,6 +44,9 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -238,6 +241,8 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
 -- * Term simplifiers
 

@@ -60,6 +60,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -183,7 +184,7 @@ makeEvaluateTerm sideCondition ceilChild =
     ceilSimplifier =
         mconcat
         [ newPredicateCeilSimplifier
-        , newDefinedCeilSimplifier
+        , newDefinedCeilSimplifier sideCondition
         -- We must apply user-defined \ceil rule before built-in rules
         -- because they may be more specific. In particular, Map and Set
         -- \ceil conditions are reduced to Bool expressions using in_keys.
@@ -205,9 +206,10 @@ newPredicateCeilSimplifier = CeilSimplifier $ \input ->
 newDefinedCeilSimplifier
     :: Monad simplifier
     => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
-newDefinedCeilSimplifier = CeilSimplifier $ \input ->
-    if isDefinedPattern (ceilChild input)
+    => SideCondition variable
+    -> CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
+    if SideCondition.isDefined sideCondition (ceilChild input)
         then return OrCondition.top
         else empty
 

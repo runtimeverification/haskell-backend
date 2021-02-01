@@ -73,6 +73,9 @@ import Control.Monad.Reader
     , runReaderT
     )
 import qualified Control.Monad.Reader as Reader
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import qualified Control.Monad.State.Lazy as State.Lazy
 import Control.Monad.State.Strict
     ( StateT
@@ -422,6 +425,8 @@ instance MonadSMT m => MonadSMT (Counter.CounterT m)
 instance MonadSMT m => MonadSMT (State.Strict.StateT s m)
 
 instance MonadSMT m => MonadSMT (ExceptT e m)
+
+instance MonadSMT m => MonadSMT (RWST r () s m)
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }

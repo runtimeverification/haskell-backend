@@ -92,8 +92,6 @@ module Kore.Internal.TermLike
     , mkEvaluated
     , mkEndianness
     , mkSignedness
-    -- , mkDefined
-    -- , unDefined
     -- * Predicate constructors
     , mkBottom_
     , mkCeil_

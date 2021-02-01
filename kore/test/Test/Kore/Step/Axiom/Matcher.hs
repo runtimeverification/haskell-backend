@@ -36,6 +36,7 @@ import Kore.Internal.Predicate
     , makeCeilPredicate
     , makeTruePredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -1050,7 +1051,7 @@ match first second =
     runSimplifier Mock.env matchResult
   where
     matchResult :: SimplifierT NoSMT MatchResult
-    matchResult = matchIncremental first second
+    matchResult = matchIncremental SideCondition.top first second
 
 withMatch
     :: (MatchResult -> Assertion)

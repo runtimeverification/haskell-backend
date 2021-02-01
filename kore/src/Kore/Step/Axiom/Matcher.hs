@@ -21,9 +21,12 @@ import Control.Lens
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import Control.Monad.State.Strict
-    ( MonadState
-    , StateT
+import Control.Monad.RWS.Strict
+    ( MonadReader
+    , MonadState
+    , RWST (..)
+    , ask
+    , evalRWST
     )
 import qualified Control.Monad.State.Strict as Monad.State
 import Control.Monad.Trans.Maybe
@@ -82,6 +85,8 @@ import Kore.Internal.Predicate
     , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike hiding
     ( substitute
@@ -193,11 +198,13 @@ deferred constraints, then matching fails.
 matchIncremental
     :: forall variable simplifier
     .  (MatchingVariable variable, MonadSimplify simplifier)
-    => TermLike variable
+      => SideCondition variable
+    -> TermLike variable
     -> TermLike variable
     -> simplifier (Maybe (MatchResult variable))
-matchIncremental termLike1 termLike2 =
-    Monad.State.evalStateT matcher initial
+matchIncremental sideCondition termLike1 termLike2 =
+    evalRWST matcher sideCondition initial
+    & fmap fst
   where
     matcher :: MatcherT variable simplifier (Maybe (MatchResult variable))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
@@ -444,7 +451,8 @@ data MatcherState variable =
         }
     deriving (GHC.Generic)
 
-type MatcherT variable simplifier = StateT (MatcherState variable) simplifier
+type MatcherT variable simplifier =
+    RWST (SideCondition variable) () (MatcherState variable) simplifier
 
 {- | Pop the next constraint from the matching queue.
  -}
@@ -618,13 +626,19 @@ occursCheck Variable { variableName } termLike =
     (Monad.guard . not) (hasFreeVariable variableName termLike)
 
 definedTerm
-    :: (MatchingVariable variable, MonadState (MatcherState variable) matcher)
+    :: MatchingVariable variable
+    => MonadState (MatcherState variable) matcher
+    => MonadReader (SideCondition variable) matcher
     => TermLike variable
     -> matcher ()
-definedTerm termLike
-  | isDefinedPattern termLike = return ()
-  | otherwise = field @"predicate" <>= definedTermLike
+definedTerm termLike =
+    ask >>= definedTermWorker
   where
+    definedTermWorker sideCondition
+      | SideCondition.isDefined sideCondition termLike =
+          return ()
+      | otherwise = field @"predicate" <>= definedTermLike
+
     definedTermLike = MultiAnd.make [makeCeilPredicate termLike]
 
 {- | Ensure that the given variable is a target variable.
