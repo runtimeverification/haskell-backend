@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Exists
     ( simplify
     , makeEvaluate
@@ -78,7 +80,7 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplify
+    ( makeEvaluate
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
@@ -303,7 +305,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                         $ Conditional.predicate normalized
                     }
         orPattern <-
-            lift $ Pattern.simplify sideCondition substituted
+            lift $ Pattern.makeEvaluate sideCondition substituted
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
