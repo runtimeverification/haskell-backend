@@ -9,8 +9,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Sup (Sup(..))
-import GHC.Natural (intToNatural)
 import Control.Monad
     ( (>=>)
     )
@@ -18,8 +16,14 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Map.Strict as Map
+import Data.Sup
+    ( Sup (..)
+    )
 import Data.Text
     ( Text
+    )
+import GHC.Natural
+    ( intToNatural
     )
 
 import qualified Kore.Equation as Equation
@@ -40,6 +44,9 @@ import Kore.Step.Axiom.Registry
 import qualified Pretty
 
 import Test.Expect
+import Test.Kore
+    ( testId
+    )
 import Test.Kore.Equation.Common hiding
     ( axiom
     , axiom_
@@ -52,13 +59,12 @@ import Test.Kore.Internal.SideCondition as SideCondition
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import Test.Kore (testId)
 
 type AttemptEquationError' = AttemptEquationError RewritingVariableName
 type AttemptEquationResult' = AttemptEquationResult RewritingVariableName
 
 attemptEquation
-    :: SideCondition RewritingVariableName 
+    :: SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> Equation RewritingVariableName
     -> IO AttemptEquationResult'
@@ -596,7 +602,7 @@ tdivInt
     -> TermLike RewritingVariableName
 tdivInt = Mock.tdivInt
 
-positive :: TermLike RewritingVariableName ->  Predicate RewritingVariableName 
+positive :: TermLike RewritingVariableName ->  Predicate RewritingVariableName
 positive u' =
     makeEqualsPredicate
         (Mock.lessInt
@@ -650,7 +656,7 @@ notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 notInstantiated
     :: TestName
     -> Equation RewritingVariableName
-    -> SideCondition RewritingVariableName 
+    -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree
 notInstantiated =
@@ -658,8 +664,8 @@ notInstantiated =
 
 requiresNotMet
     :: TestName
-    -> Equation RewritingVariableName 
-    -> SideCondition RewritingVariableName 
+    -> Equation RewritingVariableName
+    -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree
 requiresNotMet =

@@ -140,7 +140,7 @@ concrete
     :: InternalVariable variable
     => [TermLike variable]
     -> Equation variable
-    -> Equation variable 
+    -> Equation variable
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")
