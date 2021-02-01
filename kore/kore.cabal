@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a582a9185452019c3edd24db2a392b265ee7e7d1342566af00819981d53b03f0
+-- hash: 9ae62d0b2c873da174eb6697f81badf65f6f1d7026f7d4ccafd3a0d8a2078390
 
 name:           kore
 version:        0.38.0.0
@@ -927,7 +927,6 @@ test-suite kore-test
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier
-      Test.Kore.Builtin.AssociativeCommutative
       Test.Kore.Builtin.Bool
       Test.Kore.Builtin.Builtin
       Test.Kore.Builtin.Definition
