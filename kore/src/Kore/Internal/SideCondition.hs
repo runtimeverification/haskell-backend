@@ -124,9 +124,6 @@ import Kore.Internal.Variable
     ( InternalVariable
     )
 import Kore.Syntax.Variable
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
 import Kore.Unparser
     ( Unparse (..)
     )
@@ -168,16 +165,6 @@ data SideCondition variable =
 instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
-
-instance TopBottom (SideCondition variable) where
-    isTop sideCondition@(SideCondition _ _ _) =
-        isTop assumedTrue
-      where
-        SideCondition { assumedTrue } = sideCondition
-    isBottom sideCondition@(SideCondition _ _ _) =
-        isBottom assumedTrue
-      where
-        SideCondition { assumedTrue } = sideCondition
 
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
@@ -325,9 +312,18 @@ toPredicate
     => SideCondition variable
     -> Predicate variable
 toPredicate condition@(SideCondition _ _ _) =
-    MultiAnd.toPredicate assumedTrue
+    Predicate.makeAndPredicate
+        assumedTruePredicate
+        definedPredicate
   where
-    SideCondition { assumedTrue } = condition
+    SideCondition { assumedTrue, definedTerms } = condition
+    assumedTruePredicate = MultiAnd.toPredicate assumedTrue
+    definedPredicate =
+        definedTerms
+            & HashSet.toList
+            & fmap Predicate.makeCeilPredicate
+            & MultiAnd.make
+            & MultiAnd.toPredicate
 
 fromPredicate
     :: InternalVariable variable
