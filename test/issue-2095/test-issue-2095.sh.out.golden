@@ -16556,7 +16556,9 @@
                         ),
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                            /* Fl Fn D Sfa */
+                            Var'QuesUnds'4:SortInt{}
                         ),
                         /* Fl Fn D Sfa Cli */
                         /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -16609,7 +16611,9 @@
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Fl Fn D Sfa */
+                                    Var'QuesUnds'4:SortInt{}
                                 ),
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
