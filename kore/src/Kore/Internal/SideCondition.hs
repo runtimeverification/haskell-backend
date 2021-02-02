@@ -170,8 +170,9 @@ instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
     freeVariables sideCondition@(SideCondition _ _ _) =
         freeVariables assumedTrue
+        <> foldMap freeVariables definedTerms
       where
-        SideCondition { assumedTrue } = sideCondition
+        SideCondition { assumedTrue, definedTerms } = sideCondition
 
 instance InternalVariable variable => Pretty (SideCondition variable) where
     pretty
@@ -738,7 +739,6 @@ isDefined sideCondition@SideCondition { definedTerms } term =
     isFunctionalSymbol (App_ symbol children)
       | isFunctional symbol =
           all (isDefined sideCondition) children
-      | otherwise = False
     isFunctionalSymbol _ = False
 
 {- | Generates the minimal set of defined collections
