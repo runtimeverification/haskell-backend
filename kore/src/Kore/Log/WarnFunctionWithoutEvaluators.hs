@@ -14,8 +14,12 @@ import Prelude.Kore
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.AST.AstWithLocation ( prettyPrintLocationFromAst )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol(..)
+    )
 import Kore.Internal.Symbol
-    ( Symbol
+    ( Symbol(..)
     , noEvaluators
     )
 import Kore.Unparser
@@ -44,9 +48,13 @@ instance SOP.HasDatatypeInfo WarnFunctionWithoutEvaluators
 
 instance Pretty WarnFunctionWithoutEvaluators where
     pretty WarnFunctionWithoutEvaluators { symbol } =
+        let Symbol { symbolAttributes } = symbol in
+        let Attribute.Symbol { klabel } = symbolAttributes in
         Pretty.vsep
             [ "No evaluators for function symbol:"
             , Pretty.indent 4 (unparse symbol)
+            , Pretty.hsep ["with label", Pretty.pretty klabel, "at location:"]
+            , Pretty.pretty (prettyPrintLocationFromAst symbol)
             ]
 
 instance Entry WarnFunctionWithoutEvaluators where
