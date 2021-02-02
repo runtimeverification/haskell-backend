@@ -14,12 +14,14 @@ import Prelude.Kore
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.AST.AstWithLocation ( prettyPrintLocationFromAst )
+import Kore.AST.AstWithLocation
+    ( prettyPrintLocationFromAst
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol(..)
+    ( Symbol (..)
     )
 import Kore.Internal.Symbol
-    ( Symbol(..)
+    ( Symbol (..)
     , noEvaluators
     )
 import Kore.Unparser
