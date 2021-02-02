@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 31c0153b51498e9307cfa8992158de791fb8824f02b0c299f2e0b5dd9a03eab8
+-- hash: 3a3209955e7db4f112e2b2c2ab073b1d479448d68f21f84c4a14ce8f5f2293d9
 
 name:           kore
 version:        0.38.0.0
@@ -476,6 +476,7 @@ executable kore-exec
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/exec
@@ -556,6 +557,7 @@ executable kore-format
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/format
@@ -636,6 +638,7 @@ executable kore-parser
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/parser
@@ -790,6 +793,7 @@ executable kore-repl
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/repl
