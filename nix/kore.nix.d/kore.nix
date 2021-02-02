@@ -530,7 +530,7 @@
             (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
+          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
           hsSourceDirs = [ "app/exec" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -602,7 +602,7 @@
             (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
+          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
           hsSourceDirs = [ "app/format" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -674,7 +674,7 @@
             (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
+          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
           hsSourceDirs = [ "app/parser" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -816,7 +816,7 @@
             (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "Paths_kore" ];
+          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
           hsSourceDirs = [ "app/repl" "app/share" ];
           mainPath = ([
             "Main.hs"
