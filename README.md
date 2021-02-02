@@ -52,8 +52,16 @@ in addition to the requirements and recommendations below.
 For integration testing, we require:
 
 - GNU [make]
-- The [K Framework] frontend, or [curl] to fetch an appropriate version.
-  The frontend has other dependencies, most notably a Java runtime.
+- The [K Framework] frontend.
+
+Instead of installing the frontend, you can use our `Dockerfile`
+to run the integration tests inside a container.
+Use `docker.sh` to run commands inside the container:
+
+``` sh
+./docker/build.sh  # run once when dependencies change
+./docker/run.sh make ...
+```
 
 ### Recommended dependencies
 
