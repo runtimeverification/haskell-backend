@@ -54,11 +54,16 @@ instance Pretty WarnFunctionWithoutEvaluators where
         let Attribute.Symbol { klabel } = symbolAttributes in
         Pretty.vsep
             [ "No evaluators for function symbol:"
-            , Pretty.indent 4 (unparse symbol)
-            , Pretty.hsep ["with label", Pretty.pretty klabel, "at location:"]
-            , Pretty.pretty (prettyPrintLocationFromAst symbol)
+            , Pretty.indent 4 $ Pretty.hsep
+                [ unparse symbol
+                , Pretty.parens $ Pretty.pretty klabel
+                ]
+            , Pretty.hsep
+                [ "defined at:"
+                , Pretty.pretty $ prettyPrintLocationFromAst symbol
+                ]
             ]
-
+            
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
     helpDoc _ = "warn when encountering a function with no definition"
