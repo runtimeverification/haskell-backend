@@ -29,7 +29,7 @@ newtype WarnBoundedModelChecker
 instance Pretty WarnBoundedModelChecker where
     pretty (WarnBoundedModelChecker claim) =
         Pretty.hsep
-            [ "The pattern does not terminate within the bound at:"
+            [ "The claim was not proven within the bound:"
             , Pretty.pretty (from claim :: SourceLocation)
             ]
 
