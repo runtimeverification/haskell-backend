@@ -425,7 +425,7 @@ transitionRule' claims axioms = \prim proofState ->
 withWarnings
     :: forall m
     .  MonadSimplify m
-    =>  CommonTransitionRule m
+    => CommonTransitionRule m
     -> CommonTransitionRule m
 withWarnings rule prim claimState =
     case prim of
