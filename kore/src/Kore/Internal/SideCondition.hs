@@ -49,9 +49,6 @@ import qualified Data.HashSet as HashSet
 import Data.List
     ( sortOn
     )
-import Data.List.Extra
-    ( nubOrdBy
-    )
 import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -79,7 +76,9 @@ import Kore.Internal.NormalizedAc
     ( AcWrapper (..)
     , InternalAc (..)
     , NormalizedAc (..)
+    , PairWiseElements (..)
     , emptyNormalizedAc
+    , generatePairWiseElements
     , getSymbolicKeysOfAc
     )
 import Kore.Internal.Predicate
@@ -766,20 +765,14 @@ generateNormalizedAcs
     => InternalAc Key normalized (TermLike variable)
     -> HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
-    let symbolicPairs = pairWiseElemsOfSameType symbolicElems
-        concretePairs = pairWiseElemsOfSameType concreteElems
-        opaquePairs   = pairWiseElemsOfSameType opaqueElems
-        symbolicConcrete = (,) <$> symbolicElems <*> concreteElems
-        symbolicOpaque   = (,) <$> symbolicElems <*> opaqueElems
-        concreteOpaque   = (,) <$> concreteElems <*> opaqueElems
-     in [ symbolicToAc <$> symbolicPairs
-        , concreteToAc <$> concretePairs
-        , opaqueToAc <$> opaquePairs
-        , symbolicConcreteToAc <$> symbolicConcrete
-        , symbolicOpaqueToAc <$> symbolicOpaque
-        , concreteOpaqueToAc <$> concreteOpaque
-        ]
-        & concat & HashSet.fromList
+    [ symbolicToAc <$> symbolicPairs
+    , concreteToAc <$> concretePairs
+    , opaqueToAc <$> opaquePairs
+    , symbolicConcreteToAc <$> symbolicConcretePairs
+    , symbolicOpaqueToAc <$> symbolicOpaquePairs
+    , concreteOpaqueToAc <$> concreteOpaquePairs
+    ]
+    & concat & HashSet.fromList
   where
     InternalAc
         { builtinAcChild
@@ -788,16 +781,14 @@ generateNormalizedAcs internalAc =
         , builtinAcConcat
         , builtinAcElement
         } = internalAc
-    symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
-    concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
-    opaqueElems = opaque . unwrapAc $ builtinAcChild
-    pairWiseElemsOfSameType elems =
-        [ (x, y) | x <- elems, y <- elems, x /= y ]
-        & nubOrdBy applyComm
-    applyComm p1 p2
-      | p1 == p2 = EQ
-      | swap p1 == p2 = EQ
-      | otherwise = compare p1 p2
+    PairWiseElements
+        { symbolicPairs
+        , concretePairs
+        , opaquePairs
+        , symbolicConcretePairs
+        , symbolicOpaquePairs
+        , concreteOpaquePairs
+        } = generatePairWiseElements builtinAcChild
     symbolicToAc (symbolic1, symbolic2) =
         let symbolicAc =
                 emptyNormalizedAc
