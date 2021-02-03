@@ -659,7 +659,6 @@ assumeDefined term =
                         generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
                  in foldMap assumeDefinedWorker definedElems
-                    <> asSet term'
                     <> definedMaps
             TermLike.InternalSet_ internalSet ->
                 let definedElems =
@@ -668,7 +667,6 @@ assumeDefined term =
                         generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
                  in foldMap assumeDefinedWorker definedElems
-                    <> asSet term'
                     <> definedSets
             TermLike.Forall_ _ _ child ->
                 asSet term' <> assumeDefinedWorker child
@@ -708,7 +706,8 @@ assumeDefined term =
 or be defined in the context of the `SideCondition`.
 -}
 isDefined
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => SideCondition variable
     -> TermLike variable
     -> Bool
@@ -724,12 +723,14 @@ isDefined sideCondition@SideCondition { definedTerms } term =
                 let subMaps =
                         generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
-                 in subMaps `isNonEmptySubset` definedTerms
+                 in isSingleton internalMap
+                    || subMaps `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
-                 in subSets `isNonEmptySubset` definedTerms
+                 in isSingleton internalSet
+                    || subSets `isNonEmptySubset` definedTerms
             _ -> False
 
     isNonEmptySubset subset set
@@ -740,6 +741,27 @@ isDefined sideCondition@SideCondition { definedTerms } term =
       | isFunctional symbol =
           all (isDefined sideCondition) children
     isFunctionalSymbol _ = False
+
+    isSingleton
+        :: AcWrapper normalized
+        => InternalAc (TermLike Concrete) normalized (TermLike variable)
+        -> Bool
+    isSingleton InternalAc { builtinAcChild }
+      | numberOfElements == 1 =
+          all (isDefined sideCondition) symbolicKeys
+          && all (isDefined sideCondition) concreteKeys
+          && all (isDefined sideCondition) opaqueElems
+      | otherwise = False
+      where
+        symbolicKeys = getSymbolicKeysOfAc builtinAcChild
+        concreteKeys =
+            TermLike.fromConcrete
+            <$> getConcreteKeysOfAc builtinAcChild
+        opaqueElems = opaque . unwrapAc $ builtinAcChild
+        numberOfElements =
+            length symbolicKeys
+            + length concreteKeys
+            + length opaqueElems
 
 {- | Generates the minimal set of defined collections
 from which definedness of any sub collection can be inferred.
@@ -755,9 +777,7 @@ generateNormalizedAcs
     => AcWrapper normalized
     => InternalAc (TermLike Concrete) normalized (TermLike variable)
     -> HashSet (InternalAc (TermLike Concrete) normalized (TermLike variable))
-generateNormalizedAcs internalAc
-  | numberOfElements <= 2 = mempty
-  | otherwise =
+generateNormalizedAcs internalAc =
     let symbolicPairs = pairWiseElemsOfSameType symbolicElems
         concretePairs = pairWiseElemsOfSameType concreteElems
         opaquePairs   = pairWiseElemsOfSameType opaqueElems
@@ -783,10 +803,6 @@ generateNormalizedAcs internalAc
     symbolicElems = elementsWithVariables . unwrapAc $ builtinAcChild
     concreteElems = Map.toList . concreteElements . unwrapAc $ builtinAcChild
     opaqueElems = opaque . unwrapAc $ builtinAcChild
-    numberOfElements =
-        length symbolicElems
-        + length concreteElems
-        + length opaqueElems
     pairWiseElemsOfSameType elems =
         [ (x, y) | x <- elems, y <- elems, x /= y ]
         & nubOrdBy applyComm

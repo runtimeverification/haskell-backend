@@ -165,7 +165,7 @@ test_assumeDefined =
                     [(Mock.plain00, Mock.a)]
                     []
             expectedTerms = [ Mock.plain00 ]
-            expectedCollections = [ collection ]
+            expectedCollections = []
         testCollection collection expectedTerms expectedCollections
     , testCase "Opaque is always defined" $ do
         let collection = Collection [] [0]
@@ -196,8 +196,7 @@ test_assumeDefined =
                 , Mock.f Mock.plain00
                 ]
             expectedCollections =
-                [ collection
-                , Collection
+                [ Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
                     ]
@@ -266,6 +265,18 @@ test_isDefined =
                 & HashSet.fromList & fromDefinedTerms
             actual = isDefined sideCondition term
         assertEqual "" True actual
+    , testCase "Singleton map is defined" $ do
+        let term :: TermLike VariableName
+            term = Mock.framedMap [ (Mock.plain00, Mock.a) ] []
+            sideCondition = assumeDefined term
+            actual = isDefined sideCondition term
+        assertEqual "" True actual
+    , testCase "Singleton set is defined" $ do
+        let term :: TermLike VariableName
+            term = Mock.framedSet [ Mock.plain00 ] []
+            sideCondition = assumeDefined term
+            actual = isDefined sideCondition term
+        assertEqual "" True actual
     , testCase "Singleton: always defined key implies\
                 \ always defined collection" $ do
         let collection =
@@ -286,19 +297,22 @@ test_isDefined =
         let collection = Collection [] [0]
         testCollection collection Nothing True
     , testCase "2-element: is assumed defined, is defined" $ do
-        let definedCollection =
+        let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
                     ]
                     []
-            collection =
+        testCollection collection (Just collection) True
+    , testCase "3-element: is assumed defined, is defined" $ do
+        let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
+                    , (Mock.c, Mock.d)
                     ]
-                    []
-        testCollection collection (Just definedCollection) True
+                    [0]
+        testCollection collection (Just collection) True
     , testCase "3-element: is subcollection of assumed\
                 \ to be defined collection" $ do
         let definedCollection =
@@ -375,14 +389,14 @@ test_generateNormalizedAcs =
         let collection = Collection [] [0]
             expected = mempty
         testCollection collection expected
-    , testCase "2-element: no subcollections to generate" $ do
+    , testCase "2-element: generates itself" $ do
         let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (mkElemVar Mock.y, Mock.b)
                     ]
                     []
-            expected = mempty
+            expected = [ collection ]
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
         let collection =
