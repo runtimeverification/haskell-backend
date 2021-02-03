@@ -427,22 +427,36 @@ withWarnings
     .  MonadSimplify m
     => CommonTransitionRule m
     -> CommonTransitionRule m
-withWarnings rule prim claimState =
-    case prim of
-        Prim.CheckImplication  ->
+withWarnings rule prim claimState = do
+    claimState' <- rule prim claimState
+    withWarningsHelper claimState'
+
+  where
+    withWarningsHelper 
+        :: CommonClaimState
+        -> Transition.TransitionT (AppliedRule SomeClaim) m CommonClaimState
+    withWarningsHelper claimState'
+        | isCheckImpl prim, isStuck claimState' =
             case ClaimState.retractRewritable claimState of
                 Just claim -> do
-                    result <- checkImplication claim & Logic.lowerLogicT
-                    case result of
-                        Implied -> rule prim claimState
-                        NotImpliedStuck _ -> do
-                            warnStuckClaimStateTermsUnifiable claim
-                            rule prim claimState
-                        NotImplied _ -> do
-                            warnStuckClaimStateTermsNotUnifiable claim
-                            rule prim claimState
-                Nothing -> pure claimState
-        _ -> rule prim claimState
+                    warn claimState claim
+                    return claimState'
+                Nothing -> return claimState'
+        | otherwise = return claimState'
+
+    isStuck :: CommonClaimState -> Bool
+    isStuck (ClaimState.Stuck _) = True
+    isStuck _ = False
+
+    isCheckImpl :: Prim -> Bool
+    isCheckImpl Prim.CheckImplication = True
+    isCheckImpl _ = False
+
+    warn :: forall m'. MonadLog m' => CommonClaimState -> SomeClaim -> m' ()
+    warn (ClaimState.Remaining _) =
+        warnStuckClaimStateTermsNotUnifiable
+    warn _ =
+        warnStuckClaimStateTermsUnifiable
 
 profTransitionRule
     :: forall m
