@@ -41,9 +41,6 @@ module Kore.Sort
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Exception
     ( Exception (..)
     , throw

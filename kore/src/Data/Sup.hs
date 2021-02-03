@@ -13,9 +13,6 @@ module Data.Sup
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Data
     ( Data
     )

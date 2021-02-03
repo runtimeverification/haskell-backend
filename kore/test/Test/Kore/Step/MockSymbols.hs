@@ -84,6 +84,7 @@ import Kore.Internal.Symbol hiding
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , retractKey
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
@@ -1876,7 +1877,7 @@ framedInternalMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Builtin.toKey key <*> pure value
+        (,) <$> retractKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
@@ -1940,7 +1941,7 @@ framedInternalSet elements opaque =
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure SetValue
+            (,) <$> retractKey key <*> pure SetValue
         & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements

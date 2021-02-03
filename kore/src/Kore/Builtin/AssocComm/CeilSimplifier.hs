@@ -32,7 +32,6 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd
@@ -54,12 +53,13 @@ import Kore.Internal.SideCondition
     )
 import Kore.Internal.TermLike
     ( Ceil (..)
-    , Concrete
     , ElementVariable
     , InternalVariable
+    , Key
     , TermLike
     , fromVariableName
     , generatedId
+    , retractKey
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -76,7 +76,7 @@ import Kore.Variables.Fresh
     )
 
 type BuiltinAssocComm normalized variable =
-    InternalAc (TermLike Concrete) normalized (TermLike variable)
+    InternalAc Key normalized (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
@@ -188,7 +188,8 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil { ceilChild } -> do
         let internalAc@InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
-        let normalizedAc = unwrapAc builtinAcChild
+        let normalizedAc :: NormalizedAc normalized Key (TermLike variable)
+            normalizedAc = unwrapAc builtinAcChild
             NormalizedAc
                 { elementsWithVariables = abstractElements
                 , concreteElements
@@ -234,7 +235,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 :: [Value normalized (TermLike variable)]
             (abstractKeys, abstractValues) =
                 unzip (unwrapElement <$> abstractElements)
-            concreteKeys = TermLike.fromConcrete <$> Map.keys concreteElements
+            concreteKeys = from @Key <$> Map.keys concreteElements
             concreteValues = Map.elems concreteElements
             allValues = concreteValues <> abstractValues
 
@@ -310,7 +311,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         & MultiAnd.singleton
 
     notMembers
-        :: NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+        :: NormalizedAc normalized Key (TermLike variable)
         -> TermLike variable
         -> MultiAnd (OrCondition variable)
     notMembers normalizedAc termLike =
@@ -320,7 +321,7 @@ foldElements
     ::  AcWrapper collection
     =>  InternalVariable variable
     =>  Lens.Fold
-            (NormalizedAc collection (TermLike Concrete) (TermLike variable))
+            (NormalizedAc collection Key (TermLike variable))
             (Element collection (TermLike variable))
 foldElements =
     Lens.folding $ \normalizedAc ->
@@ -335,11 +336,10 @@ foldElements =
 
 fromElement
     :: AcWrapper normalized
-    => InternalVariable variable
     => Element normalized (TermLike variable)
-    -> NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    -> NormalizedAc normalized Key (TermLike variable)
 fromElement element
-  | Just concreteKey <- Builtin.toKey symbolicKey
+  | Just concreteKey <- retractKey symbolicKey
   = emptyNormalizedAc { concreteElements = Map.singleton concreteKey value }
   | otherwise
   = emptyNormalizedAc { elementsWithVariables = [element] }

@@ -53,9 +53,6 @@ module Kore.Syntax.Sentence
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Monad as Monad
 import Data.Generics.Sum.Typed
     ( projectTyped

@@ -127,6 +127,7 @@ import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.Int
     ( genConcreteIntegerPattern
     , genInteger
+    , genIntegerKey
     , genIntegerPattern
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -172,11 +173,11 @@ genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
 genSetPattern :: Gen (TermLike VariableName)
-genSetPattern = fromConcrete . builtinSet_ <$> genSetConcreteIntegerPattern
+genSetPattern = fromConcrete . mkSet_ <$> genSetConcreteIntegerPattern
 
 intSetToSetPattern :: Set Integer -> TermLike VariableName
 intSetToSetPattern intSet =
-    builtinSet_ (Set.map Test.Int.asInternal intSet)
+    mkSet_ (Set.map Test.Int.asInternal intSet)
 
 test_unit :: [TestTree]
 test_unit =
@@ -271,7 +272,7 @@ test_inConcatSymbolic =
         (do
             keys <- forAll genKeys
             patKey <- forAll genKey
-            let patSet = builtinSet_ $ Set.insert patKey (Set.fromList keys)
+            let patSet = mkSet_ $ Set.insert patKey (Set.fromList keys)
                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
                 patTrue = Test.Bool.asPattern True
                 conditionTerm = mkCeil boolSort patSet
@@ -292,7 +293,7 @@ test_inConcat =
             elem' <- forAll genConcreteIntegerPattern
             values <- forAll genSetConcreteIntegerPattern
             let patIn = mkApplySymbol inSetSymbol [ patElem , patSet ]
-                patSet = builtinSet_ (Set.insert elem' values) & fromConcrete
+                patSet = mkSet_ (Set.insert elem' values) & fromConcrete
                 patElem = fromConcrete elem'
                 patTrue = Test.Bool.asInternal True
                 predicate = mkEquals_ patTrue patIn
@@ -365,29 +366,27 @@ test_concatNormalizes =
             unless (distinctVars allVars) discard
             when (int1 == int2) discard
 
-            let intPat1 = Test.Int.asInternal int1
-                intPat2 = Test.Int.asInternal int2
-                Just concretePat1 = asConcrete intPat1
-                Just concretePat2 = asConcrete intPat2
+            let intKey1 = Test.Int.asKey int1
+                intKey2 = Test.Int.asKey int2
                 [elementVar1, elementVar2] = map mkElemVar (List.sort elemVars)
 
                 patConcat =
                     mkApplySymbol concatSetSymbol
                         [mkApplySymbol concatSetSymbol
-                            [ mkApplySymbol elementSetSymbol [intPat1]
+                            [ mkApplySymbol elementSetSymbol [from intKey1]
                             , mkApplySymbol elementSetSymbol [elementVar1]
                             ]
                         , mkApplySymbol concatSetSymbol
                             [ mkElemVar setVar
                             , mkApplySymbol concatSetSymbol
                                 [ mkApplySymbol elementSetSymbol [elementVar2]
-                                , mkApplySymbol elementSetSymbol [intPat2]
+                                , mkApplySymbol elementSetSymbol [from intKey2]
                                 ]
                             ]
                         ]
                 normalized = emptyNormalizedSet
-                    `with` ConcreteElement concretePat1
-                    `with` ConcreteElement concretePat2
+                    `with` intKey1
+                    `with` intKey2
                     `with` VariableElement elementVar1
                     `with` VariableElement elementVar2
                     `with` OpaqueSet (mkElemVar setVar)
@@ -408,11 +407,11 @@ test_difference =
             set1 <- forAll genSetConcreteIntegerPattern
             set2 <- forAll genSetConcreteIntegerPattern
             let set3 = Set.difference set1 set2
-                patSet3 = builtinSet_ set3 & fromConcrete
+                patSet3 = mkSet_ set3 & fromConcrete
                 patDifference =
                     differenceSet
-                        (builtinSet_ set1 & fromConcrete)
-                        (builtinSet_ set2 & fromConcrete)
+                        (mkSet_ set1 & fromConcrete)
+                        (mkSet_ set2 & fromConcrete)
                 predicate = mkEquals_ patSet3 patDifference
             expect <- evaluateT patSet3
             (===) expect      =<< evaluateT patDifference
@@ -423,8 +422,8 @@ test_difference_symbolic :: [TestTree]
 test_difference_symbolic =
     [ testCase "[X, 0, 1] -Set [X, 0] = [1]" $ do
         let args =
-                [ builtinSet_ [x, zero, one]
-                , builtinSet_ [x, zero]
+                [ mkSet_ [x, zero, one]
+                , mkSet_ [x, zero]
                 ]
             expect =
                 makeMultipleAndPredicate (makeCeilPredicate <$> args)
@@ -433,8 +432,8 @@ test_difference_symbolic =
         evalDifference (Just expect) args
     , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
         let args =
-                [ builtinSet_ [x, one]
-                , builtinSet_ [x, y]
+                [ mkSet_ [x, one]
+                , mkSet_ [x, y]
                 ]
             expect =
                 makeMultipleAndPredicate (makeCeilPredicate <$> args)
@@ -443,19 +442,19 @@ test_difference_symbolic =
         evalDifference (Just expect) args
     , testCase "[X] -Set [X, Y] = []" $ do
         let args =
-                [ builtinSet_ [x]
-                , builtinSet_ [x, y]
+                [ mkSet_ [x]
+                , mkSet_ [x, y]
                 ]
             expect =
                 makeMultipleAndPredicate
                     (makeCeilPredicate <$> tail args)
                 & Condition.fromPredicate
-                & Pattern.withCondition (builtinSet_ [])
+                & Pattern.withCondition (mkSet_ [])
         evalDifference (Just expect) args
     , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
         let args =
-                [ builtinSet_ [fx, one]
-                , builtinSet_ [fx]
+                [ mkSet_ [fx, one]
+                , mkSet_ [fx]
                 ]
             expect =
                 makeCeilPredicate (head args)
@@ -469,8 +468,8 @@ test_difference_symbolic =
     zero = Int.asInternal 0
     one = Int.asInternal 1
     fx = addInt x one
-    ySingleton = builtinSet_ [y]
-    oneSingleton = builtinSet_ [one]
+    ySingleton = mkSet_ [y]
+    oneSingleton = mkSet_ [one]
 
     ofSort :: Text.Text -> Sort -> ElementVariable VariableName
     idName `ofSort` sort = mkElementVariable (testId idName) sort
@@ -496,7 +495,7 @@ test_toList =
             let set2 = fmap fromConcrete . Seq.fromList . Set.toList $ set1
                 patSet2 = Test.List.asTermLike set2
                 patToList =
-                    mkApplySymbol toListSetSymbol [builtinSet_ set1]
+                    mkApplySymbol toListSetSymbol [mkSet_ set1]
                     & fromConcrete
                 predicate = mkEquals_ patSet2 patToList
             expect <- evaluateT patSet2
@@ -514,7 +513,7 @@ test_size =
                 size = Set.size set
                 patExpected = Test.Int.asInternal $ toInteger size
                 patActual =
-                    mkApplySymbol sizeSetSymbol [builtinSet_ set]
+                    mkApplySymbol sizeSetSymbol [mkSet_ set]
                     & fromConcrete
                 predicate = mkEquals_ patExpected patActual
             expect <- evaluateT patExpected
@@ -537,7 +536,7 @@ test_intersection_idem =
     testPropertyWithSolver "intersection(as, as) === as" $ do
         as <- forAll genConcreteSet
         let
-            termLike = builtinSet_ as & fromConcrete
+            termLike = mkSet_ as & fromConcrete
             original = intersectionSet termLike termLike
             expect = Pattern.fromTermLike (asInternal as)
         (===) expect      =<< evaluateT original
@@ -550,7 +549,7 @@ test_list2set =
         let
             set = Set.map Test.Int.asInternal $ Set.fromList
                 $ toList someSeq
-            termLike = builtinSet_ set & fromConcrete
+            termLike = mkSet_ set & fromConcrete
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
             original = list2setSet input
             expect = Pattern.fromTermLike (asInternal set)
@@ -673,8 +672,8 @@ test_unifyConcreteDistinct =
             patElem <- forAll genConcreteIntegerPattern
             when (Set.member patElem set1) discard
             let set2 = Set.insert patElem set1
-                patSet1 = builtinSet_ set1 & fromConcrete
-                patSet2 = builtinSet_ set2 & fromConcrete
+                patSet1 = mkSet_ set1 & fromConcrete
+                patSet2 = mkSet_ set2 & fromConcrete
                 conjunction = mkAnd patSet1 patSet2
                 predicate = mkEquals_ patSet1 conjunction
             (===) Pattern.bottom =<< evaluateT conjunction
@@ -693,10 +692,10 @@ test_unifyFramingVariable =
                     (forAll genSetConcreteIntegerPattern)
             frameVar <- forAll (standaloneGen $ elementVariableGen setSort)
             let framedSet = Set.singleton framedElem
-                patConcreteSet = builtinSet_ concreteSet & fromConcrete
+                patConcreteSet = mkSet_ concreteSet & fromConcrete
                 patFramedSet =
                     mkApplySymbol concatSetSymbol
-                        [ builtinSet_ framedSet & fromConcrete
+                        [ mkSet_ framedSet & fromConcrete
                         , mkElemVar frameVar
                         ]
                 remainder = Set.delete framedElem concreteSet
@@ -781,7 +780,7 @@ test_unifySelectFromEmpty =
         emptySet `doesNotUnifyWith` fnSelectPatRev
         fnSelectPatRev `doesNotUnifyWith` emptySet
   where
-    emptySet = builtinSet_ Set.empty
+    emptySet = mkSet_ Set.empty
     doesNotUnifyWith pat1 pat2 = do
         annotateShow pat1
         annotateShow pat2
@@ -960,8 +959,8 @@ test_unifyConcatElemVarVsElemSet =
 
             let [elementVar1, elementVar2] = List.sort elemVars
 
-            concreteElem <- forAll genConcreteIntegerPattern
-            let set = asInternal (Set.fromList [concreteElem])
+            key <- forAll genIntegerKey
+            let set = asInternal (Set.fromList [from key])
                 elementSet' = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkElemVar elementVar2)
@@ -969,14 +968,13 @@ test_unifyConcatElemVarVsElemSet =
                 expectedPatSet = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkElemVar elementVar2)
-                    `with` ConcreteElement concreteElem
-                elemStepPattern = fromConcrete concreteElem
+                    `with` key
                 selectPat = addSelectElement elementVar1 (mkElemVar setVar)
             let
                 expect = do  -- list monad
                     (elemUnifier, setUnifier) <-
                         [ (mkElemVar elementVar2, set)
-                        , (elemStepPattern, elementSet')
+                        , (from key, elementSet')
                         ]
                     return Conditional
                         { term = expectedPatSet
@@ -1052,21 +1050,20 @@ test_unifyConcatElemElemVsElemConcrete =
 
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
 
-            concreteElem <- forAll genConcreteIntegerPattern
-            let set = builtinSet_ [concreteElem] & fromConcrete
-                elemStepPattern = fromConcrete concreteElem
+            key <- forAll genIntegerKey
+            let set = mkSet_ [from key] & fromConcrete
                 elementSet2 = makeElementVariable elementVar2
                 selectPat = addSelectElement elementVar1 elementSet2
                 patSet = addSelectElement elementVar3 set
                 expectedSet = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkElemVar elementVar3)
-                    `with` ConcreteElement concreteElem
+                    `with` key
             let
                 expect = do  -- list monad
                     (elemUnifier1, elemUnifier2) <-
-                        [ (mkElemVar elementVar3, elemStepPattern)
-                        , (elemStepPattern, mkElemVar elementVar3)
+                        [ (mkElemVar elementVar3, from key)
+                        , (from key, mkElemVar elementVar3)
                         ]
                     return Conditional
                         { term = expectedSet
@@ -1145,8 +1142,8 @@ test_unifyConcatElemConcatVsElemConcrete =
             let allConcrete = [concreteElem1, concreteElem2, concreteElem3]
             unless (allConcrete == List.nub allConcrete) discard
 
-            let set1 = builtinSet_ [concreteElem1] & fromConcrete
-                set2 = builtinSet_ [concreteElem2, concreteElem3] & fromConcrete
+            let set1 = mkSet_ [concreteElem1] & fromConcrete
+                set2 = mkSet_ [concreteElem2, concreteElem3] & fromConcrete
                 elemStepPattern1 = fromConcrete concreteElem1
                 elemStepPattern2 = fromConcrete concreteElem2
                 elemStepPattern3 = fromConcrete concreteElem3
@@ -1192,14 +1189,14 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
 
             let [elementVar1, elementVar2] = List.sort allVars
 
-            concreteElem <- forAll genConcreteIntegerPattern
-            let set = builtinSet_ [concreteElem] & fromConcrete
+            key <- forAll genIntegerKey
+            let set = mkSet_ [from key] & fromConcrete
                 selectPat = addSelectElement elementVar1 set
                 patSet = addSelectElement elementVar2 set
                 expectedSet = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkElemVar elementVar2)
-                    `with` ConcreteElement concreteElem
+                    `with` key
             let
                 expect =
                     [ Conditional
@@ -1230,8 +1227,8 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
             concreteElem1 <- forAll genConcreteIntegerPattern
             concreteElem2 <- forAll genConcreteIntegerPattern
             when (concreteElem1 == concreteElem2) discard
-            let set1 = builtinSet_ [concreteElem1] & fromConcrete
-                set2 = builtinSet_ [concreteElem2] & fromConcrete
+            let set1 = mkSet_ [concreteElem1] & fromConcrete
+                set2 = mkSet_ [concreteElem2] & fromConcrete
                 elemStepPattern1 = fromConcrete concreteElem1
                 elemStepPattern2 = fromConcrete concreteElem2
                 selectPat = addSelectElement elementVar1 set1
@@ -1273,8 +1270,8 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
             let allElems = [concreteElem1, concreteElem2, concreteElem3]
             when (allElems /= List.nub allElems) discard
 
-            let set1 = builtinSet_ [concreteElem1, concreteElem2] & fromConcrete
-                set2 = builtinSet_ [concreteElem1, concreteElem3] & fromConcrete
+            let set1 = mkSet_ [concreteElem1, concreteElem2] & fromConcrete
+                set2 = mkSet_ [concreteElem1, concreteElem3] & fromConcrete
                 elemStepPattern2 = fromConcrete concreteElem2
                 elemStepPattern3 = fromConcrete concreteElem3
                 selectPat = addSelectElement elementVar1 set1
@@ -1321,8 +1318,8 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
                     [concreteElem1, concreteElem2, concreteElem3, concreteElem4]
             when (allElems /= List.nub allElems) discard
 
-            let set1 = builtinSet_ [concreteElem1, concreteElem2] & fromConcrete
-                set2 = builtinSet_ [concreteElem3, concreteElem4] & fromConcrete
+            let set1 = mkSet_ [concreteElem1, concreteElem2] & fromConcrete
+                set2 = mkSet_ [concreteElem3, concreteElem4] & fromConcrete
                 selectPat = addSelectElement elementVar1 set1
                 patSet = addSelectElement elementVar2 set2
             let
@@ -1344,21 +1341,18 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
 
             let [elementVar1, elementVar2] = List.sort allVars
 
-            concreteElem1 <- forAll genConcreteIntegerPattern
-            concreteElem2 <- forAll genConcreteIntegerPattern
-            let allElems = [concreteElem1, concreteElem2]
+            key1 <- forAll genIntegerKey
+            key2 <- forAll genIntegerKey
+            let allElems = [key1, key2]
             when (allElems /= List.nub allElems) discard
 
-            let set = builtinSet_ [concreteElem1, concreteElem2] & fromConcrete
+            let set = mkSet_ [from key1, from key2] & fromConcrete
                 selectPat = addSelectElement elementVar1 set
                 patSet = addSelectElement elementVar2 set
                 expectedSet = asInternalNormalized
                     $ emptyNormalizedSet
                     `with` VariableElement (mkElemVar elementVar2)
-                    `with`
-                        [ ConcreteElement concreteElem1
-                        , ConcreteElement concreteElem2
-                        ]
+                    `with` [key1, key2]
             let
                 expect =
                     [ Conditional
@@ -1415,7 +1409,7 @@ test_unifyConcatElemVsElemConcrete1 =
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
 
-            let set = builtinSet_ (Set.fromList [])
+            let set = mkSet_ (Set.fromList [])
                 selectPat = addSelectElement elementVar1 set
                 patSet = asInternalNormalized
                     $ emptyNormalizedSet
@@ -1561,7 +1555,7 @@ test_unifyConcatElemElemVsElemConcat =
 
             concreteElem <- forAll genConcreteIntegerPattern
 
-            let set = builtinSet_ [concreteElem] & fromConcrete
+            let set = mkSet_ [concreteElem] & fromConcrete
                 patSet =
                     addSelectElement
                         elementVar2
@@ -1761,7 +1755,7 @@ test_concretizeKeys =
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
-    concreteSet = builtinSet_ $ Set.fromList [concreteKey]
+    concreteSet = mkSet_ $ Set.fromList [concreteKey]
     symbolic = asSymbolicPattern $ Set.fromList [mkElemVar x]
     original =
         mkAnd
@@ -1772,7 +1766,7 @@ test_concretizeKeys =
             { term =
                 mkPair intSort setSort
                     symbolicKey
-                    (builtinSet_ [concreteKey])
+                    (mkSet_ [concreteKey])
             , predicate = Predicate.makeTruePredicate
             , substitution = Substitution.unsafeWrap
                 [ (inject x, symbolicKey) ]
@@ -1807,7 +1801,7 @@ test_concretizeKeysAxiom =
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
     symbolicSet = asSymbolicPattern $ Set.fromList [x]
-    concreteSet = builtinSet_ $ Set.fromList [concreteKey]
+    concreteSet = mkSet_ $ Set.fromList [concreteKey]
     axiom =
         RewriteRule RulePattern
             { left = mkPair intSort setSort x symbolicSet
@@ -1908,10 +1902,11 @@ asInternal :: Set (TermLike Concrete) -> TermLike VariableName
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
     . Map.fromSet (const SetValue)
+    . Set.map (retractKey >>> Maybe.fromJust)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
+    :: NormalizedAc NormalizedSet Key (TermLike VariableName)
     -> TermLike VariableName
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
@@ -1925,7 +1920,7 @@ normalizedSet
     -- ^ (abstract or concrete) elements
     -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedSet (TermLike Concrete) (TermLike VariableName)
+    -> NormalizedSet Key (TermLike VariableName)
 normalizedSet elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
         { elementsWithVariables = SetElement <$> elements

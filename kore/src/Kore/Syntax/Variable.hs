@@ -57,9 +57,6 @@ module Kore.Syntax.Variable
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Data.Distributive
     ( Distributive (..)
     )

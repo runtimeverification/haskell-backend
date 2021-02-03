@@ -13,7 +13,6 @@ module Kore.Attribute.Pattern.Functional
 
 import Prelude.Kore
 
-import Control.DeepSeq
 import Data.Functor.Const
 import Data.Monoid
 import qualified Generics.SOP as SOP
