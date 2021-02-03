@@ -830,7 +830,7 @@ test_unifySelectFromEmpty =
         annotateShow pat1
         annotateShow pat2
         (===) Pattern.bottom =<< evaluateT(mkAnd pat1 pat2)
-        
+
 test_unifySelectFromSingleton :: TestTree
 test_unifySelectFromSingleton =
     testPropertyWithoutSolver
