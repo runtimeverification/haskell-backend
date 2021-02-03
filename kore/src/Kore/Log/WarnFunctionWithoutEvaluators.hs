@@ -63,7 +63,7 @@ instance Pretty WarnFunctionWithoutEvaluators where
                 , Pretty.pretty $ prettyPrintLocationFromAst symbol
                 ]
             ]
-            
+
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
     helpDoc _ = "warn when encountering a function with no definition"
