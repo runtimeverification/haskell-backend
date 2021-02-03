@@ -141,54 +141,59 @@ maybeTermEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals notSimplifier childTransformers first second =
-    Builtin.Int.unifyInt first second
-    <|> Builtin.Bool.unifyBool first second
-    <|> Builtin.String.unifyString first second
-    <|> unifyDomainValue first second
-    <|> unifyStringLiteral first second
-    <|> equalAndEquals first second
-    <|> bytesDifferent first second
-    <|> bottomTermEquals SideCondition.topTODO first second
-    <|> termBottomEquals SideCondition.topTODO first second
-    <|> variableFunctionEquals first second
-    <|> variableFunctionEquals second first
-    <|> equalInjectiveHeadsAndEquals childTransformers first second
-    <|> sortInjectionAndEquals childTransformers first second
-    <|> constructorSortInjectionAndEquals first second
-    <|> constructorAndEqualsAssumesDifferentHeads first second
-    <|> overloadedConstructorSortInjectionAndEquals
-            childTransformers
-            first
-            second
-    <|> Builtin.Bool.unifyBoolAnd childTransformers first second
-    <|> Builtin.Bool.unifyBoolOr childTransformers first second
-    <|> Builtin.Bool.unifyBoolNot childTransformers first second
-    <|> Builtin.Int.unifyIntEq childTransformers notSimplifier first second
-    <|> Builtin.String.unifyStringEq childTransformers notSimplifier first second
-    <|> Builtin.KEqual.unifyKequalsEq
-            childTransformers
-            notSimplifier
-            first
-            second
-    <|> Builtin.Endianness.unifyEquals first second
-    <|> Builtin.Signedness.unifyEquals first second
-    <|> unifyDefinedModifier
-            (Builtin.Map.unifyEquals childTransformers)
-            first
-            second
-    <|> Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-    <|> unifyDefinedModifier
-            (Builtin.Set.unifyEquals childTransformers)
-            first
-            second
-    <|> Builtin.List.unifyEquals
-            SimplificationType.Equals
-            childTransformers
-            first
-            second
-    <|> domainValueAndConstructorErrors first second
-    <|> unifyDefined childTransformers first second
+maybeTermEquals notSimplifier childTransformers first second = asum
+    [ Builtin.Int.unifyInt first second
+    , Builtin.Bool.unifyBool first second
+    , Builtin.String.unifyString first second
+    , unifyDomainValue first second
+    , unifyStringLiteral first second
+    , equalAndEquals first second
+    , bytesDifferent first second
+    , bottomTermEquals SideCondition.topTODO first second
+    , termBottomEquals SideCondition.topTODO first second
+    , variableFunctionEquals first second
+    , variableFunctionEquals second first
+    , equalInjectiveHeadsAndEquals childTransformers first second
+    , sortInjectionAndEquals childTransformers first second
+    , constructorSortInjectionAndEquals first second
+    , constructorAndEqualsAssumesDifferentHeads first second
+    , overloadedConstructorSortInjectionAndEquals
+        childTransformers
+        first
+        second
+    , Builtin.Bool.unifyBoolAnd childTransformers first second
+    , Builtin.Bool.unifyBoolOr childTransformers first second
+    , Builtin.Bool.unifyBoolNot childTransformers first second
+    , Builtin.Int.unifyIntEq childTransformers notSimplifier first second
+    , Builtin.String.unifyStringEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.KEqual.unifyKequalsEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.Endianness.unifyEquals first second
+    , Builtin.Signedness.unifyEquals first second
+    , unifyDefinedModifier
+        (Builtin.Map.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+    , unifyDefinedModifier
+        (Builtin.Set.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.List.unifyEquals
+        SimplificationType.Equals
+        childTransformers
+        first
+        second
+    , domainValueAndConstructorErrors first second
+    , unifyDefined childTransformers first second
+    ]
 
 maybeTermAnd
     :: InternalVariable variable
@@ -200,56 +205,57 @@ maybeTermAnd
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd notSimplifier childTransformers first second =
-    expandAlias
-            (maybeTermAnd notSimplifier childTransformers)
-            first
-            second
-    <|> boolAnd first second
-    <|> Builtin.Int.unifyInt first second
-    <|> Builtin.Bool.unifyBool first second
-    <|> Builtin.String.unifyString first second
-    <|> unifyDomainValue first second
-    <|> unifyStringLiteral first second
-    <|> equalAndEquals first second
-    <|> bytesDifferent first second
-    <|> variableFunctionAnd first second
-    <|> variableFunctionAnd second first
-    <|> equalInjectiveHeadsAndEquals childTransformers first second
-    <|> sortInjectionAndEquals childTransformers first second
-    <|> constructorSortInjectionAndEquals first second
-    <|> constructorAndEqualsAssumesDifferentHeads first second
-    <|> overloadedConstructorSortInjectionAndEquals
-            childTransformers
-            first
-            second
-    <|> Builtin.Bool.unifyBoolAnd childTransformers first second
-    <|> Builtin.Bool.unifyBoolOr childTransformers first second
-    <|> Builtin.Bool.unifyBoolNot childTransformers first second
-    <|> Builtin.KEqual.unifyKequalsEq
-            childTransformers
-            notSimplifier
-            first
-            second
-    <|> Builtin.KEqual.unifyIfThenElse childTransformers first second
-    <|> Builtin.Endianness.unifyEquals first second
-    <|> Builtin.Signedness.unifyEquals first second
-    <|> unifyDefinedModifier
-            (Builtin.Map.unifyEquals childTransformers)
-            first
-            second
-    <|> unifyDefinedModifier
-            (Builtin.Set.unifyEquals childTransformers)
-            first
-            second
-    <|> Builtin.List.unifyEquals
-            SimplificationType.And
-            childTransformers
-            first
-            second
-    <|> domainValueAndConstructorErrors first second
-    <|> unifyDefined childTransformers first second
-    <|> Error.hoistMaybe (functionAnd first second)
+maybeTermAnd notSimplifier childTransformers first second = asum
+    [ expandAlias
+        (maybeTermAnd notSimplifier childTransformers)
+        first
+        second
+    , boolAnd first second
+    , Builtin.Int.unifyInt first second
+    , Builtin.Bool.unifyBool first second
+    , Builtin.String.unifyString first second
+    , unifyDomainValue first second
+    , unifyStringLiteral first second
+    , equalAndEquals first second
+    , bytesDifferent first second
+    , variableFunctionAnd first second
+    , variableFunctionAnd second first
+    , equalInjectiveHeadsAndEquals childTransformers first second
+    , sortInjectionAndEquals childTransformers first second
+    , constructorSortInjectionAndEquals first second
+    , constructorAndEqualsAssumesDifferentHeads first second
+    , overloadedConstructorSortInjectionAndEquals
+        childTransformers
+        first
+        second
+    , Builtin.Bool.unifyBoolAnd childTransformers first second
+    , Builtin.Bool.unifyBoolOr childTransformers first second
+    , Builtin.Bool.unifyBoolNot childTransformers first second
+    , Builtin.KEqual.unifyKequalsEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.KEqual.unifyIfThenElse childTransformers first second
+    , Builtin.Endianness.unifyEquals first second
+    , Builtin.Signedness.unifyEquals first second
+    , unifyDefinedModifier
+        (Builtin.Map.unifyEquals childTransformers)
+        first
+        second
+    , unifyDefinedModifier
+        (Builtin.Set.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.List.unifyEquals
+        SimplificationType.And
+        childTransformers
+        first
+        second
+    , domainValueAndConstructorErrors first second
+    , unifyDefined childTransformers first second
+    , Error.hoistMaybe (functionAnd first second)
+    ]
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -304,11 +310,11 @@ equalAndEquals
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-equalAndEquals first second
-  | unDefined first == unDefined second =
-    -- TODO (thomas.tuegel): Preserve defined and simplified flags.
-    return (Pattern.fromTermLike first)
-equalAndEquals _ _ = empty
+equalAndEquals first second =
+    if unDefined first == unDefined second then
+        -- TODO (thomas.tuegel): Preserve defined and simplified flags.
+        return (Pattern.fromTermLike first)
+    else empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals

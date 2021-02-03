@@ -74,7 +74,6 @@ import Kore.Step.Step
     , assertFunctionLikeResults
     , unifyRules
     )
-import Kore.Unification.Procedure
 import Logic
     ( LogicT
     )
@@ -290,7 +289,7 @@ applyWithFinalizer
     -- ^ Configuration being rewritten
     -> simplifier (Results rule)
 applyWithFinalizer finalize rules initial = do
-    results <- unifyRules unificationProcedure initial rules
+    results <- unifyRules initial rules
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalize initialVariables initial results

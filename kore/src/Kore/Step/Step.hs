@@ -77,6 +77,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
+import Kore.Unification.Procedure
 import Kore.Unification.UnificationProcedure
 import Kore.Unparser
 import Kore.Variables.Target
@@ -106,16 +107,15 @@ unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnifyingRuleVariable rule ~ RewritingVariableName
-    => UnificationProcedure simplifier
-    -> Pattern RewritingVariableName
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
     -> [rule]
     -- ^ Rule
     -> simplifier [UnifiedRule rule]
-unifyRules unificationProcedure initial rules =
+unifyRules initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
-        unifyRule unificationProcedure initial rule
+        unifyRule initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -135,13 +135,12 @@ unifyRule
     => InternalVariable variable
     => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure simplifier
-    -> Pattern variable
+    => Pattern variable
     -- ^ Initial configuration
     -> rule
     -- ^ Rule
     -> LogicT simplifier (UnifiedRule rule)
-unifyRule unificationProcedure initial rule = do
+unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
     -- Unify the left-hand side of the rule with the term of the initial

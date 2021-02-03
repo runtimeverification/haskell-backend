@@ -51,7 +51,20 @@ newtype UnifierT (m :: Type -> Type) a =
                 (LogicT m)
                 a
         }
-    deriving newtype (Functor, Applicative, Monad, Alternative, MonadPlus)
+    deriving newtype (Functor, Applicative)
+
+instance Alternative (UnifierT m) where
+    empty = UnifierT $ lift empty
+    x <|> y = UnifierT $ getUnifierT x <|> getUnifierT y
+
+instance Monad (UnifierT m) where
+    UnifierT {getUnifierT = unifier} >>= cont =
+        UnifierT $ unifier >>= getUnifierT . cont
+    return = pure
+
+instance MonadPlus (UnifierT m) where
+    mzero = empty
+    mplus = (<|>)
 
 instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift
