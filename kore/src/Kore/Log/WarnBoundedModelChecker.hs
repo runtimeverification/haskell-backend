@@ -1,5 +1,5 @@
 {- |
-Copyright   : (c) Runtime Verification, 2020
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 
 -}
