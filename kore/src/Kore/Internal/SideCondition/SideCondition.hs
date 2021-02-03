@@ -10,9 +10,6 @@ module Kore.Internal.SideCondition.SideCondition
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Data.Hashable
     ( Hashed
     , hashed

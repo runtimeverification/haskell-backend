@@ -53,9 +53,6 @@ module Kore.IndexedModule.IndexedModule
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Monad.Extra
     ( unlessM

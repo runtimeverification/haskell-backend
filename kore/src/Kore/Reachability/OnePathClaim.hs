@@ -13,9 +13,6 @@ module Kore.Reachability.OnePathClaim
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Generics.Wrapped
     ( _Unwrapped
     )

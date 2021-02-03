@@ -9,6 +9,9 @@ import Prelude.Kore
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
@@ -66,7 +69,7 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> InternalSet (TermLike Concrete) (OrPattern VariableName)
+        -> InternalSet Key (OrPattern VariableName)
         -> [Pattern VariableName]
         -> TestTree
     becomes name origin (OrPattern.fromPatterns -> expects) =
@@ -74,14 +77,14 @@ test_simplify =
             let actuals = evaluate origin
             assertEqual "" expects actuals
 
-mkSet :: [child] -> [child] -> InternalSet (TermLike Concrete) child
+mkSet :: [child] -> [child] -> InternalSet Key child
 mkSet = mkSetAux []
 
 mkSetAux
     :: [TermLike Concrete]
     -> [child]
     -> [child]
-    -> InternalSet (TermLike Concrete) child
+    -> InternalSet Key child
 mkSetAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.setSort
@@ -91,12 +94,16 @@ mkSetAux concreteElements elements opaque =
         , builtinAcChild = NormalizedSet NormalizedAc
             { elementsWithVariables = SetElement <$> elements
             , concreteElements =
-                Map.fromList $ map (\x -> (x, SetValue)) concreteElements
+                concreteElements
+                & map (retractKey >>> fromJust >>> mkSetValue)
+                & Map.fromList
             , opaque
             }
         }
+  where
+    mkSetValue = \x -> (x, SetValue)
 
 evaluate
-    :: InternalSet (TermLike Concrete) (OrPattern VariableName)
+    :: InternalSet Key (OrPattern VariableName)
     -> OrPattern VariableName
 evaluate = simplify

@@ -64,9 +64,6 @@ module Kore.Internal.Predicate
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Env as Env
-import Control.DeepSeq
-    ( NFData (rnf)
-    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
