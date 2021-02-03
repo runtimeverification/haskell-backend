@@ -242,13 +242,13 @@ returnList builtinListSort builtinListChild = do
     return (Reflection.give tools $ asPattern builtinListSort builtinListChild)
 
 evalElement :: Builtin.Function
-evalElement resultSort =
+evalElement _ resultSort =
     \case
         [elem'] -> returnList resultSort (Seq.singleton elem')
         _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
-evalGet resultSort [_list, _ix] = do
+evalGet _ resultSort [_list, _ix] = do
     let emptyList = do
             _list <- expectBuiltinList getKey _list
             if Seq.null _list
@@ -267,35 +267,35 @@ evalGet resultSort [_list, _ix] = do
     where
     maybeBottom =
         maybe Pattern.bottom Pattern.fromTermLike
-evalGet _ _ = Builtin.wrongArity getKey
+evalGet _ _ _ = Builtin.wrongArity getKey
 
 evalUpdate :: Builtin.Function
-evalUpdate resultSort [_list, _ix, value] = do
+evalUpdate _ resultSort [_list, _ix, value] = do
     _list <- expectBuiltinList getKey _list
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
     let len = Seq.length _list
     if _ix >= 0 && _ix < len
         then returnList resultSort (Seq.update _ix value _list)
         else return (Pattern.bottomOf resultSort)
-evalUpdate _ _ = Builtin.wrongArity updateKey
+evalUpdate _ _ _ = Builtin.wrongArity updateKey
 
 evalIn :: Builtin.Function
-evalIn resultSort [_elem, _list] = do
+evalIn _ resultSort [_elem, _list] = do
     _list <- expectConcreteBuiltinList inKey _list
     _elem <- hoistMaybe $ Builtin.toKey _elem
     _elem `elem` _list
         & Bool.asPattern resultSort
         & return
-evalIn _ _ = Builtin.wrongArity inKey
+evalIn _ _ _ = Builtin.wrongArity inKey
 
 evalUnit :: Builtin.Function
-evalUnit resultSort =
+evalUnit _ resultSort =
     \case
         [] -> returnList resultSort Seq.empty
         _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
-evalConcat resultSort [_list1, _list2] = do
+evalConcat _ resultSort [_list1, _list2] = do
     let leftIdentity = do
             _list1 <- expectBuiltinList concatKey _list1
             if Seq.null _list1
@@ -311,27 +311,27 @@ evalConcat resultSort [_list1, _list2] = do
             _list2 <- expectBuiltinList concatKey _list2
             returnList resultSort (_list1 <> _list2)
     leftIdentity <|> rightIdentity <|> bothConcrete
-evalConcat _ _ = Builtin.wrongArity concatKey
+evalConcat _ _ _ = Builtin.wrongArity concatKey
 
 evalSize :: Builtin.Function
-evalSize resultSort [_list] = do
+evalSize _ resultSort [_list] = do
     _list <- expectBuiltinList sizeKey _list
     Seq.length _list
         & fromIntegral & Int.asPattern resultSort
         & return
-evalSize _ _ = Builtin.wrongArity sizeKey
+evalSize _ _ _ = Builtin.wrongArity sizeKey
 
 evalMake :: Builtin.Function
-evalMake resultSort [_len, value] = do
+evalMake _ resultSort [_len, value] = do
     _len <- fromInteger <$> Int.expectBuiltinInt getKey _len
     if _len >= 0
         then
             returnList resultSort (Seq.replicate _len value)
         else return (Pattern.bottomOf resultSort)
-evalMake _ _ = Builtin.wrongArity sizeKey
+evalMake _ _ _ = Builtin.wrongArity sizeKey
 
 evalUpdateAll :: Builtin.Function
-evalUpdateAll resultSort [_list1, _ix, _list2] = do
+evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
     _list1 <- expectBuiltinList getKey _list1
     _list2 <- expectBuiltinList getKey _list2
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
@@ -346,7 +346,7 @@ evalUpdateAll resultSort [_list1, _ix, _list2] = do
                     unchanged2 = Seq.drop (_ix + length _list2) _list1
                 in returnList resultSort (unchanged1 <> _list2 <> unchanged2)
     result
-evalUpdateAll _ _ = Builtin.wrongArity updateKey
+evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 
 {- | Implement builtin function evaluation.
  -}

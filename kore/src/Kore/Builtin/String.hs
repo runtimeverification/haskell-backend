@@ -249,25 +249,25 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
     substr startIndex endIndex =
         Text.take (endIndex - startIndex) . Text.drop startIndex
 
-    evalSubstr0 resultSort [_str, _start, _end] = do
+    evalSubstr0 _ resultSort [_str, _start, _end] = do
         _str   <- expectBuiltinString substrKey _str
         _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
         _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
         substr _start _end _str
             & asPattern resultSort
             & return
-    evalSubstr0 _ _ = Builtin.wrongArity substrKey
+    evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
 evalLength :: BuiltinAndAxiomSimplifier
 evalLength = Builtin.functionEvaluator evalLength0
   where
-    evalLength0 resultSort [_str] = do
+    evalLength0 _ resultSort [_str] = do
         _str <- expectBuiltinString lengthKey _str
         Text.length _str
             & toInteger
             & Int.asPattern resultSort
             & return
-    evalLength0 _ _ = Builtin.wrongArity lengthKey
+    evalLength0 _ _ _ = Builtin.wrongArity lengthKey
 
 evalFind :: BuiltinAndAxiomSimplifier
 evalFind = Builtin.functionEvaluator evalFind0
@@ -275,7 +275,7 @@ evalFind = Builtin.functionEvaluator evalFind0
     maybeNotFound :: Maybe Int -> Integer
     maybeNotFound = maybe (-1) toInteger
 
-    evalFind0 resultSort [_str, _substr, _idx] = do
+    evalFind0 _ resultSort [_str, _substr, _idx] = do
         _str <- expectBuiltinString findKey _str
         _substr <- expectBuiltinString findKey _substr
         _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
@@ -286,12 +286,12 @@ evalFind = Builtin.functionEvaluator evalFind0
         maybeNotFound result
             & Int.asPattern resultSort
             & return
-    evalFind0 _ _ = Builtin.wrongArity findKey
+    evalFind0 _ _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: BuiltinAndAxiomSimplifier
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 resultSort [_str, _base] = do
+    evalString2Base0 _ resultSort [_str, _base] = do
         _str  <- expectBuiltinString string2BaseKey _str
         _base <- Int.expectBuiltinInt string2BaseKey _base
         let readN =
@@ -308,43 +308,43 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
             _ -> return (Pattern.bottomOf resultSort)
-    evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
+    evalString2Base0 _ _ _ = Builtin.wrongArity string2BaseKey
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
-    evalString2Int0 resultSort [_str] = do
+    evalString2Int0 _ resultSort [_str] = do
         _str <- expectBuiltinString string2IntKey _str
         case Text.signed Text.decimal _str of
             Right (result, Text.unpack -> "") ->
                 return (Int.asPattern resultSort result)
             _ -> return (Pattern.bottomOf resultSort)
-    evalString2Int0 _ _ = Builtin.wrongArity string2IntKey
+    evalString2Int0 _ _ _ = Builtin.wrongArity string2IntKey
 
 evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
   where
-    evalInt2String0 resultSort [_int] = do
+    evalInt2String0 _ resultSort [_int] = do
         _int <- Int.expectBuiltinInt int2StringKey _int
         Text.pack (show _int)
             & asPattern resultSort
             & return
-    evalInt2String0 _ _ = Builtin.wrongArity int2StringKey
+    evalInt2String0 _ _ _ = Builtin.wrongArity int2StringKey
 
 evalChr :: BuiltinAndAxiomSimplifier
 evalChr = Builtin.functionEvaluator evalChr0
   where
-    evalChr0 resultSort [_n] = do
+    evalChr0 _ resultSort [_n] = do
         _n <- Int.expectBuiltinInt chrKey _n
         Text.singleton (chr $ fromIntegral _n)
             & asPattern resultSort
             & return
-    evalChr0 _ _ = Builtin.wrongArity chrKey
+    evalChr0 _ _ _ = Builtin.wrongArity chrKey
 
 evalOrd :: BuiltinAndAxiomSimplifier
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
-    evalOrd0 resultSort [_str] = do
+    evalOrd0 _ resultSort [_str] = do
         _str <- expectBuiltinString ordKey _str
         let result
               | Text.length _str == 1 = charToOrdInt (Text.head _str)
@@ -355,24 +355,24 @@ evalOrd = Builtin.functionEvaluator evalOrd0
             Int.asPattern resultSort
             . toInteger
             . ord
-    evalOrd0 _ _ = Builtin.wrongArity ordKey
+    evalOrd0 _ _ _ = Builtin.wrongArity ordKey
 
 evalToken2String :: BuiltinAndAxiomSimplifier
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
-    evalToken2String0 resultSort [_dv] = do
+    evalToken2String0 _ resultSort [_dv] = do
         _dv <- Builtin.expectDomainValue token2StringKey _dv
         return (asPattern resultSort _dv)
-    evalToken2String0 _ _ = Builtin.wrongArity token2StringKey
+    evalToken2String0 _ _ _ = Builtin.wrongArity token2StringKey
 
 evalString2Token :: BuiltinAndAxiomSimplifier
 evalString2Token = Builtin.functionEvaluator evalString2Token0
   where
-    evalString2Token0 resultSort [_str] = do
+    evalString2Token0 _ resultSort [_str] = do
         _str <- expectBuiltinString string2TokenKey _str
         Builtin.makeDomainValuePattern resultSort _str
             & return
-    evalString2Token0 _ _ = Builtin.wrongArity token2StringKey
+    evalString2Token0 _ _ _ = Builtin.wrongArity token2StringKey
 
 {- | Implement builtin function evaluation.
  -}

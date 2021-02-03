@@ -24,7 +24,6 @@ module Kore.Internal.TermLike
     , simplifiedAttribute
     , isFunctionPattern
     , isFunctionalPattern
-    , isDefinedPattern
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
@@ -186,7 +185,6 @@ module Kore.Internal.TermLike
 
 import Prelude.Kore
 
-import qualified Control.Lens as Lens
 import Data.Align
     ( alignWith
     )
@@ -201,9 +199,6 @@ import Data.Functor.Foldable
     ( Base
     )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Generics.Product
-    ( field
-    )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
     ( Endo (..)
@@ -220,7 +215,6 @@ import Data.These
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
-import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
@@ -368,12 +362,6 @@ hasConstructorLikeTop = \case
 isFunctionalPattern :: TermLike variable -> Bool
 isFunctionalPattern =
     Pattern.isFunctional . Attribute.functional . extractAttributes
-
-{- | Is the 'TermLike' defined, i.e. known not to be 'Bottom'?
- -}
-isDefinedPattern :: TermLike variable -> Bool
-isDefinedPattern =
-    Pattern.isDefined . Attribute.defined . extractAttributes
 
 {- | Throw an error if the variable occurs free in the pattern.
 

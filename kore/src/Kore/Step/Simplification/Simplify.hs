@@ -518,7 +518,8 @@ purePatternAxiomEvaluator p =
 applicationAxiomSimplifier
     ::  (  forall variable simplifier
         .  (InternalVariable variable, MonadSimplify simplifier)
-        => CofreeF
+        => SideCondition variable
+        -> CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
@@ -534,9 +535,10 @@ applicationAxiomSimplifier applicationSimplifier =
         => TermLike variable
         -> SideCondition variable
         -> simplifier (AttemptedAxiom variable)
-    helper termLike _ =
+    helper termLike sideCondition =
         case Recursive.project termLike of
-            (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
+            (valid :< ApplySymbolF p) ->
+                applicationSimplifier sideCondition (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
 

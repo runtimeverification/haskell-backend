@@ -98,6 +98,7 @@ import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern
@@ -482,7 +483,9 @@ test_difference_symbolic =
         -> Assertion
     evalDifference expect args = do
         actual <-
-            Set.evalDifference (Application differenceSetSymbol args)
+            Set.evalDifference
+                SideCondition.top
+                (Application differenceSetSymbol args)
             & runMaybeT
             & runSimplifier testEnv
         assertEqual "" expect actual

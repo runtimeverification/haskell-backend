@@ -45,16 +45,6 @@ import Kore.Attribute.Synthetic
     )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalInt
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
 import Kore.Internal.Substitution
     ( orientSubstitution
     )

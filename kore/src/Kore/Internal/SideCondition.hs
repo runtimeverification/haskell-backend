@@ -61,6 +61,8 @@ import qualified GHC.Generics as GHC
 
 import Changed
 import Debug
+import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -118,6 +120,7 @@ import Kore.Internal.TermLike
     , pattern Mu_
     , pattern Nu_
     , TermLike
+    , extractAttributes
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
@@ -681,7 +684,7 @@ assumeDefined term =
                     \ a \\bottom pattern is defined."
             _ -> asSet term'
     asSet newTerm
-      | TermLike.isDefinedPattern newTerm = mempty
+      | isDefinedInternal newTerm = mempty
       | otherwise = HashSet.singleton newTerm
     checkFunctional symbol newTerm
       | isFunctional symbol = mempty
@@ -712,7 +715,7 @@ isDefined
     -> TermLike variable
     -> Bool
 isDefined sideCondition@SideCondition { definedTerms } term =
-    TermLike.isDefinedPattern term
+    isDefinedInternal term
     || isFunctionalSymbol term
     || HashSet.member term definedTerms
     || isDefinedAc
@@ -847,3 +850,9 @@ generateNormalizedAcs internalAc
              , builtinAcSort
              , builtinAcConcat
              }
+
+-- | Checks if a term is defined by only looking at the attributes.
+-- Should not be used outside this module.
+isDefinedInternal :: TermLike variable -> Bool
+isDefinedInternal =
+    Pattern.isDefined . Attribute.defined . extractAttributes
