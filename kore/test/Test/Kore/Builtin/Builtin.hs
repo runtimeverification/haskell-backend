@@ -70,7 +70,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -94,7 +93,6 @@ import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
-    , mkRewritingRule
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -125,18 +123,21 @@ emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc
 
 mkPair
-    :: Sort
+    :: InternalVariable variable
+    => Sort
     -> Sort
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithoutSolver
-    ::  ( HasCallStack
-        , p ~ TermLike VariableName
-        , expanded ~ Pattern VariableName
+    :: forall variable p expanded
+    .   ( InternalVariable variable
+        , HasCallStack
+        , p ~ TermLike variable
+        , expanded ~ Pattern variable
         )
     => (p -> NoSMT expanded)
     -- ^ evaluator function for the builtin
@@ -247,8 +248,8 @@ simplify =
 
 evaluate
     :: (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
-    => TermLike VariableName
-    -> smt (Pattern VariableName)
+    => TermLike RewritingVariableName
+    -> smt (Pattern RewritingVariableName)
 evaluate termLike =
     runSimplifier testEnv $ do
         patterns <- TermLike.simplify SideCondition.top termLike
@@ -257,37 +258,40 @@ evaluate termLike =
 evaluateT
     :: MonadTrans t
     => (MonadSMT smt, MonadLog smt, MonadProf smt, MonadMask smt)
-    => TermLike VariableName
-    -> t smt (Pattern VariableName)
+    => TermLike RewritingVariableName
+    -> t smt (Pattern RewritingVariableName)
 evaluateT = lift . evaluate
 
-evaluateToList :: TermLike VariableName -> NoSMT [Pattern VariableName]
+evaluateToList
+    :: InternalVariable variable
+    => TermLike variable
+    -> NoSMT [Pattern variable]
 evaluateToList =
     fmap toList
     . runSimplifier testEnv
     . TermLike.simplify SideCondition.top
 
 runStep
-    :: Pattern VariableName
+    :: Pattern RewritingVariableName
     -- ^ configuration
-    -> RewriteRule VariableName
+    -> RewriteRule RewritingVariableName
     -- ^ axiom
-    -> NoSMT (OrPattern VariableName)
+    -> NoSMT (OrPattern RewritingVariableName)
 runStep configuration axiom = do
     results <- runStepResult configuration axiom
-    return . MultiOr.map getRewritingPattern $ Step.gatherResults results
+    return $ Step.gatherResults results
 
 runStepResult
-    :: Pattern VariableName
+    :: Pattern RewritingVariableName
     -- ^ configuration
-    -> RewriteRule VariableName
+    -> RewriteRule RewritingVariableName
     -- ^ axiom
     -> NoSMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         unificationProcedure
-        [mkRewritingRule axiom]
-        (mkRewritingPattern configuration)
+        [axiom]
+        configuration
     & runSimplifier testEnv
 
 unificationProcedure

@@ -42,7 +42,7 @@ import qualified Data.Text as T
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (mkConfigVariable)
+import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Pattern
 import Kore.Internal.TermLike hiding
@@ -257,8 +257,8 @@ test_substr =
     testSubstrBytes
         :: HasCallStack
         => TestName
-        -> [TermLike VariableName]  -- ^ arguments of @substrBytes@ symbol
-        -> Pattern VariableName  -- ^ expected result
+        -> [TermLike RewritingVariableName]  -- ^ arguments of @substrBytes@ symbol
+        -> Pattern RewritingVariableName  -- ^ expected result
         -> TestTree
     testSubstrBytes testName = testBytes testName substrBytesSymbol
 
@@ -633,17 +633,17 @@ test_InternalBytes =
 
 -- * Helpers
 
-asInternal :: ByteString -> TermLike VariableName
+asInternal :: InternalVariable variable => ByteString -> TermLike variable
 asInternal = InternalBytes.asInternal bytesSort
 
-asPattern :: ByteString -> Pattern VariableName
+asPattern :: InternalVariable variable => ByteString -> Pattern variable
 asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testBytes name = testSymbolWithoutSolver evaluate name

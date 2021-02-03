@@ -46,6 +46,7 @@ import Test.Tasty
 import Control.Monad.Trans.Maybe
     ( runMaybeT
     )
+import Data.Functor ((<&>))
 import Data.Bits
     ( complement
     , shift
@@ -78,6 +79,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     , simplifyCondition
@@ -101,7 +103,7 @@ import Test.Tasty.HUnit.Ext
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (TermLike VariableName)
+genIntegerPattern :: InternalVariable variable => Gen (TermLike variable)
 genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (TermLike Concrete)
@@ -380,7 +382,7 @@ test_euclidian_division_theorem =
             (asInternal <$> [a, b])
         & evaluateT
         & fmap extractValue
-    extractValue :: Pattern VariableName -> Integer
+    extractValue :: Pattern RewritingVariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
             InternalInt_ InternalInt { internalIntValue } ->
@@ -450,18 +452,19 @@ asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = asInternal
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> Pattern VariableName
+asPattern :: InternalVariable variable => Integer -> Pattern variable
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern :: Maybe Integer -> Pattern VariableName
+asPartialPattern
+    :: InternalVariable variable => Maybe Integer -> Pattern variable
 asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testInt name = testSymbolWithoutSolver evaluate name
 
@@ -511,7 +514,9 @@ test_unifyAndEqual_Equal =
 test_unifyAnd_Fn :: TestTree
 test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
-        var <- forAll (standaloneGen $ elementVariableGen intSort)
+        var <-
+            forAll (standaloneGen $ elementVariableGen intSort)
+            <&> mapElementVariable (pure mkConfigVariable)
         let dv = asInternal 2
             fnPat = mkApplySymbol absIntSymbol  [mkElemVar var]
             expect =
@@ -527,6 +532,7 @@ test_reflexivity_symbolic :: TestTree
 test_reflexivity_symbolic =
     testCaseWithoutSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
+                & mapElementVariable (pure mkConfigVariable)
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
@@ -535,7 +541,9 @@ test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
     testCaseWithoutSMT "evaluate symbolic equality for different variables" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
+                & mapElementVariable (pure mkConfigVariable)
             y = mkElemVar $ "y" `ofSort` intSort
+                & mapElementVariable (pure mkConfigVariable)
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual

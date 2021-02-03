@@ -29,6 +29,8 @@ import Kore.Step.Simplification.AndTerms
 import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     )
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable (mkConfigVariable)
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
@@ -88,6 +90,7 @@ test_KEqual =
                         (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
                         (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
                     )
+                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -100,6 +103,7 @@ test_KEqual =
                         (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
                         (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
                     )
+                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -112,12 +116,15 @@ test_KEqual =
                         (kseq (inj kItemSort dvX) dotk)
                         (kseq (inj kItemSort dvT) dotk)
                     )
+                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
     , testCaseWithoutSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
-            original = keqBool (inj kSort dvT) (inj kSort dvX)
+            original =
+                keqBool (inj kSort dvT) (inj kSort dvX)
+                & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -129,6 +136,7 @@ test_KEqual =
                 keqBool
                     (kseq (inj kItemSort dvT) dotk)
                     (kseq (inj kItemSort dvX) dotk)
+                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -165,7 +173,8 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "abstract" $ do
-        let original = kiteK x y z
+        let original =
+                kiteK x y z & TermLike.mapVariables (pure mkConfigVariable)
             expect = Pattern.fromTermLike original
             x = mkElemVar $ mkElementVariable (testId "x") boolSort
             y = mkElemVar $ mkElementVariable (testId "y") kSort

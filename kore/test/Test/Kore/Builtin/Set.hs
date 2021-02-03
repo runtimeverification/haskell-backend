@@ -76,6 +76,7 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
+import Data.Functor ((<&>))
 import qualified Data.Default as Default
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -110,6 +111,8 @@ import Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable, mkRuleVariable)
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( runUnifierT
@@ -171,10 +174,12 @@ genSetConcreteIntegerPattern =
 genConcreteSet :: Gen (Set (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
-genSetPattern :: Gen (TermLike VariableName)
+genSetPattern :: InternalVariable variable =>  Gen (TermLike variable)
 genSetPattern = fromConcrete . builtinSet_ <$> genSetConcreteIntegerPattern
 
-intSetToSetPattern :: Set Integer -> TermLike VariableName
+intSetToSetPattern
+    :: Set Integer
+    -> TermLike RewritingVariableName
 intSetToSetPattern intSet =
     builtinSet_ (Set.map Test.Int.asInternal intSet)
 
@@ -186,11 +191,13 @@ test_unit =
         $ "concat(x:Set, unit()) === x:Set"
     ]
   where
-    xSet = mkElementVariable "xSet" setSort
+    xSet =
+        mkElementVariable "xSet" setSort
+        & mapElementVariable (pure mkConfigVariable)
     becomes
         :: HasCallStack
-        => TermLike VariableName
-        -> TermLike VariableName
+        => TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> TestName
         -> TestTree
     becomes original expect name =
@@ -235,7 +242,9 @@ test_inUnitSymbolic =
     testPropertyWithSolver
         "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
         (do
-            patKey <- forAll genFunctionalKey
+            patKey <-
+                forAll genFunctionalKey
+                <&> TermLike.mapVariables (pure mkConfigVariable)
             let patIn =
                     mkApplySymbol
                         inSetSymbolTestSort
@@ -253,7 +262,9 @@ test_inElementSymbolic =
     testPropertyWithSolver
         "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
         (do
-            patKey <- forAll genKey
+            patKey <-
+                forAll genKey
+                <&> TermLike.mapVariables (pure mkConfigVariable)
             let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
                 patTrue = Test.Bool.asInternal True
@@ -270,8 +281,11 @@ test_inConcatSymbolic =
         \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
         (do
             keys <- forAll genKeys
-            patKey <- forAll genKey
-            let patSet = builtinSet_ $ Set.insert patKey (Set.fromList keys)
+            let keys' = keys <&> TermLike.mapVariables (pure mkConfigVariable)
+            patKey <-
+                forAll genKey
+                <&> TermLike.mapVariables (pure mkConfigVariable)
+            let patSet = builtinSet_ $ Set.insert patKey (Set.fromList keys')
                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
                 patTrue = Test.Bool.asPattern True
                 conditionTerm = mkCeil boolSort patSet
@@ -305,7 +319,9 @@ test_concatUnit =
     testPropertyWithSolver
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
         (do
-            patValues <- forAll genSetPattern
+            patValues <-
+                forAll genSetPattern
+                <&> TermLike.mapVariables (pure mkConfigVariable)
             let patUnit = mkApplySymbol unitSetSymbol []
                 patConcat1 =
                     mkApplySymbol concatSetSymbol [ patUnit, patValues ]
@@ -357,9 +373,13 @@ test_concatNormalizes =
             int2 <- forAll genInteger
             elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
-            setVar <- forAll (standaloneGen $ elementVariableGen setSort)
+            setVar <-
+                forAll (standaloneGen $ elementVariableGen setSort)
+                <&> mapElementVariable (pure mkConfigVariable)
 
-            let elemVars = [elemVar1, elemVar2]
+            let elemVars =
+                    [elemVar1, elemVar2]
+                    <&> mapElementVariable (pure mkConfigVariable)
                 allVars = setVar : elemVars
 
             unless (distinctVars allVars) discard
@@ -623,11 +643,18 @@ test_symbolic =
         "concat and elem are evaluated on symbolic keys"
         (do
             values <- forAll (setVariableGen intSort)
-            let patMap = asSymbolicPattern (Set.map mkElemVar values)
+            let values' =
+                    values
+                    & Set.map (mapElementVariable (pure mkConfigVariable))
+                patMap =
+                    asSymbolicPattern
+                        (Set.map mkElemVar values')
                 expect = Pattern.fromTermLike
                     (asInternalNormalized
                         (emptyNormalizedSet `with`
-                            map (VariableElement . mkElemVar) (Set.toList values)
+                            map
+                                (VariableElement . mkElemVar)
+                                (Set.toList values')
                         )
                     )
             if Set.null values
@@ -637,8 +664,8 @@ test_symbolic =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Set (TermLike VariableName)
-    -> TermLike VariableName
+    :: Set (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 asSymbolicPattern result
     | Set.null result =
         applyUnit
@@ -719,17 +746,21 @@ test_unifyFramingVariable =
 -- `SetItem(absInt(X:Int)) Rest:Set`, or
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
 selectFunctionPattern
-    :: ElementVariable VariableName         -- ^element variable
-    -> ElementVariable VariableName         -- ^set variable
+    :: InternalVariable variable
+    => ElementVariable variable         -- ^element variable
+    -> ElementVariable variable         -- ^set variable
     -> (forall a . [a] -> [a])          -- ^scrambling function
-    -> TermLike VariableName
+    -> TermLike variable
 selectFunctionPattern elementVar setVar permutation  =
     mkApplySymbol concatSetSymbol $ permutation [singleton, mkElemVar setVar]
   where
     element = mkApplySymbol absIntSymbol  [mkElemVar elementVar]
     singleton = mkApplySymbol elementSetSymbol [ element ]
 
-makeElementVariable :: ElementVariable VariableName -> TermLike VariableName
+makeElementVariable
+    :: InternalVariable variable
+    => ElementVariable variable
+    -> TermLike variable
 makeElementVariable var =
     mkApplySymbol elementSetSymbol [mkElemVar var]
 
@@ -737,10 +768,11 @@ makeElementVariable var =
 -- @id@ or @reverse@, produces a pattern of the form
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
 selectPattern
-    :: ElementVariable VariableName           -- ^element variable
-    -> ElementVariable VariableName           -- ^set variable
+    :: InternalVariable variable
+    => ElementVariable variable           -- ^element variable
+    -> ElementVariable variable           -- ^set variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike VariableName
+    -> TermLike variable
 selectPattern elementVar setVar permutation  =
     mkApplySymbol concatSetSymbol
     $ permutation [makeElementVariable elementVar, mkElemVar setVar]
@@ -752,15 +784,22 @@ addSelectElement
 addSelectElement elementVar setPattern  =
     mkApplySymbol concatSetSymbol [makeElementVariable elementVar, setPattern]
 
-distinctVars :: [ElementVariable VariableName] -> Bool
+distinctVars
+    :: InternalVariable variable
+    => [ElementVariable variable]
+    -> Bool
 distinctVars vars = varNames == List.nub varNames
   where varNames = map variableName vars
 
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
     testPropertyWithSolver "unify an empty set with a selection pattern" $ do
-        elementVar <- forAll (standaloneGen $ elementVariableGen intSort)
-        setVar <- forAll (standaloneGen $ elementVariableGen setSort)
+        elementVar <-
+            forAll (standaloneGen $ elementVariableGen intSort)
+            <&> mapElementVariable (pure mkConfigVariable)
+        setVar <-
+            forAll (standaloneGen $ elementVariableGen setSort)
+            <&> mapElementVariable (pure mkConfigVariable)
         when
             (variableName elementVar == variableName setVar)
             discard
@@ -1757,7 +1796,9 @@ test_concretizeKeys =
         actual <- evaluate original
         assertEqual "" expected actual
   where
-    x = mkElementVariable (testId "x") intSort
+    x =
+        mkElementVariable (testId "x") intSort
+        & mapElementVariable (pure mkConfigVariable)
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
@@ -1802,7 +1843,7 @@ test_concretizeKeysAxiom =
         actual <- runStep config axiom
         assertEqual "" expected actual
   where
-    x = mkIntVar (testId "x")
+    x = mkIntVar (testId "x") & TermLike.mapVariables (pure mkRuleVariable)
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key
@@ -1904,15 +1945,19 @@ unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
             assertEqual "" expect (substitution actual)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal :: Set (TermLike Concrete) -> TermLike VariableName
+asInternal
+    :: InternalVariable variable
+    => Set (TermLike Concrete)
+    -> TermLike variable
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
     . Map.fromSet (const SetValue)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized
-    :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike VariableName)
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => NormalizedAc NormalizedSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . wrapAc
 
 {- | Construct a 'NormalizedSet' from a list of elements and opaque terms.

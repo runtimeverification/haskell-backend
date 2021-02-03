@@ -275,9 +275,10 @@ dummyFunctionalInt :: TermLike VariableName -> TermLike VariableName
 dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
 
 addInt, subInt, mulInt, divInt, tdivInt, tmodInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 addInt i j = mkApplySymbol addIntSymbol  [i, j]
 subInt i j = mkApplySymbol subIntSymbol  [i, j]
 mulInt i j = mkApplySymbol mulIntSymbol  [i, j]
@@ -327,7 +328,11 @@ injSymbol lSort rSort =
     & sortInjection
     & injective
 
-inj :: Sort -> TermLike VariableName -> TermLike VariableName
+inj
+    :: InternalVariable variable
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
 inj injTo injChild =
     (synthesize . InjF)
         Inj { injConstructor, injFrom, injTo, injAttributes, injChild }
@@ -338,23 +343,25 @@ inj injTo injChild =
     Internal.Symbol { symbolAttributes = injAttributes } = symbol
 
 keqBool, kneqBool
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
 kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
 
 kseq :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 kseq x y = mkApplySymbol kseqSymbol [x, y]
 
-dotk :: TermLike VariableName
+dotk :: InternalVariable variable => TermLike variable
 dotk = mkApplySymbol dotkSymbol []
 
 kiteK
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 
 -- ** List
@@ -406,42 +413,61 @@ updateAllListSymbol =
     builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
     & hook "LIST.updateAll"
 
-unitList :: TermLike VariableName
+unitList :: InternalVariable variable => TermLike variable
 unitList = mkApplySymbol unitListSymbol []
 
-elementList :: TermLike VariableName -> TermLike VariableName
+elementList
+    :: InternalVariable variable => TermLike variable -> TermLike variable
 elementList x = mkApplySymbol elementListSymbol [x]
 
-concatList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+concatList
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 concatList x y = mkApplySymbol concatListSymbol [x, y]
 
-getList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+getList
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 getList list poz = mkApplySymbol getListSymbol [list, poz]
 
-sizeList :: TermLike VariableName -> TermLike VariableName
+sizeList
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
-makeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+makeList
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 makeList len x = mkApplySymbol makeListSymbol [len, x]
 
 updateList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
 inList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 inList x list = mkApplySymbol inListSymbol [x, list]
 
 updateAllList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
 
 -- ** Map
@@ -507,84 +533,99 @@ inclusionMapSymbol :: Internal.Symbol
 inclusionMapSymbol =
     builtinSymbol "inclusionMap" boolSort [mapSort, mapSort] & hook "MAP.inclusion"
 
-unitMap :: TermLike VariableName
+unitMap
+    :: InternalVariable variable
+    => TermLike variable
 unitMap = mkApplySymbol unitMapSymbol []
 
 updateMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
 
 lookupMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
 
 lookupOrDefaultMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 lookupOrDefaultMap map' key def' =
     mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
 
 elementMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 elementMap key value = mkApplySymbol elementMapSymbol [key, value]
 
 concatMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
 
 inKeysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
 
 keysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 keysMap map' = mkApplySymbol keysMapSymbol [map']
 
 keysListMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 keysListMap map' = mkApplySymbol keysListMapSymbol [map']
 
 removeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
 
 removeAllMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
 sizeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
 valuesMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 valuesMap map' = mkApplySymbol valuesMapSymbol [map']
 
 inclusionMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 inclusionMap mapLeft mapRight = mkApplySymbol inclusionMapSymbol [mapLeft, mapRight]
 
 -- ** Pair
@@ -600,7 +641,11 @@ pairSymbol lSort rSort =
     & constructor
     & functional
 
-pair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+pair
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 pair l r =
     mkApplySymbol (pairSymbol lSort rSort) [l, r]
   where
@@ -612,7 +657,7 @@ pair l r =
 unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
 
-unitSet :: TermLike VariableName
+unitSet :: InternalVariable variable => TermLike variable
 unitSet = mkApplySymbol unitSetSymbol []
 
 elementSetSymbol :: Internal.Symbol
@@ -625,7 +670,10 @@ elementSetSymbolTestSort =
     builtinSymbol "elementSet" setSort [Mock.testSort]
     & hook "SET.element" & functional
 
-elementSet :: TermLike VariableName -> TermLike VariableName
+elementSet
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
@@ -633,9 +681,10 @@ concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & function
 
 concatSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
 
 inSetSymbol :: Internal.Symbol
@@ -651,9 +700,10 @@ differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
 
 differenceSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
 
 toListSetSymbol :: Internal.Symbol
@@ -677,22 +727,25 @@ inclusionSetSymbol =
         & hook "SET.inclusion"
 
 intersectionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 intersectionSet set1 set2 =
     mkApplySymbol intersectionSetSymbol [set1, set2]
 
 list2setSet
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
 
 inclusionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 inclusionSet setLeft setRight =
     mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 
@@ -1085,8 +1138,8 @@ listSortDecl =
         ]
 
 builtinList
-    :: [TermLike VariableName]
-    -> InternalList (TermLike VariableName)
+    :: [TermLike variable]
+    -> InternalList (TermLike variable)
 builtinList children =
     InternalList
         { internalListSort = listSort
@@ -1137,8 +1190,8 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(TermLike Concrete, TermLike VariableName)]
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    :: [(TermLike Concrete, TermLike variable)]
+    -> InternalMap (TermLike Concrete) (TermLike variable)
 builtinMap children =
     InternalAc
         { builtinAcSort = mapSort

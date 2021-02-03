@@ -52,6 +52,7 @@ import Kore.Step.Simplification.Data
     , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
@@ -391,19 +392,19 @@ test_string2Token =
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
-asInternal :: Text -> TermLike VariableName
+asInternal :: InternalVariable variable => Text -> TermLike variable
 asInternal = String.asInternal stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> Pattern VariableName
+asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
 
 testString
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testString name = testSymbolWithoutSolver evaluate name
 

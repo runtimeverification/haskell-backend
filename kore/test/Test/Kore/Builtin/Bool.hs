@@ -88,11 +88,13 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> TermLike VariableName
+asInternal
+    :: InternalVariable variable => Bool -> TermLike variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern VariableName
+asPattern
+    :: InternalVariable variable => Bool -> Pattern variable
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
