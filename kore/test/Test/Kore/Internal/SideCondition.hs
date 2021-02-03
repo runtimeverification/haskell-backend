@@ -265,18 +265,12 @@ test_isDefined =
                 & HashSet.fromList & fromDefinedTerms
             actual = isDefined sideCondition term
         assertEqual "" True actual
-    , testCase "Singleton map is defined" $ do
-        let term :: TermLike VariableName
-            term = Mock.framedMap [ (Mock.plain00, Mock.a) ] []
-            sideCondition = assumeDefined term
-            actual = isDefined sideCondition term
-        assertEqual "" True actual
-    , testCase "Singleton set is defined" $ do
-        let term :: TermLike VariableName
-            term = Mock.framedSet [ Mock.plain00 ] []
-            sideCondition = assumeDefined term
-            actual = isDefined sideCondition term
-        assertEqual "" True actual
+    , testCase "Singleton: collection is assumed to be defined" $ do
+        let collection =
+                Collection
+                    [ (Mock.plain00, Mock.a) ]
+                    []
+        testCollection collection (Just collection) True
     , testCase "Singleton: always defined key implies\
                 \ always defined collection" $ do
         let collection =
