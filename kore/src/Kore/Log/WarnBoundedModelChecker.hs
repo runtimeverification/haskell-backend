@@ -30,7 +30,7 @@ instance Pretty WarnBoundedModelChecker where
     pretty (WarnBoundedModelChecker claim) =
         Pretty.hsep
             [ "The claim was not proven within the bound:"
-            , Pretty.pretty (from claim :: SourceLocation)
+            , Pretty.pretty (from @_ @SourceLocation claim)
             ]
 
 instance Entry WarnBoundedModelChecker where
