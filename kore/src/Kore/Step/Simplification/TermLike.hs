@@ -2,7 +2,6 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
-
 {-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.TermLike
@@ -46,7 +45,9 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
+    ( cannotReplaceTerm
+    , replaceTerm
+    , toRepresentation
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
@@ -199,7 +200,31 @@ simplify sideCondition = \termLike ->
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-      | TermLike.isSimplified sideConditionRepresentation termLike =
+      | Just termLike' <- continueSimplificationWith termLike =
+        assertTermNotPredicate $ do
+            unfixedTermOr <- descendAndSimplify termLike'
+            let termOr = OrPattern.coerceSort
+                    (termLikeSort termLike')
+                    unfixedTermOr
+            returnIfSimplifiedOrContinue
+                termLike'
+                (OrPattern.toPatterns termOr)
+                (do
+                    termPredicateList <- Logic.observeAllT $ do
+                        termOrElement <- Logic.scatter termOr
+                        simplified <-
+                            simplifyCondition sideCondition termOrElement
+                        return (applyTermSubstitution simplified)
+
+                    returnIfSimplifiedOrContinue
+                        termLike'
+                        termPredicateList
+                        (do
+                            resultsList <- mapM resimplify termPredicateList
+                            return (MultiOr.mergeAll resultsList)
+                        )
+                )
+      | otherwise =
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -212,31 +237,16 @@ simplify sideCondition = \termLike ->
                     & Pattern.fromCondition (termLikeSort termLike)
                     & OrPattern.fromPattern
                     & pure
-      | otherwise =
-        assertTermNotPredicate $ do
-            unfixedTermOr <- descendAndSimplify termLike
-            let termOr = OrPattern.coerceSort
-                    (termLikeSort termLike)
-                    unfixedTermOr
-            returnIfSimplifiedOrContinue
-                termLike
-                (OrPattern.toPatterns termOr)
-                (do
-                    termPredicateList <- Logic.observeAllT $ do
-                        termOrElement <- Logic.scatter termOr
-                        simplified <-
-                            simplifyCondition sideCondition termOrElement
-                        return (applyTermSubstitution simplified)
-
-                    returnIfSimplifiedOrContinue
-                        termLike
-                        termPredicateList
-                        (do
-                            resultsList <- mapM resimplify termPredicateList
-                            return (MultiOr.mergeAll resultsList)
-                        )
-                )
       where
+        continueSimplificationWith :: TermLike variable -> Maybe (TermLike variable)
+        continueSimplificationWith original =
+            let isOriginalNotSimplified
+                  | TermLike.isSimplified sideConditionRepresentation original =
+                      Nothing
+                  | otherwise = Just original
+            in
+                SideCondition.replaceTerm sideCondition original
+                <|> isOriginalNotSimplified
 
         resimplify :: Pattern variable -> simplifier (OrPattern variable)
         resimplify result = do
@@ -297,13 +307,16 @@ simplify sideCondition = \termLike ->
             -> simplifier (OrPattern variable)
         returnIfResultSimplifiedOrContinue originalTerm result continuation
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultTerm
-            && resultSubstitutionIsEmpty
+          , isTop resultTerm
+          , resultSubstitutionIsEmpty
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultPredicate
+          , isTop resultPredicate
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return
                 (OrPattern.fromTermLike
                     (TermLike.markSimplifiedConditional
@@ -339,7 +352,7 @@ simplify sideCondition = \termLike ->
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
-        in case termLikeF of
+         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
             -- Do not simplify non-simplifiable patterns.

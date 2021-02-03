@@ -87,7 +87,6 @@ import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
@@ -126,8 +125,8 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.Int
-    ( genConcreteIntegerPattern
-    , genInteger
+    ( genInteger
+    , genIntegerKey
     , genIntegerPattern
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -144,9 +143,9 @@ genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
     Gen.map (Range.linear 0 32) ((,) <$> genInteger <*> genElement)
 
-genConcreteMap :: Gen a -> Gen (Map (TermLike Concrete) a)
+genConcreteMap :: Gen a -> Gen (Map Key a)
 genConcreteMap genElement =
-    Map.mapKeys Test.Int.asInternal <$> genMapInteger genElement
+    Map.mapKeys Test.Int.asKey <$> genMapInteger genElement
 
 genMapPattern :: Gen (TermLike RewritingVariableName)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
@@ -306,8 +305,8 @@ test_removeAll =
             when (set == Set.empty) discard
             let key = Set.elemAt 0 set
                 diffSet = Set.delete key set
-                patSet = builtinSet_ set & fromConcrete
-                patDiffSet = builtinSet_ diffSet & fromConcrete
+                patSet = mkSet_ set & fromConcrete
+                patDiffSet = mkSet_ diffSet & fromConcrete
                 patKey = fromConcrete key
                 patRemoveAll1 = removeAllMap map' patSet
                 patRemoveAll2 = removeAllMap
@@ -438,7 +437,7 @@ test_keysUnit =
             let
                 patUnit = unitMap
                 patKeys = keysMap patUnit
-                patExpect = builtinSet_ Set.empty
+                patExpect = mkSet_ Set.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
             assertEqual "" expect =<< evaluate patKeys
@@ -449,10 +448,10 @@ test_keysElement =
     testPropertyWithSolver
         "keys{}(element{}(key, _) : Map{}) === element{}(key) : Set{}"
         (do
-            key <- forAll genConcreteIntegerPattern
+            key <- forAll genIntegerKey
             val <- forAll genIntegerPattern
             let patMap = asTermLike $ Map.singleton key val
-                patKeys = builtinSet_ (Set.singleton key) & fromConcrete
+                patKeys = mkSet_ (Set.singleton $ from key) & fromConcrete
                 patSymbolic = keysMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
@@ -466,8 +465,8 @@ test_keys =
         "MAP.keys"
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
-            let keys1 = Map.keysSet map1
-                patConcreteKeys = builtinSet_ keys1 & fromConcrete
+            let keys1 = Map.keysSet map1 & Set.map from
+                patConcreteKeys = mkSet_ keys1 & fromConcrete
                 patMap = asTermLike map1
                 patSymbolicKeys = keysMap patMap
                 predicate = mkEquals_ patConcreteKeys patSymbolicKeys
@@ -495,10 +494,10 @@ test_keysListElement =
     testPropertyWithSolver
         "keys_list{}(element{}(key, _) : Map{}) === element{}(key) : List{}"
         (do
-            key <- forAll genConcreteIntegerPattern
+            key <- forAll genIntegerKey
             val <- forAll genIntegerPattern
             let patMap = asTermLike $ Map.singleton key val
-                patKeys = Test.List.asTermLike [TermLike.fromConcrete key]
+                patKeys = Test.List.asTermLike [from key]
                 patSymbolic = keysListMap patMap
                 predicate = mkEquals_ patKeys patSymbolic
             expect <- evaluateT patKeys
@@ -512,7 +511,7 @@ test_keysList =
         "MAP.keys_list"
         (do
             map1 <- forAll (genConcreteMap genIntegerPattern)
-            let keys1 = TermLike.fromConcrete <$> Map.keys map1
+            let keys1 = from <$> Map.keys map1
                 patConcreteKeys = Test.List.asTermLike keys1
                 patMap = asTermLike map1
                 patSymbolicKeys = keysListMap patMap
@@ -653,7 +652,7 @@ test_simplify =
         let
             x = mkIntVar (testId "x")
                 & TermLike.mapVariables (pure mkConfigVariable)
-            key = Test.Int.asInternal 1
+            key = Test.Int.asKey 1
             original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
             expected = asPattern $ Map.fromList [(key, x)]
         actual <- evaluate original
@@ -1132,8 +1131,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
         "unify two symbolic maps with identical keys and one variable opaque"
         (do
             key1 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+                forAll genIntegerKey
             value1 <-
                 forAll genIntegerPattern
                 <&> TermLike.mapVariables (pure mkConfigVariable)
@@ -1164,7 +1162,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                     then (mapVar1, mapVar2)
                     else (mapVar2, mapVar1)
                 selectPat =
-                    addLookupElement (unsafeAsConcrete key1) valueVar1
+                    addLookupElement (from key1) valueVar1
                     $ addSelectElement keyVar2 valueVar2
                     $ mkElemVar mapVar2
                 mapValueFromVar mapVar =
@@ -1173,9 +1171,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                         { elementsWithVariables =
                             [MapElement (mkElemVar keyVar2, value2)]
                         , concreteElements =
-                            Map.singleton
-                                (unsafeAsConcrete key1)
-                                (MapValue value1)
+                            Map.singleton key1 (MapValue value1)
                         , opaque = [mkElemVar mapVar]
                         }
                 mapValue = mapValueFromVar mapVar1
@@ -1309,10 +1305,11 @@ test_concretizeKeysAxiom =
   where
     x = mkIntVar (testId "x")
         & TermLike.mapVariables (pure mkRuleVariable)
-    v = mkIntVar (testId "v")
+    v =
+        mkIntVar (testId "v")
         & TermLike.mapVariables (pure mkRuleVariable)
-    key = Test.Int.asInternal 1
-    symbolicKey = fromConcrete key
+    key = Test.Int.asKey 1
+    symbolicKey = from key
     val = Test.Int.asInternal 2
     symbolicMap = asSymbolicPattern $ Map.fromList [(x, v)]
     axiom =
@@ -1333,38 +1330,38 @@ test_concretizeKeysAxiom =
 
 test_renormalize :: [TestTree]
 test_renormalize =
-    [ unchanged "abstract key is unchanged" (mkMap [(x, v)] [] [])
+    [ unchanged "abstract key is unchanged" (mkMap' [(x, v)] [] [])
     , becomes "concrete key is normalized"
-        (mkMap [(k1, v)] [] [])
-        (mkMap [] [(k1, v)] [])
+        (mkMap' [(from k1, v)] [] [])
+        (mkMap' [] [(k1, v)] [])
     , becomes "opaque child is flattened"
-        (mkMap [] [(k1, v)] [mkMap [] [(k2, v)] []])
-        (mkMap [] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [] [(k2, v)] []])
+        (mkMap' [] [(k1, v), (k2, v)] [])
     , becomes "child is flattened and normalized"
-        (mkMap [] [(k1, v)] [mkMap [(k2, v)] [] []])
-        (mkMap [] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [(from k2, v)] [] []])
+        (mkMap' [] [(k1, v), (k2, v)] [])
     , becomes "grandchild is flattened and normalized"
-        (mkMap [] [(k1, v)] [mkMap [(x, v)] [] [mkMap [(k2, v)] [] []]])
-        (mkMap [(x, v)] [(k1, v), (k2, v)] [])
+        (mkMap' [] [(k1, v)] [mkMap' [(x, v)] [] [mkMap' [(from k2, v)] [] []]])
+        (mkMap' [(x, v)] [(k1, v), (k2, v)] [])
     , denorm "duplicate key in map"
-        (mkMap [(k1, v), (k1, v)] [] [])
+        (mkMap' [(from k1, v), (from k1, v)] [] [])
     , denorm "duplicate key in child"
-        (mkMap [(k1, v)] [] [mkMap [(k1, v)] [] []])
+        (mkMap' [(from k1, v)] [] [mkMap' [(from k1, v)] [] []])
     ]
   where
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
 
-    k1, k2 :: InternalVariable variable => TermLike variable
-    k1 = Test.Int.asInternal 1
-    k2 = Test.Int.asInternal 2
+    k1, k2 :: Key
+    k1 = Test.Int.asKey 1
+    k2 = Test.Int.asKey 2
 
     becomes
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
+        -> NormalizedMap Key (TermLike VariableName)
         -- ^ original, (possibly) de-normalized map
-        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
+        -> NormalizedMap Key (TermLike VariableName)
         -- ^ expected normalized map
         -> TestTree
     becomes name origin expect =
@@ -1373,27 +1370,27 @@ test_renormalize =
     unchanged
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
+        -> NormalizedMap Key (TermLike VariableName)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
         :: HasCallStack
         => TestName
-        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
+        -> NormalizedMap Key (TermLike VariableName)
         -> TestTree
     denorm name origin =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
-    mkMap
+    mkMap'
         :: [(TermLike VariableName, TermLike VariableName)]
         -- ^ abstract elements
-        -> [(TermLike Concrete, TermLike VariableName)]
+        -> [(Key, TermLike VariableName)]
         -- ^ concrete elements
-        -> [NormalizedMap (TermLike Concrete) (TermLike VariableName)]
+        -> [NormalizedMap Key (TermLike VariableName)]
         -- ^ opaque terms
-        -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
-    mkMap abstract concrete opaque =
+        -> NormalizedMap Key (TermLike VariableName)
+    mkMap' abstract concrete opaque =
         wrapAc NormalizedAc
             { elementsWithVariables = MapElement <$> abstract
             , concreteElements =
@@ -1407,7 +1404,7 @@ hprop_unparse =
     hpropUnparse
         ( asInternal
         . Map.toList
-        . Map.mapKeys fromConcrete
+        . Map.mapKeys from
         <$> genConcreteMap genValue
         )
   where
@@ -1527,7 +1524,7 @@ asSymbolicPattern result
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
 asTermLike
     :: InternalVariable variable
-    => Map (TermLike Concrete) (TermLike variable)
+    => Map Key (TermLike variable)
     -> TermLike variable
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
@@ -1536,7 +1533,7 @@ asTermLike =
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
 asPattern
-    :: Map (TermLike Concrete) (TermLike RewritingVariableName)
+    :: Map Key (TermLike RewritingVariableName)
     -> Pattern RewritingVariableName
 asPattern concreteMap =
     Reflection.give testMetadataTools
@@ -1584,18 +1581,11 @@ asInternal elements =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Builtin.toKey key <*> pure value
+        (,) <$> retractKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
-
-unsafeAsConcrete
-    :: TermLike RewritingVariableName
-    -> TermLike Concrete
-unsafeAsConcrete term =
-    TermLike.asConcrete term
-    & fromMaybe (error "Expected concrete term.")
 
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
 
@@ -1607,7 +1597,7 @@ normalizedMap
     -- ^ (abstract or concrete) elements
     -> [TermLike VariableName]
     -- ^ opaque terms
-    -> NormalizedMap (TermLike Concrete) (TermLike VariableName)
+    -> NormalizedMap Key (TermLike VariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
         { elementsWithVariables = MapElement <$> elements

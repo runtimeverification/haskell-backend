@@ -37,9 +37,6 @@ module Kore.Attribute.Axiom
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Data.Default

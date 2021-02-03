@@ -296,7 +296,7 @@ makeEvaluateInternalMap
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> InternalMap (TermLike Concrete) (TermLike variable)
+    -> InternalMap Key (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateInternalMap sideCondition internalMap =
     runCeilSimplifierWith
@@ -317,7 +317,7 @@ makeEvaluateInternalSet
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> InternalSet (TermLike Concrete) (TermLike variable)
+    -> InternalSet Key (TermLike variable)
     -> MaybeT simplifier (OrCondition variable)
 makeEvaluateInternalSet sideCondition internalSet =
     runCeilSimplifierWith

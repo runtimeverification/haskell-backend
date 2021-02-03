@@ -18,6 +18,9 @@ import Control.Error
     )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -1307,11 +1310,12 @@ test_equalsTermsSimplification =
 
     , testCase "handles set ambiguity" $ do
         let
-            asInternal set =
-                Ac.asInternalConcrete
-                    Mock.metadataTools
-                    Mock.setSort
-                    (Map.fromSet (const SetValue) set)
+            asInternal
+                :: Set.Set (TermLike Concrete) -> TermLike RewritingVariableName
+            asInternal =
+                Set.map (retractKey >>> fromJust)
+                >>> Map.fromSet (const SetValue)
+                >>> Ac.asInternalConcrete Mock.metadataTools Mock.setSort
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])
@@ -1320,7 +1324,7 @@ test_equalsTermsSimplification =
                 mconcat
                     [ Condition.assign (inject Mock.xConfig) xValue
                     , Condition.assign (inject Mock.xConfigSet)
-                        (asInternal $ Set.fromList xSetValue)
+                        $ asInternal $ Set.fromList xSetValue
                     ]
                     & pure
         actual <- simplifyEquals

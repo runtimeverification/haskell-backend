@@ -139,12 +139,13 @@ isSymbolList2set = Builtin.isSymbol list2setKey
 isSymbolInclusion :: Symbol -> Bool
 isSymbolInclusion = Builtin.isSymbol inclusionKey
 
+-- TODO (thomas.tuegel): Rename this function.
 {- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
 -}
 asTermLike
     :: forall variable
     .  InternalVariable variable
-    => InternalSet (TermLike Concrete) (TermLike variable)
+    => InternalSet Key (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
@@ -179,9 +180,9 @@ asTermLike builtin =
     NormalizedAc { opaque } = normalizedAc
 
     concreteElement
-        :: (TermLike Concrete, SetValue (TermLike variable))
+        :: (Key, SetValue (TermLike variable))
         -> TermLike variable
-    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+    concreteElement (key, value) = element (from @Key key, value)
 
     element
         :: (TermLike variable, SetValue (TermLike variable))

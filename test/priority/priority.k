@@ -33,4 +33,9 @@ module PRIORITY
   rule func3(6)     => six
   rule func3(_:Int) => seven  [owise]
 
+  syntax S ::= func4(Int)     [function]
+  rule func4(X:Int) => four
+    requires func3(X) ==K four
+  rule func4(_:Int) => seven  [owise]
+
 endmodule

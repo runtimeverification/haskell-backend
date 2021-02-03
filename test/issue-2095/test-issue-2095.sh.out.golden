@@ -1446,11 +1446,8 @@
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
                                                         /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                            /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                                /* Fl Fn D Sfa Cl */
-                                                                \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                                "$I")
+                                                                \dv{SortSymbolicData{}}("$I")
                                                             ),
                                                             /* Fl Fn D Sfc */
                                                             /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -3277,11 +3274,8 @@
                                                     Lbl'-LT-'symbols'-GT-'{}(
                                                         /* Fl Fn D Sfc */
                                                         /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                            /* Fl Fn D Sfa Cli */
                                                             /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                                /* Fl Fn D Sfa Cl */
-                                                                \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                                "$I")
+                                                                \dv{SortSymbolicData{}}("$I")
                                                             ),
                                                             /* Fl Fn D Sfc */
                                                             /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -5014,11 +5008,8 @@
                                                 Lbl'-LT-'symbols'-GT-'{}(
                                                     /* Fl Fn D Sfc */
                                                     /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                        /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                            "$I")
+                                                            \dv{SortSymbolicData{}}("$I")
                                                         ),
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -6586,11 +6577,8 @@
                                             Lbl'-LT-'symbols'-GT-'{}(
                                                 /* Fl Fn D Sfc */
                                                 /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                    /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                        "$I")
+                                                        \dv{SortSymbolicData{}}("$I")
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -7535,9 +7523,9 @@
                                                                                     /* Inj: */ inj{SortPair{}, SortData{}}(
                                                                                         /* Fl Fn D Sfc */
                                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                                            /* Fl Fn D Sfc */
+                                                                                            /* Fl Fn D Sfa Cli */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                                /* Fl Fn D Sfa */
+                                                                                                /* Fl Fn D Sfa Cl */
                                                                                                 /* InternalList: */ Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
@@ -7581,11 +7569,8 @@
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
                                                                     /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                                        /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                                            /* Fl Fn D Sfa Cl */
-                                                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                                            "$I")
+                                                                            \dv{SortSymbolicData{}}("$I")
                                                                         ),
                                                                         /* Fl Fn D Sfc */
                                                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -8752,11 +8737,8 @@
                                             /* Fl Fn D Sfc */
                                             /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                                 /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                    /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                        "$I")
+                                                        \dv{SortSymbolicData{}}("$I")
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -8811,11 +8793,8 @@
                                                 ),
                                             Lbl'Unds'Map'Unds'{}(
                                                 /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                    /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                        "$K")
+                                                        \dv{SortSymbolicData{}}("$K")
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -8836,11 +8815,8 @@
                                                     )
                                                 ),
                                                 /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                    /* Fl Fn D Sfa Cli */
                                                     /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                        "$O")
+                                                        \dv{SortSymbolicData{}}("$O")
                                                     ),
                                                     /* Fl Fn D Sfc */
                                                     /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -8883,9 +8859,9 @@
                                                             /* Inj: */ inj{SortPair{}, SortData{}}(
                                                                 /* Fl Fn D Sfc */
                                                                 LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                    /* Fl Fn D Sfc */
+                                                                    /* Fl Fn D Sfa Cli */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                        /* Fl Fn D Sfa */
+                                                                        /* Fl Fn D Sfa Cl */
                                                                         /* InternalList: */ Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
@@ -9727,9 +9703,9 @@
                                                                                     /* Inj: */ inj{SortPair{}, SortData{}}(
                                                                                         /* Fl Fn D Sfc */
                                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                                            /* Fl Fn D Sfc */
+                                                                                            /* Fl Fn D Sfa Cli */
                                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                                /* Fl Fn D Sfa */
+                                                                                                /* Fl Fn D Sfa Cl */
                                                                                                 /* InternalList: */ Lbl'Stop'List{}()
                                                                                             ),
                                                                                             /* Fl Fn D Sfc */
@@ -9773,11 +9749,8 @@
                                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                                     /* Fl Fn D Sfc */
                                                                     /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                                        /* Fl Fn D Sfa Cli */
                                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                                            /* Fl Fn D Sfa Cl */
-                                                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                                            "$I")
+                                                                            \dv{SortSymbolicData{}}("$I")
                                                                         ),
                                                                         /* Fl Fn D Sfc */
                                                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -10935,11 +10908,8 @@
                                         /* Fl Fn D Sfc */
                                         /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                    "$I")
+                                                    \dv{SortSymbolicData{}}("$I")
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -10994,11 +10964,8 @@
                                             ),
                                         Lbl'Unds'Map'Unds'{}(
                                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                    "$K")
+                                                    \dv{SortSymbolicData{}}("$K")
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -11019,11 +10986,8 @@
                                                 )
                                             ),
                                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                    "$O")
+                                                    \dv{SortSymbolicData{}}("$O")
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -11066,9 +11030,9 @@
                                                         /* Inj: */ inj{SortPair{}, SortData{}}(
                                                             /* Fl Fn D Sfc */
                                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                /* Fl Fn D Sfc */
+                                                                /* Fl Fn D Sfa Cli */
                                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                    /* Fl Fn D Sfa */
+                                                                    /* Fl Fn D Sfa Cl */
                                                                     /* InternalList: */ Lbl'Stop'List{}()
                                                                 ),
                                                                 /* Fl Fn D Sfc */
@@ -11669,9 +11633,9 @@
                                                 /* Inj: */ inj{SortPair{}, SortData{}}(
                                                     /* Fl Fn D Sfc */
                                                     LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                        /* Fl Fn D Sfc */
+                                                        /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
+                                                            /* Fl Fn D Sfa Cl */
                                                             /* InternalList: */ Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
@@ -12761,11 +12725,8 @@
                                 Lbl'-LT-'symbols'-GT-'{}(
                                     /* Fl Fn D Sfc */
                                     /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                        /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                            "$I")
+                                            \dv{SortSymbolicData{}}("$I")
                                         ),
                                         /* Fl Fn D Sfc */
                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -13421,9 +13382,9 @@
                                                                     /* Inj: */ inj{SortPair{}, SortData{}}(
                                                                         /* Fl Fn D Sfc */
                                                                         LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                            /* Fl Fn D Sfc */
+                                                                            /* Fl Fn D Sfa Cli */
                                                                             /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                                /* Fl Fn D Sfa */
+                                                                                /* Fl Fn D Sfa Cl */
                                                                                 /* InternalList: */ Lbl'Stop'List{}()
                                                                             ),
                                                                             /* Fl Fn D Sfc */
@@ -13467,11 +13428,8 @@
                                                 Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                                     /* Fl Fn D Sfc */
                                                     /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                        /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                            "$I")
+                                                            \dv{SortSymbolicData{}}("$I")
                                                         ),
                                                         /* Fl Fn D Sfc */
                                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -14596,11 +14554,8 @@
                                 /* Fl Fn D Sfc */
                                 /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                                     /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                        /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                            "$I")
+                                            \dv{SortSymbolicData{}}("$I")
                                         ),
                                         /* Fl Fn D Sfc */
                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -14655,11 +14610,8 @@
                                     ),
                                 Lbl'Unds'Map'Unds'{}(
                                     /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                        /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                            "$K")
+                                            \dv{SortSymbolicData{}}("$K")
                                         ),
                                         /* Fl Fn D Sfc */
                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -14680,11 +14632,8 @@
                                         )
                                     ),
                                     /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                        /* Fl Fn D Sfa Cli */
                                         /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                            "$O")
+                                            \dv{SortSymbolicData{}}("$O")
                                         ),
                                         /* Fl Fn D Sfc */
                                         /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -14727,9 +14676,9 @@
                                                 /* Inj: */ inj{SortPair{}, SortData{}}(
                                                     /* Fl Fn D Sfc */
                                                     LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                        /* Fl Fn D Sfc */
+                                                        /* Fl Fn D Sfa Cli */
                                                         /* Inj: */ inj{SortList{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
+                                                            /* Fl Fn D Sfa Cl */
                                                             /* InternalList: */ Lbl'Stop'List{}()
                                                         ),
                                                         /* Fl Fn D Sfc */
@@ -15339,9 +15288,9 @@
                                         /* Inj: */ inj{SortPair{}, SortData{}}(
                                             /* Fl Fn D Sfc */
                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
+                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
+                                                    /* Fl Fn D Sfa Cl */
                                                     /* InternalList: */ Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */
@@ -16431,11 +16380,8 @@
                         Lbl'-LT-'symbols'-GT-'{}(
                             /* Fl Fn D Sfc */
                             /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                    "$I")
+                                    \dv{SortSymbolicData{}}("$I")
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -16556,7 +16502,9 @@
                         ),
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                            /* Fl Fn D Sfa */
+                            Var'QuesUnds'4:SortInt{}
                         ),
                         /* Fl Fn D Sfa Cli */
                         /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -16609,7 +16557,9 @@
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{}
+                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Fl Fn D Sfa */
+                                    Var'QuesUnds'4:SortInt{}
                                 ),
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -17057,9 +17007,9 @@
                                                             /* Inj: */ inj{SortPair{}, SortData{}}(
                                                                 /* Fl Fn D Sfc */
                                                                 LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                                    /* Fl Fn D Sfc */
+                                                                    /* Fl Fn D Sfa Cli */
                                                                     /* Inj: */ inj{SortList{}, SortData{}}(
-                                                                        /* Fl Fn D Sfa */
+                                                                        /* Fl Fn D Sfa Cl */
                                                                         /* InternalList: */ Lbl'Stop'List{}()
                                                                     ),
                                                                     /* Fl Fn D Sfc */
@@ -17102,11 +17052,8 @@
                                         Lbl'Hash'RestoreSymbols'LParUndsRParUnds'MICHELSON'Unds'KItem'Unds'Map{}(
                                             /* Fl Fn D Sfc */
                                             /* InternalMap: */ /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                                    "$I")
+                                                    \dv{SortSymbolicData{}}("$I")
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -18229,11 +18176,8 @@
                         /* Fl Fn D Sfc */
                         /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                    "$I")
+                                    \dv{SortSymbolicData{}}("$I")
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -18288,11 +18232,8 @@
                             ),
                         Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                    "$K")
+                                    \dv{SortSymbolicData{}}("$K")
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -18313,11 +18254,8 @@
                                 )
                             ),
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortSymbolicData{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortSymbolicData{}}(/* Fl Fn D Sfa Cl */
-                                    "$O")
+                                    \dv{SortSymbolicData{}}("$O")
                                 ),
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortTypedSymbol{}, SortKItem{}}(
@@ -18360,9 +18298,9 @@
                                         /* Inj: */ inj{SortPair{}, SortData{}}(
                                             /* Fl Fn D Sfc */
                                             LblPair'UndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Pair'Unds'Data'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
+                                                /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortList{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
+                                                    /* Fl Fn D Sfa Cl */
                                                     /* InternalList: */ Lbl'Stop'List{}()
                                                 ),
                                                 /* Fl Fn D Sfc */

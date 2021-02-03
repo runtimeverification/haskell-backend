@@ -490,9 +490,6 @@ test_updateAll =
   where
     original = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3]
 
-mkInt :: InternalVariable variable => Integer -> TermLike variable
-mkInt = Test.Int.asInternal
-
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike
     :: InternalVariable variable

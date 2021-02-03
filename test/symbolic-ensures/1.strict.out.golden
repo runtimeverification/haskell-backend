@@ -5,11 +5,11 @@
   {
     true
   #Equals
-    ?X <=Int 3
+    ?X:Int <=Int 3
   }
 #And
   {
     true
   #Equals
-    ?X >=Int 1
+    ?X:Int >=Int 1
   }

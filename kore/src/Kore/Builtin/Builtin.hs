@@ -36,7 +36,6 @@ module Kore.Builtin.Builtin
     , lookupSymbolConcat
     , isSymbol
     , isSort
-    , toKey
     , getAttemptedAxiom
     , makeDomainValueTerm
     , makeDomainValuePattern
@@ -472,23 +471,6 @@ isSort builtinName tools sort
         Just (getHook hook == Just builtinName)
   where
     isPredicateSort = sort == predicateSort
-
-
-{- | Ensure that a 'TermLike' is a concrete, normalized term.
-
-If the pattern is not concrete and normalized, the function is
-See also: 'Kore.Proof.Value.Value'
-
- -}
-toKey
-    :: Ord variable
-    => TermLike variable -> Maybe (TermLike Concrete)
-toKey purePattern = do
-    p <- TermLike.asConcrete purePattern
-    -- TODO (thomas.tuegel): Use the return value as the term.
-    if TermLike.isConstructorLike p
-        then return p
-        else Nothing
 
 {- | Run a function evaluator that can terminate early.
  -}

@@ -54,9 +54,6 @@ import Prelude.Kore hiding
     ( null
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map

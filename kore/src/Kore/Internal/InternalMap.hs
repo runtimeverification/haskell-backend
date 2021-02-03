@@ -17,9 +17,6 @@ module Kore.Internal.InternalMap
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Generics.SOP as SOP
