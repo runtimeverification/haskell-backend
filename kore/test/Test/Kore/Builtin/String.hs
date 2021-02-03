@@ -44,6 +44,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -52,7 +55,6 @@ import Kore.Step.Simplification.Data
     , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )

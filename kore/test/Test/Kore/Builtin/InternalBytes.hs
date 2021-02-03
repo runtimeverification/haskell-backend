@@ -41,12 +41,15 @@ import qualified Data.Text as T
 
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
-import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName)
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike hiding
     ( bytesSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
     )
 import qualified Pretty
 

@@ -46,13 +46,15 @@ import Test.Tasty
 import Control.Monad.Trans.Maybe
     ( runMaybeT
     )
-import Data.Functor ((<&>))
 import Data.Bits
     ( complement
     , shift
     , xor
     , (.&.)
     , (.|.)
+    )
+import Data.Functor
+    ( (<&>)
     )
 import Data.Semigroup
     ( Endo (..)
@@ -76,10 +78,13 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     , simplifyCondition

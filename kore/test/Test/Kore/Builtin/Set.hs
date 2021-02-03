@@ -76,8 +76,10 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
-import Data.Functor ((<&>))
 import qualified Data.Default as Default
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -101,6 +103,12 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    , mkRuleVariable
+    )
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , injectTermIntoRHS
@@ -111,8 +119,6 @@ import Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable, mkRuleVariable)
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( runUnifierT

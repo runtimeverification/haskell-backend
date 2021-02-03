@@ -23,14 +23,16 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkConfigVariable
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import Kore.Step.Simplification.Data
     ( runSimplifierBranch
     )
-import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (mkConfigVariable)
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
     ( evalEnvUnifierT

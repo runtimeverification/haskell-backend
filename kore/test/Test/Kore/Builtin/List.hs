@@ -49,9 +49,12 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeTruePredicate
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 
 import Test.Kore
     ( testId
@@ -60,9 +63,9 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
+import qualified Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
-import qualified Test.Kore.Internal.Substitution as Substitution
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)

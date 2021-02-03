@@ -67,12 +67,14 @@ import Test.Tasty
 import Control.Error
     ( runMaybeT
     )
-import Data.Functor ((<&>))
 import Control.Monad
     ( guard
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -104,7 +106,11 @@ import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (mkConfigVariable, RewritingVariableName, mkRuleVariable)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    , mkRuleVariable
+    )
 import Kore.Step.RulePattern
 import SMT
     ( NoSMT

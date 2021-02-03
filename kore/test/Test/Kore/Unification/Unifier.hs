@@ -41,11 +41,15 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import qualified Pretty
 
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
-import Kore.Internal.Predicate (Predicate)
 import qualified Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Internal.TermLike as TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
