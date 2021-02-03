@@ -429,34 +429,21 @@ withWarnings
     -> CommonTransitionRule m
 withWarnings rule prim claimState = do
     claimState' <- rule prim claimState
-    withWarningsHelper claimState'
-
-  where
-    withWarningsHelper 
-        :: CommonClaimState
-        -> Transition.TransitionT (AppliedRule SomeClaim) m CommonClaimState
-    withWarningsHelper claimState'
-        | isCheckImpl prim, isStuck claimState' =
+    case prim of
+        Prim.CheckImplication ->
             case ClaimState.retractRewritable claimState of
                 Just claim -> do
-                    warn claimState claim
-                    return claimState'
+                    case claimState' of
+                        ClaimState.Stuck _ -> case claimState of
+                            ClaimState.Remaining _ -> do
+                                warnStuckClaimStateTermsNotUnifiable claim
+                                return claimState'
+                            _ -> do
+                                warnStuckClaimStateTermsUnifiable claim
+                                return claimState'
+                        _ -> return claimState'
                 Nothing -> return claimState'
-        | otherwise = return claimState'
-
-    isStuck :: CommonClaimState -> Bool
-    isStuck (ClaimState.Stuck _) = True
-    isStuck _ = False
-
-    isCheckImpl :: Prim -> Bool
-    isCheckImpl Prim.CheckImplication = True
-    isCheckImpl _ = False
-
-    warn :: forall m'. MonadLog m' => CommonClaimState -> SomeClaim -> m' ()
-    warn (ClaimState.Remaining _) =
-        warnStuckClaimStateTermsNotUnifiable
-    warn _ =
-        warnStuckClaimStateTermsUnifiable
+        _ -> return claimState'
 
 profTransitionRule
     :: forall m
