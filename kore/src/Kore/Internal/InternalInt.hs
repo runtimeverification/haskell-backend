@@ -8,9 +8,6 @@ module Kore.Internal.InternalInt
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Functor.Const
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

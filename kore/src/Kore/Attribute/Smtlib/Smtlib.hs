@@ -15,9 +15,6 @@ module Kore.Attribute.Smtlib.Smtlib
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Default
     ( Default (..)
     )

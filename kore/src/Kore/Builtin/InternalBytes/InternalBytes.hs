@@ -93,10 +93,10 @@ asTermLike
     :: InternalVariable variable
     => InternalBytes  -- ^ builtin value to render
     -> TermLike variable
-asTermLike InternalBytes { bytesSort, bytesValue }  =
+asTermLike InternalBytes { internalBytesSort, internalBytesValue }  =
     mkDomainValue DomainValue
-        { domainValueSort = bytesSort
-        , domainValueChild = mkStringLiteral $ Encoding.decode8Bit bytesValue
+        { domainValueSort = internalBytesSort
+        , domainValueChild = mkStringLiteral $ Encoding.decode8Bit internalBytesValue
         }
 
 internalize

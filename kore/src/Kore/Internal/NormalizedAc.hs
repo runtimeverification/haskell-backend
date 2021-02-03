@@ -33,9 +33,6 @@ module Kore.Internal.NormalizedAc
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Lens as Lens
 import Control.Lens.Iso
     ( Iso'

@@ -52,8 +52,16 @@ in addition to the requirements and recommendations below.
 For integration testing, we require:
 
 - GNU [make]
-- The [K Framework] frontend, or [curl] to fetch an appropriate version.
-  The frontend has other dependencies, most notably a Java runtime.
+- The [K Framework] frontend.
+
+Instead of installing the frontend, you can use our `Dockerfile`
+to run the integration tests inside a container.
+Use `docker.sh` to run commands inside the container:
+
+``` sh
+./docker/build.sh  # run once when dependencies change
+./docker/run.sh make ...
+```
 
 ### Recommended dependencies
 
@@ -64,6 +72,11 @@ For setting up a development environment, we recommend:
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
+- [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
+
+We recommend to keep `./entr.sh` running in the background
+to keep important files (such as package descriptions) up-to-date,
+especially if the developer is using Cabal.
 
 ### Running a language server
 
@@ -117,3 +130,5 @@ This script is also run by an automatic workflow.
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
 [Nix]: https://nixos.org
+[entr]: https://github.com/eradman/entr
+[fd]: https://github.com/sharkdp/fd

@@ -64,6 +64,7 @@ import qualified Kore.Attribute.Unit as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
@@ -83,6 +84,7 @@ import Kore.Internal.Symbol hiding
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , retractKey
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
@@ -281,6 +283,8 @@ elementSetId :: Id
 elementSetId = testId "elementSet"
 unitSetId :: Id
 unitSetId = testId "unitSet"
+keqBoolId :: Id
+keqBoolId = testId "keqBool"
 sigmaId :: Id
 sigmaId = testId "sigma"
 anywhereId :: Id
@@ -659,6 +663,11 @@ elementSetSymbol =
 unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
+
+keqBoolSymbol :: Symbol
+keqBoolSymbol =
+    symbol keqBoolId [testSort, testSort] boolSort
+    & function & functional & hook "KEQUAL.eq"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
@@ -1347,6 +1356,13 @@ unitList
     => TermLike variable
 unitList = Internal.mkApplySymbol unitListSymbol []
 
+keqBool
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+keqBool t1 t2 = Internal.mkApplySymbol keqBoolSymbol [t1, t2]
+
 sigma
     :: InternalVariable variable
     => HasCallStack
@@ -1463,6 +1479,7 @@ symbols =
     , lessIntSymbol
     , greaterEqIntSymbol
     , tdivIntSymbol
+    , keqBoolSymbol
     , sigmaSymbol
     , anywhereSymbol
     , subsubOverloadSymbol
@@ -1848,7 +1865,7 @@ framedMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Builtin.toKey key <*> pure value
+        (,) <$> retractKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
@@ -1904,7 +1921,7 @@ framedSet elements opaque =
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure SetValue
+            (,) <$> retractKey key <*> pure SetValue
         & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
@@ -2046,5 +2063,9 @@ builtinSimplifiers =
         ,   ( AxiomIdentifier.Application greaterEqIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            )
+        ,   ( AxiomIdentifier.Application keqBoolId
+            , builtinEvaluation
+                (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )
         ]

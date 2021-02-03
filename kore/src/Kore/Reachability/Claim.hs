@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Reachability.Claim
     ( Claim (..)
     , ApplyResult (..)
@@ -134,9 +136,6 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
-    )
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     )
@@ -527,9 +526,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 $ from $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
-            simplifyConditionsWithSmt sideCondition configs'
-            >>= Logic.scatter
-            >>= Pattern.simplify sideCondition
+            Logic.scatter configs'
+            >>= Pattern.simplify
+            >>= SMT.Evaluator.filterMultiOr
             >>= Logic.scatter
         pure (examine anyUnified stuck)
     & elseImplied
@@ -558,12 +557,12 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             unified <-
                 mkIn sort leftTerm rightTerm
                 & Pattern.fromTermLike
-                & Pattern.simplify sideCondition
+                & Pattern.simplify
                 & (>>= Logic.scatter)
             didUnify
             removed <-
                 Pattern.andCondition unified rightCondition
-                & Pattern.simplify sideCondition
+                & Pattern.simplify
                 & (>>= Logic.scatter)
             Exists.makeEvaluate sideCondition existentials removed
                 >>= Logic.scatter
@@ -632,7 +631,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
         OrPattern.observeAllT
         $ Logic.scatter dest
-        >>= Pattern.simplify sideCondition . Pattern.requireDefined
+        >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
         >>= SMT.Evaluator.filterMultiOr
         >>= Logic.scatter
 

@@ -17,9 +17,6 @@ module Kore.Syntax.PatternF
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Lens as Lens
 import Data.Functor.Const
 import Data.Functor.Identity

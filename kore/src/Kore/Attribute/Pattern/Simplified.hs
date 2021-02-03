@@ -24,7 +24,6 @@ module Kore.Attribute.Pattern.Simplified
 
 import Prelude.Kore
 
-import Control.DeepSeq
 import Data.Text
     ( Text
     )

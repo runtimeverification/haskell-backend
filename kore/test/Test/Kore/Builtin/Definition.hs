@@ -8,11 +8,21 @@ module Test.Kore.Builtin.Definition where
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
+import Data.ByteString
+    ( ByteString
+    )
+import qualified Data.ByteString as ByteString
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
+    )
+import Data.Word
+    ( Word8
     )
 
 import Kore.Attribute.Concat hiding
@@ -43,15 +53,16 @@ import Kore.Attribute.Unit hiding
     )
 import qualified Kore.Attribute.Unit as Sort
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalBool
+import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
+import Kore.Internal.InternalString
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -66,7 +77,6 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
-    , bytesSort
     )
 import Kore.Syntax
     ( Const (..)
@@ -1025,6 +1035,9 @@ builtinBool internalBoolValue =
         , internalBoolValue
         }
 
+mkBool :: InternalVariable variable => Bool -> TermLike variable
+mkBool = mkInternalBool . builtinBool
+
 -- ** Int
 
 -- | A sort to hook to the builtin @INT.Int@.
@@ -1047,6 +1060,9 @@ builtinInt internalIntValue =
         { internalIntSort = intSort
         , internalIntValue
         }
+
+mkInt :: InternalVariable variable => Integer -> TermLike variable
+mkInt = mkInternalInt . builtinInt
 
 -- ** KEQUAL
 
@@ -1093,9 +1109,7 @@ listSortDecl =
         , concatAttribute concatListSymbol
         ]
 
-builtinList
-    :: [TermLike VariableName]
-    -> InternalList (TermLike VariableName)
+builtinList :: [TermLike variable] -> InternalList (TermLike variable)
 builtinList children =
     InternalList
         { internalListSort = listSort
@@ -1104,6 +1118,9 @@ builtinList children =
         , internalListConcat = concatListSymbol
         , internalListChild = Seq.fromList children
         }
+
+mkList :: InternalVariable variable => [TermLike variable] -> TermLike variable
+mkList = mkInternalList . builtinList
 
 -- | Another sort with the same hook
 listSort2 :: Sort
@@ -1146,8 +1163,9 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(TermLike Concrete, TermLike VariableName)]
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    :: Ord key
+    => [(key, TermLike variable)]
+    -> InternalMap key (TermLike variable)
 builtinMap children =
     InternalAc
         { builtinAcSort = mapSort
@@ -1161,6 +1179,15 @@ builtinMap children =
             , opaque = []
             }
         }
+
+mkMap
+    :: InternalVariable variable
+    => [(TermLike Concrete, TermLike variable)]
+    -> TermLike variable
+mkMap =
+    mkInternalMap
+    . builtinMap
+    . (map . Bifunctor.first) (retractKey >>> fromJust)
 
 -- ** Pair
 
@@ -1222,13 +1249,13 @@ testSort =
 testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
 
-builtinSet
+mkSet
     :: InternalVariable variable
     => Foldable f
     => f (TermLike variable)
     -> [TermLike variable]
     -> TermLike variable
-builtinSet elements opaque =
+mkSet elements opaque =
     mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = toUnit unitSetSymbol
@@ -1242,18 +1269,18 @@ builtinSet elements opaque =
         }
   where
     asKey key =
-        (,) <$> Builtin.toKey key <*> pure SetValue
+        (,) <$> retractKey key <*> pure SetValue
         & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asKey <$> toList elements
         & partitionEithers
 
-builtinSet_
+mkSet_
     :: InternalVariable variable
     => Foldable f
     => f (TermLike variable)
     -> TermLike variable
-builtinSet_ items = builtinSet items []
+mkSet_ items = mkSet items []
 
 -- ** String
 
@@ -1285,6 +1312,16 @@ userTokenSortDecl =
     sortDeclWithAttributes
         userTokenSort
         [ hasDomainValuesAttribute ]
+
+mkString :: InternalVariable variable => Text -> TermLike variable
+mkString = mkInternalString . internalString
+
+internalString :: Text -> InternalString
+internalString internalStringValue =
+    InternalString
+        { internalStringSort = stringSort
+        , internalStringValue
+        }
 
 -- ** Bytes
 
@@ -1321,6 +1358,16 @@ signednessSort =
 
 signednessSortDecl :: ParsedSentence
 signednessSortDecl = sortDecl signednessSort
+
+builtinBytes :: ByteString -> InternalBytes
+builtinBytes internalBytesValue =
+    InternalBytes
+    { internalBytesSort = bytesSort
+    , internalBytesValue
+    }
+
+mkBytes :: InternalVariable variable => [Word8] -> TermLike variable
+mkBytes = mkInternalBytes' . builtinBytes . ByteString.pack
 
 -- -------------------------------------------------------------
 -- * Modules

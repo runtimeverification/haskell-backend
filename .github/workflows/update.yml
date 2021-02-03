@@ -54,8 +54,7 @@ jobs:
           submodules: recursive
 
       - name: Format with stylish-haskell
-        run: |
-          find . -type f -name '*.hs*' '(' ! -path '*/.stack-work*' ')' '(' ! -path '*/dist*' ')' -print0 | xargs -0L1 stylish-haskell -i
+        run: stylish-haskell -i -r kore
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4.7.2

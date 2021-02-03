@@ -229,7 +229,7 @@ isSymbolInclusion = Builtin.isSymbol inclusionKey
 asTermLike
     :: forall variable
     .  InternalVariable variable
-    => InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap Key (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
@@ -264,9 +264,9 @@ asTermLike builtin =
     NormalizedAc { opaque } = normalizedAc
 
     concreteElement
-        :: (TermLike Concrete, MapValue (TermLike variable))
+        :: (Key, MapValue (TermLike variable))
         -> TermLike variable
-    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+    concreteElement (key, value) = element (into @(TermLike variable) key, value)
 
     element
         :: (TermLike variable, MapValue (TermLike variable))

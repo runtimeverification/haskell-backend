@@ -14,7 +14,6 @@ module Kore.Internal.Inj
 
 import Prelude.Kore
 
-import Control.DeepSeq
 import Control.Exception
     ( Exception (..)
     , throw

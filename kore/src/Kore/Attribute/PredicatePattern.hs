@@ -23,9 +23,6 @@ module Kore.Attribute.PredicatePattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import qualified Generics.SOP as SOP

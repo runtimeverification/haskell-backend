@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.TermLike
     ( test_substitute
     , test_refreshVariables
     , test_hasConstructorLikeTop
     , test_renaming
     , test_mkDefined
+    , test_orientSubstitution
     --
     , termLikeGen
     , termLikeChildGen
@@ -22,6 +23,7 @@ import Test.Tasty
 
 import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
+import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Identity
     ( runIdentity
     )
@@ -53,6 +55,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import Kore.Internal.Substitution
+    ( orientSubstitution
     )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
@@ -173,6 +178,73 @@ mkSubst
     -> ElementVariable variable
     -> Map (SomeVariableName variable) (TermLike variable)
 mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
+
+test_orientSubstitution :: [TestTree]
+test_orientSubstitution =
+    [ testCase "Applies reversed substitution" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, Mock.f $ mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, Mock.f $ mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Duplicate keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.x, mkElemVar Mock.y)
+                , (Mock.t, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.x, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys - negated" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.u)
+                , (Mock.x, mkElemVar Mock.u)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.u, mkElemVar Mock.x)
+                , (Mock.t, mkElemVar Mock.x)
+                ]
+        assertEqual "" expect (orientSubstitution (not . toLeft) subst)
+    ]
+  where
+    mkSubsts = Map.fromList . map (Bifunctor.first (inject . variableName))
+
+    toLeft :: SomeVariableName VariableName -> Bool
+    toLeft someVariableName =
+        someVariableName == inject (variableName Mock.x)
+        || someVariableName == inject (variableName Mock.y)
 
 test_substitute :: [TestTree]
 test_substitute =

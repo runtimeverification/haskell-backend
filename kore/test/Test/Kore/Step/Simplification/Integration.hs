@@ -18,6 +18,9 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 import Test.Tasty
 
@@ -54,7 +57,7 @@ import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplify
+    ( makeEvaluate
     )
 import Kore.Step.Simplification.Simplify
 
@@ -1402,7 +1405,7 @@ evaluateConditionalWithAxioms
     -> TestPattern
     -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
-    runSimplifierSMT env . Pattern.simplify sideCondition
+    runSimplifierSMT env . Pattern.makeEvaluate sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap
@@ -1475,6 +1478,7 @@ asInternal :: Set.Set (TermLike Concrete) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const SetValue)
+    . Set.map (retractKey >>> fromJust)
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

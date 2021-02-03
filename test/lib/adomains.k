@@ -1,4 +1,4 @@
-require "domains.k"
+require "domains.md"
 
 module ABOOL-SYNTAX
   syntax ABool ::= "Zero" | "One"
