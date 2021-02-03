@@ -159,7 +159,8 @@ test_assumeDefined =
                     [(Mock.a, Mock.a)]
                     []
         testCollection collection [] []
-    , testCase "Singleton without always defined key" $ do
+    , testCase "Singleton without always defined key is defined if\
+                \ key is defined" $ do
         let collection =
                 Collection
                     [(Mock.plain00, Mock.a)]
@@ -604,7 +605,7 @@ collectionToMapTerm = mkInternalMap . collectionToMap
 
 collectionToMap
     :: Collection VariableName
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    -> InternalMap Key (TermLike VariableName)
 collectionToMap Collection { elements, opaqueVars } =
     Mock.framedInternalMap elements mapOpaqueVars
   where
@@ -620,7 +621,7 @@ collectionToSetTerm = mkInternalSet . collectionToSet
 
 collectionToSet
     :: Collection VariableName
-    -> InternalSet (TermLike Concrete) (TermLike VariableName)
+    -> InternalSet Key (TermLike VariableName)
 collectionToSet Collection { elements, opaqueVars } =
     Mock.framedInternalSet setElements setOpaqueVars
   where

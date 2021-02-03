@@ -80,7 +80,6 @@ import Kore.Internal.NormalizedAc
     , InternalAc (..)
     , NormalizedAc (..)
     , emptyNormalizedAc
-    , getConcreteKeysOfAc
     , getSymbolicKeysOfAc
     )
 import Kore.Internal.Predicate
@@ -112,6 +111,7 @@ import Kore.Internal.TermLike
     , pattern InternalMap_
     , pattern InternalSet_
     , pattern InternalString_
+    , Key
     , pattern Mu_
     , pattern Nu_
     , TermLike
@@ -686,17 +686,13 @@ assumeDefined term =
     getDefinedElementsOfAc
         :: forall normalized
         .  AcWrapper normalized
-        => InternalAc (TermLike Concrete) normalized (TermLike variable)
+        => InternalAc Key normalized (TermLike variable)
         -> HashSet (TermLike variable)
     getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
         let symbolicKeys = getSymbolicKeysOfAc normalizedAc
-            concreteKeys =
-                getConcreteKeysOfAc normalizedAc
-                & fmap TermLike.fromConcrete
             opaqueElems = opaque (unwrapAc normalizedAc)
          in HashSet.fromList
             $ symbolicKeys
-            <> concreteKeys
             <> opaqueElems
 
 {- | Checks if a 'TermLike' is defined. It may always be defined,
@@ -720,13 +716,13 @@ isDefined sideCondition@SideCondition { definedTerms } term =
                 let subMaps =
                         generateNormalizedAcs internalMap
                         & HashSet.map TermLike.mkInternalMap
-                 in isSingleton internalMap
+                 in isSymbolicSingleton internalMap
                     || subMaps `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                         & HashSet.map TermLike.mkInternalSet
-                 in isSingleton internalSet
+                 in isSymbolicSingleton internalSet
                     || subSets `isNonEmptySubset` definedTerms
             _ -> False
 
@@ -739,25 +735,20 @@ isDefined sideCondition@SideCondition { definedTerms } term =
           all (isDefined sideCondition) children
     isFunctionalSymbol _ = False
 
-    isSingleton
+    isSymbolicSingleton
         :: AcWrapper normalized
-        => InternalAc (TermLike Concrete) normalized (TermLike variable)
+        => InternalAc Key normalized (TermLike variable)
         -> Bool
-    isSingleton InternalAc { builtinAcChild }
+    isSymbolicSingleton InternalAc { builtinAcChild }
       | numberOfElements == 1 =
           all (isDefined sideCondition) symbolicKeys
-          && all (isDefined sideCondition) concreteKeys
           && all (isDefined sideCondition) opaqueElems
       | otherwise = False
       where
         symbolicKeys = getSymbolicKeysOfAc builtinAcChild
-        concreteKeys =
-            TermLike.fromConcrete
-            <$> getConcreteKeysOfAc builtinAcChild
         opaqueElems = opaque . unwrapAc $ builtinAcChild
         numberOfElements =
             length symbolicKeys
-            + length concreteKeys
             + length opaqueElems
 
 {- | Generates the minimal set of defined collections
@@ -769,11 +760,11 @@ generateNormalizedAcs
     .  InternalVariable variable
     => Ord (Element normalized (TermLike variable))
     => Ord (Value normalized (TermLike variable))
-    => Ord (normalized (TermLike Concrete) (TermLike variable))
-    => Hashable (normalized (TermLike Concrete) (TermLike variable))
+    => Ord (normalized Key (TermLike variable))
+    => Hashable (normalized Key (TermLike variable))
     => AcWrapper normalized
-    => InternalAc (TermLike Concrete) normalized (TermLike variable)
-    -> HashSet (InternalAc (TermLike Concrete) normalized (TermLike variable))
+    => InternalAc Key normalized (TermLike variable)
+    -> HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
     let symbolicPairs = pairWiseElemsOfSameType symbolicElems
         concretePairs = pairWiseElemsOfSameType concreteElems

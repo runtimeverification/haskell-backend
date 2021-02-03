@@ -1859,10 +1859,9 @@ framedMap elements opaque =
     framedInternalMap elements opaque & Internal.mkInternalMap
 
 framedInternalMap
-    :: InternalVariable variable
-    => [(TermLike variable, TermLike variable)]
+    :: [(TermLike variable, TermLike variable)]
     -> [TermLike variable]
-    -> InternalMap (TermLike Concrete) (TermLike variable)
+    -> InternalMap Internal.Key (TermLike variable)
 framedInternalMap elements opaque =
     InternalAc
         { builtinAcSort = mapSort
@@ -1921,10 +1920,9 @@ framedSet elements opaque =
     framedInternalSet elements opaque & Internal.mkInternalSet
 
 framedInternalSet
-    :: InternalVariable variable
-    => [TermLike variable]
+    :: [TermLike variable]
     -> [TermLike variable]
-    -> InternalSet (TermLike Concrete) (TermLike variable)
+    -> InternalSet Internal.Key (TermLike variable)
 framedInternalSet elements opaque =
     InternalAc
         { builtinAcSort = setSort
