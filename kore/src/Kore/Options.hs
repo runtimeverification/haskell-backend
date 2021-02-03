@@ -53,7 +53,7 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 {- | Options for parsing and verifying a pattern.
  -}
 data PatternOptions = PatternOptions
-    { patternFileName     :: !FilePath
+    { patternFileNames    :: ![FilePath]
     -- ^ name of file containing a pattern to parse and verify
     , mainModuleName      :: !Text
     -- ^ the name of the main module in the definition
@@ -77,14 +77,16 @@ data KoreParserOptions = KoreParserOptions
 
 parsePatternOptions :: Parser PatternOptions
 parsePatternOptions = PatternOptions
-    <$> strOption
-        (  metavar "PATTERN_FILE"
-        <> long "pattern"
-        <> help "Kore pattern source file to parse [and verify]. Needs --module.")
+    <$> some parsePatternFileName
     <*> strOption
         (  metavar "MODULE"
         <> long "module"
         <> help "The name of the main module in the Kore definition")
+  where
+    parsePatternFileName = strOption
+        (  metavar "PATTERN_FILE"
+        <> long "pattern"
+        <> help "Kore pattern source file to parse [and verify]. Needs --module.")
 
 -- | Command Line Argument Parser
 parseKoreParserOptions :: Parser KoreParserOptions
@@ -92,19 +94,19 @@ parseKoreParserOptions =
     KoreParserOptions
     <$> argument str
         (  metavar "FILE"
-        <> help "Kore source file to parse [and verify]" )
+        <> help "Kore source file to parse and (optionally) validate." )
     <*> optional parsePatternOptions
     <*> enableDisableFlag "print-definition"
         True False False
-        "printing parsed definition to stdout [default disabled]"
+        "Print the parsed definition. [default: disabled]"
     <*> enableDisableFlag "print-pattern"
         True False False
-        "printing parsed pattern to stdout [default disabled]"
+        "Print the parsed pattern. [default: disabled]"
     <*> enableDisableFlag "verify"
         True False True
-        "Verify well-formedness of parsed definition [default enabled]"
+        "Verify well-formedness of parsed definition and pattern(s).\
+        \ [default: enabled]"
     <*> enableDisableFlag "appkore"
         True False False
-        (  "printing parsed definition in applicative Kore syntax "
-        ++ "[default disabled]"
-        )
+        "Print the valid definition in applicative Kore syntax.\
+        \ (Requires --verify.) [default: disabled]"

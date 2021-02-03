@@ -158,28 +158,7 @@ attemptEquation
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
-        (equation', predicate) <-
-            case argument of
-                Nothing -> do
-                    matchResult <- match left termLike & whileMatch
-                    applyMatchResult equationRenamed matchResult
-                        & whileApplyMatchResult
-                Just argument' -> do
-                    (matchPredicate, matchSubstitution) <-
-                        match left termLike
-                        & whileMatch
-                    matchResults <-
-                        applySubstitutionAndSimplify
-                            argument'
-                            antiLeft
-                            matchSubstitution
-                        & whileMatch
-                    (equation', predicate) <-
-                        applyAndSelectMatchResult matchResults
-                    return
-                        ( equation'
-                        , makeAndPredicate predicate matchPredicate
-                        )
+        (equation', predicate) <- matchAndApplyResults left argument antiLeft
         let Equation { requires } = equation'
         checkRequires sideCondition predicate requires & whileCheckRequires
         let Equation { right, ensures } = equation'
@@ -194,6 +173,29 @@ attemptEquation sideCondition termLike equation =
     match term1 term2 =
         matchIncremental term1 term2
         & MaybeT & noteT matchError
+
+    matchAndApplyResults left' argument' antiLeft'
+      | isNothing argument'
+      , isNothing antiLeft' = do
+          matchResult <- match left' termLike & whileMatch
+          applyMatchResult equationRenamed matchResult
+              & whileApplyMatchResult
+      | otherwise = do
+          (matchPredicate, matchSubstitution) <-
+              match left' termLike
+              & whileMatch
+          matchResults <-
+              applySubstitutionAndSimplify
+                  argument'
+                  antiLeft'
+                  matchSubstitution
+              & whileMatch
+          (equation', predicate) <-
+              applyAndSelectMatchResult matchResults
+          return
+              ( equation'
+              , makeAndPredicate predicate matchPredicate
+              )
 
     applyAndSelectMatchResult
         :: [MatchResult variable]
@@ -227,7 +229,7 @@ applySubstitutionAndSimplify
     :: HasCallStack
     => MonadSimplify simplifier
     => InternalVariable variable
-    => Predicate variable
+    => Maybe (Predicate variable)
     -> Maybe (Predicate variable)
     -> Map (SomeVariableName variable) (TermLike variable)
     -> ExceptT
@@ -244,7 +246,7 @@ applySubstitutionAndSimplify
                 (predicate, Substitution.toMap substitution)
         Substitution.mergePredicatesAndSubstitutions
             SideCondition.top
-            (argument : maybeToList antiLeft)
+            (maybeToList argument <> maybeToList antiLeft)
             [from @_ @(Substitution _) matchSubstitution]
             & Logic.observeAllT
             & (fmap . fmap) toMatchResult
