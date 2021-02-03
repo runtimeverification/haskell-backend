@@ -41,6 +41,10 @@ import Data.HashMap.Strict
     ( HashMap
     )
 import qualified Data.HashMap.Strict as HashMap
+import Data.HashSet
+    ( HashSet
+    )
+import qualified Data.HashSet as HashSet
 import Data.Int
 import Data.Map.Strict
     ( Map
@@ -346,6 +350,11 @@ instance Debug a => Debug (Set a) where
         (parens (precOut >= 10) . Pretty.sep)
         ["Data.Set.fromList", debug (Set.toList as)]
 
+instance Debug a => Debug (HashSet a) where
+    debugPrec as precOut =
+        (parens (precOut >= 10) . Pretty.sep)
+        ["Data.HashSet.fromList", debug (HashSet.toList as)]
+
 instance Debug a => Debug (Seq a) where
     debugPrec as precOut =
         (parens (precOut >= 10) . Pretty.sep)
@@ -619,6 +628,13 @@ instance (Debug a, Diff a) => Diff (Set a) where
       where
         wrapFromList diff' precOut =
             parens (precOut >= 10) $ "Data.Set.fromList" <+> diff' 10
+
+instance (Debug a, Diff a) => Diff (HashSet a) where
+    diffPrec as bs =
+        fmap wrapFromList $ diffPrec (HashSet.toList as) (HashSet.toList bs)
+      where
+        wrapFromList diff' precOut =
+            parens (precOut >= 10) $ "Data.HashSet.fromList" <+> diff' 10
 
 instance Diff ExitCode
 

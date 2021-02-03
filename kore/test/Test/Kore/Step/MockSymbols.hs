@@ -759,6 +759,10 @@ xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
+yMap :: MockElementVariable
+yMap = MockElementVariable (testId "yMap") mempty mapSort
+zMap :: MockElementVariable
+zMap = MockElementVariable (testId "zMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
@@ -1852,7 +1856,14 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkInternalMap InternalAc
+    framedInternalMap elements opaque & Internal.mkInternalMap
+
+framedInternalMap
+    :: [(TermLike variable, TermLike variable)]
+    -> [TermLike variable]
+    -> InternalMap Internal.Key (TermLike variable)
+framedInternalMap elements opaque =
+    InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
@@ -1906,7 +1917,14 @@ framedSet
     -> [TermLike variable]
     -> TermLike variable
 framedSet elements opaque =
-    Internal.mkInternalSet InternalAc
+    framedInternalSet elements opaque & Internal.mkInternalSet
+
+framedInternalSet
+    :: [TermLike variable]
+    -> [TermLike variable]
+    -> InternalSet Internal.Key (TermLike variable)
+framedInternalSet elements opaque =
+    InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
