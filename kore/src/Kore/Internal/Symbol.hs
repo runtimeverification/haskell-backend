@@ -35,6 +35,8 @@ module Kore.Internal.Symbol
 import Prelude.Kore
 
 import Control.DeepSeq
+    ( deepseq
+    )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import Data.Text

@@ -87,16 +87,17 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
-    , Concrete
     , pattern ElemVar_
     , pattern InternalList_
     , pattern InternalList_
+    , Key
     , Sort
     , TermLike
     , pattern Var_
     , mkApplySymbol
     , mkInternalList
     , mkSort
+    , retractKey
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -222,14 +223,13 @@ expectBuiltinList _ =
         _ -> empty
 
 expectConcreteBuiltinList
-    :: Ord variable
-    => Monad m
+    :: Monad m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Seq (TermLike Concrete))
+    -> MaybeT m (Seq Key)
 expectConcreteBuiltinList ctx =
     Monad.Trans.Maybe.mapMaybeT (fmap Monad.join)
-        . fmap (traverse Builtin.toKey)
+        . fmap (traverse retractKey)
         . expectBuiltinList ctx
 
 returnList
@@ -282,7 +282,7 @@ evalUpdate _ _ _ = Builtin.wrongArity updateKey
 evalIn :: Builtin.Function
 evalIn _ resultSort [_elem, _list] = do
     _list <- expectConcreteBuiltinList inKey _list
-    _elem <- hoistMaybe $ Builtin.toKey _elem
+    _elem <- hoistMaybe $ retractKey _elem
     _elem `elem` _list
         & Bool.asPattern resultSort
         & return

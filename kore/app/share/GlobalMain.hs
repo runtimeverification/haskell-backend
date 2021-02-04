@@ -49,26 +49,12 @@ import Data.Text
     , pack
     )
 import qualified Data.Text.IO as Text
-import Data.Time.Format
-    ( defaultTimeLocale
-    , formatTime
-    )
-import Data.Time.LocalTime
-    ( ZonedTime
-    , getZonedTime
-    )
 import Data.Version
     ( showVersion
-    )
-import Development.GitRev
-    ( gitBranch
-    , gitCommitDate
-    , gitHash
     )
 import GHC.Stack
     ( emptyCallStack
     )
-
 import Options.Applicative
     ( InfoMod
     , Parser
@@ -92,12 +78,11 @@ import Options.Applicative
     , value
     , (<**>)
     )
+import qualified Options.Applicative as Options
 import Options.Applicative.Help.Chunk
     ( Chunk (..)
     , vsepChunks
     )
-
-import qualified Options.Applicative as Options
 import qualified Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
@@ -106,6 +91,9 @@ import System.Clock
     )
 import qualified System.Environment as Env
 import qualified Text.Megaparsec as Parser
+import Text.Read
+    ( readMaybe
+    )
 
 import Kore.ASTVerifier.DefinitionVerifier
     ( sortModuleClaims
@@ -144,12 +132,11 @@ import Kore.Syntax.Definition
     , getModuleNameForError
     )
 import qualified Kore.Verified as Verified
+
 import qualified Paths_kore as MetaData
     ( version
     )
-import Text.Read
-    ( readMaybe
-    )
+import VersionInfo
 
 type Main = LoggerT IO
 
@@ -289,27 +276,22 @@ mainGlobal
     -> IO      (MainOptions options)
 mainGlobal exeName maybeEnv localOptionsParser modifiers = do
     options <- commandLineParse exeName maybeEnv localOptionsParser modifiers
-    when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
+    when (willVersion $ globalOptions options) mainVersion
     return options
 
 -- | main function to print version information
-mainVersion :: ZonedTime -> IO ()
-mainVersion time =
-      mapM_ putStrLn
-      [ "Kore version "    ++ packageVersion
-      , "Git:"
-      , "  revision:\t"    ++ $gitHash
-      , "  branch:\t"      ++ $gitBranch
-      , "  last commit:\t" ++  gitTime
-      , "Build date:\t"    ++  exeTime
-      ]
+mainVersion :: IO ()
+mainVersion =
+    mapM_ putStrLn
+        [ "Kore version "    ++ packageVersion
+        , "Git:"
+        , "  revision:\t"    ++ gitHash ++ if gitDirty then " (dirty)" else ""
+        , "  branch:\t"      ++ fromMaybe "<unknown>" gitBranch
+        , "  last commit:\t" ++ gitCommitDate
+        ]
     where
       packageVersion = showVersion MetaData.version
-      formatGit (_:mm:dd:tt:yy:tz:_) = [yy,mm,dd,tt,tz]
-      formatGit t                    = t
-      gitTime = (unwords . formatGit . words) $gitCommitDate
-      exeTime = formatTime defaultTimeLocale  "%Y %b %d %X %z" time
-
+      VersionInfo { gitHash, gitDirty, gitBranch, gitCommitDate } = $versionInfo
 
 --------------------
 -- Option Parsers --

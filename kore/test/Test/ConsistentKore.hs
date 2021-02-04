@@ -80,7 +80,8 @@ import qualified Kore.Internal.Symbol as Internal
     )
 import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Key
+    , TermLike
     , TermLikeF (..)
     , mkAnd
     , mkApplyAlias
@@ -108,6 +109,7 @@ import Kore.Internal.TermLike
     , mkSetVar
     , mkStringLiteral
     , mkTop
+    , retractKey
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( asConcrete
@@ -818,10 +820,11 @@ acGenerator
     -> (Sort -> Gen (Maybe (TermLike VariableName)))
     -> Gen (Maybe (TermLike VariableName))
 acGenerator mapSort keySort valueGenerator childGenerator = do
-    let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
+    let concreteKeyGenerator :: Gen (Maybe Key)
         concreteKeyGenerator =
-                requestConstructorLike
-                $ concreteTermGenerator keySort childGenerator
+            fmap (>>= retractKey)
+            $ requestConstructorLike
+            $ concreteTermGenerator keySort childGenerator
     maybeConcreteMap <-
         Gen.map (Range.constant 0 5)
             (   (,)
@@ -829,11 +832,10 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             <*> valueGenerator childGenerator
             )
     let concreteMapElem
-            ::  ( Maybe (TermLike Concrete)
+            ::  ( Maybe Key
                 , Maybe (Value normalized (TermLike VariableName))
                 )
-            -> Maybe
-                (TermLike Concrete, Value normalized (TermLike VariableName))
+            -> Maybe (Key, Value normalized (TermLike VariableName))
         concreteMapElem (ma, mb) = (,) <$> ma <*> mb
         concreteMap =
             Map.fromList

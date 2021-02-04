@@ -38,7 +38,6 @@ module Kore.Step.Simplification.Simplify
 
 import Prelude.Kore
 
-import Control.DeepSeq
 import qualified Control.Monad as Monad
 import Control.Monad.Morph
     ( MFunctor

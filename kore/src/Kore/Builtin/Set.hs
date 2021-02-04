@@ -89,10 +89,11 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( pattern App_
-    , Concrete
     , pattern InternalSet_
+    , Key
     , TermLike
     , mkSort
+    , retractKey
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -227,7 +228,7 @@ expectConcreteBuiltinSet
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Concrete) (SetValue (TermLike variable)))
+    -> MaybeT m (Map Key (SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
     case unwrapAc _set of
@@ -253,13 +254,13 @@ as a function result.
 returnConcreteSet
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
-    -> Map (TermLike Concrete) (SetValue (TermLike variable))
+    -> Map Key (SetValue (TermLike variable))
     -> m (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
 evalElement :: Builtin.Function
 evalElement _ resultSort [_elem] =
-    case Builtin.toKey _elem of
+    case retractKey _elem of
         Just concrete ->
             TermLike.assertConstructorLikeKeys [_elem]
             $ returnConcreteSet
@@ -278,7 +279,7 @@ evalElement _ _ _ = Builtin.wrongArity Set.elementKey
 evalIn :: Builtin.Function
 evalIn _ resultSort [_elem, _set] = do
     let setSymbolic = do
-            _elem <- hoistMaybe $ Builtin.toKey _elem
+            _elem <- hoistMaybe $ retractKey _elem
             _set' <- expectBuiltinSet Set.inKey _set
             let result = isConcreteKeyOfAc _elem _set'
             returnIfTrueAndDefined result _set
@@ -291,7 +292,7 @@ evalIn _ resultSort [_elem, _set] = do
             Monad.guard (TermLike.isFunctionalPattern _elem)
             return $ asExpandedBoolPattern False
         bothConcrete = do
-            _elem <- hoistMaybe $ Builtin.toKey _elem
+            _elem <- hoistMaybe $ retractKey _elem
             _set <- expectConcreteBuiltinSet Set.inKey _set
             Map.member _elem _set
                 & asExpandedBoolPattern
@@ -414,7 +415,7 @@ evalToList _ resultSort [_set] = do
     _set <- expectConcreteBuiltinSet Set.toListKey _set
     map dropNoValue (Map.toList _set)
         & Seq.fromList
-        & fmap TermLike.fromConcrete
+        & fmap (from @Key)
         & List.returnList resultSort
   where
     dropNoValue (a, SetValue) = a
@@ -446,7 +447,6 @@ evalList2set _ resultSort [_list] = do
             fmap (\x -> (x, SetValue)) _list
             & toList
             & Map.fromList
-            & TermLike.assertConstructorLikeKeys _list
     returnConcreteSet resultSort _set
 evalList2set _ _ _ = Builtin.wrongArity Set.list2setKey
 

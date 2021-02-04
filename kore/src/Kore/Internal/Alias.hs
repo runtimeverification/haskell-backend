@@ -14,6 +14,8 @@ module Kore.Internal.Alias
 import Prelude.Kore
 
 import Control.DeepSeq
+    ( deepseq
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

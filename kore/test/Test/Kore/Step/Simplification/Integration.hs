@@ -18,6 +18,9 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 import Test.Tasty
 
@@ -1443,6 +1446,7 @@ asInternal :: Set.Set (TermLike Concrete) -> TestTerm
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const SetValue)
+    . Set.map (retractKey >>> fromJust)
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

@@ -3,7 +3,6 @@
 module Test.Kore.With
     ( With (..)
     , Attribute (..)
-    , ConcreteElement (..)
     , OpaqueSet (..)
     , VariableElement (..)
     ) where
@@ -30,8 +29,7 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Cons
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
-    ( Concrete
-    , TermLike
+    ( Key
     )
 import qualified Kore.Sort as Kore
     ( Sort
@@ -305,31 +303,28 @@ instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
             sortDependencies `with` AST.SortReference sort
         }
 
-newtype ConcreteElement =
-    ConcreteElement {getConcreteElement :: TermLike Concrete}
-
 instance With
-    (NormalizedAc NormalizedSet (TermLike Concrete) child)
-    ConcreteElement
+    (NormalizedAc NormalizedSet Key child)
+    Key
   where
     with
         s@NormalizedAc {concreteElements}
-        (ConcreteElement c)
-      | Map.member c concreteElements = error "Duplicated key in set."
+        key
+      | Map.member key concreteElements = error "Duplicated key in set."
       | otherwise = s
         { concreteElements =
-            Map.insert c SetValue concreteElements
+            Map.insert key SetValue concreteElements
         }
 
 instance With
-    (NormalizedAc NormalizedSet (TermLike Concrete) child)
-    [ConcreteElement]
+    (NormalizedAc NormalizedSet Key child)
+    [Key]
   where
     with = foldl' with
 
 instance With
-    (NormalizedSet (TermLike Concrete) child)
-    ConcreteElement
+    (NormalizedSet Key child)
+    Key
   where
     with
         (NormalizedSet ac)
@@ -337,8 +332,8 @@ instance With
       = NormalizedSet (ac `with` value)
 
 instance With
-    (NormalizedSet (TermLike Concrete) child)
-    [ConcreteElement]
+    (NormalizedSet Key child)
+    [Key]
   where
     with = foldl' with
 
@@ -348,7 +343,7 @@ newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance Ord child
     => With
-        (NormalizedAc NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         (VariableElement child)
   where
     with
@@ -361,14 +356,14 @@ instance Ord child
 
 instance Ord child
     => With
-        (NormalizedAc NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         [VariableElement child]
   where
     with = foldl' with
 
 instance Ord child
     => With
-        (NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         (VariableElement child)
   where
     with
@@ -378,7 +373,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         [VariableElement child]
   where
     with = foldl' with
@@ -389,7 +384,7 @@ newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
 
 instance Ord child
     => With
-        (NormalizedAc NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         (OpaqueSet child)
   where
     with
@@ -400,7 +395,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (NormalizedAc NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         [OpaqueSet child]
   where
     with = foldl' with
@@ -408,7 +403,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         (OpaqueSet child)
   where
     with
@@ -418,7 +413,7 @@ instance Ord child
 
 instance Ord child
     => With
-        (NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         [OpaqueSet child]
   where
     with = foldl' with

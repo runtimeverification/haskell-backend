@@ -91,7 +91,9 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern InternalMap_
+    , Key
     , TermLike
+    , retractKey
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -108,7 +110,6 @@ import Kore.Unification.Unify
     )
 import qualified Kore.Unification.Unify as Unify
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
  -}
@@ -244,7 +245,7 @@ expectConcreteBuiltinMap
     :: MonadSimplify m
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map (TermLike Concrete) (MapValue (TermLike variable)))
+    -> MaybeT m (Map Key (MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
     case unwrapAc _map of
@@ -261,7 +262,7 @@ as a function result.
 returnConcreteMap
     :: (MonadSimplify m, InternalVariable variable)
     => Sort
-    -> Map (TermLike Concrete) (MapValue (TermLike variable))
+    -> Map Key (MapValue (TermLike variable))
     -> m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 
@@ -273,7 +274,7 @@ evalLookup _ resultSort [_map, _key] = do
                 then return (Pattern.bottomOf resultSort)
                 else empty
         bothConcrete = do
-            _key <- hoistMaybe $ Builtin.toKey _key
+            _key <- hoistMaybe $ retractKey _key
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
             (return . maybeBottom)
                 (getMapValue <$> Map.lookup _key _map)
@@ -284,7 +285,7 @@ evalLookup _ _ _ = Builtin.wrongArity Map.lookupKey
 
 evalLookupOrDefault :: Builtin.Function
 evalLookupOrDefault _ _ [_map, _key, _def] = do
-    _key <- hoistMaybe $ Builtin.toKey _key
+    _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.lookupKey _map
     Map.lookup _key _map
         & maybe _def getMapValue
@@ -295,7 +296,7 @@ evalLookupOrDefault _ _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
 evalElement _ resultSort [_key, _value] =
-    case Builtin.toKey _key of
+    case retractKey _key of
         Just concrete ->
             Map.singleton concrete (MapValue _value)
             & returnConcreteMap resultSort
@@ -327,11 +328,10 @@ evalUnit _ resultSort =
 
 evalUpdate :: Builtin.Function
 evalUpdate _ resultSort [_map, _key, value] = do
-    _key <- hoistMaybe $ Builtin.toKey _key
+    _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.updateKey _map
     Map.insert _key (MapValue value) _map
         & returnConcreteMap resultSort
-        & TermLike.assertConstructorLikeKeys (_key : Map.keys _map)
 evalUpdate _ _ _ = Builtin.wrongArity Map.updateKey
 
 evalInKeys :: Builtin.Function
@@ -355,7 +355,7 @@ evalInKeys sideCondition resultSort arguments@[_key, _map] =
     -- When the map is concrete, decide if a concrete key is present or absent.
     concreteMap = do
         _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-        _key <- hoistMaybe $ Builtin.toKey _key
+        _key <- hoistMaybe $ retractKey _key
         Map.member _key _map
             & Bool.asPattern resultSort
             & returnPattern
@@ -367,7 +367,7 @@ evalInKeys sideCondition resultSort arguments@[_key, _map] =
                 (or . catMaybes)
                 -- The key may be concrete or symbolic.
                 [ do
-                    _key <- Builtin.toKey _key
+                    _key <- retractKey _key
                     pure (isConcreteKeyOfAc _key _map)
                 , pure (isSymbolicKeyOfAc _key _map)
                 ]
@@ -397,7 +397,7 @@ evalKeysList :: Builtin.Function
 evalKeysList _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.keys_listKey _map
     Map.keys _map
-        & fmap TermLike.fromConcrete
+        & fmap (from @Key)
         & Seq.fromList
         & Builtin.List.returnList resultSort
 evalKeysList _ _ _ = Builtin.wrongArity Map.keys_listKey
@@ -411,7 +411,7 @@ evalRemove _ resultSort [_map, _key] = do
                 else empty
         bothConcrete = do
             _map <- expectConcreteBuiltinMap Map.removeKey _map
-            _key <- hoistMaybe $ Builtin.toKey _key
+            _key <- hoistMaybe $ retractKey _key
             returnConcreteMap resultSort $ Map.delete _key _map
     emptyMap <|> bothConcrete
 evalRemove _ _ _ = Builtin.wrongArity Map.removeKey
@@ -646,9 +646,7 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
       , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
       = do
         let symbolicKeys = getSymbolicKeysOfAc normalizedMap
-            concreteKeys =
-                TermLike.fromConcrete
-                <$> getConcreteKeysOfAc normalizedMap
+            concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
             mapKeys = symbolicKeys <> concreteKeys
             opaqueElements = opaque . unwrapAc $ normalizedMap
         if null mapKeys && null opaqueElements then

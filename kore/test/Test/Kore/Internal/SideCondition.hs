@@ -159,13 +159,14 @@ test_assumeDefined =
                     [(Mock.a, Mock.a)]
                     []
         testCollection collection [] []
-    , testCase "Singleton without always defined key" $ do
+    , testCase "Singleton without always defined key is defined if\
+                \ key is defined" $ do
         let collection =
                 Collection
                     [(Mock.plain00, Mock.a)]
                     []
             expectedTerms = [ Mock.plain00 ]
-            expectedCollections = [ collection ]
+            expectedCollections = []
         testCollection collection expectedTerms expectedCollections
     , testCase "Opaque is always defined" $ do
         let collection = Collection [] [0]
@@ -196,8 +197,7 @@ test_assumeDefined =
                 , Mock.f Mock.plain00
                 ]
             expectedCollections =
-                [ collection
-                , Collection
+                [ Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
                     ]
@@ -266,6 +266,12 @@ test_isDefined =
                 & HashSet.fromList & fromDefinedTerms
             actual = isDefined sideCondition term
         assertEqual "" True actual
+    , testCase "Singleton: collection is assumed to be defined" $ do
+        let collection =
+                Collection
+                    [ (Mock.plain00, Mock.a) ]
+                    []
+        testCollection collection (Just collection) True
     , testCase "Singleton: always defined key implies\
                 \ always defined collection" $ do
         let collection =
@@ -286,19 +292,22 @@ test_isDefined =
         let collection = Collection [] [0]
         testCollection collection Nothing True
     , testCase "2-element: is assumed defined, is defined" $ do
-        let definedCollection =
+        let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
                     ]
                     []
-            collection =
+        testCollection collection (Just collection) True
+    , testCase "3-element: is assumed defined, is defined" $ do
+        let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (Mock.f Mock.plain00, Mock.b)
+                    , (Mock.c, Mock.d)
                     ]
-                    []
-        testCollection collection (Just definedCollection) True
+                    [0]
+        testCollection collection (Just collection) True
     , testCase "3-element: is subcollection of assumed\
                 \ to be defined collection" $ do
         let definedCollection =
@@ -375,14 +384,14 @@ test_generateNormalizedAcs =
         let collection = Collection [] [0]
             expected = mempty
         testCollection collection expected
-    , testCase "2-element: no subcollections to generate" $ do
+    , testCase "2-element: generates itself" $ do
         let collection =
                 Collection
                     [ (mkElemVar Mock.x, Mock.a)
                     , (mkElemVar Mock.y, Mock.b)
                     ]
                     []
-            expected = mempty
+            expected = [ collection ]
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
         let collection =
@@ -596,7 +605,7 @@ collectionToMapTerm = mkInternalMap . collectionToMap
 
 collectionToMap
     :: Collection VariableName
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    -> InternalMap Key (TermLike VariableName)
 collectionToMap Collection { elements, opaqueVars } =
     Mock.framedInternalMap elements mapOpaqueVars
   where
@@ -612,7 +621,7 @@ collectionToSetTerm = mkInternalSet . collectionToSet
 
 collectionToSet
     :: Collection VariableName
-    -> InternalSet (TermLike Concrete) (TermLike VariableName)
+    -> InternalSet Key (TermLike VariableName)
 collectionToSet Collection { elements, opaqueVars } =
     Mock.framedInternalSet setElements setOpaqueVars
   where

@@ -749,7 +749,7 @@ type Value normalized variable =
     Builtin.Value normalized (TermLike variable)
 
 type NormalizedAc normalized variable =
-    Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    Builtin.NormalizedAc normalized Key (TermLike variable)
 
 matchNormalizedAc
     :: forall normalized simplifier variable
@@ -802,8 +802,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 case (headMay . Map.toList $ concrete2, headMay abstract2) of
                     (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
-                                wrapElement
-                                $ Bifunctor.first TermLike.fromConcrete concreteElement2
+                                Bifunctor.first (from @Key) concreteElement2
+                                & wrapElement
                         pushElement (Pair element1 liftedConcreteElement2)
                         let (key2, _) = concreteElement2
                             normalized2' =

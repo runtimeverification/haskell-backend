@@ -36,9 +36,6 @@ import Prelude.Kore hiding
     , traverse
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field

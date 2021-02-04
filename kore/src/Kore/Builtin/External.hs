@@ -58,6 +58,7 @@ externalize =
                 (Syntax.Pattern variable Attribute.Null)
                 (TermLike variable)
     worker termLike =
+        -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
             InternalBoolF (Const internalBool) ->
                 (toPatternF . Recursive.project) (Bool.asTermLike internalBool)
