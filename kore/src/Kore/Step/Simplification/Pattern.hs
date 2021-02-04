@@ -3,12 +3,9 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
-{-# LANGUAGE Strict #-}
-
 module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     , simplify
-    , makeEvaluate
     ) where
 
 import Prelude.Kore
@@ -29,7 +26,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
-    , top
+    , topTODO
     )
 import Kore.Internal.Substitution
     ( toMap
@@ -47,7 +44,8 @@ import Kore.Substitute
     ( substitute
     )
 
-{-| Simplifies the pattern and removes the exists quantifiers at the top.
+{-| Simplifies the pattern without a side-condition (i.e. it's top)
+and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
     :: forall variable simplifier
@@ -56,7 +54,7 @@ simplifyTopConfiguration
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplifyTopConfiguration patt = do
-    simplified <- simplify patt
+    simplified <- simplify SideCondition.topTODO patt
     return (OrPattern.map removeTopExists simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable
@@ -69,22 +67,10 @@ simplifyTopConfiguration patt = do
 simplify
     :: InternalVariable variable
     => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
-simplify = makeEvaluate SideCondition.top
-
-{- | Simplifies a 'Pattern' with a custom 'SideCondition'.
-This should only be used when it's certain that the
-'SideCondition' was not created from the 'Condition' of
-the 'Pattern'.
- -}
-makeEvaluate
-    :: InternalVariable variable
-    => MonadSimplify simplifier
     => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluate sideCondition pattern' =
+simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =

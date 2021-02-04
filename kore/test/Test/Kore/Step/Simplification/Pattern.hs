@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.Pattern
     ( test_Pattern_simplify
     , test_Pattern_simplifyAndRemoveTopExists
@@ -31,6 +29,9 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -369,7 +370,7 @@ bottomLike =
     (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
 
 simplify :: Pattern VariableName -> IO (OrPattern VariableName)
-simplify = runSimplifier Mock.env . Pattern.simplify
+simplify = runSimplifier Mock.env . Pattern.simplify SideCondition.top
 
 simplifyAndRemoveTopExists :: Pattern VariableName -> IO (OrPattern VariableName)
 simplifyAndRemoveTopExists =
