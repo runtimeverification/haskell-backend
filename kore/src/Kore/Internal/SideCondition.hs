@@ -18,10 +18,6 @@ module Kore.Internal.SideCondition
     , toRepresentation
     , replaceTerm
     , cannotReplaceTerm
-    , assumeDefined
-    , isDefined
-    , fromDefinedTerms
-    , generateNormalizedAcs
     , simplifyConjunctionByAssumption
     ) where
 
@@ -42,14 +38,9 @@ import Data.HashMap.Strict
     ( HashMap
     )
 import qualified Data.HashMap.Strict as HashMap
-import Data.HashSet
-    ( HashSet
-    )
-import qualified Data.HashSet as HashSet
 import Data.List
     ( sortOn
     )
-import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -65,22 +56,10 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.InternalList
-    ( InternalList (..)
-    )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.NormalizedAc
-    ( AcWrapper (..)
-    , InternalAc (..)
-    , NormalizedAc (..)
-    , PairWiseElements (..)
-    , emptyNormalizedAc
-    , generatePairWiseElements
-    , getSymbolicKeysOfAc
-    )
 import Kore.Internal.Predicate
     ( Predicate
     , pattern PredicateEquals
@@ -95,7 +74,6 @@ import Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
     ( isConstructor
     , isFunction
-    , isFunctional
     )
 import Kore.Internal.TermLike
     ( pattern App_
@@ -110,7 +88,6 @@ import Kore.Internal.TermLike
     , pattern InternalMap_
     , pattern InternalSet_
     , pattern InternalString_
-    , Key
     , pattern Mu_
     , pattern Nu_
     , TermLike
@@ -120,6 +97,9 @@ import Kore.Internal.Variable
     ( InternalVariable
     )
 import Kore.Syntax.Variable
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
     ( Unparse (..)
     )
@@ -149,8 +129,6 @@ data SideCondition variable =
             :: !(MultiAnd (Predicate variable))
         , replacements
             :: !(HashMap (TermLike variable) (TermLike variable))
-        , definedTerms
-            :: !(HashSet (TermLike variable))
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -162,19 +140,27 @@ instance InternalVariable variable => SQL.Column (SideCondition variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . pretty
 
+instance TopBottom (SideCondition variable) where
+    isTop sideCondition@(SideCondition _ _) =
+        isTop assumedTrue
+      where
+        SideCondition { assumedTrue } = sideCondition
+    isBottom sideCondition@(SideCondition _ _) =
+        isBottom assumedTrue
+      where
+        SideCondition { assumedTrue } = sideCondition
+
 instance Ord variable => HasFreeVariables (SideCondition variable) variable
   where
-    freeVariables sideCondition@(SideCondition _ _ _) =
+    freeVariables sideCondition@(SideCondition _ _) =
         freeVariables assumedTrue
-        <> foldMap freeVariables definedTerms
       where
-        SideCondition { assumedTrue, definedTerms } = sideCondition
+        SideCondition { assumedTrue } = sideCondition
 
 instance InternalVariable variable => Pretty (SideCondition variable) where
     pretty
         SideCondition
             { assumedTrue
-            , definedTerms
             , replacements
             }
       =
@@ -184,8 +170,6 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
             , "Term replacements:"
             ]
             <> HashMap.foldlWithKey' (acc unparse) [] replacements
-            <> [ "Assumed to be defined:" ]
-            <> (unparse <$> HashSet.toList definedTerms)
       where
         acc showFunc result key value =
             result <>
@@ -197,7 +181,7 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable))
   where
-    from condition@(SideCondition _ _ _) = assumedTrue condition
+    from condition@(SideCondition _ _) = assumedTrue condition
     {-# INLINE from #-}
 
 instance InternalVariable variable =>
@@ -217,7 +201,6 @@ instance InternalVariable variable =>
          in SideCondition
             { assumedTrue
             , replacements
-            , definedTerms = mempty
             }
     {-# INLINE from #-}
 
@@ -251,7 +234,6 @@ top :: InternalVariable variable => SideCondition variable
 top =
     SideCondition
         { assumedTrue = MultiAnd.top
-        , definedTerms = mempty
         , replacements = mempty
         }
 
@@ -286,11 +268,10 @@ andCondition
             <> predicateReplacementsAsTerms
      in SideCondition
         { assumedTrue
-        , definedTerms
         , replacements
         }
   where
-    SideCondition { assumedTrue = oldCondition, definedTerms } = sideCondition
+    SideCondition { assumedTrue = oldCondition } = sideCondition
 
 assumeTrueCondition
     :: InternalVariable variable
@@ -308,19 +289,10 @@ toPredicate
     :: InternalVariable variable
     => SideCondition variable
     -> Predicate variable
-toPredicate condition@(SideCondition _ _ _) =
-    Predicate.makeAndPredicate
-        assumedTruePredicate
-        definedPredicate
+toPredicate condition@(SideCondition _ _) =
+    MultiAnd.toPredicate assumedTrue
   where
-    SideCondition { assumedTrue, definedTerms } = condition
-    assumedTruePredicate = MultiAnd.toPredicate assumedTrue
-    definedPredicate =
-        definedTerms
-            & HashSet.toList
-            & fmap Predicate.makeCeilPredicate
-            & MultiAnd.make
-            & MultiAnd.toPredicate
+    SideCondition { assumedTrue } = condition
 
 fromPredicate
     :: InternalVariable variable
@@ -333,22 +305,18 @@ mapVariables
     => AdjSomeVariableName (variable1 -> variable2)
     -> SideCondition variable1
     -> SideCondition variable2
-mapVariables adj condition@(SideCondition _ _ _) =
+mapVariables adj condition@(SideCondition _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
         replacements' =
             mapKeysAndValues (TermLike.mapVariables adj) replacements
-        definedTerms' =
-            HashSet.map (TermLike.mapVariables adj) definedTerms
      in SideCondition
             { assumedTrue = assumedTrue'
             , replacements = replacements'
-            , definedTerms = definedTerms'
             }
   where
     SideCondition
         { assumedTrue
-        , definedTerms
         , replacements
         } = condition
 
@@ -369,13 +337,6 @@ fromCondition
     => Condition variable
     -> SideCondition variable
 fromCondition = fromPredicate . Condition.toPredicate
-
-fromDefinedTerms
-    :: InternalVariable variable
-    => HashSet (TermLike variable)
-    -> SideCondition variable
-fromDefinedTerms definedTerms =
-    top { definedTerms }
 
 toRepresentation
     :: InternalVariable variable
@@ -613,232 +574,3 @@ retractLocalFunction =
             InternalSet_ _ -> Just (Pair term1 term2)
             _          -> Nothing
     go _ _ = Nothing
-
-{- | Assumes a 'TermLike' to be defined. If not always defined,
-it will be stored in the `SideCondition` together with any subterms
-resulting from the implication that the original term is defined.
-
-For maps and sets: this will generate and store a minimal set
-of sub-collections from which the definedness of any sub-collection
-can be inferred.
--}
-assumeDefined
-    :: forall variable
-    .  InternalVariable variable
-    => TermLike variable
-    -> SideCondition variable
-assumeDefined term =
-    assumeDefinedWorker term
-    & fromDefinedTerms
-  where
-    assumeDefinedWorker
-        :: TermLike variable
-        -> HashSet (TermLike variable)
-    assumeDefinedWorker term' =
-        case term' of
-            TermLike.And_ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.App_ symbol children ->
-                checkFunctional symbol term'
-                <> foldMap assumeDefinedWorker children
-            TermLike.Ceil_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.InternalList_ internalList ->
-                asSet term'
-                <> foldMap assumeDefinedWorker (internalListChild internalList)
-            TermLike.InternalMap_ internalMap ->
-                let definedElems =
-                        getDefinedElementsOfAc internalMap
-                    definedMaps =
-                        generateNormalizedAcs internalMap
-                        & HashSet.map TermLike.mkInternalMap
-                 in foldMap assumeDefinedWorker definedElems
-                    <> definedMaps
-            TermLike.InternalSet_ internalSet ->
-                let definedElems =
-                        getDefinedElementsOfAc internalSet
-                    definedSets =
-                        generateNormalizedAcs internalSet
-                        & HashSet.map TermLike.mkInternalSet
-                 in foldMap assumeDefinedWorker definedElems
-                    <> definedSets
-            TermLike.Forall_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.In_ _ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ ->
-                error
-                    "Internal error: cannot assume\
-                    \ a \\bottom pattern is defined."
-            _ -> asSet term'
-    asSet newTerm
-      | TermLike.isDefinedPattern newTerm = mempty
-      | otherwise = HashSet.singleton newTerm
-    checkFunctional symbol newTerm
-      | isFunctional symbol = mempty
-      | otherwise = asSet newTerm
-
-    getDefinedElementsOfAc
-        :: forall normalized
-        .  AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
-        -> HashSet (TermLike variable)
-    getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
-        let symbolicKeys = getSymbolicKeysOfAc normalizedAc
-            opaqueElems = opaque (unwrapAc normalizedAc)
-         in HashSet.fromList
-            $ symbolicKeys
-            <> opaqueElems
-
-{- | Checks if a 'TermLike' is defined. It may always be defined,
-or be defined in the context of the `SideCondition`.
--}
-isDefined
-    :: forall variable
-    .  InternalVariable variable
-    => SideCondition variable
-    -> TermLike variable
-    -> Bool
-isDefined sideCondition@SideCondition { definedTerms } term =
-    TermLike.isDefinedPattern term
-    || isFunctionalSymbol term
-    || HashSet.member term definedTerms
-    || isDefinedAc
-  where
-    isDefinedAc =
-        case term of
-            TermLike.InternalMap_ internalMap ->
-                let subMaps =
-                        generateNormalizedAcs internalMap
-                        & HashSet.map TermLike.mkInternalMap
-                 in isSymbolicSingleton internalMap
-                    || subMaps `isNonEmptySubset` definedTerms
-            TermLike.InternalSet_ internalSet ->
-                let subSets =
-                        generateNormalizedAcs internalSet
-                        & HashSet.map TermLike.mkInternalSet
-                 in isSymbolicSingleton internalSet
-                    || subSets `isNonEmptySubset` definedTerms
-            _ -> False
-
-    isNonEmptySubset subset set
-      | null subset = False
-      | otherwise = all (`HashSet.member` set) subset
-
-    isFunctionalSymbol (App_ symbol children)
-      | isFunctional symbol =
-          all (isDefined sideCondition) children
-    isFunctionalSymbol _ = False
-
-    isSymbolicSingleton
-        :: AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
-        -> Bool
-    isSymbolicSingleton InternalAc { builtinAcChild }
-      | numberOfElements == 1 =
-          all (isDefined sideCondition) symbolicKeys
-          && all (isDefined sideCondition) opaqueElems
-      | otherwise = False
-      where
-        symbolicKeys = getSymbolicKeysOfAc builtinAcChild
-        opaqueElems = opaque . unwrapAc $ builtinAcChild
-        numberOfElements =
-            length symbolicKeys
-            + length opaqueElems
-
-{- | Generates the minimal set of defined collections
-from which definedness of any sub collection can be inferred.
-The resulting set will not contain the input collection itself.
--}
-generateNormalizedAcs
-    :: forall normalized variable
-    .  InternalVariable variable
-    => Ord (Element normalized (TermLike variable))
-    => Ord (Value normalized (TermLike variable))
-    => Ord (normalized Key (TermLike variable))
-    => Hashable (normalized Key (TermLike variable))
-    => AcWrapper normalized
-    => InternalAc Key normalized (TermLike variable)
-    -> HashSet (InternalAc Key normalized (TermLike variable))
-generateNormalizedAcs internalAc =
-    [ symbolicToAc <$> symbolicPairs
-    , concreteToAc <$> concretePairs
-    , opaqueToAc <$> opaquePairs
-    , symbolicConcreteToAc <$> symbolicConcretePairs
-    , symbolicOpaqueToAc <$> symbolicOpaquePairs
-    , concreteOpaqueToAc <$> concreteOpaquePairs
-    ]
-    & concat & HashSet.fromList
-  where
-    InternalAc
-        { builtinAcChild
-        , builtinAcSort
-        , builtinAcUnit
-        , builtinAcConcat
-        , builtinAcElement
-        } = internalAc
-    PairWiseElements
-        { symbolicPairs
-        , concretePairs
-        , opaquePairs
-        , symbolicConcretePairs
-        , symbolicOpaquePairs
-        , concreteOpaquePairs
-        } = generatePairWiseElements builtinAcChild
-    symbolicToAc (symbolic1, symbolic2) =
-        let symbolicAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic1, symbolic2]
-                    }
-                & wrapAc
-         in toInternalAc symbolicAc
-    concreteToAc (concrete1, concrete2) =
-        let concreteAc =
-                emptyNormalizedAc
-                    { concreteElements = [concrete1, concrete2] & Map.fromList
-                    }
-                & wrapAc
-         in toInternalAc concreteAc
-    opaqueToAc (opaque1, opaque2) =
-        let opaqueAc =
-                emptyNormalizedAc
-                    { opaque = [opaque1, opaque2]
-                    }
-                & wrapAc
-         in toInternalAc opaqueAc
-    symbolicConcreteToAc (symbolic, concrete) =
-        let symbolicConcreteAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic]
-                    , concreteElements = [concrete] & Map.fromList
-                    }
-                & wrapAc
-         in toInternalAc symbolicConcreteAc
-    symbolicOpaqueToAc (symbolic, opaque') =
-        let symbolicOpaqueAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic]
-                    , opaque = [opaque']
-                    }
-                & wrapAc
-         in toInternalAc symbolicOpaqueAc
-    concreteOpaqueToAc (concrete, opaque') =
-        let concreteOpaqueAc =
-                emptyNormalizedAc
-                    { concreteElements = [concrete] & Map.fromList
-                    , opaque = [opaque']
-                    }
-                & wrapAc
-         in toInternalAc concreteOpaqueAc
-    toInternalAc normalized =
-         InternalAc
-             { builtinAcChild = normalized
-             , builtinAcUnit
-             , builtinAcElement
-             , builtinAcSort
-             , builtinAcConcat
-             }
