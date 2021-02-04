@@ -86,6 +86,7 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.SourceLocation
 import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
@@ -122,6 +123,8 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
+    , sourceLocation :: !SourceLocation
+    -- ^ Source and location in the original file.
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -148,6 +151,7 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
+        >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -165,6 +169,7 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
+            , from . sourceLocation
             ]
 
 type StepperAttributes = Symbol
@@ -172,19 +177,20 @@ type StepperAttributes = Symbol
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
-        { function      = def
-        , functional    = def
-        , constructor   = def
-        , injective     = def
-        , sortInjection = def
-        , anywhere      = def
-        , hook          = def
-        , smtlib        = def
-        , smthook       = def
-        , memo          = def
-        , klabel        = def
-        , symbolKywd    = def
-        , noEvaluators  = def
+        { function       = def
+        , functional     = def
+        , constructor    = def
+        , injective      = def
+        , sortInjection  = def
+        , anywhere       = def
+        , hook           = def
+        , smtlib         = def
+        , smthook        = def
+        , memo           = def
+        , klabel         = def
+        , symbolKywd     = def
+        , noEvaluators   = def
+        , sourceLocation = def
         }
 
 -- | See also: 'defaultSymbolAttributes'
