@@ -7,9 +7,9 @@ module TEST
 
   syntax A ::= a(Map) | "b"
 
-  rule X:KItem in_keys((Y:KItem |-> _:KItem M:Map) #as _:Map)
+  rule [xyzzy]: X:KItem in_keys((Y:KItem |-> _:KItem M:Map))
         => X ==K Y orBool X in_keys(M)
-    [simplification, label(xyzzy)]
+    [simplification]
 
   rule a(M:Map) => b
     requires 3 in_keys(M)
