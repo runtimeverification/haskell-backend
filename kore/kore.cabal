@@ -183,6 +183,7 @@ library
       Kore.Internal.InternalMap
       Kore.Internal.InternalSet
       Kore.Internal.InternalString
+      Kore.Internal.Key
       Kore.Internal.MultiAnd
       Kore.Internal.MultiOr
       Kore.Internal.NormalizedAc
@@ -477,6 +478,7 @@ executable kore-exec
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/exec
@@ -557,6 +559,7 @@ executable kore-format
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/format
@@ -637,6 +640,7 @@ executable kore-parser
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/parser
@@ -791,6 +795,7 @@ executable kore-repl
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/repl
@@ -959,6 +964,7 @@ test-suite kore-test
       Test.Kore.IndexedModule.SortGraph
       Test.Kore.Internal.ApplicationSorts
       Test.Kore.Internal.Condition
+      Test.Kore.Internal.Key
       Test.Kore.Internal.MultiAnd
       Test.Kore.Internal.OrCondition
       Test.Kore.Internal.OrPattern

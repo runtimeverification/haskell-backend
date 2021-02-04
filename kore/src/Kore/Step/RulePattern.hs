@@ -37,9 +37,6 @@ module Kore.Step.RulePattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Lens
     ( Lens'
     )

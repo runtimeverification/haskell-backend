@@ -22,9 +22,6 @@ module Kore.Step.Implication
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Error.Util
     ( hush
     )

@@ -12,7 +12,7 @@ import qualified Kore.Step.Function.Memo as Memo
 
 module Kore.Step.Function.Memo
     ( Self (..)
-    , Key
+    , CacheKey
     , Cache
     , forgetful
     , simple
@@ -61,10 +61,10 @@ forgetful :: Applicative monad => Self monad
 forgetful = Self { recall = \_ -> pure Nothing, record = \_ _ -> pure () }
 
 -- | The concrete function pattern used as a @Key@ into the memoization cache.
-type Key = Application Symbol (TermLike Concrete)
+type CacheKey = Application Symbol (TermLike Concrete)
 
 -- | The memoization @Cache@.
-type Cache = HashMap Key (TermLike Concrete)
+type Cache = HashMap CacheKey (TermLike Concrete)
 
 {- | The simple memoizer.
 

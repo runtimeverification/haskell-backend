@@ -25,7 +25,6 @@ import Prelude.Kore hiding
     ( toList
     )
 
-import Control.DeepSeq
 import Data.Functor.Const
 import Data.Map.Strict
     ( Map

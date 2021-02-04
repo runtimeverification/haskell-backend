@@ -42,6 +42,8 @@ module Prelude.Kore
     , CofreeF (..)
     -- * Hashable
     , Hashable (..)
+    -- * NFData
+    , NFData (..)
     -- * Monad
     , Monad (..)
     , MonadPlus (..)
@@ -86,6 +88,9 @@ import Control.Comonad
 import Control.Comonad.Trans.Cofree
     ( Cofree
     , CofreeF (..)
+    )
+import Control.DeepSeq
+    ( NFData (..)
     )
 import Control.Error
     ( either

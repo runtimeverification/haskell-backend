@@ -34,9 +34,6 @@ module Kore.Rewriting.RewritingVariable
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP

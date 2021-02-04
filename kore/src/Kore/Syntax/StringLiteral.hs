@@ -10,9 +10,6 @@ module Kore.Syntax.StringLiteral
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Data.Functor.Const
 import Data.Text
     ( Text

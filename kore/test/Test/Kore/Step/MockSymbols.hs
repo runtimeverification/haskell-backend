@@ -84,6 +84,7 @@ import Kore.Internal.Symbol hiding
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , retractKey
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
@@ -758,6 +759,10 @@ xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
+yMap :: MockElementVariable
+yMap = MockElementVariable (testId "yMap") mempty mapSort
+zMap :: MockElementVariable
+zMap = MockElementVariable (testId "zMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
@@ -1851,7 +1856,14 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkInternalMap InternalAc
+    framedInternalMap elements opaque & Internal.mkInternalMap
+
+framedInternalMap
+    :: [(TermLike variable, TermLike variable)]
+    -> [TermLike variable]
+    -> InternalMap Internal.Key (TermLike variable)
+framedInternalMap elements opaque =
+    InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
@@ -1864,7 +1876,7 @@ framedMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Builtin.toKey key <*> pure value
+        (,) <$> retractKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
@@ -1905,7 +1917,14 @@ framedSet
     -> [TermLike variable]
     -> TermLike variable
 framedSet elements opaque =
-    Internal.mkInternalSet InternalAc
+    framedInternalSet elements opaque & Internal.mkInternalSet
+
+framedInternalSet
+    :: [TermLike variable]
+    -> [TermLike variable]
+    -> InternalSet Internal.Key (TermLike variable)
+framedInternalSet elements opaque =
+    InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = unitSetSymbol
         , builtinAcElement = elementSetSymbol
@@ -1920,7 +1939,7 @@ framedSet elements opaque =
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure SetValue
+            (,) <$> retractKey key <*> pure SetValue
         & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
