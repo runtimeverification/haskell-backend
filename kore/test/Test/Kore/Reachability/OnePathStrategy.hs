@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Reachability.OnePathStrategy
     ( test_onePathStrategy
     ) where
@@ -759,11 +757,11 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             ((fmap . fmap) OnePath _actual)
             _actualReach
-    , testCase "RHS simplification, checkImplication detects \\bottom RHS" $ do
+    , testCase "Goal stuck after remove destination" $ do
         -- Goal: X && X = a => X && X != a
         -- Coinductive axiom: -
         -- Normal axiom: -
-        -- Expected: stuck
+        -- Expected: stuck, since the terms unify but the conditions do not
         let left =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
@@ -786,9 +784,8 @@ test_onePathStrategy =
                             Mock.a
                         )
                     )
-            right' = Pattern.bottom
             original = makeOnePathGoalFromPatterns left right
-            expect = makeOnePathGoalFromPatterns left' right'
+            expect = makeOnePathGoalFromPatterns left' right
         [ _actual ] <- runOnePathSteps
             Unlimited
             (Limit 1)

@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Step.Simplification.IntegrationProperty
     ( test_simplifiesToSimplified
     , test_regressionGeneratedTerms
@@ -117,6 +115,7 @@ test_regressionGeneratedTerms =
                     )
         simplified <-
             Pattern.simplify
+                SideCondition.top
                 (Pattern.fromTermLike term)
             & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
@@ -136,7 +135,7 @@ evaluateWithAxioms
     -> Pattern VariableName
     -> SMT.NoSMT (OrPattern VariableName)
 evaluateWithAxioms axioms =
-    Simplification.runSimplifier env . Pattern.simplify
+    Simplification.runSimplifier env . Pattern.simplify SideCondition.top
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap
