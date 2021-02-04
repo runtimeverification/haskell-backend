@@ -81,6 +81,7 @@ import Kore.Internal.NormalizedAc
     , PairWiseElements (..)
     , emptyNormalizedAc
     , generatePairWiseElements
+    , getConcreteKeysOfAc
     , getSymbolicKeysOfAc
     )
 import Kore.Internal.Predicate
@@ -744,9 +745,11 @@ isDefined sideCondition@SideCondition { definedTerms } term =
       | otherwise = False
       where
         symbolicKeys = getSymbolicKeysOfAc builtinAcChild
+        concreteKeys = getConcreteKeysOfAc builtinAcChild
         opaqueElems = opaque . unwrapAc $ builtinAcChild
         numberOfElements =
             length symbolicKeys
+            + length concreteKeys
             + length opaqueElems
 
 {- | Generates the minimal set of defined collections

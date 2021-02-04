@@ -344,6 +344,18 @@ test_isDefined =
                     ]
                     []
         testCollection collection (Just definedCollection) False
+    , testCase "1-element concrete, opaque: is not always defined" $ do
+        let collection =
+                Collection
+                    [ (Mock.a, Mock.constr10 Mock.a) ]
+                    [0]
+        testCollection collection Nothing False
+    , testCase "1-element symbolic, opaque: is not always defined" $ do
+        let collection =
+                Collection
+                    [ (mkElemVar Mock.x, Mock.constr10 Mock.a) ]
+                    [0]
+        testCollection collection Nothing False
     ]
   where
     testCollection input maybeAssumeDefined expectedIsDefined = do
