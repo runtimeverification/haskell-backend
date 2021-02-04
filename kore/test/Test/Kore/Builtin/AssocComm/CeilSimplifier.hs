@@ -10,6 +10,7 @@ module Test.Kore.Builtin.AssocComm.CeilSimplifier
     ) where
 
 import Prelude.Kore
+import qualified Pretty
 
 import Hedgehog hiding
     ( test
@@ -117,7 +118,7 @@ hprop_Builtin_Set :: Property
                 original = Mock.framedMap [(cKey1, sVal1)] []
                 expect = [makeCeilPredicate sVal1]
             in
-                test "values with concrete keys are defined" original expect
+                test "2TESTING values with concrete keys are defined" original expect
         ,
             let
                 original = Mock.framedMap [(sKey2, sVal2)] []
@@ -277,6 +278,11 @@ hprop_Builtin_Set :: Property
     test testName original expect =
         testCase testName $ do
             actual <- makeEvaluate original
+            traceM
+                $ "\nActual:\n"
+                <> unlines (show . Pretty.pretty <$> toList actual)
+                <> "\nExpected:\n"
+                <> unlines (show . Pretty.pretty <$> expect)
             assertEqual "" (MultiAnd.make expect) actual
 
 propertyBuiltinAssocComm

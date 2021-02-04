@@ -82,7 +82,9 @@ import Kore.Internal.NormalizedAc
     , emptyNormalizedAc
     , generatePairWiseElements
     , getConcreteKeysOfAc
+    , getConcreteValuesOfAc
     , getSymbolicKeysOfAc
+    , getSymbolicValuesOfAc
     )
 import Kore.Internal.Predicate
     ( Predicate
@@ -685,15 +687,22 @@ assumeDefined term =
     getDefinedElementsOfAc
         :: forall normalized
         .  AcWrapper normalized
+        => Foldable (Value normalized)
         => InternalAc Key normalized (TermLike variable)
         -> HashSet (TermLike variable)
     getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
         let symbolicKeys = getSymbolicKeysOfAc normalizedAc
+            values =
+                getSymbolicValuesOfAc normalizedAc
+                <> getConcreteValuesOfAc normalizedAc
+                & foldMap toList
             opaqueElems = opaque (unwrapAc normalizedAc)
          in HashSet.fromList
             $ symbolicKeys
             <> opaqueElems
+            <> values
 
+-- TODO: check values as well
 {- | Checks if a 'TermLike' is defined. It may always be defined,
 or be defined in the context of the `SideCondition`.
 -}

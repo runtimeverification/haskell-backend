@@ -210,8 +210,8 @@ newDefinedCeilSimplifier
     -> CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
 newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
     if SideCondition.isDefined sideCondition (ceilChild input)
-        then return OrCondition.top
-        else empty
+        then trace "is defined" $ return OrCondition.top
+        else trace "is not defined" empty
 
 newApplicationCeilSimplifier
     :: MonadReader (SideCondition variable) simplifier
