@@ -57,7 +57,7 @@ import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplify
+    ( makeEvaluate
     )
 import Kore.Step.Simplification.Simplify
 
@@ -1405,7 +1405,7 @@ evaluateConditionalWithAxioms
     -> TestPattern
     -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
-    runSimplifierSMT env . Pattern.simplify sideCondition
+    runSimplifierSMT env . Pattern.makeEvaluate sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap
