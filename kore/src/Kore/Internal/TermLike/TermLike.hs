@@ -9,7 +9,6 @@ License     : NCSA
 
 module Kore.Internal.TermLike.TermLike
     ( Evaluated (..)
-    , Defined (..)
     , TermLike (..)
     , TermLikeF (..)
     , retractKey
@@ -147,34 +146,6 @@ instance Synthetic syn Evaluated where
 
 instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
     synthetic = const Pattern.fullySimplified
-    {-# INLINE synthetic #-}
-
-{- | @Defined@ wraps patterns which are defined.
-
-This avoids re-checking the definedness of terms which are already
-known to be defined.
-
- -}
-newtype Defined child = Defined { getDefined :: child }
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Unparse child => Unparse (Defined child) where
-    unparse defined =
-        Pretty.vsep ["/* defined: */", Unparser.unparseGeneric defined]
-    unparse2 defined =
-        Pretty.vsep ["/* defined: */", Unparser.unparse2Generic defined]
-
-instance Synthetic syn Defined where
-    synthetic = getDefined
-    {-# INLINE synthetic #-}
-
-instance {-# OVERLAPS #-} Synthetic Pattern.Defined Defined where
-    synthetic = const (Pattern.Defined True)
     {-# INLINE synthetic #-}
 
 {- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.

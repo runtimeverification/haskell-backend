@@ -11,7 +11,6 @@ module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
     , Evaluated (..)
-    , Defined (..)
     , extractAttributes
     , isSimplified
     , Pattern.isConstructorLike
