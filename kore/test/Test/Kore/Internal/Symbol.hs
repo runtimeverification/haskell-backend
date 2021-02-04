@@ -8,8 +8,8 @@ import qualified Hedgehog.Gen as Gen
 
 import qualified Data.Default as Default
 
-import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.SourceLocation
+import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
 import Kore.Sort
