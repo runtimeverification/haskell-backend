@@ -83,12 +83,14 @@ simplifyEquation
     -> simplifier (MultiAnd (Equation variable))
 simplifyEquation equation =
     do
-        simplifiedResults <-
-            Logic.observeT $ Simplifier.simplifyCondition SideCondition.top (fromPredicate argument')
-        unless
-            ((isTop . predicate) simplifiedResults)
+        simplifiedCond <- lift $
+            Simplifier.simplifyCondition
+                SideCondition.top
+                (fromPredicate argument')
+        Monad.unless
+            ((isTop . predicate) simplifiedCond)
             (throwE equation)
-        let Conditional { substitution, predicate } = simplifiedResults
+        let Conditional { substitution, predicate } = simplifiedCond
         Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst left
