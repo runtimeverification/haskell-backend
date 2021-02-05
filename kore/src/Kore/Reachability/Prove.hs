@@ -436,7 +436,7 @@ withWarnings rule prim claimState = do
                 ClaimState.Claimed claim -> warnStuckClaimStateTermsUnifiable claim
                 _ -> return ()
         _ -> return ()
-        return claimState'
+    return claimState'
 
 profTransitionRule
     :: forall m
