@@ -263,9 +263,9 @@ evaluateT
 evaluateT = lift . evaluate
 
 evaluateToList
-    :: InternalVariable variable
-    => TermLike variable
-    -> NoSMT [Pattern variable]
+    :: InternalVariable RewritingVariableName
+    => TermLike RewritingVariableName
+    -> NoSMT [Pattern RewritingVariableName]
 evaluateToList =
     fmap toList
     . runSimplifier testEnv
