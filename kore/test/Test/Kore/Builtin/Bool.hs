@@ -37,8 +37,11 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.Data
     ( SimplifierT
     , runSimplifier
