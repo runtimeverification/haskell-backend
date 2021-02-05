@@ -8,8 +8,6 @@ Portability : portable
 
 Expose concrete execution as a library
 -}
-{-# LANGUAGE Strict #-}
-
 module Kore.Exec
     ( exec
     , mergeAllRules
@@ -94,7 +92,8 @@ import Kore.Internal.Predicate
     , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
+    ( top
+    , topTODO
     )
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
@@ -225,7 +224,7 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
         finals <-
             getFinalConfigsOf $ do
                 initialConfig <-
-                    Pattern.simplify
+                    Pattern.simplify SideCondition.top
                         (Pattern.fromTermLike initialTerm)
                     >>= Logic.scatter
                 let
@@ -373,7 +372,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
-            Pattern.simplify
+            Pattern.simplify SideCondition.top
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
