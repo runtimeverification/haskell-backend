@@ -430,20 +430,13 @@ withWarnings
 withWarnings rule prim claimState = do
     claimState' <- rule prim claimState
     case prim of
-        Prim.CheckImplication ->
-            case ClaimState.retractRewritable claimState of
-                Just claim -> do
-                    case claimState' of
-                        ClaimState.Stuck _ -> case claimState of
-                            ClaimState.Remaining _ -> do
-                                warnStuckClaimStateTermsNotUnifiable claim
-                                return claimState'
-                            _ -> do
-                                warnStuckClaimStateTermsUnifiable claim
-                                return claimState'
-                        _ -> return claimState'
-                Nothing -> return claimState'
-        _ -> return claimState'
+        Prim.CheckImplication | ClaimState.Stuck _ <- claimState' ->
+            case claimState of
+                ClaimState.Remaining claim -> warnStuckClaimStateTermsNotUnifiable claim
+                ClaimState.Claimed claim -> warnStuckClaimStateTermsUnifiable claim
+                _ -> return ()
+        _ -> return ()
+        return claimState'
 
 profTransitionRule
     :: forall m
