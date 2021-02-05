@@ -121,7 +121,7 @@ data Symbol =
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
     , sourceLocation :: !SourceLocation
-    -- ^ Source and location in the original file.
+    -- ^ Location in the original (source) file.
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
