@@ -104,9 +104,9 @@ test_simplify_sideConditionReplacements =
     and' = makeAndPredicate
 
 simplifyWithSideCondition
-    :: SideCondition VariableName
-    -> TermLike VariableName
-    -> IO (OrPattern VariableName)
+    :: SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 simplifyWithSideCondition sideCondition =
     runSimplifier Mock.env . TermLike.simplify sideCondition
 
