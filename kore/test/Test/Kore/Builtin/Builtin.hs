@@ -263,8 +263,7 @@ evaluateT
 evaluateT = lift . evaluate
 
 evaluateToList
-    :: InternalVariable RewritingVariableName
-    => TermLike RewritingVariableName
+    :: TermLike RewritingVariableName
     -> NoSMT [Pattern RewritingVariableName]
 evaluateToList =
     fmap toList

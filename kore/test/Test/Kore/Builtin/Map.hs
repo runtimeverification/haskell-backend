@@ -1593,11 +1593,11 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedMap
-    :: [(TermLike VariableName, TermLike VariableName)]
+    :: [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
     -- ^ (abstract or concrete) elements
-    -> [TermLike VariableName]
+    -> [TermLike RewritingVariableName]
     -- ^ opaque terms
-    -> NormalizedMap Key (TermLike VariableName)
+    -> NormalizedMap Key (TermLike RewritingVariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
         { elementsWithVariables = MapElement <$> elements

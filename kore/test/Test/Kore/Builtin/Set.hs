@@ -1833,7 +1833,9 @@ test_unify_concat_xSet_unit_unit_vs_unit =
         $ "concat(xSet:Set, unit()) ~ unit()"
     ]
   where
-    xSet = mkElementVariable "xSet" setSort
+    xSet =
+        mkElementVariable "xSet" setSort
+        & mapElementVariable (pure mkConfigVariable)
     internalUnit = asInternal Set.empty
 
 
@@ -2065,8 +2067,8 @@ unifiesWithMulti pat1 pat2 expectedResults = do
 
 unifiedBy
     :: HasCallStack
-    => (TermLike VariableName, TermLike VariableName)
-    -> [(SomeVariable VariableName, TermLike VariableName)]
+    => (TermLike RewritingVariableName, TermLike RewritingVariableName)
+    -> [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)]
     -> TestName
     -> TestTree
 unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
@@ -2103,11 +2105,11 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedSet
-    :: [TermLike VariableName]
+    :: [TermLike RewritingVariableName]
     -- ^ (abstract or concrete) elements
-    -> [TermLike VariableName]
+    -> [TermLike RewritingVariableName]
     -- ^ opaque terms
-    -> NormalizedSet Key (TermLike VariableName)
+    -> NormalizedSet Key (TermLike RewritingVariableName)
 normalizedSet elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
         { elementsWithVariables = SetElement <$> elements

@@ -13,7 +13,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
 
 import Test.Kore.Equation.Common
-    ( functionAxiomUnification'_
+    ( functionAxiomUnification_
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -33,7 +33,7 @@ test_simplifyEquation =
         -- the argument is then removed.
         [ testCase "Variable gets substituted in simplified equation" $ do
             let equation =
-                    functionAxiomUnification'_
+                    functionAxiomUnification_
                         Mock.fSymbol
                         [a]
                         a
@@ -45,7 +45,7 @@ test_simplifyEquation =
             assertEqual "" expected actual
         , testCase "Gets split into two equations" $ do
             let equation =
-                    functionAxiomUnification'_
+                    functionAxiomUnification_
                             Mock.fSymbol
                             [mkOr a b]
                             c
@@ -60,7 +60,7 @@ test_simplifyEquation =
                     \ predicates from the simplified patterns\
                     \ is not \\top" $ do
             let equation =
-                    functionAxiomUnification'_
+                    functionAxiomUnification_
                             Mock.fMapSymbol
                             [mkOr symbolicMap xMap]
                             c
@@ -78,14 +78,14 @@ b = Mock.b
 c = Mock.c
 f :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.f
-xMap :: TermLike VariableName
-xMap = mkElemVar Mock.xMap
-symbolicMap :: TermLike VariableName
+xMap :: TermLike RewritingVariableName
+xMap = mkElemVar Mock.xMapConfig
+symbolicMap :: TermLike RewritingVariableName
 symbolicMap =
     Mock.concatMap
         (Mock.elementMap
-            (mkElemVar Mock.x)
-            (mkElemVar Mock.y)
+            (mkElemVar Mock.xConfig)
+            (mkElemVar Mock.yConfig)
         )
         xMap
 

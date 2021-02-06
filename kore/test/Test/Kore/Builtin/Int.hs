@@ -546,7 +546,6 @@ test_reflexivity_symbolic :: TestTree
 test_reflexivity_symbolic =
     testCaseWithoutSMT "evaluate symbolic reflexivity for equality" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
-                & mapElementVariable (pure mkConfigVariable)
             expect = Test.Bool.asPattern True
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, x]
         assertEqual' "" expect actual
@@ -555,15 +554,15 @@ test_symbolic_eq_not_conclusive :: TestTree
 test_symbolic_eq_not_conclusive =
     testCaseWithoutSMT "evaluate symbolic equality for different variables" $ do
         let x = mkElemVar $ "x" `ofSort` intSort
-                & mapElementVariable (pure mkConfigVariable)
             y = mkElemVar $ "y" `ofSort` intSort
-                & mapElementVariable (pure mkConfigVariable)
             expect = fromTermLike $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
 
-ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-idName `ofSort` sort = mkElementVariable (testId idName) sort
+ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+idName `ofSort` sort =
+    mkElementVariable (testId idName) sort
+    & mapElementVariable (pure mkConfigVariable)
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
@@ -635,14 +634,14 @@ test_unifyIntEq =
             assertEqual "" [expect { term = () }] actual
     ]
   where
-    x, y :: ElementVariable VariableName
+    x, y :: ElementVariable RewritingVariableName
     x = "x" `ofSort` intSort
     y = "y" `ofSort` intSort
 
     unifyIntEq
-        :: TermLike VariableName
-        -> TermLike VariableName
-        -> IO [Maybe (Pattern VariableName)]
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> IO [Maybe (Pattern RewritingVariableName)]
     unifyIntEq term1 term2 =
         Int.unifyIntEq
             (termUnification Not.notSimplifier)
@@ -655,8 +654,8 @@ test_unifyIntEq =
         & runNoSMT
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv
@@ -679,13 +678,13 @@ test_contradiction =
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
   where
-    x, y :: TermLike VariableName
+    x, y :: TermLike RewritingVariableName
     x = mkElemVar $ ofSort "x" intSort
     y = mkElemVar $ ofSort "y" intSort
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv

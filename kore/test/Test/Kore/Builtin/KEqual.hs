@@ -25,7 +25,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkConfigVariable
+    ( mkConfigVariable, RewritingVariableName
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -118,7 +118,6 @@ test_KEqual =
                         (kseq (inj kItemSort dvX) dotk)
                         (kseq (inj kItemSort dvT) dotk)
                     )
-                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -126,7 +125,6 @@ test_KEqual =
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
             original =
                 keqBool (inj kSort dvT) (inj kSort dvX)
-                & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -138,7 +136,6 @@ test_KEqual =
                 keqBool
                     (kseq (inj kItemSort dvT) dotk)
                     (kseq (inj kItemSort dvX) dotk)
-                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -199,7 +196,7 @@ test_KEqualSimplification =
 
     ]
 
-dvT, dvX :: TermLike VariableName
+dvT, dvX :: TermLike RewritingVariableName
 dvT =
     mkDomainValue DomainValue
         { domainValueSort = idSort
@@ -212,9 +209,9 @@ dvX =
         }
 
 runKEqualSimplification
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> NoSMT [Maybe (Pattern VariableName)]
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> NoSMT [Maybe (Pattern RewritingVariableName)]
 runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . evalEnvUnifierT Not.notSimplifier

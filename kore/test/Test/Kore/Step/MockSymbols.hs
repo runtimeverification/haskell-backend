@@ -793,8 +793,16 @@ setXConfig :: MockRewritingSetVariable
 setXConfig = mkConfigSetVariable (testId "@x") mempty testSort
 var_setX_0 :: MockSetVariable
 var_setX_0 = MockSetVariable (testId "@x") (Just (Element 0)) testSort
+var_setXConfig_0 :: MockRewritingSetVariable
+var_setXConfig_0 =
+    mkConfigSetVariable (testId "@x") (Just (Element 0)) testSort
+var_setXRule_0 :: MockRewritingSetVariable
+var_setXRule_0 =
+    mkRuleSetVariable (testId "@x") (Just (Element 0)) testSort
 x0 :: MockElementVariable
 x0 = MockElementVariable (testId "x0") mempty testSort0
+xConfig0 :: MockRewritingElementVariable
+xConfig0 = mkConfigElementVariable (testId "x0") mempty testSort0
 y :: MockElementVariable
 y = MockElementVariable (testId "y") mempty testSort
 yRule :: MockRewritingElementVariable
@@ -861,6 +869,8 @@ xConfigString :: MockRewritingElementVariable
 xConfigString = mkConfigElementVariable (testId "xString") mempty stringSort
 xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
+xConfigList :: MockRewritingElementVariable
+xConfigList = mkConfigElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
 xMapRule :: MockRewritingElementVariable

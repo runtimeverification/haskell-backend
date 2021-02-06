@@ -276,7 +276,10 @@ emodIntSymbol =
 dummyIntSymbol :: Internal.Symbol
 dummyIntSymbol = unaryIntSymbol "f" & function
 
-dummyInt :: TermLike VariableName -> TermLike VariableName
+dummyInt
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
 
 dummyFunctionalIntSymbol :: Internal.Symbol
@@ -298,9 +301,10 @@ tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
 
 eqInt, ltInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 
@@ -361,7 +365,11 @@ keqBool, kneqBool
 keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
 kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
 
-kseq :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+kseq
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 kseq x y = mkApplySymbol kseqSymbol [x, y]
 
 dotk :: InternalVariable variable => TermLike variable
@@ -836,7 +844,7 @@ littleEndianBytesSymbol =
     & klabel "littleEndianBytes"
     & symbolKywd
 
-littleEndianBytes :: TermLike VariableName
+littleEndianBytes :: InternalVariable variable => TermLike variable
 littleEndianBytes =
     mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
 
@@ -846,7 +854,7 @@ bigEndianBytesSymbol =
     & klabel "bigEndianBytes"
     & symbolKywd
 
-bigEndianBytes :: TermLike VariableName
+bigEndianBytes :: InternalVariable variable => TermLike variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 
@@ -856,7 +864,7 @@ signedBytesSymbol =
     & klabel "signedBytes"
     & symbolKywd
 
-signedBytes :: TermLike VariableName
+signedBytes :: InternalVariable variable => TermLike variable
 signedBytes =
     mkSignedness (Signedness.Signed signedBytesSymbol)
 
@@ -866,7 +874,7 @@ unsignedBytesSymbol =
     & klabel "unsignedBytes"
     & symbolKywd
 
-unsignedBytes :: TermLike VariableName
+unsignedBytes :: InternalVariable variable => TermLike variable
 unsignedBytes =
     mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
 

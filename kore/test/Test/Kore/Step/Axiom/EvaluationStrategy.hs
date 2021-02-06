@@ -37,7 +37,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( mkRuleVariable, RewritingVariableName
     )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
@@ -212,7 +212,7 @@ test_definitionEvaluation =
                         , remainders = OrPattern.fromPatterns []
                         }
 
-            symbolicTerm = Mock.functionalConstr10 (mkElemVar Mock.y)
+            symbolicTerm = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
@@ -311,7 +311,7 @@ test_firstFullEvaluation =
                         (Mock.f Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     , testCase "None matching" $ do
         let
@@ -327,7 +327,7 @@ test_firstFullEvaluation =
                         (Mock.g Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     , testCase "Skip when remainder" $ do
         let expect =
@@ -616,12 +616,12 @@ failingEvaluator =
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> Predicate VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRequires left right requires =
-    simplificationEvaluation (axiom' left right requires)
+    simplificationEvaluation (axiom left right requires)
 
 axiomEvaluator
     :: TermLike VariableName
@@ -632,15 +632,15 @@ axiomEvaluator left right =
 
 evaluate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluate simplifier term =
     evaluateWithPredicate simplifier term makeTruePredicate
 
 evaluateWithPredicate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
-    -> Predicate VariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifierSMT Mock.env

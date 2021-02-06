@@ -96,7 +96,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Internal.Variable
     ( InternalVariable
-    , VariableName
     )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
@@ -109,6 +108,7 @@ import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
     )
@@ -455,7 +455,7 @@ isNotApplicableUntilConditionChanges =
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedAxiom = AttemptedAxiom VariableName
+type CommonAttemptedAxiom = AttemptedAxiom RewritingVariableName
 
 emptyAttemptedAxiom :: InternalVariable variable => AttemptedAxiom variable
 emptyAttemptedAxiom = Applied mempty
