@@ -8,8 +8,6 @@ Portability : portable
 
 Expose concrete execution as a library
 -}
-{-# LANGUAGE Strict #-}
-
 module Kore.Exec
     ( exec
     , mergeAllRules
@@ -94,7 +92,8 @@ import Kore.Internal.Predicate
     , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
+    ( top
+    , topTODO
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike.TermLike as TermLike
@@ -231,7 +230,7 @@ exec
         finals <-
             getFinalConfigsOf $ do
                 initialConfig <-
-                    Pattern.simplify
+                    Pattern.simplify SideCondition.top
                         (Pattern.fromTermLike initialTerm)
                     >>= Logic.scatter
                 let
@@ -388,7 +387,7 @@ search
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
-            Pattern.simplify
+            Pattern.simplify SideCondition.top
             $ Pattern.fromTermLike termLike
         let
             initialPattern =
@@ -548,7 +547,11 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike RewritingVariableName))
+    -> smt
+        (Bounded.CheckResult
+            (TermLike RewritingVariableName)
+            (ImplicationRule RewritingVariableName)
+        )
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initializeAndSimplify definitionModule
