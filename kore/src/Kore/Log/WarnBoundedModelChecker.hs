@@ -12,7 +12,9 @@ module Kore.Log.WarnBoundedModelChecker
 import Prelude.Kore
 
 import Kore.Attribute.SourceLocation
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( ImplicationRule
     )

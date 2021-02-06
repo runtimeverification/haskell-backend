@@ -49,7 +49,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRuleVariable, mkConfigVariable
+    , mkConfigVariable
+    , mkRuleVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
@@ -78,7 +79,6 @@ import Test.Kore.Equation.Common
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern
     ( Conditional (..)
-    -- , TestPattern
     )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
@@ -579,7 +579,7 @@ test_simplificationIntegration =
                 Variable
                 { variableName =
                     SetVariableName
-                    $ mkConfigVariable 
+                    $ mkConfigVariable
                         VariableName
                         { base = testId "mx"
                         , counter = mempty
@@ -590,7 +590,7 @@ test_simplificationIntegration =
                 Variable
                 { variableName =
                     SetVariableName
-                    $ mkConfigVariable 
+                    $ mkConfigVariable
                         VariableName
                         { base = testId "iz"
                         , counter = mempty
@@ -601,7 +601,7 @@ test_simplificationIntegration =
                 Variable
                 { variableName =
                     ElementVariableName
-                    $ mkConfigVariable 
+                    $ mkConfigVariable
                         VariableName
                         { base = testId "ub"
                         , counter = mempty

@@ -36,8 +36,11 @@ import Kore.Internal.Predicate
     , makeCeilPredicate
     , makeTruePredicate
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
