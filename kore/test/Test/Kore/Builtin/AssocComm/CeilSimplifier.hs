@@ -39,7 +39,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     )

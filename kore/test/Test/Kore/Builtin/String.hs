@@ -45,7 +45,8 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName, mkConfigVariable
+    ( RewritingVariableName
+    , mkConfigVariable
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification

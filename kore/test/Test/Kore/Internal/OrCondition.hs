@@ -4,6 +4,8 @@ module Test.Kore.Internal.OrCondition
     ) where
 
 import Kore.Internal.OrCondition
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 type OrTestCondition = OrCondition RewritingVariableName

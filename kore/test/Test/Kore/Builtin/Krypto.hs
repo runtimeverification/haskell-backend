@@ -48,6 +48,9 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.TopBottom as TopBottom
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Builtin.Builtin hiding
     ( evaluate
     )
@@ -57,7 +60,6 @@ import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_ecdsaRecover :: [TestTree]
 test_ecdsaRecover =

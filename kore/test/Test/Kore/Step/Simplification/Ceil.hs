@@ -28,6 +28,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
@@ -35,7 +38,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     , simplify
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -43,7 +45,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
 
 import Test.Kore.Internal.OrPattern
     ( OrPattern
-    -- , OrTestPattern
     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern

@@ -73,7 +73,6 @@ import Test.Kore.Internal.OrCondition
     )
 import Test.Kore.Internal.OrPattern
     ( OrPattern
-    -- , OrTestPattern
     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
@@ -361,7 +360,7 @@ test_applyRewriteRule_ =
     , testCase "substitute variable with itself" $ do
         let expect =
                 [ OrPattern.fromPatterns
-                    [initial { term = mkElemVar Mock.xConfig }] 
+                    [initial { term = mkElemVar Mock.xConfig }]
                 ]
             initial = Pattern.fromTermLike
                 (Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig))
