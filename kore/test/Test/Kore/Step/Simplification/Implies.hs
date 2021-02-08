@@ -23,17 +23,18 @@ import qualified Kore.Step.Simplification.Implies as Implies
 import Kore.Unparser
 import qualified Pretty
 
-import Test.Kore.Internal.OrPattern
-    ( OrTestPattern
-    )
+-- import Test.Kore.Internal.OrPattern
+--     ( OrTestPattern
+--     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import Test.Kore.Internal.Pattern
-    ( TestPattern
-    )
+-- import Test.Kore.Internal.Pattern
+--     ( TestPattern
+--     )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -57,8 +58,10 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => ([TestPattern], [TestPattern])
-        -> [TestPattern]
+        =>  ( [Pattern.Pattern RewritingVariableName]
+            , [Pattern.Pattern RewritingVariableName]
+            )
+        -> [Pattern.Pattern RewritingVariableName]
         -> TestTree
     becomes_ (firsts, seconds) expecteds =
         testCase "becomes" $ do
@@ -83,56 +86,56 @@ test_simplifyEvaluated =
           where
             actuals = toList actual
 
-termA :: TestPattern
+termA :: Pattern.Pattern RewritingVariableName
 termA = Pattern.fromTermLike Mock.a
 
-termB :: TestPattern
+termB :: Pattern.Pattern RewritingVariableName
 termB = Pattern.fromTermLike Mock.b
 
-aImpliesB :: TestPattern
+aImpliesB :: Pattern.Pattern RewritingVariableName
 aImpliesB = Conditional
     { term = mkImplies Mock.a Mock.b
     , predicate = Predicate.makeTruePredicate
     , substitution = mempty
     }
 
-equalsXA :: TestPattern
+equalsXA :: Pattern.Pattern RewritingVariableName
 equalsXA = Pattern.fromPredicateSorted Mock.testSort equalsXA_
 
-equalsXB :: TestPattern
+equalsXB :: Pattern.Pattern RewritingVariableName
 equalsXB = Pattern.fromPredicateSorted Mock.testSort equalsXB_
 
-equalsXC :: TestPattern
+equalsXC :: Pattern.Pattern RewritingVariableName
 equalsXC = Pattern.fromPredicateSorted Mock.testSort equalsXC_
 
-equalsXA_ :: TestPredicate
-equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+equalsXA_ :: Predicate RewritingVariableName
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a
 
-equalsXB_ :: TestPredicate
-equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
+equalsXB_ :: Predicate RewritingVariableName
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b
 
-equalsXC_ :: TestPredicate
-equalsXC_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.c
+equalsXC_ :: Predicate RewritingVariableName
+equalsXC_ = Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c
 
-impliesEqualsXAEqualsXB :: TestPattern
+impliesEqualsXAEqualsXB :: Pattern.Pattern RewritingVariableName
 impliesEqualsXAEqualsXB =
     Predicate.makeImpliesPredicate equalsXA_ equalsXB_
     & Pattern.fromPredicateSorted Mock.testSort
 
-impliesEqualsXAEqualsXC :: TestPattern
+impliesEqualsXAEqualsXC :: Pattern.Pattern RewritingVariableName
 impliesEqualsXAEqualsXC =
     Predicate.makeImpliesPredicate equalsXA_ equalsXC_
     & Pattern.fromPredicateSorted Mock.testSort
 
-impliesEqualsXBEqualsXC_ :: Condition VariableName
+impliesEqualsXBEqualsXC_ :: Condition RewritingVariableName
 impliesEqualsXBEqualsXC_ =
     Predicate.makeImpliesPredicate equalsXB_ equalsXC_
     & Condition.fromPredicate
 
 simplifyEvaluated
-    :: OrTestPattern
-    -> OrTestPattern
-    -> IO OrTestPattern
+    :: OrPattern.OrPattern RewritingVariableName
+    -> OrPattern.OrPattern RewritingVariableName
+    -> IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated first second =
     runSimplifier mockEnv
     $ Implies.simplifyEvaluated SideCondition.top first second
