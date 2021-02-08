@@ -6,9 +6,12 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.RulePattern
     ( RulePattern
     , rulePattern

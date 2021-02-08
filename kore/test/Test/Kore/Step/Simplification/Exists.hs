@@ -14,24 +14,24 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
     ( OrPattern
-    -- , OrTestPattern
     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern
     ( Pattern
-    -- , TestPattern
     )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
