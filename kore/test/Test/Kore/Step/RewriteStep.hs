@@ -805,21 +805,21 @@ test_applyRewriteRule_ =
     -- x => x ensures g(x)=f(x)
     -- vs
     -- y
-    -- Expected: y and g(x)=f(x)
+    -- Expected: y and g(y)=f(y)
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.xConfig))
-                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                    (Mock.functional11 (mkElemVar Mock.xRule))
+                    (Mock.functional10 (mkElemVar Mock.xRule))
             rhs = (RulePattern.rhs ruleId) { ensures }
             expect =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = mkElemVar Mock.yConfig
                         , predicate = makeEqualsPredicate
-                            (Mock.functional10 (mkElemVar Mock.xConfig))
-                            (Mock.functional11 (mkElemVar Mock.xConfig))
+                            (Mock.functional10 (mkElemVar Mock.yConfig))
+                            (Mock.functional11 (mkElemVar Mock.yConfig))
                         , substitution = mempty
                         }
                     ]
