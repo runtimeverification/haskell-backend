@@ -7,6 +7,7 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -73,11 +74,17 @@ test_makeEvaluate =
                         makeIffPredicate
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
-                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                                (makeEqualsPredicate
+                                    (mkElemVar Mock.xConfig)
+                                    Mock.a
+                                )
                             )
                             (makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
+                                (makeEqualsPredicate
+                                    (mkElemVar Mock.yConfig)
+                                    Mock.b
+                                )
                             )
                     , substitution = mempty
                     }
@@ -90,7 +97,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.x, Mock.a)]
+                        [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
@@ -98,7 +105,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, Mock.b)]
+                        [(inject Mock.yConfig, Mock.b)]
                     }
             )
         )
@@ -113,14 +120,14 @@ test_makeEvaluate =
                                     (Mock.f Mock.a)
                                     (mkCeil_ Mock.cf)
                                 )
-                                (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                                (mkEquals_ (mkElemVar Mock.xConfig) Mock.a)
                             )
                             (mkAnd
                                 (mkAnd
                                     (Mock.g Mock.b)
                                     (mkCeil_ Mock.cg)
                                 )
-                                (mkEquals_ (mkElemVar Mock.y) Mock.b)
+                                (mkEquals_ (mkElemVar Mock.yConfig) Mock.b)
                             )
                     , predicate = makeTruePredicate
                     , substitution = mempty
@@ -134,7 +141,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.x, Mock.a)]
+                        [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
@@ -142,7 +149,7 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, Mock.b)]
+                        [(inject Mock.yConfig, Mock.b)]
                     }
             )
         )
@@ -176,12 +183,12 @@ nameBool x
     | x = "⊤"
     | otherwise = "⊥"
 
-valueBool :: Bool -> Pattern VariableName
+valueBool :: Bool -> Pattern RewritingVariableName
 valueBool x
     | x = Pattern.top
     | otherwise = Pattern.bottom
 
-termA :: Pattern VariableName
+termA :: Pattern RewritingVariableName
 termA =
     Conditional
         { term = Mock.a
@@ -189,7 +196,7 @@ termA =
         , substitution = mempty
         }
 
-termNotA :: Pattern VariableName
+termNotA :: Pattern RewritingVariableName
 termNotA = mkNot <$> termA
 
 makeIff
@@ -205,8 +212,8 @@ makeIff first second =
         }
 
 simplify
-    :: Iff Sort (OrPattern VariableName)
-    -> IO (OrPattern VariableName)
+    :: Iff Sort (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 simplify =
     runSimplifier mockEnv
     . Iff.simplify SideCondition.top
@@ -215,8 +222,8 @@ simplify =
     mockEnv = Mock.env
 
 makeEvaluate
-    :: Pattern VariableName
-    -> Pattern VariableName
-    -> OrPattern VariableName
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluate p1 p2 =
     Iff.makeEvaluate (simplifiedPattern p1) (simplifiedPattern p2)
