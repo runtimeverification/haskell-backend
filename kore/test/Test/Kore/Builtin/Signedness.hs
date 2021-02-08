@@ -38,6 +38,7 @@ import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_verify :: [TestTree]
 test_verify =
@@ -84,9 +85,9 @@ test_unify =
     unifies
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> [Assignment VariableName]
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> [Assignment RewritingVariableName]
         -> TestTree
     unifies name term1 term2 solution =
         testCase name $ do
@@ -98,8 +99,8 @@ test_unify =
     doesn'tUnify
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> TestTree
     doesn'tUnify name term1 term2 =
         testCase name $ do
@@ -108,9 +109,9 @@ test_unify =
 
 unify
     :: HasCallStack
-    => TermLike VariableName
-    -> TermLike VariableName
-    -> IO [Pattern VariableName]
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO [Pattern RewritingVariableName]
 unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv
