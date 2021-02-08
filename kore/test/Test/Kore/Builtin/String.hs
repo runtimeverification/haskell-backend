@@ -45,7 +45,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    ( RewritingVariableName, mkConfigVariable
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -410,8 +410,10 @@ testString
     -> TestTree
 testString name = testSymbolWithoutSolver evaluate name
 
-ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-idName `ofSort` sort = mkElementVariable (testId idName) sort
+ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+idName `ofSort` sort =
+    mkElementVariable (testId idName) sort
+    & mapElementVariable (pure mkConfigVariable)
 
 test_unifyStringEq :: [TestTree]
 test_unifyStringEq =
@@ -455,9 +457,9 @@ test_unifyStringEq =
     ]
   where
     unifyStringEq
-        :: TermLike VariableName
-        -> TermLike VariableName
-        -> IO [Maybe (Pattern VariableName)]
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
         String.unifyStringEq
             (termUnification Not.notSimplifier)
@@ -470,14 +472,14 @@ test_unifyStringEq =
         & runNoSMT
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv
         & runNoSMT
 
-x, y :: ElementVariable VariableName
+x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort
 y = "y" `ofSort` stringSort
 
@@ -499,8 +501,8 @@ test_contradiction =
         assertEqual "expected bottom" [] actual
   where
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv

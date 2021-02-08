@@ -830,9 +830,10 @@ string2TokenStringSymbol =
     & hook "STRING.string2token"
 
 eqString, concatString
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
 concatString x y = mkApplySymbol concatStringSymbol [x, y]
 
