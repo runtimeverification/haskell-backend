@@ -62,6 +62,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( isConstructor
@@ -126,16 +127,17 @@ simplify
     ->  SideCondition variable
     ->  Conditional variable any
     ->  LogicT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
-    normalize >=> worker
+simplify SubstitutionSimplifier { simplifySubstitution } sideCondition' cond = do
+    sideCondition <- simplifySideCondition sideCondition'
+    normalize sideCondition cond >>= worker sideCondition
   where
-    worker Conditional { term, predicate, substitution } = do
+    worker sideCondition Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
         simplified <- simplifyPredicate sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
-        normalized <- normalize merged
+        normalized <- normalize sideCondition merged
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
@@ -146,7 +148,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
                     normalized { term }
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
-            else worker (extract simplifiedPattern)
+            else worker sideCondition (extract simplifiedPattern)
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional { predicate, substitution }) =
@@ -157,9 +159,10 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
 
     normalize
         ::  forall any'
-        .   Conditional variable any'
+        .   SideCondition variable
+        ->  Conditional variable any'
         ->  LogicT simplifier (Conditional variable any')
-    normalize conditional@Conditional { substitution } = do
+    normalize sideCondition conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
             simplifySubstitution sideCondition substitution
@@ -199,6 +202,31 @@ simplifyPredicate sideCondition predicate = do
             [ "Expecting a \\top term, but found:"
             , unparse conditional
             ]
+
+-- | Simplify each condition in the 'SideCondition' with the assumption that
+-- the other conditions are true.
+simplifySideCondition
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> LogicT simplifier (SideCondition variable)
+simplifySideCondition (toList . from @_ @(MultiAnd _) -> predicates) =
+    State.execStateT (worker predicates) SideCondition.top
+  where
+    worker
+        :: [Predicate variable]
+        -> StateT
+            (SideCondition variable)
+            (LogicT simplifier)
+            ()
+    worker [] = return ()
+    worker (pred' : rest) = do
+        sideCondition <- State.get
+        let otherConds = sideCondition <> from (MultiAnd.make rest)
+        result <- lift $ simplifyPredicate otherConds pred'
+        State.put (SideCondition.andCondition sideCondition result)
+        worker rest
 
 simplifyConjunctions
     :: InternalVariable variable
