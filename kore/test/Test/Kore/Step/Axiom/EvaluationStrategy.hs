@@ -80,19 +80,19 @@ test_attemptEquations =
         attemptEquationAndAccumulateErrors condition term equation
     applicable =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
           Mock.a
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.a)
     notApplicable1 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
           Mock.c
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
+          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.c)
     notApplicable2 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
           Mock.b
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.b)
+          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
