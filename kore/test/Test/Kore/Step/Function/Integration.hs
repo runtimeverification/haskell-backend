@@ -350,10 +350,10 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [   ( inject Mock.var_x_1
+                        [   ( inject Mock.var_xRule_1
                             , Mock.a
                             )
-                        ,   ( inject Mock.var_z_1
+                        ,   ( inject Mock.var_zRule_1
                             , Mock.a
                             )
                         ]
@@ -402,8 +402,8 @@ test_functionIntegration =
                             (Mock.plain10 Mock.cf)
                         )
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.var_x_1, Mock.cf)
-                        , (inject Mock.var_y_1, Mock.b)
+                        [ (inject Mock.var_xRule_1, Mock.cf)
+                        , (inject Mock.var_yRule_1, Mock.b)
                         ]
                     }
         actual <-
@@ -432,7 +432,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         let message =
                 (show . Pretty.vsep)
                     [ "Expected:"
@@ -461,7 +461,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Picks first matching simplification." $ do
@@ -502,7 +502,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
@@ -531,7 +531,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 {-
     Uncomment this if we ever go back to allowing branches for function
@@ -828,7 +828,7 @@ test_functionIntegrationUnification =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Picks first matching simplification." $ do
@@ -870,7 +870,7 @@ test_functionIntegrationUnification =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
@@ -899,7 +899,7 @@ test_functionIntegrationUnification =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     ]
 
@@ -1028,8 +1028,8 @@ simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideC
 
 evaluate
     :: BuiltinAndAxiomSimplifierMap
-    -> TermLike VariableName
-    -> IO (Pattern VariableName)
+    -> TermLike RewritingVariableName
+    -> IO (Pattern RewritingVariableName)
 evaluate functionIdToEvaluator termLike =
     runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
         patterns <- TermLike.simplify SideCondition.top termLike

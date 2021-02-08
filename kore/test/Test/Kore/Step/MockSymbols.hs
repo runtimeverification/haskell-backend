@@ -777,8 +777,16 @@ var_xConfig_1 :: MockRewritingElementVariable
 var_xConfig_1 = mkConfigElementVariable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: MockElementVariable
 var_y_1 = MockElementVariable (testId "y") (Just (Element 1)) testSort
+var_yRule_1 :: MockRewritingElementVariable
+var_yRule_1 = mkRuleElementVariable (testId "y") (Just (Element 1)) testSort
+var_yConfig_1 :: MockRewritingElementVariable
+var_yConfig_1 = mkConfigElementVariable (testId "y") (Just (Element 1)) testSort
 var_z_1 :: MockElementVariable
 var_z_1 = MockElementVariable (testId "z") (Just (Element 1)) testSort
+var_zRule_1 :: MockRewritingElementVariable
+var_zRule_1 = mkRuleElementVariable (testId "z") (Just (Element 1)) testSort
+var_zConfig_1 :: MockRewritingElementVariable
+var_zConfig_1 = mkConfigElementVariable (testId "z") (Just (Element 1)) testSort
 x :: MockElementVariable
 x = MockElementVariable (testId "x") mempty testSort
 xRule :: MockRewritingElementVariable
