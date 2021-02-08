@@ -990,23 +990,30 @@ ripemd160Symbol =
     & hook "KRYPTO.ripemd160"
 
 ecdsaRecoverKrypto
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
 
-keccak256Krypto :: TermLike VariableName -> TermLike VariableName
+keccak256Krypto
+    :: InternalVariable variable => TermLike variable -> TermLike variable
 keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
 
-sha256Krypto :: TermLike VariableName -> TermLike VariableName
+sha256Krypto
+    :: InternalVariable variable => TermLike variable -> TermLike variable
 sha256Krypto message = mkApplySymbol sha256Symbol [message]
 
-sha3256Krypto :: TermLike VariableName -> TermLike VariableName
+sha3256Krypto
+    :: InternalVariable variable => TermLike variable -> TermLike variable
 sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
 
-ripemd160Krypto :: TermLike VariableName -> TermLike VariableName
+ripemd160Krypto
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
 ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------

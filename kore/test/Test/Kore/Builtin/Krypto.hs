@@ -57,6 +57,7 @@ import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_ecdsaRecover :: [TestTree]
 test_ecdsaRecover =
@@ -286,7 +287,10 @@ test_hashRipemd160 =
                 & evaluate "HASH.ripemd160"
             assertEqual "" expect actual
 
-evaluate :: Text -> TermLike VariableName -> IO (Pattern VariableName)
+evaluate
+    :: Text
+    -> TermLike RewritingVariableName
+    -> IO (Pattern RewritingVariableName)
 evaluate builtin termLike = do
     evaluator <-
         Map.lookup builtin Krypto.builtinFunctions
