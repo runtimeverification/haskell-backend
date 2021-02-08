@@ -175,8 +175,8 @@ test_attemptEquation =
         let
             ensures =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.xConfig))
-                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                    (Mock.functional11 (mkElemVar Mock.xRule))
+                    (Mock.functional10 (mkElemVar Mock.xRule))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
@@ -192,8 +192,8 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional10 (mkElemVar Mock.xConfig))
-                    (Mock.functional11 (mkElemVar Mock.xConfig))
+                    (Mock.functional10 (mkElemVar Mock.xRule))
+                    (Mock.functional11 (mkElemVar Mock.xRule))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
@@ -547,7 +547,7 @@ test_applySubstitutionAndSimplify =
 -- * Test data
 
 equationId :: Equation RewritingVariableName
-equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
+equationId = mkEquation (mkElemVar Mock.xRule) (mkElemVar Mock.xRule)
 
 equationRequiresBottom :: Equation RewritingVariableName
 equationRequiresBottom =

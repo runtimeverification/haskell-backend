@@ -846,12 +846,15 @@ test_applyRewriteRule_ =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional10 (mkElemVar Mock.xConfig))
-                    (Mock.functional11 (mkElemVar Mock.xConfig))
+                    (Mock.functional10 (mkElemVar Mock.xRule))
+                    (Mock.functional11 (mkElemVar Mock.xRule))
+            requires' =
+                requires
+                & Predicate.mapVariables (pure $ mkConfigVariable . from)
             expect =
                 [ OrPattern.fromPatterns
                     [ initialTerm
-                    `Pattern.withCondition` Condition.fromPredicate requires
+                    `Pattern.withCondition` Condition.fromPredicate requires'
                     ]
                 ]
             initialTerm = mkElemVar Mock.xConfig
