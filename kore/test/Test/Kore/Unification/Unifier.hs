@@ -1,5 +1,3 @@
-{-# LANGUAGE Strict #-}
-
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
@@ -803,7 +801,7 @@ simplifyPattern (UnificationTerm term) = do
   where
     simplifier = do
         simplifiedPatterns <-
-            Pattern.simplify expandedPattern
+            Pattern.simplify SideCondition.top expandedPattern
         case toList simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config

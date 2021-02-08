@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
@@ -39,8 +41,6 @@ It also works for test error messages:
 
 Enjoy.
 -}
-{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
-{-# LANGUAGE Strict #-}
 
 module Kore.Debug
     (

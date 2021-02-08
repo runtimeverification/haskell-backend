@@ -66,12 +66,12 @@ import Numeric.Natural
     ( Natural
     )
 
-data CheckResult patt
+data CheckResult patt claim
     = Proved
     -- ^ Property is proved within the bound.
     | Failed !patt
     -- ^ Counter example is found within the bound.
-    | Unknown
+    | Unknown !claim
     -- ^ Result is unknown within the bound.
     deriving (Show)
 
@@ -104,12 +104,12 @@ checkClaim
     -> (ImplicationRule VariableName, Limit Natural)
     -- a claim to check, together with a maximum number of verification steps
     -- for each.
-    -> m (CheckResult (TermLike VariableName))
+    -> m (CheckResult (TermLike VariableName) (ImplicationRule VariableName))
 checkClaim
     breadthLimit
     strategyBuilder
     searchOrder
-    (ImplicationRule RulePattern { left, rhs = RHS { right } }, depthLimit)
+    (rule@(ImplicationRule RulePattern { left, rhs = RHS { right } }), depthLimit)
   = do
         let
             ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
@@ -150,14 +150,14 @@ checkClaim
 
     checkFinalNodes
         :: [CommonProofState]
-        -> CheckResult (TermLike VariableName)
+        -> CheckResult (TermLike VariableName) (ImplicationRule VariableName)
     checkFinalNodes nodes = foldl' checkFinalNodesHelper Proved nodes
       where
         checkFinalNodesHelper Proved  ProofState.Proven = Proved
         checkFinalNodesHelper Proved  (ProofState.Unprovable config) =
             Failed (Pattern.toTermLike config)
-        checkFinalNodesHelper Proved  _ = Unknown
-        checkFinalNodesHelper Unknown (ProofState.Unprovable config) =
+        checkFinalNodesHelper Proved  _ = Unknown rule
+        checkFinalNodesHelper (Unknown _) (ProofState.Unprovable config) =
             Failed (Pattern.toTermLike config)
-        checkFinalNodesHelper Unknown _ = Unknown
+        checkFinalNodesHelper (Unknown _) _ = Unknown rule
         checkFinalNodesHelper (Failed config) _ = Failed config
