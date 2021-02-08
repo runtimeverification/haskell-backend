@@ -284,73 +284,73 @@ toNormalizedInternalMap termLike =
             -> singleOpaqueTerm
           | otherwise -> TermLike.mkInternalMap internal
         Nothing -> TermLike.mkBottom (termLikeSort termLike)
+
+toNormalizedInternalMapWorker
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> Maybe (InternalMap Key (TermLike variable))
+toNormalizedInternalMapWorker (InternalMap_ internal) =
+    setAsChild <$> renormalize builtinAcChild
   where
-    toNormalizedInternalMapWorker
-        :: HasCallStack
-        => InternalVariable variable
-        => TermLike variable
-        -> Maybe (InternalMap Key (TermLike variable))
-    toNormalizedInternalMapWorker (InternalMap_ internal) =
-        setAsChild <$> renormalize builtinAcChild
-      where
-        InternalAc { builtinAcChild } = internal
-        setAsChild renormalized = internal {builtinAcChild = renormalized}
-    toNormalizedInternalMapWorker term@(App_ symbol args)
-      | Map.isSymbolUnit symbol =
-        case args of
-            [] -> Just (emptyInternalAc (termLikeSort term))
-                { builtinAcUnit = Att.toUnit symbol
-                }
-            _ -> Builtin.wrongArity "MAP.unit"
-      | Map.isSymbolElement symbol =
-        case args of
-            [key, value] ->
-                Just (emptyInternalAc @NormalizedMap (termLikeSort term))
-                { builtinAcElement = Att.toElement symbol
-                , builtinAcChild = wrapAc $ case TermLike.retractKey key of
-                    Just key' -> emptyNormalizedAc
-                        { concreteElements =
-                            Map.singleton key' (MapValue value)
-                        }
-                    _ -> emptyNormalizedAc
-                        { elementsWithVariables = [MapElement (key, value)]
-                        }
-                }
-            _ -> Builtin.wrongArity "MAP.element"
-      | Map.isSymbolConcat symbol =
-        case args of
-            [map1, map2] -> do
-                internal1 <- toNormalizedInternalMapWorker map1
-                internal2 <- toNormalizedInternalMapWorker map2
-                normalized <- concatNormalized
-                    (builtinAcChild internal1)
-                    (builtinAcChild internal2)
-                let internal = InternalAc
-                        { builtinAcSort = sameSort
-                            (builtinAcSort internal1)
-                            (builtinAcSort internal2)
-                        , builtinAcUnit = Att.mergeUnit
-                            (builtinAcUnit internal1)
-                            (builtinAcUnit internal2)
-                        , builtinAcElement = Att.mergeElement
-                            (builtinAcElement internal1)
-                            (builtinAcElement internal2)
-                        , builtinAcConcat = Att.mergeConcat
-                            ( Att.mergeConcat
-                                (builtinAcConcat internal1)
-                                (builtinAcConcat internal2)
-                            )
-                            (Att.toConcat symbol)
-                        , builtinAcChild = normalized
-                        }
-                return internal
-            _ -> Builtin.wrongArity "MAP.concat"
-    toNormalizedInternalMapWorker (Defined_ child) =
-        toNormalizedInternalMapWorker child
-    toNormalizedInternalMapWorker term =
-        Just (emptyInternalAc @NormalizedMap (termLikeSort term))
-            { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+    InternalAc { builtinAcChild } = internal
+    setAsChild renormalized = internal {builtinAcChild = renormalized}
+toNormalizedInternalMapWorker term@(App_ symbol args)
+  | Map.isSymbolUnit symbol =
+    case args of
+        [] -> Just (emptyInternalAc (termLikeSort term))
+            { builtinAcUnit = Att.toUnit symbol
             }
+        _ -> Builtin.wrongArity "MAP.unit"
+  | Map.isSymbolElement symbol =
+    case args of
+        [key, value] ->
+            Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+            { builtinAcElement = Att.toElement symbol
+            , builtinAcChild = wrapAc $ case TermLike.retractKey key of
+                Just key' -> emptyNormalizedAc
+                    { concreteElements =
+                        Map.singleton key' (MapValue value)
+                    }
+                _ -> emptyNormalizedAc
+                    { elementsWithVariables = [MapElement (key, value)]
+                    }
+            }
+        _ -> Builtin.wrongArity "MAP.element"
+  | Map.isSymbolConcat symbol =
+    case args of
+        [map1, map2] -> do
+            internal1 <- toNormalizedInternalMapWorker map1
+            internal2 <- toNormalizedInternalMapWorker map2
+            normalized <- concatNormalized
+                (builtinAcChild internal1)
+                (builtinAcChild internal2)
+            let internal = InternalAc
+                    { builtinAcSort = sameSort
+                        (builtinAcSort internal1)
+                        (builtinAcSort internal2)
+                    , builtinAcUnit = Att.mergeUnit
+                        (builtinAcUnit internal1)
+                        (builtinAcUnit internal2)
+                    , builtinAcElement = Att.mergeElement
+                        (builtinAcElement internal1)
+                        (builtinAcElement internal2)
+                    , builtinAcConcat = Att.mergeConcat
+                        ( Att.mergeConcat
+                            (builtinAcConcat internal1)
+                            (builtinAcConcat internal2)
+                        )
+                        (Att.toConcat symbol)
+                    , builtinAcChild = normalized
+                    }
+            return internal
+        _ -> Builtin.wrongArity "MAP.concat"
+toNormalizedInternalMapWorker (Defined_ child) =
+    toNormalizedInternalMapWorker child
+toNormalizedInternalMapWorker term =
+    Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+        { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+        }
 
 
 instance TermWrapper NormalizedSet where
@@ -437,74 +437,74 @@ toNormalizedInternalSet termLike =
             -> singleOpaqueTerm
           | otherwise -> TermLike.mkInternalSet internal
         Nothing -> TermLike.mkBottom (termLikeSort termLike)
+
+toNormalizedInternalSetWorker
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> Maybe (InternalSet Key (TermLike variable))
+toNormalizedInternalSetWorker (InternalSet_ internal) =
+    setAsChild <$> renormalize builtinAcChild
   where
-    toNormalizedInternalSetWorker
-        :: HasCallStack
-        => InternalVariable variable
-        => TermLike variable
-        -> Maybe (InternalSet Key (TermLike variable))
-    toNormalizedInternalSetWorker (InternalSet_ internal) =
-        setAsChild <$> renormalize builtinAcChild
-      where
-        InternalAc { builtinAcChild } = internal
-        setAsChild renormalized = internal {builtinAcChild = renormalized}
-    toNormalizedInternalSetWorker term@(App_ symbol args)
-      | Set.isSymbolUnit symbol =
-        case args of
-            [] -> Just (emptyInternalAc (termLikeSort term))
-                { builtinAcUnit = Att.toUnit symbol
-                }
-            _ -> Builtin.wrongArity "SET.unit"
-      | Set.isSymbolElement symbol =
-        case args of
-            [key] ->
-                Just (emptyInternalAc @NormalizedSet (termLikeSort term))
-                { builtinAcElement = Att.toElement symbol
-                , builtinAcChild = wrapAc $ case TermLike.retractKey key of
-                    Just key' -> emptyNormalizedAc
-                        { concreteElements =
-                            Map.singleton key' SetValue
-                        }
-                    _ -> emptyNormalizedAc
-                        { elementsWithVariables =
-                            [ SetElement { getSetElement = key } ]
-                        }
-                }
-            _ -> Builtin.wrongArity "SET.element"
-      | Set.isSymbolConcat symbol =
-        case args of
-            [set1, set2] -> do
-                internal1 <- toNormalizedInternalSetWorker set1
-                internal2 <- toNormalizedInternalSetWorker set2
-                normalized <- concatNormalized
-                    (builtinAcChild internal1)
-                    (builtinAcChild internal2)
-                let internal = InternalAc
-                        { builtinAcSort = sameSort
-                            (builtinAcSort internal1)
-                            (builtinAcSort internal2)
-                        , builtinAcUnit = Att.mergeUnit
-                            (builtinAcUnit internal1)
-                            (builtinAcUnit internal2)
-                        , builtinAcElement = Att.mergeElement
-                            (builtinAcElement internal1)
-                            (builtinAcElement internal2)
-                        , builtinAcConcat = Att.mergeConcat
-                            ( Att.mergeConcat
-                                (builtinAcConcat internal1)
-                                (builtinAcConcat internal2)
-                            )
-                            (Att.toConcat symbol)
-                        , builtinAcChild = normalized
-                        }
-                return internal
-            _ -> Builtin.wrongArity "SET.concat"
-    toNormalizedInternalSetWorker (Defined_ child) =
-        toNormalizedInternalSetWorker child
-    toNormalizedInternalSetWorker term =
-        Just (emptyInternalAc @NormalizedSet (termLikeSort term))
-            { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+    InternalAc { builtinAcChild } = internal
+    setAsChild renormalized = internal {builtinAcChild = renormalized}
+toNormalizedInternalSetWorker term@(App_ symbol args)
+  | Set.isSymbolUnit symbol =
+    case args of
+        [] -> Just (emptyInternalAc (termLikeSort term))
+            { builtinAcUnit = Att.toUnit symbol
             }
+        _ -> Builtin.wrongArity "SET.unit"
+  | Set.isSymbolElement symbol =
+    case args of
+        [key] ->
+            Just (emptyInternalAc @NormalizedSet (termLikeSort term))
+            { builtinAcElement = Att.toElement symbol
+            , builtinAcChild = wrapAc $ case TermLike.retractKey key of
+                Just key' -> emptyNormalizedAc
+                    { concreteElements =
+                        Map.singleton key' SetValue
+                    }
+                _ -> emptyNormalizedAc
+                    { elementsWithVariables =
+                        [ SetElement { getSetElement = key } ]
+                    }
+            }
+        _ -> Builtin.wrongArity "SET.element"
+  | Set.isSymbolConcat symbol =
+    case args of
+        [set1, set2] -> do
+            internal1 <- toNormalizedInternalSetWorker set1
+            internal2 <- toNormalizedInternalSetWorker set2
+            normalized <- concatNormalized
+                (builtinAcChild internal1)
+                (builtinAcChild internal2)
+            let internal = InternalAc
+                    { builtinAcSort = sameSort
+                        (builtinAcSort internal1)
+                        (builtinAcSort internal2)
+                    , builtinAcUnit = Att.mergeUnit
+                        (builtinAcUnit internal1)
+                        (builtinAcUnit internal2)
+                    , builtinAcElement = Att.mergeElement
+                        (builtinAcElement internal1)
+                        (builtinAcElement internal2)
+                    , builtinAcConcat = Att.mergeConcat
+                        ( Att.mergeConcat
+                            (builtinAcConcat internal1)
+                            (builtinAcConcat internal2)
+                        )
+                        (Att.toConcat symbol)
+                    , builtinAcChild = normalized
+                    }
+            return internal
+        _ -> Builtin.wrongArity "SET.concat"
+toNormalizedInternalSetWorker (Defined_ child) =
+    toNormalizedInternalSetWorker child
+toNormalizedInternalSetWorker term =
+    Just (emptyInternalAc @NormalizedSet (termLikeSort term))
+        { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+        }
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @Key@ to @TermLike variable@.

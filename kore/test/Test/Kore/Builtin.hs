@@ -19,7 +19,10 @@ import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
     )
-import qualified Data.Set
+import qualified Data.Map.Internal as Data.Map
+import Data.Maybe
+    ( fromJust
+    )
 
 import Kore.ASTVerifier.DefinitionVerifier
     ( sortModuleClaims
@@ -36,6 +39,15 @@ import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.InternalSet
+    ( Value (..)
+    )
+import Kore.Internal.NormalizedAc
+    ( InternalAc (..)
+    , NormalizedAc (..)
+    , emptyNormalizedAc
+    , wrapAc
+    )
 import Kore.Internal.TermLike
 import Test.Kore.Step.SMT.Builders
     ( indexModule
@@ -46,7 +58,6 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
-import qualified Test.Kore.Builtin.Set as Set
 
 test_internalize :: [TestTree]
 test_internalize =
@@ -74,44 +85,50 @@ test_internalize =
 
     , internalizes  "unitMap"
         unitMap
-        (mkMap [])
+        (mkMap [] True False False)
     , internalizes  "elementMap"
         (elementMap zero x)
-        (mkMap [(zero, x)])
+        (mkMap [(zero, x)] False True False)
     , internalizes  "concatMap(internal, internal)"
-        (concatMap (mkMap [(zero, x)]) (mkMap [(one, y)]))
-        (mkMap [(zero, x), (one, y)])
+        (concatMap
+            (mkMap [(zero, x)] False True False)
+            (mkMap [(one , y)] False True False)
+        )
+        (mkMap [(zero, x), (one, y)] False True True)
     , internalizes  "concatMap(element, element)"
         (concatMap (elementMap zero x) (elementMap one y))
-        (mkMap [(zero, x), (one, y)])
+        (mkMap [(zero, x), (one, y)] False True True)
     , internalizes  "concatMap(element, unit)"
         (concatMap (elementMap zero x) unitMap)
-        (mkMap [(zero, x)])
+        (mkMap [(zero, x)] True True True)
     , internalizes  "concatMap(unit, element)"
         (concatMap unitMap (elementMap one y))
-        (mkMap [(one, y)])
+        (mkMap [(one, y)] True True True)
     , notInternalizes "m:Map" m
     , internalizes "concatMap(m:Map, unit)" (concatMap m unitMap) m
     , internalizes "concatMap(unit, m:Map)" (concatMap unitMap m) m
 
     , internalizes  "unitSet"
         unitSet
-        (mkSet [])
+        (mkSet [] True False False)
     , internalizes  "elementSet"
         (elementSet zero)
-        (mkSet [zero])
+        (mkSet [zero] False True False)
     , internalizes  "concatSet(internal, internal)"
-        (concatSet (mkSet [zero]) (mkSet [one]))
-        (mkSet [zero, one])
+        (concatSet
+            (mkSet [zero] False True False)
+            (mkSet [one] False True False)
+        )
+        (mkSet [zero, one] False True True)
     , internalizes  "concatSet(element, element)"
         (concatSet (elementSet zero) (elementSet one))
-        (mkSet [zero, one])
+        (mkSet [zero, one] False True True)
     , internalizes  "concatSet(element, unit)"
         (concatSet (elementSet zero) unitSet)
-        (mkSet [zero])
+        (mkSet [zero] True True True)
     , internalizes  "concatSet(unit, element)"
         (concatSet unitSet (elementSet one))
-        (mkSet [one])
+        (mkSet [one] True True True)
     , notInternalizes "s:Set" s
     , internalizes "concatSet(s:Set, unit)" (concatSet s unitSet) s
     , internalizes "concatSet(unit, s:Set)" (concatSet unitSet s) s
@@ -128,14 +145,41 @@ test_internalize =
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
-    mkMap = Map.asInternal
+    mkMap elems hasUnit hasElement hasConcat = mkInternalMap InternalAc
+        { builtinAcSort = mapSort
+        , builtinAcUnit = Attribute.Unit $
+            if hasUnit then Just Builtin.unitMapSymbol else Nothing
+        , builtinAcElement = Attribute.Element $
+            if hasElement then Just Builtin.elementMapSymbol else Nothing
+        , builtinAcConcat = Attribute.Concat $
+            if hasConcat then Just Builtin.concatMapSymbol else Nothing
+        , builtinAcChild = Map.normalizedMap elems []
+        }
     m = mkElemVar (mkElementVariable "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
-    mkSet = Set.asInternal . Data.Set.fromList
+    mkSet
+        :: [TermLike VariableName]
+        -> Bool
+        -> Bool
+        -> Bool
+        -> TermLike VariableName
+    mkSet elems hasUnit hasElement hasConcat = mkInternalSet InternalAc
+        { builtinAcSort = setSort
+        , builtinAcUnit = Attribute.Unit $
+            if hasUnit then Just Builtin.unitSetSymbol else Nothing
+        , builtinAcElement = Attribute.Element $
+            if hasElement then Just Builtin.elementSetSymbol else Nothing
+        , builtinAcConcat = Attribute.Concat $
+            if hasConcat then Just Builtin.concatSetSymbol else Nothing
+        , builtinAcChild = wrapAc emptyNormalizedAc
+            { concreteElements = Data.Map.fromList
+                [(fromJust (retractKey e), SetValue) | e <- elems]
+            }
+        }
     s = mkElemVar (mkElementVariable "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable
