@@ -39,6 +39,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     )
@@ -71,7 +72,7 @@ hprop_Builtin_Set :: Property
     )
   where
     nullaryCtors = [Mock.a, Mock.b, Mock.c]
-    elemVars = [Mock.x, Mock.y, Mock.z]
+    elemVars = [Mock.xConfig, Mock.yConfig, Mock.zConfig]
     opaqueMaps@[opaqueMap1, opaqueMap2, opaqueMap3] =
         Mock.opaqueMap . mkElemVar <$> elemVars
     opaqueSets@[opaqueSet1, opaqueSet2, opaqueSet3] =
@@ -271,8 +272,8 @@ hprop_Builtin_Set :: Property
     test
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> [Predicate VariableName]
+        -> TermLike RewritingVariableName
+        -> [Predicate RewritingVariableName]
         -> TestTree
     test testName original expect =
         testCase testName $ do
@@ -282,11 +283,14 @@ hprop_Builtin_Set :: Property
 propertyBuiltinAssocComm
     :: Show element
     => Gen [element]
-    -> Gen [TermLike VariableName]
-    -> (element -> TermLike VariableName)
-    -> (element -> [Predicate VariableName])
-    -> (element -> TermLike VariableName -> Predicate VariableName)
-    -> ([element] -> [TermLike VariableName] -> TermLike VariableName)
+    -> Gen [TermLike RewritingVariableName]
+    -> (element -> TermLike RewritingVariableName)
+    -> (element -> [Predicate RewritingVariableName])
+    ->  (  element
+        -> TermLike RewritingVariableName
+        -> Predicate RewritingVariableName
+        )
+    -> ([element] -> [TermLike RewritingVariableName] -> TermLike RewritingVariableName)
     -> Property
 propertyBuiltinAssocComm
     genElements
@@ -339,13 +343,15 @@ propertyBuiltinAssocComm
     zipWithTails f (x : xs) = map (f x) xs ++ zipWithTails f xs
 
 makeNotEqualsPredicate
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> Predicate VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
 makeNotEqualsPredicate x y =
     (makeNotPredicate . uncurry makeEqualsPredicate) (minMax x y)
 
-makeEvaluate :: TermLike VariableName -> IO (MultiAnd (Predicate VariableName))
+makeEvaluate
+    :: TermLike RewritingVariableName
+    -> IO (MultiAnd (Predicate RewritingVariableName))
 makeEvaluate termLike = do
     actualPattern <-
         makeEvaluate' termLike
