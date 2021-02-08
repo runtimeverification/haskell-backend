@@ -105,8 +105,8 @@ simplifyEquation equation =
   where
     argument' =
         fromMaybe Predicate.makeTruePredicate argument
-    returnOriginalIfAborted xs =
-        fmap (either (: []) id) (runExceptT xs)
+    returnOriginalIfAborted =
+        fmap (either (: []) id) . runExceptT
     Equation
         { requires
         , argument
