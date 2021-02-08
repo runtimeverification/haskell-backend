@@ -30,18 +30,10 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
--- import Kore.Internal.OrPattern
---     ( OrPattern
---     )
--- import Kore.Internal.Pattern
---     ( Pattern
---     )
--- import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
--- import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( InternalVariable
     , MonadSimplify
@@ -83,15 +75,15 @@ simplifyEquation
     -> simplifier (MultiAnd (Equation variable))
 simplifyEquation equation =
     do
-        simplifiedCond <- lift $
+        simplifiedCond <-
             Simplifier.simplifyCondition
                 SideCondition.top
                 (fromPredicate argument')
-        Monad.unless
+        lift $ Monad.unless
             ((isTop . predicate) simplifiedCond)
             (throwE equation)
         let Conditional { substitution, predicate } = simplifiedCond
-        Monad.unless (isTop predicate) (throwE equation)
+        lift $ Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
             left' = TermLike.substitute subst left
             requires' = Predicate.substitute subst requires
@@ -107,14 +99,14 @@ simplifyEquation equation =
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes
             }
-    & returnOriginalIfAborted
     & Logic.observeAllT
+    & returnOriginalIfAborted
     & fmap MultiAnd.make
   where
     argument' =
         fromMaybe Predicate.makeTruePredicate argument
-    returnOriginalIfAborted =
-        fmap (either id id) . runExceptT
+    returnOriginalIfAborted xs =
+        fmap (either (: []) id) (runExceptT xs)
     Equation
         { requires
         , argument
