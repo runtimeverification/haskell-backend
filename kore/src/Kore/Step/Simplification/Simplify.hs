@@ -100,6 +100,9 @@ import Kore.Internal.Variable
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
@@ -108,7 +111,6 @@ import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.OverloadSimplifier
     ( OverloadSimplifier (..)
     )

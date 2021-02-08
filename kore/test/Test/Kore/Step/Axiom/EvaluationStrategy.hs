@@ -37,7 +37,8 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable, RewritingVariableName
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
