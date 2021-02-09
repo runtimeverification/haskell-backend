@@ -13,11 +13,13 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
 import qualified Pretty

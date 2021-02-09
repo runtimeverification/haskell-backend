@@ -28,6 +28,9 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Axiom.Matcher
@@ -38,7 +41,6 @@ import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_verify :: [TestTree]
 test_verify =
