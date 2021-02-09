@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2c8cc003e138e15974563191016707bdb4c1aad05d9b59130972c019b8653bff
+-- hash: c7335f234ff802f2b2d42c8970fd41a6fa133676b9afa09d411e6222e1120d42
 
 name:           kore
-version:        0.38.0.0
+version:        0.39.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -223,6 +223,7 @@ library
       Kore.Log.KoreLogOptions
       Kore.Log.Registry
       Kore.Log.SQLite
+      Kore.Log.WarnBoundedModelChecker
       Kore.Log.WarnFunctionWithoutEvaluators
       Kore.Log.WarnIfLowProductivity
       Kore.Log.WarnRetrySolverQuery

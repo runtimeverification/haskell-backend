@@ -89,6 +89,7 @@ import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.SourceLocation
 import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
@@ -129,6 +130,8 @@ data Symbol =
     , unitHook      :: !(Unit SymbolOrAlias)
     , elementHook   :: !(Element SymbolOrAlias)
     , concatHook    :: !(Concat SymbolOrAlias)
+    , sourceLocation :: !SourceLocation
+    -- ^ Location in the original (source) file.
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -158,6 +161,7 @@ instance ParseAttributes Symbol where
         >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
         >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
         >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
+        >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -178,6 +182,7 @@ instance From Symbol Attributes where
             , from . unitHook
             , from . elementHook
             , from . concatHook
+            , from . sourceLocation
             ]
 
 type StepperAttributes = Symbol
@@ -185,22 +190,23 @@ type StepperAttributes = Symbol
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
-        { function      = def
-        , functional    = def
-        , constructor   = def
-        , injective     = def
-        , sortInjection = def
-        , anywhere      = def
-        , hook          = def
-        , smtlib        = def
-        , smthook       = def
-        , memo          = def
-        , klabel        = def
-        , symbolKywd    = def
-        , noEvaluators  = def
-        , unitHook      = def
-        , elementHook   = def
-        , concatHook    = def
+        { function       = def
+        , functional     = def
+        , constructor    = def
+        , injective      = def
+        , sortInjection  = def
+        , anywhere       = def
+        , hook           = def
+        , smtlib         = def
+        , smthook        = def
+        , memo           = def
+        , klabel         = def
+        , symbolKywd     = def
+        , noEvaluators   = def
+        , unitHook       = def
+        , elementHook    = def
+        , concatHook     = def
+        , sourceLocation = def
         }
 
 -- | See also: 'defaultSymbolAttributes'

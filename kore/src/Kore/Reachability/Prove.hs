@@ -90,6 +90,7 @@ import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState
@@ -409,6 +410,7 @@ transitionRule'
 transitionRule' claims axioms = \prim proofState ->
     deepseq proofState
         (transitionRule claims axiomGroups
+            & withWarnings
             & profTransitionRule
             & withConfiguration
             & withDebugClaimState
@@ -419,6 +421,22 @@ transitionRule' claims axioms = \prim proofState ->
         prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+withWarnings
+    :: forall m
+    .  MonadSimplify m
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
+withWarnings rule prim claimState = do
+    claimState' <- rule prim claimState
+    case prim of
+        Prim.CheckImplication | ClaimState.Stuck _ <- claimState' ->
+            case claimState of
+                ClaimState.Remaining claim -> warnStuckClaimStateTermsNotUnifiable claim
+                ClaimState.Claimed claim -> warnStuckClaimStateTermsUnifiable claim
+                _ -> return ()
+        _ -> return ()
+    return claimState'
 
 profTransitionRule
     :: forall m

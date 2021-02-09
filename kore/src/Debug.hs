@@ -1,10 +1,10 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
-{-# LANGUAGE Strict               #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Debug
     (
@@ -37,10 +37,6 @@ import Data.Hashable
     ( Hashed
     , unhashed
     )
-import Data.HashMap.Strict
-    ( HashMap
-    )
-import qualified Data.HashMap.Strict as HashMap
 import Data.Int
 import Data.Map.Strict
     ( Map
@@ -336,11 +332,6 @@ instance (Debug k, Debug a) => Debug (Map.Map k a) where
         (parens (precOut >= 10) . Pretty.sep)
         ["Data.Map.Strict.fromList", debug (Map.toList as)]
 
-instance (Debug k, Debug a) => Debug (HashMap k a) where
-    debugPrec as precOut =
-        (parens (precOut >= 10) . Pretty.sep)
-        ["Data.HashMap.Strict.fromList", debug (HashMap.toList as)]
-
 instance Debug a => Debug (Set a) where
     debugPrec as precOut =
         (parens (precOut >= 10) . Pretty.sep)
@@ -600,16 +591,6 @@ instance
       where
         wrapFromList diff' precOut =
             parens (precOut >= 10) $ "Data.Map.Strict.fromList" <+> diff' 10
-
-instance
-    ( Debug key, Debug value, Diff key, Diff value )
-    => Diff (HashMap key value)
-  where
-    diffPrec as bs =
-        fmap wrapFromList $ diffPrec (HashMap.toList as) (HashMap.toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.HashMap.Strict.fromList" <+> diff' 10
 
 instance (Debug a, Debug b, Diff a, Diff b) => Diff (a, b)
 

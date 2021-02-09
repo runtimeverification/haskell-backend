@@ -8,6 +8,7 @@ import qualified Hedgehog.Gen as Gen
 
 import qualified Data.Default as Default
 
+import Kore.Attribute.SourceLocation
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
@@ -54,6 +55,7 @@ symbolAttributeGen =
         <*> unitHookAttributeGen
         <*> elementHookAttributeGen
         <*> concatHookAttributeGen
+        <*> sourceLocationAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -102,3 +104,6 @@ elementHookAttributeGen = pure Default.def
 
 concatHookAttributeGen :: Gen (Attribute.Concat SymbolOrAlias)
 concatHookAttributeGen = pure Default.def
+
+sourceLocationAttributeGen :: Gen Kore.Attribute.SourceLocation.SourceLocation
+sourceLocationAttributeGen = pure Default.def
