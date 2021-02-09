@@ -8,7 +8,13 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Bifunctor
+    ( bimap
+    )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
@@ -85,7 +91,7 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> InternalMap (TermLike Concrete) (OrPattern VariableName)
+        -> InternalMap Key (OrPattern VariableName)
         -> [Pattern VariableName]
         -> TestTree
     becomes name origin expect =
@@ -94,14 +100,14 @@ test_simplify =
             (OrPattern.fromPatterns expect)
             (evaluate origin)
 
-mkMap :: [(child, child)] -> [child] -> InternalMap (TermLike Concrete) child
+mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []
 
 mkMapAux
     :: [(TermLike Concrete, child)]
     -> [(child, child)]
     -> [child]
-    -> InternalMap (TermLike Concrete) child
+    -> InternalMap Key child
 mkMapAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.mapSort
@@ -110,12 +116,15 @@ mkMapAux concreteElements elements opaque =
         , builtinAcConcat = Mock.concatMapSymbol
         , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = MapElement <$> elements
-            , concreteElements = MapValue <$> Map.fromList concreteElements
+            , concreteElements =
+                concreteElements
+                & map (bimap (retractKey >>> fromJust) MapValue)
+                & Map.fromList
             , opaque
             }
         }
 
 evaluate
-    :: InternalMap (TermLike Concrete) (OrPattern VariableName)
+    :: InternalMap Key (OrPattern VariableName)
     -> OrPattern VariableName
 evaluate = simplify

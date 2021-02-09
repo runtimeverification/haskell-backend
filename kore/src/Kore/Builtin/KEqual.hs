@@ -29,7 +29,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT
-    , hoistMaybe
     )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
@@ -65,7 +64,7 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
@@ -161,11 +160,14 @@ evalKEq true (valid :< app) =
         -> TermLike variable
         -> MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
-        asConcrete1 <- hoistMaybe $ Builtin.toKey termLike1
-        asConcrete2 <- hoistMaybe $ Builtin.toKey termLike2
+        -- Here we handle the case when both patterns are constructor-like
+        -- (so that equality is syntactic). If either pattern is not
+        -- constructor-like, we postpone evaluation until we know more.
+        Monad.guard (TermLike.isConstructorLike termLike1)
+        Monad.guard (TermLike.isConstructorLike termLike2)
         Builtin.appliedFunction
             $ Bool.asPattern sort
-            $ comparison asConcrete1 asConcrete2
+            $ comparison termLike1 termLike2
 
 evalKIte
     :: forall variable simplifier

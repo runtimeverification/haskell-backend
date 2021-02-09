@@ -21,9 +21,6 @@ module Kore.Syntax.Id
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.String
     ( IsString (..)
     )

@@ -104,10 +104,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import Kore.Log.InfoReachability
-import Kore.Log.WarnStuckClaimState
-    ( warnStuckClaimStateTermsNotUnifiable
-    , warnStuckClaimStateTermsUnifiable
-    )
 import Kore.Reachability.ClaimState hiding
     ( claimState
     )
@@ -327,11 +323,9 @@ transitionRule claims axiomGroups = transitionRuleWorker
         case result of
             Implied -> pure Proven
             NotImpliedStuck a -> do
-                warnStuckClaimStateTermsUnifiable
                 pure (Stuck a)
             NotImplied a
               | isRemainder claimState -> do
-                warnStuckClaimStateTermsNotUnifiable
                 pure (Stuck a)
               | otherwise -> pure (Claimed a)
       | otherwise = pure claimState

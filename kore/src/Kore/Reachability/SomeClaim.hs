@@ -22,9 +22,6 @@ module Kore.Reachability.SomeClaim
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Data.Coerce
     ( coerce

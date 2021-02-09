@@ -12,7 +12,7 @@
     {
       false
     #Equals
-      ?I <=Int ?I0
+      ?I:Int <=Int ?I0:Int
     }
 #Or
     <T>
@@ -29,5 +29,5 @@
     {
       true
     #Equals
-      ?I <=Int ?I0
+      ?I:Int <=Int ?I0:Int
     }

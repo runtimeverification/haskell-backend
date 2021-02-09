@@ -14,6 +14,26 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.39.0.0] - 2021-02-04
+
+### Added
+
+- `kore-parser` accepts the `--pattern` argument multiple times. It will
+  validate all the patterns with a single definition. (#2369)
+
+### Changed
+
+- `kore-exec --version` will report the version number and Git commit, but not
+  the build date. The build date was never reported correctly anyway. (#2370)
+
+### Fixed
+
+- The priority of equations is respected again. (#2366)
+- Terms are still equal if the backend has inferred that one is defined but not
+  the other. (#2372)
+- Uninterpreted functions appearing in the keys of maps and sets are handled
+  correctly. (#2323)
+
 ## [0.38.0.0] - 2021-01-24
 
 ### Added

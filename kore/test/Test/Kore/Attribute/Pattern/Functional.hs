@@ -9,13 +9,18 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Maybe
+    ( fromJust
+    )
+
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Key
     , TermLikeF (..)
+    , retractKey
     )
 import Kore.Syntax hiding
     ( PatternF (..)
@@ -71,8 +76,8 @@ test_instance_Synthetic =
         [ is . asSetBuiltin
             $ emptyNormalizedSet
         , is . asSetBuiltin
-            $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a, ConcreteElement Mock.b]
+            $ with emptyNormalizedSet
+            $ map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
         , is . asSetBuiltin
             $ emptyNormalizedSet `with` VariableElement functional
         , isn't . asSetBuiltin
@@ -82,7 +87,7 @@ test_instance_Synthetic =
                 `with` [VariableElement functional, VariableElement functional]
         , isn't . asSetBuiltin
             $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a]
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
                 `with` VariableElement functional
         , is . asSetBuiltin
             $ emptyNormalizedSet `with` OpaqueSet functional
@@ -93,7 +98,7 @@ test_instance_Synthetic =
                 `with` [OpaqueSet functional, OpaqueSet nonFunctional]
         , isn't . asSetBuiltin
             $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a]
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
                 `with` OpaqueSet functional
         ]
     ]
@@ -137,6 +142,6 @@ test_instance_Synthetic =
       | otherwise      = isn't
 
     asSetBuiltin
-        :: NormalizedAc NormalizedSet (TermLike Concrete) Functional
-        -> InternalAc (TermLike Concrete) NormalizedSet Functional
+        :: NormalizedAc NormalizedSet Key Functional
+        -> InternalAc Key NormalizedSet Functional
     asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

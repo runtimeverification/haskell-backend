@@ -29,7 +29,7 @@ import qualified Logic
 -}
 simplify
     :: InternalVariable variable
-    => InternalMap (TermLike Concrete) (OrPattern variable)
+    => InternalMap Key (OrPattern variable)
     -> OrPattern variable
 simplify =
     traverse (Logic.scatter >>> Compose)
@@ -40,7 +40,7 @@ simplify =
 
 normalizeInternalMap
     :: InternalVariable variable
-    => InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap Key (TermLike variable)
     -> TermLike variable
 normalizeInternalMap map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of

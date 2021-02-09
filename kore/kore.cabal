@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 31c0153b51498e9307cfa8992158de791fb8824f02b0c299f2e0b5dd9a03eab8
+-- hash: c7335f234ff802f2b2d42c8970fd41a6fa133676b9afa09d411e6222e1120d42
 
 name:           kore
-version:        0.38.0.0
+version:        0.39.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -183,6 +183,7 @@ library
       Kore.Internal.InternalMap
       Kore.Internal.InternalSet
       Kore.Internal.InternalString
+      Kore.Internal.Key
       Kore.Internal.MultiAnd
       Kore.Internal.MultiOr
       Kore.Internal.NormalizedAc
@@ -222,6 +223,7 @@ library
       Kore.Log.KoreLogOptions
       Kore.Log.Registry
       Kore.Log.SQLite
+      Kore.Log.WarnBoundedModelChecker
       Kore.Log.WarnFunctionWithoutEvaluators
       Kore.Log.WarnIfLowProductivity
       Kore.Log.WarnRetrySolverQuery
@@ -476,6 +478,7 @@ executable kore-exec
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/exec
@@ -556,6 +559,7 @@ executable kore-format
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/format
@@ -636,6 +640,7 @@ executable kore-parser
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/parser
@@ -790,6 +795,7 @@ executable kore-repl
   main-is: Main.hs
   other-modules:
       GlobalMain
+      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/repl
@@ -958,6 +964,7 @@ test-suite kore-test
       Test.Kore.IndexedModule.SortGraph
       Test.Kore.Internal.ApplicationSorts
       Test.Kore.Internal.Condition
+      Test.Kore.Internal.Key
       Test.Kore.Internal.MultiAnd
       Test.Kore.Internal.OrCondition
       Test.Kore.Internal.OrPattern

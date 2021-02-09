@@ -37,9 +37,6 @@ module Kore.Step.RulePattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Lens
     ( Lens'
     )
@@ -506,6 +503,9 @@ newtype ImplicationRule variable =
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance From (ImplicationRule variable) Attribute.SourceLocation where
+    from (ImplicationRule rule) = from rule
 
 instance
     InternalVariable variable

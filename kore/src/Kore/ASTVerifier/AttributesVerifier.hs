@@ -42,7 +42,7 @@ import Kore.AST.AstWithLocation
     ( locationFromAst
     )
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
@@ -149,7 +149,7 @@ verifyNoHookAttribute attributes = do
 
 verifyNoHookedSupersort
     :: MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    => IndexedModule Verified.Pattern Attribute.Symbol.Symbol attrs
     -> Attribute.Axiom SymbolOrAlias VariableName
     -> [Subsort.Subsort]
     -> error ()
@@ -176,7 +176,7 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
 verifyAxiomAttributes
     :: forall error attrs
     .  MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol attrs
+    => IndexedModule Verified.Pattern Attribute.Symbol.Symbol attrs
     -> Attribute.Axiom SymbolOrAlias VariableName
     -> error (Attribute.Axiom Internal.Symbol.Symbol VariableName)
 verifyAxiomAttributes indexedModule axiom = do
@@ -214,15 +214,15 @@ verifyAxiomAttributes indexedModule axiom = do
 verifySymbolAttributes
     :: forall error a
     .  MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol a
-    -> Attribute.Symbol
-    -> error Attribute.Symbol
+    => IndexedModule Verified.Pattern Attribute.Symbol.Symbol a
+    -> Attribute.Symbol.Symbol
+    -> error Attribute.Symbol.Symbol
 verifySymbolAttributes _ attrs = return attrs
 
 verifySortAttributes
     :: forall error a
     .  MonadError (Error VerifyError) error
-    => IndexedModule Verified.Pattern Attribute.Symbol a
-    -> Attribute.Symbol
-    -> error Attribute.Symbol
+    => IndexedModule Verified.Pattern Attribute.Symbol.Symbol a
+    -> Attribute.Symbol.Symbol
+    -> error Attribute.Symbol.Symbol
 verifySortAttributes _ attrs = return attrs
