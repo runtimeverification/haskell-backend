@@ -39,7 +39,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkConfigVariable, mkElementConfigVariable
     )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -257,7 +257,7 @@ test_matcherVariableFunction =
             a = Mock.functional00SubSubSort
             x =
                 mkElementVariable (testId "x") Mock.subSort
-                & mapElementVariable (pure mkConfigVariable)
+                & mkElementConfigVariable
             expect =
                 mkMatchResult
                     ( makeTruePredicate
@@ -276,7 +276,7 @@ test_matcherVariableFunction =
             a = Mock.functional00SubSubSort
             x =
                 mkElementVariable (testId "x") Mock.subSort
-                & mapElementVariable (pure mkConfigVariable)
+                & mkElementConfigVariable
             expect = Nothing
         actual <-
             matchDefinition
@@ -384,7 +384,7 @@ test_matcherVariableFunction =
     aSubSub = Mock.functional00SubSubSort
     xSub =
         mkElementVariable (testId "xSub") Mock.subSort
-        & mapElementVariable (pure mkConfigVariable)
+        & mkElementConfigVariable
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
@@ -660,12 +660,12 @@ test_matching_List =
   where
     xList =
         inject
+        $ mkElementConfigVariable
         $ mkElementVariable (testId "xList") Test.listSort
-        & mapElementVariable (pure mkConfigVariable)
     yList =
         inject
+        $ mkElementConfigVariable
         $ mkElementVariable (testId "yList") Test.listSort
-        & mapElementVariable (pure mkConfigVariable)
     one = mkInt 1
     two = mkInt 2
     concatList = Test.concatList
@@ -1035,19 +1035,19 @@ test_matcherOverloading =
 xInt, yInt, zInt, mMap, nMap :: ElementVariable RewritingVariableName
 mMap =
     mkElementVariable (testId "mMap") Test.mapSort
-    & mapElementVariable (pure mkConfigVariable)
+    & mkElementConfigVariable
 nMap =
     mkElementVariable (testId "nMap") Test.mapSort
-    & mapElementVariable (pure mkConfigVariable)
+    & mkElementConfigVariable
 xInt =
     mkElementVariable (testId "xInt") Test.intSort
-    & mapElementVariable (pure mkConfigVariable)
+    & mkElementConfigVariable
 yInt =
     mkElementVariable (testId "yInt") Test.intSort
-    & mapElementVariable (pure mkConfigVariable)
+    & mkElementConfigVariable
 zInt =
     mkElementVariable (testId "zInt") Test.intSort
-    & mapElementVariable (pure mkConfigVariable)
+    & mkElementConfigVariable
 
 mkInt :: InternalVariable variable => Integer -> TermLike variable
 mkInt = Test.Int.asInternal

@@ -940,10 +940,11 @@ int2bytesSymbol =
     & hook "BYTES.int2bytes"
 
 int2bytes
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+    -> TermLike variable
 int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
 
 bytes2intSymbol :: Internal.Symbol

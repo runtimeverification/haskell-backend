@@ -53,7 +53,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkConfigVariable, mkElementConfigVariable
     )
 
 import Test.Kore
@@ -63,7 +63,6 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 
@@ -239,8 +238,8 @@ test_concatUnitSymbolic =
     prop = do
         let patUnit = mkApplySymbol unitListSymbol []
             patSymbolic =
-                mkElemVar (mkElementVariable (testId "x") listSort)
-                & TermLike.mapVariables (pure mkConfigVariable)
+                mkElemVar . mkElementConfigVariable
+                $ mkElementVariable (testId "x") listSort
             patConcat1 = mkApplySymbol concatListSymbol [ patUnit, patSymbolic ]
             patConcat2 = mkApplySymbol concatListSymbol [ patSymbolic, patUnit ]
             predicate1 = mkEquals_ patSymbolic patConcat1
@@ -299,44 +298,35 @@ test_concatSymbolic =
             patConcatY = concatList patElemY patSymbolicYs
             patUnifiedXY =
                 mkAnd patConcatX patConcatY
-                & TermLike.mapVariables (pure mkConfigVariable)
 
             expect = Conditional
-                        { term =
-                            patConcatY
-                            & TermLike.mapVariables (pure mkConfigVariable)
+                        { term = patConcatY
                         , predicate = makeTruePredicate
                         , substitution =
-                            from @(Map (SomeVariable VariableName) _)
+                            from @(Map (SomeVariable RewritingVariableName) _)
                             (Map.fromList
                                 [ (inject elemVarX, patSymbolicY)
                                 , (inject elemVarXs, patSymbolicYs)
                                 ]
                             )
-                            & Substitution.mapVariables (pure mkConfigVariable)
                         }
         unified <- evaluateT patUnifiedXY
         expect === unified
 
         let patConcatX' = concatList patSymbolicXs patElemX
             patConcatY' = concatList patSymbolicYs patElemY
-            patUnifiedXY' =
-                mkAnd patConcatX' patConcatY'
-                & TermLike.mapVariables (pure mkConfigVariable)
+            patUnifiedXY' = mkAnd patConcatX' patConcatY'
 
             expect' = Conditional
-                        { term =
-                            patConcatY'
-                            & TermLike.mapVariables (pure mkConfigVariable)
+                        { term = patConcatY'
                         , predicate = makeTruePredicate
                         , substitution =
-                            from @(Map (SomeVariable VariableName) _)
+                            from @(Map (SomeVariable RewritingVariableName) _)
                             ( Map.fromList
                                 [ (inject elemVarX, patSymbolicY)
                                 , (inject elemVarXs, patSymbolicYs)
                                 ]
                             )
-                            & Substitution.mapVariables (pure mkConfigVariable)
                         }
         unified' <- evaluateT patUnifiedXY'
         expect' === unified'
@@ -365,19 +355,15 @@ test_concatSymbolicDifferentLengths =
             patConcatX =
                 patElemX1 `concatList` patElemX2 `concatList` patSymbolicXs
             patConcatY = patElemY `concatList` patSymbolicYs
-            patUnifiedXY =
-                mkAnd patConcatX patConcatY
-                & TermLike.mapVariables (pure mkConfigVariable)
+            patUnifiedXY = mkAnd patConcatX patConcatY
             expect =
                 Conditional
                     { term =
-                        patElemY
-                        `concatList`
-                            (patElemX2 `concatList` patSymbolicXs)
-                        & TermLike.mapVariables (pure mkConfigVariable)
+                        patElemY `concatList`
+                        (patElemX2 `concatList` patSymbolicXs)
                     , predicate = makeTruePredicate
                     , substitution =
-                        from @(Map (SomeVariable VariableName) _)
+                        from @(Map (SomeVariable RewritingVariableName) _)
                         ( Map.fromList
                             [ (inject elemVarX1, patSymbolicY)
                             ,   ( inject elemVarYs
@@ -385,13 +371,14 @@ test_concatSymbolicDifferentLengths =
                                 )
                             ]
                         )
-                        & Substitution.mapVariables (pure mkConfigVariable)
                     }
         unified <- evaluateT patUnifiedXY
         expect === unified
 
-ofSort :: Text -> Sort -> ElementVariable VariableName
-ofSort name sort = mkElementVariable (testId name) sort
+ofSort :: Text -> Sort -> ElementVariable RewritingVariableName
+ofSort name sort =
+    mkElementVariable (testId name) sort
+    & mkElementConfigVariable
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree

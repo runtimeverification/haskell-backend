@@ -19,6 +19,7 @@ module Test.Kore
     , predicateGen
     , predicateChildGen
     , elementVariableGen
+    , configElementVariableGen
     , setVariableGen
     , elementTargetVariableGen
     , setTargetVariableGen
@@ -93,6 +94,8 @@ import Kore.Variables.Target
     , mkSetNonTarget
     , mkSetTarget
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkElementConfigVariable)
+import Data.Functor ((<&>))
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -256,6 +259,11 @@ elementVariableGen patternSort = do
         variables = (fmap . fmap) unElementVariableName elementVariables
     variableGen' patternSort variables idGen
         & (fmap . fmap) ElementVariableName
+
+configElementVariableGen :: Sort -> Gen (ElementVariable RewritingVariableName)
+configElementVariableGen patternSort =
+    elementVariableGen patternSort
+    <&> mkElementConfigVariable
 
 setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do

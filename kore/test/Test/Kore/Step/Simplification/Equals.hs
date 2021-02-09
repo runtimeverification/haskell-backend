@@ -925,8 +925,7 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let x = --mkElementVariable "x" Mock.listSort
-                    Variable
+            let x = Variable
                         { variableName =
                             ElementVariableName
                                 (mkConfigVariable $ mkVariableName "x")

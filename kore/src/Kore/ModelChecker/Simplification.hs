@@ -91,7 +91,9 @@ checkImplicationIsTop lhs rhs =
 
 stripForallQuantifiers
     :: TermLike RewritingVariableName
-    -> (Set.Set (ElementVariable RewritingVariableName), TermLike RewritingVariableName)
+    ->  ( Set.Set (ElementVariable RewritingVariableName)
+        , TermLike RewritingVariableName
+        )
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

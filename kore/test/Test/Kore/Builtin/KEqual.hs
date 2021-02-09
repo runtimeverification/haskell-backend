@@ -23,10 +23,9 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkElementConfigVariable
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -86,27 +85,29 @@ test_KEqual =
 
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
         let expect = Pattern.top
+            xConfigElemVarKItemSort =
+                mkElementVariable "x" kItemSort & mkElementConfigVariable
             original =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
-                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
                     )
-                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
         let expect = Pattern.top
+            xConfigElemVarIdSort =
+                mkElementVariable "x" idSort & mkElementConfigVariable
             original =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
-                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
+                        (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
+                        (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
                     )
-                    & TermLike.mapVariables (pure mkConfigVariable)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -124,8 +125,7 @@ test_KEqual =
 
     , testCaseWithoutSMT "distinct domain values" $ do
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal False
-            original =
-                keqBool (inj kSort dvT) (inj kSort dvX)
+            original = keqBool (inj kSort dvT) (inj kSort dvX)
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -173,12 +173,17 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
     , testCaseWithoutSMT "abstract" $ do
-        let original =
-                kiteK x y z & TermLike.mapVariables (pure mkConfigVariable)
+        let original = kiteK x y z
             expect = Pattern.fromTermLike original
-            x = mkElemVar $ mkElementVariable (testId "x") boolSort
-            y = mkElemVar $ mkElementVariable (testId "y") kSort
-            z = mkElemVar $ mkElementVariable (testId "z") kSort
+            x =
+                mkElemVar . mkElementConfigVariable
+                $ mkElementVariable (testId "x") boolSort  
+            y =
+                mkElemVar . mkElementConfigVariable
+                $ mkElementVariable (testId "y") kSort
+            z =
+                mkElemVar . mkElementConfigVariable
+                $ mkElementVariable (testId "z") kSort
         actual <- evaluate original
         assertEqual' "" expect actual
     ]

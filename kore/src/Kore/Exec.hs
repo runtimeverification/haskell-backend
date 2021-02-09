@@ -561,11 +561,8 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
-                fmap
-                    ( mapRuleVariables (pure mkConfigVariable)
-                    . makeImplicationRule
-                    )
-                    specClaims
+                mapRuleVariables (pure mkConfigVariable) . makeImplicationRule
+                <$> specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -749,8 +746,7 @@ initialize simplificationProcedure verifiedModule = do
         simplRule <- simplificationProcedure rule
         when (lhsEqualsRhs $ getRewriteRule simplRule)
             (errorRewriteLoop simplRule)
-        let renamedRule = simplRule
-        deepseq renamedRule pure renamedRule
+        deepseq simplRule pure simplRule
 
 data InitializedProver =
     InitializedProver

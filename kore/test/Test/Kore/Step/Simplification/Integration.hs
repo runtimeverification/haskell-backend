@@ -50,7 +50,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkRuleVariable
+    , mkRuleVariable, mkElementConfigVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
@@ -291,19 +291,15 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
                             ,   [ conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.x))
+                                    (Mock.functional10 (mkElemVar Mock.xRule))
                                     (makeEqualsPredicate Mock.cf Mock.a)
-                                    (mkElemVar Mock.x)
-                                    & Equation.mapVariables
-                                        (pure mkRuleVariable)
+                                    (mkElemVar Mock.xRule)
                                 , conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.x))
+                                    (Mock.functional10 (mkElemVar Mock.xRule))
                                     (makeNotPredicate
                                         (makeEqualsPredicate Mock.cf Mock.a)
                                     )
-                                    (mkElemVar Mock.x)
-                                    & Equation.mapVariables
-                                        (pure mkRuleVariable)
+                                    (mkElemVar Mock.xRule)
                                 ]
                             )
                        ]
@@ -797,13 +793,13 @@ test_simplificationIntegration =
     , testCase "Implies simplification" $ do
         let zz =
                 mkElementVariable (testId "zz") Mock.subOthersort
-                & mapElementVariable (pure mkConfigVariable)
+                & mkElementConfigVariable
             mci =
                 mkElementVariable (testId "mci") Mock.subOthersort
-                & mapElementVariable (pure mkConfigVariable)
+                & mkElementConfigVariable
             mw =
                 mkElementVariable (testId "mw") Mock.subOthersort
-                & mapElementVariable (pure mkConfigVariable)
+                & mkElementConfigVariable
             k =
                 mkSetVariable (testId "k") Mock.setSort
                 & mapSetVariable (pure mkConfigVariable)

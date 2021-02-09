@@ -16,17 +16,12 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Map.Strict as Map
-import Data.Sup
-    ( Sup (..)
-    )
 import Data.Text
     ( Text
     )
-import GHC.Natural
-    ( intToNatural
-    )
 
 import qualified Kore.Equation as Equation
+import Test.Kore.Equation.Common
 import Kore.Equation.Application hiding
     ( attemptEquation
     )
@@ -35,7 +30,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRuleVariable
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
@@ -44,15 +38,6 @@ import Kore.Step.Axiom.Registry
 import qualified Pretty
 
 import Test.Expect
-import Test.Kore
-    ( testId
-    )
-import Test.Kore.Equation.Common hiding
-    ( axiom
-    , axiom_
-    , functionAxiomUnification
-    , functionAxiomUnification_
-    )
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
@@ -535,7 +520,7 @@ test_applySubstitutionAndSimplify =
         [ (AxiomIdentifier.Application Mock.fId
           , [ functionAxiomUnification_
                 Mock.fSymbol
-                [mkElemVar Mock.zConfig]
+                [mkElemVar Mock.zRule]
                 Mock.a
             ]
           )
@@ -671,59 +656,3 @@ requiresNotMet
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
 
--- TODO (Andrei): Probably replace `Common.axiom` with this
-
-axiom
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Predicate RewritingVariableName
-    -> Equation RewritingVariableName
-axiom left right requires =
-    (mkEquation left right) { requires }
-
-axiom_
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Equation RewritingVariableName
-axiom_ left right = axiom left right makeTruePredicate
-
-functionAxiomUnification
-    :: Symbol
-    -> [TermLike RewritingVariableName]
-    -> TermLike RewritingVariableName
-    -> Predicate RewritingVariableName
-    -> Equation RewritingVariableName
-functionAxiomUnification symbol args right requires =
-    case args of
-        [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
-        _  -> (mkEquation left right) { requires, argument }
-  where
-    left = mkApplySymbol symbol variables
-    sorts = fmap termLikeSort args
-    variables = generateVariables (intToNatural (length args)) sorts
-    generateVariables n sorts' =
-        fmap makeElementVariable (zip [0..n - 1] sorts')
-    argument =
-        Just
-        $ foldr1 makeAndPredicate
-        $ fmap (uncurry makeInPredicate)
-        $ zip variables args
-    makeElementVariable (num, sort) =
-        mkElementVariable' (testId "funcVar") num sort
-        & mkElemVar
-    mkElementVariable' base counter variableSort =
-        Variable
-            { variableName =
-                ElementVariableName
-                    $ mkRuleVariable
-                    $ VariableName { base, counter = Just (Element counter) }
-            , variableSort
-            }
-
-functionAxiomUnification_
-    :: Symbol
-    -> [TermLike RewritingVariableName]
-    -> TermLike RewritingVariableName
-    -> Equation RewritingVariableName
-functionAxiomUnification_ symbol args right =
-    functionAxiomUnification symbol args right makeTruePredicate

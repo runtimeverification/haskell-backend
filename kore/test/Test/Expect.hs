@@ -26,6 +26,7 @@ import Kore.Internal.TermLike
 import Kore.TopBottom
 
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 expectRight :: HasCallStack => Debug left => Either left right -> IO right
 expectRight = either (assertFailure . show . debug) return
@@ -60,7 +61,7 @@ assertTop a
   | isTop a = return ()
   | otherwise = (assertFailure . show) (debug a)
 
-expectBool :: HasCallStack => TermLike VariableName -> IO Bool
+expectBool :: HasCallStack => TermLike RewritingVariableName -> IO Bool
 expectBool (InternalBool_ internalBool) = return (internalBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)
 

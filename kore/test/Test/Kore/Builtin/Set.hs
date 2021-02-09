@@ -126,9 +126,9 @@ import Kore.Unification.UnifierT
 
 import Test.Expect
 import Test.Kore
-    ( elementVariableGen
+    ( configElementVariableGen
     , standaloneGen
-    , testId
+    , testId, configElementVariableGen
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
@@ -150,26 +150,26 @@ import Test.SMT hiding
     )
 import Test.Tasty.HUnit.Ext
 
-genKeys :: Gen [TermLike VariableName]
+genKeys :: Gen [TermLike RewritingVariableName]
 genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
 
-genKey :: Gen (TermLike VariableName)
+genKey :: Gen (TermLike RewritingVariableName)
 genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
 
-genFunctionalKey :: Gen (TermLike VariableName)
+genFunctionalKey :: Gen (TermLike RewritingVariableName)
 genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
 
-functionalKeys :: [TermLike VariableName]
+functionalKeys :: [TermLike RewritingVariableName]
 functionalKeys = Mock.functional10 . mkElemVar <$> elemVars'
 
-concreteKeys :: [TermLike VariableName]
+concreteKeys :: [TermLike RewritingVariableName]
 concreteKeys = [Mock.a, Mock.b, Mock.c]
 
-symbolicKeys :: [TermLike VariableName]
+symbolicKeys :: [TermLike RewritingVariableName]
 symbolicKeys = Mock.f . mkElemVar <$> elemVars'
 
-elemVars' :: [ElementVariable VariableName]
-elemVars' = [Mock.x, Mock.y, Mock.z]
+elemVars' :: [ElementVariable RewritingVariableName]
+elemVars' = [Mock.xConfig, Mock.yConfig, Mock.zConfig]
 
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
@@ -249,9 +249,7 @@ test_inUnitSymbolic =
     testPropertyWithSolver
         "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
         (do
-            patKey <-
-                forAll genFunctionalKey
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            patKey <- forAll genFunctionalKey
             let patIn =
                     mkApplySymbol
                         inSetSymbolTestSort
@@ -269,9 +267,7 @@ test_inElementSymbolic =
     testPropertyWithSolver
         "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
         (do
-            patKey <-
-                forAll genKey
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            patKey <- forAll genKey
             let patElement = mkApplySymbol elementSetSymbolTestSort [ patKey ]
                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patElement ]
                 patTrue = Test.Bool.asInternal True
@@ -288,11 +284,8 @@ test_inConcatSymbolic =
         \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
         (do
             keys <- forAll genKeys
-            let keys' = keys <&> TermLike.mapVariables (pure mkConfigVariable)
-            patKey <-
-                forAll genKey
-                <&> TermLike.mapVariables (pure mkConfigVariable)
-            let patSet = mkSet_ $ Set.insert patKey (Set.fromList keys')
+            patKey <- forAll genKey
+            let patSet = mkSet_ $ Set.insert patKey (Set.fromList keys)
                 patIn = mkApplySymbol inSetSymbolTestSort [ patKey, patSet ]
                 patTrue = Test.Bool.asPattern True
                 conditionTerm = mkCeil boolSort patSet
@@ -378,15 +371,15 @@ test_concatNormalizes =
         (do
             int1 <- forAll genInteger
             int2 <- forAll genInteger
-            elemVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            elemVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
+            elemVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            elemVar2 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
 
             let elemVars =
                     [elemVar1, elemVar2]
-                    <&> mapElementVariable (pure mkConfigVariable)
                 allVars = setVar : elemVars
 
             unless (distinctVars allVars) discard
@@ -637,9 +630,9 @@ test_inclusion =
         )
     ]
 
-setVariableGen :: Sort -> Gen (Set (ElementVariable VariableName))
+setVariableGen :: Sort -> Gen (Set (ElementVariable RewritingVariableName))
 setVariableGen sort =
-    Gen.set (Range.linear 0 32) (standaloneGen $ elementVariableGen sort)
+    Gen.set (Range.linear 0 32) (standaloneGen $ configElementVariableGen sort)
 
 -- | Sets with symbolic keys are not simplified.
 test_symbolic :: TestTree
@@ -648,18 +641,13 @@ test_symbolic =
         "concat and elem are evaluated on symbolic keys"
         (do
             values <- forAll (setVariableGen intSort)
-            let values' =
-                    values
-                    & Set.map (mapElementVariable (pure mkConfigVariable))
-                patMap =
-                    asSymbolicPattern
-                        (Set.map mkElemVar values')
+            let patMap = asSymbolicPattern (Set.map mkElemVar values)
                 expect = Pattern.fromTermLike
                     (asInternalNormalized
                         (emptyNormalizedSet `with`
                             map
                                 (VariableElement . mkElemVar)
-                                (Set.toList values')
+                                (Set.toList values)
                         )
                     )
             if Set.null values
@@ -724,8 +712,7 @@ test_unifyFramingVariable =
                     (Set.insert framedElem)
                     (forAll genSetConcreteIntegerPattern)
             frameVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             let framedSet = Set.singleton framedElem
                 patConcreteSet = mkSet_ concreteSet & fromConcrete
                 patFramedSet =
@@ -802,11 +789,9 @@ test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
     testPropertyWithSolver "unify an empty set with a selection pattern" $ do
         elementVar <-
-            forAll (standaloneGen $ elementVariableGen intSort)
-            <&> mapElementVariable (pure mkConfigVariable)
+            forAll (standaloneGen $ configElementVariableGen intSort)
         setVar <-
-            forAll (standaloneGen $ elementVariableGen setSort)
-            <&> mapElementVariable (pure mkConfigVariable)
+            forAll (standaloneGen $ configElementVariableGen setSort)
         when
             (variableName elementVar == variableName setVar)
             discard
@@ -840,11 +825,9 @@ test_unifySelectFromSingleton =
         (do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             when
                 ( unElementVariableName (variableName elementVar)
                 == unElementVariableName (variableName setVar)
@@ -879,8 +862,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
         (do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let selectPat       = makeElementVariable elementVar
                 singleton       = asInternal (Set.singleton concreteElem)
                 elemStepPattern = fromConcrete concreteElem
@@ -907,11 +889,9 @@ test_unifySelectFromTwoElementSet =
             when (concreteElem1 == concreteElem2) discard
 
             elementVar <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             when
                 ( unElementVariableName (variableName elementVar)
                 == unElementVariableName (variableName setVar)
@@ -969,14 +949,11 @@ test_unifySelectTwoFromTwoElementSet =
             when (concreteElem1 == concreteElem2) discard
 
             elementVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elementVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             let allVars = [elementVar1, elementVar2, setVar]
             unless (distinctVars allVars) discard
 
@@ -1014,14 +991,11 @@ test_unifyConcatElemVarVsElemSet =
         "unify two set concatenations"
         (do
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2]
                 allVars = setVar : elemVars
             unless (distinctVars allVars) discard
@@ -1065,17 +1039,13 @@ test_unifyConcatElemVarVsElemElem =
         "unify concat(elem(X), S) and concat(elem(Y), elem(Z))"
         (do
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3]
                 allVars = setVar : elemVars
             unless (distinctVars allVars) discard
@@ -1120,14 +1090,11 @@ test_unifyConcatElemElemVsElemConcrete =
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), 1)"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
             unless (distinctVars allVars) discard
 
@@ -1168,17 +1135,13 @@ test_unifyConcatElemElemVsElemElem =
         "unify concat(elem(X), elem(Y)) and concat(elem(Z), elem(T))"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar4 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3, elemVar4]
             unless (distinctVars allVars) discard
 
@@ -1218,17 +1181,13 @@ test_unifyConcatElemConcatVsElemConcrete =
         "unify concat(elem(X), concat(elem(Y), S)) and concat(elem(Z), {6})"
         (do
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3]
                 allVars = setVar : elemVars
             unless (distinctVars allVars) discard
@@ -1282,11 +1241,9 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
         "unify concat(elem(X), {6}) and concat(elem(Y), {6})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
 
@@ -1321,11 +1278,9 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
         "unify concat(elem(X), {5}) and concat(elem(Y), {6})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
 
@@ -1365,11 +1320,9 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 7})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
 
@@ -1415,11 +1368,9 @@ test_unifyConcatElemConcreteVsElemConcrete4 =
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {7, 8})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
 
@@ -1450,11 +1401,9 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
         "unify concat(elem(X), {5, 6}) and concat(elem(Y), {5, 6})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
 
@@ -1493,11 +1442,9 @@ test_unifyConcatElemVsElem =
         "unify elem(X) and elem(Y)"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
@@ -1527,11 +1474,9 @@ test_unifyConcatElemVsElemConcrete1 =
         "unify elem(X) and concat(elem(Y), {})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
@@ -1562,11 +1507,9 @@ test_unifyConcatElemVsElemConcrete2 =
         "unify elem(X) and concat(elem(Y), {5})"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2] = List.sort allVars
@@ -1589,14 +1532,11 @@ test_unifyConcatElemVsElemElem =
         "unify elem(X) and concat(elem(Y), elem(Z))"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
@@ -1619,14 +1559,11 @@ test_unifyConcatElemVsElemConcat =
         "unify elem(X) and concat(elem(Y), concat(elem(Z), {5}))"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3] = List.sort allVars
@@ -1652,14 +1589,11 @@ test_unifyConcatElemVsElemVar =
         "unify elem(X) and concat(elem(Y), Z)"
         (do
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2]
                 allVars = setVar : elemVars
             unless (distinctVars allVars) discard
@@ -1694,17 +1628,13 @@ test_unifyConcatElemElemVsElemConcat =
             \ and concat(elem(Z), concat(elem(T), {5}))"
         (do
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar4 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let allVars = [elemVar1, elemVar2, elemVar3, elemVar4]
             unless (distinctVars allVars) discard
             let [elementVar1, elementVar2, elementVar3, elementVar4] =
@@ -1735,20 +1665,15 @@ test_unifyConcatElemElemVsElemConcatSet =
             \ and concat(elem(Z), concat(elem(T), U))"
         (do
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar3 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar4 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2, elemVar3, elemVar4]
             let allVars = setVar : elemVars
             unless (distinctVars allVars) discard
@@ -1792,11 +1717,9 @@ test_unifyFnSelectFromSingleton =
         (do
             concreteElem <- forAll genConcreteIntegerPattern
             elementVar <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             setVar <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             when
                 (variableName elementVar == variableName setVar)
                 discard
@@ -1846,20 +1769,15 @@ test_unifyMultipleIdenticalOpaqueSets =
             \ and concat(elem(y), concat(U, concat(V, concat(T, U))))"
         (do
             sVar1 <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             sVar2 <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             sVar3 <-
-                forAll (standaloneGen $ elementVariableGen setSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen setSort)
             elemVar1 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             elemVar2 <-
-                forAll (standaloneGen $ elementVariableGen intSort)
-                <&> mapElementVariable (pure mkConfigVariable)
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let elemVars = [elemVar1, elemVar2]
                 setVars = [sVar1, sVar2, sVar3]
             let allVars = setVars ++ elemVars

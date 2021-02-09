@@ -547,14 +547,7 @@ test_int2bytes =
                         (Test.Int.asInternal len)
                         (Test.Int.asInternal integer)
                         end
-                        & TermLike.mapVariables (pure mkConfigVariable)
-                expect =
-                    [ asPattern bytes
-                    -- TODO (Andrei): Perhaps change the whole module,
-                    -- but right now that would lead to too many errors at the
-                    -- same time
-                    & Pattern.mapVariables (pure mkConfigVariable)
-                    ]
+                expect = [ asPattern bytes]
             actual <- simplify input
             assertEqual "" expect actual
       where

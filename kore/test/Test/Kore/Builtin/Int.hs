@@ -55,9 +55,6 @@ import Data.Bits
     , (.&.)
     , (.|.)
     )
-import Data.Functor
-    ( (<&>)
-    )
 import Data.Semigroup
     ( Endo (..)
     )
@@ -83,7 +80,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkElementConfigVariable
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -97,10 +94,10 @@ import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
 
+
 import Test.Kore
-    ( elementVariableGen
-    , standaloneGen
-    , testId
+    ( standaloneGen
+    , testId, configElementVariableGen
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
@@ -529,8 +526,7 @@ test_unifyAnd_Fn :: TestTree
 test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
         var <-
-            forAll (standaloneGen $ elementVariableGen intSort)
-            <&> mapElementVariable (pure mkConfigVariable)
+            forAll (standaloneGen $ configElementVariableGen intSort)
         let dv = asInternal 2
             fnPat = mkApplySymbol absIntSymbol  [mkElemVar var]
             expect =
@@ -561,8 +557,7 @@ test_symbolic_eq_not_conclusive =
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
 idName `ofSort` sort =
-    mkElementVariable (testId idName) sort
-    & mapElementVariable (pure mkConfigVariable)
+    mkElementVariable (testId idName) sort & mkElementConfigVariable
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

@@ -461,7 +461,8 @@ test_applyRewriteRule_ =
 
     , testCase "Apply non-function-like rule in parallel" $ do
         let initial =
-                pure (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                pure
+                    (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xConfig))
         resultAxiom <-
             Exception.try
             $ applyRewriteRuleParallel_ initial axiomSigmaTopId
@@ -478,7 +479,11 @@ test_applyRewriteRule_ =
 
     , testCase "Apply list containing non-function-like rule in parallel" $ do
         let initial =
-                pure (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                pure
+                    (Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
         resultAxiom <-
             Exception.try
             $ applyRewriteRules_
@@ -501,7 +506,11 @@ test_applyRewriteRule_ =
 
     , testCase "Apply non-function-like rule in sequence" $ do
         let initial =
-                pure (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                pure
+                    (Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
         resultAxiom <-
             Exception.try
             $ applyRewriteRule_
@@ -524,7 +533,11 @@ test_applyRewriteRule_ =
 
     , testCase "Apply list containing non-function-like rule in sequence" $ do
         let initial =
-                pure (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                pure
+                    (Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
         resultAxiom <-
             Exception.try
             $ applyRewriteRules_
@@ -577,13 +590,13 @@ test_applyRewriteRule_ =
                 Conditional
                     { term =
                         Mock.sigma
-                            (mkElemVar Mock.xRule)
-                            (Mock.functionalConstr10 (mkElemVar Mock.yRule))
+                            (mkElemVar Mock.xConfig)
+                            (Mock.functionalConstr10 (mkElemVar Mock.yConfig))
                     , predicate = Predicate.makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.yRule, mkElemVar Mock.xRule)]
+                        [(inject Mock.yConfig, mkElemVar Mock.xConfig)]
                     }
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId

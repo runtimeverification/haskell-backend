@@ -46,7 +46,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkElementConfigVariable
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -413,8 +413,7 @@ testString name = testSymbolWithoutSolver evaluate name
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
 idName `ofSort` sort =
-    mkElementVariable (testId idName) sort
-    & mapElementVariable (pure mkConfigVariable)
+    mkElementVariable (testId idName) sort & mkElementConfigVariable
 
 test_unifyStringEq :: [TestTree]
 test_unifyStringEq =

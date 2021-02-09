@@ -402,7 +402,8 @@ testEvaluators =
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
     partitionEquations
-    <$> Map.map (fmap . Equation.mapVariables $ pure mkRuleVariable)
+    <$> Map.map
+            (fmap . Equation.mapVariables $ pure mkRuleVariable)
             (extractEquations testIndexedModule)
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol

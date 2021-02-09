@@ -292,7 +292,10 @@ propertyBuiltinAssocComm
         -> TermLike RewritingVariableName
         -> Predicate RewritingVariableName
         )
-    -> ([element] -> [TermLike RewritingVariableName] -> TermLike RewritingVariableName)
+    ->  (  [element]
+        -> [TermLike RewritingVariableName]
+        -> TermLike RewritingVariableName
+        )
     -> Property
 propertyBuiltinAssocComm
     genElements

@@ -4,8 +4,6 @@ module Test.Kore.Equation.Common
     , symbolic
     , axiom
     , axiom_
-    , axiom'
-    , axiom'_
     , functionAxiomUnification
     , functionAxiomUnification_
     , sortR
@@ -33,7 +31,6 @@ import Kore.Attribute.Axiom.Symbolic
 import Kore.Equation.Equation
 import Kore.Internal.TermLike
 
-import qualified Kore.Equation.Equation as Equation
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
@@ -41,7 +38,6 @@ import Kore.Rewriting.RewritingVariable
 import Test.Kore
     ( testId
     )
-import Test.Kore.Internal.Pattern
 import Test.Kore.Internal.Predicate
 
 type Equation' = Equation VariableName
@@ -61,21 +57,6 @@ axiom_
     -> TermLike variable
     -> Equation variable
 axiom_ left right = axiom left right makeTruePredicate
-
-axiom'
-    :: TestTerm
-    -> TestTerm
-    -> TestPredicate
-    -> Equation RewritingVariableName
-axiom' left right requires =
-    axiom left right requires
-    & Equation.mapVariables (pure mkRuleVariable)
-
-axiom'_
-    :: TestTerm
-    -> TestTerm
-    -> Equation RewritingVariableName
-axiom'_ left right = axiom' left right makeTruePredicate
 
 functionAxiomUnification
     :: Symbol

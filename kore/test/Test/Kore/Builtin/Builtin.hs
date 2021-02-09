@@ -123,21 +123,19 @@ emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc
 
 mkPair
-    :: InternalVariable variable
-    => Sort
+    :: Sort
     -> Sort
-    -> TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 mkPair lSort rSort l r = mkApplySymbol (pairSymbol lSort rSort) [l, r]
 
 -- | 'testSymbol' is useful for writing unit tests for symbols.
 testSymbolWithoutSolver
-    :: forall variable p expanded
-    .   ( InternalVariable variable
-        , HasCallStack
-        , p ~ TermLike variable
-        , expanded ~ Pattern variable
+    :: forall p expanded
+    .   ( HasCallStack
+        , p ~ TermLike RewritingVariableName
+        , expanded ~ Pattern RewritingVariableName
         )
     => (p -> NoSMT expanded)
     -- ^ evaluator function for the builtin
