@@ -42,7 +42,7 @@ let
   hpack-project = default.pkgs.haskell-nix.cabalProject {
     src = sources."hpack";
     # Change the compiler when updating our own resolver.
-    compiler-nix-name = "ghc8101";
+    compiler-nix-name = "ghc8103";
     inherit checkMaterialization;
     materialized = ./nix/hpack.nix.d;
   };
@@ -58,4 +58,11 @@ shellFor {
       ghcid hlint hpack stylish-haskell
       cabal-install stack
     ];
+  passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''
+    #!/bin/sh
+    ${ghcide-project.stack-nix.passthru.updateMaterialized}
+    ${hlint-project.stack-nix.passthru.updateMaterialized}
+    ${stylish-haskell-project.stack-nix.passthru.updateMaterialized}
+    ${hpack-project.plan-nix.passthru.updateMaterialized}
+  '';
 }
