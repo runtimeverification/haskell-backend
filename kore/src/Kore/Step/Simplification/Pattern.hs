@@ -13,8 +13,6 @@ import Kore.Step.Simplification.Condition
     ( simplifySideCondition
     )
 import Prelude.Kore
-import qualified Pretty
-
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
