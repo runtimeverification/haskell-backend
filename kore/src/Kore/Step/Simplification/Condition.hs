@@ -10,6 +10,7 @@ module Kore.Step.Simplification.Condition
     , simplify
     , simplifyPredicate
     , simplifyCondition
+    , simplifySideCondition
     ) where
 
 import Prelude.Kore
@@ -127,17 +128,16 @@ simplify
     ->  SideCondition variable
     ->  Conditional variable any
     ->  LogicT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } sideCondition' cond = do
-    sideCondition <- simplifySideCondition sideCondition'
-    normalize sideCondition cond >>= worker sideCondition
+simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
+    normalize >=> worker
   where
-    worker sideCondition Conditional { term, predicate, substitution } = do
+    worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
         simplified <- simplifyPredicate sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
-        normalized <- normalize sideCondition merged
+        normalized <- normalize merged
         -- Check for full simplification *after* normalization. Simplification
         -- may have produced irrelevant substitutions that become relevant after
         -- normalization.
@@ -148,7 +148,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition' cond = d
                     normalized { term }
         if fullySimplified simplifiedPattern
             then return (extract simplifiedPattern)
-            else worker sideCondition (extract simplifiedPattern)
+            else worker (extract simplifiedPattern)
 
     -- TODO(Ana): this should also check if the predicate is simplified
     fullySimplified (Unchanged Conditional { predicate, substitution }) =
@@ -159,10 +159,9 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition' cond = d
 
     normalize
         ::  forall any'
-        .   SideCondition variable
-        ->  Conditional variable any'
+        .   Conditional variable any'
         ->  LogicT simplifier (Conditional variable any')
-    normalize sideCondition conditional@Conditional { substitution } = do
+    normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
             simplifySubstitution sideCondition substitution

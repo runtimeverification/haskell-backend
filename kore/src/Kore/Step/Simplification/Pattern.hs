@@ -9,7 +9,11 @@ module Kore.Step.Simplification.Pattern
     , makeEvaluate
     ) where
 
+import Kore.Step.Simplification.Condition
+    ( simplifySideCondition
+    )
 import Prelude.Kore
+import qualified Pretty
 
 
 import qualified Kore.Internal.Condition as Condition
@@ -102,7 +106,9 @@ makeEvaluate sideCondition pattern' =
                 & Condition.fromPredicate
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition'
-        simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
+        simplifiedSideCondition <-
+            simplifySideCondition termSideCondition
+        simplifiedTerm <- simplifyConditionalTerm simplifiedSideCondition term'
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition
         simplifyCondition sideCondition simplifiedPattern
