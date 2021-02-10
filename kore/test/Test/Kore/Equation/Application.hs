@@ -21,7 +21,6 @@ import Data.Text
     )
 
 import qualified Kore.Equation as Equation
-import Test.Kore.Equation.Common
 import Kore.Equation.Application hiding
     ( attemptEquation
     )
@@ -36,6 +35,7 @@ import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
 import qualified Pretty
+import Test.Kore.Equation.Common
 
 import Test.Expect
 import Test.Kore.Internal.Pattern as Pattern

@@ -108,7 +108,8 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkElementConfigVariable, mkElementRuleVariable
+    , mkElementConfigVariable
+    , mkElementRuleVariable
     )
 import Kore.Step.RulePattern
 import SMT
@@ -117,8 +118,9 @@ import SMT
 
 import Test.Expect
 import Test.Kore
-    ( standaloneGen
-    , testId, configElementVariableGen
+    ( configElementVariableGen
+    , standaloneGen
+    , testId
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin

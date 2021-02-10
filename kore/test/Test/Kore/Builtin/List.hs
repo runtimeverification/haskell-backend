@@ -53,7 +53,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable, mkElementConfigVariable
+    , mkConfigVariable
+    , mkElementConfigVariable
     )
 
 import Test.Kore

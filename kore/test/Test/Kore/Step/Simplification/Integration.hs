@@ -50,7 +50,8 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkRuleVariable, mkElementConfigVariable
+    , mkElementConfigVariable
+    , mkRuleVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation

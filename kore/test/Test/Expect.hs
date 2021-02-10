@@ -25,8 +25,10 @@ import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
 import Kore.TopBottom
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 expectRight :: HasCallStack => Debug left => Either left right -> IO right
 expectRight = either (assertFailure . show . debug) return

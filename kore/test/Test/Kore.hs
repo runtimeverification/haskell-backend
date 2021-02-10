@@ -58,6 +58,9 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
+import Data.Functor
+    ( (<&>)
+    )
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
@@ -85,6 +88,10 @@ import Kore.Parser
 import Kore.Parser.Parser
     ( parseVariableCounter
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkElementConfigVariable
+    )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.Target
@@ -94,8 +101,6 @@ import Kore.Variables.Target
     , mkSetNonTarget
     , mkSetTarget
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkElementConfigVariable)
-import Data.Functor ((<&>))
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}

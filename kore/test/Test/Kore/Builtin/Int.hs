@@ -96,8 +96,9 @@ import Kore.Unification.UnifierT
 
 
 import Test.Kore
-    ( standaloneGen
-    , testId, configElementVariableGen
+    ( configElementVariableGen
+    , standaloneGen
+    , testId
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin

@@ -177,7 +177,7 @@ test_KIte =
             expect = Pattern.fromTermLike original
             x =
                 mkElemVar . mkElementConfigVariable
-                $ mkElementVariable (testId "x") boolSort  
+                $ mkElementVariable (testId "x") boolSort
             y =
                 mkElemVar . mkElementConfigVariable
                 $ mkElementVariable (testId "y") kSort

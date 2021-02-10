@@ -127,8 +127,9 @@ import Kore.Unification.UnifierT
 import Test.Expect
 import Test.Kore
     ( configElementVariableGen
+    , configElementVariableGen
     , standaloneGen
-    , testId, configElementVariableGen
+    , testId
     )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
