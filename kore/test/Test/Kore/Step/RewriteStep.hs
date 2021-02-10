@@ -1099,10 +1099,10 @@ test_narrowing =
         Pattern.withCondition initial
         $ Condition.fromPredicate
         $ Predicate.makeNotPredicate
-        $ Predicate.makeExistsPredicate xRule
+        $ Predicate.makeExistsPredicate xConfig'
         $ Predicate.makeEqualsPredicate
             (mkElemVar xConfig)
-            (Mock.sigma Mock.a (mkElemVar xRule))
+            (Mock.sigma Mock.a (mkElemVar xConfig'))
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel

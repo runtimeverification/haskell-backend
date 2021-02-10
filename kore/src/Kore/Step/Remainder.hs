@@ -71,7 +71,8 @@ remainder'
     :: MultiOr (Condition RewritingVariableName)
     -> Predicate RewritingVariableName
 remainder' results =
-    mkMultiAndPredicate $ mkNotExists conditions
+    Predicate.mapVariables resetConfigVariable
+    $ mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = MultiOr.map (mkMultiAndPredicate . unificationConditions) results
     mkNotExists = mkNotMultiOr . MultiOr.map existentiallyQuantifyRuleVariables
