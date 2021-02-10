@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-kollect=
+kollected=
 name=${1:?}
 shift
 
@@ -77,7 +77,7 @@ done
 
 echo '"$@"'
 
-if [[ -z "${kollected-}" ]]
+if [[ -z "${kollected:-}" ]]
 then
     echo >&2 "Did not collect any Kore files!"
     exit 1
