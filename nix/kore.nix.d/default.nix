@@ -18,6 +18,6 @@
         pipes-sqlite-simple = ./.stack-to-nix.cache.3;
         };
       };
-  resolver = "nightly-2020-07-19";
+  resolver = "lts-17.2";
   modules = [ ({ lib, ... }: { packages = {}; }) { packages = {}; } ];
   }

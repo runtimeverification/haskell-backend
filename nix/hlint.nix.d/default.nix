@@ -2,8 +2,8 @@
   extras = hackage:
     {
       packages = {
-        "ghc-lib-parser" = (((hackage.ghc-lib-parser)."8.10.2.20200808").revisions).default;
-        "ghc-lib-parser-ex" = (((hackage.ghc-lib-parser-ex)."8.10.0.16").revisions).default;
+        "ghc-lib-parser" = (((hackage.ghc-lib-parser)."8.10.3.20201220").revisions).default;
+        "ghc-lib-parser-ex" = (((hackage.ghc-lib-parser-ex)."8.10.0.17").revisions).default;
         "extra" = (((hackage.extra)."1.7.3").revisions).default;
         "apply-refact" = (((hackage.apply-refact)."0.8.2.0").revisions).default;
         "ghc-exactprint" = (((hackage.ghc-exactprint)."0.6.3.1").revisions).default;
