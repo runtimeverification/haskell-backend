@@ -547,7 +547,7 @@ test_int2bytes =
                         (Test.Int.asInternal len)
                         (Test.Int.asInternal integer)
                         end
-                expect = [ asPattern bytes]
+                expect = [asPattern bytes]
             actual <- simplify input
             assertEqual "" expect actual
       where
