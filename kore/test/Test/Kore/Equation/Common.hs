@@ -99,12 +99,10 @@ functionAxiomUnification_
 functionAxiomUnification_ symbol args right =
     functionAxiomUnification symbol args right makeTruePredicate
 
--- TODO (Andrei): Fix this to `RewritingVariableName`
 concrete
-    :: InternalVariable variable
-    => [TermLike variable]
-    -> Equation variable
-    -> Equation variable
+    :: [TermLike RewritingVariableName]
+    -> Equation RewritingVariableName
+    -> Equation RewritingVariableName
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")

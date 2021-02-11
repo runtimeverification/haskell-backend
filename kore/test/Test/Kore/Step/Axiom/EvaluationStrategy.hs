@@ -16,7 +16,6 @@ import Data.IORef
     , readIORef
     )
 
-import qualified Kore.Equation as Equation
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -38,7 +37,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRuleVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
@@ -217,10 +215,9 @@ test_definitionEvaluation =
 
             evaluator = definitionEvaluation
                 [ axiom_
-                    (Mock.functionalConstr10 (mkElemVar Mock.x))
-                    (Mock.g (mkElemVar Mock.x))
-                    & concrete [mkElemVar Mock.x]
-                    & Equation.mapVariables (pure mkRuleVariable)
+                    (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                    (Mock.g (mkElemVar Mock.xRule))
+                    & concrete [mkElemVar Mock.xRule]
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
