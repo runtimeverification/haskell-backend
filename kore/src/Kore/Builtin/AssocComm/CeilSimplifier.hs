@@ -63,6 +63,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import Kore.Step.Simplification.CeilSimplifier
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -74,7 +77,6 @@ import Kore.Step.Simplification.Simplify
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 type BuiltinAssocComm normalized variable =
     InternalAc Key normalized (TermLike variable)

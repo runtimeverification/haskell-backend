@@ -16,10 +16,12 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
     ( TermLike
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Logic
     ( LogicT
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- | Unifies two 'TermLike' patterns under the given 'SideCondition'.
 newtype UnificationProcedure unifier =

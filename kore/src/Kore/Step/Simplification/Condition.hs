@@ -89,6 +89,9 @@ import Kore.Internal.TermLike
     , mkEquals_
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -98,7 +101,6 @@ import Kore.Unparser
 import Logic
 import Pair
 import qualified Pretty
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
 -}

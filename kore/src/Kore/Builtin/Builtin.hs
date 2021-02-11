@@ -99,6 +99,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( predicateSort
     )
@@ -123,7 +126,6 @@ import qualified Kore.Unification.Unify as Monad.Unify
     ( scatter
     )
 import Kore.Unparser
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- TODO (thomas.tuegel): Include hook name here.
 

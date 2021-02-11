@@ -30,6 +30,9 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( forgetSimplified
     , substitute
@@ -44,7 +47,6 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Simplify a 'Rule' using only matching logic rules.
 

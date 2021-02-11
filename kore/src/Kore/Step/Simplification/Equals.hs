@@ -42,6 +42,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -78,7 +81,6 @@ import Logic
     ( LogicT
     )
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 

@@ -26,6 +26,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -33,7 +36,6 @@ import Kore.Step.Simplification.Simplify
     ( TermSimplifier
     )
 import Kore.Unification.Unify as Unify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | An equality-like symbol applied to @term@-type arguments.
 -}

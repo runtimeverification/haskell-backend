@@ -65,6 +65,9 @@ import Kore.Log.DebugUnification
     , debugUnificationUnsolved
     , whileDebugUnification
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
@@ -80,7 +83,6 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     ( SimplificationType (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Syntax.PatternF
     ( Const (..)
     )

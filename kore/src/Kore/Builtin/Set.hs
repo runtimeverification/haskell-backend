@@ -93,6 +93,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
     )
@@ -107,7 +110,6 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Builtin name of the @Set@ sort.
  -}

@@ -25,6 +25,9 @@ import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -46,7 +49,6 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Logic
     ( lowerLogicT
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.

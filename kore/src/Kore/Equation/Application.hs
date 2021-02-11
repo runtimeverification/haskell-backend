@@ -95,6 +95,9 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.Matcher
     ( MatchResult
     , matchIncremental
@@ -111,7 +114,6 @@ import Kore.Syntax.Id
     )
 import Kore.Syntax.Variable
 import Kore.TopBottom
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unparser
     ( Unparse (..)
     )

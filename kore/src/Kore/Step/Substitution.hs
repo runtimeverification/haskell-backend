@@ -30,6 +30,9 @@ import Kore.Internal.SideCondition
 import Kore.Internal.Substitution
     ( Substitution
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -39,7 +42,6 @@ import Kore.TopBottom
     ( TopBottom
     )
 import Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize

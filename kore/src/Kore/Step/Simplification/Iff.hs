@@ -29,12 +29,14 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.

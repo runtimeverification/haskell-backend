@@ -87,6 +87,9 @@ import Kore.Internal.TermLike
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
@@ -100,7 +103,6 @@ import Logic
     ( LogicT
     )
 import qualified Pretty
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 newtype SubstitutionSimplifier simplifier =
     SubstitutionSimplifier

@@ -47,6 +47,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( toPredicate
     , top
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyCondition
@@ -61,7 +64,6 @@ import Logic
     ( LogicT
     )
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 simplifyConditionsWithSmt
     :: forall simplifier

@@ -44,6 +44,9 @@ import Kore.Log.DebugSubstitutionSimplifier
     ( debugSubstitutionSimplifierResult
     , whileDebugSubstitutionSimplifier
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -58,7 +61,6 @@ import Kore.Step.Simplification.SubstitutionSimplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 

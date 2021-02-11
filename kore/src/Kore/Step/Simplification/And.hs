@@ -53,10 +53,12 @@ import Kore.Internal.TermLike
     , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution

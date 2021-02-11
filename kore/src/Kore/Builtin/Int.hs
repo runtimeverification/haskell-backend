@@ -124,6 +124,9 @@ import Kore.Internal.Symbol
     ( symbolHook
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -132,7 +135,6 @@ import Kore.Step.Simplification.Simplify
     , TermSimplifier
     )
 import Kore.Unification.Unify as Unify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 

@@ -65,6 +65,9 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
@@ -72,7 +75,6 @@ import Kore.Syntax.Definition
     )
 import Kore.Unification.Unify as Unify
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 verifiers :: Builtin.Verifiers
 verifiers =

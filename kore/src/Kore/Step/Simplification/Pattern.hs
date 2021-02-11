@@ -34,6 +34,9 @@ import Kore.Internal.Substitution
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyCondition
@@ -42,7 +45,6 @@ import Kore.Step.Simplification.Simplify
 import Kore.Substitute
     ( substitute
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
 and removes the exists quantifiers at the top.

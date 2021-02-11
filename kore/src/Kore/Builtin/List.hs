@@ -105,6 +105,9 @@ import qualified Kore.Internal.TermLike as TermLike
     , isFunctionPattern
     , markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
@@ -116,7 +119,6 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
 

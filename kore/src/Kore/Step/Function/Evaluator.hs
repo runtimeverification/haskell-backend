@@ -49,9 +49,11 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Log.ErrorBottomTotalFunction
     ( errorBottomTotalFunction
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify as AttemptedAxiom

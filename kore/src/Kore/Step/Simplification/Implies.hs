@@ -26,6 +26,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
@@ -37,7 +40,6 @@ import Logic
     ( LogicT
     )
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.

@@ -58,6 +58,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
@@ -65,7 +68,6 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.

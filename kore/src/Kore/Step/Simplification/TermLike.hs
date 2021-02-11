@@ -60,6 +60,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -158,7 +161,6 @@ import qualified Kore.Step.Simplification.Variable as Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unparser
     ( unparse
     )

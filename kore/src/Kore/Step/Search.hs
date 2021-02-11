@@ -44,6 +44,9 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -53,7 +56,6 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.TopBottom
 import Kore.Unification.Procedure
     ( unificationProcedureWorker

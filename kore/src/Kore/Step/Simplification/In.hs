@@ -23,6 +23,9 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
@@ -31,7 +34,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.

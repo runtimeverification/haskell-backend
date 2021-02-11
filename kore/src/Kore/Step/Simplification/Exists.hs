@@ -71,6 +71,9 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -87,7 +90,6 @@ import Logic
     ( LogicT
     )
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done

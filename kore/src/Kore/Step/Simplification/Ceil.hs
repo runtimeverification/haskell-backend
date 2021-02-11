@@ -64,6 +64,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Sort as Sort
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
@@ -76,7 +79,6 @@ import Kore.TopBottom
 import Kore.Unparser
     ( unparseToString
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 

@@ -14,7 +14,9 @@ import Kore.Internal.OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 newtype NotSimplifier simplifier =
     NotSimplifier

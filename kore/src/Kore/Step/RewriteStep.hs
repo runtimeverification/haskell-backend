@@ -15,13 +15,13 @@ module Kore.Step.RewriteStep
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import qualified Control.Lens as Lens
-import qualified Data.Sequence as Seq
 import Data.Generics.Product
     ( field
     )
+import qualified Data.Sequence as Seq
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables

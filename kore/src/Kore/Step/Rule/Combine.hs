@@ -52,6 +52,9 @@ import Kore.Internal.TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( RHS (RHS)
     , RewriteRule (RewriteRule)
@@ -65,7 +68,6 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyCondition
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
     )

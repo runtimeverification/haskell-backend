@@ -33,7 +33,9 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )

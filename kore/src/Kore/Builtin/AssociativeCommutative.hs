@@ -108,6 +108,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
     )
@@ -121,7 +124,6 @@ import Kore.Unparser
     ( unparse
     , unparseToString
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Unparser as Unparser
 import Logic
 import Pretty

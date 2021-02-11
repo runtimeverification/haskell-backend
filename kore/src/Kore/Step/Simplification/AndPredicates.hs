@@ -24,7 +24,9 @@ import Kore.Internal.OrCondition
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
