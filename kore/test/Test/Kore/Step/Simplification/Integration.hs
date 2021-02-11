@@ -1535,11 +1535,10 @@ builtinAxioms =
         ]
 
 axiom
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Predicate variable
-    -> Equation variable
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
 axiom left right requires =
     Equation
         { left
@@ -1553,9 +1552,8 @@ axiom left right requires =
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal
-    :: InternalVariable variable
-    => Set.Set (TermLike Concrete)
-    -> TermLike variable
+    :: Set.Set (TermLike Concrete)
+    -> TermLike RewritingVariableName
 asInternal =
     Ac.asInternalConcrete Mock.metadataTools Mock.setSort
     . Map.fromSet (const SetValue)

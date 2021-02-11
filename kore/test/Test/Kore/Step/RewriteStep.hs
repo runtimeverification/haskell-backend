@@ -462,7 +462,10 @@ test_applyRewriteRule_ =
     , testCase "Apply non-function-like rule in parallel" $ do
         let initial =
                 pure
-                    (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xConfig))
+                    (Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.xConfig)
+                    )
         resultAxiom <-
             Exception.try
             $ applyRewriteRuleParallel_ initial axiomSigmaTopId
@@ -860,13 +863,14 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate
                     (Mock.functional10 (mkElemVar Mock.xRule))
                     (Mock.functional11 (mkElemVar Mock.xRule))
-            requires' =
+            requiresForExpect =
                 requires
                 & Predicate.mapVariables (pure $ mkConfigVariable . from)
             expect =
                 [ OrPattern.fromPatterns
-                    [ initialTerm
-                    `Pattern.withCondition` Condition.fromPredicate requires'
+                    [ Pattern.withCondition
+                        initialTerm
+                        (Condition.fromPredicate requiresForExpect)
                     ]
                 ]
             initialTerm = mkElemVar Mock.xConfig
@@ -923,7 +927,6 @@ test_applyRewriteRule_ =
         -> IO [OrPattern RewritingVariableName]
     applyRewriteRuleParallel_ patt rule =
         applyRewriteRule_ applyRewriteRulesParallel patt rule
-        -- & (fmap . fmap . OrPattern.map) getRewritingPattern
 
     applyClaim
         :: Pattern RewritingVariableName
@@ -931,7 +934,6 @@ test_applyRewriteRule_ =
         -> IO [OrPattern RewritingVariableName]
     applyClaim patt rule =
         applyClaim_ applyClaimsSequence patt rule
-        -- & (fmap . fmap . OrPattern.map) getRewritingPattern
 
     ruleId =
         rulePattern

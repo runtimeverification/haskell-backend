@@ -34,7 +34,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRuleVariable
+    , mkConfigVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
@@ -208,7 +208,7 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
-                        & Variable.mapElementVariable (pure mkRuleVariable)
+                        & Variable.mapElementVariable (pure mkConfigVariable)
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -229,11 +229,7 @@ test_applicationSimplification =
                         ]
             actual <-
                 let
-                    result
-                        -- TODO (Andrei): This won't need to be polymorphic
-                        :: forall variable
-                        .  InternalVariable variable
-                        => AttemptedAxiom variable
+                    result :: AttemptedAxiom RewritingVariableName
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
                             [ Conditional
@@ -242,17 +238,11 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject zvar, gOfB) ]
+                                    [ (inject z', gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
                         }
-                      where
-                        zvar :: ElementVariable variable
-                        zvar =
-                            fmap
-                                (from . from @RewritingVariableName @VariableName)
-                            <$> z'
                 in
                     evaluate
                         (Map.singleton
