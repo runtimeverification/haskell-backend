@@ -65,6 +65,7 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyCondition
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
     )
@@ -148,9 +149,9 @@ renameRulesVariables rules =
         (rewriteRule', used <> freeVariables rewriteRule')
 
 mergeRules
-    :: (MonadSimplify simplifier, InternalVariable variable)
-    => NonEmpty (RewriteRule variable)
-    -> simplifier [RewriteRule variable]
+    :: MonadSimplify simplifier
+    => NonEmpty (RewriteRule RewritingVariableName)
+    -> simplifier [RewriteRule RewritingVariableName]
 mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . toList -> rules) =
     Logic.observeAllT $ do
@@ -192,12 +193,12 @@ first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
 into rule 7', then returns the result of merging 7', 8 and 9.
 -}
 mergeRulesConsecutiveBatches
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    :: MonadSimplify simplifier
     => Int
     -- ^ Batch size
-    -> NonEmpty (RewriteRule variable)
+    -> NonEmpty (RewriteRule RewritingVariableName)
     -- Rules to merge
-    -> simplifier [RewriteRule variable]
+    -> simplifier [RewriteRule RewritingVariableName]
 mergeRulesConsecutiveBatches
     batchSize
     (rule :| rules)

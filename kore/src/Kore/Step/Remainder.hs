@@ -71,8 +71,7 @@ remainder'
     :: MultiOr (Condition RewritingVariableName)
     -> Predicate RewritingVariableName
 remainder' results =
-    Predicate.mapVariables resetConfigVariable
-    $ mkMultiAndPredicate $ mkNotExists conditions
+    mkMultiAndPredicate $ mkNotExists conditions
   where
     conditions = MultiOr.map (mkMultiAndPredicate . unificationConditions) results
     mkNotExists = mkNotMultiOr . MultiOr.map existentiallyQuantifyRuleVariables
@@ -132,11 +131,11 @@ substitutionConditions subst =
         Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop
-    :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
-    => SideCondition variable
-    -> TermLike variable
-    -> m (Condition variable)
+    :: forall m
+    .  MonadSimplify m
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> m (Condition RewritingVariableName)
 ceilChildOfApplicationOrTop sideCondition patt =
     case patt of
         App_ _ children -> do

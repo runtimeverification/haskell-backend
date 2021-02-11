@@ -74,6 +74,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Variables.Fresh
     ( refreshElementVariable
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 type BuiltinAssocComm normalized variable =
     InternalAc Key normalized (TermLike variable)
@@ -87,13 +88,12 @@ type MkNotMember normalized variable =
     ->  Predicate variable
 
 newSetCeilSimplifier
-    ::  forall variable simplifier
-    .   InternalVariable variable
-    =>  MonadReader (SideCondition variable) simplifier
+    ::  forall simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm NormalizedSet variable)
-            (OrCondition variable)
+            (BuiltinAssocComm NormalizedSet RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newSetCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
@@ -114,13 +114,12 @@ newSetCeilSimplifier =
             ceil
 
 newMapCeilSimplifier
-    ::  forall variable simplifier
-    .   InternalVariable variable
-    =>  MonadReader (SideCondition variable) simplifier
+    ::  forall simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm NormalizedMap variable)
-            (OrCondition variable)
+            (BuiltinAssocComm NormalizedMap RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
@@ -173,22 +172,22 @@ generalizeMapElement freeVariables' element =
     variable = refreshElementVariable avoiding x & fromMaybe x
 
 newBuiltinAssocCommCeilSimplifier
-    :: forall normalized variable simplifier
-    .   InternalVariable variable
-    =>  MonadReader (SideCondition variable) simplifier
+    :: forall normalized simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
     =>  MonadSimplify simplifier
     =>  Traversable (Value normalized)
     =>  AcWrapper normalized
-    =>  MkBuiltinAssocComm normalized variable
-    ->  MkNotMember normalized variable
+    =>  MkBuiltinAssocComm normalized RewritingVariableName
+    ->  MkNotMember normalized RewritingVariableName
     ->  CeilSimplifier simplifier
-            (BuiltinAssocComm normalized variable)
-            (OrCondition variable)
+            (BuiltinAssocComm normalized RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil { ceilChild } -> do
         let internalAc@InternalAc { builtinAcChild } = ceilChild
         sideCondition <- Reader.ask
-        let normalizedAc :: NormalizedAc normalized Key (TermLike variable)
+        let normalizedAc
+                :: NormalizedAc normalized Key (TermLike RewritingVariableName)
             normalizedAc = unwrapAc builtinAcChild
             NormalizedAc
                 { elementsWithVariables = abstractElements
@@ -198,9 +197,9 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
               = normalizedAc
 
         let defineOpaquePair
-                :: TermLike variable
-                -> TermLike variable
-                -> MultiAnd (OrCondition variable)
+                :: TermLike RewritingVariableName
+                -> TermLike RewritingVariableName
+                -> MultiAnd (OrCondition RewritingVariableName)
             defineOpaquePair opaque1 opaque2 =
                 internalAc
                     { builtinAcChild =
@@ -217,22 +216,22 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 & MultiAnd.singleton
 
             defineOpaquePairs
-                :: TermLike variable
-                -> [TermLike variable]
-                -> MultiAnd (OrCondition variable)
+                :: TermLike RewritingVariableName
+                -> [TermLike RewritingVariableName]
+                -> MultiAnd (OrCondition RewritingVariableName)
             defineOpaquePairs this others =
                 foldMap (defineOpaquePair this) others
 
-            definedOpaquePairs :: MultiAnd (OrCondition variable)
+            definedOpaquePairs :: MultiAnd (OrCondition RewritingVariableName)
             definedOpaquePairs =
                 mconcat
                 $ zipWith defineOpaquePairs opaque
                 $ tail $ List.tails opaque
 
         let abstractKeys, concreteKeys
-                :: [TermLike variable]
+                :: [TermLike RewritingVariableName]
             abstractValues, concreteValues, allValues
-                :: [Value normalized (TermLike variable)]
+                :: [Value normalized (TermLike RewritingVariableName)]
             (abstractKeys, abstractValues) =
                 unzip (unwrapElement <$> abstractElements)
             concreteKeys = from @Key <$> Map.keys concreteElements
@@ -240,14 +239,17 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             allValues = concreteValues <> abstractValues
 
         let makeEvaluateTerm, defineAbstractKey, defineOpaque
-                :: TermLike variable -> MaybeT simplifier (OrCondition variable)
+                :: TermLike RewritingVariableName
+                -> MaybeT simplifier (OrCondition RewritingVariableName)
             makeEvaluateTerm = makeEvaluateTermCeil sideCondition
             defineAbstractKey = makeEvaluateTerm
             defineOpaque = makeEvaluateTerm
 
             defineValue
-                ::  Value normalized (TermLike variable)
-                ->  MaybeT simplifier (MultiAnd (OrCondition variable))
+                :: Value normalized (TermLike RewritingVariableName)
+                -> MaybeT
+                    simplifier
+                    (MultiAnd (OrCondition RewritingVariableName))
             defineValue = foldlM worker mempty
               where
                 worker multiAnd termLike = do
@@ -267,7 +269,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             zipWithM distinctKey
                 abstractKeys
                 (tail $ List.tails abstractKeys)
-        let conditions :: MultiAnd (OrCondition variable)
+        let conditions :: MultiAnd (OrCondition RewritingVariableName)
             conditions =
                 mconcat
                     [ MultiAnd.make definedKeys
@@ -283,16 +285,16 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
   where
 
     distinctKey
-        ::  TermLike variable
-        ->  [TermLike variable]
-        ->  MaybeT simplifier (MultiAnd (OrCondition variable))
+        :: TermLike RewritingVariableName
+        -> [TermLike RewritingVariableName]
+        -> MaybeT simplifier (MultiAnd (OrCondition RewritingVariableName))
     distinctKey thisKey otherKeys =
         MultiAnd.make <$> traverse (notEquals thisKey) otherKeys
 
     notEquals
-        ::  TermLike variable
-        ->  TermLike variable
-        ->  MaybeT simplifier (OrCondition variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT simplifier (OrCondition RewritingVariableName)
     notEquals t1 t2 = do
         sideCondition <- Reader.ask
         Equals.makeEvaluateTermsToPredicate tMin tMax sideCondition
@@ -302,18 +304,18 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         (tMin, tMax) = minMax t1 t2
 
     notMember
-        :: TermLike variable
-        -> Element normalized (TermLike variable)
-        -> MultiAnd (OrCondition variable)
+        :: TermLike RewritingVariableName
+        -> Element normalized (TermLike RewritingVariableName)
+        -> MultiAnd (OrCondition RewritingVariableName)
     notMember termLike element =
         mkNotMember element termLike
         & OrCondition.fromPredicate
         & MultiAnd.singleton
 
     notMembers
-        :: NormalizedAc normalized Key (TermLike variable)
-        -> TermLike variable
-        -> MultiAnd (OrCondition variable)
+        :: NormalizedAc normalized Key (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> MultiAnd (OrCondition RewritingVariableName)
     notMembers normalizedAc termLike =
         Lens.foldMapOf foldElements (notMember termLike) normalizedAc
 

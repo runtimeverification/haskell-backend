@@ -158,6 +158,7 @@ import qualified Kore.Step.Simplification.Variable as Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unparser
     ( unparse
     )
@@ -176,28 +177,29 @@ import qualified Pretty
     the term simplification procedure, the condition simplifier will be called as well.
  -}
 simplify
-    :: forall variable simplifier
+    :: forall simplifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadSimplify simplifier
     => MonadThrow simplifier
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
-simplify sideCondition = \termLike ->
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
+simplify sideCondition = \termLike -> do
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
+    -- >>= pure . OrPattern.mapVariables resetConfigVariable
   where
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
     simplifyChildren
         :: Traversable t
-        => t (TermLike variable)
-        -> simplifier (t (OrPattern variable))
+        => t (TermLike RewritingVariableName)
+        -> simplifier (t (OrPattern RewritingVariableName))
     simplifyChildren = traverse (simplifyTermLike sideCondition)
 
     simplifyInternalWorker
-        :: TermLike variable -> simplifier (OrPattern variable)
+        :: TermLike RewritingVariableName
+        -> simplifier (OrPattern RewritingVariableName)
     simplifyInternalWorker termLike
       | TermLike.isSimplified sideConditionRepresentation termLike =
         case Predicate.makePredicate termLike of
@@ -237,14 +239,22 @@ simplify sideCondition = \termLike ->
                         )
                 )
       where
-
-        resimplify :: Pattern variable -> simplifier (OrPattern variable)
+        resimplify
+            :: Pattern RewritingVariableName
+            -> simplifier (OrPattern RewritingVariableName)
         resimplify result = do
             let (resultTerm, resultPredicate) = Pattern.splitTerm result
             simplified <- simplifyInternalWorker resultTerm
-            return (MultiOr.map (`Conditional.andCondition` resultPredicate) simplified)
+            return
+                (MultiOr.map
+                    (`Conditional.andCondition` resultPredicate)
+                    simplified
+                )
 
-        applyTermSubstitution :: Pattern variable -> Pattern variable
+        applyTermSubstitution
+            :: InternalVariable variable
+            => Pattern variable
+            -> Pattern variable
         applyTermSubstitution
             Conditional {term = term', predicate = predicate', substitution}
           =
@@ -278,10 +288,10 @@ simplify sideCondition = \termLike ->
                     ]
 
         returnIfSimplifiedOrContinue
-            :: TermLike variable
-            -> [Pattern variable]
-            -> simplifier (OrPattern variable)
-            -> simplifier (OrPattern variable)
+            :: TermLike RewritingVariableName
+            -> [Pattern RewritingVariableName]
+            -> simplifier (OrPattern RewritingVariableName)
+            -> simplifier (OrPattern RewritingVariableName)
         returnIfSimplifiedOrContinue originalTerm resultList continuation =
             case resultList of
                 [] -> return OrPattern.bottom
@@ -291,10 +301,10 @@ simplify sideCondition = \termLike ->
                 _ -> continuation
 
         returnIfResultSimplifiedOrContinue
-            :: TermLike variable
-            -> Pattern variable
-            -> simplifier (OrPattern variable)
-            -> simplifier (OrPattern variable)
+            :: TermLike RewritingVariableName
+            -> Pattern RewritingVariableName
+            -> simplifier (OrPattern RewritingVariableName)
+            -> simplifier (OrPattern RewritingVariableName)
         returnIfResultSimplifiedOrContinue originalTerm result continuation
           | Pattern.isSimplified sideConditionRepresentation result
             && isTop resultTerm
@@ -329,7 +339,9 @@ simplify sideCondition = \termLike ->
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate originalTerm
 
-    descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
+    descendAndSimplify
+        :: TermLike RewritingVariableName
+        -> simplifier (OrPattern RewritingVariableName)
     descendAndSimplify termLike =
         let ~doNotSimplify =
                 assert

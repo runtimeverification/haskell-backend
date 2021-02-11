@@ -77,7 +77,6 @@ import Kore.Rewriting.RewritingVariable
     , mkElementConfigVariable
     , mkElementRuleVariable
     , mkRuleVariable
-    , resetConfigVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
@@ -1035,10 +1034,7 @@ evaluate
 evaluate functionIdToEvaluator termLike =
     runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
         patterns <- TermLike.simplify SideCondition.top termLike
-        let patterns' =
-                patterns
-                & OrPattern.mapVariables resetConfigVariable
-        pure (OrPattern.toPattern patterns')
+        pure (OrPattern.toPattern patterns)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -1864,20 +1860,18 @@ appliedMockEvaluator result =
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = OrPattern.fromPatterns
-            [Test.Kore.Step.Function.Integration.mapVariables result]
+            [Test.Kore.Step.Function.Integration.mapVariablesConfig result]
         , remainders = OrPattern.fromPatterns []
         }
 
-mapVariables
-    :: forall variable
-    .  InternalVariable variable
-    => Pattern VariableName
-    -> Pattern variable
-mapVariables =
+mapVariablesConfig
+    :: Pattern VariableName
+    -> Pattern RewritingVariableName
+mapVariablesConfig =
     Pattern.mapVariables (pure worker)
   where
-    worker :: VariableName -> variable
-    worker v = fromVariableName v { counter = Just (Element 1) }
+    worker :: VariableName -> RewritingVariableName
+    worker v = mkConfigVariable v { counter = Just (Element 1) }
 
 mockEvaluator
     :: Monad simplifier

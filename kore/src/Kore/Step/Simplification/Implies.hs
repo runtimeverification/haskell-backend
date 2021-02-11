@@ -37,6 +37,7 @@ import Logic
     ( LogicT
     )
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -52,10 +53,10 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Implies Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Implies Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
     Implies { impliesFirst = first, impliesSecond = second }
@@ -81,11 +82,11 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
@@ -97,11 +98,11 @@ simplifyEvaluated sideCondition first second
       >>= simplifyEvaluateHalfImplies sideCondition first
 
 simplifyEvaluateHalfImplies
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> Pattern variable
-    -> LogicT simplifier (Pattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> LogicT simplifier (Pattern RewritingVariableName)
 simplifyEvaluateHalfImplies
     sideCondition
     first
@@ -120,11 +121,11 @@ simplifyEvaluateHalfImplies
             >>= Logic.scatter
 
 distributeEvaluateImplies
-    :: (MonadSimplify simplifier, InternalVariable variable)
-    => SideCondition variable
-    -> [Pattern variable]
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 distributeEvaluateImplies sideCondition firsts second =
     And.simplify
         Not.notSimplifier

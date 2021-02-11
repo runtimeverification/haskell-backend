@@ -65,6 +65,7 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 import Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -76,10 +77,10 @@ Right now this uses the following:
 
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Not Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Not Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Not { notChild } =
     simplifyEvaluated sideCondition notChild
 
@@ -102,10 +103,10 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition simplified =
     OrPattern.observeAllT $ do
         let not' = Not { notChild = simplified, notSort = () }
@@ -228,10 +229,10 @@ scatterAnd = scatter . MultiOr.distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> MultiAnd (Pattern variable)
-    -> LogicT simplifier (Pattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> MultiAnd (Pattern RewritingVariableName)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 mkMultiAndPattern = And.makeEvaluate notSimplifier
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.

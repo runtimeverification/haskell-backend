@@ -46,18 +46,17 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Logic
     ( lowerLogicT
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 unificationProcedureWorker
-    ::  ( InternalVariable variable
-        , MonadUnify unifier
-        )
-    => SideCondition variable
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Condition variable)
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Condition RewritingVariableName)
 unificationProcedureWorker sideCondition p1 p2
   | p1Sort /= p2Sort =
     Monad.Unify.explainAndReturnBottom "Cannot unify different sorts."  p1 p2

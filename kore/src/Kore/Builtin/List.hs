@@ -116,6 +116,7 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
 
@@ -374,13 +375,16 @@ builtinFunctions =
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier
-    .  (InternalVariable variable, MonadUnify unifier)
+    :: forall unifier
+    .  MonadUnify unifier
     => SimplificationType
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    ->  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals
     simplificationType
     simplifyChild
@@ -394,15 +398,16 @@ unifyEquals
     sort1 = termLikeSort first
 
     propagateConditions
-        :: Traversable t
+        :: InternalVariable variable
+        => Traversable t
         => t (Conditional variable a)
         -> Conditional variable (t a)
     propagateConditions = sequenceA
 
     unifyEquals0
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
 
     unifyEquals0 pat1@(ElemVar_ _) pat2
       | TermLike.isFunctionPattern pat2 =
@@ -461,9 +466,9 @@ unifyEquals
             _ -> empty
 
     unifyEqualsConcrete
-        :: InternalList (TermLike variable)
-        -> InternalList (TermLike variable)
-        -> unifier (Pattern variable)
+        :: InternalList (TermLike RewritingVariableName)
+        -> InternalList (TermLike RewritingVariableName)
+        -> unifier (Pattern RewritingVariableName)
     unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
       | otherwise = do
@@ -483,10 +488,10 @@ unifyEquals
         InternalList { internalListChild = list2 } = builtin2
 
     unifyEqualsFramedRight
-        :: InternalList (TermLike variable)
-        -> InternalList (TermLike variable)
-        -> TermLike variable
-        -> unifier (Pattern variable)
+        :: InternalList (TermLike RewritingVariableName)
+        -> InternalList (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     unifyEqualsFramedRight
         internal1
         internal2
@@ -515,10 +520,10 @@ unifyEquals
             prefixLength = Seq.length prefix2
 
     unifyEqualsFramedLeft
-        :: InternalList (TermLike variable)
-        -> TermLike variable
-        -> InternalList (TermLike variable)
-        -> unifier (Pattern variable)
+        :: InternalList (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> InternalList (TermLike RewritingVariableName)
+        -> unifier (Pattern RewritingVariableName)
     unifyEqualsFramedLeft
         internal1
         frame2
@@ -554,11 +559,11 @@ unifyEquals
 
     unifyEqualsFramedRightRight
         :: TermLike.Symbol
-        -> InternalList (TermLike variable)
-        -> TermLike variable
-        -> InternalList (TermLike variable)
-        -> TermLike variable
-        -> unifier (Pattern variable)
+        -> InternalList (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> InternalList (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     unifyEqualsFramedRightRight
         symbol
         internal1
@@ -604,11 +609,11 @@ unifyEquals
 
     unifyEqualsFramedLeftLeft
         :: TermLike.Symbol
-        -> TermLike variable
-        -> InternalList (TermLike variable)
-        -> TermLike variable
-        -> InternalList (TermLike variable)
-        -> unifier (Pattern variable)
+        -> TermLike RewritingVariableName
+        -> InternalList (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> InternalList (TermLike RewritingVariableName)
+        -> unifier (Pattern RewritingVariableName)
     unifyEqualsFramedLeftLeft
         symbol
         frame1

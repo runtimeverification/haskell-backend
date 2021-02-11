@@ -58,6 +58,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -74,11 +75,9 @@ substitutionSimplifier notSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
-        :: forall variable
-        .  InternalVariable variable
-        => SideCondition variable
-        -> Substitution variable
-        -> unifier (OrCondition variable)
+        :: SideCondition RewritingVariableName
+        -> Substitution RewritingVariableName
+        -> unifier (OrCondition RewritingVariableName)
     wrapper sideCondition substitution =
         whileDebugSubstitutionSimplifier $ do
             (predicate, result) <-
@@ -92,10 +91,12 @@ substitutionSimplifier notSimplifier =
             return conditions
       where
         worker
-            :: Substitution variable
+            :: Substitution RewritingVariableName
             -> MaybeT
                 unifier
-                (Predicate variable, Normalization variable)
+                ( Predicate RewritingVariableName
+                , Normalization RewritingVariableName
+                )
         worker =
             simplifySubstitutionWorker
                 sideCondition
@@ -110,12 +111,10 @@ unificationMakeAnd notSimplifier =
     MakeAnd { makeAnd }
   where
     makeAnd
-        :: forall variable
-        .  InternalVariable variable
-        => TermLike variable
-        -> TermLike variable
-        -> SideCondition variable
-        -> unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> SideCondition RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified

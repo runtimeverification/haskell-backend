@@ -53,6 +53,7 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.TopBottom
 import Kore.Unification.Procedure
     ( unificationProcedureWorker
@@ -124,26 +125,26 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
-    => SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
-    -> MaybeT m (OrCondition variable)
+    :: forall m
+    .  MonadSimplify m
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> MaybeT m (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
     unifiers <-
         lift $ Unifier.runUnifierT Not.notSimplifier
         $ unificationProcedureWorker sideCondition t1 t2
     let
         mergeAndEvaluate
-            :: Condition variable
-            -> m (OrCondition variable)
+            :: Condition RewritingVariableName
+            -> m (OrCondition RewritingVariableName)
         mergeAndEvaluate predSubst = do
             results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
-            :: Condition variable
-            -> LogicT m (Condition variable)
+            :: Condition RewritingVariableName
+            -> LogicT m (Condition RewritingVariableName)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
@@ -171,7 +172,7 @@ matchWith sideCondition e1 e2 = do
                         )
     results <- lift $ traverse mergeAndEvaluate unifiers
     let
-        orResults :: OrCondition variable
+        orResults :: OrCondition RewritingVariableName
         orResults = MultiOr.mergeAll results
     guardAgainstBottom orResults
     return orResults

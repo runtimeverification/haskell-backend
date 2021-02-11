@@ -33,6 +33,7 @@ import Kore.Step.Simplification.Simplify
     ( TermSimplifier
     )
 import Kore.Unification.Unify as Unify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | An equality-like symbol applied to @term@-type arguments.
 -}
@@ -61,14 +62,13 @@ This function is suitable only for equality simplification.
 
  -}
 unifyEqTerm
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> EqTerm (TermLike variable)
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> EqTerm (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
   | Just value2 <- Bool.matchBool termLike2
   = lift $ do

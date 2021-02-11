@@ -132,6 +132,7 @@ import Kore.Step.Simplification.Simplify
     , TermSimplifier
     )
 import Kore.Unification.Unify as Unify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -429,14 +430,13 @@ This function is suitable only for equality simplification.
 
  -}
 unifyIntEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIntEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where

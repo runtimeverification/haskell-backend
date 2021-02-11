@@ -31,6 +31,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
@@ -45,10 +46,10 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> In Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> In Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
     In { inContainedChild = first, inContainingChild = second }
@@ -69,12 +70,12 @@ carry around.
 
 -}
 simplifyEvaluatedIn
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluatedIn sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
@@ -89,11 +90,11 @@ simplifyEvaluatedIn sideCondition first second
         makeEvaluateIn sideCondition pattFirst pattSecond >>= Logic.scatter
 
 makeEvaluateIn
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateIn sideCondition first second
   | Pattern.isTop first = Ceil.makeEvaluate sideCondition second
   | Pattern.isTop second = Ceil.makeEvaluate sideCondition first

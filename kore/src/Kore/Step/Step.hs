@@ -131,12 +131,11 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: variable ~ UnifyingRuleVariable rule
-    => InternalVariable variable
+    :: RewritingVariableName ~ UnifyingRuleVariable rule
     => MonadSimplify simplifier
     => UnifyingRule rule
     => UnificationProcedure simplifier
-    -> Pattern variable
+    -> Pattern RewritingVariableName
     -- ^ Initial configuration
     -> rule
     -- ^ Rule
@@ -236,14 +235,13 @@ respect to the initial condition.
 
  -}
 applyInitialConditions
-    :: forall simplifier variable
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Condition variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Condition RewritingVariableName
     -- ^ Initial conditions
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Unification conditions
-    -> LogicT simplifier (OrCondition variable)
+    -> LogicT simplifier (OrCondition RewritingVariableName)
     -- TODO(virgil): This should take advantage of the LogicT and not return
     -- an OrCondition.
 applyInitialConditions initial unification = do
@@ -276,14 +274,13 @@ toConfigurationVariablesCondition =
 
  -}
 applyRemainder
-    :: forall simplifier variable
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Remainder
-    -> LogicT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 applyRemainder initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level

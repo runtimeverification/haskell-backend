@@ -35,24 +35,23 @@ import Kore.Internal.TermLike
     ( pattern Exists_
     )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     , simplifyCondition
     , simplifyConditionalTerm
     )
 import Kore.Substitute
     ( substitute
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
 and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration patt = do
     simplified <- simplify SideCondition.topTODO patt
     return (OrPattern.map removeTopExists simplified)
@@ -65,11 +64,10 @@ simplifyTopConfiguration patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition pattern' =
     OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'

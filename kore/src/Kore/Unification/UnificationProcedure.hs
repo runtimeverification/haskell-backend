@@ -14,21 +14,19 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     )
 import Logic
     ( LogicT
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- | Unifies two 'TermLike' patterns under the given 'SideCondition'.
 newtype UnificationProcedure unifier =
     UnificationProcedure
         { runUnificationProcedure
-            :: forall variable
-            .  InternalVariable variable
-            => SideCondition variable
-            -> TermLike variable
-            -> TermLike variable
-            -> LogicT unifier (Condition variable)
+            :: SideCondition RewritingVariableName
+            -> TermLike RewritingVariableName
+            -> TermLike RewritingVariableName
+            -> LogicT unifier (Condition RewritingVariableName)
         }

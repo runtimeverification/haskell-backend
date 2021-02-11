@@ -34,6 +34,7 @@ import qualified Kore.Step.Simplification.Not as Not
     , simplifyEvaluated
     )
 import Kore.Step.Simplification.Simplify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
@@ -42,10 +43,10 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Iff Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Iff Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Iff { iffFirst = first, iffSecond = second } =
     simplifyEvaluated sideCondition first second
 
@@ -67,11 +68,11 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated
     sideCondition
     first

@@ -72,6 +72,7 @@ import Kore.Syntax.Definition
     )
 import Kore.Unification.Unify as Unify
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -213,14 +214,13 @@ matchKequalEq =
         & isJust
 
 unifyKequalsEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
@@ -249,13 +249,12 @@ matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
 matchIfThenElse _ = Nothing
 
 unifyIfThenElse
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren a b =
     worker a b <|> worker b a
   where

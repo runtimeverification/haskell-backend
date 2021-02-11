@@ -111,6 +111,7 @@ import Kore.Syntax.Id
     )
 import Kore.Syntax.Variable
 import Kore.TopBottom
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Unparser
     ( Unparse (..)
     )
@@ -147,14 +148,13 @@ applicable.
 
  -}
 attemptEquation
-    :: forall simplifier variable
+    :: forall simplifier
     .  HasCallStack
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> TermLike variable
-    -> Equation variable
-    -> simplifier (AttemptEquationResult variable)
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
+    -> simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation =
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
@@ -198,11 +198,11 @@ attemptEquation sideCondition termLike equation =
               )
 
     applyAndSelectMatchResult
-        :: [MatchResult variable]
+        :: [MatchResult RewritingVariableName]
         -> ExceptT
-            (AttemptEquationError variable)
+            (AttemptEquationError RewritingVariableName)
             simplifier
-            (Equation variable, Predicate variable)
+            (Equation RewritingVariableName, Predicate RewritingVariableName)
     applyAndSelectMatchResult [] =
         throwE (WhileMatch matchError)
     applyAndSelectMatchResult results =
@@ -212,8 +212,8 @@ attemptEquation sideCondition termLike equation =
     takeFirstSuccess first second = catchError first (const second)
 
     whileDebugAttemptEquation'
-        :: simplifier (AttemptEquationResult variable)
-        -> simplifier (AttemptEquationResult variable)
+        :: simplifier (AttemptEquationResult RewritingVariableName)
+        -> simplifier (AttemptEquationResult RewritingVariableName)
     whileDebugAttemptEquation' action =
         whileDebugAttemptEquation termLike equationRenamed $ do
             result <- action
@@ -228,14 +228,15 @@ attemptEquation sideCondition termLike equation =
 applySubstitutionAndSimplify
     :: HasCallStack
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => Maybe (Predicate variable)
-    -> Maybe (Predicate variable)
-    -> Map (SomeVariableName variable) (TermLike variable)
+    => Maybe (Predicate RewritingVariableName)
+    -> Maybe (Predicate RewritingVariableName)
+    -> Map
+        (SomeVariableName RewritingVariableName)
+        (TermLike RewritingVariableName)
     -> ExceptT
-        (MatchError variable)
+        (MatchError RewritingVariableName)
         simplifier
-        [MatchResult variable]
+        [MatchResult RewritingVariableName]
 applySubstitutionAndSimplify
     argument
     antiLeft
@@ -354,18 +355,17 @@ Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
 
  -}
 checkRequires
-    :: forall simplifier variable
+    :: forall simplifier
     .  MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> Predicate variable  -- ^ requires from matching
-    -> Predicate variable  -- ^ requires from 'Equation'
-    -> ExceptT (CheckRequiresError variable) simplifier ()
+    => SideCondition RewritingVariableName
+    -> Predicate RewritingVariableName  -- ^ requires from matching
+    -> Predicate RewritingVariableName  -- ^ requires from 'Equation'
+    -> ExceptT (CheckRequiresError RewritingVariableName) simplifier ()
 checkRequires sideCondition predicate requires =
     do
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
-            condition :: Condition variable
+            condition :: Condition RewritingVariableName
             condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
             -- First try to refute 'condition' without user-defined axioms:

@@ -33,6 +33,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )
@@ -59,13 +60,12 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
+    ::  ( MonadSimplify simplifier
         , MonadThrow simplifier
         )
-    => SideCondition variable
-    -> Application Symbol (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    => SideCondition RewritingVariableName
+    -> Application Symbol (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition application = do
     evaluated <- OrPattern.observeAllT $ do
         Application { applicationChildren = result } <-
@@ -84,26 +84,24 @@ simplify sideCondition application = do
         MultiOr.distributeApplication application
 
 makeAndEvaluateApplications
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
+    ::  ( MonadSimplify simplifier
         , MonadThrow simplifier
         )
-    => SideCondition variable
+    => SideCondition RewritingVariableName
     -> Symbol
-    -> [Pattern variable]
-    -> simplifier (OrPattern variable)
+    -> [Pattern RewritingVariableName]
+    -> simplifier (OrPattern RewritingVariableName)
 makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
+    ::  ( MonadSimplify simplifier
         , MonadThrow simplifier
         )
-    => SideCondition variable
+    => SideCondition RewritingVariableName
     -> Symbol
-    -> [Pattern variable]
-    -> simplifier (OrPattern variable)
+    -> [Pattern RewritingVariableName]
+    -> simplifier (OrPattern RewritingVariableName)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
         makeExpandedApplication sideCondition symbol children
@@ -115,15 +113,14 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( InternalVariable variable
-        , MonadSimplify simplifier
+    ::  ( MonadSimplify simplifier
         , MonadThrow simplifier
         )
-    => SideCondition variable
+    => SideCondition RewritingVariableName
     -- ^ The predicate from the configuration
-    -> ExpandedApplication variable
+    -> ExpandedApplication RewritingVariableName
     -- ^ The pattern to be evaluated
-    -> simplifier (OrPattern variable)
+    -> simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
     Conditional { term, predicate, substitution }
@@ -134,11 +131,11 @@ evaluateApplicationFunction
         term
 
 makeExpandedApplication
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
     -> Symbol
-    -> [Pattern variable]
-    -> LogicT simplifier (ExpandedApplication variable)
+    -> [Pattern RewritingVariableName]
+    -> LogicT simplifier (ExpandedApplication RewritingVariableName)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions

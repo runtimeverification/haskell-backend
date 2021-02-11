@@ -17,7 +17,11 @@ import Prelude.Kore
 
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
+import qualified Control.Lens as Lens
 import qualified Data.Sequence as Seq
+import Data.Generics.Product
+    ( field
+    )
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -332,11 +336,23 @@ applyRewriteRulesParallel
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
-    initial
+    (resetResultPattern mempty -> initial)
   = do
     results <- applyRulesParallel unificationProcedure rules initial
     assertFunctionLikeResults (term initial) results
-    return results
+    return
+        $ results
+        & field @"remainders"
+            Lens.%~
+                MultiOr.map
+                    (Conditional.mapVariables (pure id) resetConfigVariable)
+        & (field @"results" . Lens.traverse . field @"result")
+            Lens.%~
+                MultiOr.map
+                    (Conditional.mapVariables
+                        TermLike.mapVariables
+                        resetConfigVariable
+                    )
 
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -371,12 +387,28 @@ applyRewriteRulesSequence
     -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
     unificationProcedure
-    initialConfig
+    (resetResultPattern mempty -> initialConfig)
     (map getRewriteRule -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
     assertFunctionLikeResults (term initialConfig) results
-    return results
+    return
+        $ results
+        & field @"remainders"
+            Lens.%~
+                MultiOr.map
+                    (Conditional.mapVariables
+                        TermLike.mapVariables
+                        resetConfigVariable
+                    )
+        & (field @"results" . Lens.traverse . field @"result")
+            Lens.%~
+                MultiOr.map
+                    (Conditional.mapVariables
+                        TermLike.mapVariables
+                        resetConfigVariable
+                    )
+
 
 applyClaimsSequence
     :: forall goal simplifier

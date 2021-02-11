@@ -107,6 +107,7 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Builtin name of the @Set@ sort.
  -}
@@ -514,12 +515,15 @@ internalize tools termLike
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier
-    .  (InternalVariable variable, MonadUnify unifier)
-    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    =>  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals
     unifyEqualsChildren
     first
@@ -537,9 +541,9 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
     unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
@@ -556,7 +560,9 @@ unifyEquals
         unifyEquals0 firstDomain secondDomain
       where
         asDomain
-            :: TermLike variable
+            :: forall variable
+            .  InternalVariable variable
+            => TermLike variable
             -> MaybeT unifier (TermLike variable)
         asDomain patt =
             case normalizedOrBottom of

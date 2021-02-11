@@ -24,19 +24,19 @@ import Kore.Internal.OrCondition
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Logic as LogicT
 
 simplifyEvaluatedMultiPredicate
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> MultiAnd (OrCondition variable)
-    -> simplifier (OrCondition variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> MultiAnd (OrCondition RewritingVariableName)
+    -> simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedMultiPredicate sideCondition predicates = do
     let crossProduct = MultiOr.distributeAnd predicates
     MultiOr.observeAllT $ do

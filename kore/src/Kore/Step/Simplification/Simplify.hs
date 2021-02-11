@@ -141,33 +141,29 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     {- | Simplify a 'TermLike' to a disjunction of function-like 'Pattern's.
      -}
     simplifyTermLike
-        :: InternalVariable variable
-        => SideCondition variable
-        -> TermLike variable
-        -> m (OrPattern variable)
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> m (OrPattern RewritingVariableName)
     default simplifyTermLike
-        :: InternalVariable variable
-        => (MonadTrans t, MonadSimplify n, m ~ t n)
-        => SideCondition variable
-        -> TermLike variable
-        -> m (OrPattern variable)
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> m (OrPattern RewritingVariableName)
     simplifyTermLike sideCondition termLike =
         lift (simplifyTermLike sideCondition termLike)
 
     simplifyCondition
-        :: InternalVariable variable
-        => SideCondition variable
-        -> Conditional variable term
-        -> LogicT m (Conditional variable term)
+        :: SideCondition RewritingVariableName
+        -> Conditional RewritingVariableName term
+        -> LogicT m (Conditional RewritingVariableName term)
     default simplifyCondition
-        ::  ( InternalVariable variable
-            , MonadTrans trans
+        ::  ( MonadTrans trans
             , MonadSimplify n
             , m ~ trans n
             )
-        =>  SideCondition variable
-        ->  Conditional variable term
-        ->  LogicT m (Conditional variable term)
+        =>  SideCondition RewritingVariableName
+        ->  Conditional RewritingVariableName term
+        ->  LogicT m (Conditional RewritingVariableName term)
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift
@@ -247,12 +243,11 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 {- | Simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => (MonadLogic simplifier, MonadSimplify simplifier)
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (Pattern variable)
+    :: forall simplifier
+    .  (MonadLogic simplifier, MonadSimplify simplifier)
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (Pattern RewritingVariableName)
 simplifyConditionalTerm sideCondition termLike =
     simplifyTermLike sideCondition termLike >>= Logic.scatter
 
@@ -265,11 +260,10 @@ that it applies the substitution on the predicate.
 newtype ConditionSimplifier monad =
     ConditionSimplifier
         { getConditionSimplifier
-            :: forall variable term
-            .  InternalVariable variable
-            => SideCondition variable
-            -> Conditional variable term
-            -> LogicT monad (Conditional variable term)
+            :: forall term
+            .  SideCondition RewritingVariableName
+            -> Conditional RewritingVariableName term
+            -> LogicT monad (Conditional RewritingVariableName term)
         }
 
 emptyConditionSimplifier :: ConditionSimplifier monad
@@ -315,11 +309,11 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
         { runBuiltinAndAxiomSimplifier
-            :: forall variable simplifier
-            .  (InternalVariable variable, MonadSimplify simplifier)
-            => TermLike variable
-            -> SideCondition variable
-            -> simplifier (AttemptedAxiom variable)
+            :: forall simplifier
+            .  MonadSimplify simplifier
+            => TermLike RewritingVariableName
+            -> SideCondition RewritingVariableName
+            -> simplifier (AttemptedAxiom RewritingVariableName)
         }
 
 {-|A type to abstract away the mapping from symbol identifiers to
@@ -547,11 +541,10 @@ isConstructorOrOverloaded s
     return (isConstructor s || isOverloaded s)
 
 makeEvaluateTermCeil
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (OrCondition variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 makeEvaluateTermCeil sideCondition child =
     Predicate.makeCeilPredicate child
     & Condition.fromPredicate
@@ -560,10 +553,9 @@ makeEvaluateTermCeil sideCondition child =
 
 makeEvaluateCeil
     :: MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateCeil sideCondition child =
     do
         let (childTerm, childCondition) = Pattern.splitTerm child

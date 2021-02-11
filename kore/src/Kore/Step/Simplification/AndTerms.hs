@@ -80,6 +80,7 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     ( SimplificationType (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Syntax.PatternF
     ( Const (..)
     )
@@ -104,14 +105,13 @@ the special cases handled by this.
 
 -}
 termUnification
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
+    :: forall unifier
+    .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Pattern RewritingVariableName)
 termUnification notSimplifier = \term1 term2 ->
     whileDebugUnification term1 term2 $ do
         result <- termUnificationWorker term1 term2
@@ -119,12 +119,13 @@ termUnification notSimplifier = \term1 term2 ->
         pure result
   where
     termUnificationWorker
-        :: TermLike variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     termUnificationWorker pat1 pat2 = do
         let
-            maybeTermUnification :: MaybeT unifier (Pattern variable)
+            maybeTermUnification
+                :: MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
                 maybeTermAnd notSimplifier termUnificationWorker pat1 pat2
         Error.maybeT
@@ -139,38 +140,35 @@ termUnification notSimplifier = \term1 term2 ->
             & return
 
 maybeTermEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
+    :: MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> TermSimplifier variable unifier
+    -> TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 maybeTermEquals notSimplifier =
     maybeTransformTerm (equalsFunctions notSimplifier)
 
 maybeTermAnd
-    :: InternalVariable variable
-    => MonadUnify unifier
+    :: MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> TermSimplifier variable unifier
+    -> TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 maybeTermAnd notSimplifier =
     maybeTransformTerm (andFunctions notSimplifier)
 
 andFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
+    :: forall unifier
+    .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld variable unifier]
+    -> [TermTransformationOld RewritingVariableName unifier]
 andFunctions notSimplifier =
     forAnd . snd
     <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
@@ -186,12 +184,11 @@ andFunctions notSimplifier =
     forAnd f = f SideCondition.topTODO SimplificationType.And
 
 equalsFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
+    :: forall unifier
+    .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld variable unifier]
+    -> [TermTransformationOld RewritingVariableName unifier]
 equalsFunctions notSimplifier =
     forEquals . snd
     <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
@@ -207,12 +204,11 @@ equalsFunctions notSimplifier =
     forEquals f = f SideCondition.topTODO SimplificationType.Equals
 
 andEqualsFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
+    :: forall unifier
+    .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [(SimplificationTarget, TermTransformation variable unifier)]
+    -> [(SimplificationTarget, TermTransformation RewritingVariableName unifier)]
 andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
@@ -338,12 +334,11 @@ equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition variable
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 bottomTermEquals
     sideCondition
     first@(Bottom_ _)
@@ -376,12 +371,11 @@ See also: 'bottomTermEquals'
 
  -}
 termBottomEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition variable
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 termBottomEquals sideCondition first second =
     bottomTermEquals sideCondition second first
 
@@ -391,13 +385,12 @@ See also: 'isFunctionPattern'
 
  -}
 variableFunctionAndEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => SideCondition variable
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
     -> SimplificationType
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 variableFunctionAndEquals
     _
     SimplificationType.And
@@ -442,12 +435,12 @@ See also: 'variableFunctionAndEquals'
 
  -}
 functionVariableAndEquals
-    :: (InternalVariable variable, MonadUnify unifier)
-    => SideCondition variable
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
     -> SimplificationType
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 functionVariableAndEquals sideCondition simplificationType first second =
     variableFunctionAndEquals sideCondition simplificationType second first
 
@@ -529,11 +522,11 @@ See <https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-
 
  -}
 overloadedConstructorSortInjectionAndEquals
-    :: (InternalVariable variable, MonadUnify unifier)
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 overloadedConstructorSortInjectionAndEquals termMerger firstTerm secondTerm
   = do
     eunifier <- lift . Error.runExceptT

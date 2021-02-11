@@ -98,6 +98,7 @@ import Kore.Unparser
 import Logic
 import Pair
 import qualified Pretty
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
 -}
@@ -117,15 +118,14 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify
-    ::  forall simplifier variable any
+    ::  forall simplifier any
     .   ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
-    ->  SideCondition variable
-    ->  Conditional variable any
-    ->  LogicT simplifier (Conditional variable any)
+    ->  SideCondition RewritingVariableName
+    ->  Conditional RewritingVariableName any
+    ->  LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
     normalize >=> worker
   where
@@ -157,8 +157,8 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
 
     normalize
         ::  forall any'
-        .   Conditional variable any'
-        ->  LogicT simplifier (Conditional variable any')
+        .   Conditional RewritingVariableName any'
+        ->  LogicT simplifier (Conditional RewritingVariableName any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
@@ -176,12 +176,11 @@ See also: 'simplify'
 -}
 simplifyPredicate
     ::  ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
-    =>  SideCondition variable
-    ->  Predicate variable
-    ->  LogicT simplifier (Condition variable)
+    =>  SideCondition RewritingVariableName
+    ->  Predicate RewritingVariableName
+    ->  LogicT simplifier (Condition RewritingVariableName)
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
