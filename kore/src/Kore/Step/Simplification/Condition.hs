@@ -223,7 +223,9 @@ simplifySideCondition (toList . from @_ @(MultiAnd _) -> predicates) =
     worker (pred' : rest) = do
         sideCondition <- State.get
         let otherConds = sideCondition <> from (MultiAnd.make rest)
-        result <- lift $ simplifyPredicate otherConds pred'
+        result <-
+            simplifyCondition otherConds (Condition.fromPredicate pred')
+            & lift
         State.put (SideCondition.andCondition sideCondition result)
         worker rest
 
