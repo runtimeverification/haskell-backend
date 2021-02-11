@@ -10,7 +10,6 @@ module Kore.Step.Simplification.Condition
     , simplify
     , simplifyPredicate
     , simplifyCondition
-    , simplifySideCondition
     ) where
 
 import Prelude.Kore
@@ -63,7 +62,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( isConstructor
@@ -201,33 +199,6 @@ simplifyPredicate sideCondition predicate = do
             [ "Expecting a \\top term, but found:"
             , unparse conditional
             ]
-
--- | Simplify each condition in the 'SideCondition' with the assumption that
--- the other conditions are true.
-simplifySideCondition
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> LogicT simplifier (SideCondition variable)
-simplifySideCondition (toList . from @_ @(MultiAnd _) -> predicates) =
-    State.execStateT (worker predicates) SideCondition.top
-  where
-    worker
-        :: [Predicate variable]
-        -> StateT
-            (SideCondition variable)
-            (LogicT simplifier)
-            ()
-    worker [] = return ()
-    worker (pred' : rest) = do
-        sideCondition <- State.get
-        let otherConds = sideCondition <> from (MultiAnd.make rest)
-        result <-
-            simplifyCondition otherConds (Condition.fromPredicate pred')
-            & lift
-        State.put (SideCondition.andCondition sideCondition result)
-        worker rest
 
 simplifyConjunctions
     :: InternalVariable variable

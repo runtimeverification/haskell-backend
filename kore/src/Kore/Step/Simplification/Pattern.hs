@@ -9,13 +9,19 @@ module Kore.Step.Simplification.Pattern
     , makeEvaluate
     ) where
 
-import Kore.Step.Simplification.Condition
-    ( simplifySideCondition
-    )
 import Prelude.Kore
+
+import Control.Monad.State.Strict
+    ( StateT
+    )
+import qualified Control.Monad.State.Strict as State
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -23,6 +29,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
+    )
+import Kore.Internal.Predicate
+    ( Predicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -46,6 +55,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Substitute
     ( substitute
     )
+import Logic
 
 {-| Simplifies the pattern without a side-condition (i.e. it's top)
 and removes the exists quantifiers at the top.
@@ -110,3 +120,30 @@ makeEvaluate sideCondition pattern' =
         let simplifiedPattern =
                 Conditional.andCondition simplifiedTerm simplifiedCondition
         simplifyCondition sideCondition simplifiedPattern
+
+-- | Simplify each condition in the 'SideCondition' with the assumption that
+-- the other conditions are true.
+simplifySideCondition
+    :: forall variable simplifier
+    .  InternalVariable variable
+    => MonadSimplify simplifier
+    => SideCondition variable
+    -> LogicT simplifier (SideCondition variable)
+simplifySideCondition (toList . from @_ @(MultiAnd _) -> predicates) =
+    State.execStateT (worker predicates) SideCondition.top
+  where
+    worker
+        :: [Predicate variable]
+        -> StateT
+            (SideCondition variable)
+            (LogicT simplifier)
+            ()
+    worker [] = return ()
+    worker (pred' : rest) = do
+        sideCondition <- State.get
+        let otherConds = sideCondition <> from (MultiAnd.make rest)
+        result <-
+            simplifyCondition otherConds (Condition.fromPredicate pred')
+            & lift
+        State.put (SideCondition.andCondition sideCondition result)
+        worker rest
