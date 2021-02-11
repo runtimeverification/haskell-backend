@@ -649,6 +649,7 @@ derivePar'
     -> Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
+
 type Deriver monad =
         [RewriteRule RewritingVariableName]
     ->  Pattern RewritingVariableName
