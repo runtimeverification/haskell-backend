@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c7335f234ff802f2b2d42c8970fd41a6fa133676b9afa09d411e6222e1120d42
+-- hash: 999e1c394d84530678f479451e3ecface6622df87771c72c3aa313a406716b15
 
 name:           kore
 version:        0.39.0.0
