@@ -7,6 +7,8 @@ module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     , simplify
     , makeEvaluate
+    -- For testing
+    , simplifySideCondition
     ) where
 
 import Prelude.Kore
