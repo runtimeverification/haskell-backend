@@ -21,7 +21,6 @@ module Kore.Step.Step
     , checkFunctionLike
     , wouldNarrowWith
     -- * Re-exports
-    , UnificationProcedure (..)
     , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
@@ -71,6 +70,7 @@ import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -78,7 +78,9 @@ import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Procedure
-import Kore.Unification.UnificationProcedure
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 import Kore.Unparser
 import Kore.Variables.Target
     ( Target
@@ -146,7 +148,9 @@ unifyRule initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyTermLikes sideCondition initialTerm ruleLeft
+    unification <-
+        unificationProcedure sideCondition initialTerm ruleLeft
+        & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
@@ -155,8 +159,6 @@ unifyRule initial rule = do
             sideCondition
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
-  where
-    unifyTermLikes = runUnificationProcedure unificationProcedure
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
