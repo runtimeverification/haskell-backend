@@ -186,10 +186,9 @@ simplify
     => SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> simplifier (OrPattern RewritingVariableName)
-simplify sideCondition = \termLike -> do
+simplify sideCondition = \termLike ->
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
-    -- >>= pure . OrPattern.mapVariables resetConfigVariable
   where
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
