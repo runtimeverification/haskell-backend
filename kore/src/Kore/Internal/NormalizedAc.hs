@@ -60,9 +60,6 @@ import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
 import Kore.Sort
-import Kore.Syntax.Application
-    ( SymbolOrAlias
-    )
 import Kore.Unparser
 import Pretty
     ( (<+>)
@@ -125,7 +122,7 @@ wrapConcreteElement = from
 unparsedChildren
     :: forall ann child normalized key
     .  AcWrapper normalized
-    => SymbolOrAlias
+    => Pretty.Doc ann
     -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> normalized key child
@@ -143,8 +140,8 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
-    element = (<>) ("/* element: */" <+> unparse elementSymbol)
-    concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
+    element = (<>) ("/* element: */" <+> elementSymbol)
+    concreteElement = (<>) ("/* concrete element: */" <+> elementSymbol)
     child = (<+>) "/* opaque child: */"
 
     elementUnparser :: Element normalized child -> Pretty.Doc ann
@@ -390,17 +387,29 @@ data InternalAc (normalized :: Type -> Type -> Type) key child =
         , builtinAcConcat :: !(Att.Concat Symbol)
         , builtinAcChild :: normalized key child
         }
-    deriving (Eq, Ord, Show)
+    deriving (Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Eq (normalized key child)
+    => Eq (InternalAc normalized key child) where
+    internal1 == internal2 =
+        builtinAcChild internal1 == builtinAcChild internal2
+        && builtinAcSort internal1 == builtinAcSort internal2
+
+instance Ord (normalized key child)
+    => Ord (InternalAc normalized key child) where
+    internal1 <= internal2 =
+        builtinAcChild internal1 <= builtinAcChild internal2
 
 instance Hashable (normalized key child)
     => Hashable (InternalAc normalized key child)
   where
     hashWithSalt salt builtin =
-        hashWithSalt salt builtinAcChild
+        hashWithSalt (hashWithSalt salt builtinAcSort) builtinAcChild
       where
+        InternalAc { builtinAcSort } = builtin
         InternalAc { builtinAcChild } = builtin
 
 instance (NFData (normalized key child))
@@ -433,13 +442,9 @@ unparseInternalAc
     -> Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
     unparseConcat'
-        (unparse $ Att.fromUnit unitSymbolOrAlias)
-        (unparse $ Att.fromConcat builtinAcConcat)
-    $ unparsedChildren
-        (Att.fromElement elementSymbolOrAlias)
-        keyUnparser
-        childUnparser
-        builtinAcChild
+        (Att.fromUnit $ unparse <$> unitSymbolOrAlias)
+        (Att.fromConcat $ unparse <$> builtinAcConcat)
+        children
   where
     InternalAc { builtinAcChild } = builtinAc
     InternalAc { builtinAcUnit } = builtinAc
@@ -455,6 +460,11 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
     elementSymbolOrAlias = Att.mergeElement
         (toSymbolOrAlias <$> builtinAcElement)
         concatElement
+    children = unparsedChildren
+        (Att.fromElement $ unparse <$> elementSymbolOrAlias)
+        keyUnparser
+        childUnparser
+        builtinAcChild
 
 
 normalizedAcDefined

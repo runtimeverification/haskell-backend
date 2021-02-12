@@ -130,6 +130,7 @@ data Symbol =
     , unitHook      :: !(Unit SymbolOrAlias)
     , elementHook   :: !(Element SymbolOrAlias)
     , concatHook    :: !(Concat SymbolOrAlias)
+    -- ^ The above three are only populated if the symbol is a concat
     , sourceLocation :: !SourceLocation
     -- ^ Location in the original (source) file.
     }

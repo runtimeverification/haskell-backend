@@ -44,9 +44,6 @@ import Kore.Attribute.Element hiding
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
-import Kore.Attribute.Unit hiding
-    ( unitSymbol
-    )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore
@@ -171,7 +168,7 @@ asTermLike builtin =
     isEmptySet :: TermLike variable -> Bool
     isEmptySet (InternalSet_ InternalAc { builtinAcChild = wrappedChild }) =
         unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == toUnit symbol
+    isEmptySet (App_ symbol _) = isSymbolUnit symbol
     isEmptySet _ = False
 
     InternalAc { builtinAcChild } = builtin

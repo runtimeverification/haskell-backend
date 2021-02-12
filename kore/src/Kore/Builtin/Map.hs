@@ -479,6 +479,7 @@ operates at the top-most level, it does not descend into the 'TermLike' to
 internalize subterms.
 
  -}
+
 internalize
     :: InternalVariable variable
     => SmtMetadataTools Attribute.Symbol
