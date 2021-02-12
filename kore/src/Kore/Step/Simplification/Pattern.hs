@@ -29,7 +29,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
+    ( Condition
+    , Conditional (..)
     , Pattern
     )
 import Kore.Internal.Predicate
@@ -116,12 +117,13 @@ makeEvaluate sideCondition pattern' =
                 & Condition.fromPredicate
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition'
-        simplifiedSideCondition <-
-            simplifySideCondition termSideCondition
+        simplifiedSideCondition <- simplifySideCondition termSideCondition
         simplifiedTerm <- simplifyConditionalTerm simplifiedSideCondition term'
         let simplifiedPattern =
-                Conditional.andCondition simplifiedTerm simplifiedCondition
-        simplifyCondition sideCondition simplifiedPattern
+                Conditional.andCondition
+                    simplifiedTerm
+                    (from @_ @(Condition _) simplifiedSideCondition)
+        return simplifiedPattern
 
 -- | Simplify each condition in the 'SideCondition' with the assumption that
 -- the other conditions are true.

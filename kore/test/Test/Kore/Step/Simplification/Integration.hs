@@ -6,6 +6,7 @@ module Test.Kore.Step.Simplification.Integration
     , test_substituteMap
     , test_substituteList
     , test_substitute
+    , test_simplifySideCondition
     ) where
 
 import Prelude.Kore
@@ -1388,6 +1389,50 @@ test_substituteList =
     ]
   where
     mkDomainBuiltinList = Mock.builtinList
+
+test_simplifySideCondition :: [TestTree]
+test_simplifySideCondition =
+    [ testCase "Simplifies function application in side condition" $ do
+        let configuration =
+                Pattern.fromTermAndPredicate
+                    Mock.a
+                    (makeAndPredicate
+                        (makeEqualsPredicate
+                            (Mock.f Mock.a)
+                            Mock.b
+                        )
+                        (makeEqualsPredicate
+                            (Mock.g Mock.a)
+                            (Mock.g Mock.b)
+                        )
+                    )
+            expected =
+                Pattern.fromTermAndPredicate
+                    Mock.a
+                    (makeEqualsPredicate
+                        (Mock.g Mock.a)
+                        (Mock.g Mock.b)
+                    )
+                & OrPattern.fromPattern
+            axioms =
+                mkEvaluatorRegistry
+                    (Map.fromList
+                        [ ( AxiomIdentifier.Application Mock.fId
+                        , [ functionAxiomUnification
+                                Mock.fSymbol
+                                [Mock.a]
+                                Mock.b
+                                ( makeEqualsPredicate
+                                    (Mock.g Mock.a)
+                                    (Mock.g Mock.b)
+                                )
+                          ]
+                          )
+                        ]
+                    )
+        actual <- evaluateWithAxioms axioms configuration
+        assertEqual "" expected actual
+    ]
 
 evaluate :: TestPattern -> IO OrTestPattern
 evaluate = evaluateWithAxioms Map.empty
