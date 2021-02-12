@@ -73,16 +73,16 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "stylish-haskell": {
-        "branch": "master",
+        "branch": "v0.11.0.3",
         "description": "Haskell code prettifier",
         "homepage": "",
         "owner": "jaspervdj",
         "repo": "stylish-haskell",
-        "rev": "f1569c0454fa0b7243a9787746e7bdf7e8ae5879",
-        "sha256": "1402jz6ds37khk7c5hq7b2zf9vbk4zfklqvickc4s24wlbs3x0zd",
+        "rev": "771b82f3c4af465a2f2b675ca9a28d18d3a27c1b",
+        "sha256": "02hphd5yxyml5hnz53y78cl9fp9d7rf8ag88m3n3kyrgk8hqmixf",
         "type": "tarball",
-        "url": "https://github.com/jaspervdj/stylish-haskell/archive/f1569c0454fa0b7243a9787746e7bdf7e8ae5879.tar.gz",
+        "url": "https://github.com/jaspervdj/stylish-haskell/archive/771b82f3c4af465a2f2b675ca9a28d18d3a27c1b.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v0.11.0.0"
+        "version": "v0.11.0.3"
     }
 }

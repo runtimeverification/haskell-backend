@@ -161,6 +161,4 @@
           };
         };
       };
-    } // rec {
-    src = (pkgs.lib).mkDefault ./.;
-    }
+    } // rec { src = (pkgs.lib).mkDefault ../.; }
