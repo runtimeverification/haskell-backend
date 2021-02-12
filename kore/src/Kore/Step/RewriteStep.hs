@@ -62,7 +62,7 @@ import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
-    , RulePattern
+    , RulePattern, mapRuleVariables
     )
 import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Simplify
@@ -335,24 +335,17 @@ applyRewriteRulesParallel
     -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     unificationProcedure
-    (map getRewriteRule -> rules)
-    (resetResultPattern mempty -> initial)
+    (map (mapRuleVariables resetRuleVariable . getRewriteRule) -> rules)
+    (Pattern.mapVariables resetConfigVariable -> initial)
   = do
     results <- applyRulesParallel unificationProcedure rules initial
     assertFunctionLikeResults (term initial) results
     return
         $ results
         & field @"remainders"
-            Lens.%~
-                MultiOr.map
-                    (Conditional.mapVariables (pure id) resetConfigVariable)
+            Lens.%~ MultiOr.map (Pattern.mapVariables resetConfigVariable)
         & (field @"results" . Lens.traverse . field @"result")
-            Lens.%~
-                MultiOr.map
-                    (Conditional.mapVariables
-                        TermLike.mapVariables
-                        resetConfigVariable
-                    )
+            Lens.%~ MultiOr.map (Pattern.mapVariables resetConfigVariable)
 
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -387,8 +380,8 @@ applyRewriteRulesSequence
     -> simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
     unificationProcedure
-    (resetResultPattern mempty -> initialConfig)
-    (map getRewriteRule -> rules)
+    (Pattern.mapVariables resetConfigVariable -> initialConfig)
+    (map (mapRuleVariables resetRuleVariable . getRewriteRule) -> rules)
   = do
     results <- applyRulesSequence unificationProcedure rules initialConfig
     assertFunctionLikeResults (term initialConfig) results
@@ -396,19 +389,10 @@ applyRewriteRulesSequence
         $ results
         & field @"remainders"
             Lens.%~
-                MultiOr.map
-                    (Conditional.mapVariables
-                        TermLike.mapVariables
-                        resetConfigVariable
-                    )
+                MultiOr.map (Pattern.mapVariables resetConfigVariable)
         & (field @"results" . Lens.traverse . field @"result")
             Lens.%~
-                MultiOr.map
-                    (Conditional.mapVariables
-                        TermLike.mapVariables
-                        resetConfigVariable
-                    )
-
+                MultiOr.map (Pattern.mapVariables resetConfigVariable)
 
 applyClaimsSequence
     :: forall goal simplifier

@@ -61,7 +61,7 @@ import Kore.Reachability
     ( onePathRuleToTerm
     )
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( mkRuleVariable, RewritingVariableName
     )
 import Kore.Sort
     ( Sort (..)
@@ -83,7 +83,7 @@ import Kore.Step.RulePattern
     , implicationRuleToTerm
     , injectTermIntoRHS
     , rewriteRuleToTerm
-    , termToRHS
+    , termToRHS, mapRuleVariables
     )
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
@@ -97,6 +97,7 @@ import Kore.Unparser
     )
 import qualified Kore.Verified as Verified
 import qualified Pretty
+import Kore.Attribute.Axiom (mapAxiomVariables)
 
 {-| Error encountered when parsing patterns
 -}
@@ -152,8 +153,8 @@ extractRewriteAxioms idxMod =
 extractImplicationClaims
     :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-            , ImplicationRule VariableName
+    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol RewritingVariableName
+            , ImplicationRule RewritingVariableName
             )
         ]
 extractImplicationClaims =
@@ -165,13 +166,18 @@ extractImplicationClaimFrom
         )
     -- ^ Sentence to extract axiom pattern from
     -> Maybe
-        ( Attribute.Axiom Internal.Symbol.Symbol VariableName
-        , ImplicationRule VariableName
+        ( Attribute.Axiom Internal.Symbol.Symbol RewritingVariableName
+        , ImplicationRule RewritingVariableName
         )
 extractImplicationClaimFrom (attrs, sentence) =
     case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-        Right (ImplicationAxiomPattern axiomPat) -> Just (attrs, axiomPat)
+        Right (ImplicationAxiomPattern axiomPat) ->
+            Just
+                ( attrs & mapAxiomVariables (pure mkRuleVariable)
+                , axiomPat & mapRuleVariables (pure mkRuleVariable)
+                )
         _ -> Nothing
+  where
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence

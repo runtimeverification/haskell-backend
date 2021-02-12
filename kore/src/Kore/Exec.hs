@@ -561,8 +561,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
-                mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
-                <$> specClaims
+                makeImplicationRule <$> specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -697,8 +696,8 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeImplicationRule
-    :: (Attribute.Axiom Symbol VariableName, ImplicationRule VariableName)
-    -> ImplicationRule VariableName
+    :: (Attribute.Axiom Symbol RewritingVariableName, ImplicationRule RewritingVariableName)
+    -> ImplicationRule RewritingVariableName
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 

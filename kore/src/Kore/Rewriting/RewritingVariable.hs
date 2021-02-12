@@ -26,6 +26,7 @@ module Kore.Rewriting.RewritingVariable
     , getRemainderPredicate
     , assertRemainderPattern
     , resetConfigVariable
+    , resetRuleVariable
     , getRewritingVariable
     -- * Exported for unparsing/testing
     , getRewritingPattern
@@ -163,6 +164,12 @@ resetConfigVariable
         (RewritingVariableName -> RewritingVariableName)
 resetConfigVariable =
     pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
+
+resetRuleVariable
+    :: AdjSomeVariableName
+        (RewritingVariableName -> RewritingVariableName)
+resetRuleVariable =
+    pure (.) <*> pure mkRuleVariable <*> getRewritingVariable
 
 getRewritingVariable
     :: AdjSomeVariableName (RewritingVariableName -> VariableName)
