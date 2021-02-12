@@ -54,12 +54,6 @@ deriving instance
     => Show (NormalizedOrBottom collection variable)
 
 -- | Wrapper for giving names to arguments.
--- newtype UnitSymbol = UnitSymbol {getUnitSymbol :: Symbol}
-
--- | Wrapper for giving names to arguments.
--- newtype ConcatSymbol = ConcatSymbol {getConcatSymbol :: Symbol}
-
--- | Wrapper for giving names to arguments.
 newtype ConcreteElements variable =
     ConcreteElements {getConcreteElements :: [TermLike variable]}
 

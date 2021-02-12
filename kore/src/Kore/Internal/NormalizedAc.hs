@@ -395,13 +395,15 @@ data InternalAc (normalized :: Type -> Type -> Type) key child =
 instance Eq (normalized key child)
     => Eq (InternalAc normalized key child) where
     internal1 == internal2 =
-        builtinAcChild internal1 == builtinAcChild internal2
-        && builtinAcSort internal1 == builtinAcSort internal2
+        builtinAcSort internal1 == builtinAcSort internal2
+        && builtinAcChild internal1 == builtinAcChild internal2
 
 instance Ord (normalized key child)
     => Ord (InternalAc normalized key child) where
     internal1 <= internal2 =
-        builtinAcChild internal1 <= builtinAcChild internal2
+        if builtinAcSort internal1 == builtinAcSort internal2
+            then builtinAcChild internal1 <= builtinAcChild internal2
+            else builtinAcSort internal1 <= builtinAcSort internal2
 
 instance Hashable (normalized key child)
     => Hashable (InternalAc normalized key child)
