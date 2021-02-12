@@ -62,7 +62,8 @@ import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
 import Kore.Step.RulePattern
     ( RewriteRule (..)
-    , RulePattern, mapRuleVariables
+    , RulePattern
+    , mapRuleVariables
     )
 import qualified Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Simplify

@@ -33,6 +33,9 @@ import Data.List.Extra
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Axiom
+    ( mapAxiomVariables
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor
     ( isConstructor
@@ -61,7 +64,8 @@ import Kore.Reachability
     ( onePathRuleToTerm
     )
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable, RewritingVariableName
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import Kore.Sort
     ( Sort (..)
@@ -82,8 +86,9 @@ import Kore.Step.RulePattern
     , allPathGlobally
     , implicationRuleToTerm
     , injectTermIntoRHS
+    , mapRuleVariables
     , rewriteRuleToTerm
-    , termToRHS, mapRuleVariables
+    , termToRHS
     )
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
@@ -97,7 +102,6 @@ import Kore.Unparser
     )
 import qualified Kore.Verified as Verified
 import qualified Pretty
-import Kore.Attribute.Axiom (mapAxiomVariables)
 
 {-| Error encountered when parsing patterns
 -}
