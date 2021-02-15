@@ -25,8 +25,9 @@ import Data.Limit
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
 
+
 import Kore.Internal.Pattern as Conditional
-    ( Conditional (..)
+    ( Conditional (..), mapVariables
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
@@ -46,7 +47,7 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     , transitionRule
     )
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    ( RewritingVariableName, resetConfigVariable
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
@@ -68,6 +69,7 @@ import qualified Log
 import Numeric.Natural
     ( Natural
     )
+import qualified Kore.Internal.TermLike as TermLike
 
 data CheckResult patt claim
     = Proved
@@ -120,7 +122,11 @@ checkClaim
   = do
         let
             ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
-            goalPattern = ModalPattern { modalOp = getId alias, term = prop }
+            goalPattern =
+                ModalPattern
+                { modalOp = getId alias
+                , term = prop & TermLike.mapVariables resetConfigVariable
+                }
             strategy =
                 Limit.takeWithin
                     depthLimit
@@ -128,7 +134,8 @@ checkClaim
             startState :: CommonProofState
             startState =
                 ProofState.GoalLHS
-                    Conditional
+                    $ Conditional.mapVariables resetConfigVariable
+                    $ Conditional
                         { term = left
                         , predicate = Predicate.makeTruePredicate
                         , substitution = mempty

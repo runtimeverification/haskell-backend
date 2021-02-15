@@ -33,9 +33,6 @@ import Data.List.Extra
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Axiom
-    ( mapAxiomVariables
-    )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor
     ( isConstructor
@@ -64,8 +61,7 @@ import Kore.Reachability
     ( onePathRuleToTerm
     )
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkRuleVariable
+    ( mkRuleVariable
     )
 import Kore.Sort
     ( Sort (..)
@@ -86,7 +82,6 @@ import Kore.Step.RulePattern
     , allPathGlobally
     , implicationRuleToTerm
     , injectTermIntoRHS
-    , mapRuleVariables
     , rewriteRuleToTerm
     , termToRHS
     )
@@ -157,8 +152,8 @@ extractRewriteAxioms idxMod =
 extractImplicationClaims
     :: VerifiedModule declAtts
     -- ^'IndexedModule' containing the definition
-    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol RewritingVariableName
-            , ImplicationRule RewritingVariableName
+    ->  [   ( Attribute.Axiom Internal.Symbol.Symbol VariableName
+            , ImplicationRule VariableName
             )
         ]
 extractImplicationClaims =
@@ -170,18 +165,13 @@ extractImplicationClaimFrom
         )
     -- ^ Sentence to extract axiom pattern from
     -> Maybe
-        ( Attribute.Axiom Internal.Symbol.Symbol RewritingVariableName
-        , ImplicationRule RewritingVariableName
+        ( Attribute.Axiom Internal.Symbol.Symbol VariableName
+        , ImplicationRule VariableName
         )
 extractImplicationClaimFrom (attrs, sentence) =
     case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-        Right (ImplicationAxiomPattern axiomPat) ->
-            Just
-                ( attrs & mapAxiomVariables (pure mkRuleVariable)
-                , axiomPat & mapRuleVariables (pure mkRuleVariable)
-                )
+        Right (ImplicationAxiomPattern axiomPat) -> Just ( attrs, axiomPat)
         _ -> Nothing
-  where
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence

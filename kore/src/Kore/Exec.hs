@@ -26,6 +26,7 @@ import Control.Concurrent.MVar
 import Control.DeepSeq
     ( deepseq
     )
+import Data.Functor ((<&>))
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -562,6 +563,7 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
                 makeImplicationRule <$> specClaims
+                <&> mapRuleVariables (pure mkRuleVariable)
 
         Bounded.checkClaim
             breadthLimit
@@ -696,8 +698,8 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeImplicationRule
-    :: (Attribute.Axiom Symbol RewritingVariableName, ImplicationRule RewritingVariableName)
-    -> ImplicationRule RewritingVariableName
+    :: (Attribute.Axiom Symbol VariableName, ImplicationRule VariableName)
+    -> ImplicationRule VariableName
 makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern { attributes }
 

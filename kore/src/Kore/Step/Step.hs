@@ -292,6 +292,12 @@ applyRemainder initial remainder = do
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!
-    Simplifier.simplifyCondition
-        SideCondition.topTODO
-        (Pattern.andCondition initial partial)
+    r <-
+        Simplifier.simplifyCondition
+            SideCondition.topTODO
+            (Pattern.andCondition initial partial)
+    -- traceM "before"
+    -- traceM . unparseToString $ r
+    -- traceM "after"
+    -- traceM . unparseToString $ r & Pattern.mapVariables resetConfigVariable
+    return (r & Pattern.mapVariables resetConfigVariable)
