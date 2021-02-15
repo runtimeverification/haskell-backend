@@ -122,15 +122,22 @@ wrapConcreteElement = from
 unparsedChildren
     :: forall ann child normalized key
     .  AcWrapper normalized
-    => Pretty.Doc ann
+    => Att.Element (Pretty.Doc ann)
     -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> normalized key child
     -> [Pretty.Doc ann]
-unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
-    (elementUnparser <$> elementsWithVariables)
-    ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+unparsedChildren elementSymbol keyUnparser childUnparser wrapped
+  | Just elementSymbolDoc <- Att.getElement elementSymbol =
+    (elementUnparser elementSymbolDoc <$> elementsWithVariables)
+    ++ (concreteElementUnparser elementSymbolDoc
+        <$> Map.toAscList concreteElements)
     ++ (child . childUnparser <$> opaque)
+  | isNothing (Att.getElement elementSymbol)
+  , null elementsWithVariables
+  , null concreteElements =
+    child . childUnparser <$> opaque
+  | otherwise = error "Cannot unparse nonempty element lists without an Element symbol"
   where
     unwrapped :: NormalizedAc normalized key child
     -- Matching needed only for getting compiler notifications when
@@ -140,16 +147,19 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
-    element = (<>) ("/* element: */" <+> elementSymbol)
-    concreteElement = (<>) ("/* concrete element: */" <+> elementSymbol)
+    element = (<>) . (<+>) "/* element: */"
+    concreteElement = (<>) . (<+>) "/* concrete element: */"
     child = (<+>) "/* opaque child: */"
 
-    elementUnparser :: Element normalized child -> Pretty.Doc ann
-    elementUnparser = element . unparseElement childUnparser
+    elementUnparser :: Pretty.Doc ann -> Element normalized child -> Pretty.Doc ann
+    elementUnparser elementSymbolDoc =
+        element elementSymbolDoc
+        . unparseElement childUnparser
 
-    concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
-    concreteElementUnparser =
-        concreteElement . unparseConcreteElement keyUnparser childUnparser
+    concreteElementUnparser :: Pretty.Doc ann -> (key, Value normalized child) -> Pretty.Doc ann
+    concreteElementUnparser elementSymbolDoc =
+        concreteElement elementSymbolDoc
+        . unparseConcreteElement keyUnparser childUnparser
 
 {- | Internal representation for associative-commutative domain values.
 
@@ -463,7 +473,7 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
         (toSymbolOrAlias <$> builtinAcElement)
         concatElement
     children = unparsedChildren
-        (Att.fromElement $ unparse <$> elementSymbolOrAlias)
+        (unparse <$> elementSymbolOrAlias)
         keyUnparser
         childUnparser
         builtinAcChild
