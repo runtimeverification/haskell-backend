@@ -26,7 +26,6 @@ import Control.Concurrent.MVar
 import Control.DeepSeq
     ( deepseq
     )
-import Data.Functor ((<&>))
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -41,6 +40,9 @@ import Control.Monad.Trans.Except
     )
 import Data.Coerce
     ( coerce
+    )
+import Data.Functor
+    ( (<&>)
     )
 import Data.Generics.Product
     ( field
