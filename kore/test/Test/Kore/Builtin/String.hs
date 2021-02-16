@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.String
     ( test_eq
     , test_lt

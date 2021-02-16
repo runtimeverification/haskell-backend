@@ -5,6 +5,8 @@ License     : NCSA
 Unification of rules (used for stepping with rules or equations)
 
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Step
     ( UnifiedRule
     , Result

@@ -7,6 +7,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Unification.Procedure
     ( unificationProcedure
     , unificationProcedureWorker

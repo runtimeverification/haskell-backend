@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Equation.Common
     ( Equation'
     , concrete
@@ -69,10 +71,11 @@ functionAxiomUnification symbol args right requires =
         [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
         _  -> (mkEquation left right) { requires, argument }
   where
-    left = mkApplySymbol symbol variables
+    ~left = mkApplySymbol symbol variables
     sorts = fmap termLikeSort args
-    variables = generateVariables (intToNatural (length args)) sorts
-    generateVariables n sorts' =
+    ~variables = generateVariables (intToNatural (length args)) sorts
+    generateVariables ~n sorts' =
+        -- lazy argument to prevent arithmetic underflow
         fmap makeElementVariable (zip [0..n - 1] sorts')
     argument =
         Just

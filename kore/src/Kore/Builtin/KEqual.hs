@@ -14,6 +14,8 @@ builtin modules.
     import qualified Kore.Builtin.KEqual as KEqual
 @
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions

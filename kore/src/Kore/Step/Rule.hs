@@ -170,7 +170,7 @@ extractImplicationClaimFrom
         )
 extractImplicationClaimFrom (attrs, sentence) =
     case fromSentenceAxiom (attrs, Syntax.getSentenceClaim sentence) of
-        Right (ImplicationAxiomPattern axiomPat) -> Just ( attrs, axiomPat)
+        Right (ImplicationAxiomPattern axiomPat) -> Just (attrs, axiomPat)
         _ -> Nothing
 
 -- | Attempts to extract a rule from the 'Verified.Sentence'.

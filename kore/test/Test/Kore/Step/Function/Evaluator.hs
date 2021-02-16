@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Function.Evaluator
     ( test_evaluateApplication ) where
 

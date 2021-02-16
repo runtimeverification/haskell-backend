@@ -8,6 +8,8 @@ Portability : portable
 
 Expose concrete execution as a library
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Exec
     ( exec
     , mergeAllRules

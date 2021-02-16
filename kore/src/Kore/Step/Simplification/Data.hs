@@ -9,6 +9,7 @@ Portability : portable
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.Data
     ( Simplifier

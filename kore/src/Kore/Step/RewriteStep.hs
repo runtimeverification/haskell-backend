@@ -338,6 +338,7 @@ applyRewriteRulesParallel
     assertFunctionLikeResults (term initial) results
     return results
 
+
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
 See also: 'applyRewriteRule'

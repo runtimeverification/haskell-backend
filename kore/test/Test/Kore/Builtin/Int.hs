@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Int
     ( test_gt, test_ge, test_eq, test_le, test_lt, test_ne
     , test_min, test_max

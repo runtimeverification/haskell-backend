@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# LANGUAGE Strict #-}
 
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration

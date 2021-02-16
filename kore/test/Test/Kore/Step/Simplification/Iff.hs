@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Iff
     ( test_simplify
     , test_makeEvaluate

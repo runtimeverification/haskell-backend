@@ -4,6 +4,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.ModelChecker.Bounded
     ( CheckResult (..)

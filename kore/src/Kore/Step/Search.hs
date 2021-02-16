@@ -5,6 +5,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Search
     ( Config (..)
     , SearchType (..)

@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Function.Evaluator
     ( evaluateApplication
     , evaluatePattern
@@ -282,7 +284,7 @@ evaluateSortInjection ap
     App_ apHeadChild grandChildren
       | Symbol.isSortInjection apHeadChild ->
         let
-            (fromSort', toSort') = sortInjectionSorts apHeadChild
+            ~(fromSort', toSort') = sortInjectionSorts apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
             resultApp = apHeadNew grandChildren
         in
@@ -291,8 +293,8 @@ evaluateSortInjection ap
   | otherwise = ap
   where
     apHead = applicationSymbolOrAlias ap
-    (fromSort, _) = sortInjectionSorts apHead
-    apChild = sortInjectionChild ap
+    ~(fromSort, _) = sortInjectionSorts apHead
+    ~apChild = sortInjectionChild ap
     updateSortInjectionSource head1 fromSort1 children =
         Application
             { applicationSymbolOrAlias =
@@ -300,7 +302,7 @@ evaluateSortInjection ap
             , applicationChildren = children
             }
       where
-        (_, toSort1) = sortInjectionSorts head1
+        ~(_, toSort1) = sortInjectionSorts head1
 
 sortInjectionChild :: Unparse a => Application Symbol a -> a
 sortInjectionChild application =
