@@ -255,13 +255,12 @@ applySubstitutionAndSimplify
             & (fmap . fmap) toMatchResult
 
 applyEquation
-    :: forall simplifier variable
+    :: forall simplifier
     .  MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> Equation variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    => SideCondition RewritingVariableName
+    -> Equation RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
@@ -279,13 +278,12 @@ Throws 'ApplyMatchResultErrors' if there is a problem with the 'MatchResult'.
 
  -}
 applyMatchResult
-    :: forall monad variable
+    :: forall monad
     .   Monad monad
-    =>  InternalVariable variable
-    =>  Equation variable
-    ->  MatchResult variable
-    ->  ExceptT (ApplyMatchResultErrors variable) monad
-            (Equation variable, Predicate variable)
+    =>  Equation RewritingVariableName
+    ->  MatchResult RewritingVariableName
+    ->  ExceptT (ApplyMatchResultErrors RewritingVariableName) monad
+            (Equation RewritingVariableName, Predicate RewritingVariableName)
 applyMatchResult equation matchResult@(predicate, substitution) = do
     case errors of
         x : xs ->
@@ -304,7 +302,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     equationVariables = freeVariables equation
 
-    occursInEquation :: (SomeVariableName variable -> Bool)
+    occursInEquation :: (SomeVariableName RewritingVariableName -> Bool)
     occursInEquation = \someVariableName ->
         Set.member someVariableName equationVariableNames
 
@@ -405,12 +403,10 @@ checkRequires sideCondition predicate requires =
     withAxioms = id
 
 refreshVariables
-    :: forall variable
-    .  InternalVariable variable
-    => SideCondition variable
-    -> TermLike variable
-    -> Equation variable
-    -> Equation variable
+    :: SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
+    -> Equation RewritingVariableName
 refreshVariables sideCondition initial =
     snd
     . Equation.refreshVariables avoiding
@@ -451,20 +447,20 @@ mapAttemptEquationErrorVariables adj =
 
 whileMatch
     :: Functor monad
-    => ExceptT (MatchError variable) monad a
-    -> ExceptT (AttemptEquationError variable) monad a
+    => ExceptT (MatchError RewritingVariableName) monad a
+    -> ExceptT (AttemptEquationError RewritingVariableName) monad a
 whileMatch = withExceptT WhileMatch
 
 whileApplyMatchResult
     :: Functor monad
-    => ExceptT (ApplyMatchResultErrors variable) monad a
-    -> ExceptT (AttemptEquationError variable) monad a
+    => ExceptT (ApplyMatchResultErrors RewritingVariableName) monad a
+    -> ExceptT (AttemptEquationError RewritingVariableName) monad a
 whileApplyMatchResult = withExceptT WhileApplyMatchResult
 
 whileCheckRequires
     :: Functor monad
-    => ExceptT (CheckRequiresError variable) monad a
-    -> ExceptT (AttemptEquationError variable) monad a
+    => ExceptT (CheckRequiresError RewritingVariableName) monad a
+    -> ExceptT (AttemptEquationError RewritingVariableName) monad a
 whileCheckRequires = withExceptT WhileCheckRequires
 
 instance
@@ -716,9 +712,8 @@ instance Entry DebugAttemptEquation where
  -}
 debugAttemptEquationResult
     :: MonadLog log
-    => InternalVariable variable
-    => Equation variable
-    -> AttemptEquationResult variable
+    => Equation RewritingVariableName
+    -> AttemptEquationResult RewritingVariableName
     -> log ()
 debugAttemptEquationResult equation result =
     logEntry $ DebugAttemptEquationResult
@@ -737,9 +732,8 @@ mapAttemptEquationResultVariables adj =
 
 whileDebugAttemptEquation
     :: MonadLog log
-    => InternalVariable variable
-    => TermLike variable
-    -> Equation variable
+    => TermLike RewritingVariableName
+    -> Equation RewritingVariableName
     -> log a
     -> log a
 whileDebugAttemptEquation termLike equation =
@@ -795,9 +789,8 @@ after 'attemptEquation'.
  -}
 debugApplyEquation
     :: MonadLog log
-    => InternalVariable variable
-    => Equation variable
-    -> Pattern variable
+    => Equation RewritingVariableName
+    -> Pattern RewritingVariableName
     -> log ()
 debugApplyEquation equation result =
     logEntry $ DebugApplyEquation equation' result'
