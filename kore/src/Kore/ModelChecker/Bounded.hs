@@ -28,11 +28,13 @@ import qualified Data.Text as Text
 
 
 import Kore.Internal.Pattern as Conditional
-    ( Conditional (..), mapVariables
+    ( Conditional (..)
+    , mapVariables
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.ModelChecker.Step
     ( CommonModalPattern
     , CommonProofState
@@ -48,7 +50,8 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     , transitionRule
     )
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName, resetConfigVariable
+    ( RewritingVariableName
+    , resetConfigVariable
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
@@ -70,7 +73,6 @@ import qualified Log
 import Numeric.Natural
     ( Natural
     )
-import qualified Kore.Internal.TermLike as TermLike
 
 data CheckResult patt claim
     = Proved
