@@ -165,8 +165,11 @@ test_makeEvaluate =
                         { term = Mock.f gOfA
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate gOfA)
-                                (makeCeilPredicate (Mock.h gOfA))
+                                (makeCeilPredicate fOfA)
+                                (makeAndPredicate
+                                    (makeCeilPredicate gOfA)
+                                    (makeCeilPredicate (Mock.h gOfA))
+                                )
                         , substitution = Substitution.unsafeWrap
                             [(inject Mock.y, fOfA)]
                         }

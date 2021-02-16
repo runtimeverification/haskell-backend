@@ -9,13 +9,15 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
+    ( Condition
+    , Conditional (..)
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
@@ -31,9 +33,6 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
@@ -364,7 +363,7 @@ test_Pattern_simplifyAndRemoveTopExists =
 test_Pattern_simplifySideCondition :: [TestTree]
 test_Pattern_simplifySideCondition =
     [ testCase "\\top => \\top" $ do
-        let sideCondition = SideCondition.top
+        let sideCondition = Condition.top
         [ actual ] <- simplifySideCondition sideCondition
         assertEqual "" sideCondition actual
     , testCase "\\bottom and _ => \\bottom" $ do
@@ -375,7 +374,7 @@ test_Pattern_simplifySideCondition =
                         (mkElemVar Mock.x)
                         Mock.a
                     )
-                & SideCondition.fromPredicate
+                & Condition.fromPredicate
         actual <- simplifySideCondition sideCondition
         assertEqual "" [] actual
     , testCase "_ and \\bottom => \\bottom" $ do
@@ -386,7 +385,7 @@ test_Pattern_simplifySideCondition =
                         Mock.a
                     )
                     makeFalsePredicate
-                & SideCondition.fromPredicate
+                & Condition.fromPredicate
         actual <- simplifySideCondition sideCondition
         assertEqual "" [] actual
     ]
@@ -407,12 +406,12 @@ simplify :: Pattern VariableName -> IO (OrPattern VariableName)
 simplify = runSimplifier Mock.env . Pattern.simplify
 
 simplifySideCondition
-    :: SideCondition VariableName
-    -> IO [SideCondition VariableName]
+    :: Condition VariableName
+    -> IO [Condition VariableName]
 simplifySideCondition =
     runSimplifier Mock.env
     . Logic.observeAllT
-    . Pattern.simplifySideCondition
+    . Pattern.simplifySideCondition SideCondition.top
 
 simplifyAndRemoveTopExists :: Pattern VariableName -> IO (OrPattern VariableName)
 simplifyAndRemoveTopExists =

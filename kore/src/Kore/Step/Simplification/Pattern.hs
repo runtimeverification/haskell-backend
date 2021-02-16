@@ -100,10 +100,15 @@ makeEvaluate
     -> simplifier (OrPattern variable)
 makeEvaluate sideCondition pattern' =
     OrPattern.observeAllT $ do
+        -- TODO: is this simplifyCondition necessary anymore?
+        -- does simplifyCondition modify the 'term' in any way?
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
+        --
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
-            term' = substitute (toMap $ substitution simplifiedCondition) term
+        fullySimplifiedCondition <-
+            simplifySideCondition sideCondition simplifiedCondition
+        let term' = substitute (toMap $ substitution fullySimplifiedCondition) term
             simplifiedCondition' =
                 -- Combine the predicate and the substitution. The substitution
                 -- has already been applied to the term being simplified. This
@@ -117,37 +122,51 @@ makeEvaluate sideCondition pattern' =
                 & Condition.fromPredicate
             termSideCondition =
                 sideCondition `SideCondition.andCondition` simplifiedCondition'
-        simplifiedSideCondition <- simplifySideCondition termSideCondition
-        simplifiedTerm <- simplifyConditionalTerm simplifiedSideCondition term'
+        simplifiedTerm <- simplifyConditionalTerm termSideCondition term'
         let simplifiedPattern =
                 Conditional.andCondition
                     simplifiedTerm
-                    (from @_ @(Condition _) simplifiedSideCondition)
-        return simplifiedPattern
+                    fullySimplifiedCondition
+        simplifyCondition sideCondition simplifiedPattern
 
--- | Simplify each condition in the 'SideCondition' with the assumption that
--- the other conditions are true.
+-- | Simplify a 'Condition', representing the configuration's side condition,
+-- by splitting it up into a conjunction of predicates and simplifying each
+-- predicate under the assumption that the others are true.
 simplifySideCondition
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
     => SideCondition variable
-    -> LogicT simplifier (SideCondition variable)
-simplifySideCondition (toList . from @_ @(MultiAnd _) -> predicates) =
-    State.execStateT (worker predicates) SideCondition.top
+    -> Condition variable
+    -> LogicT simplifier (Condition variable)
+simplifySideCondition
+    sideCondition
+    (toList . from @_ @(MultiAnd _) -> predicates)
+  =
+    State.execStateT (worker predicates) Condition.top
+    >>= simplifyCondition sideCondition
   where
     worker
         :: [Predicate variable]
         -> StateT
-            (SideCondition variable)
+            (Condition variable)
             (LogicT simplifier)
             ()
     worker [] = return ()
     worker (pred' : rest) = do
-        sideCondition <- State.get
-        let otherConds = sideCondition <> from (MultiAnd.make rest)
+        condition <- State.get
+        let otherConds =
+                SideCondition.andCondition
+                    sideCondition
+                    (mkOtherConditions condition rest)
         result <-
             simplifyCondition otherConds (Condition.fromPredicate pred')
             & lift
-        State.put (SideCondition.andCondition sideCondition result)
+        State.put (Condition.andCondition condition result)
         worker rest
+
+    mkOtherConditions (Condition.toPredicate -> alreadySimplified) rest =
+        from @_ @(Condition _)
+        . MultiAnd.toPredicate
+        . MultiAnd.make
+        $ alreadySimplified : rest
