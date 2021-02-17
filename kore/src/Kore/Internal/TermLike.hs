@@ -28,7 +28,6 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
-    , freshSymbolInstance
     , removeEvaluated
     , termLikeSort
     , hasFreeVariable
@@ -324,28 +323,6 @@ refreshVariables (FreeVariables.toNames -> avoid) term =
     rename = Fresh.refreshVariables avoid originalFreeVariables
     originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
-
--- | Generates fresh variables as arguments for a symbol to create a pattern.
-freshSymbolInstance
-    :: forall variable
-     . InternalVariable variable
-    => FreeVariables variable
-    -> Symbol
-    -> Text
-    -> TermLike variable
-freshSymbolInstance freeVars sym base =
-    mkApplySymbol sym varTerms
-    & refreshVariables freeVars
-  where
-    sorts = applicationSortsOperands $ symbolSorts sym
-    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
-
-    mkVariable :: Integer -> Sort -> ElementVariable variable
-    mkVariable vIdx vSort =
-        mkElementVariable
-            (generatedId $ base <> (Text.pack . show) vIdx)
-            vSort
-        & (fmap . fmap) fromVariableName
 
 {- | Is the 'TermLike' a function pattern?
  -}

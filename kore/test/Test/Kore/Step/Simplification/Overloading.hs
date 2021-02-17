@@ -15,6 +15,7 @@ import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Internal.Condition as Condition
+import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import Kore.Step.Simplification.Overloading
 import Pair
 
@@ -24,7 +25,7 @@ import Test.Kore.Step.Simplification
 import Test.Kore.Syntax.Id
 import Test.Tasty.HUnit.Ext
 
-type ElementVariable' = ElementVariable VariableName
+type ElementVariable' = ElementVariable RewritingVariableName
 
 test_matchOverloading :: [TestTree]
 test_matchOverloading =
@@ -113,7 +114,7 @@ test_matchOverloading =
             "injected builtin string"
         , matchNotApplicable "direct overload vs. variable, left side"
             (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
-            (Mock.sortInjectionOtherToTop (mkElemVar Mock.xOtherSort))
+            (Mock.sortInjectionOtherToTop (mkElemVar Mock.xConfigOtherSort))
         , matchNotApplicable "overload vs injected non-constructor"
             (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
             (Mock.sortInjectionOtherToTop Mock.plain00OtherSort)
@@ -204,11 +205,11 @@ test_unifyOverloading =
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
                 )
             )
-        , narrows "direct overload vs. variable, left side; var direct"
+        , narrows "qqdirect overload vs. variable, left side; var direct"
             ( Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort)
-            , Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort)
+            , Mock.sortInjectionSubToTop (mkElemVar Mock.xConfigSubSort)
             )
-            ( ( Mock.xSubSort
+            ( ( Mock.xConfigSubSort
               , Mock.subOverload x1
               )
             , ( Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort)
@@ -217,9 +218,9 @@ test_unifyOverloading =
             )
         , narrows "direct overload vs. variable, left side; var inject"
             ( Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort)
-            , Mock.sortInjectionTestToTop (mkElemVar Mock.x)
+            , Mock.sortInjectionTestToTop (mkElemVar Mock.xConfig)
             )
-            ( ( Mock.x
+            ( ( Mock.xConfig
               , Mock.sortInjectionSubToTest (Mock.subOverload x1)
               )
             , ( Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort)
@@ -231,9 +232,9 @@ test_unifyOverloading =
                (Mock.otherOverload
                    (Mock.sortInjectionSubSubToOther Mock.aSubSubsort)
                )
-            , Mock.sortInjectionTestToTop (mkElemVar Mock.x)
+            , Mock.sortInjectionTestToTop (mkElemVar Mock.xConfig)
             )
-            ( ( Mock.x
+            ( ( Mock.xConfig
               , Mock.sortInjectionSubToTest (Mock.subOverload x1)
               )
             , ( Mock.topOverload
@@ -281,7 +282,9 @@ test_unifyOverloading =
             ( Mock.sortInjectionSubSubToTop
                (Mock.subsubOverload Mock.aSubSubsort)
             )
-            (Mock.sortInjectionSubOtherToTop (mkElemVar Mock.xSubOtherSort))
+            (Mock.sortInjectionSubOtherToTop
+                (mkElemVar Mock.xConfigSubOtherSort)
+            )
             "overloaded constructors not unifiable"
         , unifyNotApplicable "overload vs injected non-constructor"
             (Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort))
@@ -324,7 +327,7 @@ test_unifyOverloading =
          ]
     ]
 
-otherDomainValue :: TestTerm
+otherDomainValue :: TermLike RewritingVariableName
 otherDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.otherSort
@@ -334,8 +337,8 @@ otherDomainValue =
 matches
     :: HasCallStack
     => TestName
-    -> (TestTerm, TestTerm)
-    -> (TestTerm, TestTerm)
+    -> (TermLike RewritingVariableName, TermLike RewritingVariableName)
+    -> (TermLike RewritingVariableName, TermLike RewritingVariableName)
     -> TestTree
 matches comment (term1, term2) (term1', term2') =
     withMatching
@@ -346,8 +349,8 @@ matches comment (term1, term2) (term1', term2') =
 doesn'tMatch
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
     -> TestTree
 doesn'tMatch comment term1 term2 reason
@@ -359,8 +362,8 @@ doesn'tMatch comment term1 term2 reason
 matchNotApplicable
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 matchNotApplicable comment term1 term2
     = withMatching
@@ -371,8 +374,8 @@ matchNotApplicable comment term1 term2
 matchNotApplicableTwice
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 matchNotApplicableTwice comment term1 term2
     = withMatchingTwice
@@ -383,8 +386,8 @@ matchNotApplicableTwice comment term1 term2
 unifies
     :: HasCallStack
     => TestName
-    -> (TestTerm, TestTerm)
-    -> (TestTerm, TestTerm)
+    -> (TermLike RewritingVariableName, TermLike RewritingVariableName)
+    -> (TermLike RewritingVariableName, TermLike RewritingVariableName)
     -> TestTree
 unifies comment (term1, term2) (term1', term2') =
     withUnification
@@ -395,9 +398,9 @@ unifies comment (term1, term2) (term1', term2') =
 narrows
     :: HasCallStack
     => TestName
-    -> (TestTerm, TestTerm)
-    ->  ( (ElementVariable', TestTerm)
-        , (TestTerm, TestTerm)
+    -> (TermLike RewritingVariableName, TermLike RewritingVariableName)
+    ->  ( (ElementVariable', TermLike RewritingVariableName)
+        , (TermLike RewritingVariableName, TermLike RewritingVariableName)
         )
     -> TestTree
 narrows comment (term1, term2) ((v, term), (term1', term2')) =
@@ -421,8 +424,8 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
 doesn'tUnify
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
     -> TestTree
 doesn'tUnify comment term1 term2 reason
@@ -434,8 +437,8 @@ doesn'tUnify comment term1 term2 reason
 unifyNotApplicable
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 unifyNotApplicable comment term1 term2
     = withUnification
@@ -446,8 +449,8 @@ unifyNotApplicable comment term1 term2
 unifyNotApplicableTwice
     :: HasCallStack
     => TestName
-    -> TestTerm
-    -> TestTerm
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 unifyNotApplicableTwice comment term1 term2
     = withUnificationTwice
@@ -455,20 +458,21 @@ unifyNotApplicableTwice comment term1 term2
         comment
         (Pair term1 term2)
 
-type MatchResult = Either UnifyOverloadingError (Pair TestTerm)
+type MatchResult =
+        Either UnifyOverloadingError (Pair (TermLike RewritingVariableName))
 
 match
-    :: Pair TestTerm
+    :: Pair (TermLike RewritingVariableName)
     -> IO MatchResult
 match termPair = runSimplifier Mock.env $ runExceptT matchResult
   where
-    matchResult :: MatchOverloadingResult (SimplifierT NoSMT) VariableName
+    matchResult :: MatchOverloadingResult (SimplifierT NoSMT)
     matchResult = matchOverloading termPair
 
 withMatching
     :: (MatchResult -> Assertion)
     -> TestName
-    -> Pair TestTerm
+    -> Pair (TermLike RewritingVariableName)
     -> TestTree
 withMatching check comment termPair =
     testCase comment $ do
@@ -478,7 +482,7 @@ withMatching check comment termPair =
 withMatchingTwice
     :: (MatchResult -> Assertion)
     -> TestName
-    -> Pair TestTerm
+    -> Pair (TermLike RewritingVariableName)
     -> TestTree
 withMatchingTwice check comment termPair =
     testCase comment $ do
@@ -490,20 +494,20 @@ withMatchingTwice check comment termPair =
                 check actual'
 
 type UnificationResult =
-    Either UnifyOverloadingError (OverloadingResolution VariableName)
+    Either UnifyOverloadingError OverloadingResolution
 
 unify
-    :: Pair TestTerm
+    :: Pair (TermLike RewritingVariableName)
     -> IO UnificationResult
 unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
   where
-    unifyResult :: UnifyOverloadingResult (SimplifierT NoSMT) VariableName
+    unifyResult :: UnifyOverloadingResult (SimplifierT NoSMT)
     unifyResult = unifyOverloading termPair
 
 withUnification
     :: (UnificationResult -> Assertion)
     -> TestName
-    -> Pair TestTerm
+    -> Pair (TermLike RewritingVariableName)
     -> TestTree
 withUnification check comment termPair =
     testCase comment $ do
@@ -513,7 +517,7 @@ withUnification check comment termPair =
 withUnificationTwice
     :: (UnificationResult -> Assertion)
     -> TestName
-    -> Pair TestTerm
+    -> Pair (TermLike RewritingVariableName)
     -> TestTree
 withUnificationTwice check comment termPair =
     testCase comment $ do
@@ -527,5 +531,9 @@ withUnificationTwice check comment termPair =
                 actual' <- unify overloadPair
                 check actual'
 
-x1 :: TestTerm
-x1 = mkElemVar (mkElementVariable (testId "x1") Mock.subSort)
+x1 :: TermLike RewritingVariableName
+x1 =
+    mkElemVar
+    (mkElementVariable (testId "x1") Mock.subSort
+        & mapElementVariable (pure mkConfigVariable)
+    )

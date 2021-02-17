@@ -98,6 +98,7 @@ import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables
 import Pair
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- * Matching
 
@@ -167,9 +168,9 @@ pair, it is deferred until we have more information.
 
  -}
 matchOne
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MatcherT variable simplifier ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MatcherT RewritingVariableName simplifier ()
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
@@ -192,15 +193,19 @@ deferred constraints, then matching fails.
 
  -}
 matchIncremental
-    :: forall variable simplifier
-    .  (MatchingVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> simplifier (Maybe (MatchResult variable))
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (Maybe (MatchResult RewritingVariableName))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    matcher
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -217,7 +222,11 @@ matchIncremental termLike1 termLike2 =
     free2 = (FreeVariables.toNames . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    done
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -225,7 +234,11 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable simplifier (MatchResult variable)
+    assembleResult
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (MatchResult RewritingVariableName)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
@@ -414,9 +427,9 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
 matchInj _ = empty
 
 matchOverload
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
 
 matchDefined

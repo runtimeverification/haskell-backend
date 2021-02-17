@@ -908,6 +908,8 @@ xConfigSubOtherSort =
     mkConfigElementVariable (testId "xSubOtherSort") mempty subOthersort
 xOtherSort :: MockElementVariable
 xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
+xConfigOtherSort :: MockRewritingElementVariable
+xConfigOtherSort = mkConfigElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
 xConfigTopSort :: MockRewritingElementVariable
