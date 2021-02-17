@@ -15,7 +15,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 -- * Driver
 

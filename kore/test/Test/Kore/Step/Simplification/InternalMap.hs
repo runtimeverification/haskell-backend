@@ -34,9 +34,11 @@ import Kore.Step.Simplification.InternalMap
     ( simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_simplify :: [TestTree]
 test_simplify =

@@ -19,9 +19,11 @@ import Kore.Step.Simplification.Bottom
     )
 import Kore.Syntax.Bottom
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_bottomSimplification :: [TestTree]
 test_bottomSimplification =

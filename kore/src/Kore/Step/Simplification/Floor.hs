@@ -27,7 +27,9 @@ import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
     )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 

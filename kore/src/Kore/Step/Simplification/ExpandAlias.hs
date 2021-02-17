@@ -35,10 +35,12 @@ import Kore.Internal.TermLike
     , mapVariables
     , substitute
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Unification.Unify
     ( MonadUnify
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 expandAlias
     :: forall unifier

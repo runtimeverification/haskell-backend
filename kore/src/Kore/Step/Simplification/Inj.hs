@@ -23,6 +23,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
@@ -30,7 +33,6 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
     ( TopBottom
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- |'simplify' simplifies an 'Inj' of 'OrPattern'.
 

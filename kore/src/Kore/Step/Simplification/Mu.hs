@@ -30,7 +30,9 @@ import qualified Kore.Internal.TermLike as TermLike
     ( setSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-|'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
 child.

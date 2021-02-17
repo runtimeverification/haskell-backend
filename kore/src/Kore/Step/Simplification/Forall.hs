@@ -56,10 +56,12 @@ import qualified Kore.Internal.TermLike as TermLike
     , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done

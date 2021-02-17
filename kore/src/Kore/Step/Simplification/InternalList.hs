@@ -20,8 +20,10 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Logic
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 simplify
     :: InternalList (OrPattern RewritingVariableName)
