@@ -158,7 +158,7 @@ ignoreDefinition :: Equation VariableName -> Bool
 ignoreDefinition Equation { attributes, left }
     | isLeftFunctionLike = False
     | otherwise = (error . show . Pretty.vsep)
-        [ "isLeftFunctionLike assertion failed for equation defined at"
+        [ "left-hand side of equation was not function-like at:"
         , Pretty.indent 4 $ Pretty.pretty sourceLocation
         ]
   where
