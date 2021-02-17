@@ -18,10 +18,10 @@ import Kore.Step.Simplification.Bottom
     ( simplify
     )
 import Kore.Syntax.Bottom
-import Kore.Syntax.Variable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
@@ -32,5 +32,7 @@ test_bottomSimplification =
         )
     ]
 
-evaluate :: Bottom Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Bottom Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

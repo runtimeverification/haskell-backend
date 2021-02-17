@@ -50,8 +50,10 @@ import Logic
     )
 import qualified Logic
 
-type ExpandedApplication variable =
-    Conditional variable (Application Symbol (TermLike variable))
+type ExpandedApplication =
+    Conditional
+        RewritingVariableName
+        (Application Symbol (TermLike RewritingVariableName))
 
 {-|'simplify' simplifies an 'Application' of 'OrPattern'.
 
@@ -122,7 +124,7 @@ evaluateApplicationFunction
         )
     => SideCondition RewritingVariableName
     -- ^ The predicate from the configuration
-    -> ExpandedApplication RewritingVariableName
+    -> ExpandedApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
@@ -139,7 +141,7 @@ makeExpandedApplication
     => SideCondition RewritingVariableName
     -> Symbol
     -> [Pattern RewritingVariableName]
-    -> LogicT simplifier (ExpandedApplication RewritingVariableName)
+    -> LogicT simplifier ExpandedApplication
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions

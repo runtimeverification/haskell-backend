@@ -38,27 +38,26 @@ import Kore.Internal.TermLike
 import Kore.Unification.Unify
     ( MonadUnify
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 expandAlias
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => (   TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => (   TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
        )
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 expandAlias recurse t1 t2 =
     case (expandSingleAlias t1, expandSingleAlias t2) of
         (Nothing, Nothing) -> nothing
         (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')
 
 expandSingleAlias
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe (TermLike variable)
+    :: TermLike RewritingVariableName
+    -> Maybe (TermLike RewritingVariableName)
 expandSingleAlias =
     \case
         ApplyAlias_ alias children -> pure $ substituteInAlias alias children

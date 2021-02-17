@@ -170,7 +170,7 @@ andFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld RewritingVariableName unifier]
+    -> [TermTransformationOld unifier]
 andFunctions notSimplifier =
     forAnd . snd
     <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
@@ -181,8 +181,8 @@ andFunctions notSimplifier =
     appliesToAnd (BothT, _) = True
 
     forAnd
-        :: TermTransformation variable unifier
-        -> TermTransformationOld variable unifier
+        :: TermTransformation unifier
+        -> TermTransformationOld unifier
     forAnd f = f SideCondition.topTODO SimplificationType.And
 
 equalsFunctions
@@ -190,7 +190,7 @@ equalsFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld RewritingVariableName unifier]
+    -> [TermTransformationOld unifier]
 equalsFunctions notSimplifier =
     forEquals . snd
     <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
@@ -201,8 +201,8 @@ equalsFunctions notSimplifier =
     appliesToEquals (BothT, _) = True
 
     forEquals
-        :: TermTransformation variable unifier
-        -> TermTransformationOld variable unifier
+        :: TermTransformation unifier
+        -> TermTransformationOld unifier
     forEquals f = f SideCondition.topTODO SimplificationType.Equals
 
 andEqualsFunctions
@@ -210,7 +210,7 @@ andEqualsFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [(SimplificationTarget, TermTransformation RewritingVariableName unifier)]
+    -> [(SimplificationTarget, TermTransformation unifier)]
 andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
@@ -261,28 +261,28 @@ All the @TermTransformationOld@s and similar functions defined in this module
 call 'empty' unless given patterns matching their unification case.
 
  -}
-type TermTransformation variable unifier =
-       SideCondition variable
+type TermTransformation unifier =
+       SideCondition RewritingVariableName
     -> SimplificationType
-    -> TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 
-type TermTransformationOld variable unifier =
-       TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+type TermTransformationOld unifier =
+       TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 
 maybeTransformTerm
     :: MonadUnify unifier
-    => [TermTransformationOld variable unifier]
-    -> TermSimplifier variable unifier
+    => [TermTransformationOld unifier]
+    -> TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm pairs.
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 maybeTransformTerm topTransformers childTransformers first second =
     asum
         (map
@@ -297,10 +297,9 @@ maybeTransformTerm topTransformers childTransformers first second =
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
-    => InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 boolAnd first second
   | isBottom first  = do
       explainBoolAndBottom first second
@@ -314,20 +313,19 @@ boolAnd first second
 
 explainBoolAndBottom
     :: MonadUnify unifier
-    => InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MaybeT unifier ()
 explainBoolAndBottom term1 term2 =
     lift $ explainBottom "Cannot unify bottom." term1 term2
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: InternalVariable variable
+    :: InternalVariable RewritingVariableName
     => Monad unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 equalAndEquals first second
   | unDefined first == unDefined second =
     -- TODO (thomas.tuegel): Preserve defined and simplified flags.
@@ -464,14 +462,12 @@ when @src1@ is a subsort of @src2@.
 
  -}
 sortInjectionAndEquals
-    ::  forall variable unifier
-    .   ( InternalVariable variable
-        , MonadUnify unifier
-        )
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 sortInjectionAndEquals termMerger first@(Inj_ inj1) second@(Inj_ inj2) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
     unifyInj inj1 inj2 & either distinct merge
@@ -494,10 +490,9 @@ returns @\\bottom@.
 
  -}
 constructorSortInjectionAndEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
+    :: MonadUnify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MaybeT unifier a
 constructorSortInjectionAndEquals first@(Inj_ _) second@(App_ symbol2 _)
   | Symbol.isConstructor symbol2 =
@@ -508,10 +503,9 @@ constructorSortInjectionAndEquals first@(App_ symbol1 _) second@(Inj_ _)
 constructorSortInjectionAndEquals _ _ = empty
 
 noConfusionInjectionConstructor
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
+    :: MonadUnify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> unifier a
 noConfusionInjectionConstructor =
     explainAndReturnBottom "No confusion: sort injections and constructors"
@@ -569,11 +563,10 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: InternalVariable variable
-    => Monad unifier
+    :: Monad unifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MaybeT unifier a
 domainValueAndConstructorErrors
     term1@(DV_ _ _)
@@ -606,17 +599,16 @@ See also: 'equalAndEquals'
 -- TODO (thomas.tuegel): This unification case assumes that \dv is injective,
 -- but it is not.
 unifyDomainValue
-    :: forall variable unifier
+    :: forall unifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyDomainValue term1@(DV_ sort1 value1) term2@(DV_ sort2 value2) =
     assert (sort1 == sort2) $ lift worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
       | value1 == value2 =
         return $ Pattern.fromTermLike term1
@@ -627,10 +619,9 @@ cannotUnifyDistinctDomainValues :: Pretty.Doc ()
 cannotUnifyDistinctDomainValues = "distinct domain values"
 
 cannotUnifyDomainValues
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
+    :: MonadUnify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> unifier a
 cannotUnifyDomainValues = explainAndReturnBottom cannotUnifyDistinctDomainValues
 
@@ -643,15 +634,14 @@ See also: 'equalAndEquals'
 
  -}
 unifyStringLiteral
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyStringLiteral term1@(StringLiteral_ _) term2@(StringLiteral_ _) = lift worker
   where
-    worker :: unifier (Pattern variable)
+    worker :: unifier (Pattern RewritingVariableName)
     worker
       | term1 == term2 =
         return $ Pattern.fromTermLike term1
@@ -668,10 +658,9 @@ appears on the right-hand side.
 
 -}
 functionAnd
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Maybe (Pattern variable)
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Maybe (Pattern RewritingVariableName)
 functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
     makeEqualsPredicate first' second'
@@ -693,9 +682,8 @@ The normal ordering is arbitrary, but important to avoid duplication.
 
 -}
 compareForEquals
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Ordering
 compareForEquals first second
   | isConstructorLike first = LT
@@ -703,11 +691,10 @@ compareForEquals first second
   | otherwise = compare first second
 
 bytesDifferent
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: MonadUnify unifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 bytesDifferent
     (Recursive.project -> _ :< InternalBytesF (Const bytesFirst))
     (Recursive.project -> _ :< InternalBytesF (Const bytesSecond))
@@ -719,22 +706,25 @@ bytesDifferent _ _ = empty
  -}
 unifyDefined
     :: MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyDefined unifyChildren term1 term2
   | Defined_ child1 <- term1 = lift $ unifyChildren child1 term2
   | Defined_ child2 <- term2 = lift $ unifyChildren term1 child2
   | otherwise = empty
 
 unifyDefinedModifier
-    :: InternalVariable variable
+    :: InternalVariable RewritingVariableName
     => Monad monad
-    => (TermLike variable -> TermLike variable -> monad (Pattern variable))
-    -> TermLike variable
-    -> TermLike variable
-    -> monad (Pattern variable)
+    =>  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> monad (Pattern RewritingVariableName)
+        )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> monad (Pattern RewritingVariableName)
 unifyDefinedModifier unify (Defined_ def1) (Defined_ def2) = do
     unified <- unify def1 def2
     let Conditional { term } = unified

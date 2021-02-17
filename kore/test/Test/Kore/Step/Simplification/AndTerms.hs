@@ -1442,8 +1442,8 @@ test_functionAnd :: [TestTree]
 test_functionAnd =
     [ testCase "simplifies result" $ do
         let f = TermLike.markSimplified . Mock.f
-            x = mkElemVar Mock.x
-            y = mkElemVar Mock.y
+            x = mkElemVar Mock.xConfig
+            y = mkElemVar Mock.yConfig
             expect =
                 Pattern.withCondition (f x)
                 $ Condition.fromPredicate

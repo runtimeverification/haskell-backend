@@ -17,13 +17,11 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
 import Kore.Sort
 import Kore.Syntax.Bottom
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
-simplify :: InternalVariable variable => Bottom Sort child -> OrPattern variable
+simplify :: Bottom Sort child -> OrPattern RewritingVariableName
 simplify Bottom {} = OrPattern.bottom

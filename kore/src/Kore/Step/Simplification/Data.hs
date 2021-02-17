@@ -54,7 +54,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( mkRuleVariable, RewritingVariableName
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
@@ -119,8 +119,8 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
 
 traceProfSimplify
     :: MonadProf prof
-    => InternalVariable variable
-    => TermLike variable
+    => InternalVariable RewritingVariableName
+    => TermLike RewritingVariableName
     -> prof a
     -> prof a
 traceProfSimplify termLike =

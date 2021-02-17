@@ -233,9 +233,9 @@ makeEvaluate sideCondition variables original = do
 
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
-    -> Pattern variable
+    :: MonadSimplify simplifier
+    => ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
     -> simplifier Bool
 matchesToVariableSubstitution
     variable
@@ -253,9 +253,10 @@ matchesToVariableSubstitution
   | otherwise = return False
 
 singleVariableSubstitution
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Map.Map (SomeVariableName variable) (TermLike variable)
+    :: ElementVariable RewritingVariableName
+    -> Map.Map
+        (SomeVariableName RewritingVariableName)
+        (TermLike RewritingVariableName)
     -> Bool
 singleVariableSubstitution
     variable
@@ -362,11 +363,13 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    :: (InternalVariable variable, HasCallStack)
-    => ElementVariable variable
-    -> Substitution variable
-    ->  ( Either (TermLike variable) (Substitution variable)
-        , Substitution variable
+    :: HasCallStack
+    => ElementVariable RewritingVariableName
+    -> Substitution RewritingVariableName
+    ->  ( Either
+            (TermLike RewritingVariableName)
+            (Substitution RewritingVariableName)
+        , Substitution RewritingVariableName
         )
 splitSubstitution variable substitution =
     (bound, independent)
@@ -394,10 +397,9 @@ if possible.
 
  -}
 quantifyPattern
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate
   = (error . unlines)

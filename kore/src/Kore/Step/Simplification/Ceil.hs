@@ -194,8 +194,10 @@ makeEvaluateTerm sideCondition ceilChild =
 
 newPredicateCeilSimplifier
     :: Monad simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newPredicateCeilSimplifier = CeilSimplifier $ \input ->
     case Predicate.makePredicate (ceilChild input) of
         Left _ -> empty
@@ -203,8 +205,10 @@ newPredicateCeilSimplifier = CeilSimplifier $ \input ->
 
 newDefinedCeilSimplifier
     :: Monad simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newDefinedCeilSimplifier = CeilSimplifier $ \input ->
     if isDefinedPattern (ceilChild input)
         then return OrCondition.top

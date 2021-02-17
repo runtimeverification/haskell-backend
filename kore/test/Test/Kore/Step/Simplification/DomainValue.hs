@@ -19,6 +19,7 @@ import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -39,5 +40,7 @@ test_simplify =
         )
     ]
 
-evaluate :: DomainValue Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: DomainValue Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

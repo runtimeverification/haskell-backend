@@ -202,18 +202,17 @@ simplifyPredicate sideCondition predicate = do
             ]
 
 simplifyConjunctions
-    :: InternalVariable variable
-    => Predicate variable
-    -> Changed (Predicate variable)
+    :: Predicate RewritingVariableName
+    -> Changed (Predicate RewritingVariableName)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
     case simplifyConjunctionByAssumption predicates of
         Unchanged _ -> Unchanged original
         Changed changed ->
             Changed (MultiAnd.toPredicate changed)
 
-data DoubleMap variable = DoubleMap
-    { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
-    , predMap :: HashMap (Predicate variable) (Predicate variable)
+data DoubleMap = DoubleMap
+    { termLikeMap :: HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+    , predMap :: HashMap (Predicate RewritingVariableName) (Predicate RewritingVariableName)
     }
     deriving (Eq, GHC.Generic, Show)
 
@@ -224,10 +223,8 @@ A ∧ P(A) = A ∧ P(⊤)
 @
  -}
 simplifyConjunctionByAssumption
-    :: forall variable
-    .  InternalVariable variable
-    => MultiAnd (Predicate variable)
-    -> Changed (MultiAnd (Predicate variable))
+    :: MultiAnd (Predicate RewritingVariableName)
+    -> Changed (MultiAnd (Predicate RewritingVariableName))
 simplifyConjunctionByAssumption (toList -> andPredicates) =
     fmap MultiAnd.make
     $ flip evalStateT (DoubleMap HashMap.empty HashMap.empty)
@@ -240,10 +237,10 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     -- Sorting by size ensures that every clause is considered before any clause
     -- which could contain it, because the containing clause is necessarily
     -- larger.
-    sortBySize :: [Predicate variable] -> [Predicate variable]
+    sortBySize :: [Predicate RewritingVariableName] -> [Predicate RewritingVariableName]
     sortBySize = sortOn predSize
 
-    size :: TermLike variable -> Int
+    size :: TermLike RewritingVariableName -> Int
     size =
         Recursive.fold $ \(_ :< termLikeF) ->
             case termLikeF of
@@ -251,7 +248,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
-    predSize :: Predicate variable -> Int
+    predSize :: Predicate RewritingVariableName -> Int
     predSize =
         Recursive.fold $ \(_ :< predF) ->
             case predF of
@@ -262,8 +259,8 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 _ -> 1 + sum predF
 
     assume
-        :: Predicate variable ->
-        StateT (DoubleMap variable) Changed ()
+        :: Predicate RewritingVariableName ->
+        StateT DoubleMap Changed ()
     assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
@@ -291,16 +288,16 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 _ -> id
 
     applyAssumptions
-        ::  Predicate variable
-        ->  StateT (DoubleMap variable) Changed (Predicate variable)
+        ::  Predicate RewritingVariableName
+        ->  StateT DoubleMap Changed (Predicate RewritingVariableName)
     applyAssumptions replaceIn = do
         assumptions <- State.get
         lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
-        :: DoubleMap variable
-        -> Predicate variable
-        -> Changed (Predicate variable)
+        :: DoubleMap
+        -> Predicate RewritingVariableName
+        -> Changed (Predicate RewritingVariableName)
     applyAssumptionsWorker assumptions original
       | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
 
@@ -343,9 +340,9 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
             wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
 
     applyAssumptionsWorkerTerm
-        :: HashMap (TermLike variable) (TermLike variable)
-        -> TermLike variable
-        -> Changed (TermLike variable)
+        :: HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> Changed (TermLike RewritingVariableName)
     applyAssumptionsWorkerTerm assumptions (TermLike.unDefined -> original)
       | Just result <- HashMap.lookup original assumptions = Changed result
 
@@ -388,8 +385,8 @@ in either order, but the function pattern is always returned first in the
 'Pair'.
  -}
 retractLocalFunction
-    :: TermLike variable
-    -> Maybe (Pair (TermLike variable))
+    :: TermLike RewritingVariableName
+    -> Maybe (Pair (TermLike RewritingVariableName))
 retractLocalFunction =
     \case
         Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1

@@ -171,9 +171,9 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             & return
 
 applyAndIdempotenceAndFindContradictions
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+    :: InternalVariable RewritingVariableName
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
         then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
@@ -188,23 +188,26 @@ applyAndIdempotenceAndFindContradictions patt =
             (mkAnd a b)
 
 splitIntoTermsAndNegations
-    :: forall variable
-    .  Ord variable
-    => TermLike variable
-    -> (Set (TermLike variable), Set (TermLike variable))
+    :: TermLike RewritingVariableName
+    ->  ( Set (TermLike RewritingVariableName)
+        , Set (TermLike RewritingVariableName)
+        )
 splitIntoTermsAndNegations =
     bimap Set.fromList Set.fromList
         . partitionWith termOrNegation
         . children
   where
-    children :: TermLike variable -> [TermLike variable]
+    children
+        :: TermLike RewritingVariableName -> [TermLike RewritingVariableName]
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
 
     -- Left is for regular terms, Right is negated terms
     termOrNegation
-        :: TermLike variable
-        -> Either (TermLike variable) (TermLike variable)
+        :: TermLike RewritingVariableName
+        -> Either
+            (TermLike RewritingVariableName)
+            (TermLike RewritingVariableName)
     termOrNegation t@(Not_ _ _) = Right t
     termOrNegation t            = Left t
 

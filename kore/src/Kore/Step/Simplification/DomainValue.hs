@@ -30,24 +30,26 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
 -}
 simplify
-    :: forall variable
-    .  InternalVariable variable
-    => DomainValue Sort (OrPattern variable)
-    -> OrPattern variable
+    :: DomainValue Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify builtin@DomainValue { domainValueSort } =
     OrPattern.coerceSort domainValueSort
     . MultiOr.map (fmap (markSimplified . mkDomainValue))
     $ simplifyDomainValue builtin
 
 simplifyDomainValue
-    :: InternalVariable variable
-    => DomainValue Sort (OrPattern variable)
-    -> MultiOr (Conditional variable (DomainValue Sort (TermLike variable)))
+    :: DomainValue Sort (OrPattern RewritingVariableName)
+    -> MultiOr
+        (Conditional
+            RewritingVariableName
+            (DomainValue Sort (TermLike RewritingVariableName))
+        )
 simplifyDomainValue _ext@DomainValue { domainValueChild } =
     MultiOr.map
         ( sequenceA
