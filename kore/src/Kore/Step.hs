@@ -70,7 +70,6 @@ import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Unification.Procedure as Unification
 
 {- | The program's state during symbolic execution.
 -}
@@ -192,7 +191,6 @@ transitionRule rewriteGroups = transitionRuleWorker
         transitionRewrite' applied rewrites
           | Just config' <- retractRemaining applied =
             Step.applyRewriteRulesParallel
-                Unification.unificationProcedure
                 rewrites
                 config'
                 & lift
@@ -207,7 +205,6 @@ transitionRule rewriteGroups = transitionRuleWorker
         let rules = concat rewriteGroups
         results <-
             Step.applyRewriteRulesSequence
-                Unification.unificationProcedure
                 config
                 rules
         deriveResults results
