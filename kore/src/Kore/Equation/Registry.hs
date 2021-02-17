@@ -156,11 +156,11 @@ ignoreEquation Equation { attributes }
  -}
 ignoreDefinition :: Equation VariableName -> Bool
 ignoreDefinition Equation { attributes, left }
-    | isLeftFunctionLike = (error . show . Pretty.vsep)
+    | isLeftFunctionLike = False
+    | otherwise = (error . show . Pretty.vsep)
         [ "isLeftFunctionLike assertion failed for equation defined at"
         , Pretty.indent 4 $ Pretty.pretty sourceLocation
         ]
-    | otherwise = False
   where
     Attribute.Axiom { sourceLocation } = attributes
     isLeftFunctionLike =
