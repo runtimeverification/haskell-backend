@@ -435,7 +435,6 @@
           "Kore/Unification/Procedure"
           "Kore/Unification/SubstitutionNormalization"
           "Kore/Unification/SubstitutionSimplifier"
-          "Kore/Unification/UnificationProcedure"
           "Kore/Unification/UnifierT"
           "Kore/Unification/Unify"
           "Kore/Unparser"
