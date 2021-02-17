@@ -15,6 +15,7 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
+    # TODO Mircea: change debug to save-temps after the evm-semantics repo is updated to use the latest backend
     "$@" --debug --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
@@ -46,4 +47,5 @@ done
 kollect test-sum-to-n \
     ./kevm prove --backend haskell \
         tests/specs/examples/sum-to-n-spec.k \
+        # TODO Mircea: should we remove or change this "--def-module"?
         --format-failures --def-module VERIFICATION
