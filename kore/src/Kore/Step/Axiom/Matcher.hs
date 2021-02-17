@@ -87,6 +87,9 @@ import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
     ( matchOverloading
@@ -98,7 +101,6 @@ import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Variables.Binding
 import qualified Kore.Variables.Fresh as Variables
 import Pair
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- * Matching
 

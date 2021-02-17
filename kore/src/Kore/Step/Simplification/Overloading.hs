@@ -20,14 +20,16 @@ import Prelude.Kore hiding
     ( concat
     )
 
-import Data.Text (Text)
-import qualified Data.Text as Text
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except
     ( ExceptT
     , catchE
     , throwE
     )
+import Data.Text
+    ( Text
+    )
+import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Kore.Step.Simplification.Simplify as Simplifier
@@ -35,21 +37,26 @@ import Kore.Step.Simplification.Simplify as Simplifier
     , isConstructorOrOverloaded
     )
 
+import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
 import Kore.Debug
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
-import Kore.Internal.ApplicationSorts (ApplicationSorts(..))
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.OverloadSimplifier
 import Pair
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
-import Kore.Attribute.Pattern.FreeVariables
 
 -- | Overload solution requiring narrowing
 data Narrowing
