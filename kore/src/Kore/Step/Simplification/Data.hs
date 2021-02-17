@@ -119,7 +119,6 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
 
 traceProfSimplify
     :: MonadProf prof
-    => InternalVariable RewritingVariableName
     => TermLike RewritingVariableName
     -> prof a
     -> prof a

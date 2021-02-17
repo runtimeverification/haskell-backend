@@ -171,8 +171,7 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             & return
 
 applyAndIdempotenceAndFindContradictions
-    :: InternalVariable RewritingVariableName
-    => TermLike RewritingVariableName
+    :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
