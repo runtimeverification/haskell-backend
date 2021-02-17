@@ -23,9 +23,11 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Unify two application patterns with equal, injective heads.
 

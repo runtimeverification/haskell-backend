@@ -26,9 +26,11 @@ import qualified Kore.Step.Simplification.Forall as Forall
     , simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_forallSimplification :: [TestTree]
 test_forallSimplification =

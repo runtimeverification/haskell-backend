@@ -15,11 +15,13 @@ import Kore.Step.Simplification.DomainValue
     ( simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_simplify :: [TestTree]
 test_simplify =

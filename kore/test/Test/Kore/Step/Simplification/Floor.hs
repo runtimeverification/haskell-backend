@@ -38,6 +38,10 @@ import Kore.Step.Simplification.Floor
     , simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Test.Kore
     ( testId
     )
@@ -46,7 +50,6 @@ import Test.Kore.Step.MockSymbols
     )
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 
 test_floorSimplification :: [TestTree]
 test_floorSimplification =

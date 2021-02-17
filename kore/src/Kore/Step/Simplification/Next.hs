@@ -22,7 +22,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done

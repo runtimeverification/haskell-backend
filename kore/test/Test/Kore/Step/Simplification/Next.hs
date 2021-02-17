@@ -21,9 +21,11 @@ import Kore.Step.Simplification.Next
     ( simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_nextSimplification :: [TestTree]
 test_nextSimplification =

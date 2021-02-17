@@ -17,7 +17,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.

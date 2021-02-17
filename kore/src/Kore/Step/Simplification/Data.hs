@@ -54,7 +54,8 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable, RewritingVariableName
+    ( RewritingVariableName
+    , mkRuleVariable
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier

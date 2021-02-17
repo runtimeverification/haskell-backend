@@ -26,9 +26,12 @@ import Kore.Internal.Predicate
 import Kore.Internal.Substitution
     ( Substitution
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.Or
     ( simplify
     , simplifyEvaluated
