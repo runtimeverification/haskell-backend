@@ -139,10 +139,9 @@ distributeEvaluateImplies sideCondition firsts second =
     implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -157,10 +156,9 @@ makeEvaluateImplies
     makeEvaluateImpliesNonBool first second
 
 makeEvaluateImpliesNonBool
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

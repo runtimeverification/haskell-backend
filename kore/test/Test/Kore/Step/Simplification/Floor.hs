@@ -46,6 +46,7 @@ import Test.Kore.Step.MockSymbols
     )
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkConfigVariable)
 
 test_floorSimplification :: [TestTree]
 test_floorSimplification =
@@ -108,7 +109,7 @@ test_floorSimplification =
                     [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (Pattern.top :: Pattern VariableName)
+                    (Pattern.top :: Pattern RewritingVariableName)
                 )
             -- floor(bottom) = bottom
             assertEqual "floor(bottom)"
@@ -116,7 +117,7 @@ test_floorSimplification =
                     []
                 )
                 (makeEvaluate
-                    (Pattern.bottom :: Pattern VariableName)
+                    (Pattern.bottom :: Pattern RewritingVariableName)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -162,10 +163,12 @@ test_floorSimplification =
     bSymbol = symbol "b" [] testSort
     fSymbol = symbol "f" [testSort] testSort
     gSymbol = symbol "g" [testSort] testSort
-    x = mkElementVariable (testId "x") testSort
-    a :: TermLike VariableName
+    x =
+        mkElementVariable (testId "x") testSort
+        & mapElementVariable (pure mkConfigVariable)
+    a :: TermLike RewritingVariableName
     a = mkApplySymbol aSymbol []
-    b :: TermLike VariableName
+    b :: TermLike RewritingVariableName
     b = mkApplySymbol bSymbol []
     fOfA = mkApplySymbol fSymbol [a]
     fOfB = mkApplySymbol fSymbol [b]
@@ -182,9 +185,8 @@ test_floorSimplification =
         }
 
 makeFloor
-    :: InternalVariable variable
-    => [Pattern variable]
-    -> Floor Sort (OrPattern variable)
+    :: [Pattern RewritingVariableName]
+    -> Floor Sort (OrPattern RewritingVariableName)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -192,8 +194,10 @@ makeFloor patterns =
         , floorChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate :: Floor Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Floor Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify . fmap simplifiedOrPattern
 
-makeEvaluate :: Pattern VariableName -> OrPattern VariableName
+makeEvaluate :: Pattern RewritingVariableName -> OrPattern RewritingVariableName
 makeEvaluate = makeEvaluateFloor . simplifiedPattern

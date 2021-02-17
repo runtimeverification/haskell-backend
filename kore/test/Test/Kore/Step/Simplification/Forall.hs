@@ -28,6 +28,7 @@ import qualified Kore.Step.Simplification.Forall as Forall
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_forallSimplification :: [TestTree]
 test_forallSimplification =
@@ -36,12 +37,12 @@ test_forallSimplification =
         (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkForall Mock.x something1OfX
+                    { term = mkForall Mock.xConfig something1OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 , Conditional
-                    { term = mkForall Mock.x something2OfX
+                    { term = mkForall Mock.xConfig something2OfX
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -49,7 +50,7 @@ test_forallSimplification =
             )
             (evaluate
                 (makeForall
-                    Mock.x
+                    Mock.xConfig
                     [something1OfXExpanded, something2OfXExpanded]
                 )
             )
@@ -63,7 +64,7 @@ test_forallSimplification =
                 )
                 (evaluate
                     (makeForall
-                        Mock.x
+                        Mock.xConfig
                         [Pattern.top]
                     )
                 )
@@ -74,7 +75,7 @@ test_forallSimplification =
                 )
                 (evaluate
                     (makeForall
-                        Mock.x
+                        Mock.xConfig
                         []
                     )
                 )
@@ -279,8 +280,8 @@ test_forallSimplification =
     fOfX = Mock.f (mkElemVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
-    something1OfX = Mock.plain10 (mkElemVar Mock.x)
-    something2OfX = Mock.plain11 (mkElemVar Mock.x)
+    something1OfX = Mock.plain10 (mkElemVar Mock.xConfig)
+    something2OfX = Mock.plain11 (mkElemVar Mock.xConfig)
     something1OfXExpanded = Conditional
         { term = something1OfX
         , predicate = makeTruePredicate
@@ -308,8 +309,8 @@ testSort :: Sort
 testSort = Mock.testSort
 
 evaluate
-    :: Forall Sort VariableName (OrPattern VariableName)
-    -> OrPattern VariableName
+    :: Forall Sort RewritingVariableName (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = Forall.simplify
 
 makeEvaluate

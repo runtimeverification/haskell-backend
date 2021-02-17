@@ -59,6 +59,7 @@ import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.TopBottom
     ( TopBottom (..)
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -76,9 +77,8 @@ we only expect forall usage for symbolic variables, so we won't attempt to
 simplify it this way.
 -}
 simplify
-    :: InternalVariable variable
-    => Forall Sort variable (OrPattern variable)
-    -> OrPattern variable
+    :: Forall Sort RewritingVariableName (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
@@ -96,10 +96,9 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> OrPattern variable
-    -> OrPattern variable
+    :: ElementVariable RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = simplified
   | OrPattern.isFalse simplified = simplified

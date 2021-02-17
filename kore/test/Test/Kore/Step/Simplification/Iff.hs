@@ -204,10 +204,9 @@ termNotA :: Pattern RewritingVariableName
 termNotA = mkNot <$> termA
 
 makeIff
-    :: InternalVariable variable
-    => [Pattern variable]
-    -> [Pattern variable]
-    -> Iff Sort (OrPattern variable)
+    :: [Pattern RewritingVariableName]
+    -> [Pattern RewritingVariableName]
+    -> Iff Sort (OrPattern RewritingVariableName)
 makeIff first second =
     Iff
         { iffSort   = Mock.testSort
