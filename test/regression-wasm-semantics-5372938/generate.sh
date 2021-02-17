@@ -34,6 +34,5 @@ do
 done
 
 kollect "test-wrc20" \
-    ./kwasm prove --backend haskell \
-        tests/proofs/wrc20-spec.k \
-        WRC20-LEMMAS
+    ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
+    --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend
