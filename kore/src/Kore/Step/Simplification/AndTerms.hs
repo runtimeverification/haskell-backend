@@ -13,8 +13,6 @@ module Kore.Step.Simplification.AndTerms
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
     , functionAnd
-    , equalsFunctions
-    , andFunctions
     , compareForEquals
     ) where
 
@@ -73,9 +71,6 @@ import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Overloading as Overloading
-import Kore.Step.Simplification.SimplificationType
-    ( SimplificationType
-    )
 import qualified Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
     )
@@ -88,8 +83,6 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
 import qualified Pretty
-
-data SimplificationTarget = AndT | EqualsT | BothT
 
 {- | Unify two terms without discarding the terms.
 
@@ -148,8 +141,59 @@ maybeTermEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals notSimplifier =
-    maybeTransformTerm (equalsFunctions notSimplifier)
+maybeTermEquals notSimplifier childTransformers first second = asum
+    [ Builtin.Int.unifyInt first second
+    , Builtin.Bool.unifyBool first second
+    , Builtin.String.unifyString first second
+    , unifyDomainValue first second
+    , unifyStringLiteral first second
+    , equalAndEquals first second
+    , bytesDifferent first second
+    , bottomTermEquals SideCondition.topTODO first second
+    , termBottomEquals SideCondition.topTODO first second
+    , variableFunctionEquals first second
+    , variableFunctionEquals second first
+    , equalInjectiveHeadsAndEquals childTransformers first second
+    , sortInjectionAndEquals childTransformers first second
+    , constructorSortInjectionAndEquals first second
+    , constructorAndEqualsAssumesDifferentHeads first second
+    , overloadedConstructorSortInjectionAndEquals
+        childTransformers
+        first
+        second
+    , Builtin.Bool.unifyBoolAnd childTransformers first second
+    , Builtin.Bool.unifyBoolOr childTransformers first second
+    , Builtin.Bool.unifyBoolNot childTransformers first second
+    , Builtin.Int.unifyIntEq childTransformers notSimplifier first second
+    , Builtin.String.unifyStringEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.KEqual.unifyKequalsEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.Endianness.unifyEquals first second
+    , Builtin.Signedness.unifyEquals first second
+    , unifyDefinedModifier
+        (Builtin.Map.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+    , unifyDefinedModifier
+        (Builtin.Set.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.List.unifyEquals
+        SimplificationType.Equals
+        childTransformers
+        first
+        second
+    , domainValueAndConstructorErrors first second
+    , unifyDefined childTransformers first second
+    ]
 
 maybeTermAnd
     :: InternalVariable variable
@@ -161,93 +205,56 @@ maybeTermAnd
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd notSimplifier =
-    maybeTransformTerm (andFunctions notSimplifier)
-
-andFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => HasCallStack
-    => NotSimplifier unifier
-    -> [TermTransformationOld variable unifier]
-andFunctions notSimplifier =
-    forAnd . snd
-    <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
-  where
-    appliesToAnd :: (SimplificationTarget, a) -> Bool
-    appliesToAnd (AndT, _) = True
-    appliesToAnd (EqualsT, _) = False
-    appliesToAnd (BothT, _) = True
-
-    forAnd
-        :: TermTransformation variable unifier
-        -> TermTransformationOld variable unifier
-    forAnd f = f SideCondition.topTODO SimplificationType.And
-
-equalsFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => HasCallStack
-    => NotSimplifier unifier
-    -> [TermTransformationOld variable unifier]
-equalsFunctions notSimplifier =
-    forEquals . snd
-    <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
-  where
-    appliesToEquals :: (SimplificationTarget, a) -> Bool
-    appliesToEquals (AndT, _) = False
-    appliesToEquals (EqualsT, _) = True
-    appliesToEquals (BothT, _) = True
-
-    forEquals
-        :: TermTransformation variable unifier
-        -> TermTransformationOld variable unifier
-    forEquals f = f SideCondition.topTODO SimplificationType.Equals
-
-andEqualsFunctions
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => HasCallStack
-    => NotSimplifier unifier
-    -> [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions notSimplifier =
-    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
-    , (AndT,    \_ _ _ -> boolAnd)
-    , (BothT,   \_ _ _ -> Builtin.Int.unifyInt)
-    , (BothT,   \_ _ _ -> Builtin.Bool.unifyBool)
-    , (BothT,   \_ _ _ -> Builtin.String.unifyString)
-    , (BothT,   \_ _ _ -> unifyDomainValue)
-    , (BothT,   \_ _ _ -> unifyStringLiteral)
-    , (BothT,   \_ _ _ -> equalAndEquals)
-    , (BothT,   \_ _ _ -> bytesDifferent)
-    , (EqualsT, \p _ _ -> bottomTermEquals p)
-    , (EqualsT, \p _ _ -> termBottomEquals p)
-    , (BothT,   \p t _ -> variableFunctionAndEquals p t)
-    , (BothT,   \p t _ -> functionVariableAndEquals p t)
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s)
-    , (BothT,   \_ _ s -> sortInjectionAndEquals s)
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals)
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads)
-    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolAnd s)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolOr s)
-    , (BothT,   \_ _ s -> Builtin.Bool.unifyBoolNot s)
-    , (EqualsT, \_ _ s -> Builtin.Int.unifyIntEq s notSimplifier)
-    , (EqualsT, \_ _ s -> Builtin.String.unifyStringEq s notSimplifier)
-    , (BothT,   \_ _ s -> Builtin.KEqual.unifyKequalsEq s notSimplifier)
-    , (AndT,    \_ _ s -> Builtin.KEqual.unifyIfThenElse s)
-    , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals)
-    , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals)
-    , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Map.unifyEquals s))
-    , (EqualsT, \_ _ s -> Builtin.Map.unifyNotInKeys s notSimplifier)
-    , (BothT,   \_ _ s -> unifyDefinedModifier (Builtin.Set.unifyEquals s))
-    , (BothT,   \_ t s -> Builtin.List.unifyEquals t s)
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors)
-    , (BothT,   \_ _ s -> unifyDefined s)
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2)
+maybeTermAnd notSimplifier childTransformers first second = asum
+    [ expandAlias
+        (maybeTermAnd notSimplifier childTransformers)
+        first
+        second
+    , boolAnd first second
+    , Builtin.Int.unifyInt first second
+    , Builtin.Bool.unifyBool first second
+    , Builtin.String.unifyString first second
+    , unifyDomainValue first second
+    , unifyStringLiteral first second
+    , equalAndEquals first second
+    , bytesDifferent first second
+    , variableFunctionAnd first second
+    , variableFunctionAnd second first
+    , equalInjectiveHeadsAndEquals childTransformers first second
+    , sortInjectionAndEquals childTransformers first second
+    , constructorSortInjectionAndEquals first second
+    , constructorAndEqualsAssumesDifferentHeads first second
+    , overloadedConstructorSortInjectionAndEquals
+        childTransformers
+        first
+        second
+    , Builtin.Bool.unifyBoolAnd childTransformers first second
+    , Builtin.Bool.unifyBoolOr childTransformers first second
+    , Builtin.Bool.unifyBoolNot childTransformers first second
+    , Builtin.KEqual.unifyKequalsEq
+        childTransformers
+        notSimplifier
+        first
+        second
+    , Builtin.KEqual.unifyIfThenElse childTransformers first second
+    , Builtin.Endianness.unifyEquals first second
+    , Builtin.Signedness.unifyEquals first second
+    , unifyDefinedModifier
+        (Builtin.Map.unifyEquals childTransformers)
+        first
+        second
+    , unifyDefinedModifier
+        (Builtin.Set.unifyEquals childTransformers)
+        first
+        second
+    , Builtin.List.unifyEquals
+        SimplificationType.And
+        childTransformers
+        first
+        second
+    , domainValueAndConstructorErrors first second
+    , unifyDefined childTransformers first second
+    , Error.hoistMaybe (functionAnd first second)
     ]
 
 {- | Construct the conjunction or unification of two terms.
@@ -261,40 +268,13 @@ of that case.
 
 All the @TermTransformationOld@s and similar functions defined in this module
 call 'empty' unless given patterns matching their unification case.
-
- -}
-type TermTransformation variable unifier =
-       SideCondition variable
-    -> SimplificationType
-    -> TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+-}
 
 type TermTransformationOld variable unifier =
        TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-
-maybeTransformTerm
-    :: MonadUnify unifier
-    => [TermTransformationOld variable unifier]
-    -> TermSimplifier variable unifier
-    -- ^ Used to simplify subterm pairs.
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-maybeTransformTerm topTransformers childTransformers first second =
-    asum
-        (map
-            (\f -> f
-                childTransformers
-                first
-                second
-            )
-            topTransformers
-        )
 
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
@@ -330,11 +310,11 @@ equalAndEquals
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-equalAndEquals first second
-  | unDefined first == unDefined second =
-    -- TODO (thomas.tuegel): Preserve defined and simplified flags.
-    return (Pattern.fromTermLike first)
-equalAndEquals _ _ = empty
+equalAndEquals first second =
+    if unDefined first == unDefined second then
+        -- TODO (thomas.tuegel): Preserve defined and simplified flags.
+        return (Pattern.fromTermLike first)
+    else empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals
@@ -385,71 +365,60 @@ termBottomEquals
 termBottomEquals sideCondition first second =
     bottomTermEquals sideCondition second first
 
+variableFunctionAnd
+    :: InternalVariable variable
+    => MonadUnify unifier
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+variableFunctionAnd
+    (ElemVar_ v1)
+    second@(ElemVar_ _)
+  = return $ Pattern.assign (inject v1) second
+variableFunctionAnd
+    (ElemVar_ v)
+    second
+  | isFunctionPattern second =
+    -- Ceil predicate not needed since 'second' being bottom
+    -- will make the entire term bottom. However, one must
+    -- be careful to not just drop the term.
+    lift $ return (Pattern.withCondition second result)
+  where result = Condition.fromSingleSubstitution
+            (Substitution.assign (inject v) second)
+variableFunctionAnd _ _ = empty
+
 {- | Unify a variable with a function pattern.
 
 See also: 'isFunctionPattern'
 
  -}
-variableFunctionAndEquals
+variableFunctionEquals
     :: InternalVariable variable
     => MonadUnify unifier
-    => SideCondition variable
-    -> SimplificationType
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-variableFunctionAndEquals
-    _
-    SimplificationType.And
-    (ElemVar_ v1)
-    second@(ElemVar_ _)
-  =
-      return $ Pattern.assign (inject v1) second
-variableFunctionAndEquals
-    sideCondition
-    simplificationType
+variableFunctionEquals
     first@(ElemVar_ v)
     second
   | isFunctionPattern second = lift $ do -- MonadUnify
-    predicate <-
-        case simplificationType of -- Simplifier
-            SimplificationType.And ->
-                -- Ceil predicate not needed since 'second' being bottom
-                -- will make the entire term bottom. However, one must
-                -- be careful to not just drop the term.
-                return Condition.top
-            SimplificationType.Equals -> do
-                resultOr <- makeEvaluateTermCeil sideCondition second
-                case toList resultOr of
-                    [] -> do
-                        explainBottom
-                           "Unification of variable and bottom \
-                           \when attempting to simplify equals."
-                           first
-                           second
-                        empty
-                    resultConditions -> Unify.scatter resultConditions
+    predicate <- do
+        resultOr <- makeEvaluateTermCeil SideCondition.topTODO second
+        case toList resultOr of
+            [] -> do
+                explainBottom
+                    "Unification of variable and bottom \
+                    \when attempting to simplify equals."
+                    first
+                    second
+                empty
+            resultConditions -> Unify.scatter resultConditions
     let result =
             predicate
             <> Condition.fromSingleSubstitution
                 (Substitution.assign (inject v) second)
     return (Pattern.withCondition second result)
-variableFunctionAndEquals _ _ _ _ = empty
-
-{- | Unify a function pattern with a variable.
-
-See also: 'variableFunctionAndEquals'
-
- -}
-functionVariableAndEquals
-    :: (InternalVariable variable, MonadUnify unifier)
-    => SideCondition variable
-    -> SimplificationType
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals sideCondition simplificationType first second =
-    variableFunctionAndEquals sideCondition simplificationType second first
+variableFunctionEquals _ _ = empty
 
 {- | Simplify the conjunction of two sort injections.
 

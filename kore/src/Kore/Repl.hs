@@ -88,7 +88,7 @@ import Prof
     )
 
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import Kore.Unparser
     ( unparseToString
@@ -208,7 +208,7 @@ runRepl
     config =
         Config
             { stepper    = stepper0
-            , unifier    = unificationProcedureWorker
+            , unifier    = unificationProcedure
             , logger
             , outputFile
             , mainModuleName
