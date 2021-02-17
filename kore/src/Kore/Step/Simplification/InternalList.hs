@@ -21,11 +21,11 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 simplify
-    :: InternalVariable variable
-    => InternalList (OrPattern variable)
-    -> OrPattern variable
+    :: InternalList (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify =
     traverse (Logic.scatter >>> Compose)
     >>> fmap mkInternalList

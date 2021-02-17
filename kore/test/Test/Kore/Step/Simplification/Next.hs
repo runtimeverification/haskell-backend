@@ -23,6 +23,7 @@ import Kore.Step.Simplification.Next
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_nextSimplification :: [TestTree]
 test_nextSimplification =
@@ -80,16 +81,18 @@ test_nextSimplification =
         )
     ]
 
-findSort :: [Pattern VariableName] -> Sort
+findSort :: [Pattern RewritingVariableName] -> Sort
 findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
-evaluate :: Next Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Next Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify
 
 makeNext
-    :: [Pattern VariableName]
-    -> Next Sort (OrPattern VariableName)
+    :: [Pattern RewritingVariableName]
+    -> Next Sort (OrPattern RewritingVariableName)
 makeNext child =
     Next
         { nextSort = findSort child

@@ -22,6 +22,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -32,15 +33,13 @@ child.
 Right now this does not do any actual simplification.
 -}
 simplify
-    :: InternalVariable variable
-    => Next Sort (OrPattern variable)
-    -> OrPattern variable
+    :: Next Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Next { nextChild = child } = simplifyEvaluated child
 
 simplifyEvaluated
-    :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
+    :: OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplifyEvaluated simplified =
     OrPattern.fromTermLike
     $ TermLike.markSimplified

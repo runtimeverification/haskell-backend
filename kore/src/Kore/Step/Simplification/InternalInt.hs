@@ -14,9 +14,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 simplify
-    :: InternalVariable variable
-    => InternalInt
-    -> OrPattern variable
+    :: InternalInt
+    -> OrPattern RewritingVariableName
 simplify = OrPattern.fromPattern . pure . mkInternalInt

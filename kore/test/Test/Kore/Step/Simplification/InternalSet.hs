@@ -33,6 +33,7 @@ import Kore.Step.Simplification.InternalSet
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -69,8 +70,8 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> InternalSet Key (OrPattern VariableName)
-        -> [Pattern VariableName]
+        -> InternalSet Key (OrPattern RewritingVariableName)
+        -> [Pattern RewritingVariableName]
         -> TestTree
     becomes name origin (OrPattern.fromPatterns -> expects) =
         testCase name $ do
@@ -104,6 +105,6 @@ mkSetAux concreteElements elements opaque =
     mkSetValue = \x -> (x, SetValue)
 
 evaluate
-    :: InternalSet Key (OrPattern VariableName)
-    -> OrPattern VariableName
+    :: InternalSet Key (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

@@ -25,6 +25,7 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Unify two application patterns with equal, injective heads.
 
@@ -35,15 +36,13 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 
  -}
 equalInjectiveHeadsAndEquals
-    ::  ( InternalVariable variable
-        , MonadUnify unifier
-        )
+    :: MonadUnify unifier
     => HasCallStack
-    => TermSimplifier variable unifier
+    => TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
     (App_ firstHead firstChildren)
@@ -72,11 +71,10 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    :: InternalVariable variable
-    => MonadUnify unifier
+    :: MonadUnify unifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
     first@(App_ firstHead _)

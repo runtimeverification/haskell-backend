@@ -119,9 +119,9 @@ simplifyEvaluated sideCondition simplified =
         mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => OrCondition variable
-    -> simplifier (OrCondition variable)
+    :: MonadSimplify simplifier
+    => OrCondition RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedPredicate notChild =
     OrCondition.observeAllT $ do
         let not' = Not { notChild = notChild, notSort = () }
@@ -139,15 +139,13 @@ child.
 See 'simplify' for details.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
-    :: InternalVariable variable
-    => Not sort (Pattern variable)
-    -> OrPattern variable
+    :: Not sort (Pattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
         (MultiOr.map Pattern.fromTermLike $ makeTermNot term)
@@ -169,9 +167,8 @@ I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 a @not@ on top of that.
 -}
 makeEvaluatePredicate
-    :: InternalVariable variable
-    => Condition variable
-    -> Condition variable
+    :: Condition RewritingVariableName
+    -> Condition RewritingVariableName
 makeEvaluatePredicate
     Conditional
         { term = ()
@@ -189,16 +186,14 @@ makeEvaluatePredicate
         }
 
 makeEvaluateNotPredicate
-    :: InternalVariable variable
-    => Not sort (Condition variable)
-    -> OrCondition variable
+    :: Not sort (Condition RewritingVariableName)
+    -> OrCondition RewritingVariableName
 makeEvaluateNotPredicate Not { notChild = predicate } =
     OrCondition.fromConditions [ makeEvaluatePredicate predicate ]
 
 makeTermNot
-    :: InternalVariable variable
-    => TermLike variable
-    -> MultiOr (TermLike variable)
+    :: TermLike RewritingVariableName
+    -> MultiOr (TermLike RewritingVariableName)
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
@@ -242,9 +237,8 @@ mkMultiAndPattern = And.makeEvaluate notSimplifier
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
 mkMultiAndPredicate
-    :: InternalVariable variable
-    => MultiAnd (Condition variable)
-    -> LogicT simplifier (Condition variable)
+    :: MultiAnd (Condition RewritingVariableName)
+    -> LogicT simplifier (Condition RewritingVariableName)
 mkMultiAndPredicate predicates =
     -- Using fold because the Monoid instance of Condition
     -- implements And semantics.

@@ -24,14 +24,14 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Logic
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 
 {-| Simplify an 'InternalMap' pattern.
 -}
 simplify
-    :: InternalVariable variable
-    => InternalSet Key (OrPattern variable)
-    -> OrPattern variable
+    :: InternalSet Key (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify =
     traverse (Logic.scatter >>> Compose)
     >>> fmap (normalizeInternalSet >>> markSimplified)
@@ -40,9 +40,8 @@ simplify =
     >>> MultiOr.observeAll
 
 normalizeInternalSet
-    :: InternalVariable variable
-    => InternalSet Key (TermLike variable)
-    -> TermLike variable
+    :: InternalSet Key (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 normalizeInternalSet map' =
     case Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize map' of
         Just normalizedSet ->
