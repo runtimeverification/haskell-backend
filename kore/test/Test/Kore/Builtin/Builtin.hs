@@ -108,8 +108,6 @@ import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition
     )
-import qualified Kore.Unification.Procedure as Unification
-import Kore.Unification.UnificationProcedure
 import Kore.Unparser
     ( unparseToText
     )
@@ -285,15 +283,9 @@ runStepResult
     -> NoSMT (Step.Results (RulePattern RewritingVariableName))
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
-        unificationProcedure
         [mkRewritingRule axiom]
         (mkRewritingPattern configuration)
     & runSimplifier testEnv
-
-unificationProcedure
-    :: MonadSimplify simplifier
-    => UnificationProcedure simplifier
-unificationProcedure = Unification.unificationProcedure
 
 -- | Test unparsing internalized patterns.
 hpropUnparse
