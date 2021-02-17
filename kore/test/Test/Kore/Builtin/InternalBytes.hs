@@ -44,8 +44,8 @@ import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import Kore.Internal.Pattern
 import Kore.Internal.TermLike
-import qualified Pretty
 import Kore.Unparser
+import qualified Pretty
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
