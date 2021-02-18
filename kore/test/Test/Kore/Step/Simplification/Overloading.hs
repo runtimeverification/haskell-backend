@@ -469,7 +469,8 @@ match
     -> IO MatchResult
 match termPair = runSimplifier Mock.env $ runExceptT matchResult
   where
-    matchResult :: MatchOverloadingResult (SimplifierT NoSMT)
+    matchResult
+        :: MatchOverloadingResult (SimplifierT NoSMT) RewritingVariableName
     matchResult = matchOverloading termPair
 
 withMatching
@@ -497,14 +498,14 @@ withMatchingTwice check comment termPair =
                 check actual'
 
 type UnificationResult =
-    Either UnifyOverloadingError OverloadingResolution
+    Either UnifyOverloadingError (OverloadingResolution RewritingVariableName)
 
 unify
     :: Pair (TermLike RewritingVariableName)
     -> IO UnificationResult
 unify termPair = runSimplifier Mock.env $ runExceptT unifyResult
   where
-    unifyResult :: UnifyOverloadingResult (SimplifierT NoSMT)
+    unifyResult :: UnifyOverloadingResult (SimplifierT NoSMT) RewritingVariableName
     unifyResult = unifyOverloading termPair
 
 withUnification

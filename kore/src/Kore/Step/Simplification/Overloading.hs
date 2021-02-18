@@ -59,13 +59,13 @@ import Kore.Step.Simplification.OverloadSimplifier
 import Pair
 
 -- | Overload solution requiring narrowing
-data Narrowing
+data Narrowing variable
     = Narrowing
-        { narrowingSubst :: !(Condition RewritingVariableName)
+        { narrowingSubst :: !(Condition variable)
         -- ^narrowing substitution represented as a 'Condition'
-        , narrowingVars :: ![ElementVariable RewritingVariableName]
+        , narrowingVars :: ![ElementVariable variable]
         -- ^the fresh variables within the narrowingSubst
-        , overloadPair  :: !(Pair (TermLike RewritingVariableName))
+        , overloadPair  :: !(Pair (TermLike variable))
         -- overload solution
         }
     deriving (Eq, Ord, Show)
@@ -74,10 +74,10 @@ data Narrowing
     deriving anyclass (Debug, Diff)
 
 -- | Result of applying the 'unifyOverloading' resolution procedure
-data OverloadingResolution
-    = Simple !(Pair (TermLike RewritingVariableName))
+data OverloadingResolution variable
+    = Simple !(Pair (TermLike variable))
     -- ^The overloading resolves yielding the transformed pair of terms
-    | WithNarrowing !Narrowing
+    | WithNarrowing !(Narrowing variable)
     -- ^Overloading resolves, but additional narrowing is needed for solution
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -106,14 +106,14 @@ instance Semigroup UnifyOverloadingError where
 instance Monoid UnifyOverloadingError where
     mempty = NotApplicable
 
-type UnifyOverloadingResult unifier =
-    ExceptT UnifyOverloadingError unifier OverloadingResolution
+type UnifyOverloadingResult unifier variable =
+    ExceptT UnifyOverloadingError unifier (OverloadingResolution variable)
 
-type MatchOverloadingResult unifier =
+type MatchOverloadingResult unifier variable =
     ExceptT
         UnifyOverloadingError
         unifier
-        (Pair (TermLike RewritingVariableName))
+        (Pair (TermLike variable))
 
 type OverloadingResult unifier a = ExceptT UnifyOverloadingError unifier a
 
@@ -126,7 +126,7 @@ throwBottom = throwE . Clash
 matchOverloading
     :: MonadSimplify unifier
     => Pair (TermLike RewritingVariableName)
-    -> MatchOverloadingResult unifier
+    -> MatchOverloadingResult unifier RewritingVariableName
 matchOverloading termPair
   = do
     unifyResult <- unifyOverloading termPair
@@ -151,7 +151,7 @@ unifyOverloading
     :: forall unifier
      . MonadSimplify unifier
     => Pair (TermLike RewritingVariableName)
-    -> UnifyOverloadingResult unifier
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloading termPair = case termPair of
     Pair
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
@@ -187,7 +187,7 @@ unifyOverloading termPair = case termPair of
     worker
       :: TermLike RewritingVariableName
       -> TermLike RewritingVariableName
-      -> UnifyOverloadingResult unifier
+      -> UnifyOverloadingResult unifier RewritingVariableName
     worker
         firstTerm@(App_ firstHead _)
         (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
@@ -237,7 +237,7 @@ unifyOverloadingCommonOverload
     => Application Symbol (TermLike RewritingVariableName)
     -> Application Symbol (TermLike RewritingVariableName)
     -> Inj ()
-    -> MatchOverloadingResult unifier
+    -> MatchOverloadingResult unifier RewritingVariableName
 unifyOverloadingCommonOverload
     (Application firstHead firstChildren)
     (Application secondHead secondChildren)
@@ -274,7 +274,7 @@ unifyOverloadingVsOverloaded
     -> TermLike RewritingVariableName
     -> Application Symbol (TermLike RewritingVariableName)
     -> Inj ()
-    -> MatchOverloadingResult unifier
+    -> MatchOverloadingResult unifier RewritingVariableName
 unifyOverloadingVsOverloaded
     overloadingHead
     overloadingTerm
@@ -313,7 +313,7 @@ unifyOverloadingVsOverloadedVariable
     -> TermLike RewritingVariableName
     -> ElementVariable RewritingVariableName
     -> Inj ()
-    -> UnifyOverloadingResult unifier
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloadingVsOverloadedVariable
     overloadingHead
     overloadingTerm
@@ -362,7 +362,7 @@ unifyOverloadingInjVsVariable
     -> ElementVariable RewritingVariableName
     -> Attribute.FreeVariables RewritingVariableName
     -> Inj ()
-    -> UnifyOverloadingResult unifier
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloadingInjVsVariable
     (Application firstHead firstChildren)
     overloadedVar
@@ -400,7 +400,7 @@ computeNarrowing
     -> Attribute.FreeVariables RewritingVariableName -- ^free vars in the unification pair
     -> ElementVariable RewritingVariableName -- ^injected variable (to be narrowed)
     -> InjectedOverload -- ^overloaded symbol injected into the variable's sort
-    -> ExceptT UnifyOverloadingError unifier Narrowing
+    -> ExceptT UnifyOverloadingError unifier (Narrowing RewritingVariableName)
 computeNarrowing
     first' injection' headUnion injUnion freeVars overloadedVar overloaded
   | App_ _ freshTerms <- overloadedTerm
