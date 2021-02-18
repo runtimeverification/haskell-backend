@@ -83,7 +83,7 @@
                                                         Lbl'-LT-'program'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
                                                             \dv{SortBytes{}}(
-                                                                "6003600401600814600c57fe5b00"
+                                                                "`\x03`\x04\x01`\x08\x14`\x0cW\xfe[\x00"
                                                             )
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
