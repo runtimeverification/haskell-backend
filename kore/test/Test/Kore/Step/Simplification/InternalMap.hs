@@ -2,12 +2,22 @@
 
 module Test.Kore.Step.Simplification.InternalMap
     ( test_simplify
+    , test_unparse
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
+import Control.DeepSeq
+    ( force
+    )
+import qualified Control.Exception as Exception
+    ( evaluate
+    )
+import Control.Monad
+    ( void
+    )
 import Data.Bifunctor
     ( bimap
     )
@@ -36,6 +46,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.InternalMap
     ( simplify
     )
+import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
@@ -102,6 +113,60 @@ test_simplify =
         $ assertEqual ""
             (OrPattern.fromPatterns expect)
             (evaluate origin)
+
+test_unparse :: [TestTree]
+test_unparse =
+    [ unparseTest "empty" False False True True $ wrapAc emptyNormalizedAc
+    , unparseTest "empty" True True False False $ wrapAc emptyNormalizedAc
+    , unparseTest "one element" False True False True
+        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
+    , unparseTest "one element" True False True False
+        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
+    , unparseTest "two elements" False True True False
+        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
+    , unparseTest "two elements" True False True True
+        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
+    , unparseTest "two opaque elements" False True True False
+        $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
+    , unparseTest "two opaque elements" True False False True
+        $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
+    ]
+  where
+    unparseTest
+        :: String
+        -> Bool
+        -> Bool
+        -> Bool
+        -> Bool
+        -> NormalizedMap Key (TermLike VariableName)
+        -> TestTree
+    unparseTest testName expectSuccess hasUnit hasElement hasConcat child =
+        testCase fullTestName $ if expectSuccess
+            then void (Exception.evaluate $ force $ show unparsedMap)
+            else assertErrorIO
+                (void . return)
+                (Exception.evaluate $ force $ show unparsedMap)
+      where
+        (unitText, mockUnitSymbol) = if hasUnit
+            then (" withUnit", toUnit Mock.unitMapSymbol)
+            else (" withoutUnit", Unit Nothing)
+        (elementText, mockElementSymbol) = if hasElement
+            then (" withElement", toElement Mock.elementMapSymbol)
+            else (" withoutElement", Element Nothing)
+        (concatText, mockConcatSymbol) = if hasConcat
+            then (" withConcat", toConcat Mock.concatMapSymbol)
+            else (" withoutConcat", Concat Nothing)
+        unparsedMap = unparse @(InternalMap Key (TermLike VariableName))
+            $ InternalAc
+                { builtinAcSort = Mock.mapSort
+                , builtinAcUnit = mockUnitSymbol
+                , builtinAcElement = mockElementSymbol
+                , builtinAcConcat = mockConcatSymbol
+                , builtinAcChild = child
+                }
+        fullTestName = "unparsing map"
+            ++ unitText ++ elementText ++ concatText
+            ++ " and child: " ++ testName
 
 mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []
