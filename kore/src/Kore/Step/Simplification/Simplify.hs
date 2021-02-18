@@ -325,8 +325,7 @@ type BuiltinAndAxiomSimplifierMap =
 
 lookupAxiomSimplifier
     :: MonadSimplify simplifier
-    => InternalVariable variable
-    => TermLike variable
+    => TermLike RewritingVariableName
     -> MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
     simplifierMap <- lift askSimplifierAxioms
@@ -385,7 +384,7 @@ data AttemptedAxiomResults variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable) where
+instance Semigroup (AttemptedAxiomResults RewritingVariableName) where
     (<>)
         AttemptedAxiomResults
             { results = firstResults
@@ -401,7 +400,7 @@ instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable)
             , remainders = MultiOr.merge firstRemainders secondRemainders
             }
 
-instance InternalVariable variable => Monoid (AttemptedAxiomResults variable) where
+instance Monoid (AttemptedAxiomResults RewritingVariableName) where
     mempty =
         AttemptedAxiomResults
             { results = OrPattern.bottom
@@ -435,7 +434,7 @@ data AttemptedAxiom variable
 isApplicable
     , isNotApplicable
     , isNotApplicableUntilConditionChanges
-        :: AttemptedAxiom variable -> Bool
+        :: AttemptedAxiom RewritingVariableName -> Bool
 isApplicable =
     \case
         Applied _ -> True
@@ -454,7 +453,7 @@ following the same pattern as the other `Common*` types.
 -}
 type CommonAttemptedAxiom = AttemptedAxiom RewritingVariableName
 
-emptyAttemptedAxiom :: InternalVariable variable => AttemptedAxiom variable
+emptyAttemptedAxiom :: AttemptedAxiom RewritingVariableName
 emptyAttemptedAxiom = Applied mempty
 
 {- | Does the 'AttemptedAxiom' have remainders?
@@ -462,7 +461,7 @@ emptyAttemptedAxiom = Applied mempty
 A 'NotApplicable' result is not considered to have remainders.
 
  -}
-hasRemainders :: AttemptedAxiom variable -> Bool
+hasRemainders :: AttemptedAxiom RewritingVariableName -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
 hasRemainders (NotApplicableUntilConditionChanges _) = False
@@ -471,8 +470,8 @@ hasRemainders (NotApplicableUntilConditionChanges _) = False
  -}
 maybeNotApplicable
     :: Functor m
-    => MaybeT m (AttemptedAxiomResults variable)
-    ->        m (AttemptedAxiom variable)
+    => MaybeT m (AttemptedAxiomResults RewritingVariableName)
+    ->        m (AttemptedAxiom RewritingVariableName)
 maybeNotApplicable =
     fmap (maybe NotApplicable Applied) . runMaybeT
 
@@ -480,20 +479,21 @@ maybeNotApplicable =
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiomResults variable)
-    ->           m (AttemptedAxiom variable)
+    => ExceptT e m (AttemptedAxiomResults RewritingVariableName)
+    ->           m (AttemptedAxiom RewritingVariableName)
 exceptNotApplicable =
     fmap (either (const NotApplicable) Applied) . runExceptT
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableAxiomEvaluator :: Applicative m => m (AttemptedAxiom variable)
+notApplicableAxiomEvaluator
+    :: Applicative m => m (AttemptedAxiom RewritingVariableName)
 notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: (Applicative m, InternalVariable variable)
-    => TermLike variable
-    -> m (AttemptedAxiom variable)
+    :: Applicative m
+    => TermLike RewritingVariableName
+    -> m (AttemptedAxiom RewritingVariableName)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
@@ -507,24 +507,24 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier
-    ::  (  forall variable simplifier
-        .  (InternalVariable variable, MonadSimplify simplifier)
+    ::  (  forall simplifier
+        .  MonadSimplify simplifier
         => CofreeF
             (Application Symbol)
-            (Attribute.Pattern variable)
-            (TermLike variable)
-        -> simplifier (AttemptedAxiom variable)
+            (Attribute.Pattern RewritingVariableName)
+            (TermLike RewritingVariableName)
+        -> simplifier (AttemptedAxiom RewritingVariableName)
         )
     -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
-        :: forall variable simplifier
-        .  (InternalVariable variable, MonadSimplify simplifier)
-        => TermLike variable
-        -> SideCondition variable
-        -> simplifier (AttemptedAxiom variable)
+        :: forall simplifier
+        .  MonadSimplify simplifier
+        => TermLike RewritingVariableName
+        -> SideCondition RewritingVariableName
+        -> simplifier (AttemptedAxiom RewritingVariableName)
     helper termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)

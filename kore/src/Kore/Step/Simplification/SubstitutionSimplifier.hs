@@ -77,7 +77,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
-    , InternalVariable
     , SomeVariable
     , SomeVariableName (..)
     , TermLike
@@ -257,9 +256,8 @@ deduplicateSubstitution sideCondition makeAnd' =
     toMultiMap = Map.map (:| [])
 
     collectConditions
-        :: InternalVariable variable
-        => Map key (Conditional variable term)
-        -> Conditional variable (Map key term)
+        :: Map key (Conditional RewritingVariableName term)
+        -> Conditional RewritingVariableName (Map key term)
     collectConditions = sequenceA
 
 simplifySubstitutionWorker
@@ -283,9 +281,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     assertNullSubstitution =
         assert . Substitution.null . Condition.substitution
 
-    loop
-        :: Impl RewritingVariableName simplifier
-            (Normalization RewritingVariableName)
+    loop :: Impl simplifier (Normalization RewritingVariableName)
     loop = do
         simplified <-
             takeSubstitution
@@ -312,8 +308,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyNormalizationOnce
         :: Normalization RewritingVariableName
-        -> Impl RewritingVariableName simplifier
-            (Normalization RewritingVariableName)
+        -> Impl simplifier (Normalization RewritingVariableName)
     simplifyNormalizationOnce =
         return
         >=> simplifyNormalized
@@ -322,8 +317,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyNormalized
         :: Normalization RewritingVariableName
-        -> Impl RewritingVariableName simplifier
-            (Normalization RewritingVariableName)
+        -> Impl simplifier (Normalization RewritingVariableName)
     simplifyNormalized =
         Lens.traverseOf
             (field @"normalized" . Lens.traversed)
@@ -331,8 +325,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyDenormalized
         :: Normalization RewritingVariableName
-        -> Impl RewritingVariableName simplifier
-            (Normalization RewritingVariableName)
+        -> Impl simplifier (Normalization RewritingVariableName)
     simplifyDenormalized =
         Lens.traverseOf
             (field @"denormalized" . Lens.traversed)
@@ -340,8 +333,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifySingleSubstitution
         :: Assignment RewritingVariableName
-        -> Impl RewritingVariableName simplifier
-            (Assignment RewritingVariableName)
+        -> Impl simplifier (Assignment RewritingVariableName)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
         case variableName uVar of
             SomeVariableNameSet _ -> return subst
@@ -357,8 +349,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyTermLike'
         :: TermLike RewritingVariableName
-        -> Impl RewritingVariableName simplifier
-            (TermLike RewritingVariableName)
+        -> Impl simplifier (TermLike RewritingVariableName)
     simplifyTermLike' termLike = do
         orPattern <- simplifyTermLike sideCondition termLike
         case OrPattern.toPatterns orPattern of
@@ -373,7 +364,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     deduplicate
         ::  Substitution RewritingVariableName
-        ->  Impl RewritingVariableName simplifier
+        ->  Impl simplifier
                 (Map
                     (SomeVariable RewritingVariableName)
                     (TermLike RewritingVariableName)
@@ -386,9 +377,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
-data Private variable =
+data Private =
     Private
-        { accum :: !(Condition variable)
+        { accum :: !(Condition RewritingVariableName)
         -- ^ The current condition, accumulated during simplification.
         , count :: !Int
         -- ^ The current number of denormalized substitutions.
@@ -401,36 +392,32 @@ The 'MaybeT' transformer layer is used for short-circuiting: if any individual
 substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
 
  -}
-type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
+type Impl simplifier = StateT Private (MaybeT simplifier)
 
 addCondition
-    :: InternalVariable variable
-    => Monad simplifier
-    => Condition variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Condition RewritingVariableName
+    -> Impl simplifier ()
 addCondition condition
   | TopBottom.isBottom condition = empty
   | otherwise =
     Lens.modifying (field @"accum") (mappend condition)
 
 addPredicate
-    :: InternalVariable variable
-    => Monad simplifier
-    => Predicate variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Predicate RewritingVariableName
+    -> Impl simplifier ()
 addPredicate = addCondition . Condition.fromPredicate
 
 addSubstitution
-    :: InternalVariable variable
-    => Monad simplifier
-    => Substitution variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Substitution RewritingVariableName
+    -> Impl simplifier ()
 addSubstitution = addCondition . Condition.fromSubstitution
 
 takeSubstitution
-    :: InternalVariable variable
-    => Monad simplifier
-    => Impl variable simplifier (Substitution variable)
+    :: Monad simplifier
+    => Impl simplifier (Substitution RewritingVariableName)
 takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty

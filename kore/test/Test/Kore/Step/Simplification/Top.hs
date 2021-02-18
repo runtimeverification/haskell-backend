@@ -14,6 +14,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Step.Simplification.Top
     ( simplify
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Syntax
 
 import Test.Kore.Step.MockSymbols
@@ -30,5 +31,7 @@ test_topSimplification =
         )
     ]
 
-evaluate :: Top Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Top Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

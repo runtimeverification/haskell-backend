@@ -74,9 +74,6 @@ import Test.Kore.Equation.Common
     ( functionAxiomUnification
     , functionAxiomUnification_
     )
--- import Test.Kore.Internal.OrPattern
---     ( OrTestPattern
---     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern
     ( Conditional (..)

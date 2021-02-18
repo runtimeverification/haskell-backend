@@ -26,6 +26,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- | Consists of an overload symbol and an injection from the sort
 -- of the symbol; the injection can miss (@Nothing@) if not needed.
@@ -54,13 +55,11 @@ data OverloadSimplifier =
         , isOverloaded :: Symbol -> Bool
         -- ^ Whether the symbol is overloaded
         , resolveOverloading
-            :: forall variable
-            .  HasCallStack
-            => InternalVariable variable
+            :: HasCallStack
             => Inj ()
             -> Symbol
-            -> [TermLike variable]
-            -> TermLike variable
+            -> [TermLike RewritingVariableName]
+            -> TermLike RewritingVariableName
         {- ^ Apply an overloading equation from right to left.
 
         In general an overloading equation is of the form
@@ -135,13 +134,11 @@ mkOverloadSimplifier overloadGraph InjSimplifier {isOrderedInj, injectTermTo} =
     isOverloaded = OverloadGraph.isOverloaded overloadGraph
 
     resolveOverloading
-        :: forall variable
-        .  HasCallStack
-        => InternalVariable variable
+        :: HasCallStack
         => Inj ()
         -> Symbol
-        -> [TermLike variable]
-        -> TermLike variable
+        -> [TermLike RewritingVariableName]
+        -> TermLike RewritingVariableName
     resolveOverloading injProto overloadedHead overloadingChildren =
         mkApplySymbol overloadedHead
         $ assert (length overloadedChildrenSorts == length overloadingChildren)

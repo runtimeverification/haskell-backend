@@ -438,12 +438,11 @@ simplify sideCondition = \termLike ->
                 Defined.simplify <$> simplifyChildren definedF
 
 ensureSimplifiedResult
-    :: InternalVariable variable
-    => Monad simplifier
+    :: Monad simplifier
     => SideCondition.Representation
-    -> TermLike variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> TermLike RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 ensureSimplifiedResult repr termLike results
   | OrPattern.isSimplified repr results = pure results
   | otherwise =
@@ -456,12 +455,11 @@ ensureSimplifiedResult repr termLike results
         ]
 
 ensureSimplifiedCondition
-    :: InternalVariable variable
-    => Monad simplifier
+    :: Monad simplifier
     => SideCondition.Representation
-    -> TermLike variable
-    -> Condition variable
-    -> simplifier (Condition variable)
+    -> TermLike RewritingVariableName
+    -> Condition RewritingVariableName
+    -> simplifier (Condition RewritingVariableName)
 ensureSimplifiedCondition repr termLike condition
   | Condition.isSimplified repr condition = pure condition
   | otherwise =

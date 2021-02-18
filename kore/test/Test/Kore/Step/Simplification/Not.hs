@@ -26,17 +26,8 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
 import qualified Pretty
 
--- import Test.Kore.Internal.OrPattern
---     ( OrTestPattern
---     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
--- import Test.Kore.Internal.Pattern
---     ( TestPattern
---     )
 import qualified Test.Kore.Internal.Pattern as Pattern
--- import Test.Kore.Internal.Predicate
---     ( TestPredicate
---     )
 import qualified Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock

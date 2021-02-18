@@ -175,20 +175,20 @@ evalKEq true (valid :< app) =
             $ comparison termLike1 termLike2
 
 evalKIte
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
-        (TermLike variable)
-    -> simplifier (AttemptedAxiom variable)
+        (Attribute.Pattern RewritingVariableName)
+        (TermLike RewritingVariableName)
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where
-    evaluate :: TermLike variable -> Maybe Bool
+    evaluate :: TermLike RewritingVariableName -> Maybe Bool
     evaluate = Bool.matchBool
 
     evalIte expr t1 t2 =

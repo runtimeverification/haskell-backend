@@ -17,6 +17,7 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Step.Simplification.StringLiteral
     ( simplify
     )
@@ -41,5 +42,5 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate :: StringLiteral -> OrPattern VariableName
+evaluate :: StringLiteral -> OrPattern RewritingVariableName
 evaluate = simplify

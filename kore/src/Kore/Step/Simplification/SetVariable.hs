@@ -18,12 +18,12 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.
 -}
 simplify
-    :: InternalVariable variable
-    => SetVariable variable
-    -> OrPattern variable
+    :: SetVariable RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplify setVar = OrPattern.fromTermLike $ mkSetVar setVar

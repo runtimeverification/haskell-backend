@@ -23,18 +23,12 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Implies as Implies
 import Kore.Unparser
-import qualified Pretty
-
--- import Test.Kore.Internal.OrPattern
---     ( OrTestPattern
---     )
-import qualified Test.Kore.Internal.OrPattern as OrPattern
--- import Test.Kore.Internal.Pattern
---     ( TestPattern
---     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
+import qualified Pretty
+
+import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock

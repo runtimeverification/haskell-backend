@@ -39,9 +39,6 @@ import Kore.Step.Simplification.Or
 import qualified Kore.Unparser as Unparser
 import qualified Pretty
 
--- import Test.Kore.Internal.OrPattern
---     ( OrTestPattern
---     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
