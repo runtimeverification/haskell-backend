@@ -170,7 +170,7 @@ andFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld unifier]
+    -> [TermTransformationOld RewritingVariableName unifier]
 andFunctions notSimplifier =
     forAnd . snd
     <$> filter appliesToAnd (andEqualsFunctions notSimplifier)
@@ -181,8 +181,8 @@ andFunctions notSimplifier =
     appliesToAnd (BothT, _) = True
 
     forAnd
-        :: TermTransformation unifier
-        -> TermTransformationOld unifier
+        :: TermTransformation RewritingVariableName unifier
+        -> TermTransformationOld RewritingVariableName unifier
     forAnd f = f SideCondition.topTODO SimplificationType.And
 
 equalsFunctions
@@ -190,7 +190,7 @@ equalsFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [TermTransformationOld unifier]
+    -> [TermTransformationOld RewritingVariableName unifier]
 equalsFunctions notSimplifier =
     forEquals . snd
     <$> filter appliesToEquals (andEqualsFunctions notSimplifier)
@@ -201,8 +201,8 @@ equalsFunctions notSimplifier =
     appliesToEquals (BothT, _) = True
 
     forEquals
-        :: TermTransformation unifier
-        -> TermTransformationOld unifier
+        :: TermTransformation RewritingVariableName unifier
+        -> TermTransformationOld RewritingVariableName unifier
     forEquals f = f SideCondition.topTODO SimplificationType.Equals
 
 andEqualsFunctions
@@ -210,7 +210,7 @@ andEqualsFunctions
     .  MonadUnify unifier
     => HasCallStack
     => NotSimplifier unifier
-    -> [(SimplificationTarget, TermTransformation unifier)]
+    -> [(SimplificationTarget, TermTransformation RewritingVariableName unifier)]
 andEqualsFunctions notSimplifier =
     [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd notSimplifier s))
     , (AndT,    \_ _ _ -> boolAnd)
@@ -261,23 +261,23 @@ All the @TermTransformationOld@s and similar functions defined in this module
 call 'empty' unless given patterns matching their unification case.
 
  -}
-type TermTransformation unifier =
-       SideCondition RewritingVariableName
+type TermTransformation variable unifier =
+       SideCondition variable
     -> SimplificationType
-    -> TermSimplifier RewritingVariableName unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+    -> TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
 
-type TermTransformationOld unifier =
-       TermSimplifier RewritingVariableName unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+type TermTransformationOld variable unifier =
+       TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
 
 maybeTransformTerm
     :: MonadUnify unifier
-    => [TermTransformationOld unifier]
+    => [TermTransformationOld RewritingVariableName unifier]
     -> TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm pairs.
     -> TermLike RewritingVariableName
