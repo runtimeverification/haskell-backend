@@ -23,10 +23,12 @@ import Kore.Internal.ApplicationSorts
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 -- | Consists of an overload symbol and an injection from the sort
 -- of the symbol; the injection can miss (@Nothing@) if not needed.

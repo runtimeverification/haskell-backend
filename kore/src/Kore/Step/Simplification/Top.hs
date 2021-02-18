@@ -17,9 +17,11 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
 import Kore.Syntax.Top
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}

@@ -11,10 +11,12 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Top
     ( simplify
     )
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Syntax
 
 import Test.Kore.Step.MockSymbols

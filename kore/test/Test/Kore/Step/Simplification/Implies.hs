@@ -21,11 +21,11 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.Implies as Implies
-import Kore.Unparser
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
+import qualified Kore.Step.Simplification.Implies as Implies
+import Kore.Unparser
 import qualified Pretty
 
 import qualified Test.Kore.Internal.OrPattern as OrPattern
