@@ -16,17 +16,10 @@ let
   compiler-nix-name = "ghc8103";
   index-state = "2021-02-09T00:00:00Z";
 
-  ghcide-project = default.pkgs.haskell-nix.cabalProject {
-    src = sources."ghcide";
-    modules = [
-      # This fixes a performance issue, probably https://gitlab.haskell.org/ghc/ghc/issues/15524
-      { packages.ghcide.configureFlags = [ "--enable-executable-dynamic" ]; }
-    ];
-    inherit checkMaterialization compiler-nix-name index-state;
-    materialized = ./nix/ghcide.nix.d;
+  hls-project = import sources."nix-haskell-hls" {
+    ghcVersion = compiler-nix-name;
   };
-  inherit (ghcide-project.ghcide.components.exes) ghcide;
-  inherit (ghcide-project.hie-bios.components.exes) hie-bios;
+  inherit (hls-project) hls-renamed;
 
   hlint-project = default.pkgs.haskell-nix.cabalProject {
     src = sources."hlint";
@@ -55,13 +48,12 @@ shellFor {
   buildInputs =
     [
       gnumake yq z3
-      ghcide hie-bios
+      hls-renamed
       ghcid hlint hpack stylish-haskell
       cabal-install stack
     ];
   passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''
     #!/bin/sh
-    ${ghcide-project.plan-nix.passthru.updateMaterialized}
     ${hlint-project.plan-nix.passthru.updateMaterialized}
     ${stylish-haskell-project.plan-nix.passthru.updateMaterialized}
     ${hpack-project.plan-nix.passthru.updateMaterialized}
