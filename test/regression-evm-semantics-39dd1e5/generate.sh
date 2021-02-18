@@ -47,5 +47,4 @@ done
 kollect test-sum-to-n \
     ./kevm prove --backend haskell \
         tests/specs/examples/sum-to-n-spec.k \
-        # TODO Mircea: should we remove or change this "--def-module"?
-        --format-failures --def-module VERIFICATION
+        VERIFICATION --format-failures
