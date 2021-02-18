@@ -59,7 +59,6 @@ import Kore.Step.Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.TopBottom
-import qualified Kore.Unification.Procedure as Unification
 import qualified Pretty
 
 data Prim patt rewrite =
@@ -208,8 +207,6 @@ transitionRule
     transitionComputeWeakNext _ (GoalRemLHS _)
       = return (GoalLHS Pattern.bottom)
 
-    unificationProcedure = Unification.unificationProcedure
-
     transitionComputeWeakNextHelper
         :: [RewriteRule RewritingVariableName]
         -> Pattern RewritingVariableName
@@ -219,7 +216,6 @@ transitionRule
     transitionComputeWeakNextHelper rules config = do
         results <-
             Step.applyRewriteRulesParallel
-                unificationProcedure
                 rules
                 config
             & lift . lift

@@ -255,7 +255,7 @@ unificationProcedureSuccessWithSimplifiers
     testCase message $ do
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
         results <-
-            unificationProcedureWorker
+            unificationProcedure
                 SideCondition.topTODO
                 term1
                 term2

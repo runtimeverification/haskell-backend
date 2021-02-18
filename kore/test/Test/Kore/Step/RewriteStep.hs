@@ -63,7 +63,6 @@ import Kore.Step.RulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Step as Step
-import qualified Kore.Unification.Procedure as Unification
 import Kore.Variables.Fresh
     ( nextName
     )
@@ -151,7 +150,7 @@ unifyRule
     -> rule
     -> IO [Step.UnifiedRule rule]
 unifyRule initial rule =
-    Step.unifyRule Unification.unificationProcedure initial rule
+    Step.unifyRule initial rule
     & Logic.observeAllT
     & runSimplifier Mock.env
 
@@ -1117,7 +1116,6 @@ applyRewriteRulesParallel
     -> IO Results'
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
-        Unification.unificationProcedure
         rules
         (simplifiedPattern initial)
     & runSimplifierSMT Mock.env
@@ -1131,7 +1129,6 @@ applyClaimsSequence
 applyClaimsSequence initial claims =
     Step.applyClaimsSequence
         AllPathClaim
-        Unification.unificationProcedure
         (simplifiedPattern initial)
         claims
     & runSimplifierSMT Mock.env
@@ -1552,7 +1549,6 @@ applyRewriteRulesSequence
     -> IO Results'
 applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
-        Unification.unificationProcedure
         (simplifiedPattern initial)
         rules
     & runSimplifierSMT Mock.env

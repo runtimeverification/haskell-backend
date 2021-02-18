@@ -23,7 +23,6 @@ module Kore.Step.Step
     , checkFunctionLike
     , wouldNarrowWith
     -- * Re-exports
-    , UnificationProcedure (..)
     , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
@@ -73,13 +72,17 @@ import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.UnificationProcedure
+import Kore.Unification.Procedure
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 import Kore.Unparser
 import Kore.Variables.Target
     ( Target
@@ -108,16 +111,15 @@ unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnifyingRuleVariable rule ~ RewritingVariableName
-    => UnificationProcedure simplifier
-    -> Pattern RewritingVariableName
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
     -> [rule]
     -- ^ Rule
     -> simplifier [UnifiedRule rule]
-unifyRules unificationProcedure initial rules =
+unifyRules initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
-        unifyRule unificationProcedure initial rule
+        unifyRule initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -136,19 +138,20 @@ unifyRule
     :: RewritingVariableName ~ UnifyingRuleVariable rule
     => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure simplifier
-    -> Pattern RewritingVariableName
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
     -> rule
     -- ^ Rule
     -> LogicT simplifier (UnifiedRule rule)
-unifyRule unificationProcedure initial rule = do
+unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyTermLikes sideCondition initialTerm ruleLeft
+    unification <-
+        unificationProcedure sideCondition initialTerm ruleLeft
+        & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
@@ -157,8 +160,6 @@ unifyRule unificationProcedure initial rule = do
             sideCondition
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
-  where
-    unifyTermLikes = runUnificationProcedure unificationProcedure
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}

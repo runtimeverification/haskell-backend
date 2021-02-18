@@ -60,7 +60,7 @@ import Kore.Step.Substitution
     )
 import Kore.TopBottom
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Logic
@@ -138,7 +138,7 @@ matchWith
 matchWith sideCondition e1 e2 = do
     unifiers <-
         lift $ Unifier.runUnifierT Not.notSimplifier
-        $ unificationProcedureWorker sideCondition t1 t2
+        $ unificationProcedure sideCondition t1 t2
     let
         mergeAndEvaluate
             :: Condition RewritingVariableName
