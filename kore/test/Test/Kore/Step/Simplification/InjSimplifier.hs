@@ -7,10 +7,13 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, mkElementConfigVariable)
 import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding
     ( Top (..)
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkElementConfigVariable
     )
 import Kore.Step.Simplification.InjSimplifier
 import Pair

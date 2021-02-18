@@ -28,8 +28,10 @@ import Kore.IndexedModule.SortGraph
     )
 import Kore.Internal.Inj
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Pair
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 
 {- | Two 'Inj' are 'Distinct' if they are known not to unify.
 
