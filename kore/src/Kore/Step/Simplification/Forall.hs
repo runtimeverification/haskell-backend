@@ -45,7 +45,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , Forall (Forall)
-    , InternalVariable
     , Sort
     , Variable (..)
     , mkForall
@@ -112,10 +111,9 @@ simplifyEvaluated variable simplified
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom

@@ -88,15 +88,15 @@ test_forallSimplification =
             assertEqual "forall(top)"
                 Pattern.top
                 (makeEvaluate
-                    Mock.x
-                    (Pattern.top :: Pattern VariableName)
+                    Mock.xConfig
+                    (Pattern.top :: Pattern RewritingVariableName)
                 )
             -- forall(bottom) = bottom
             assertEqual "forall(bottom)"
                 Pattern.bottom
                 (makeEvaluate
-                    Mock.x
-                    (Pattern.bottom :: Pattern VariableName)
+                    Mock.xConfig
+                    (Pattern.bottom :: Pattern RewritingVariableName)
                 )
         )
     , testCase "forall applies substitution if possible"
@@ -104,29 +104,32 @@ test_forallSimplification =
         (assertEqual "forall with substitution"
             Conditional
                 { term =
-                    mkForall Mock.x
+                    mkForall Mock.xConfig
                         (mkAnd
                             (mkAnd
-                                (Mock.f $ mkElemVar Mock.x)
-                                (mkCeil_ (Mock.h (mkElemVar Mock.x)))
+                                (Mock.f $ mkElemVar Mock.xConfig)
+                                (mkCeil_ (Mock.h (mkElemVar Mock.xConfig)))
                             )
                             (mkAnd
-                                (mkEquals_ (mkElemVar Mock.x) gOfA)
-                                (mkEquals_ (mkElemVar Mock.y) fOfA)
+                                (mkEquals_ (mkElemVar Mock.xConfig) gOfA)
+                                (mkEquals_ (mkElemVar Mock.yConfig) fOfA)
                             )
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
-                    { term = Mock.f $ mkElemVar Mock.x
-                    , predicate = makeCeilPredicate (Mock.h (mkElemVar Mock.x))
+                    { term = Mock.f $ mkElemVar Mock.xConfig
+                    , predicate =
+                        makeCeilPredicate (Mock.h (mkElemVar Mock.xConfig))
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.x, gOfA), (inject Mock.y, fOfA)]
+                            [ (inject Mock.xConfig, gOfA)
+                            , (inject Mock.yConfig, fOfA)
+                            ]
                     }
             )
         )
@@ -139,7 +142,7 @@ test_forallSimplification =
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
@@ -151,12 +154,12 @@ test_forallSimplification =
         -- forall x . (t(x) and p and s)
         (assertEqual "forall on term"
             Conditional
-                { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
+                { term = mkForall Mock.xConfig (mkAnd fOfX (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
@@ -168,12 +171,12 @@ test_forallSimplification =
         -- forall x . (t(x) and top and top)
         (assertEqual "forall on term bool predicate"
             Conditional
-                { term = mkForall Mock.x fOfX
+                { term = mkForall Mock.xConfig fOfX
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeTruePredicate
@@ -186,26 +189,26 @@ test_forallSimplification =
         --    = (forall x . (t and p(x) and s)
         (assertEqual "forall on predicate"
             Conditional
-                { term = mkForall Mock.x
+                { term = mkForall Mock.xConfig
                     (mkAnd
                         (mkAnd
                             fOfA
                             (mkCeil_ fOfX)
                         )
-                        (mkEquals_ (mkElemVar Mock.y) fOfA)
+                        (mkEquals_ (mkElemVar Mock.yConfig) fOfA)
                     )
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfA)]
+                        [(inject Mock.yConfig, fOfA)]
                     }
             )
         )
@@ -215,22 +218,22 @@ test_forallSimplification =
         (assertEqual "forall on predicate"
             Conditional
                 { term = mkTop_
-                , predicate = makeForallPredicate Mock.x
+                , predicate = makeForallPredicate Mock.xConfig
                     (makeAndPredicate
                         (makeCeilPredicate fOfX)
-                        (makeEqualsPredicate (mkElemVar Mock.y) fOfA)
+                        (makeEqualsPredicate (mkElemVar Mock.yConfig) fOfA)
                     )
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfA)]
+                        [(inject Mock.yConfig, fOfA)]
                     }
             )
         )
@@ -239,23 +242,23 @@ test_forallSimplification =
         (assertEqual "forall moves substitution"
             Conditional
                 { term =
-                    mkForall Mock.x
+                    mkForall Mock.xConfig
                         (mkAnd
                             (mkAnd fOfX (mkEquals_ fOfX gOfA))
-                            (mkEquals_ (mkElemVar Mock.y) hOfA)
+                            (mkEquals_ (mkElemVar Mock.yConfig) hOfA)
                         )
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
             (makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, hOfA)]
+                        [(inject Mock.yConfig, hOfA)]
                     }
             )
         )
@@ -279,7 +282,7 @@ test_forallSimplification =
     ]
   where
     fOfA = Mock.f Mock.a
-    fOfX = Mock.f (mkElemVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.xConfig)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
     something1OfX = Mock.plain10 (mkElemVar Mock.xConfig)
@@ -296,10 +299,9 @@ test_forallSimplification =
         }
 
 makeForall
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> [Pattern variable]
-    -> Forall Sort variable (OrPattern variable)
+    :: ElementVariable RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> Forall Sort RewritingVariableName (OrPattern RewritingVariableName)
 makeForall variable patterns =
     Forall
         { forallSort = testSort
@@ -316,7 +318,7 @@ evaluate
 evaluate = Forall.simplify
 
 makeEvaluate
-    :: ElementVariable VariableName
-    -> Pattern VariableName
-    -> Pattern VariableName
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 makeEvaluate = Forall.makeEvaluate
