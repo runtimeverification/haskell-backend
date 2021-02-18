@@ -21,5 +21,5 @@ else
     MAKE="make -j ${JOBS:?} -C $TOP"
 fi
 
-$MAKE kore k-frontend
+$MAKE kore
 $MAKE test-k
