@@ -51,6 +51,7 @@ import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
 import qualified Kore.Verified as Verified
+import qualified Pretty
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -154,8 +155,13 @@ ignoreEquation Equation { attributes }
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
 ignoreDefinition :: Equation VariableName -> Bool
-ignoreDefinition Equation { left } =
-    assert isLeftFunctionLike False
+ignoreDefinition Equation { attributes, left }
+    | isLeftFunctionLike = False
+    | otherwise = (error . show . Pretty.vsep)
+        [ "left-hand side of equation was not function-like at:"
+        , Pretty.indent 4 $ Pretty.pretty sourceLocation
+        ]
   where
+    Attribute.Axiom { sourceLocation } = attributes
     isLeftFunctionLike =
         (Pattern.isFunction . Pattern.function) (extractAttributes left)
