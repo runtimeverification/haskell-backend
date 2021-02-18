@@ -3,7 +3,7 @@
 {-# LANGUAGE Strict                  #-}
 {-# LANGUAGE TemplateHaskell         #-}
 
-module VersionInfo
+module Kore.VersionInfo
     ( VersionInfo (..)
     , versionInfo
     ) where
