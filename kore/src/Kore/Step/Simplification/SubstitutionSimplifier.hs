@@ -281,7 +281,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     assertNullSubstitution =
         assert . Substitution.null . Condition.substitution
 
-    loop :: Impl simplifier (Normalization RewritingVariableName)
+    loop ::
+        Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     loop = do
         simplified <-
             takeSubstitution
@@ -308,7 +310,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyNormalizationOnce
         :: Normalization RewritingVariableName
-        -> Impl simplifier (Normalization RewritingVariableName)
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyNormalizationOnce =
         return
         >=> simplifyNormalized
@@ -317,7 +320,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyNormalized
         :: Normalization RewritingVariableName
-        -> Impl simplifier (Normalization RewritingVariableName)
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyNormalized =
         Lens.traverseOf
             (field @"normalized" . Lens.traversed)
@@ -325,7 +329,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyDenormalized
         :: Normalization RewritingVariableName
-        -> Impl simplifier (Normalization RewritingVariableName)
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyDenormalized =
         Lens.traverseOf
             (field @"denormalized" . Lens.traversed)
@@ -333,7 +338,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifySingleSubstitution
         :: Assignment RewritingVariableName
-        -> Impl simplifier (Assignment RewritingVariableName)
+        -> Impl RewritingVariableName simplifier
+            (Assignment RewritingVariableName)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
         case variableName uVar of
             SomeVariableNameSet _ -> return subst
@@ -349,7 +355,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     simplifyTermLike'
         :: TermLike RewritingVariableName
-        -> Impl simplifier (TermLike RewritingVariableName)
+        -> Impl RewritingVariableName simplifier
+            (TermLike RewritingVariableName)
     simplifyTermLike' termLike = do
         orPattern <- simplifyTermLike sideCondition termLike
         case OrPattern.toPatterns orPattern of
@@ -364,7 +371,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
 
     deduplicate
         ::  Substitution RewritingVariableName
-        ->  Impl simplifier
+        ->  Impl RewritingVariableName simplifier
                 (Map
                     (SomeVariable RewritingVariableName)
                     (TermLike RewritingVariableName)
@@ -377,9 +384,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
-data Private =
+data Private variable =
     Private
-        { accum :: !(Condition RewritingVariableName)
+        { accum :: !(Condition variable)
         -- ^ The current condition, accumulated during simplification.
         , count :: !Int
         -- ^ The current number of denormalized substitutions.
@@ -392,12 +399,12 @@ The 'MaybeT' transformer layer is used for short-circuiting: if any individual
 substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
 
  -}
-type Impl simplifier = StateT Private (MaybeT simplifier)
+type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
 
 addCondition
     :: Monad simplifier
     => Condition RewritingVariableName
-    -> Impl simplifier ()
+    -> Impl RewritingVariableName simplifier ()
 addCondition condition
   | TopBottom.isBottom condition = empty
   | otherwise =
@@ -406,18 +413,19 @@ addCondition condition
 addPredicate
     :: Monad simplifier
     => Predicate RewritingVariableName
-    -> Impl simplifier ()
+    -> Impl RewritingVariableName simplifier ()
 addPredicate = addCondition . Condition.fromPredicate
 
 addSubstitution
     :: Monad simplifier
     => Substitution RewritingVariableName
-    -> Impl simplifier ()
+    -> Impl RewritingVariableName simplifier ()
 addSubstitution = addCondition . Condition.fromSubstitution
 
 takeSubstitution
     :: Monad simplifier
-    => Impl simplifier (Substitution RewritingVariableName)
+    => Impl RewritingVariableName
+        simplifier (Substitution RewritingVariableName)
 takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
