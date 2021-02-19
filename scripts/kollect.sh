@@ -54,5 +54,3 @@ then
     echo >&2 "Did not collect any Kore files!"
     exit 1
 fi
-
-#TODO Mircea: delete temporary folder at the end?
