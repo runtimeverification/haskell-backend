@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Next
     ( test_nextSimplification
     ) where

@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Variable
     ( simplify
     ) where

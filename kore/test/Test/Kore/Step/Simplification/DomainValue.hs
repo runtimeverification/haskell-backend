@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.DomainValue
     ( test_simplify
     ) where

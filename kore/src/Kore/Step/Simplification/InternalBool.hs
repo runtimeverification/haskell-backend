@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.InternalBool
     ( simplify
     ) where

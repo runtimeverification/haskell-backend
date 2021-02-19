@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Or
     ( test_anyBottom
     , test_deduplicateMiddle

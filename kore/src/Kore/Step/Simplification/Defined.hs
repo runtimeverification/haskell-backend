@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Defined
     ( simplify
     ) where

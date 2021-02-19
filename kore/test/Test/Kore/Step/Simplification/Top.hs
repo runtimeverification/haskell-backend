@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Top
     ( test_topSimplification
     ) where
