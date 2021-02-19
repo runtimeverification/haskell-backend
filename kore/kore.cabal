@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 46217db26fc4d241134a63d421f717bad3d58f8ec8c40c85263c7d954fda6561
+-- hash: 03c98e7a7113ac321409caf3539c3987574f8cb7fa4049e7fb285d8c462de491
 
 name:           kore
-version:        0.39.0.0
+version:        0.40.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
