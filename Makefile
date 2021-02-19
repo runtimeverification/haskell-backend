@@ -1,6 +1,6 @@
 include include.mk
 
-.PHONY: all clean docs haddock jenkins k-frontend \
+.PHONY: all clean docs haddock \
         test test-kore test-k \
         kore-exec kore-repl
 
@@ -11,8 +11,6 @@ kore-exec: $(KORE_EXEC)
 kore-repl: $(KORE_REPL)
 
 kore-parser: $(KORE_PARSER)
-
-k-frontend: $(K)
 
 docs: haddock
 
@@ -32,7 +30,7 @@ haddock:
 haskell_documentation: haddock
 	cp -r $$($(STACK_HADDOCK) path --local-doc-root) haskell_documentation
 
-all: kore k-frontend
+all: kore
 
 test: test-kore test-k
 
