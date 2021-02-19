@@ -106,9 +106,9 @@ makeEvaluate sideCondition pattern' =
         --
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
-        fullySimplifiedCondition <-
-            simplifySideCondition sideCondition simplifiedCondition
-        let term' = substitute (toMap $ substitution fullySimplifiedCondition) term
+        -- fullySimplifiedCondition <-
+        --     simplifySideCondition sideCondition simplifiedCondition
+        let term' = substitute (toMap $ substitution simplifiedCondition) term
             simplifiedCondition' =
                 -- Combine the predicate and the substitution. The substitution
                 -- has already been applied to the term being simplified. This
@@ -126,7 +126,7 @@ makeEvaluate sideCondition pattern' =
         let simplifiedPattern =
                 Conditional.andCondition
                     simplifiedTerm
-                    fullySimplifiedCondition
+                    simplifiedCondition
         simplifyCondition sideCondition simplifiedPattern
 
 -- | Simplify a 'Condition', representing the configuration's side condition,
