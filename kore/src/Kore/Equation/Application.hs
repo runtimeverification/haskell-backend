@@ -463,7 +463,10 @@ whileCheckRequires
     -> ExceptT (AttemptEquationError RewritingVariableName) monad a
 whileCheckRequires = withExceptT WhileCheckRequires
 
-instance Pretty (AttemptEquationError RewritingVariableName) where
+instance
+    InternalVariable variable
+    => Pretty (AttemptEquationError variable)
+  where
     pretty (WhileMatch matchError) =
         pretty matchError
     pretty (WhileApplyMatchResult applyMatchResultErrors) =
@@ -483,7 +486,7 @@ data MatchError variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Pretty (MatchError RewritingVariableName) where
+instance InternalVariable variable => Pretty (MatchError variable) where
     pretty _ = "equation did not match term"
 
 mapMatchErrorVariables
@@ -514,7 +517,10 @@ data ApplyMatchResultErrors variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Pretty (ApplyMatchResultErrors RewritingVariableName) where
+instance
+    InternalVariable variable
+    => Pretty (ApplyMatchResultErrors variable)
+  where
     pretty ApplyMatchResultErrors { applyMatchErrors } =
         Pretty.vsep
         [ "could not apply match result:"
@@ -569,7 +575,10 @@ data ApplyMatchResultError variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Pretty (ApplyMatchResultError RewritingVariableName) where
+instance
+    InternalVariable variable
+    => Pretty (ApplyMatchResultError variable)
+  where
     pretty (NotConcrete variable _) =
         Pretty.hsep
         [ "variable"
@@ -626,7 +635,7 @@ data CheckRequiresError variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Pretty (CheckRequiresError RewritingVariableName) where
+instance InternalVariable variable => Pretty (CheckRequiresError variable) where
     pretty checkRequiresError =
         Pretty.vsep
         [ "could not infer the equation requirement:"
