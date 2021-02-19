@@ -14,6 +14,17 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.40.0.0] - 2021-02-17
+
+### Fixed
+
+- When a function equation is rejected for having the wrong form, the source
+  location of the rule is displayed. (#2408)
+- When a function cannot be evaluated because it was not given any rules, the
+  source location of the function declaration is displayed. (#2377)
+- When the proof of a reachability claim is stuck, the source location of the
+  original claim is displayed. (#2377)
+
 ## [0.39.0.0] - 2021-02-04
 
 ### Added
