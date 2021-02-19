@@ -24,14 +24,19 @@ make build-haskell
 for spec in \
     simple-arithmetic \
     locals \
-    loops \
-    memory
+    loops
 do
     kollect "test-$spec" \
         ./kwasm prove --backend haskell \
             tests/proofs/"$spec"-spec.k \
             KWASM-LEMMAS
 done
+
+kollect "test-memory" \
+    ./kwasm prove --backend haskell \
+        tests/proofs/memory-spec.k \
+        KWASM-LEMMAS \
+        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive
 
 kollect "test-wrc20" \
     ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
