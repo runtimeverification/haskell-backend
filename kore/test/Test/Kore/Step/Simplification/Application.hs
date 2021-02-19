@@ -281,7 +281,7 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB, gOfA, gOfB :: InternalVariable variable => TermLike variable
+    fOfA, fOfB, gOfA, gOfB :: TermLike RewritingVariableName
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
@@ -308,7 +308,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: InternalVariable variable => Pattern variable
+    gOfAExpanded :: Pattern RewritingVariableName
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -321,10 +321,9 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: InternalVariable variable
-    => Symbol
-    -> [[Pattern variable]]
-    -> Application Symbol (OrPattern variable)
+    :: Symbol
+    -> [[Pattern RewritingVariableName]]
+    -> Application Symbol (OrPattern RewritingVariableName)
 makeApplication symbol patterns =
     Application
         { applicationSymbolOrAlias = symbol

@@ -478,10 +478,10 @@ appliedMockEvaluator result =
 
 mockEvaluator
     :: MonadSimplify simplifier
-    => AttemptedAxiom variable
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    => AttemptedAxiom RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
@@ -496,9 +496,8 @@ mapVariables =
     worker v = fromVariableName $ (from v) { counter = Just (Sup.Element 1) }
 
 makeCeil
-    :: InternalVariable variable
-    => [Pattern variable]
-    -> Ceil Sort (OrPattern variable)
+    :: [Pattern RewritingVariableName]
+    -> Ceil Sort (OrPattern RewritingVariableName)
 makeCeil patterns =
     Ceil
         { ceilOperandSort = testSort

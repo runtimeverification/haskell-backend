@@ -1321,11 +1321,10 @@ test_simplificationIntegrationUnification =
     ]
 
 conditionalEqualityPattern
-    :: InternalVariable variable
-    => TermLike variable
-    -> Predicate.Predicate variable
-    -> TermLike variable
-    -> Equation variable
+    :: TermLike RewritingVariableName
+    -> Predicate.Predicate RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
 conditionalEqualityPattern left requires right =
     mkEquation left right
     & Lens.set (field @"requires") requires

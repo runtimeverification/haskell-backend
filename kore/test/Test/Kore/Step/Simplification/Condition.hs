@@ -392,11 +392,11 @@ makeEvaluator
 makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
 
 simpleEvaluator
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => [(TermLike variable, TermLike variable)]
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    :: MonadSimplify simplifier
+    => [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 simpleEvaluator [] _  _ = return NotApplicable
 simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
   | fromTermLike == patt =

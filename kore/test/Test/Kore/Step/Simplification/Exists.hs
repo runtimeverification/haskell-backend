@@ -385,10 +385,9 @@ test_makeEvaluate =
     hOfA = Mock.h Mock.a
 
 makeExists
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> [Pattern variable]
-    -> Exists Sort variable (OrPattern variable)
+    :: ElementVariable RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> Exists Sort RewritingVariableName (OrPattern RewritingVariableName)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
