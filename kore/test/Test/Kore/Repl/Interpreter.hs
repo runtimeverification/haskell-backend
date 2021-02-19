@@ -78,7 +78,7 @@ import Kore.Syntax.Module
     )
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import Kore.Unification.Unify
     ( explainBottom
@@ -840,7 +840,7 @@ mkConfig
 mkConfig logger =
     Config
         { stepper     = stepper0
-        , unifier     = unificationProcedureWorker
+        , unifier     = unificationProcedure
         , logger
         , outputFile  = OutputFile Nothing
         , mainModuleName = ModuleName "TEST"
