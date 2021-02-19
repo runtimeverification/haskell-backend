@@ -46,5 +46,4 @@ done
 kollect test-sum-to-n \
     ./kevm prove --backend haskell \
         tests/specs/examples/sum-to-n-spec.k \
-        VERIFICATION \
-        --format-failures
+        --format-failures --def-module VERIFICATION
