@@ -160,7 +160,6 @@ ignoreDefinition Equation { attributes, left }
     | otherwise = (error . show . Pretty.vsep)
         [ "left-hand side of equation was not function-like at:"
         , Pretty.indent 4 $ Pretty.pretty sourceLocation
-        , Pretty.indent 4 $ Pretty.pretty $ show left
         ]
   where
     Attribute.Axiom { sourceLocation } = attributes
