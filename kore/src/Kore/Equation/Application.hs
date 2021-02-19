@@ -138,9 +138,7 @@ indicate the reason.
 
  -}
 type AttemptEquationResult variable =
-    Either
-        (AttemptEquationError RewritingVariableName)
-        (Pattern RewritingVariableName)
+    Either (AttemptEquationError variable) (Pattern variable)
 
 {- | Attempt to apply an 'Equation' to the 'TermLike'.
 
@@ -421,16 +419,17 @@ refreshVariables sideCondition initial =
 {- | Errors that can occur during 'attemptEquation'.
  -}
 data AttemptEquationError variable
-    = WhileMatch !(MatchError RewritingVariableName)
-    | WhileApplyMatchResult !(ApplyMatchResultErrors RewritingVariableName)
-    | WhileCheckRequires !(CheckRequiresError RewritingVariableName)
+    = WhileMatch !(MatchError variable)
+    | WhileApplyMatchResult !(ApplyMatchResultErrors variable)
+    | WhileCheckRequires !(CheckRequiresError variable)
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 mapAttemptEquationErrorVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> AttemptEquationError variable1
     -> AttemptEquationError variable2
 mapAttemptEquationErrorVariables adj =
@@ -476,8 +475,8 @@ instance Pretty (AttemptEquationError RewritingVariableName) where
  -}
 data MatchError variable =
     MatchError
-    { matchTerm :: !(TermLike RewritingVariableName)
-    , matchEquation :: !(Equation RewritingVariableName)
+    { matchTerm :: !(TermLike variable)
+    , matchEquation :: !(Equation variable)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -488,7 +487,8 @@ instance Pretty (MatchError RewritingVariableName) where
     pretty _ = "equation did not match term"
 
 mapMatchErrorVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> MatchError variable1
     -> MatchError variable2
 mapMatchErrorVariables adj =
@@ -506,9 +506,8 @@ type contains a 'NonEmpty' list of 'ApplyMatchError'.
  -}
 data ApplyMatchResultErrors variable =
     ApplyMatchResultErrors
-    { matchResult :: !(MatchResult RewritingVariableName)
-    , applyMatchErrors ::
-        !(NonEmpty (ApplyMatchResultError RewritingVariableName))
+    { matchResult :: !(MatchResult variable)
+    , applyMatchErrors :: !(NonEmpty (ApplyMatchResultError variable))
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -524,7 +523,8 @@ instance Pretty (ApplyMatchResultErrors RewritingVariableName) where
         ]
 
 mapApplyMatchResultErrorsVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> ApplyMatchResultErrors variable1
     -> ApplyMatchResultErrors variable2
 mapApplyMatchResultErrorsVariables adj applyMatchResultErrors =
@@ -554,19 +554,15 @@ mapMatchResultVariables adj (predicate, substitution) =
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
 data ApplyMatchResultError variable
-    = NotConcrete
-        (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName)
+    = NotConcrete (SomeVariableName variable) (TermLike variable)
     -- ^ The variable was matched with a symbolic term where a concrete
     -- term was required.
-    | NotSymbolic
-        (SomeVariableName RewritingVariableName)
-        (TermLike RewritingVariableName)
+    | NotSymbolic (SomeVariableName variable) (TermLike variable)
     -- ^ The variable was matched with a concrete term where a symbolic
     -- term was required.
-    | NotMatched (SomeVariableName RewritingVariableName)
+    | NotMatched (SomeVariableName variable)
     -- ^ The variable was not matched.
-    | NonMatchingSubstitution (SomeVariableName RewritingVariableName)
+    | NonMatchingSubstitution (SomeVariableName variable)
     -- ^ The variable is not part of the matching solution.
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -596,9 +592,10 @@ instance Pretty (ApplyMatchResultError RewritingVariableName) where
         ]
 
 mapApplyMatchResultErrorVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
-    -> ApplyMatchResultError RewritingVariableName
-    -> ApplyMatchResultError RewritingVariableName
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> ApplyMatchResultError variable1
+    -> ApplyMatchResultError variable2
 mapApplyMatchResultErrorVariables adj applyMatchResultError =
     case applyMatchResultError of
         NotConcrete variable termLike ->
@@ -620,9 +617,9 @@ mapApplyMatchResultErrorVariables adj applyMatchResultError =
  -}
 data CheckRequiresError variable =
     CheckRequiresError
-    { matchPredicate :: !(Predicate RewritingVariableName)
-    , equationRequires :: !(Predicate RewritingVariableName)
-    , sideCondition :: !(SideCondition RewritingVariableName)
+    { matchPredicate :: !(Predicate variable)
+    , equationRequires :: !(Predicate variable)
+    , sideCondition :: !(SideCondition variable)
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -644,7 +641,8 @@ instance Pretty (CheckRequiresError RewritingVariableName) where
             checkRequiresError
 
 mapCheckRequiresErrorVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> CheckRequiresError variable1
     -> CheckRequiresError variable2
 mapCheckRequiresErrorVariables adj checkRequiresError =
@@ -711,10 +709,11 @@ debugAttemptEquationResult
 debugAttemptEquationResult equation result =
     logEntry $ DebugAttemptEquationResult
         (Equation.mapVariables (pure toVariableName) equation)
-        (mapAttemptEquationResultVariables (pure id) result)
+        (mapAttemptEquationResultVariables (pure toVariableName) result)
 
 mapAttemptEquationResultVariables
-    :: AdjSomeVariableName (RewritingVariableName -> RewritingVariableName)
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
     -> AttemptEquationResult variable1
     -> AttemptEquationResult variable2
 mapAttemptEquationResultVariables adj =
