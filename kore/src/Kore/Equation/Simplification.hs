@@ -68,7 +68,6 @@ argument contain a predicate which is not 'Top', 'simplifyEquation'
 returns the original equation.
 
  -}
-
 simplifyEquation
     :: (InternalVariable variable, MonadSimplify simplifier)
     => Equation variable
