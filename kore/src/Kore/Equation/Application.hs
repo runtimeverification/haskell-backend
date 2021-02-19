@@ -38,7 +38,6 @@ import Control.Monad
 import Control.Monad.Except
     ( catchError
     )
-import qualified Data.Bifunctor as Bifunctor
 import Data.Map.Strict
     ( Map
     )
@@ -91,12 +90,11 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
+    ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    ( RewritingVariableName, getRewritingVariable
     )
 import Kore.Step.Axiom.Matcher
     ( MatchResult
@@ -427,24 +425,6 @@ data AttemptEquationError variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-mapAttemptEquationErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> AttemptEquationError variable1
-    -> AttemptEquationError variable2
-mapAttemptEquationErrorVariables adj =
-    \case
-        WhileMatch matchError ->
-            WhileMatch $ mapMatchErrorVariables adj matchError
-        WhileApplyMatchResult applyMatchResultErrors ->
-            WhileApplyMatchResult
-            $ mapApplyMatchResultErrorsVariables
-                adj
-                applyMatchResultErrors
-        WhileCheckRequires checkRequiresError ->
-            WhileCheckRequires
-            $ mapCheckRequiresErrorVariables adj checkRequiresError
-
 whileMatch
     :: Functor monad
     => ExceptT (MatchError RewritingVariableName) monad a
@@ -463,10 +443,7 @@ whileCheckRequires
     -> ExceptT (AttemptEquationError RewritingVariableName) monad a
 whileCheckRequires = withExceptT WhileCheckRequires
 
-instance
-    InternalVariable variable
-    => Pretty (AttemptEquationError variable)
-  where
+instance Pretty (AttemptEquationError RewritingVariableName) where
     pretty (WhileMatch matchError) =
         pretty matchError
     pretty (WhileApplyMatchResult applyMatchResultErrors) =
@@ -486,20 +463,8 @@ data MatchError variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance InternalVariable variable => Pretty (MatchError variable) where
+instance Pretty (MatchError RewritingVariableName) where
     pretty _ = "equation did not match term"
-
-mapMatchErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> MatchError variable1
-    -> MatchError variable2
-mapMatchErrorVariables adj =
-    \MatchError { matchTerm, matchEquation } ->
-        MatchError
-        { matchTerm = TermLike.mapVariables adj matchTerm
-        , matchEquation = Equation.mapVariables adj matchEquation
-        }
 
 {- | Errors that can occur during 'applyMatchResult'.
 
@@ -517,45 +482,13 @@ data ApplyMatchResultErrors variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    InternalVariable variable
-    => Pretty (ApplyMatchResultErrors variable)
-  where
+instance Pretty (ApplyMatchResultErrors RewritingVariableName) where
     pretty ApplyMatchResultErrors { applyMatchErrors } =
         Pretty.vsep
         [ "could not apply match result:"
         , (Pretty.indent 4 . Pretty.vsep)
             (pretty <$> toList applyMatchErrors)
         ]
-
-mapApplyMatchResultErrorsVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> ApplyMatchResultErrors variable1
-    -> ApplyMatchResultErrors variable2
-mapApplyMatchResultErrorsVariables adj applyMatchResultErrors =
-    ApplyMatchResultErrors
-    { matchResult = mapMatchResultVariables adj matchResult
-    , applyMatchErrors =
-        mapApplyMatchResultErrorVariables adj <$> applyMatchErrors
-    }
-  where
-    ApplyMatchResultErrors { matchResult, applyMatchErrors } =
-        applyMatchResultErrors
-
-mapMatchResultVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> MatchResult variable1
-    -> MatchResult variable2
-mapMatchResultVariables adj (predicate, substitution) =
-    ( Predicate.mapVariables adj predicate
-    , mapSubstitutionVariables substitution
-    )
-  where
-    mapSubstitutionVariables =
-       Map.mapKeys (mapSomeVariableName adj)
-       . Map.map (TermLike.mapVariables adj)
 
 {- | @ApplyMatchResultError@ represents a reason the match could not be applied.
  -}
@@ -575,10 +508,7 @@ data ApplyMatchResultError variable
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    InternalVariable variable
-    => Pretty (ApplyMatchResultError variable)
-  where
+instance Pretty (ApplyMatchResultError RewritingVariableName) where
     pretty (NotConcrete variable _) =
         Pretty.hsep
         [ "variable"
@@ -600,28 +530,6 @@ instance
         , "should not be substituted"
         ]
 
-mapApplyMatchResultErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> ApplyMatchResultError variable1
-    -> ApplyMatchResultError variable2
-mapApplyMatchResultErrorVariables adj applyMatchResultError =
-    case applyMatchResultError of
-        NotConcrete variable termLike ->
-            NotConcrete
-                (mapSomeVariableName' variable)
-                (mapTermLikeVariables termLike)
-        NotSymbolic variable termLike ->
-            NotSymbolic
-                (mapSomeVariableName' variable)
-                (mapTermLikeVariables termLike)
-        NotMatched variable -> NotMatched (mapSomeVariableName' variable)
-        NonMatchingSubstitution variable ->
-            NonMatchingSubstitution (mapSomeVariableName' variable)
-  where
-    mapSomeVariableName' = mapSomeVariableName adj
-    mapTermLikeVariables = TermLike.mapVariables adj
-
 {- | Errors that can occur during 'checkRequires'.
  -}
 data CheckRequiresError variable =
@@ -635,7 +543,7 @@ data CheckRequiresError variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance InternalVariable variable => Pretty (CheckRequiresError variable) where
+instance Pretty (CheckRequiresError RewritingVariableName) where
     pretty checkRequiresError =
         Pretty.vsep
         [ "could not infer the equation requirement:"
@@ -649,32 +557,18 @@ instance InternalVariable variable => Pretty (CheckRequiresError variable) where
         CheckRequiresError { matchPredicate, equationRequires, sideCondition } =
             checkRequiresError
 
-mapCheckRequiresErrorVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> CheckRequiresError variable1
-    -> CheckRequiresError variable2
-mapCheckRequiresErrorVariables adj checkRequiresError =
-    CheckRequiresError
-    { matchPredicate = mapPredicateVariables matchPredicate
-    , equationRequires = mapPredicateVariables equationRequires
-    , sideCondition = SideCondition.mapVariables adj sideCondition
-    }
-  where
-    mapPredicateVariables = Predicate.mapVariables adj
-    CheckRequiresError { matchPredicate, equationRequires, sideCondition } =
-        checkRequiresError
-
 -- * Logging
 
 {- | Log entries for all phases of equation application.
  -}
 data DebugAttemptEquation
-    = DebugAttemptEquation (Equation VariableName) (TermLike VariableName)
+    = DebugAttemptEquation
+        (Equation RewritingVariableName)
+        (TermLike RewritingVariableName)
     -- ^ Covers the entire scope of 'attemptEquation'.
     | DebugAttemptEquationResult
-        (Equation VariableName)
-        (AttemptEquationResult VariableName)
+        (Equation RewritingVariableName)
+        (AttemptEquationResult RewritingVariableName)
     -- ^ Entered into the log when an equation is applicable.
     deriving (Show)
     deriving (GHC.Generic)
@@ -716,19 +610,7 @@ debugAttemptEquationResult
     -> AttemptEquationResult RewritingVariableName
     -> log ()
 debugAttemptEquationResult equation result =
-    logEntry $ DebugAttemptEquationResult
-        (Equation.mapVariables (pure toVariableName) equation)
-        (mapAttemptEquationResultVariables (pure toVariableName) result)
-
-mapAttemptEquationResultVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> AttemptEquationResult variable1
-    -> AttemptEquationResult variable2
-mapAttemptEquationResultVariables adj =
-    Bifunctor.bimap
-        (mapAttemptEquationErrorVariables adj)
-        (Pattern.mapVariables adj)
+    logEntry $ DebugAttemptEquationResult equation result
 
 whileDebugAttemptEquation
     :: MonadLog log
@@ -737,15 +619,14 @@ whileDebugAttemptEquation
     -> log a
     -> log a
 whileDebugAttemptEquation termLike equation =
-    logWhile (DebugAttemptEquation equation' termLike')
-  where
-    termLike' = TermLike.mapVariables (pure toVariableName) termLike
-    equation' = Equation.mapVariables (pure toVariableName) equation
+    logWhile (DebugAttemptEquation equation termLike)
 
 {- | Log when an 'Equation' is actually applied.
  -}
 data DebugApplyEquation
-    = DebugApplyEquation (Equation VariableName) (Pattern VariableName)
+    = DebugApplyEquation
+        (Equation RewritingVariableName)
+        (Pattern RewritingVariableName)
     -- ^ Entered into the log when an equation's result is actually used.
     deriving (Show)
     deriving (GHC.Generic)
@@ -761,14 +642,15 @@ instance Pretty DebugApplyEquation where
         , Pretty.indent 4 (unparse result)
         ]
 
-srcLoc :: Equation VariableName -> Maybe Attribute.SourceLocation
+srcLoc :: Equation RewritingVariableName -> Maybe Attribute.SourceLocation
 srcLoc equation
   | (not . isLocEmpty) kLoc = Just kLoc
-  | AstLocationFile fileLocation <- locationFromAst equation =
+  | AstLocationFile fileLocation <- locationFromAst equation' =
     Just (from @FileLocation fileLocation)
   | otherwise = Nothing
   where
     kLoc = Attribute.sourceLocation $ attributes equation
+    equation' = Equation.mapVariables getRewritingVariable equation
 
 isLocEmpty :: Attribute.SourceLocation -> Bool
 isLocEmpty Attribute.SourceLocation { source = Attribute.Source file } =
@@ -793,7 +675,4 @@ debugApplyEquation
     -> Pattern RewritingVariableName
     -> log ()
 debugApplyEquation equation result =
-    logEntry $ DebugApplyEquation equation' result'
-  where
-    equation' = Equation.mapVariables (pure toVariableName) equation
-    result' = Pattern.mapVariables (pure toVariableName) result
+    logEntry $ DebugApplyEquation equation result
