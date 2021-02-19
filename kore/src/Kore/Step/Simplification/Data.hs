@@ -8,8 +8,8 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE Strict               #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Step.Simplification.Data
     ( Simplifier

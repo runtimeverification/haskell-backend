@@ -1,6 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict              #-}
 
 module Test.Kore.Builtin.Krypto
     ( test_ecdsaRecover
