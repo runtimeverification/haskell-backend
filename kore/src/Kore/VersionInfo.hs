@@ -1,9 +1,15 @@
+{- |
+Copyright   : (c) Runtime Verification, 2021
+License     : NCSA
+
+ -}
+
 {-# LANGUAGE DeriveLift              #-}
 {-# LANGUAGE NoDuplicateRecordFields #-}
 {-# LANGUAGE Strict                  #-}
 {-# LANGUAGE TemplateHaskell         #-}
 
-module VersionInfo
+module Kore.VersionInfo
     ( VersionInfo (..)
     , versionInfo
     ) where
