@@ -13,7 +13,7 @@ let
   inherit (pkgs) gnumake yq z3;
 
   # Change the compiler when updating our own resolver.
-  compiler-nix-name = "ghc8103";
+  compiler-nix-name = "ghc8104";
   index-state = "2021-02-09T00:00:00Z";
 
   hls-project = import sources."nix-haskell-hls" {

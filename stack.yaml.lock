@@ -117,7 +117,7 @@ packages:
     hackage: ghc-events-0.13.0
 snapshots:
 - completed:
-    size: 563099
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/2.yaml
-    sha256: 92b1a17e31d0a978fca4bf270305d4d1dd8092271bf60eafbc9349c890854026
-  original: lts-17.2
+    size: 563103
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/4.yaml
+    sha256: f11e2153044f5f71ea7b1c9398f4721f517c9bd37642ed769647b896564021f3
+  original: lts-17.4

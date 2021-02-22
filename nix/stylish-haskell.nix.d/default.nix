@@ -118,7 +118,7 @@
         "aeson".flags.fast = false;
         "aeson".flags.bytestring-builder = false;
         "aeson".flags.developer = false;
-        "ghc-boot-th".revision = (((hackage."ghc-boot-th")."8.10.3").revisions).default;
+        "ghc-boot-th".revision = (((hackage."ghc-boot-th")."8.10.4").revisions).default;
         "base-orphans".revision = (((hackage."base-orphans")."0.8.4").revisions).default;
         "HsYAML-aeson".revision = (((hackage."HsYAML-aeson")."0.2.0.0").revisions).default;
         "th-abstraction".revision = (((hackage."th-abstraction")."0.3.2.0").revisions).default;
@@ -127,8 +127,8 @@
         "integer-gmp".revision = (((hackage."integer-gmp")."1.0.3.0").revisions).default;
         };
       compiler = {
-        version = "8.10.3";
-        nix-name = "ghc8103";
+        version = "8.10.4";
+        nix-name = "ghc8104";
         packages = {
           "binary" = "0.8.8.0";
           "ghc-prim" = "0.6.1";
@@ -148,7 +148,7 @@
           "filepath" = "1.4.2.1";
           "process" = "1.6.9.0";
           "pretty" = "1.1.3.6";
-          "ghc-boot-th" = "8.10.3";
+          "ghc-boot-th" = "8.10.4";
           "array" = "0.5.4.0";
           "integer-gmp" = "1.0.3.0";
           };
