@@ -134,6 +134,10 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
         simplified <- simplifyPredicates sideCondition predicate'
+        -- traceM
+        --     $ "\nPredicate:\n" <> (show . Pretty.pretty) predicate'
+        --     <> "\nSideCondition:\n" <> (show . Pretty.pretty) sideCondition
+        --     <> "\nResult:\n" <> (show . Pretty.pretty) simplified
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -167,7 +171,8 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
 
--- | TODO
+-- | Simplify a 'Predicate' by splitting it up into a conjunction of predicates
+-- and simplifying each one under the assumption that the others are true.
 simplifyPredicates
     :: forall variable simplifier
     .  HasCallStack
@@ -178,7 +183,7 @@ simplifyPredicates
     -> LogicT simplifier (Condition variable)
 simplifyPredicates
     sideCondition
-    (toList . MultiAnd.fromPredicate -> predicates)
+    bigPred@(toList . MultiAnd.fromPredicate -> predicates)
   =
     State.execStateT (worker predicates) Condition.top
     >>= markConjunctionSimplified
@@ -199,6 +204,12 @@ simplifyPredicates
         result <-
             simplifyPredicate otherConds pred'
             & lift
+        -- traceM
+        --     $ "\nBigPred:\n" <> (show . Pretty.pretty) bigPred
+        --     <> "\nInitSideCond:\n" <> (show . Pretty.pretty) sideCondition
+        --     <> "\nPredPiece:\n" <> (show . Pretty.pretty) pred'
+        --     <> "\nSideCond:\n" <> (show . Pretty.pretty) otherConds
+        --     <> "\nResult:\n" <> (show . Pretty.pretty) result
         State.put (Condition.andCondition condition result)
         worker rest
 

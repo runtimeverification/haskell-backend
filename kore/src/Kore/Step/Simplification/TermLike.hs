@@ -476,6 +476,11 @@ ensureSimplifiedResult
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
   | OrPattern.isSimplified repr results = pure results
+      -- trace
+      --     ("\nIs simplified:\n" <> unlines (unparseToString <$> toList results)
+      --     <> "\nWith side cond:\n" <> (show . Pretty.pretty) repr
+      --     )
+      --     $ pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -483,6 +488,8 @@ ensureSimplifiedResult repr termLike results
             (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
+        , Pretty.indent 2 "with side condition:"
+        , Pretty.indent 4 (Pretty.pretty repr)
         ]
 
 ensureSimplifiedCondition
