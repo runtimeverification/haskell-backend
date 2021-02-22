@@ -1,9 +1,11 @@
 module Test.Kore.Step.Simplification.Condition
     ( test_simplify_local_functions
     , test_predicateSimplification
+    -- , test_simplifyCondition
     ) where
 
 import Prelude.Kore
+-- import qualified Pretty
 
 import Test.Tasty
 
@@ -355,6 +357,39 @@ test_predicateSimplification =
                     }
         assertEqual "" (MultiOr.singleton expect) actual
     ]
+
+-- TODO: add test which checks that the result of simplfiyPredicates
+-- returns a conjunction which is marked simplified at the top
+-- test_simplifyCondition :: [TestTree]
+-- test_simplifyCondition =
+--     [ testCase "2TESTING" $ do
+--         let map1 =
+--                 Mock.framedMap
+--                     [(Mock.a, Mock.functionalConstr10 Mock.a)]
+--                     [mkElemVar Mock.xMap]
+--             map2 =
+--                 Mock.framedMap
+--                     [(mkElemVar Mock.y, mkElemVar Mock.x)]
+--                     [mkElemVar Mock.m]
+--             -- term =
+--             --     Mock.constrFunct20TestMap
+--             --         Mock.a
+--             --         map1
+--             predicate =
+--                 makeEqualsPredicate map1 map2
+--             substitution =
+--                 Substitution.assign (inject Mock.y) Mock.a
+--                 & from
+--                     @(Substitution.Assignment VariableName)
+--                     @(Substitution.Substitution VariableName)
+--             condition :: Condition VariableName
+--             condition =
+--                 Conditional { term = (), predicate, substitution }
+--         actual <- simplify condition
+--         traceM
+--             $ "\nFinal result:\n"
+--             <> unlines (show . Pretty.pretty <$> toList actual)
+--     ]
 
 simplify :: Condition VariableName -> IO (OrCondition VariableName)
 simplify condition = runSimplifier mempty condition

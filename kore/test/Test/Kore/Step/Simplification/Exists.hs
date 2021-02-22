@@ -7,13 +7,18 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Align
+    ( align
+    )
+
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
@@ -23,6 +28,7 @@ import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Unparser
 import qualified Pretty
 
+import Test.Expect
 import Test.Kore.Internal.OrPattern
     ( OrPattern
     , OrTestPattern
@@ -159,22 +165,19 @@ test_makeEvaluate =
     , testCase "exists applies substitution if possible" $ do
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
-        let expect =
+        let expects =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.f gOfA
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate fOfA)
-                                (makeAndPredicate
-                                    (makeCeilPredicate gOfA)
-                                    (makeCeilPredicate (Mock.h gOfA))
-                                )
+                                (makeCeilPredicate gOfA)
+                                (makeCeilPredicate (Mock.h gOfA))
                         , substitution = Substitution.unsafeWrap
                             [(inject Mock.y, fOfA)]
                         }
                     ]
-        actual <-
+        actuals <-
             makeEvaluate
                 Mock.x
                 Conditional
@@ -184,7 +187,12 @@ test_makeEvaluate =
                         Substitution.wrap . Substitution.mkUnwrappedSubstitution
                             $ [(inject Mock.x, gOfA), (inject Mock.y, fOfA)]
                     }
-        assertEqual "exists with substitution" expect actual
+        -- TODO: use this throughout the test code
+        for_ (align (toList expects) (toList actuals)) $ \these -> do
+            (expect, actual) <- expectThese these
+            on (assertEqual "exists with substitution") term expect actual
+            on (assertEqual "exists with substitution") (MultiAnd.fromPredicate . predicate) expect actual
+            on (assertEqual "exists with substitution") substitution expect actual
 
     , testCase "exists disappears if variable not used" $ do
         -- exists x . (t and p and s)

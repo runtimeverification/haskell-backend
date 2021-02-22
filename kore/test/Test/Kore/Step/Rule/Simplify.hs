@@ -411,16 +411,14 @@ test_simplifyClaimRule =
             []
         & require aEqualsb
     rule2' =
-        Lens.set
+        rule2
+        & requireDefined
+        & Lens.over
             (field @"left")
-            (Pattern.fromTermAndPredicate
-                (Mock.f Mock.a)
-                (makeAndPredicate
-                    (makeCeilPredicate (Mock.g Mock.a))
-                    (makeEqualsPredicate Mock.a Mock.b)
-                )
+            ( Pattern.andCondition
+                (Mock.f Mock.a & Pattern.fromTermLike)
+            . Pattern.withoutTerm
             )
-            rule2
 
     require condition =
         Lens.over

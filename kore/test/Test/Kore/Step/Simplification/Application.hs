@@ -6,6 +6,10 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Align
+    ( align
+    )
+
 import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
@@ -44,6 +48,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 
+import Test.Expect
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -188,7 +193,7 @@ test_applicationSimplification =
                     )
             assertEqual "" expect actual
 
-        , testCase "When applying functions" $ do
+        , testCase "BTESTING When applying functions" $ do
             -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
             --    =
             --        f(a) and
@@ -203,7 +208,7 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
-                expect =
+                expects =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
@@ -221,7 +226,7 @@ test_applicationSimplification =
                                     ]
                             }
                         ]
-            actual <-
+            actuals <-
                 let
                     result
                         :: forall variable
@@ -275,7 +280,12 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            assertEqual "" expect actual
+            -- TODO: use this throughout the test code
+            for_ (align (toList expects) (toList actuals)) $ \these -> do
+                (expect, actual) <- expectThese these
+                on (assertEqual "exists with substitution") term expect actual
+                on (assertEqual "exists with substitution") (MultiAnd.fromPredicate . predicate) expect actual
+                on (assertEqual "exists with substitution") substitution expect actual
         ]
     ]
   where

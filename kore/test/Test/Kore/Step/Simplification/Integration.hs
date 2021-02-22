@@ -16,7 +16,6 @@ import Data.Align
     ( align
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Data.Maybe
@@ -164,7 +163,7 @@ test_simplificationIntegration =
         assertEqual "" expect actual
 
      , testCase "map-like simplification" $ do
-        let expect =
+        let expects =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
@@ -188,7 +187,7 @@ test_simplificationIntegration =
                             [(inject Mock.y, Mock.b)]
                         }
                     ]
-        actual <-
+        actuals <-
             evaluate
                 Conditional
                     { term = mkCeil_
@@ -205,7 +204,12 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqual "" expect actual
+        -- TODO: use this throughout the test code
+        for_ (align (toList expects) (toList actuals)) $ \these -> do
+            (expect, actual) <- expectThese these
+            on (assertEqual "") term expect actual
+            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
+            on (assertEqual "") substitution expect actual
     , testCase "map function, non-matching" $ do
         let
             initial =
@@ -571,7 +575,7 @@ test_simplificationIntegration =
                 , variableSort = Mock.boolSort
                 }
 
-        let expected = OrPattern.fromPatterns
+        let expects = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop Mock.otherSort
                     , predicate =
@@ -660,7 +664,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 ]
-        actual <- evaluate
+        actuals <- evaluate
             Conditional
                 { term = mkIn Mock.otherSort
                     (mkNu iz (Mock.builtinInt 595))
@@ -702,7 +706,12 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        assertEqual "" expected actual
+        -- TODO: use this throughout the test code
+        for_ (align (toList expects) (toList actuals)) $ \these -> do
+            (expect, actual) <- expectThese these
+            on (assertEqual "") term expect actual
+            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
+            on (assertEqual "") substitution expect actual
     , testCase "Builtin and simplification failure" $ do
         let m = mkSetVariable (testId "m") Mock.listSort
             ue = mkSetVariable (testId "ue") Mock.listSort
@@ -764,25 +773,45 @@ test_simplificationIntegration =
                     , predicate = makeAndPredicate
                         (makeImpliesPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate
-                                    (mkAnd
-                                        (Mock.fSet mkTop_)
-                                        (mkMu k
-                                            (asInternal (Set.fromList [Mock.a]))
-                                        )
-                                    )
-                                )
                                 (makeAndPredicate
                                     (makeCeilPredicate
-                                        (Mock.fSet mkTop_)
+                                        (mkAnd
+                                            (Mock.fSet mkTop_)
+                                            (mkMu k
+                                                (asInternal (Set.fromList [Mock.a]))
+                                            )
+                                        )
                                     )
                                     (makeCeilPredicate
-                                        (mkMu k
-                                            (asInternal (Set.fromList [Mock.a]))
-                                        )
+                                       (Mock.fSet mkTop_)
+                                    )
+                                )
+                                (makeCeilPredicate
+                                    (mkMu k
+                                        (asInternal (Set.fromList [Mock.a]))
                                     )
                                 )
                             )
+                            -- (makeAndPredicate
+                            --     (makeCeilPredicate
+                            --         (mkAnd
+                            --             (Mock.fSet mkTop_)
+                            --             (mkMu k
+                            --                 (asInternal (Set.fromList [Mock.a]))
+                            --             )
+                            --         )
+                            --     )
+                            --     (makeAndPredicate
+                            --         (makeCeilPredicate
+                            --             (Mock.fSet mkTop_)
+                            --         )
+                            --         (makeCeilPredicate
+                            --             (mkMu k
+                            --                 (asInternal (Set.fromList [Mock.a]))
+                            --             )
+                            --         )
+                            --     )
+                            -- )
                             (makeIffPredicate
                                 (makeEqualsPredicate Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate
@@ -792,25 +821,45 @@ test_simplificationIntegration =
                         )
                         (makeImpliesPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate
-                                    (mkAnd
-                                        (Mock.fSet mkTop_)
-                                        (mkMu k
-                                            (mkEvaluated Mock.unitSet)
-                                        )
-                                    )
-                                )
                                 (makeAndPredicate
                                     (makeCeilPredicate
-                                        (Mock.fSet mkTop_)
+                                        (mkAnd
+                                            (Mock.fSet mkTop_)
+                                            (mkMu k
+                                                (mkEvaluated Mock.unitSet)
+                                            )
+                                        )
                                     )
                                     (makeCeilPredicate
-                                        (mkMu k
-                                            (mkEvaluated Mock.unitSet)
-                                        )
+                                       (Mock.fSet mkTop_)
+                                    )
+                                )
+                                (makeCeilPredicate
+                                    (mkMu k
+                                        (mkEvaluated Mock.unitSet)
                                     )
                                 )
                             )
+                            -- (makeAndPredicate
+                            --     (makeCeilPredicate
+                            --         (mkAnd
+                            --             (Mock.fSet mkTop_)
+                            --             (mkMu k
+                            --                 (mkEvaluated Mock.unitSet)
+                            --             )
+                            --         )
+                            --     )
+                            --     (makeAndPredicate
+                            --         (makeCeilPredicate
+                            --             (Mock.fSet mkTop_)
+                            --         )
+                            --         (makeCeilPredicate
+                            --             (mkMu k
+                            --                 (mkEvaluated Mock.unitSet)
+                            --             )
+                            --         )
+                            --     )
+                            -- )
                             (makeIffPredicate
                                 (makeEqualsPredicate Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate
@@ -854,7 +903,8 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        for_ (align expects (Foldable.toList actuals)) $ \these -> do
+        -- TODO: use this throughout the test code
+        for_ (align expects (toList actuals)) $ \these -> do
             (expect, actual) <- expectThese these
             on (assertEqual "") term expect actual
             on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual

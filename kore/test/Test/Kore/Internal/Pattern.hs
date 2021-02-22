@@ -2,6 +2,7 @@ module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     , test_hasSimplifiedChildren
     , internalPatternGen
+    , assertEquivalent
     -- * Re-exports
     , TestPattern
     , module Pattern
@@ -21,6 +22,10 @@ import Kore.Attribute.Pattern.Simplified
     )
 import qualified Kore.Internal.Condition as Condition
 
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -36,6 +41,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 
@@ -312,3 +320,35 @@ makeEquals
     :: InternalVariable var
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
+
+-- Representation for test patterns where the top level conjunction is
+-- flattened in the predicate.
+data NormalizedAndPattern =
+    NormalizedAndPattern
+        { term :: MultiAnd (TermLike VariableName)
+        , predicate :: MultiAnd (Predicate VariableName)
+        , substitution :: Substitution VariableName
+        }
+    deriving (Eq)
+
+assertEquivalent
+    :: Functor f
+    => Eq (f NormalizedAndPattern)
+    => [f (Pattern VariableName)]
+    -> [f (Pattern VariableName)]
+    -> IO ()
+assertEquivalent expected actual = do
+    let areEquvalent =
+            (fmap . fmap) normalizeConj expected
+            == (fmap . fmap) normalizeConj actual
+    assertBool "" areEquvalent
+
+normalizeConj
+    :: Pattern VariableName
+    -> NormalizedAndPattern
+normalizeConj Conditional { term, predicate, substitution } =
+    NormalizedAndPattern
+        { term = MultiAnd.singleton term
+        , predicate = MultiAnd.fromPredicate predicate
+        , substitution
+        }
