@@ -15,7 +15,7 @@ kollect() {
     local name="$1"
     shift
     echo '#!/bin/sh' > "$name.sh"
-    "$@" --debug --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
 
@@ -24,16 +24,20 @@ make build-haskell
 for spec in \
     simple-arithmetic \
     locals \
-    loops \
-    memory
+    loops
 do
     kollect "test-$spec" \
         ./kwasm prove --backend haskell \
             tests/proofs/"$spec"-spec.k \
-            --def-module KWASM-LEMMAS
+            KWASM-LEMMAS
 done
 
-kollect "test-wrc20" \
+kollect "test-memory" \
     ./kwasm prove --backend haskell \
-        tests/proofs/wrc20-spec.k \
-        --def-module WRC20-LEMMAS
+        tests/proofs/memory-spec.k \
+        KWASM-LEMMAS \
+        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive
+
+kollect "test-wrc20" \
+    ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
+    --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend
