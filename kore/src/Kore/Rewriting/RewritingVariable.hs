@@ -71,9 +71,11 @@ data RewritingVariableName
     deriving anyclass (Debug, Diff)
 
 instance SubstitutionOrd RewritingVariableName where
-    compareSubstitution (EquationVariableName _) _ = LT
-    compareSubstitution _ (EquationVariableName _) = GT
+    compareSubstitution (EquationVariableName _) (RuleVariableName _) = LT
+    compareSubstitution (EquationVariableName _) (ConfigVariableName _) = LT
+    compareSubstitution (RuleVariableName _) (EquationVariableName _) = GT
     compareSubstitution (RuleVariableName _) (ConfigVariableName _) = LT
+    compareSubstitution (ConfigVariableName _) (EquationVariableName _) = GT
     compareSubstitution (ConfigVariableName _) (RuleVariableName _) = GT
     compareSubstitution variable1 variable2 =
         on compareSubstitution toVariableName variable1 variable2
