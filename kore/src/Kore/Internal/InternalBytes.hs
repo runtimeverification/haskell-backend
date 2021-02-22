@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Internal.InternalBytes
     ( InternalBytes (..)
     ) where
@@ -40,14 +42,14 @@ instance Unparse InternalBytes where
     unparse internalBytes@(InternalBytes _ _) =
         "\\dv"
         <> parameters [internalBytesSort]
-        <> arguments [StringLiteral (Encoding.toBase16 internalBytesValue)]
+        <> arguments [StringLiteral (Encoding.decode8Bit internalBytesValue)]
       where
         InternalBytes { internalBytesSort, internalBytesValue } = internalBytes
 
     unparse2 internalBytes@(InternalBytes _ _) =
         "\\dv2"
         <> parameters2 [internalBytesSort]
-        <> arguments2 [StringLiteral (Encoding.toBase16 internalBytesValue)]
+        <> arguments2 [StringLiteral (Encoding.decode8Bit internalBytesValue)]
       where
         InternalBytes { internalBytesSort, internalBytesValue } = internalBytes
 
