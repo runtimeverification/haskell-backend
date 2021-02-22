@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.39.0.0"; };
+      identifier = { name = "kore"; version = "0.40.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -435,7 +435,6 @@
           "Kore/Unification/Procedure"
           "Kore/Unification/SubstitutionNormalization"
           "Kore/Unification/SubstitutionSimplifier"
-          "Kore/Unification/UnificationProcedure"
           "Kore/Unification/UnifierT"
           "Kore/Unification/Unify"
           "Kore/Unparser"

@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 211e54999f5b8cf1d7e590efe7adbbb91207512367a8620d4f86c898b4efe9bc
+-- hash: 3d55d4e48de30558077ae922d1e28eb952053eba723c498c6844dbb35e799899
 
 name:           kore
-version:        0.39.0.0
+version:        0.40.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -376,7 +376,6 @@ library
       Kore.Unification.Procedure
       Kore.Unification.SubstitutionNormalization
       Kore.Unification.SubstitutionSimplifier
-      Kore.Unification.UnificationProcedure
       Kore.Unification.UnifierT
       Kore.Unification.Unify
       Kore.Unparser
