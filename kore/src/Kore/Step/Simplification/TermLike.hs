@@ -475,7 +475,7 @@ ensureSimplifiedResult
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
-  | OrPattern.isSimplified repr results = pure results
+  | OrPattern.hasSimplifiedChildrenIgnoreConditions results = pure results
       -- trace
       --     ("\nIs simplified:\n" <> unlines (unparseToString <$> toList results)
       --     <> "\nWith side cond:\n" <> (show . Pretty.pretty) repr
@@ -490,6 +490,9 @@ ensureSimplifiedResult repr termLike results
         , Pretty.indent 4 (unparse termLike)
         , Pretty.indent 2 "with side condition:"
         , Pretty.indent 4 (Pretty.pretty repr)
+        , Pretty.indent 4 "predicates:"
+        , (Pretty.indent 2 . Pretty.vsep)
+            (Pretty.pretty . Pattern.predicate <$> toList results)
         ]
 
 ensureSimplifiedCondition

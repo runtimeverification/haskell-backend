@@ -8,6 +8,7 @@ module Kore.Internal.OrPattern
     , coerceSort
     , isSimplified
     , hasSimplifiedChildren
+    , hasSimplifiedChildrenIgnoreConditions
     , forgetSimplified
     , fromPatterns
     , toPatterns
@@ -94,6 +95,12 @@ hasSimplifiedChildren
     => SideCondition.Representation -> OrPattern variable -> Bool
 hasSimplifiedChildren sideCondition =
     all (Pattern.hasSimplifiedChildren sideCondition)
+
+hasSimplifiedChildrenIgnoreConditions
+    :: InternalVariable variable
+    => OrPattern variable -> Bool
+hasSimplifiedChildrenIgnoreConditions =
+    all Pattern.hasSimplifiedChildrenIgnoreConditions
 
 forgetSimplified
     :: InternalVariable variable => OrPattern variable -> OrPattern variable

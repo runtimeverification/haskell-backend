@@ -9,6 +9,9 @@ module Kore.Step.Simplification.Pattern
     , makeEvaluate
     ) where
 
+import Kore.Unparser
+    ( unparseToString
+    )
 import Prelude.Kore
 
 import qualified Kore.Internal.Condition as Condition
@@ -87,7 +90,7 @@ makeEvaluate sideCondition pattern' =
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =
                 Conditional.splitTerm withSimplifiedCondition
-        let term' = substitute (toMap $ substitution simplifiedCondition) term
+            term' = substitute (toMap $ substitution simplifiedCondition) term
             simplifiedCondition' =
                 -- Combine the predicate and the substitution. The substitution
                 -- has already been applied to the term being simplified. This

@@ -26,6 +26,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , hasSimplifiedChildren
+    , hasSimplifiedChildrenIgnoreConditions
     , forgetSimplified
     , markSimplified
     , simplifiedAttribute
@@ -158,6 +159,17 @@ hasSimplifiedChildren sideCondition patt =
     TermLike.isSimplified sideCondition term
     && all (Predicate.isSimplified sideCondition) clauses
     && Substitution.isSimplified sideCondition substitution
+  where
+    Conditional { term, predicate, substitution } = patt
+    clauses = MultiAnd.fromPredicate predicate
+
+hasSimplifiedChildrenIgnoreConditions
+    :: Ord variable
+    => Pattern variable -> Bool
+hasSimplifiedChildrenIgnoreConditions patt =
+    TermLike.isSimplifiedIgnoreCondition term
+    && all Predicate.isSimplifiedIgnoreCondition clauses
+    && Substitution.isSimplifiedIgnoreCondition substitution
   where
     Conditional { term, predicate, substitution } = patt
     clauses = MultiAnd.fromPredicate predicate

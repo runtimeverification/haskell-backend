@@ -14,6 +14,7 @@ module Kore.Internal.TermLike
     , Defined (..)
     , extractAttributes
     , isSimplified
+    , isSimplifiedIgnoreCondition
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
@@ -448,6 +449,10 @@ fromConcrete = mapVariables (pure $ from @Concrete)
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
+
+isSimplifiedIgnoreCondition :: TermLike variable -> Bool
+isSimplifiedIgnoreCondition =
+    Attribute.isSimplifiedIgnoreCondition . extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 

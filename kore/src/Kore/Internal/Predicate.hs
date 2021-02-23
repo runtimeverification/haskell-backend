@@ -35,6 +35,7 @@ module Kore.Internal.Predicate
     , isPredicate
     , simplifiedAttribute
     , isSimplified
+    , isSimplifiedIgnoreCondition
     , isFreeOf
     , freeElementVariables
     , hasFreeVariable
@@ -142,6 +143,7 @@ import Kore.Internal.TermLike hiding
     , forgetSimplified
     , hasFreeVariable
     , isSimplified
+    , isSimplifiedIgnoreCondition
     , mapVariables
     , markSimplified
     , markSimplifiedConditional
@@ -913,6 +915,9 @@ simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
 isSimplified :: SideCondition.Representation -> Predicate variable -> Bool
 isSimplified condition = Attribute.isSimplified condition . extractAttributes
+
+isSimplifiedIgnoreCondition :: Predicate variable -> Bool
+isSimplifiedIgnoreCondition = Attribute.isSimplifiedIgnoreCondition . extractAttributes
 
 cannotSimplifyNotSimplifiedError
     :: (HasCallStack, InternalVariable variable)

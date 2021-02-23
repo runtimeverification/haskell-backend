@@ -31,6 +31,7 @@ module Kore.Internal.Substitution
     , mapAssignmentVariables
     , isNormalized
     , isSimplified
+    , isSimplifiedIgnoreCondition
     , forgetSimplified
     , markSimplified
     , simplifiedAttribute
@@ -492,6 +493,11 @@ isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
 isSimplified _ (Substitution _) = False
 isSimplified sideCondition (NormalizedSubstitution normalized) =
     all (TermLike.isSimplified sideCondition) normalized
+
+isSimplifiedIgnoreCondition :: Substitution variable -> Bool
+isSimplifiedIgnoreCondition (Substitution _) = False
+isSimplifiedIgnoreCondition (NormalizedSubstitution normalized) =
+    all TermLike.isSimplifiedIgnoreCondition normalized
 
 forgetSimplified
     :: InternalVariable variable

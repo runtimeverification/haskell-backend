@@ -14,6 +14,7 @@ module Kore.Attribute.Pattern
     , deleteFreeVariable
     , isFullySimplified
     , isSimplified
+    , isSimplifiedIgnoreCondition
     , setSimplified
     , simplifiedAttribute
     , constructorLikeAttribute
@@ -65,10 +66,12 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified hiding
     ( isFullySimplified
     , isSimplified
+    , isSimplifiedIgnoreCondition
     )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
     ( isFullySimplified
     , isSimplified
+    , isSimplifiedIgnoreCondition
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -155,6 +158,13 @@ isSimplified
 isSimplified sideCondition patt@Pattern {simplified} =
     assertSimplifiedConsistency patt
     $ Simplified.isSimplified sideCondition simplified
+
+isSimplifiedIgnoreCondition
+    :: HasCallStack
+    => Pattern variable -> Bool
+isSimplifiedIgnoreCondition patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt
+    $ Simplified.isSimplifiedIgnoreCondition simplified
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}

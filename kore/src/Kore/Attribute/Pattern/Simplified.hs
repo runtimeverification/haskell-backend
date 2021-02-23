@@ -13,6 +13,7 @@ module Kore.Attribute.Pattern.Simplified
     , Type (..)
     , isSimplified
     , isFullySimplified
+    , isSimplifiedIgnoreCondition
     , simplifiedTo
     , notSimplified
     , fullySimplified
@@ -22,7 +23,9 @@ module Kore.Attribute.Pattern.Simplified
     , unparseTag
     ) where
 
+import qualified Data.Text as Text
 import Prelude.Kore
+import qualified Pretty
 
 import Data.Text
     ( Text
@@ -239,6 +242,10 @@ isFullySimplified (Simplified_ Fully (Condition _)) = False
 isFullySimplified (Simplified_ Fully Unknown) = False
 isFullySimplified (Simplified_ Partly _) = False
 isFullySimplified NotSimplified = False
+
+isSimplifiedIgnoreCondition :: Simplified -> Bool
+isSimplifiedIgnoreCondition (Simplified_ Fully _) = True
+isSimplifiedIgnoreCondition _ = False
 
 fullySimplified :: Simplified
 fullySimplified = Simplified_ Fully Any

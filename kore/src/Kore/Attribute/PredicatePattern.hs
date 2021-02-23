@@ -12,6 +12,7 @@ module Kore.Attribute.PredicatePattern
     , simplifiedAttribute
     , isSimplified
     , isFullySimplified
+    , isSimplifiedIgnoreCondition
     , setSimplified
     , mapVariables
     , traverseVariables
@@ -41,10 +42,12 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.Simplified hiding
     ( isFullySimplified
     , isSimplified
+    , isSimplifiedIgnoreCondition
     )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
     ( isFullySimplified
     , isSimplified
+    , isSimplifiedIgnoreCondition
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -96,6 +99,10 @@ condition.
 isSimplified
     :: SideCondition.Representation -> PredicatePattern variable -> Bool
 isSimplified sideCondition = Simplified.isSimplified sideCondition . simplifiedAttribute
+
+isSimplifiedIgnoreCondition
+    :: PredicatePattern variable -> Bool
+isSimplifiedIgnoreCondition = Simplified.isSimplifiedIgnoreCondition . simplifiedAttribute
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
