@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.InternalBytes
     ( test_update
     , test_get
@@ -14,6 +16,7 @@ module Test.Kore.Builtin.InternalBytes
     , test_int2bytes
     , test_bytes2int
     , test_InternalBytes
+    , test_unparse
     ) where
 
 import Prelude.Kore
@@ -43,6 +46,7 @@ import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import Kore.Internal.Pattern
 import Kore.Internal.TermLike
+import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Builtin.Builtin
@@ -611,6 +615,15 @@ test_InternalBytes =
                 $ mkStringLiteral "\x00"
             expect = Right $ asInternal "\x00"
             actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    ]
+
+test_unparse :: [TestTree]
+test_unparse =
+    [ testCase "unparse using 8-bit encoding" $ do
+        let input = asInternal "\x00"
+            actual = (show . unparse) input
+            expect = "/* Fl Fn D Sfa Cl */ \\dv{Bytes{}}(\"\\x00\")"
         assertEqual "" expect actual
     ]
 
