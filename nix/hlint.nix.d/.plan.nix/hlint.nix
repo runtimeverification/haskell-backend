@@ -11,9 +11,9 @@
     flags = { threaded = true; gpl = true; ghc-lib = false; hsyaml = false; };
     package = {
       specVersion = "1.18";
-      identifier = { name = "hlint"; version = "3.2"; };
+      identifier = { name = "hlint"; version = "3.2.7"; };
       license = "BSD-3-Clause";
-      copyright = "Neil Mitchell 2006-2020";
+      copyright = "Neil Mitchell 2006-2021";
       maintainer = "Neil Mitchell <ndmitchell@gmail.com>";
       author = "Neil Mitchell <ndmitchell@gmail.com>";
       homepage = "https://github.com/ndmitchell/hlint#readme";
@@ -36,7 +36,12 @@
         "HLint_QuickCheck.hs"
         "HLint_TypeCheck.hs"
         ];
-      extraSrcFiles = [];
+      extraSrcFiles = [
+        ".hlint.yaml"
+        "data/*.hs"
+        "data/*.yaml"
+        "tests/*.test"
+        ];
       extraTmpFiles = [];
       extraDocFiles = [ "README.md" "CHANGES.txt" ];
       };
@@ -120,6 +125,7 @@
           "Hint/Duplicate"
           "Hint/Export"
           "Hint/Extensions"
+          "Hint/Fixities"
           "Hint/Import"
           "Hint/Lambda"
           "Hint/List"
@@ -155,6 +161,4 @@
           };
         };
       };
-    } // rec {
-    src = (pkgs.lib).mkDefault ./.;
-    }
+    } // rec { src = (pkgs.lib).mkDefault ../.; }

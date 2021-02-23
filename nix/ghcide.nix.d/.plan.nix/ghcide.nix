@@ -24,7 +24,7 @@
       isLocal = true;
       detailLevel = "FullDetails";
       licenseFiles = [ "LICENSE" ];
-      dataDir = "";
+      dataDir = ".";
       dataFiles = [];
       extraSrcFiles = [
         "include/ghc-api-version.h"
@@ -298,6 +298,4 @@
           };
         };
       };
-    } // rec {
-    src = (pkgs.lib).mkDefault ./.;
-    }
+    } // rec { src = (pkgs.lib).mkDefault ../.; }
