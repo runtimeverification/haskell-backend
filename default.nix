@@ -78,9 +78,14 @@ let
 
   version = project.kore.components.exes.kore-exec.version;
 
+  rematerialize = pkgs.writeScript "rematerialize.sh" ''
+    #!/bin/sh
+    ${project.stack-nix.passthru.updateMaterialized}
+  '';
+
   default =
     {
-      inherit pkgs project;
+      inherit pkgs project rematerialize;
       cache = [
         project.roots
         (pkgs.haskell-nix.withInputs shell)

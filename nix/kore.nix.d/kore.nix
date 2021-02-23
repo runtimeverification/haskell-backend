@@ -93,7 +93,7 @@
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
           ];
         build-tools = [
-          (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+          (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
           ];
         buildable = true;
         modules = [
@@ -529,7 +529,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -601,7 +601,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -673,7 +673,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -745,7 +745,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "Paths_kore" ];
@@ -815,7 +815,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
@@ -899,7 +899,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [
