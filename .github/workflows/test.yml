@@ -146,24 +146,32 @@ jobs:
       - name: Run hlint
         run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
 
-  stylish-haskell:
-    name: 'stylish-haskell'
+  fourmolu:
+    name: 'Style'
     runs-on: ubuntu-latest
     steps:
-      - name: Install stylish-haskell
-        run: |
-          cd $(mktemp -d)
-          wget https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
-          tar xaf stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
-          sudo mv stylish-haskell-v0.11.0.0-linux-x86_64/stylish-haskell /usr/local/bin/
-          stylish-haskell --version
-
-      - uses: actions/checkout@v2.3.4
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
         with:
           submodules: recursive
 
-      - name: Format with stylish-haskell
-        run: stylish-haskell -i -r kore
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
+        with:
+          extra_nix_config: |
+            substituters = http://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: Install Cachix
+        uses: cachix/cachix-action@v8
+        with:
+          name: kore
+          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+          skipPush: true
+
+      - name: Format
+        run: |
+          ./nix/fourmolu.sh
 
       - name: Check for changes
         run: |
