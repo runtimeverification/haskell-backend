@@ -10,7 +10,7 @@ let
   pkgs = import sources."nixpkgs" {};
 
   inherit (pkgs) cabal-install ghcid stack;
-  inherit (pkgs) gnumake yq z3;
+  inherit (pkgs) fd gnumake yq z3;
 
   # Change the compiler when updating our own resolver.
   compiler-nix-name = "ghc8104";
