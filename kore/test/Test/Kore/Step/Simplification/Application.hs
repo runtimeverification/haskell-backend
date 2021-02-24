@@ -189,7 +189,7 @@ test_applicationSimplification =
                     )
             assertEqual "" expect actual
 
-        , testCase "BTESTING When applying functions" $ do
+        , testCase "When applying functions" $ do
             -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
             --    =
             --        f(a) and

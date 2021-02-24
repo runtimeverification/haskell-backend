@@ -357,37 +357,6 @@ test_Pattern_simplifyAndRemoveTopExists =
     existentialuniversal =
         termLike (mkExists Mock.y (mkForall Mock.x unquantified))
 
--- TODO: move tests to Condition
--- test_Pattern_simplifySideCondition :: [TestTree]
--- test_Pattern_simplifySideCondition =
---     [ testCase "\\top => \\top" $ do
---         let sideCondition = Condition.top
---         [ actual ] <- simplifySideCondition sideCondition
---         assertEqual "" sideCondition actual
---     , testCase "\\bottom and _ => \\bottom" $ do
---         let sideCondition =
---                 makeAndPredicate
---                     makeFalsePredicate
---                     (makeEqualsPredicate
---                         (mkElemVar Mock.x)
---                         Mock.a
---                     )
---                 & Condition.fromPredicate
---         actual <- simplifySideCondition sideCondition
---         assertEqual "" [] actual
---     , testCase "_ and \\bottom => \\bottom" $ do
---         let sideCondition =
---                 makeAndPredicate
---                     (makeEqualsPredicate
---                         (mkElemVar Mock.x)
---                         Mock.a
---                     )
---                     makeFalsePredicate
---                 & Condition.fromPredicate
---         actual <- simplifySideCondition sideCondition
---         assertEqual "" [] actual
---     ]
-
 termLike :: TermLike VariableName -> Pattern VariableName
 termLike = Pattern.fromTermLike
 

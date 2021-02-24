@@ -564,7 +564,7 @@ test_unification =
                         ]
                     }
                 ]
-    , testCase "TESTING key outside of map, symbolic opaque terms" $
+    , testCase "key outside of map, symbolic opaque terms" $
             andSimplify
                 (UnificationTerm
                     (constr20

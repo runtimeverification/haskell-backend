@@ -10,6 +10,8 @@ module Kore.Step.Simplification.Condition
     , simplify
     , simplifyPredicate
     , simplifyCondition
+    -- For testing
+    , simplifyPredicates
     ) where
 
 import Prelude.Kore
