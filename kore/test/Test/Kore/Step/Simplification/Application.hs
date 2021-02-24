@@ -6,10 +6,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Align
-    ( align
-    )
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product
     ( field
@@ -48,7 +44,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 
-import Test.Expect
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -280,12 +276,7 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            -- TODO: use this throughout the test code
-            for_ (align (toList expects) (toList actuals)) $ \these -> do
-                (expect, actual) <- expectThese these
-                on (assertEqual "exists with substitution") term expect actual
-                on (assertEqual "exists with substitution") (MultiAnd.fromPredicate . predicate) expect actual
-                on (assertEqual "exists with substitution") substitution expect actual
+            Pattern.assertEquivalentPatterns expects actuals
         ]
     ]
   where

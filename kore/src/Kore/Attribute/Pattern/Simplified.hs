@@ -23,9 +23,7 @@ module Kore.Attribute.Pattern.Simplified
     , unparseTag
     ) where
 
-import qualified Data.Text as Text
 import Prelude.Kore
-import qualified Pretty
 
 import Data.Text
     ( Text

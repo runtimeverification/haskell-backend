@@ -236,7 +236,7 @@ test_stepStrategy =
                             , Step.Remaining secondRemainderPattern
                             , Step.Remaining finalRewrittenPattern
                             ]
-                    Pattern.assertEquivalent expected actual
+                    Pattern.assertEquivalentPatterns' expected actual
         in
         [ mkTest "strategy all" All
         , mkTest "strategy any" Any

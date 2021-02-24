@@ -3,6 +3,8 @@ module Test.Kore.Internal.Pattern
     , test_hasSimplifiedChildren
     , internalPatternGen
     , assertEquivalent
+    , assertEquivalentPatterns
+    , assertEquivalentPatterns'
     -- * Re-exports
     , TestPattern
     , module Pattern
@@ -13,7 +15,12 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Align
+    ( align
+    )
 import qualified Data.Map.Strict as Map
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.Simplified
     ( Condition (..)
@@ -47,6 +54,7 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 
+import Test.Expect
 import Test.Kore
     ( Gen
     , sortGen
@@ -321,34 +329,67 @@ makeEquals
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 
--- Representation for test patterns where the top level conjunction is
--- flattened in the predicate.
+-- Representation for test patterns where the predicate's top level
+-- conjunction is flattened.
 data NormalizedAndPattern =
     NormalizedAndPattern
-        { term :: MultiAnd (TermLike VariableName)
+        { term :: TermLike VariableName
         , predicate :: MultiAnd (Predicate VariableName)
         , substitution :: Substitution VariableName
         }
-    deriving (Eq)
-
-assertEquivalent
-    :: Functor f
-    => Eq (f NormalizedAndPattern)
-    => [f (Pattern VariableName)]
-    -> [f (Pattern VariableName)]
-    -> IO ()
-assertEquivalent expected actual = do
-    let areEquvalent =
-            (fmap . fmap) normalizeConj expected
-            == (fmap . fmap) normalizeConj actual
-    assertBool "" areEquvalent
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 normalizeConj
     :: Pattern VariableName
     -> NormalizedAndPattern
 normalizeConj Conditional { term, predicate, substitution } =
     NormalizedAndPattern
-        { term = MultiAnd.singleton term
+        { term
         , predicate = MultiAnd.fromPredicate predicate
         , substitution
         }
+
+assertEquivalentPatterns
+    :: Foldable t
+    => t (Pattern VariableName)
+    -> t (Pattern VariableName)
+    -> IO ()
+assertEquivalentPatterns expects actuals =
+    for_ (align (toList expects) (toList actuals)) $ \these -> do
+        (expect, actual) <- expectThese these
+        assertEquivalent (assertEqual "") expect actual
+
+assertEquivalentPatterns'
+    :: Foldable t
+    => Functor f
+    => Diff (f NormalizedAndPattern)
+    => t (f (Pattern VariableName))
+    -> t (f (Pattern VariableName))
+    -> IO ()
+assertEquivalentPatterns' expects actuals =
+    for_ (align (toList expects) (toList actuals)) $ \these -> do
+        (expect, actual) <- expectThese these
+        assertEquivalent' (assertEqual "") expect actual
+
+assertEquivalent
+    :: forall m
+    .  (forall a . (Eq a, Show a, Diff a) => a -> a -> m ())
+    -> Pattern VariableName
+    -> Pattern VariableName
+    -> m ()
+assertEquivalent assertion expect actual =
+    on assertion normalizeConj expect actual
+
+assertEquivalent'
+    :: forall m f
+    .  Functor f
+    => Diff (f NormalizedAndPattern)
+    => (forall a . Diff a => a -> a -> m ())
+    -> f (Pattern VariableName)
+    -> f (Pattern VariableName)
+    -> m ()
+assertEquivalent' assertion expect actual =
+    on assertion (fmap normalizeConj) expect actual

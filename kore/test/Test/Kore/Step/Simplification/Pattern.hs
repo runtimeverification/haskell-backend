@@ -8,10 +8,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Functor.Identity
-    ( Identity (..)
-    )
-
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -86,6 +82,7 @@ test_Pattern_simplify =
                     , makeEqualsPredicate fOfX gOfX
                     ]
                     )
+                & OrPattern.fromPattern
         actual <-
             simplify
                 $ Pattern.fromTermAndPredicate
@@ -103,7 +100,7 @@ test_Pattern_simplify =
                         (makeCeilPredicate fOfY)
                     ]
                     )
-        Pattern.assertEquivalent [Identity expect] (Identity <$> toList actual)
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Does not replace and terms under intersecting quantifiers" $ do
         let expect =
                 Pattern.fromTermAndPredicate
@@ -114,6 +111,7 @@ test_Pattern_simplify =
                              (makeCeilPredicate (Mock.f (mkElemVar Mock.var_x_0)))
                          )
                      )
+                & OrPattern.fromPattern
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
@@ -122,7 +120,7 @@ test_Pattern_simplify =
                         (makeCeilPredicate fOfX)
                         (makeExistsPredicate Mock.x (makeCeilPredicate fOfX))
                     )
-        Pattern.assertEquivalent [Identity expect] (Identity <$> toList actual)
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Contradictions result in bottom" $ do
         actual <-
             simplify $
@@ -143,6 +141,7 @@ test_Pattern_simplify =
                     , makeEqualsPredicate fOfX gOfX
                     ]
                     )
+                & OrPattern.fromPattern
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
@@ -157,7 +156,7 @@ test_Pattern_simplify =
                             (makeCeilPredicate gOfX)
                         )
                     )
-        Pattern.assertEquivalent [Identity expect] (Identity <$> toList actual)
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Simplifies Implies - Negative" $ do
         let expect =
                 Pattern.fromTermAndPredicate
@@ -420,12 +419,4 @@ assertBidirectionalEqualityResult child1 child2 expected = do
   where
     testOneDirection term = do
         actual <- simplify (Pattern.fromTermLike term)
-        let expected' =
-                expected
-                & toList
-                & fmap Identity
-            actual' =
-                actual
-                & toList
-                & fmap Identity
-        Pattern.assertEquivalent expected' actual'
+        Pattern.assertEquivalentPatterns expected actual

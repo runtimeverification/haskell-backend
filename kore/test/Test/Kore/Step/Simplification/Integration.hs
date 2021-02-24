@@ -12,9 +12,6 @@ module Test.Kore.Step.Simplification.Integration
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import Data.Align
-    ( align
-    )
 import qualified Data.Default as Default
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
@@ -35,7 +32,6 @@ import Kore.Equation
     , mkEquation
     )
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -61,7 +57,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 
-import Test.Expect
 import Test.Kore
 import Test.Kore.Equation.Common
     ( functionAxiomUnification
@@ -204,12 +199,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        -- TODO: use this throughout the test code
-        for_ (align (toList expects) (toList actuals)) $ \these -> do
-            (expect, actual) <- expectThese these
-            on (assertEqual "") term expect actual
-            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
-            on (assertEqual "") substitution expect actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "map function, non-matching" $ do
         let
             initial =
@@ -706,12 +696,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        -- TODO: use this throughout the test code
-        for_ (align (toList expects) (toList actuals)) $ \these -> do
-            (expect, actual) <- expectThese these
-            on (assertEqual "") term expect actual
-            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
-            on (assertEqual "") substitution expect actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "Builtin and simplification failure" $ do
         let m = mkSetVariable (testId "m") Mock.listSort
             ue = mkSetVariable (testId "ue") Mock.listSort
@@ -792,26 +777,6 @@ test_simplificationIntegration =
                                     )
                                 )
                             )
-                            -- (makeAndPredicate
-                            --     (makeCeilPredicate
-                            --         (mkAnd
-                            --             (Mock.fSet mkTop_)
-                            --             (mkMu k
-                            --                 (asInternal (Set.fromList [Mock.a]))
-                            --             )
-                            --         )
-                            --     )
-                            --     (makeAndPredicate
-                            --         (makeCeilPredicate
-                            --             (Mock.fSet mkTop_)
-                            --         )
-                            --         (makeCeilPredicate
-                            --             (mkMu k
-                            --                 (asInternal (Set.fromList [Mock.a]))
-                            --             )
-                            --         )
-                            --     )
-                            -- )
                             (makeIffPredicate
                                 (makeEqualsPredicate Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate
@@ -840,26 +805,6 @@ test_simplificationIntegration =
                                     )
                                 )
                             )
-                            -- (makeAndPredicate
-                            --     (makeCeilPredicate
-                            --         (mkAnd
-                            --             (Mock.fSet mkTop_)
-                            --             (mkMu k
-                            --                 (mkEvaluated Mock.unitSet)
-                            --             )
-                            --         )
-                            --     )
-                            --     (makeAndPredicate
-                            --         (makeCeilPredicate
-                            --             (Mock.fSet mkTop_)
-                            --         )
-                            --         (makeCeilPredicate
-                            --             (mkMu k
-                            --                 (mkEvaluated Mock.unitSet)
-                            --             )
-                            --         )
-                            --     )
-                            -- )
                             (makeIffPredicate
                                 (makeEqualsPredicate Mock.aSubSubsort mkTop_)
                                 (makeFloorPredicate
@@ -870,6 +815,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 ]
+                & OrPattern.fromPatterns
         actuals <- evaluate
             Conditional
                 { term = mkImplies
@@ -903,12 +849,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        -- TODO: use this throughout the test code
-        for_ (align expects (toList actuals)) $ \these -> do
-            (expect, actual) <- expectThese these
-            on (assertEqual "") term expect actual
-            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
-            on (assertEqual "") substitution expect actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "Ceil simplification" $ do
         actual <- evaluate
             Conditional

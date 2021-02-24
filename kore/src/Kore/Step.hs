@@ -70,7 +70,6 @@ import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Unification.Procedure as Unification
 import Kore.Unparser
     ( Unparse (..)
     )

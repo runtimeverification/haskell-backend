@@ -9,9 +9,6 @@ module Kore.Step.Simplification.Pattern
     , makeEvaluate
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
 import Prelude.Kore
 
 import qualified Kore.Internal.Condition as Condition

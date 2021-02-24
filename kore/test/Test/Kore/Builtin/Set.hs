@@ -95,7 +95,6 @@ import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
@@ -134,6 +133,7 @@ import Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as Test.List
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.With
@@ -283,19 +283,8 @@ test_inConcatSymbolic =
                         patTrue
                         (Conditional.withoutTerm condition)
             actual <- evaluateT patIn
-            areEquivalent expected actual
+            Pattern.assertEquivalent (===) expected actual
         )
-
-areEquivalent patt1 patt2 = do
-    let t1 = Pattern.term patt1
-        t2 = Pattern.term patt2
-        p1 = MultiAnd.fromPredicate . Pattern.predicate $ patt1
-        p2 = MultiAnd.fromPredicate . Pattern.predicate $ patt2
-        s1 = Pattern.substitution patt1
-        s2 = Pattern.substitution patt2
-    t1 === t2
-    s1 === s2
-    p1 === p2
 
 test_inConcat :: TestTree
 test_inConcat =
