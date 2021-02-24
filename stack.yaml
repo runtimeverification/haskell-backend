@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: nightly-2020-07-19
+resolver: lts-17.4
 
 nix:
   packages:
