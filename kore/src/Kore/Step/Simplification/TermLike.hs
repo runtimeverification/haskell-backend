@@ -467,6 +467,9 @@ simplify sideCondition = \termLike ->
             DefinedF definedF ->
                 Defined.simplify <$> simplifyChildren definedF
 
+-- | We expect each predicate in the result to have been fully
+-- simplified with a different side condition.
+-- See 'Kore.Step.Simplification.Condition.simplifyPredicates'.
 ensureSimplifiedResult
     :: InternalVariable variable
     => Monad simplifier

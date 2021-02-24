@@ -96,6 +96,12 @@ hasSimplifiedChildren
 hasSimplifiedChildren sideCondition =
     all (Pattern.hasSimplifiedChildren sideCondition)
 
+{- | Checks whether all patterns in the disjunction have simplified children,
+ignoring the conditions used to simplify them.
+
+See also: 'Pattern.hasSimplifiedChildrenIgnoreConditions'
+
+ -}
 hasSimplifiedChildrenIgnoreConditions
     :: InternalVariable variable
     => OrPattern variable -> Bool

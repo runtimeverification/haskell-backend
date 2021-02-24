@@ -163,6 +163,9 @@ hasSimplifiedChildren sideCondition patt =
     Conditional { term, predicate, substitution } = patt
     clauses = MultiAnd.fromPredicate predicate
 
+{- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
+used to simplify the children.
+ -}
 hasSimplifiedChildrenIgnoreConditions
     :: Ord variable
     => Pattern variable -> Bool
