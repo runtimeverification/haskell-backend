@@ -46,7 +46,6 @@ import qualified Kore.Builtin.InternalBytes as InternalBytes
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
@@ -587,9 +586,7 @@ test_bytes2int =
                       |     signed, underflow   = integer + modulus
                       | otherwise               = integer
                     modulus = 0x100 ^ ByteString.length bytes
-                    input =
-                        bytes2int (asInternal bytes) end sign
-                        & TermLike.mapVariables (pure mkConfigVariable)
+                    input = bytes2int (asInternal bytes) end sign
                     expect =
                         [ Test.Int.asPattern int
                         & Pattern.mapVariables (pure mkConfigVariable)

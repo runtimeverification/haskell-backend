@@ -111,7 +111,7 @@ fEvaluator =
   where
     left = mkApplySymbol' (f x)
     right = x
-    x = TermLike.mkElemVar Mock.xRule
+    x = TermLike.mkElemVar Mock.xConfig
 
 evaluateApplication
     :: Condition RewritingVariableName

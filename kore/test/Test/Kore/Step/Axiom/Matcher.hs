@@ -42,7 +42,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkElementConfigVariable
+    , configElementVariableFromId
     )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -258,9 +258,7 @@ test_matcherVariableFunction =
     , testCase "Injection" $ do
         let
             a = Mock.functional00SubSubSort
-            x =
-                mkElementVariable (testId "x") Mock.subSort
-                & mkElementConfigVariable
+            x = configElementVariableFromId (testId "x") Mock.subSort
             expect =
                 mkMatchResult
                     ( makeTruePredicate
@@ -277,9 +275,7 @@ test_matcherVariableFunction =
     , testCase "Injection reverse" $ do
         let
             a = Mock.functional00SubSubSort
-            x =
-                mkElementVariable (testId "x") Mock.subSort
-                & mkElementConfigVariable
+            x = configElementVariableFromId (testId "x") Mock.subSort
             expect = Nothing
         actual <-
             matchDefinition
@@ -385,9 +381,7 @@ test_matcherVariableFunction =
     ]
   where
     aSubSub = Mock.functional00SubSubSort
-    xSub =
-        mkElementVariable (testId "xSub") Mock.subSort
-        & mkElementConfigVariable
+    xSub = configElementVariableFromId (testId "xSub") Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
@@ -661,14 +655,8 @@ test_matching_List =
         ]
     ]
   where
-    xList =
-        inject
-        $ mkElementConfigVariable
-        $ mkElementVariable (testId "xList") Test.listSort
-    yList =
-        inject
-        $ mkElementConfigVariable
-        $ mkElementVariable (testId "yList") Test.listSort
+    xList = inject $ configElementVariableFromId (testId "xList") Test.listSort
+    yList = inject $ configElementVariableFromId (testId "yList") Test.listSort
     one = mkInt 1
     two = mkInt 2
     concatList = Test.concatList
@@ -1036,21 +1024,11 @@ test_matcherOverloading =
     ]
 
 xInt, yInt, zInt, mMap, nMap :: ElementVariable RewritingVariableName
-mMap =
-    mkElementVariable (testId "mMap") Test.mapSort
-    & mkElementConfigVariable
-nMap =
-    mkElementVariable (testId "nMap") Test.mapSort
-    & mkElementConfigVariable
-xInt =
-    mkElementVariable (testId "xInt") Test.intSort
-    & mkElementConfigVariable
-yInt =
-    mkElementVariable (testId "yInt") Test.intSort
-    & mkElementConfigVariable
-zInt =
-    mkElementVariable (testId "zInt") Test.intSort
-    & mkElementConfigVariable
+mMap = configElementVariableFromId (testId "mMap") Test.mapSort
+nMap = configElementVariableFromId (testId "nMap") Test.mapSort
+xInt = configElementVariableFromId (testId "xInt") Test.intSort
+yInt = configElementVariableFromId (testId "yInt") Test.intSort
+zInt = configElementVariableFromId (testId "zInt") Test.intSort
 
 mkInt :: InternalVariable variable => Integer -> TermLike variable
 mkInt = Test.Int.asInternal

@@ -15,7 +15,7 @@ import Kore.Internal.TermLike hiding
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkElementConfigVariable
+    , configElementVariableFromId
     )
 import Kore.Step.Simplification.InjSimplifier
 import Pair
@@ -73,7 +73,7 @@ simplOther = plain00OtherSort
 simpl0 = plain00Sort0
 
 xSub :: TermLike RewritingVariableName
-xSub = mkElemVar (mkElementVariable "xSub" subSort & mkElementConfigVariable)
+xSub = mkElemVar (configElementVariableFromId "xSub" subSort)
 
 test_unifyInj :: [TestTree]
 test_unifyInj =

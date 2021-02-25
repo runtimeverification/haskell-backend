@@ -54,8 +54,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
-    , mkElementConfigVariable
+    , mkRewritingTerm, configElementVariableFromId
     )
 import Kore.Step.Simplification.And
     ( termAnd
@@ -900,9 +899,7 @@ test_andTermsSimplification =
             assertEqual "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
-            let x =
-                    mkElementVariable "x" Mock.listSort
-                    & mkElementConfigVariable
+            let x = configElementVariableFromId "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
@@ -931,12 +928,8 @@ test_andTermsSimplification =
                     Pattern.fromTermLike expectTerm
                     `Conditional.andPredicate`
                         makeCeilPredicate expectTerm
-                x =
-                    mkElemVar $ mkElementConfigVariable
-                    $ mkElementVariable "x" Mock.testSort
-                l =
-                    mkElemVar $ mkElementConfigVariable
-                    $ mkElementVariable "y" Mock.listSort
+                x = mkElemVar $ configElementVariableFromId "x" Mock.testSort
+                l = mkElemVar $ configElementVariableFromId "y" Mock.listSort
                 -- List unification does not fully succeed because the
                 -- elementList symbol is not simplified to a builtin structure.
                 lhs = Mock.concatList (Mock.elementList x) l
@@ -945,9 +938,7 @@ test_andTermsSimplification =
             assertEqual "" [expect] actual
 
         , testCase "[a] `concat` unit /\\ x " $ do
-            let x =
-                    mkElementVariable "x" Mock.listSort
-                    & mkElementConfigVariable
+            let x = configElementVariableFromId "x" Mock.listSort
                 term9 = Mock.builtinList [Mock.a]
                 term10 = Mock.concatList Mock.unitList (mkElemVar x)
                 term11 = Mock.concatList (mkElemVar x) Mock.unitList
@@ -1109,9 +1100,7 @@ test_andTermsSimplification =
             let
                 x = mkVariable "x"
                 alias = mkAlias' "alias1" x mkTop_
-                left =
-                    applyAlias' alias $ mkTop Mock.testSort
-                    & TermLike.mapVariables (pure mkConfigVariable)
+                left = applyAlias' alias $ mkTop Mock.testSort & mkRewritingTerm
             actual <- simplifyUnify left mkTop_
             assertExpectTop actual
         , testCase "alias1() vs alias2()" $ do

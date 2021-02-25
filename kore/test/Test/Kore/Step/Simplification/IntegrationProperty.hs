@@ -58,10 +58,9 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified SMT
 
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkRewritingTerm
     )
 import Kore.Unparser
 import Test.ConsistentKore
@@ -76,7 +75,7 @@ test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
-        let term' = TermLike.mapVariables (pure mkConfigVariable) term
+        let term' = mkRewritingTerm term
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString term, " ***** "]
         simplified <- catch

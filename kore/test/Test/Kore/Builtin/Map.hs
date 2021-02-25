@@ -72,9 +72,6 @@ import Control.Monad
     )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import Data.Functor
-    ( (<&>)
-    )
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -108,8 +105,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkElementConfigVariable
-    , mkElementRuleVariable
+    , configElementVariableFromId, ruleElementVariableFromId
     )
 import Kore.Step.RulePattern
 import SMT
@@ -835,9 +831,7 @@ test_unifySelectFromSingleton =
     testPropertyWithoutSolver
         "unify a singleton map with a variable selection pattern"
         (do
-            key      <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            key      <- forAll genIntegerPattern
             value    <- forAll genIntegerPattern
             keyVar   <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -874,9 +868,7 @@ test_unifySelectSingletonFromSingleton =
     testPropertyWithoutSolver
         "unify a singleton map with a singleton variable selection pattern"
         (do
-            key <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            key <- forAll genIntegerPattern
             value <- forAll genIntegerPattern
             keyVar <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -908,12 +900,8 @@ test_unifySelectFromSingletonWithoutLeftovers =
     testPropertyWithoutSolver
         "unify a singleton map with an element selection pattern"
         (do
-            key <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
-            value <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            key <- forAll genIntegerPattern
+            value <- forAll genIntegerPattern
             keyVar <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             valueVar <-
@@ -942,15 +930,9 @@ test_unifySelectFromTwoElementMap =
     testPropertyWithoutSolver
         "unify a two element map with a variable selection pattern"
         (do
-            key1 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
-            value1 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
-            key2 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            key1 <- forAll genIntegerPattern
+            value1 <- forAll genIntegerPattern
+            key2 <- forAll genIntegerPattern
             value2 <- forAll genIntegerPattern
             when (key1 == key2) discard
 
@@ -1063,9 +1045,7 @@ test_unifySameSymbolicKey =
         "unify a single element symbolic map with a symbolic selection pattern"
         (do
 
-            value1 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            value1 <- forAll genIntegerPattern
             keyVar1 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
             valueVar1 <-
@@ -1102,14 +1082,9 @@ test_unifySameSymbolicKeySymbolicOpaque =
     testPropertyWithoutSolver
         "unify two symbolic maps with identical keys and one variable opaque"
         (do
-            key1 <-
-                forAll genIntegerKey
-            value1 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
-            value2 <-
-                forAll genIntegerPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            key1 <- forAll genIntegerKey
+            value1 <- forAll genIntegerPattern
+            value2 <- forAll genIntegerPattern
 
             keyVar2 <-
                 forAll (standaloneGen $ configElementVariableGen intSort)
@@ -1573,13 +1548,11 @@ normalizedMap elements opaque =
 
 mkIntRuleVar :: Id -> TermLike RewritingVariableName
 mkIntRuleVar variableName =
-    mkElemVar . mkElementRuleVariable
-    $ mkElementVariable variableName intSort
+    mkElemVar $ ruleElementVariableFromId variableName intSort
 
 mkIntConfigVar :: Id -> TermLike RewritingVariableName
 mkIntConfigVar variableName =
-    mkElemVar . mkElementConfigVariable
-    $ mkElementVariable variableName intSort
+    mkElemVar $ configElementVariableFromId variableName intSort
 
 asVariableName :: ElementVariable RewritingVariableName -> Id
 asVariableName = base . from . unElementVariableName . variableName

@@ -74,8 +74,8 @@ makeOnePathGoal
     -> TermLike'
     -> OnePathClaim
 makeOnePathGoal
-    (TermLike.mapVariables (pure mkConfigVariable) -> left)
-    (TermLike.mapVariables (pure mkConfigVariable) -> right)
+    (mkRewritingTerm -> left)
+    (mkRewritingTerm -> right)
   =
     OnePathClaim
     $ ClaimPattern

@@ -79,19 +79,19 @@ test_attemptEquations =
         attemptEquationAndAccumulateErrors condition term equation
     applicable =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.a
-          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.a)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a)
     notApplicable1 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.c
-          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.c)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c)
     notApplicable2 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.b
-          (makeEqualsPredicate (mkElemVar Mock.xRule) Mock.b)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -112,8 +112,8 @@ test_definitionEvaluation =
             evaluate
                 (definitionEvaluation
                     [ axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.xRule))
-                        (Mock.g (mkElemVar Mock.xRule))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                         makeTruePredicate
                     ]
                 )
@@ -217,9 +217,9 @@ test_definitionEvaluation =
 
             evaluator = definitionEvaluation
                 [ axiom_
-                    (Mock.functionalConstr10 (mkElemVar Mock.xRule))
-                    (Mock.g (mkElemVar Mock.xRule))
-                    & concrete [mkElemVar Mock.xRule]
+                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                    (Mock.g (mkElemVar Mock.xConfig))
+                    & concrete [mkElemVar Mock.xConfig]
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
@@ -248,8 +248,8 @@ test_firstFullEvaluation =
             evaluate
                 (firstFullEvaluation
                     [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.xRule))
-                        (Mock.g (mkElemVar Mock.xRule))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)

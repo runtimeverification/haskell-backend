@@ -9,10 +9,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
+    , mkRewritingTerm
     )
 import Kore.Step.RulePattern
     ( RulePattern
@@ -40,12 +39,8 @@ test_simplifyRulePattern =
     andBool = Builtin.andBool
     unitList = Builtin.unitList
     sizeList = Builtin.sizeList
-    x =
-        mkElemVar (mkElementVariable "x" Builtin.boolSort)
-        & TermLike.mapVariables (pure mkConfigVariable)
-    y =
-        mkElemVar (mkElementVariable "y" Builtin.boolSort)
-        & TermLike.mapVariables (pure mkConfigVariable)
+    x = mkElemVar (mkElementVariable "x" Builtin.boolSort) & mkRewritingTerm
+    y = mkElemVar (mkElementVariable "y" Builtin.boolSort) & mkRewritingTerm
     mkBool = Test.Bool.asInternal
     true = mkBool True
     false = mkBool False

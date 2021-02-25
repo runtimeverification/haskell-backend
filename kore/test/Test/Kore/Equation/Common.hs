@@ -42,22 +42,20 @@ import Test.Kore
     )
 import Test.Kore.Internal.Predicate
 
-type Equation' = Equation VariableName
+type Equation' = Equation RewritingVariableName
 
 axiom
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Predicate variable
-    -> Equation variable
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
 axiom left right requires =
     (mkEquation left right) { requires }
 
 axiom_
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> Equation variable
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
 axiom_ left right = axiom left right makeTruePredicate
 
 functionAxiomUnification

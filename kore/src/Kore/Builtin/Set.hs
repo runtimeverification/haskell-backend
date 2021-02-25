@@ -562,10 +562,8 @@ unifyEquals
         unifyEquals0 firstDomain secondDomain
       where
         asDomain
-            :: forall variable
-            .  InternalVariable variable
-            => TermLike variable
-            -> MaybeT unifier (TermLike variable)
+            :: TermLike RewritingVariableName
+            -> MaybeT unifier (TermLike RewritingVariableName)
         asDomain patt =
             case normalizedOrBottom of
                 Ac.Normalized normalized -> do
@@ -578,5 +576,5 @@ unifyEquals
                         second
           where
             normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedSet variable
+                :: Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt

@@ -43,9 +43,6 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
-import Data.Functor
-    ( (<&>)
-    )
 import Data.Generics.Product
     ( field
     )
@@ -101,7 +98,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     , topTODO
     )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike.TermLike as TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
     )
@@ -221,13 +217,13 @@ exec
     -> ExecutionMode
     -> TermLike VariableName
     -- ^ The input pattern
-    -> smt (ExitCode, TermLike VariableName)
+    -> smt (ExitCode, TermLike RewritingVariableName)
 exec
     depthLimit
     breadthLimit
     verifiedModule
     strategy
-    (TermLike.mapVariables (pure mkConfigVariable) -> initialTerm)
+    (mkRewritingTerm -> initialTerm)
   =
     evalSimplifier verifiedModule' $ do
         initialized <- initializeAndSimplify verifiedModule
@@ -266,8 +262,7 @@ exec
         infoExecDepth (maximum depths)
         let finalConfigs' =
                 MultiOr.make
-                $ getRewritingPattern
-                . extractProgramState
+                $ extractProgramState
                 <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
         let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
@@ -325,12 +320,12 @@ getExitCode
     .  (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> OrPattern.OrPattern VariableName
+    -> OrPattern.OrPattern RewritingVariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
 getExitCode
     indexedModule
-    (OrPattern.mapVariables (pure mkConfigVariable) -> configs)
+    configs
   =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
@@ -384,7 +379,7 @@ search
     depthLimit
     breadthLimit
     verifiedModule
-    (TermLike.mapVariables (pure mkConfigVariable) -> termLike)
+    (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig
   =
@@ -566,8 +561,8 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
         assertSingleClaim specClaims
         let axioms = fmap Bounded.Axiom rewriteRules
             claims =
-                makeImplicationRule <$> specClaims
-                <&> mapRuleVariables (pure mkRuleVariable)
+                mapRuleVariables (pure mkRuleVariable). makeImplicationRule
+                <$> specClaims
 
         Bounded.checkClaim
             breadthLimit

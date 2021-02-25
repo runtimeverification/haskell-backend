@@ -299,8 +299,4 @@ applyRemainder initial remainder = do
         Simplifier.simplifyCondition
             SideCondition.topTODO
             (Pattern.andCondition initial partial)
-    -- traceM "before"
-    -- traceM . unparseToString $ r
-    -- traceM "after"
-    -- traceM . unparseToString $ r & Pattern.mapVariables resetConfigVariable
     return (r & Pattern.mapVariables resetConfigVariable)

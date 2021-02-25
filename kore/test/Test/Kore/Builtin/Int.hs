@@ -82,7 +82,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkElementConfigVariable
+    , configElementVariableFromId
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -451,7 +451,7 @@ test_log2 :: TestTree
 test_log2 = testPartialUnary log2IntSymbol log2
 
 -- | Another name for asInternal.
-intLiteral :: Integer -> TermLike VariableName
+intLiteral :: Integer -> TermLike RewritingVariableName
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
@@ -560,7 +560,7 @@ test_symbolic_eq_not_conclusive =
 
 ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
 idName `ofSort` sort =
-    mkElementVariable (testId idName) sort & mkElementConfigVariable
+    configElementVariableFromId (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)

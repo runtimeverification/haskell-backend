@@ -52,11 +52,9 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
-    , mkElementConfigVariable
+    , configElementVariableFromId
     )
 
 import Test.Kore
@@ -241,8 +239,7 @@ test_concatUnitSymbolic =
     prop = do
         let patUnit = mkApplySymbol unitListSymbol []
             patSymbolic =
-                mkElemVar . mkElementConfigVariable
-                $ mkElementVariable (testId "x") listSort
+                mkElemVar $ configElementVariableFromId (testId "x") listSort
             patConcat1 = mkApplySymbol concatListSymbol [ patUnit, patSymbolic ]
             patConcat2 = mkApplySymbol concatListSymbol [ patSymbolic, patUnit ]
             predicate1 = mkEquals_ patSymbolic patConcat1
@@ -299,8 +296,7 @@ test_concatSymbolic =
 
             patConcatX = concatList patElemX patSymbolicXs
             patConcatY = concatList patElemY patSymbolicYs
-            patUnifiedXY =
-                mkAnd patConcatX patConcatY
+            patUnifiedXY = mkAnd patConcatX patConcatY
 
             expect = Conditional
                         { term = patConcatY
@@ -380,16 +376,14 @@ test_concatSymbolicDifferentLengths =
 
 ofSort :: Text -> Sort -> ElementVariable RewritingVariableName
 ofSort name sort =
-    mkElementVariable (testId name) sort
-    & mkElementConfigVariable
+    configElementVariableFromId (testId name) sort
 
 -- | Check that simplification is carried out on list elements.
 test_simplify :: TestTree
 test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let
-            x = mkElemVar (mkElementVariable (testId "x") intSort)
-                & TermLike.mapVariables (pure mkConfigVariable)
+            x = mkElemVar (configElementVariableFromId (testId "x") intSort)
             original = asInternal [mkAnd x mkTop_]
             expected = asPattern [x]
         (===) expected =<< evaluateT original

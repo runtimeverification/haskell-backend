@@ -107,7 +107,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkRuleVariable
+    , mkRuleVariable, mkRewritingTerm, configElementVariableFromId
     )
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
@@ -320,9 +320,7 @@ test_concatUnit =
     testPropertyWithSolver
         "concat{}(unit{}(), xs) === concat{}(xs, unit{}()) === xs"
         (do
-            patValues <-
-                forAll genSetPattern
-                <&> TermLike.mapVariables (pure mkConfigVariable)
+            patValues <- forAll genSetPattern <&> mkRewritingTerm
             let patUnit = mkApplySymbol unitSetSymbol []
                 patConcat1 =
                     mkApplySymbol concatSetSymbol [ patUnit, patValues ]
@@ -491,13 +489,13 @@ test_difference_symbolic =
     ySingleton = mkSet_ [y]
     oneSingleton = mkSet_ [one]
 
-    ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-    idName `ofSort` sort = mkElementVariable (testId idName) sort
+    ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+    idName `ofSort` sort = configElementVariableFromId (testId idName) sort
 
     evalDifference
         :: HasCallStack
-        => Maybe (Pattern VariableName)  -- ^ expected result
-        -> [TermLike VariableName]  -- ^ arguments of 'differenceSet'
+        => Maybe (Pattern RewritingVariableName)  -- ^ expected result
+        -> [TermLike RewritingVariableName]  -- ^ arguments of 'differenceSet'
         -> Assertion
     evalDifference expect args = do
         actual <-

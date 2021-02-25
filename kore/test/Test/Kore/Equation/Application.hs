@@ -51,7 +51,7 @@ type AttemptEquationResult' = AttemptEquationResult RewritingVariableName
 attemptEquation
     :: SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
     Equation.attemptEquation sideCondition termLike equation
@@ -160,8 +160,8 @@ test_attemptEquation =
         let
             ensures =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.xRule))
-                    (Mock.functional10 (mkElemVar Mock.xRule))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
@@ -177,8 +177,8 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional10 (mkElemVar Mock.xRule))
-                    (Mock.functional11 (mkElemVar Mock.xRule))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
@@ -520,7 +520,7 @@ test_applySubstitutionAndSimplify =
         [ (AxiomIdentifier.Application Mock.fId
           , [ functionAxiomUnification_
                 Mock.fSymbol
-                [mkElemVar Mock.zRule]
+                [mkElemVar Mock.zConfig]
                 Mock.a
             ]
           )
@@ -531,20 +531,20 @@ test_applySubstitutionAndSimplify =
 
 -- * Test data
 
-equationId :: Equation RewritingVariableName
-equationId = mkEquation (mkElemVar Mock.xRule) (mkElemVar Mock.xRule)
+equationId :: Equation'
+equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
 
-equationRequiresBottom :: Equation RewritingVariableName
+equationRequiresBottom :: Equation'
 equationRequiresBottom =
     (mkEquation Mock.a Mock.b)
         { requires = makeFalsePredicate }
 
-equationEnsuresBottom :: Equation RewritingVariableName
+equationEnsuresBottom :: Equation'
 equationEnsuresBottom =
     (mkEquation Mock.a Mock.b)
         { ensures = makeFalsePredicate }
 
-equationBottom :: Equation RewritingVariableName
+equationBottom :: Equation'
 equationBottom =
     mkEquation Mock.a (mkBottom Mock.testSort)
 
@@ -571,11 +571,11 @@ string :: Text -> TermLike RewritingVariableName
 string = Mock.builtinString
 
 x, xString, xInt, y, z :: TermLike RewritingVariableName
-x = mkElemVar Mock.xRule
-xInt = mkElemVar Mock.xRuleInt
-xString = mkElemVar Mock.xRuleString
-y = mkElemVar Mock.yRule
-z = mkElemVar Mock.zRule
+x = mkElemVar Mock.xConfig
+xInt = mkElemVar Mock.xConfigInt
+xString = mkElemVar Mock.xConfigString
+y = mkElemVar Mock.yConfig
+z = mkElemVar Mock.zConfig
 
 a, b :: TermLike RewritingVariableName
 a = Mock.a
@@ -608,7 +608,7 @@ orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 withAttemptEquationResult
     :: (AttemptEquationResult' -> Assertion)
     -> TestName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree
@@ -617,7 +617,7 @@ withAttemptEquationResult check testName equation sideCondition initial =
 
 applies
     :: TestName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> Pattern RewritingVariableName
@@ -632,7 +632,7 @@ applies testName equation sideCondition initial expect =
 
 notMatched
     :: TestName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree
@@ -640,7 +640,7 @@ notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree
@@ -649,7 +649,7 @@ notInstantiated =
 
 requiresNotMet
     :: TestName
-    -> Equation RewritingVariableName
+    -> Equation'
     -> SideCondition RewritingVariableName
     -> TermLike RewritingVariableName
     -> TestTree

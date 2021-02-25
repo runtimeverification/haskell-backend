@@ -41,7 +41,7 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkElementConfigVariable
+    , configElementVariableFromId
     )
 import Kore.Step.Simplification.Data
     ( SimplifierT
@@ -263,8 +263,8 @@ _True  = asInternal True
 _False = asInternal False
 
 x, y :: SomeVariable RewritingVariableName
-x = inject (mkElementVariable "x" boolSort & mkElementConfigVariable)
-y = inject (mkElementVariable "y" boolSort & mkElementConfigVariable)
+x = inject (configElementVariableFromId "x" boolSort)
+y = inject (configElementVariableFromId "y" boolSort)
 
 test_contradiction :: TestTree
 test_contradiction =

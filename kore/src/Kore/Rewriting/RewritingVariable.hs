@@ -19,10 +19,13 @@ module Kore.Rewriting.RewritingVariable
     , mkConfigVariable
     , mkRuleVariable
     , mkElementConfigVariable
+    , configElementVariableFromId
+    , ruleElementVariableFromId
     , mkElementRuleVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
     , mkRewritingPattern
+    , mkRewritingTerm
     , resetResultPattern
     , getRemainderPredicate
     , assertRemainderPattern
@@ -57,6 +60,7 @@ import Kore.Internal.TermLike as TermLike hiding
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Kore.AST.AstWithLocation (AstWithLocation(..))
 
 {- | The name of a 'RewritingVariable'.
  -}
@@ -111,12 +115,25 @@ instance From VariableName RewritingVariableName where
 
 instance FreshName RewritingVariableName
 
+instance AstWithLocation RewritingVariableName where
+    locationFromAst = locationFromAst . base . from @RewritingVariableName @VariableName
+
 type RewritingVariable = Variable RewritingVariableName
 
 mkElementConfigVariable
     :: ElementVariable VariableName
     -> ElementVariable RewritingVariableName
 mkElementConfigVariable = (fmap . fmap) ConfigVariableName
+
+configElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+configElementVariableFromId identifier sort =
+    mkElementConfigVariable (mkElementVariable identifier sort)
+
+ruleElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+ruleElementVariableFromId identifier sort =
+    mkElementRuleVariable (mkElementVariable identifier sort)
 
 mkElementRuleVariable
     :: ElementVariable VariableName
@@ -222,6 +239,9 @@ resetResultPattern initial config@Conditional { substitution } =
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
 mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
+
+mkRewritingTerm :: TermLike VariableName -> TermLike RewritingVariableName
+mkRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
 getRemainderPredicate
     :: Predicate RewritingVariableName

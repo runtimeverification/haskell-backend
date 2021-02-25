@@ -269,8 +269,7 @@ elementVariableGen patternSort = do
 
 configElementVariableGen :: Sort -> Gen (ElementVariable RewritingVariableName)
 configElementVariableGen patternSort =
-    elementVariableGen patternSort
-    <&> mkElementConfigVariable
+    elementVariableGen patternSort <&> mkElementConfigVariable
 
 setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do

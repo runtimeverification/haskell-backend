@@ -53,8 +53,7 @@ import qualified Kore.Step.RulePattern as RulePattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Logic
@@ -83,10 +82,9 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName)
         RulePattern {left} = rule
 
         setRuleLeft
-            :: InternalVariable variable
-            => RulePattern variable
-            -> Pattern variable
-            -> RulePattern variable
+            :: RulePattern RewritingVariableName
+            -> Pattern RewritingVariableName
+            -> RulePattern RewritingVariableName
         setRuleLeft
             rulePattern@RulePattern {requires = requires'}
             Conditional {term, predicate, substitution}

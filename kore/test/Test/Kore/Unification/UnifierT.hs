@@ -431,8 +431,8 @@ normalizeExcept predicated =
             [   ( Axiom.Identifier.Application Mock.functional10Id
                 , EvaluationStrategy.definitionEvaluation
                     [ Equation.mkEquation
-                        (Mock.functional10 (mkElemVar Mock.xRule))
-                        (mkElemVar Mock.xRule)
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (mkElemVar Mock.xConfig)
                     ]
                 )
             ]

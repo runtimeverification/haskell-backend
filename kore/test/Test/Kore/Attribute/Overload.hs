@@ -30,7 +30,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
+    ( mkConfigVariable
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
@@ -139,7 +139,7 @@ test_dont_ignore =
   where
     evaluators =
         mkEvaluatorRegistry
-        $ (Map.map . fmap . Equation.mapVariables $ pure mkRuleVariable)
+        $ (Map.map . fmap . Equation.mapVariables $ pure mkConfigVariable)
         $ extractEquations indexedModule
     verifiedModules =
         assertRight

@@ -95,7 +95,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , getRewritingVariable
     )
 import Kore.Step.Axiom.Matcher
     ( MatchResult
@@ -646,12 +645,11 @@ instance Pretty DebugApplyEquation where
 srcLoc :: Equation RewritingVariableName -> Maybe Attribute.SourceLocation
 srcLoc equation
   | (not . isLocEmpty) kLoc = Just kLoc
-  | AstLocationFile fileLocation <- locationFromAst equation' =
+  | AstLocationFile fileLocation <- locationFromAst equation =
     Just (from @FileLocation fileLocation)
   | otherwise = Nothing
   where
     kLoc = Attribute.sourceLocation $ attributes equation
-    equation' = Equation.mapVariables getRewritingVariable equation
 
 isLocEmpty :: Attribute.SourceLocation -> Bool
 isLocEmpty Attribute.SourceLocation { source = Attribute.Source file } =

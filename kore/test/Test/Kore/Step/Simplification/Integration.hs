@@ -50,8 +50,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkConfigVariable
-    , mkElementConfigVariable
-    , mkRuleVariable
+    , mkRuleVariable, configElementVariableFromId
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
@@ -259,9 +258,9 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ axiom
-                                (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -291,15 +290,15 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.functional10Id
                             ,   [ conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.xRule))
+                                    (Mock.functional10 (mkElemVar Mock.xConfig))
                                     (makeEqualsPredicate Mock.cf Mock.a)
-                                    (mkElemVar Mock.xRule)
+                                    (mkElemVar Mock.xConfig)
                                 , conditionalEqualityPattern
-                                    (Mock.functional10 (mkElemVar Mock.xRule))
+                                    (Mock.functional10 (mkElemVar Mock.xConfig))
                                     (makeNotPredicate
                                         (makeEqualsPredicate Mock.cf Mock.a)
                                     )
-                                    (mkElemVar Mock.xRule)
+                                    (mkElemVar Mock.xConfig)
                                 ]
                             )
                        ]
@@ -386,9 +385,9 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ axiom
-                                (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -423,9 +422,9 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ axiom
-                                (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -459,9 +458,9 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ axiom
-                                (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
-                                (requirement Mock.setXRule)
+                                (requirement Mock.setXConfig)
                             ]
                           )
                         ]
@@ -495,9 +494,9 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ axiom
-                                (Mock.functionalConstr10 (mkElemVar Mock.xRule))
+                                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
-                                (requirement Mock.setXRule)
+                                (requirement Mock.setXConfig)
                             ]
                           )
                         ]
@@ -791,15 +790,9 @@ test_simplificationIntegration =
                 }
         assertEqual "" expected actual
     , testCase "Implies simplification" $ do
-        let zz =
-                mkElementVariable (testId "zz") Mock.subOthersort
-                & mkElementConfigVariable
-            mci =
-                mkElementVariable (testId "mci") Mock.subOthersort
-                & mkElementConfigVariable
-            mw =
-                mkElementVariable (testId "mw") Mock.subOthersort
-                & mkElementConfigVariable
+        let zz = configElementVariableFromId (testId "zz") Mock.subOthersort
+            mci = configElementVariableFromId (testId "mci") Mock.subOthersort
+            mw = configElementVariableFromId (testId "mw") Mock.subOthersort
             k =
                 mkSetVariable (testId "k") Mock.setSort
                 & mapSetVariable (pure mkConfigVariable)
@@ -1052,8 +1045,8 @@ test_simplificationIntegration =
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.fId
                           , [ axiom
-                                (Mock.f (mkElemVar Mock.xRule))
-                                (mkElemVar Mock.xRule)
+                                (Mock.f (mkElemVar Mock.xConfig))
+                                (mkElemVar Mock.xConfig)
                                 makeTruePredicate
                             ]
                           )
@@ -1084,13 +1077,13 @@ test_simplificationIntegrationUnification =
                                     Mock.function20MapTestSymbol
                                     [Mock.concatMap
                                         (Mock.elementMap
-                                            (mkElemVar Mock.xRule)
-                                            (mkElemVar Mock.yRule)
+                                            (mkElemVar Mock.xConfig)
+                                            (mkElemVar Mock.yConfig)
                                         )
-                                        (mkElemVar Mock.mRule)
-                                    , mkElemVar Mock.xRule
+                                        (mkElemVar Mock.mConfig)
+                                    , mkElemVar Mock.xConfig
                                     ]
-                                    (mkElemVar Mock.yRule)
+                                    (mkElemVar Mock.yConfig)
                                 ]
                             )
                         ]
@@ -1113,9 +1106,9 @@ test_simplificationIntegrationUnification =
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
-                                [mkElemVar Mock.xRule]
+                                [mkElemVar Mock.xConfig]
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -1146,13 +1139,13 @@ test_simplificationIntegrationUnification =
                         [   (AxiomIdentifier.Application Mock.functional10Id
                             ,   [ functionAxiomUnification
                                     Mock.functional10Symbol
-                                    [mkElemVar Mock.xRule]
-                                    (mkElemVar Mock.xRule)
+                                    [mkElemVar Mock.xConfig]
+                                    (mkElemVar Mock.xConfig)
                                     (makeEqualsPredicate Mock.cf Mock.a)
                                 , functionAxiomUnification
                                     Mock.functional10Symbol
-                                    [mkElemVar Mock.xRule]
-                                    (mkElemVar Mock.xRule)
+                                    [mkElemVar Mock.xConfig]
+                                    (mkElemVar Mock.xConfig)
                                     (makeNotPredicate
                                         (makeEqualsPredicate Mock.cf Mock.a)
                                     )
@@ -1192,9 +1185,9 @@ test_simplificationIntegrationUnification =
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
-                                [mkElemVar Mock.xRule]
+                                [mkElemVar Mock.xConfig]
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -1230,9 +1223,9 @@ test_simplificationIntegrationUnification =
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
-                                [mkElemVar Mock.xRule]
+                                [mkElemVar Mock.xConfig]
                                 (Mock.g Mock.a)
-                                (requirement Mock.xRule)
+                                (requirement Mock.xConfig)
                             ]
                           )
                         ]
@@ -1267,9 +1260,9 @@ test_simplificationIntegrationUnification =
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
-                                [mkElemVar Mock.xRule]
+                                [mkElemVar Mock.xConfig]
                                 (Mock.g Mock.a)
-                                (requirement Mock.setXRule)
+                                (requirement Mock.setXConfig)
                             ]
                           )
                         ]
@@ -1304,9 +1297,9 @@ test_simplificationIntegrationUnification =
                         [ (AxiomIdentifier.Application Mock.functionalConstr10Id
                           , [ functionAxiomUnification
                                 Mock.functionalConstr10Symbol
-                                [mkElemVar Mock.xRule]
+                                [mkElemVar Mock.xConfig]
                                 (Mock.g Mock.a)
-                                (requirement Mock.setXRule)
+                                (requirement Mock.setXConfig)
                             ]
                           )
                         ]
