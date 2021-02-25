@@ -79,13 +79,15 @@ import Kore.Syntax.Definition hiding
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
 
+import Kore.Rewriting.RewritingVariable
+    ( mkRewritingTerm
+    )
 import Test.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (mkRewritingTerm)
 
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected

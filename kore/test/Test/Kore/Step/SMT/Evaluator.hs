@@ -31,11 +31,11 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     )
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , configElementVariableFromId
     )
+import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import SMT
     ( SMT
