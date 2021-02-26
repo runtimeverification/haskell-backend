@@ -13,6 +13,7 @@ module Kore.Log.WarnBoundedModelChecker
 import Prelude.Kore
 
 import Kore.Attribute.SourceLocation
+import Kore.Internal.TermLike
 import Kore.Step.RulePattern
     ( ImplicationRule
     )
@@ -21,7 +22,6 @@ import Pretty
     ( Pretty
     )
 import qualified Pretty
-import Kore.Internal.TermLike
 
 newtype WarnBoundedModelChecker
     = WarnBoundedModelChecker (ImplicationRule VariableName)
