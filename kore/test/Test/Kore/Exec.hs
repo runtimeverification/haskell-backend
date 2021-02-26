@@ -85,7 +85,6 @@ import Test.SMT
     ( runNoSMT
     )
 import Test.Tasty.HUnit.Ext
-import Kore.Rewriting.RewritingVariable (mkRewritingTerm)
 
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
@@ -122,7 +121,7 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
         , moduleAttributes = Attributes []
         }
     inputPattern = applyToNoArgs mySort "a"
-    expected = (ExitSuccess, applyToNoArgs mySort "d" & mkRewritingTerm)
+    expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
@@ -154,7 +153,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
         , moduleAttributes = Attributes []
         }
     inputPattern = applyToNoArgs mySort "b"
-    expected = (ExitSuccess, applyToNoArgs mySort "d" & mkRewritingTerm)
+    expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_searchPriority :: [TestTree]
 test_searchPriority =

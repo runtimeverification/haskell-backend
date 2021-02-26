@@ -162,6 +162,8 @@ import Kore.Syntax.Definition
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
+import Kore.Step.RulePattern (mapRuleVariables)
+import Data.Functor ((<&>))
 import Kore.TopBottom
     ( isTop
     )
@@ -801,7 +803,9 @@ koreMerge execOptions mergeOptions = do
             lift $ Text.putStrLn err
             return (ExitFailure 1)
         (Right mergedRule) -> do
-            lift $ renderResult execOptions (vsep (map unparse mergedRule))
+            let mergedRule' =
+                    mergedRule <&> mapRuleVariables getRewritingVariable
+            lift $ renderResult execOptions (vsep (map unparse mergedRule'))
             return ExitSuccess
 
 loadRuleIds :: FilePath -> IO [Text]

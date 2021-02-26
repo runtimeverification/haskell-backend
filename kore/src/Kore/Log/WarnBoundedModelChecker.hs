@@ -13,9 +13,6 @@ module Kore.Log.WarnBoundedModelChecker
 import Prelude.Kore
 
 import Kore.Attribute.SourceLocation
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
 import Kore.Step.RulePattern
     ( ImplicationRule
     )
@@ -24,9 +21,10 @@ import Pretty
     ( Pretty
     )
 import qualified Pretty
+import Kore.Internal.TermLike
 
 newtype WarnBoundedModelChecker
-    = WarnBoundedModelChecker (ImplicationRule RewritingVariableName)
+    = WarnBoundedModelChecker (ImplicationRule VariableName)
     deriving Show
 
 instance Pretty WarnBoundedModelChecker where
@@ -42,7 +40,7 @@ instance Entry WarnBoundedModelChecker where
 
 warnBoundedModelChecker
     :: MonadLog log
-    => ImplicationRule RewritingVariableName
+    => ImplicationRule VariableName
     -> log ()
 warnBoundedModelChecker claim =
     logEntry (WarnBoundedModelChecker claim)

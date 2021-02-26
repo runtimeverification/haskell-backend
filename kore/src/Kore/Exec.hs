@@ -217,7 +217,7 @@ exec
     -> ExecutionMode
     -> TermLike VariableName
     -- ^ The input pattern
-    -> smt (ExitCode, TermLike RewritingVariableName)
+    -> smt (ExitCode, TermLike VariableName)
 exec
     depthLimit
     breadthLimit
@@ -265,7 +265,10 @@ exec
                 $ extractProgramState
                 <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
-        let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
+        let finalTerm =
+                forceSort initialSort
+                $ OrPattern.toTermLike
+                    (MultiOr.map getRewritingPattern finalConfigs')
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
@@ -549,8 +552,8 @@ boundedModelCheck
     -> Strategy.GraphSearchOrder
     -> smt
         (Bounded.CheckResult
-            (TermLike RewritingVariableName)
-            (ImplicationRule RewritingVariableName)
+            (TermLike VariableName)
+            (ImplicationRule VariableName)
         )
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do

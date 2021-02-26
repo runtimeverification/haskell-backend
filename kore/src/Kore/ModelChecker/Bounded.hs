@@ -18,6 +18,8 @@ import Prelude.Kore
 import Control.Monad.Catch
     ( MonadThrow
     )
+import qualified GHC.Generics as GHC
+import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
@@ -25,7 +27,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
-
+import Data.Generics.Sum
+    ( _Ctor
+    )
 
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
@@ -51,13 +55,13 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , resetConfigVariable
+    , resetConfigVariable, getRewritingTerm
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
     , RHS (..)
     , RewriteRule
-    , RulePattern (..)
+    , RulePattern (..), mapRuleVariables
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -81,7 +85,7 @@ data CheckResult patt claim
     -- ^ Counter example is found within the bound.
     | Unknown !claim
     -- ^ Result is unknown within the bound.
-    deriving (Show)
+    deriving (Show, GHC.Generic)
 
 newtype Axiom = Axiom { unAxiom :: RewriteRule RewritingVariableName }
 
@@ -114,8 +118,8 @@ checkClaim
     -- for each.
     -> m
         (CheckResult
-            (TermLike RewritingVariableName)
-            (ImplicationRule RewritingVariableName)
+            (TermLike VariableName)
+            (ImplicationRule VariableName)
         )
 checkClaim
     breadthLimit
@@ -156,7 +160,10 @@ checkClaim
             $ ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
 
         let
-            finalResult = (checkFinalNodes . pickFinal) executionGraph
+            finalResult =
+                (checkFinalNodes . pickFinal) executionGraph
+                    & _Ctor @"Failed" Lens.%~ getRewritingTerm
+                    & _Ctor @"Unknown" Lens.%~ mapRuleVariables (pure from)
         return finalResult
   where
     transitionRule'

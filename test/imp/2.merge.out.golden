@@ -11,9 +11,9 @@
                 Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                     /* Fl Fn D Sfc */
                     /* Inj: */ inj{SortId{}, SortKItem{}}(
-                        /* Fl Fn D Sfa */ RuleVarX:SortId{}
+                        /* Fl Fn D Sfa */ VarX:SortId{}
                     ),
-                    /* Fl Fn D Sfa */ RuleVar'Unds'DotVar3:SortMap{}
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar3:SortMap{}
                 )
             ),
             /* Sfc */
@@ -23,27 +23,27 @@
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ RuleVarX:SortId{}
+                            /* Fl Fn D Sfa */ VarX:SortId{}
                         ),
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ RuleVarI:SortInt{}
+                            /* Fl Fn D Sfa */ VarI:SortInt{}
                         )
                     ),
                     /* opaque child: */ /* Fl Fn D Sfa */
-                    RuleVar'Unds'DotVar3:SortMap{}
+                    Var'Unds'DotVar3:SortMap{}
                 ),
                 /* Fn Sfc */
                 /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Sfc */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ RuleVarX0:SortId{}
+                            /* Fl Fn D Sfa */ VarX0:SortId{}
                         ),
-                        /* Fl Fn D Sfa */ RuleVarI0:SortKItem{}
+                        /* Fl Fn D Sfa */ VarI0:SortKItem{}
                     ),
                     /* opaque child: */ /* Fl Fn D Sfa */
-                    RuleVar'Unds'DotVar6:SortMap{}
+                    Var'Unds'DotVar6:SortMap{}
                 )
             )
         ),
@@ -59,10 +59,10 @@
                         /* Inj: */ inj{SortStmt{}, SortKItem{}}(
                             /* Fl Fn D Sfc */
                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
-                                /* Fl Fn D Sfa */ RuleVarX:SortId{},
+                                /* Fl Fn D Sfa */ VarX:SortId{},
                                 /* Fl Fn D Sfc */
                                 /* Inj: */ inj{SortInt{}, SortAExp{}}(
-                                    /* Fl Fn D Sfa */ RuleVarI:SortInt{}
+                                    /* Fl Fn D Sfa */ VarI:SortInt{}
                                 )
                             )
                         ),
@@ -70,9 +70,9 @@
                         kseq{}(
                             /* Fl Fn D Sfc */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                /* Fl Fn D Sfa */ RuleVarX0:SortId{}
+                                /* Fl Fn D Sfa */ VarX0:SortId{}
                             ),
-                            /* Fl Fn D Sfa */ RuleVar'Unds'DotVar5:SortK{}
+                            /* Fl Fn D Sfa */ Var'Unds'DotVar5:SortK{}
                         )
                     )
                 ),
@@ -83,16 +83,16 @@
                         /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                             /* Fl Fn D Sfc */
                             /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                /* Fl Fn D Sfa */ RuleVarX:SortId{}
+                                /* Fl Fn D Sfa */ VarX:SortId{}
                             ),
-                            /* Fl Fn D Sfa */ RuleVar'Unds'0:SortKItem{}
+                            /* Fl Fn D Sfa */ Var'Unds'0:SortKItem{}
                         ),
                         /* opaque child: */ /* Fl Fn D Sfa */
-                        RuleVar'Unds'DotVar3:SortMap{}
+                        Var'Unds'DotVar3:SortMap{}
                     )
                 )
             ),
-            /* Fl Fn D Sfa */ RuleVar'Unds'DotVar4:SortGeneratedCounterCell{}
+            /* Fl Fn D Sfa */ Var'Unds'DotVar4:SortGeneratedCounterCell{}
         )
     ),
     /* Fn Spa */
@@ -103,8 +103,8 @@
             Lbl'-LT-'k'-GT-'{}(
                 /* Fl Fn D Spa */
                 kseq{}(
-                    /* Fl Fn D Sfa */ RuleVarI0:SortKItem{},
-                    /* Fl Fn D Sfa */ RuleVar'Unds'DotVar5:SortK{}
+                    /* Fl Fn D Sfa */ VarI0:SortKItem{},
+                    /* Fl Fn D Sfa */ Var'Unds'DotVar5:SortK{}
                 )
             ),
             /* Fn Spa */
@@ -114,15 +114,15 @@
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         /* Fl Fn D Spa */
                         /* Inj: */ inj{SortId{}, SortKItem{}}(
-                            /* Fl Fn D Sfa */ RuleVarX0:SortId{}
+                            /* Fl Fn D Sfa */ VarX0:SortId{}
                         ),
-                        /* Fl Fn D Sfa */ RuleVarI0:SortKItem{}
+                        /* Fl Fn D Sfa */ VarI0:SortKItem{}
                     ),
                     /* opaque child: */ /* Fl Fn D Sfa */
-                    RuleVar'Unds'DotVar6:SortMap{}
+                    Var'Unds'DotVar6:SortMap{}
                 )
             )
         ),
-        /* Fl Fn D Sfa */ RuleVar'Unds'DotVar4:SortGeneratedCounterCell{}
+        /* Fl Fn D Sfa */ Var'Unds'DotVar4:SortGeneratedCounterCell{}
     )
 )
