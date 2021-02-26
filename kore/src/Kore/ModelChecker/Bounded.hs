@@ -30,7 +30,6 @@ import Data.Limit
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
-
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     , mapVariables
