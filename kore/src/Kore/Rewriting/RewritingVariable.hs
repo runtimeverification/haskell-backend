@@ -45,6 +45,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
+    ( AstWithLocation (..)
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -60,7 +63,6 @@ import Kore.Internal.TermLike as TermLike hiding
     )
 import Kore.Unparser
 import Kore.Variables.Fresh
-import Kore.AST.AstWithLocation (AstWithLocation(..))
 
 {- | The name of a 'RewritingVariable'.
  -}

@@ -49,8 +49,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , configElementVariableFromId
     , mkConfigVariable
-    , mkRuleVariable, configElementVariableFromId
+    , mkRuleVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation

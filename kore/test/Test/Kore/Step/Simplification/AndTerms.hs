@@ -54,7 +54,8 @@ import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRewritingTerm, configElementVariableFromId
+    , configElementVariableFromId
+    , mkRewritingTerm
     )
 import Kore.Step.Simplification.And
     ( termAnd

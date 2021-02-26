@@ -29,7 +29,6 @@ import Kore.Attribute.Axiom
     )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore
-import Kore.Rewriting.RewritingVariable (RewritingVariableName, configElementVariableFromId)
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
     , VerifiedModule
@@ -38,6 +37,10 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Test.Kore.Step.SMT.Builders
     ( indexModule
     )

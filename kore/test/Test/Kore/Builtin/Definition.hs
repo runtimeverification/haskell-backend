@@ -54,7 +54,6 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Rewriting.RewritingVariable (RewritingVariableName)
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -69,6 +68,9 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Syntax
     ( Const (..)

@@ -106,8 +106,10 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , configElementVariableFromId
     , mkConfigVariable
-    , mkRuleVariable, mkRewritingTerm, configElementVariableFromId
+    , mkRewritingTerm
+    , mkRuleVariable
     )
 import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)

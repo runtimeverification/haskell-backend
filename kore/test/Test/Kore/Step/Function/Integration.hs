@@ -74,8 +74,8 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkConfigVariable
     , configElementVariableFromId
+    , mkConfigVariable
     )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation

@@ -104,8 +104,9 @@ import Kore.Internal.TermLike hiding
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , configElementVariableFromId
     , mkConfigVariable
-    , configElementVariableFromId, ruleElementVariableFromId
+    , ruleElementVariableFromId
     )
 import Kore.Step.RulePattern
 import SMT
