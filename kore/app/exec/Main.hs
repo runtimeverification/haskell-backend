@@ -83,6 +83,9 @@ import System.IO
     , withFile
     )
 
+import Data.Functor
+    ( (<&>)
+    )
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -147,6 +150,9 @@ import Kore.Reachability
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
+import Kore.Step.RulePattern
+    ( mapRuleVariables
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
@@ -162,8 +168,6 @@ import Kore.Syntax.Definition
     , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
-import Kore.Step.RulePattern (mapRuleVariables)
-import Data.Functor ((<&>))
 import Kore.TopBottom
     ( isTop
     )

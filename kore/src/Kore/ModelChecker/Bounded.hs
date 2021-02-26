@@ -15,21 +15,21 @@ module Kore.ModelChecker.Bounded
 
 import Prelude.Kore
 
+import qualified Control.Lens as Lens
 import Control.Monad.Catch
     ( MonadThrow
     )
-import qualified GHC.Generics as GHC
-import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
+import Data.Generics.Sum
+    ( _Ctor
+    )
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
-import Data.Generics.Sum
-    ( _Ctor
-    )
+import qualified GHC.Generics as GHC
 
 import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
@@ -55,13 +55,15 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , resetConfigVariable, getRewritingTerm
+    , getRewritingTerm
+    , resetConfigVariable
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
     , RHS (..)
     , RewriteRule
-    , RulePattern (..), mapRuleVariables
+    , RulePattern (..)
+    , mapRuleVariables
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
