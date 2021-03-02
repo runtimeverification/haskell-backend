@@ -21,7 +21,6 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -38,7 +37,7 @@ import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import Kore.Step.ClaimPattern
-    ( ClaimPattern (ClaimPattern)
+    ( ClaimPattern
     )
 import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
@@ -98,37 +97,6 @@ instance InternalVariable variable => SimplifyRuleLHS (RulePattern variable)
                     { RulePattern.left = term
                     , RulePattern.requires =
                         makeAndPredicate predicate requires'
-                    }
-
-instance SimplifyRuleLHS ClaimPattern
-  where
-    simplifyRuleLhs rule@(ClaimPattern _ _ _ _) = do
-        simplifiedTerms <-
-            Pattern.simplifyTopConfiguration left
-        fullySimplified <-
-            SMT.Evaluator.filterMultiOr simplifiedTerms
-        let rules =
-                setRuleLeft rule
-                <$> OrPattern.toPatterns fullySimplified
-        return (MultiAnd.make rules)
-      where
-        ClaimPattern { left } = rule
-
-        setRuleLeft
-            :: ClaimPattern
-            -> Pattern RewritingVariableName
-            -> ClaimPattern
-        setRuleLeft
-            claimPattern@ClaimPattern { left = left' }
-            patt@Conditional { substitution }
-          =
-            ClaimPattern.applySubstitution
-                substitution
-                claimPattern
-                    { ClaimPattern.left =
-                        Condition.andCondition
-                            patt
-                            (Condition.eraseConditionalTerm left')
                     }
 
 instance SimplifyRuleLHS (RewriteRule VariableName) where

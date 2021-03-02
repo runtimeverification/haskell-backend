@@ -1,8 +1,8 @@
-/* Spc */
+/* Spu */
 \rewrites{SortGeneratedTopCell{}}(
-    /* Spc */
+    /* Spu */
     \and{SortGeneratedTopCell{}}(
-        /* Sfc */
+        /* Sfu */
         \and{SortGeneratedTopCell{}}(
             /* Sfc */
             \equals{SortBool{}, SortGeneratedTopCell{}}(

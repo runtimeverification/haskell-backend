@@ -133,6 +133,7 @@ import Test.Kore.Builtin.Int
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as Test.List
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.With
@@ -282,7 +283,7 @@ test_inConcatSymbolic =
                         patTrue
                         (Conditional.withoutTerm condition)
             actual <- evaluateT patIn
-            actual === expected
+            Pattern.assertEquivalent (===) expected actual
         )
 
 test_inConcat :: TestTree

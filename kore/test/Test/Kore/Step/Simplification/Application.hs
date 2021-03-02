@@ -44,6 +44,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -203,7 +204,7 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
-                expect =
+                expects =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
@@ -221,7 +222,7 @@ test_applicationSimplification =
                                     ]
                             }
                         ]
-            actual <-
+            actuals <-
                 let
                     result
                         :: forall variable
@@ -275,7 +276,7 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            assertEqual "" expect actual
+            Pattern.assertEquivalentPatterns expects actuals
         ]
     ]
   where

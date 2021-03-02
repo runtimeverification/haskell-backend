@@ -70,6 +70,13 @@ import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.Unparser
+    ( Unparse (..)
+    )
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 {- | The program's state during symbolic execution.
 -}
@@ -87,6 +94,23 @@ data ProgramState a
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance Unparse a => Pretty (ProgramState a) where
+    pretty (Start a) =
+        Pretty.vsep
+            [ "start:"
+            , Pretty.indent 4 $ unparse a
+            ]
+    pretty (Rewritten a) =
+        Pretty.vsep
+            [ "rewritten:"
+            , Pretty.indent 4 $ unparse a
+            ]
+    pretty (Remaining a) =
+        Pretty.vsep
+            [ "remaining:"
+            , Pretty.indent 4 $ unparse a
+            ]
 
 extractProgramState :: ProgramState a -> a
 extractProgramState (Rewritten a) = a

@@ -37,9 +37,6 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -134,4 +131,4 @@ simplifyPattern
     -> simplifier (OrPattern variable)
 simplifyPattern patt =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify SideCondition.top patt
+    $ Pattern.simplify patt

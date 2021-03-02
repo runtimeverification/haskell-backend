@@ -29,13 +29,11 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -84,6 +82,7 @@ test_Pattern_simplify =
                     , makeEqualsPredicate fOfX gOfX
                     ]
                     )
+                & OrPattern.fromPattern
         actual <-
             simplify
                 $ Pattern.fromTermAndPredicate
@@ -101,17 +100,18 @@ test_Pattern_simplify =
                         (makeCeilPredicate fOfY)
                     ]
                     )
-        assertEqual "" (OrPattern.fromPattern expect) actual
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Does not replace and terms under intersecting quantifiers" $ do
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                      (makeAndPredicate
                          (makeCeilPredicate fOfX)
-                         (makeExistsPredicate Mock.x
-                             (makeCeilPredicate fOfX)
+                         (makeExistsPredicate Mock.var_x_0
+                             (makeCeilPredicate (Mock.f (mkElemVar Mock.var_x_0)))
                          )
                      )
+                & OrPattern.fromPattern
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
@@ -120,7 +120,7 @@ test_Pattern_simplify =
                         (makeCeilPredicate fOfX)
                         (makeExistsPredicate Mock.x (makeCeilPredicate fOfX))
                     )
-        assertEqual "" (OrPattern.fromPattern expect) actual
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Contradictions result in bottom" $ do
         actual <-
             simplify $
@@ -141,6 +141,7 @@ test_Pattern_simplify =
                     , makeEqualsPredicate fOfX gOfX
                     ]
                     )
+                & OrPattern.fromPattern
         actual <-
             simplify $
                 Pattern.fromTermAndPredicate
@@ -155,7 +156,7 @@ test_Pattern_simplify =
                             (makeCeilPredicate gOfX)
                         )
                     )
-        assertEqual "" (OrPattern.fromPattern expect) actual
+        Pattern.assertEquivalentPatterns expect actual
     , testCase "Simplifies Implies - Negative" $ do
         let expect =
                 Pattern.fromTermAndPredicate
@@ -264,9 +265,8 @@ test_Pattern_simplify_equalityterm =
             predicateSubstitution =
                 makeEqualsPredicate (mkElemVar Mock.x) Mock.a
             definedGWithSubstitution =
-                makeAndPredicate
-                    definedG
-                    predicateSubstitution
+                (MultiAnd.toPredicate . MultiAnd.make)
+                    [ definedG, predicateSubstitution ]
             definedH = makeCeilPredicate Mock.ch
             expected =
                 OrPattern.fromPatterns
@@ -370,7 +370,7 @@ bottomLike =
     (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
 
 simplify :: Pattern VariableName -> IO (OrPattern VariableName)
-simplify = runSimplifier Mock.env . Pattern.simplify SideCondition.top
+simplify = runSimplifier Mock.env . Pattern.simplify
 
 simplifyAndRemoveTopExists :: Pattern VariableName -> IO (OrPattern VariableName)
 simplifyAndRemoveTopExists =
@@ -388,4 +388,4 @@ assertBidirectionalEqualityResult child1 child2 expected = do
   where
     testOneDirection term = do
         actual <- simplify (Pattern.fromTermLike term)
-        assertEqual "" expected actual
+        Pattern.assertEquivalentPatterns expected actual

@@ -1,6 +1,7 @@
 module Test.Kore.Step.Simplification.Condition
     ( test_simplify_local_functions
     , test_predicateSimplification
+    , test_simplifyPredicates
     ) where
 
 import Prelude.Kore
@@ -21,9 +22,11 @@ import Kore.Internal.OrCondition
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeFalsePredicate
     , makeTruePredicate
     )
 import Kore.Internal.SideCondition
@@ -356,6 +359,33 @@ test_predicateSimplification =
         assertEqual "" (MultiOr.singleton expect) actual
     ]
 
+test_simplifyPredicates :: [TestTree]
+test_simplifyPredicates =
+    [ testCase "\\top => \\top" $ do
+        [ actual ] <- simplifyPredicates makeTruePredicate
+        assertEqual "" Condition.top actual
+    , testCase "\\bottom and _ => \\bottom" $ do
+        let predicate =
+                makeAndPredicate
+                    makeFalsePredicate
+                    (makeEqualsPredicate
+                        (mkElemVar Mock.x)
+                        Mock.a
+                    )
+        actual <- simplifyPredicates predicate
+        assertEqual "" [] actual
+    , testCase "_ and \\bottom => \\bottom" $ do
+        let predicate =
+                makeAndPredicate
+                    (makeEqualsPredicate
+                        (mkElemVar Mock.x)
+                        Mock.a
+                    )
+                    makeFalsePredicate
+        actual <- simplifyPredicates predicate
+        assertEqual "" [] actual
+    ]
+
 simplify :: Condition VariableName -> IO (OrCondition VariableName)
 simplify condition = runSimplifier mempty condition
 
@@ -399,3 +429,10 @@ simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
         }
   | otherwise =
     simpleEvaluator ps patt sideCondition
+
+simplifyPredicates
+    :: Predicate VariableName
+    -> IO [Condition VariableName]
+simplifyPredicates predicate =
+    Condition.simplifyPredicates SideCondition.top predicate
+    & Test.runSimplifierBranch Mock.env

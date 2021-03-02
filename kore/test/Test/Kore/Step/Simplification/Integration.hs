@@ -6,16 +6,13 @@ module Test.Kore.Step.Simplification.Integration
     , test_substituteMap
     , test_substituteList
     , test_substitute
+    , test_simplifySideCondition
     ) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import Data.Align
-    ( align
-    )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Data.Maybe
@@ -35,7 +32,6 @@ import Kore.Equation
     , mkEquation
     )
 import Kore.Internal.InternalSet
-import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -57,11 +53,10 @@ import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplify
+    ( makeEvaluate
     )
 import Kore.Step.Simplification.Simplify
 
-import Test.Expect
 import Test.Kore
 import Test.Kore.Equation.Common
     ( functionAxiomUnification
@@ -163,7 +158,7 @@ test_simplificationIntegration =
         assertEqual "" expect actual
 
      , testCase "map-like simplification" $ do
-        let expect =
+        let expects =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
@@ -187,7 +182,7 @@ test_simplificationIntegration =
                             [(inject Mock.y, Mock.b)]
                         }
                     ]
-        actual <-
+        actuals <-
             evaluate
                 Conditional
                     { term = mkCeil_
@@ -204,7 +199,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqual "" expect actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "map function, non-matching" $ do
         let
             initial =
@@ -570,7 +565,7 @@ test_simplificationIntegration =
                 , variableSort = Mock.boolSort
                 }
 
-        let expected = OrPattern.fromPatterns
+        let expects = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop Mock.otherSort
                     , predicate =
@@ -659,7 +654,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 ]
-        actual <- evaluate
+        actuals <- evaluate
             Conditional
                 { term = mkIn Mock.otherSort
                     (mkNu iz (Mock.builtinInt 595))
@@ -701,7 +696,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        assertEqual "" expected actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "Builtin and simplification failure" $ do
         let m = mkSetVariable (testId "m") Mock.listSort
             ue = mkSetVariable (testId "ue") Mock.listSort
@@ -763,22 +758,22 @@ test_simplificationIntegration =
                     , predicate = makeAndPredicate
                         (makeImpliesPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate
-                                    (mkAnd
-                                        (Mock.fSet mkTop_)
-                                        (mkMu k
-                                            (asInternal (Set.fromList [Mock.a]))
-                                        )
-                                    )
-                                )
                                 (makeAndPredicate
                                     (makeCeilPredicate
-                                        (Mock.fSet mkTop_)
+                                        (mkAnd
+                                            (Mock.fSet mkTop_)
+                                            (mkMu k
+                                                (asInternal (Set.fromList [Mock.a]))
+                                            )
+                                        )
                                     )
                                     (makeCeilPredicate
-                                        (mkMu k
-                                            (asInternal (Set.fromList [Mock.a]))
-                                        )
+                                       (Mock.fSet mkTop_)
+                                    )
+                                )
+                                (makeCeilPredicate
+                                    (mkMu k
+                                        (asInternal (Set.fromList [Mock.a]))
                                     )
                                 )
                             )
@@ -791,22 +786,22 @@ test_simplificationIntegration =
                         )
                         (makeImpliesPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate
-                                    (mkAnd
-                                        (Mock.fSet mkTop_)
-                                        (mkMu k
-                                            (mkEvaluated Mock.unitSet)
-                                        )
-                                    )
-                                )
                                 (makeAndPredicate
                                     (makeCeilPredicate
-                                        (Mock.fSet mkTop_)
+                                        (mkAnd
+                                            (Mock.fSet mkTop_)
+                                            (mkMu k
+                                                (mkEvaluated Mock.unitSet)
+                                            )
+                                        )
                                     )
                                     (makeCeilPredicate
-                                        (mkMu k
-                                            (mkEvaluated Mock.unitSet)
-                                        )
+                                       (Mock.fSet mkTop_)
+                                    )
+                                )
+                                (makeCeilPredicate
+                                    (mkMu k
+                                        (mkEvaluated Mock.unitSet)
                                     )
                                 )
                             )
@@ -820,6 +815,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 ]
+                & OrPattern.fromPatterns
         actuals <- evaluate
             Conditional
                 { term = mkImplies
@@ -853,11 +849,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        for_ (align expects (Foldable.toList actuals)) $ \these -> do
-            (expect, actual) <- expectThese these
-            on (assertEqual "") term expect actual
-            on (assertEqual "") (MultiAnd.fromPredicate . predicate) expect actual
-            on (assertEqual "") substitution expect actual
+        Pattern.assertEquivalentPatterns expects actuals
     , testCase "Ceil simplification" $ do
         actual <- evaluate
             Conditional
@@ -1389,6 +1381,50 @@ test_substituteList =
   where
     mkDomainBuiltinList = Mock.builtinList
 
+test_simplifySideCondition :: [TestTree]
+test_simplifySideCondition =
+    [ testCase "Simplifies function application in side condition" $ do
+        let configuration =
+                Pattern.fromTermAndPredicate
+                    Mock.a
+                    (makeAndPredicate
+                        (makeEqualsPredicate
+                            (Mock.f Mock.a)
+                            Mock.b
+                        )
+                        (makeEqualsPredicate
+                            (Mock.g Mock.a)
+                            (Mock.g Mock.b)
+                        )
+                    )
+            expected =
+                Pattern.fromTermAndPredicate
+                    Mock.a
+                    (makeEqualsPredicate
+                        (Mock.g Mock.a)
+                        (Mock.g Mock.b)
+                    )
+                & OrPattern.fromPattern
+            axioms =
+                mkEvaluatorRegistry
+                    (Map.fromList
+                        [ ( AxiomIdentifier.Application Mock.fId
+                        , [ functionAxiomUnification
+                                Mock.fSymbol
+                                [Mock.a]
+                                Mock.b
+                                ( makeEqualsPredicate
+                                    (Mock.g Mock.a)
+                                    (Mock.g Mock.b)
+                                )
+                          ]
+                          )
+                        ]
+                    )
+        actual <- evaluateWithAxioms axioms configuration
+        assertEqual "" expected actual
+    ]
+
 evaluate :: TestPattern -> IO OrTestPattern
 evaluate = evaluateWithAxioms Map.empty
 
@@ -1405,7 +1441,7 @@ evaluateConditionalWithAxioms
     -> TestPattern
     -> IO OrTestPattern
 evaluateConditionalWithAxioms axioms sideCondition =
-    runSimplifierSMT env . Pattern.simplify sideCondition
+    runSimplifierSMT env . Pattern.makeEvaluate sideCondition
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

@@ -14,6 +14,7 @@ module Kore.Internal.TermLike
     , Defined (..)
     , extractAttributes
     , isSimplified
+    , isSimplifiedSomeCondition
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
@@ -445,9 +446,32 @@ fromConcrete
     -> TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)
 
+{- | Is the 'TermLike' fully simplified under the given side condition?
+
+See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under any side condition?
+
+See also: 'isSimplified', 'isSimplifiedSomeCondition'.
+
+ -}
+isSimplifiedAnyCondition :: TermLike variable -> Bool
+isSimplifiedAnyCondition =
+    Attribute.isSimplifiedAnyCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under some side condition?
+
+See also: 'isSimplified', 'isSimplifiedAnyCondition'.
+
+ -}
+isSimplifiedSomeCondition :: TermLike variable -> Bool
+isSimplifiedSomeCondition =
+    Attribute.isSimplifiedSomeCondition . extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 
@@ -461,9 +485,6 @@ forgetSimplified
     => TermLike variable
     -> TermLike variable
 forgetSimplified = resynthesize
-
-isFullySimplified :: TermLike variable -> Bool
-isFullySimplified = Attribute.isFullySimplified . extractAttributes
 
 simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
@@ -488,9 +509,9 @@ assertConstructorLikeKeys keys a
                 , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-    | any (not . isFullySimplified) keys =
+    | any (not . isSimplifiedAnyCondition) keys =
         let simplifiableKeys =
-                filter (not . isFullySimplified) $ Prelude.Kore.toList keys
+                filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected fully simplified patterns,\

@@ -467,6 +467,9 @@ simplify sideCondition = \termLike ->
             DefinedF definedF ->
                 Defined.simplify <$> simplifyChildren definedF
 
+-- | We expect each predicate in the result to have been fully
+-- simplified with a different side condition.
+-- See 'Kore.Step.Simplification.Condition.simplifyPredicates'.
 ensureSimplifiedResult
     :: InternalVariable variable
     => Monad simplifier
@@ -475,7 +478,8 @@ ensureSimplifiedResult
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 ensureSimplifiedResult repr termLike results
-  | OrPattern.isSimplified repr results = pure results
+  | OrPattern.hasSimplifiedChildrenIgnoreConditions results =
+      pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -483,6 +487,8 @@ ensureSimplifiedResult repr termLike results
             (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
+        , Pretty.indent 2 "with side condition:"
+        , Pretty.indent 4 (Pretty.pretty repr)
         ]
 
 ensureSimplifiedCondition
