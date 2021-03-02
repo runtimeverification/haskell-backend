@@ -241,6 +241,11 @@ isFullySimplified (Simplified_ Fully Unknown) = False
 isFullySimplified (Simplified_ Partly _) = False
 isFullySimplified NotSimplified = False
 
+{- | Is the pattern fully simplified under some side condition?
+
+See also: 'isSimplified', 'isFullySimplified'.
+
+ -}
 isSimplifiedIgnoreCondition :: Simplified -> Bool
 isSimplifiedIgnoreCondition (Simplified_ Fully _) = True
 isSimplifiedIgnoreCondition _ = False
