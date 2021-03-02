@@ -170,9 +170,9 @@ hasSimplifiedChildrenIgnoreConditions
     :: Ord variable
     => Pattern variable -> Bool
 hasSimplifiedChildrenIgnoreConditions patt =
-    TermLike.isSimplifiedIgnoreCondition term
-    && all Predicate.isSimplifiedIgnoreCondition clauses
-    && Substitution.isSimplifiedIgnoreCondition substitution
+    TermLike.isSimplifiedSomeCondition term
+    && all Predicate.isSimplifiedSomeCondition clauses
+    && Substitution.isSimplifiedSomeCondition substitution
   where
     Conditional { term, predicate, substitution } = patt
     clauses = MultiAnd.fromPredicate predicate

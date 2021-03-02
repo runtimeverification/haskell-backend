@@ -31,7 +31,7 @@ module Kore.Internal.Substitution
     , mapAssignmentVariables
     , isNormalized
     , isSimplified
-    , isSimplifiedIgnoreCondition
+    , isSimplifiedSomeCondition
     , forgetSimplified
     , markSimplified
     , simplifiedAttribute
@@ -489,16 +489,33 @@ mapTerms mapper (Substitution s) =
 mapTerms mapper (NormalizedSubstitution s) =
     NormalizedSubstitution (fmap mapper s)
 
+{- | Is the 'Substitution' fully simplified under the given side condition?
+
+See also: 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
 isSimplified _ (Substitution _) = False
 isSimplified sideCondition (NormalizedSubstitution normalized) =
     all (TermLike.isSimplified sideCondition) normalized
 
-isSimplifiedIgnoreCondition :: Substitution variable -> Bool
-isSimplifiedIgnoreCondition (Substitution _) = False
-isSimplifiedIgnoreCondition (NormalizedSubstitution normalized) =
-    all TermLike.isSimplifiedIgnoreCondition normalized
+{- | Is the 'Substitution' fully simplified under some side condition?
 
+See also: 'isSimplified'.
+
+ -}
+isSimplifiedSomeCondition :: Substitution variable -> Bool
+isSimplifiedSomeCondition (Substitution _) = False
+isSimplifiedSomeCondition (NormalizedSubstitution normalized) =
+    all TermLike.isSimplifiedSomeCondition normalized
+
+{- | Forget the 'simplifiedAttribute' associated with the 'Substitution'.
+
+@
+isSimplified (forgetSimplified _) == False
+@
+
+ -}
 forgetSimplified
     :: InternalVariable variable
     => Substitution variable -> Substitution variable
@@ -507,6 +524,11 @@ forgetSimplified =
     . fmap (mapAssignedTerm TermLike.forgetSimplified)
     . unwrap
 
+{- | Mark a 'Substitution' as fully simplified at the current level.
+
+See 'Kore.Internal.TermLike.markSimplified'.
+
+-}
 markSimplified
     :: InternalVariable variable
     => Substitution variable -> Substitution variable

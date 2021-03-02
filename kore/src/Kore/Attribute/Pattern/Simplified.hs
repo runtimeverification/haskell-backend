@@ -12,8 +12,8 @@ module Kore.Attribute.Pattern.Simplified
     , pattern Simplified_
     , Type (..)
     , isSimplified
-    , isFullySimplified
-    , isSimplifiedIgnoreCondition
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     , simplifiedTo
     , notSimplified
     , fullySimplified
@@ -226,6 +226,11 @@ Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
 
 s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
+{- | Is the pattern fully simplified under the given side condition?
+
+See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
 isSimplified _ (Simplified_ Fully Any) = True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
@@ -234,21 +239,26 @@ isSimplified _ (Simplified_ Fully Unknown) = False
 isSimplified _ (Simplified_ Partly _) = False
 isSimplified _ NotSimplified = False
 
-isFullySimplified :: Simplified -> Bool
-isFullySimplified (Simplified_ Fully Any) = True
-isFullySimplified (Simplified_ Fully (Condition _)) = False
-isFullySimplified (Simplified_ Fully Unknown) = False
-isFullySimplified (Simplified_ Partly _) = False
-isFullySimplified NotSimplified = False
+{- | Is the pattern fully simplified under any side condition?
+
+See also: 'isSimplified', 'isSimplifiedSomeCondition'.
+
+ -}
+isSimplifiedAnyCondition :: Simplified -> Bool
+isSimplifiedAnyCondition (Simplified_ Fully Any) = True
+isSimplifiedAnyCondition (Simplified_ Fully (Condition _)) = False
+isSimplifiedAnyCondition (Simplified_ Fully Unknown) = False
+isSimplifiedAnyCondition (Simplified_ Partly _) = False
+isSimplifiedAnyCondition NotSimplified = False
 
 {- | Is the pattern fully simplified under some side condition?
 
-See also: 'isSimplified', 'isFullySimplified'.
+See also: 'isSimplified', 'isSimplifiedAnyCondition'.
 
  -}
-isSimplifiedIgnoreCondition :: Simplified -> Bool
-isSimplifiedIgnoreCondition (Simplified_ Fully _) = True
-isSimplifiedIgnoreCondition _ = False
+isSimplifiedSomeCondition :: Simplified -> Bool
+isSimplifiedSomeCondition (Simplified_ Fully _) = True
+isSimplifiedSomeCondition _ = False
 
 fullySimplified :: Simplified
 fullySimplified = Simplified_ Fully Any
