@@ -7,6 +7,8 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Unification.Procedure
     ( unificationProcedure
     ) where
@@ -23,6 +25,9 @@ import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -45,13 +50,11 @@ import Logic
 -- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 unificationProcedure
-    ::  ( InternalVariable variable
-        , MonadUnify unifier
-        )
-    => SideCondition variable
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Condition variable)
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
   | p1Sort /= p2Sort =
     Monad.Unify.explainAndReturnBottom "Cannot unify different sorts."  p1 p2

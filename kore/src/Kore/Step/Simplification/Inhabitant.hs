@@ -3,6 +3,8 @@ Module      : Kore.Step.Simplification.Inhabitant
 Description : Tools for Inhabitant pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Inhabitant
     ( simplify
     ) where
@@ -17,14 +19,16 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
 simplify
-    :: InternalVariable variable
-    => Inhabitant (OrPattern variable)
-    -> OrPattern variable
+    :: Inhabitant (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Inhabitant { inhSort } =
     OrPattern.fromTermLike
     $ TermLike.markSimplified

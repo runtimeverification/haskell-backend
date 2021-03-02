@@ -119,6 +119,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
     , sameSort
@@ -896,20 +899,22 @@ multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
 unifyEqualsNormalized
-    :: forall normalized unifier variable
-    .   ( InternalVariable variable
-        , Traversable (Value normalized)
+    :: forall normalized unifier
+    .   ( Traversable (Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
         )
     => HasCallStack
     => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> InternalAc normalized Key (TermLike variable)
-    -> InternalAc normalized Key (TermLike variable)
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    ->  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> InternalAc normalized Key (TermLike RewritingVariableName)
+    -> InternalAc normalized Key (TermLike RewritingVariableName)
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEqualsNormalized
     tools
     first
@@ -933,18 +938,19 @@ unifyEqualsNormalized
             firstNormalized
             secondNormalized
     let
-        unifierNormalizedTerm :: TermNormalizedAc normalized variable
-        unifierCondition :: Condition variable
+        unifierNormalizedTerm
+            :: TermNormalizedAc normalized RewritingVariableName
+        unifierCondition :: Condition RewritingVariableName
         (unifierNormalizedTerm, unifierCondition) =
             Conditional.splitTerm unifierNormalized
-        normalizedTerm :: TermLike variable
+        normalizedTerm :: TermLike RewritingVariableName
         normalizedTerm = asInternal tools sort1 unifierNormalizedTerm
 
     -- TODO(virgil): Check whether this normalization is still needed
     -- (the normalizedTerm may already be re-normalized) and remove it if not.
     renormalized <- normalize1 normalizedTerm
 
-    let unifierTerm :: TermLike variable
+    let unifierTerm :: TermLike RewritingVariableName
         unifierTerm = markSimplified $ asInternal tools sort1 renormalized
 
         markSimplified =
@@ -971,6 +977,7 @@ unifyEqualsNormalized
 
     normalize1
         :: HasCallStack
+        => InternalVariable variable
         => TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
@@ -986,21 +993,26 @@ unifyEqualsNormalized
 Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
-    ::  forall normalized variable unifier
-    .   ( InternalVariable variable
-        , Traversable (Value normalized)
+    ::  forall normalized unifier
+    .   ( Traversable (Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
         )
     => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermNormalizedAc normalized variable
-    -> TermNormalizedAc normalized variable
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    ->  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> TermNormalizedAc normalized RewritingVariableName
+    -> TermNormalizedAc normalized RewritingVariableName
     -> MaybeT
         unifier
-        (Conditional variable (TermNormalizedAc normalized variable))
+        (Conditional
+            RewritingVariableName
+            (TermNormalizedAc normalized RewritingVariableName)
+        )
 unifyEqualsNormalizedAc
     tools
     first
@@ -1144,30 +1156,33 @@ unifyEqualsNormalizedAc
         ++ map toConcretePat elementDifference2
 
     toConcretePat
-        :: (Key, Value normalized (TermLike variable))
-        -> ConcreteOrWithVariable normalized variable
-    toConcretePat (a, b) = ConcretePat (from @Key @(TermLike variable) a, b)
+        :: (Key, Value normalized (TermLike RewritingVariableName))
+        -> ConcreteOrWithVariable
+            normalized
+            RewritingVariableName
+    toConcretePat (a, b) =
+        ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
 
     unifyElementList
         :: forall key
         .   [
                 (key
-                ,   ( Value normalized (TermLike variable)
-                    , Value normalized (TermLike variable)
+                ,   ( Value normalized (TermLike RewritingVariableName)
+                    , Value normalized (TermLike RewritingVariableName)
                     )
                 )
             ]
         -> unifier
-            ( [(key, Value normalized (TermLike variable))]
-            , Condition variable
+            ( [(key, Value normalized (TermLike RewritingVariableName))]
+            , Condition RewritingVariableName
             )
     unifyElementList elements = do
         result <- mapM (unifyCommonElements unifyEqualsChildren) elements
         let
-            terms :: [(key, Value normalized (TermLike variable))]
-            predicates :: [Condition variable]
+            terms :: [(key, Value normalized (TermLike RewritingVariableName))]
+            predicates :: [Condition RewritingVariableName]
             (terms, predicates) = unzip (map Conditional.splitTerm result)
-            predicate :: Condition variable
+            predicate :: Condition RewritingVariableName
             predicate = List.foldl'
                 andCondition
                 Condition.top
@@ -1175,16 +1190,22 @@ unifyEqualsNormalizedAc
 
         return (terms, predicate)
 
-    simplify :: TermLike variable -> unifier (Pattern variable)
+    simplify
+        :: TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     simplify term =
         lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
     simplifyPair
-        :: (TermLike variable, Value normalized (TermLike variable))
+        ::  ( TermLike RewritingVariableName
+            , Value normalized (TermLike RewritingVariableName)
+            )
         -> unifier
             (Conditional
-                variable
-                (TermLike variable, Value normalized (TermLike variable))
+                RewritingVariableName
+                    ( TermLike RewritingVariableName
+                    , Value normalized (TermLike RewritingVariableName)
+                    )
             )
     simplifyPair (key, value) = do
         simplifiedKey <- simplifyTermLike' key
@@ -1194,15 +1215,18 @@ unifyEqualsNormalizedAc
             splitSimplifiedValue
                 :: Value
                     normalized
-                    (TermLike variable, Condition variable)
+                    ( TermLike RewritingVariableName
+                    , Condition RewritingVariableName
+                    )
             splitSimplifiedValue =
                 fmap Conditional.splitTerm simplifiedValue
-            simplifiedValueTerm :: Value normalized (TermLike variable)
+            simplifiedValueTerm
+                :: Value normalized (TermLike RewritingVariableName)
             simplifiedValueTerm = fmap fst splitSimplifiedValue
             simplifiedValueConditions
-                :: Value normalized (Condition variable)
+                :: Value normalized (Condition RewritingVariableName)
             simplifiedValueConditions = fmap snd splitSimplifiedValue
-            simplifiedValueCondition :: Condition variable
+            simplifiedValueCondition :: Condition RewritingVariableName
             simplifiedValueCondition =
                 foldr
                     andCondition
@@ -1214,7 +1238,9 @@ unifyEqualsNormalizedAc
             `andCondition` simplifiedValueCondition
             )
       where
-        simplifyTermLike' :: TermLike variable -> unifier (Pattern variable)
+        simplifyTermLike'
+            :: TermLike RewritingVariableName
+            -> unifier (Pattern RewritingVariableName)
         simplifyTermLike' term =
             lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 

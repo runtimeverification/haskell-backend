@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
@@ -22,6 +24,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -30,9 +35,8 @@ Right now this does not do any actual simplification.
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    :: InternalVariable variable
-    => Rewrites Sort (OrPattern variable)
-    -> OrPattern variable
+    :: Rewrites Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify
     Rewrites
         { rewritesFirst = first
@@ -55,20 +59,18 @@ will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
-    :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
-    -> OrPattern variable
+    :: OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toPattern first)
         (OrPattern.toPattern second)
 
 makeEvaluateRewrites
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike
     $ TermLike.markSimplified

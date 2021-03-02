@@ -10,6 +10,8 @@ module Kore.Step.Simplification.Condition
     , simplify
     , simplifyPredicate
     , simplifyCondition
+    -- For testing
+    , simplifyPredicates
     ) where
 
 import Prelude.Kore
@@ -62,6 +64,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( isConstructor
@@ -89,6 +92,9 @@ import Kore.Internal.TermLike
     , mkEquals_
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -117,22 +123,21 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify
-    ::  forall simplifier variable any
+    ::  forall simplifier any
     .   ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
-    ->  SideCondition variable
-    ->  Conditional variable any
-    ->  LogicT simplifier (Conditional variable any)
+    ->  SideCondition RewritingVariableName
+    ->  Conditional RewritingVariableName any
+    ->  LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
     normalize >=> worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
-        simplified <- simplifyPredicate sideCondition predicate'
+        simplified <- simplifyPredicates sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -157,14 +162,58 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
 
     normalize
         ::  forall any'
-        .   Conditional variable any'
-        ->  LogicT simplifier (Conditional variable any')
+        .   Conditional RewritingVariableName any'
+        ->  LogicT simplifier (Conditional RewritingVariableName any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
             simplifySubstitution sideCondition substitution
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
+
+-- | Simplify a 'Predicate' by splitting it up into a conjunction of predicates
+-- and simplifying each one under the assumption that the others are true.
+simplifyPredicates
+    :: forall simplifier
+    .  HasCallStack
+    => MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> LogicT simplifier (Condition RewritingVariableName)
+simplifyPredicates
+    sideCondition
+    (toList . MultiAnd.fromPredicate -> predicates)
+  =
+    State.execStateT (worker predicates) Condition.top
+    >>= markConjunctionSimplified
+  where
+    worker
+        :: [Predicate RewritingVariableName]
+        -> StateT
+            (Condition RewritingVariableName)
+            (LogicT simplifier)
+            ()
+    worker [] = return ()
+    worker (pred' : rest) = do
+        condition <- State.get
+        let otherConds =
+                SideCondition.andCondition
+                    sideCondition
+                    (mkOtherConditions condition rest)
+        result <-
+            simplifyPredicate otherConds pred'
+            & lift
+        State.put (Condition.andCondition condition result)
+        worker rest
+
+    mkOtherConditions (Condition.toPredicate -> alreadySimplified) rest =
+        from @_ @(Condition _)
+        . MultiAnd.toPredicate
+        . MultiAnd.make
+        $ alreadySimplified : rest
+
+    markConjunctionSimplified =
+        return . Lens.over (field @"predicate") Predicate.markSimplified
 
 {- | Simplify the 'Predicate' once.
 
@@ -176,12 +225,11 @@ See also: 'simplify'
 -}
 simplifyPredicate
     ::  ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
-    =>  SideCondition variable
-    ->  Predicate variable
-    ->  LogicT simplifier (Condition variable)
+    =>  SideCondition RewritingVariableName
+    ->  Predicate RewritingVariableName
+    ->  LogicT simplifier (Condition RewritingVariableName)
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
@@ -201,18 +249,17 @@ simplifyPredicate sideCondition predicate = do
             ]
 
 simplifyConjunctions
-    :: InternalVariable variable
-    => Predicate variable
-    -> Changed (Predicate variable)
+    :: Predicate RewritingVariableName
+    -> Changed (Predicate RewritingVariableName)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
     case simplifyConjunctionByAssumption predicates of
         Unchanged _ -> Unchanged original
         Changed changed ->
             Changed (MultiAnd.toPredicate changed)
 
-data DoubleMap variable = DoubleMap
-    { termLikeMap :: HashMap (TermLike variable) (TermLike variable)
-    , predMap :: HashMap (Predicate variable) (Predicate variable)
+data DoubleMap = DoubleMap
+    { termLikeMap :: HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+    , predMap :: HashMap (Predicate RewritingVariableName) (Predicate RewritingVariableName)
     }
     deriving (Eq, GHC.Generic, Show)
 
@@ -223,10 +270,8 @@ A ∧ P(A) = A ∧ P(⊤)
 @
  -}
 simplifyConjunctionByAssumption
-    :: forall variable
-    .  InternalVariable variable
-    => MultiAnd (Predicate variable)
-    -> Changed (MultiAnd (Predicate variable))
+    :: MultiAnd (Predicate RewritingVariableName)
+    -> Changed (MultiAnd (Predicate RewritingVariableName))
 simplifyConjunctionByAssumption (toList -> andPredicates) =
     fmap MultiAnd.make
     $ flip evalStateT (DoubleMap HashMap.empty HashMap.empty)
@@ -239,10 +284,10 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     -- Sorting by size ensures that every clause is considered before any clause
     -- which could contain it, because the containing clause is necessarily
     -- larger.
-    sortBySize :: [Predicate variable] -> [Predicate variable]
+    sortBySize :: [Predicate RewritingVariableName] -> [Predicate RewritingVariableName]
     sortBySize = sortOn predSize
 
-    size :: TermLike variable -> Int
+    size :: TermLike RewritingVariableName -> Int
     size =
         Recursive.fold $ \(_ :< termLikeF) ->
             case termLikeF of
@@ -250,7 +295,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
-    predSize :: Predicate variable -> Int
+    predSize :: Predicate RewritingVariableName -> Int
     predSize =
         Recursive.fold $ \(_ :< predF) ->
             case predF of
@@ -261,8 +306,8 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 _ -> 1 + sum predF
 
     assume
-        :: Predicate variable ->
-        StateT (DoubleMap variable) Changed ()
+        :: Predicate RewritingVariableName ->
+        StateT DoubleMap Changed ()
     assume predicate =
         State.modify' (assumeEqualTerms . assumePredicate)
       where
@@ -290,16 +335,16 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                 _ -> id
 
     applyAssumptions
-        ::  Predicate variable
-        ->  StateT (DoubleMap variable) Changed (Predicate variable)
+        ::  Predicate RewritingVariableName
+        ->  StateT DoubleMap Changed (Predicate RewritingVariableName)
     applyAssumptions replaceIn = do
         assumptions <- State.get
         lift (applyAssumptionsWorker assumptions replaceIn)
 
     applyAssumptionsWorker
-        :: DoubleMap variable
-        -> Predicate variable
-        -> Changed (Predicate variable)
+        :: DoubleMap
+        -> Predicate RewritingVariableName
+        -> Changed (Predicate RewritingVariableName)
     applyAssumptionsWorker assumptions original
       | Just result <- HashMap.lookup original (predMap assumptions) = Changed result
 
@@ -342,9 +387,9 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
             wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
 
     applyAssumptionsWorkerTerm
-        :: HashMap (TermLike variable) (TermLike variable)
-        -> TermLike variable
-        -> Changed (TermLike variable)
+        :: HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
+        -> Changed (TermLike RewritingVariableName)
     applyAssumptionsWorkerTerm assumptions (TermLike.unDefined -> original)
       | Just result <- HashMap.lookup original assumptions = Changed result
 
@@ -387,8 +432,8 @@ in either order, but the function pattern is always returned first in the
 'Pair'.
  -}
 retractLocalFunction
-    :: TermLike variable
-    -> Maybe (Pair (TermLike variable))
+    :: TermLike RewritingVariableName
+    -> Maybe (Pair (TermLike RewritingVariableName))
 retractLocalFunction =
     \case
         Equals_ _ _ term1 term2 -> go term1 term2 <|> go term2 term1

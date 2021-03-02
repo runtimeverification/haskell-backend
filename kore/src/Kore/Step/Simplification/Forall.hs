@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Forall
     ( simplify
     , makeEvaluate
@@ -45,7 +47,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , Forall (Forall)
-    , InternalVariable
     , Sort
     , Variable (..)
     , mkForall
@@ -56,6 +57,9 @@ import qualified Kore.Internal.TermLike as TermLike
     , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -76,9 +80,8 @@ we only expect forall usage for symbolic variables, so we won't attempt to
 simplify it this way.
 -}
 simplify
-    :: InternalVariable variable
-    => Forall Sort variable (OrPattern variable)
-    -> OrPattern variable
+    :: Forall Sort RewritingVariableName (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
@@ -96,10 +99,9 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> OrPattern variable
-    -> OrPattern variable
+    :: ElementVariable RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = simplified
   | OrPattern.isFalse simplified = simplified
@@ -111,10 +113,9 @@ simplifyEvaluated variable simplified
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom

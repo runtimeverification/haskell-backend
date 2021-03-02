@@ -78,6 +78,9 @@ import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Syntax
     ( Const (..)
     )
@@ -144,13 +147,13 @@ impliesBoolSymbol =
     binaryBoolSymbol "impliesBool"
     & hook "BOOL.implies" & smthook "=>"
 
-notBool :: TermLike VariableName -> TermLike VariableName
+notBool :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 notBool x = mkApplySymbol notBoolSymbol [x]
 
 andBool, impliesBool, eqBool, orBool, andThenBool
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 andBool x y = mkApplySymbol andBoolSymbol [x, y]
 impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
 eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
@@ -284,19 +287,22 @@ emodIntSymbol =
 dummyIntSymbol :: Internal.Symbol
 dummyIntSymbol = unaryIntSymbol "f" & function
 
-dummyInt :: TermLike VariableName -> TermLike VariableName
+dummyInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
 
 dummyFunctionalIntSymbol :: Internal.Symbol
 dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
 
-dummyFunctionalInt :: TermLike VariableName -> TermLike VariableName
+dummyFunctionalInt
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
 
 addInt, subInt, mulInt, divInt, tdivInt, tmodInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 addInt i j = mkApplySymbol addIntSymbol  [i, j]
 subInt i j = mkApplySymbol subIntSymbol  [i, j]
 mulInt i j = mkApplySymbol mulIntSymbol  [i, j]
@@ -305,9 +311,9 @@ tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
 
 eqInt, ltInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 
@@ -346,7 +352,11 @@ injSymbol lSort rSort =
     & sortInjection
     & injective
 
-inj :: Sort -> TermLike VariableName -> TermLike VariableName
+inj
+    :: InternalVariable variable
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
 inj injTo injChild =
     (synthesize . InjF)
         Inj { injConstructor, injFrom, injTo, injAttributes, injChild }
@@ -357,23 +367,26 @@ inj injTo injChild =
     Internal.Symbol { symbolAttributes = injAttributes } = symbol
 
 keqBool, kneqBool
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
 kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
 
-kseq :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+kseq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 kseq x y = mkApplySymbol kseqSymbol [x, y]
 
-dotk :: TermLike VariableName
+dotk :: TermLike RewritingVariableName
 dotk = mkApplySymbol dotkSymbol []
 
 kiteK
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 
 -- ** List
@@ -425,42 +438,54 @@ updateAllListSymbol =
     builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
     & hook "LIST.updateAll"
 
-unitList :: TermLike VariableName
+unitList :: TermLike RewritingVariableName
 unitList = mkApplySymbol unitListSymbol []
 
-elementList :: TermLike VariableName -> TermLike VariableName
+elementList
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 elementList x = mkApplySymbol elementListSymbol [x]
 
-concatList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+concatList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatList x y = mkApplySymbol concatListSymbol [x, y]
 
-getList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+getList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 getList list poz = mkApplySymbol getListSymbol [list, poz]
 
-sizeList :: TermLike VariableName -> TermLike VariableName
+sizeList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
-makeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+makeList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 makeList len x = mkApplySymbol makeListSymbol [len, x]
 
 updateList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
 inList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inList x list = mkApplySymbol inListSymbol [x, list]
 
 updateAllList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
 
 -- ** Map
@@ -526,84 +551,84 @@ inclusionMapSymbol :: Internal.Symbol
 inclusionMapSymbol =
     builtinSymbol "inclusionMap" boolSort [mapSort, mapSort] & hook "MAP.inclusion"
 
-unitMap :: TermLike VariableName
+unitMap :: TermLike RewritingVariableName
 unitMap = mkApplySymbol unitMapSymbol []
 
 updateMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
 
 lookupMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
 
 lookupOrDefaultMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 lookupOrDefaultMap map' key def' =
     mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
 
 elementMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 elementMap key value = mkApplySymbol elementMapSymbol [key, value]
 
 concatMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
 
 inKeysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
 
 keysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keysMap map' = mkApplySymbol keysMapSymbol [map']
 
 keysListMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keysListMap map' = mkApplySymbol keysListMapSymbol [map']
 
 removeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
 
 removeAllMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
 sizeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
 valuesMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 valuesMap map' = mkApplySymbol valuesMapSymbol [map']
 
 inclusionMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inclusionMap mapLeft mapRight = mkApplySymbol inclusionMapSymbol [mapLeft, mapRight]
 
 -- ** Pair
@@ -619,7 +644,10 @@ pairSymbol lSort rSort =
     & constructor
     & functional
 
-pair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+pair
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 pair l r =
     mkApplySymbol (pairSymbol lSort rSort) [l, r]
   where
@@ -631,7 +659,7 @@ pair l r =
 unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
 
-unitSet :: TermLike VariableName
+unitSet :: TermLike RewritingVariableName
 unitSet = mkApplySymbol unitSetSymbol []
 
 elementSetSymbol :: Internal.Symbol
@@ -644,7 +672,9 @@ elementSetSymbolTestSort =
     builtinSymbol "elementSet" setSort [Mock.testSort]
     & hook "SET.element" & functional
 
-elementSet :: TermLike VariableName -> TermLike VariableName
+elementSet
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
@@ -652,9 +682,9 @@ concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & function
 
 concatSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
 
 inSetSymbol :: Internal.Symbol
@@ -670,9 +700,9 @@ differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
 
 differenceSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
 
 toListSetSymbol :: Internal.Symbol
@@ -696,22 +726,22 @@ inclusionSetSymbol =
         & hook "SET.inclusion"
 
 intersectionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 intersectionSet set1 set2 =
     mkApplySymbol intersectionSetSymbol [set1, set2]
 
 list2setSet
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
 
 inclusionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inclusionSet setLeft setRight =
     mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 
@@ -777,9 +807,9 @@ string2TokenStringSymbol =
     & hook "STRING.string2token"
 
 eqString, concatString
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
 concatString x y = mkApplySymbol concatStringSymbol [x, y]
 
@@ -791,7 +821,7 @@ littleEndianBytesSymbol =
     & klabel "littleEndianBytes"
     & symbolKywd
 
-littleEndianBytes :: TermLike VariableName
+littleEndianBytes :: InternalVariable variable => TermLike variable
 littleEndianBytes =
     mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
 
@@ -801,7 +831,7 @@ bigEndianBytesSymbol =
     & klabel "bigEndianBytes"
     & symbolKywd
 
-bigEndianBytes :: TermLike VariableName
+bigEndianBytes :: InternalVariable variable => TermLike variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 
@@ -811,7 +841,7 @@ signedBytesSymbol =
     & klabel "signedBytes"
     & symbolKywd
 
-signedBytes :: TermLike VariableName
+signedBytes :: InternalVariable variable => TermLike variable
 signedBytes =
     mkSignedness (Signedness.Signed signedBytesSymbol)
 
@@ -821,7 +851,7 @@ unsignedBytesSymbol =
     & klabel "unsignedBytes"
     & symbolKywd
 
-unsignedBytes :: TermLike VariableName
+unsignedBytes :: InternalVariable variable => TermLike variable
 unsignedBytes =
     mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
 
@@ -886,10 +916,10 @@ int2bytesSymbol =
     & hook "BYTES.int2bytes"
 
 int2bytes
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
 
 bytes2intSymbol :: Internal.Symbol
@@ -899,10 +929,10 @@ bytes2intSymbol =
     & hook "BYTES.bytes2int"
 
 bytes2int
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 bytes2int bytes end sign = mkApplySymbol bytes2intSymbol [bytes, end, sign]
 
 -- * Krypto
@@ -936,23 +966,28 @@ ripemd160Symbol =
     & hook "KRYPTO.ripemd160"
 
 ecdsaRecoverKrypto
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
 
-keccak256Krypto :: TermLike VariableName -> TermLike VariableName
+keccak256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
 
-sha256Krypto :: TermLike VariableName -> TermLike VariableName
+sha256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha256Krypto message = mkApplySymbol sha256Symbol [message]
 
-sha3256Krypto :: TermLike VariableName -> TermLike VariableName
+sha3256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
 
-ripemd160Krypto :: TermLike VariableName -> TermLike VariableName
+ripemd160Krypto
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------

@@ -97,6 +97,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
     )
@@ -505,12 +508,12 @@ multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
 unifyEquals
-    :: forall variable unifier
-    .  (InternalVariable variable, MonadUnify unifier)
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals unifyEqualsChildren first second = do
     tools <- Simplifier.askMetadataTools
     (Monad.guard . fromMaybe False) (isMapSort tools sort1)
@@ -524,9 +527,9 @@ unifyEquals unifyEqualsChildren first second = do
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
     unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
@@ -543,8 +546,8 @@ unifyEquals unifyEqualsChildren first second = do
         unifyEquals0 firstDomain secondDomain
       where
         asDomain
-            :: TermLike variable
-            -> MaybeT unifier (TermLike variable)
+            :: TermLike RewritingVariableName
+            -> MaybeT unifier (TermLike RewritingVariableName)
         asDomain patt =
             case normalizedOrBottom of
                 Ac.Normalized normalized -> do
@@ -557,7 +560,7 @@ unifyEquals unifyEqualsChildren first second = do
                         second
           where
             normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedMap variable
+                :: Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt
 
 data InKeys term =
@@ -586,23 +589,25 @@ matchInKeys
 matchInKeys = retract
 
 unifyNotInKeys
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
     normalizedOrBottom
-       :: TermLike variable
+       :: InternalVariable variable
+       => TermLike variable
        -> Ac.NormalizedOrBottom NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
 
-    defineTerm :: TermLike variable -> MaybeT unifier (Condition variable)
+    defineTerm
+        :: TermLike RewritingVariableName
+        -> MaybeT unifier (Condition RewritingVariableName)
     defineTerm termLike =
         makeEvaluateTermCeil SideCondition.topTODO termLike
         >>= Unify.scatter
@@ -625,9 +630,9 @@ unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     collectConditions terms = fold terms & Pattern.fromCondition_
 
     worker
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
     worker termLike1 termLike2
       | Just boolValue <- Bool.matchBool termLike1
       , not boolValue

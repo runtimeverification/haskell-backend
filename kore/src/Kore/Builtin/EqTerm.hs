@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Builtin.EqTerm
     ( EqTerm (..)
@@ -26,6 +27,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -61,14 +65,13 @@ This function is suitable only for equality simplification.
 
  -}
 unifyEqTerm
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> EqTerm (TermLike variable)
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> EqTerm (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm termLike2
   | Just value2 <- Bool.matchBool termLike2
   = lift $ do
