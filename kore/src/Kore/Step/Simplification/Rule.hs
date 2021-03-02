@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Rule
     ( simplifyRulePattern
     , simplifyRewriteRule
@@ -27,6 +29,9 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( forgetSimplified
     , substitute
@@ -38,8 +43,7 @@ import qualified Kore.Step.ClaimPattern as ClaimPattern
 import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 
@@ -49,9 +53,9 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => RewriteRule variable
-    -> simplifier (RewriteRule variable)
+    :: MonadSimplify simplifier
+    => RewriteRule RewritingVariableName
+    -> simplifier (RewriteRule RewritingVariableName)
 simplifyRewriteRule (RewriteRule rule) =
     RewriteRule <$> simplifyRulePattern rule
 
@@ -62,9 +66,9 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => RulePattern variable
-    -> simplifier (RulePattern variable)
+    :: MonadSimplify simplifier
+    => RulePattern RewritingVariableName
+    -> simplifier (RulePattern RewritingVariableName)
 simplifyRulePattern rule = do
     let RulePattern { left } = rule
     simplifiedLeft <- simplifyPattern left
@@ -136,9 +140,9 @@ simplifyClaimPattern claim = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyPattern termLike =
     Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify (Pattern.fromTermLike termLike)

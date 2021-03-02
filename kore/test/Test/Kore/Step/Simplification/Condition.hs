@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Condition
     ( test_simplify_local_functions
     , test_predicateSimplification
@@ -37,6 +39,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
     )
@@ -84,11 +89,11 @@ test_simplify_local_functions =
     , testDefined "contradiction: f(g(x)) = a ∧ f(g(x)) = b" (Left fg) (Right a) (Right b)
     ]
   where
-    f = Mock.f (mkElemVar Mock.x)
-    fg = Mock.f (Mock.g (mkElemVar Mock.x))
-    fInt = Mock.fInt (mkElemVar Mock.xInt)
-    fBool = Mock.fBool (mkElemVar Mock.xBool)
-    fString = Mock.fString (mkElemVar Mock.xString)
+    f = Mock.f (mkElemVar Mock.xConfig)
+    fg = Mock.f (Mock.g (mkElemVar Mock.xConfig))
+    fInt = Mock.fInt (mkElemVar Mock.xConfigInt)
+    fBool = Mock.fBool (mkElemVar Mock.xConfigBool)
+    fString = Mock.fString (mkElemVar Mock.xConfigString)
     defined = makeCeilPredicate f & Condition.fromPredicate
 
     a = Mock.a
@@ -153,8 +158,8 @@ test_predicateSimplification =
                             (Mock.f Mock.a)
                             (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.a)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     }
         actual <-
@@ -163,11 +168,11 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                            (Mock.g (mkElemVar Mock.y))
+                            (Mock.f (mkElemVar Mock.xConfig))
+                            (Mock.g (mkElemVar Mock.yConfig))
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.a)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -181,8 +186,8 @@ test_predicateSimplification =
                             Mock.functional00
                             Mock.functional01
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.functional00)
-                        , (inject Mock.y, Mock.functional01)
+                        [ (inject Mock.xConfig, Mock.functional00)
+                        , (inject Mock.yConfig, Mock.functional01)
                         ]
                     }
         actual <-
@@ -191,11 +196,11 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.constr10 (mkElemVar Mock.x))
-                            (Mock.constr10 (mkElemVar Mock.y))
+                            (Mock.constr10 (mkElemVar Mock.xConfig))
+                            (Mock.constr10 (mkElemVar Mock.yConfig))
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.functional00)
-                        , (inject Mock.y, Mock.functional01)
+                        [ (inject Mock.xConfig, Mock.functional00)
+                        , (inject Mock.yConfig, Mock.functional01)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -206,8 +211,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate = makeEqualsPredicate Mock.a Mock.functional00
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.functional00)
-                        , (inject Mock.y, Mock.functional01)
+                        [ (inject Mock.xConfig, Mock.functional00)
+                        , (inject Mock.yConfig, Mock.functional01)
                         ]
                     }
         actual <-
@@ -229,11 +234,11 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                            (Mock.f (mkElemVar Mock.y))
+                            (Mock.f (mkElemVar Mock.xConfig))
+                            (Mock.f (mkElemVar Mock.yConfig))
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.functional00)
-                        , (inject Mock.y, Mock.functional01)
+                        [ (inject Mock.xConfig, Mock.functional00)
+                        , (inject Mock.yConfig, Mock.functional01)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -244,8 +249,8 @@ test_predicateSimplification =
                     { term = ()
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.a)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     }
         actual <-
@@ -263,10 +268,10 @@ test_predicateSimplification =
                     { term = ()
                     , predicate =
                         makeEqualsPredicate
-                            (Mock.constr10 (mkElemVar Mock.x))
-                            (Mock.f (mkElemVar Mock.y))
+                            (Mock.constr10 (mkElemVar Mock.xConfig))
+                            (Mock.f (mkElemVar Mock.yConfig))
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.y, Mock.b)
+                        [ (inject Mock.yConfig, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -280,8 +285,8 @@ test_predicateSimplification =
                             (Mock.f Mock.a)
                             (Mock.g Mock.a)
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.a)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     }
         actual <-
@@ -301,15 +306,15 @@ test_predicateSimplification =
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate
-                                (Mock.constr10 (mkElemVar Mock.x))
-                                (Mock.f (mkElemVar Mock.y))
+                                (Mock.constr10 (mkElemVar Mock.xConfig))
+                                (Mock.f (mkElemVar Mock.yConfig))
                             )
                             (makeEqualsPredicate
-                                (Mock.f (mkElemVar Mock.x))
+                                (Mock.f (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
                             )
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.y, Mock.b)
+                        [ (inject Mock.yConfig, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -323,8 +328,8 @@ test_predicateSimplification =
                             (Mock.g Mock.a)
                             (Mock.g Mock.b)
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.a)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     }
         actual <-
@@ -345,15 +350,15 @@ test_predicateSimplification =
                     , predicate =
                         makeAndPredicate
                             (makeEqualsPredicate
-                                (Mock.constr10 (mkElemVar Mock.x))
-                                (Mock.f (mkElemVar Mock.y))
+                                (Mock.constr10 (mkElemVar Mock.xConfig))
+                                (Mock.f (mkElemVar Mock.yConfig))
                             )
                             (makeEqualsPredicate
-                                (Mock.f (mkElemVar Mock.x))
+                                (Mock.f (mkElemVar Mock.xConfig))
                                 (Mock.g Mock.a)
                             )
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.y, Mock.b)
+                        [ (inject Mock.yConfig, Mock.b)
                         ]
                     }
         assertEqual "" (MultiOr.singleton expect) actual
@@ -369,7 +374,7 @@ test_simplifyPredicates =
                 makeAndPredicate
                     makeFalsePredicate
                     (makeEqualsPredicate
-                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.xConfig)
                         Mock.a
                     )
         actual <- simplifyPredicates predicate
@@ -378,7 +383,7 @@ test_simplifyPredicates =
         let predicate =
                 makeAndPredicate
                     (makeEqualsPredicate
-                        (mkElemVar Mock.x)
+                        (mkElemVar Mock.xConfig)
                         Mock.a
                     )
                     makeFalsePredicate
@@ -386,13 +391,15 @@ test_simplifyPredicates =
         assertEqual "" [] actual
     ]
 
-simplify :: Condition VariableName -> IO (OrCondition VariableName)
+simplify
+    :: Condition RewritingVariableName
+    -> IO (OrCondition RewritingVariableName)
 simplify condition = runSimplifier mempty condition
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap
-    -> Condition VariableName
-    -> IO (OrCondition VariableName)
+    -> Condition RewritingVariableName
+    -> IO (OrCondition RewritingVariableName)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ Test.runSimplifierBranch env
@@ -415,11 +422,11 @@ makeEvaluator
 makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
 
 simpleEvaluator
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => [(TermLike variable, TermLike variable)]
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    :: MonadSimplify simplifier
+    => [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 simpleEvaluator [] _  _ = return NotApplicable
 simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
   | fromTermLike == patt =
@@ -431,8 +438,8 @@ simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
     simpleEvaluator ps patt sideCondition
 
 simplifyPredicates
-    :: Predicate VariableName
-    -> IO [Condition VariableName]
+    :: Predicate RewritingVariableName
+    -> IO [Condition RewritingVariableName]
 simplifyPredicates predicate =
     Condition.simplifyPredicates SideCondition.top predicate
     & Test.runSimplifierBranch Mock.env

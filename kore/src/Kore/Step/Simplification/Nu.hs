@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Nu
     ( simplify
     , makeEvaluate
@@ -22,8 +24,7 @@ import qualified Kore.Internal.Pattern as Pattern
     , toTermLike
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , Nu (Nu)
+    ( Nu (Nu)
     , SetVariable
     , mkNu
     )
@@ -31,14 +32,16 @@ import qualified Kore.Internal.TermLike as TermLike
     ( setSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-|'simplify' simplifies a 'Nu' pattern with an 'OrPattern'
 child.
 -}
 simplify
-    :: InternalVariable variable
-    => Nu variable (OrPattern variable)
-    -> OrPattern variable
+    :: Nu RewritingVariableName (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Nu { nuVariable, nuChild } = MultiOr.map (makeEvaluate nuVariable) nuChild
 
 {-| evaluates a 'Nu' given its two 'Pattern' children.
@@ -46,10 +49,9 @@ simplify Nu { nuVariable, nuChild } = MultiOr.map (makeEvaluate nuVariable) nuCh
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => SetVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: SetVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 makeEvaluate variable patt =
     Pattern.fromTermLike
     $ TermLike.setSimplified (Pattern.simplifiedAttribute patt)

@@ -20,22 +20,24 @@ import Data.Text
     ( Text
     )
 
+import qualified Kore.Equation as Equation
 import Kore.Equation.Application hiding
     ( attemptEquation
     )
-import qualified Kore.Equation.Application as Equation
 import Kore.Equation.Equation
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( mkEvaluatorRegistry
     )
 import qualified Pretty
+import Test.Kore.Equation.Common
 
 import Test.Expect
-import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
@@ -43,12 +45,12 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-type AttemptEquationError' = AttemptEquationError VariableName
-type AttemptEquationResult' = AttemptEquationResult VariableName
+type AttemptEquationError' = AttemptEquationError RewritingVariableName
+type AttemptEquationResult' = AttemptEquationResult RewritingVariableName
 
 attemptEquation
-    :: TestSideCondition
-    -> TestTerm
+    :: SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Equation'
     -> IO AttemptEquationResult'
 attemptEquation sideCondition termLike equation =
@@ -158,15 +160,15 @@ test_attemptEquation =
         let
             ensures =
                 makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.x))
-                    (Mock.functional10 (mkElemVar Mock.x))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
             expect =
                 Pattern.withCondition initial
                 $ Condition.fromPredicate
                 $ makeEqualsPredicate
-                    (Mock.functional11 (mkElemVar Mock.y))
-                    (Mock.functional10 (mkElemVar Mock.y))
-            initial = mkElemVar Mock.y
+                    (Mock.functional11 (mkElemVar Mock.yConfig))
+                    (Mock.functional10 (mkElemVar Mock.yConfig))
+            initial = mkElemVar Mock.yConfig
             equation = equationId { ensures }
         attemptEquation SideCondition.top initial equation
             >>= expectRight >>= assertEqual "" expect
@@ -175,8 +177,8 @@ test_attemptEquation =
         let
             requires =
                 makeEqualsPredicate
-                    (Mock.functional10 (mkElemVar Mock.x))
-                    (Mock.functional11 (mkElemVar Mock.x))
+                    (Mock.functional10 (mkElemVar Mock.xConfig))
+                    (Mock.functional11 (mkElemVar Mock.xConfig))
             equation = equationId { requires }
             initial = Mock.a
         let requires1 =
@@ -492,7 +494,7 @@ test_attemptEquationUnification =
 test_applySubstitutionAndSimplify :: [TestTree]
 test_applySubstitutionAndSimplify =
     [ testCase "Function application in argument doesn't get evaluated" $ do
-        let mockArgument :: Predicate VariableName
+        let mockArgument :: Predicate RewritingVariableName
             mockArgument =
                 var1Term `makeInPredicate` Mock.f var2Term
             expected =
@@ -518,19 +520,19 @@ test_applySubstitutionAndSimplify =
         [ (AxiomIdentifier.Application Mock.fId
           , [ functionAxiomUnification_
                 Mock.fSymbol
-                [mkElemVar Mock.z]
+                [mkElemVar Mock.zConfig]
                 Mock.a
             ]
           )
         ]
-    someVar1 = Mock.x & inject
-    var1Term = mkElemVar Mock.x
-    var2Term = mkElemVar Mock.y
+    someVar1 = Mock.xConfig & inject
+    var1Term = mkElemVar Mock.xConfig
+    var2Term = mkElemVar Mock.yConfig
 
 -- * Test data
 
 equationId :: Equation'
-equationId = mkEquation (mkElemVar Mock.x) (mkElemVar Mock.x)
+equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
 
 equationRequiresBottom :: Equation'
 equationRequiresBottom =
@@ -546,40 +548,46 @@ equationBottom :: Equation'
 equationBottom =
     mkEquation Mock.a (mkBottom Mock.testSort)
 
-f, g :: TestTerm -> TestTerm
+f, g :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
 fSymbol :: Symbol
 fSymbol = Mock.functionalConstr10Symbol
 
-cf :: TestTerm
+cf :: TermLike RewritingVariableName
 cf = Mock.cf
 
-sigma :: TestTerm -> TestTerm -> TestTerm
+sigma
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sigma = Mock.functionalConstr20
 
 sigmaSymbol :: Symbol
 sigmaSymbol = Mock.functionalConstr20Symbol
 
-string :: Text -> TestTerm
+string :: Text -> TermLike RewritingVariableName
 string = Mock.builtinString
 
-x, xString, xInt, y, z :: TestTerm
-x = mkElemVar Mock.x
-xInt = mkElemVar Mock.xInt
-xString = mkElemVar Mock.xString
-y = mkElemVar Mock.y
-z = mkElemVar Mock.z
+x, xString, xInt, y, z :: TermLike RewritingVariableName
+x = mkElemVar Mock.xConfig
+xInt = mkElemVar Mock.xConfigInt
+xString = mkElemVar Mock.xConfigString
+y = mkElemVar Mock.yConfig
+z = mkElemVar Mock.zConfig
 
-a, b :: TestTerm
+a, b :: TermLike RewritingVariableName
 a = Mock.a
 b = Mock.b
 
-tdivInt :: TestTerm -> TestTerm -> TestTerm
+tdivInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 tdivInt = Mock.tdivInt
 
-positive :: TestTerm -> TestPredicate
+positive :: TermLike RewritingVariableName ->  Predicate RewritingVariableName
 positive u' =
     makeEqualsPredicate
         (Mock.lessInt
@@ -589,9 +597,9 @@ positive u' =
         (Mock.builtinBool False)
 
 andNot, orNot
-    :: TestPredicate
-    -> TestPredicate
-    -> TestPredicate
+    :: Predicate RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Predicate RewritingVariableName
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 
@@ -601,8 +609,8 @@ withAttemptEquationResult
     :: (AttemptEquationResult' -> Assertion)
     -> TestName
     -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 withAttemptEquationResult check testName equation sideCondition initial =
     testCase testName (attemptEquation sideCondition initial equation >>= check)
@@ -610,9 +618,9 @@ withAttemptEquationResult check testName equation sideCondition initial =
 applies
     :: TestName
     -> Equation'
-    -> TestSideCondition
-    -> TestTerm
-    -> TestPattern
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Pattern RewritingVariableName
     -> TestTree
 applies testName equation sideCondition initial expect =
     withAttemptEquationResult
@@ -625,16 +633,16 @@ applies testName equation sideCondition initial expect =
 notMatched
     :: TestName
     -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 notMatched = withAttemptEquationResult (expectLeft >=> assertNotMatched)
 
 notInstantiated
     :: TestName
     -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 notInstantiated =
     withAttemptEquationResult (expectLeft >=> assertApplyMatchResultErrors)
@@ -642,8 +650,9 @@ notInstantiated =
 requiresNotMet
     :: TestName
     -> Equation'
-    -> TestSideCondition
-    -> TestTerm
+    -> SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 requiresNotMet =
     withAttemptEquationResult (expectLeft >=> assertRequiresNotMet)
+

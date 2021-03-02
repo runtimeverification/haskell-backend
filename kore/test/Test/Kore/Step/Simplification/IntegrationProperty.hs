@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.IntegrationProperty
     ( test_simplifiesToSimplified
     , test_regressionGeneratedTerms
@@ -56,6 +58,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import qualified SMT
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRewritingTerm
+    )
 import Kore.Unparser
 import Test.ConsistentKore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -69,10 +75,11 @@ test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
+        let term' = mkRewritingTerm term
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString term, " ***** "]
         simplified <- catch
-            (evaluateT (Pattern.fromTermLike term))
+            (evaluateT (Pattern.fromTermLike term'))
             (exceptionHandler term)
         (===) True (OrPattern.isSimplified sideRepresentation simplified)
   where
@@ -103,12 +110,16 @@ test_regressionGeneratedTerms =
                         (mkEquals
                             Mock.subSubsort
                             (mkCeil stringMetaSort
-                                (mkCeil Mock.boolSort (mkExists Mock.xSubOtherSort Mock.b))
+                                (mkCeil
+                                    Mock.boolSort
+                                    (mkExists Mock.xConfigSubOtherSort Mock.b)
+                                )
                             )
                             (mkNu
-                                Mock.xStringMetaSort
+                                Mock.xConfigStringMetaSort
                                 (mkForall
-                                    Mock.xSubSort (mkSetVar Mock.xStringMetaSort)
+                                    Mock.xConfigSubSort
+                                    (mkSetVar Mock.xConfigStringMetaSort)
                                 )
                             )
                         )
@@ -121,17 +132,19 @@ test_regressionGeneratedTerms =
 
 evaluateT
     :: MonadTrans t
-    => Pattern VariableName
-    -> t SMT.NoSMT (OrPattern VariableName)
+    => Pattern RewritingVariableName
+    -> t SMT.NoSMT (OrPattern RewritingVariableName)
 evaluateT = lift . evaluate
 
-evaluate :: Pattern VariableName -> SMT.NoSMT (OrPattern VariableName)
+evaluate
+    :: Pattern RewritingVariableName
+    -> SMT.NoSMT (OrPattern RewritingVariableName)
 evaluate = evaluateWithAxioms Map.empty
 
 evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
-    -> Pattern VariableName
-    -> SMT.NoSMT (OrPattern VariableName)
+    -> Pattern RewritingVariableName
+    -> SMT.NoSMT (OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
     Simplification.runSimplifier env . Pattern.simplify
   where

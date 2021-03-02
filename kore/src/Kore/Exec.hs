@@ -8,6 +8,8 @@ Portability : portable
 
 Expose concrete execution as a library
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Exec
     ( exec
     , mergeAllRules
@@ -139,11 +141,10 @@ import Kore.Step.Rule.Simplify
     )
 import Kore.Step.RulePattern
     ( ImplicationRule (..)
-    , RewriteRule (RewriteRule)
+    , RewriteRule (..)
     , getRewriteRule
     , lhsEqualsRhs
-    , mkRewritingRule
-    , unRewritingRule
+    , mapRuleVariables
     )
 import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
@@ -214,7 +215,13 @@ exec
     -> TermLike VariableName
     -- ^ The input pattern
     -> smt (ExitCode, TermLike VariableName)
-exec depthLimit breadthLimit verifiedModule strategy initialTerm =
+exec
+    depthLimit
+    breadthLimit
+    verifiedModule
+    strategy
+    (mkRewritingTerm -> initialTerm)
+  =
     evalSimplifier verifiedModule' $ do
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
@@ -245,17 +252,19 @@ exec depthLimit breadthLimit verifiedModule strategy initialTerm =
                     updateQueue
                     (Strategy.unfoldTransition transit)
                     ( limitedExecutionStrategy depthLimit
-                    , (ExecDepth 0, Start (mkRewritingPattern initialConfig))
+                    , (ExecDepth 0, Start initialConfig)
                     )
         let (depths, finalConfigs) = unzip finals
         infoExecDepth (maximum depths)
         let finalConfigs' =
                 MultiOr.make
-                $ getRewritingPattern
-                . extractProgramState
+                $ extractProgramState
                 <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
-        let finalTerm = forceSort initialSort $ OrPattern.toTermLike finalConfigs'
+        let finalTerm =
+                forceSort initialSort
+                $ OrPattern.toTermLike
+                    (MultiOr.map getRewritingPattern finalConfigs')
         return (exitCode, finalTerm)
   where
     dropStrategy = snd
@@ -310,10 +319,13 @@ getExitCode
     .  (MonadIO simplifier, MonadSimplify simplifier)
     => VerifiedModule StepperAttributes
     -- ^ The main module
-    -> OrPattern.OrPattern VariableName
+    -> OrPattern.OrPattern RewritingVariableName
     -- ^ The final configuration(s) of execution
     -> simplifier ExitCode
-getExitCode indexedModule configs =
+getExitCode
+    indexedModule
+    configs
+  =
     takeExitCode $ \mkExitCodeSymbol -> do
         let mkGetExitCode t = mkApplySymbol (mkExitCodeSymbol []) [t]
         exitCodePatterns <-
@@ -362,7 +374,13 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike VariableName)
-search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfig
+search
+    depthLimit
+    breadthLimit
+    verifiedModule
+    (mkRewritingTerm -> termLike)
+    searchPattern
+    searchConfig
   =
     evalSimplifier verifiedModule $ do
         initialized <- initializeAndSimplify verifiedModule
@@ -385,7 +403,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
                         & profTransitionRule)
                     (limitedExecutionStrategy depthLimit)
         executionGraph <-
-            runStrategy' (Start $ mkRewritingPattern initialPattern)
+            runStrategy' (Start initialPattern)
         let
             match target config1 config2 =
                 Search.matchWith
@@ -527,7 +545,11 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike VariableName) (ImplicationRule VariableName))
+    -> smt
+        (Bounded.CheckResult
+            (TermLike VariableName)
+            (ImplicationRule VariableName)
+        )
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initializeAndSimplify definitionModule
@@ -535,8 +557,10 @@ boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrde
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
         assertSingleClaim specClaims
-        let axioms = fmap (Bounded.Axiom . unRewritingRule) rewriteRules
-            claims = fmap makeImplicationRule specClaims
+        let axioms = fmap Bounded.Axiom rewriteRules
+            claims =
+                mapRuleVariables (pure mkRuleVariable). makeImplicationRule
+                <$> specClaims
 
         Bounded.checkClaim
             breadthLimit
@@ -556,7 +580,7 @@ mergeAllRules
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule VariableName])
+    -> smt (Either Text [RewriteRule RewritingVariableName])
 mergeAllRules = mergeRules Rules.mergeRules
 
 -- | Rule merging
@@ -573,7 +597,7 @@ mergeRulesConsecutiveBatches
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule VariableName])
+    -> smt (Either Text [RewriteRule RewritingVariableName])
 mergeRulesConsecutiveBatches batchSize =
     mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
 
@@ -585,29 +609,29 @@ mergeRules
         , MonadProf smt
         , MonadMask smt
         )
-    =>  (  NonEmpty (RewriteRule VariableName)
-        -> Simplifier.SimplifierT smt [RewriteRule VariableName]
+    =>  (  NonEmpty (RewriteRule RewritingVariableName)
+        -> Simplifier.SimplifierT smt [RewriteRule RewritingVariableName]
         )
     -- ^ The rule merger
     -> VerifiedModule StepperAttributes
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> smt (Either Text [RewriteRule VariableName])
+    -> smt (Either Text [RewriteRule RewritingVariableName])
 mergeRules ruleMerger verifiedModule ruleNames =
     evalSimplifier verifiedModule $ runExceptT $ do
         initialized <- initializeWithoutSimplification verifiedModule
         let Initialized { rewriteRules } = initialized
-            rewriteRules' = unRewritingRule <$> rewriteRules
+            rewriteRules' = rewriteRules
         rules <- extractAndSimplifyRules rewriteRules' ruleNames
         lift $ ruleMerger rules
 
 extractAndSimplifyRules
     :: forall m
     .  MonadSimplify m
-    => [RewriteRule VariableName]
+    => [RewriteRule RewritingVariableName]
     -> [Text]
-    -> ExceptT Text m (NonEmpty (RewriteRule VariableName))
+    -> ExceptT Text m (NonEmpty (RewriteRule RewritingVariableName))
 extractAndSimplifyRules rules names = do
     let rulesById = mapMaybe ruleById rules
         rulesByLabel = mapMaybe ruleByLabel rules
@@ -703,25 +727,24 @@ initializeWithoutSimplification verifiedModule =
 initialize
     :: forall simplifier
     .  MonadSimplify simplifier
-    => (RewriteRule VariableName -> LogicT simplifier (RewriteRule VariableName))
+    => (RewriteRule RewritingVariableName -> LogicT simplifier (RewriteRule RewritingVariableName))
     -> VerifiedModule StepperAttributes
     -> simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
             rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
-            initializeRule rule
+            initializeRule (mapRuleVariables (pure mkRuleVariable) rule)
     pure Initialized { rewriteRules }
   where
     initializeRule
-        :: RewriteRule VariableName
+        :: RewriteRule RewritingVariableName
         -> LogicT simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
         simplRule <- simplificationProcedure rule
         when (lhsEqualsRhs $ getRewriteRule simplRule)
             (errorRewriteLoop simplRule)
-        let renamedRule = mkRewritingRule simplRule
-        deepseq renamedRule pure renamedRule
+        deepseq simplRule pure simplRule
 
 data InitializedProver =
     InitializedProver

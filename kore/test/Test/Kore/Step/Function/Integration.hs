@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# LANGUAGE Strict #-}
 
 module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
@@ -71,6 +72,11 @@ import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
@@ -130,8 +136,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (axiomEvaluator
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 Mock.c)
@@ -144,8 +150,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (builtinEvaluation $ axiomEvaluator
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 Mock.c)
@@ -160,12 +166,12 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ axiomEvaluator
-                            (Mock.functional10 (mkElemVar Mock.x))
-                            (Mock.g (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.g (mkElemVar Mock.xConfig))
                         )
                         ( axiomEvaluator
-                            (Mock.functional10 (mkElemVar Mock.x))
-                            (mkElemVar Mock.x)
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (mkElemVar Mock.xConfig)
                         )
                     )
                 )
@@ -184,8 +190,8 @@ test_functionIntegration =
                             notApplicableAxiomEvaluator
                         )
                         ( axiomEvaluator
-                            (Mock.functional10 (mkElemVar Mock.x))
-                            (Mock.g (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.g (mkElemVar Mock.xConfig))
                         )
                     )
                 )
@@ -199,8 +205,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
@@ -215,8 +221,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10
@@ -238,8 +244,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluator
-                        (Mock.functional10 (mkElemVar Mock.x))
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.xConfig))
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10
@@ -303,8 +309,8 @@ test_functionIntegration =
                         )
                     ,   ( AxiomIdentifier.Application Mock.functional10Id
                         , axiomEvaluator
-                            (Mock.functional10 (mkElemVar Mock.x))
-                            (Mock.functional11 (mkElemVar Mock.x))
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.functional11 (mkElemVar Mock.xConfig))
                         )
                     ]
                 )
@@ -344,10 +350,10 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [   ( inject Mock.var_x_1
+                        [   ( inject Mock.var_xConfig_1
                             , Mock.a
                             )
-                        ,   ( inject Mock.var_z_1
+                        ,   ( inject Mock.var_zConfig_1
                             , Mock.a
                             )
                         ]
@@ -396,8 +402,8 @@ test_functionIntegration =
                             (Mock.plain10 Mock.cf)
                         )
                     , substitution = Substitution.unsafeWrap
-                        [ (inject Mock.var_x_1, Mock.cf)
-                        , (inject Mock.var_y_1, Mock.b)
+                        [ (inject Mock.var_xConfig_1, Mock.cf)
+                        , (inject Mock.var_yConfig_1, Mock.b)
                         ]
                     }
         actual <-
@@ -426,7 +432,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         let message =
                 (show . Pretty.vsep)
                     [ "Expected:"
@@ -450,12 +456,12 @@ test_functionIntegration =
                         , simplifierWithFallback
                             (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
                             (definitionEvaluation
-                                [axiom_ (Mock.f (mkElemVar Mock.y)) Mock.a]
+                                [axiom_ (Mock.f (mkElemVar Mock.yConfig)) Mock.a]
                             )
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Picks first matching simplification." $ do
@@ -472,7 +478,7 @@ test_functionIntegration =
                         , simplifierWithFallback
                             (firstFullEvaluation
                                 [ axiomEvaluator
-                                    (Mock.f (Mock.g (mkElemVar Mock.x)))
+                                    (Mock.f (Mock.g (mkElemVar Mock.xConfig)))
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
@@ -488,7 +494,7 @@ test_functionIntegration =
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkElemVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.yConfig))
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -496,7 +502,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
@@ -512,12 +518,12 @@ test_functionIntegration =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluator
-                                (Mock.f (Mock.g (mkElemVar Mock.x)))
+                                (Mock.f (Mock.g (mkElemVar Mock.xConfig)))
                                 Mock.b
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkElemVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.yConfig))
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -525,7 +531,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 {-
     Uncomment this if we ever go back to allowing branches for function
@@ -575,8 +581,8 @@ test_functionIntegrationUnification =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (axiomEvaluatorUnification
                         Mock.functional10Symbol
-                        [mkElemVar Mock.x]
-                        (Mock.g (mkElemVar Mock.x))
+                        [mkElemVar Mock.xConfig]
+                        (Mock.g (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 Mock.c)
@@ -595,8 +601,8 @@ test_functionIntegrationUnification =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     (builtinEvaluation $ axiomEvaluatorUnification
                         Mock.functional10Symbol
-                        [mkElemVar Mock.x]
-                        (Mock.g (mkElemVar Mock.x))
+                        [mkElemVar Mock.xConfig]
+                        (Mock.g (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 Mock.c)
@@ -617,13 +623,13 @@ test_functionIntegrationUnification =
                     (simplifierWithFallback
                         (builtinEvaluation $ axiomEvaluatorUnification
                             Mock.functional10Symbol
-                            [mkElemVar Mock.x]
-                            (Mock.g (mkElemVar Mock.x))
+                            [mkElemVar Mock.xConfig]
+                            (Mock.g (mkElemVar Mock.xConfig))
                         )
                         ( axiomEvaluatorUnification
                             Mock.functional10Symbol
-                            [mkElemVar Mock.x]
-                            (mkElemVar Mock.x)
+                            [mkElemVar Mock.xConfig]
+                            (mkElemVar Mock.xConfig)
                         )
                     )
                 )
@@ -648,8 +654,8 @@ test_functionIntegrationUnification =
                         )
                         ( axiomEvaluatorUnification
                             Mock.functional10Symbol
-                            [mkElemVar Mock.x]
-                            (Mock.g (mkElemVar Mock.x))
+                            [mkElemVar Mock.xConfig]
+                            (Mock.g (mkElemVar Mock.xConfig))
                         )
                     )
                 )
@@ -669,8 +675,8 @@ test_functionIntegrationUnification =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluatorUnification
                         Mock.functional10Symbol
-                        [mkElemVar Mock.x]
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        [mkElemVar Mock.xConfig]
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
@@ -692,8 +698,8 @@ test_functionIntegrationUnification =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluatorUnification
                         Mock.functional10Symbol
-                        [mkElemVar Mock.x]
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        [mkElemVar Mock.xConfig]
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10
@@ -722,8 +728,8 @@ test_functionIntegrationUnification =
                     (AxiomIdentifier.Application Mock.functional10Id)
                     ( axiomEvaluatorUnification
                         Mock.functional10Symbol
-                        [mkElemVar Mock.x]
-                        (Mock.functional11 (mkElemVar Mock.x))
+                        [mkElemVar Mock.xConfig]
+                        (Mock.functional11 (mkElemVar Mock.xConfig))
                     )
                 )
                 (Mock.functional10
@@ -764,8 +770,8 @@ test_functionIntegrationUnification =
                     ,   ( AxiomIdentifier.Application Mock.functional10Id
                         , axiomEvaluatorUnification
                             Mock.functional10Symbol
-                            [mkElemVar Mock.x]
-                            (Mock.functional11 (mkElemVar Mock.x))
+                            [mkElemVar Mock.xConfig]
+                            (Mock.functional11 (mkElemVar Mock.xConfig))
                         )
                     ]
                 )
@@ -813,12 +819,16 @@ test_functionIntegrationUnification =
                         , simplifierWithFallback
                             (appliedMockEvaluator (Pattern.fromTermLike Mock.b))
                             (definitionEvaluation
-                                [functionAxiomUnification_ Mock.fSymbol [mkElemVar Mock.y] Mock.a]
+                                [functionAxiomUnification_
+                                    Mock.fSymbol
+                                    [mkElemVar Mock.yConfig]
+                                    Mock.a
+                                ]
                             )
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Picks first matching simplification." $ do
@@ -835,7 +845,8 @@ test_functionIntegrationUnification =
                         , simplifierWithFallback
                             (firstFullEvaluation
                                 [ axiomEvaluatorUnification
-                                    Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                    Mock.fSymbol
+                                        [Mock.g (mkElemVar Mock.xConfig)]
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
@@ -851,7 +862,7 @@ test_functionIntegrationUnification =
                             )
                             (definitionEvaluation
                                 [ functionAxiomUnification
-                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.fSymbol [mkElemVar Mock.yConfig]
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -859,7 +870,7 @@ test_functionIntegrationUnification =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
@@ -875,12 +886,12 @@ test_functionIntegrationUnification =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluatorUnification
-                                Mock.fSymbol [Mock.g (mkElemVar Mock.x)]
+                                Mock.fSymbol [Mock.g (mkElemVar Mock.xConfig)]
                                 Mock.b
                             )
                             (definitionEvaluation
                                 [ functionAxiomUnification
-                                    Mock.fSymbol [mkElemVar Mock.y]
+                                    Mock.fSymbol [mkElemVar Mock.yConfig]
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -888,23 +899,23 @@ test_functionIntegrationUnification =
                         )
                     ]
                 )
-                (Mock.f (mkElemVar Mock.x))
+                (Mock.f (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     ]
 
 test_Nat :: [TestTree]
 test_Nat =
     [ matches "plus(0, N) matches plus(0, 1)"
-        (plus zero varN)
+        (plus zero varNConfig)
         (plus zero one)
-        [(inject natN, one)]
+        [(inject natNConfig, one)]
     , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
-        (plus (succ varM) varN)
+        (plus (succ varMConfig) varNConfig)
         (plus zero one)
     , matches "plus(succ(M), N) matches plus(1, 1)"
-        (plus (succ varM) varN)
+        (plus (succ varMConfig) varNConfig)
         (plus one one)
-        [(inject natM, zero), (inject natN, one)]
+        [(inject natMConfig, zero), (inject natNConfig, one)]
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -940,16 +951,16 @@ test_Nat =
 test_NatUnification :: [TestTree]
 test_NatUnification =
     [ matches "plus(0, N) matches plus(0, 1)"
-        (plus zero varN)
+        (plus zero varNConfig)
         (plus zero one)
-        [(inject natN, one)]
+        [(inject natNConfig, one)]
     , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
-        (plus (succ varM) varN)
+        (plus (succ varMConfig) varNConfig)
         (plus zero one)
     , matches "plus(succ(M), N) matches plus(1, 1)"
-        (plus (succ varM) varN)
+        (plus (succ varMConfig) varNConfig)
         (plus one one)
-        [(inject natM, zero), (inject natN, one)]
+        [(inject natMConfig, zero), (inject natNConfig, one)]
     , appliesUnification            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -986,8 +997,8 @@ test_NatUnification =
 equals
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> [TermLike VariableName]
+    -> TermLike RewritingVariableName
+    -> [TermLike RewritingVariableName]
     -> TestTree
 equals comment term results =
     testCase comment $ do
@@ -998,8 +1009,8 @@ equals comment term results =
 equalsUnification
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> [TermLike VariableName]
+    -> TermLike RewritingVariableName
+    -> [TermLike RewritingVariableName]
     -> TestTree
 equalsUnification comment term results =
     testCase comment $ do
@@ -1007,16 +1018,18 @@ equalsUnification comment term results =
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
         assertEqual "" expect actual
 
-simplify :: TermLike VariableName -> IO (OrPattern VariableName)
+simplify
+    :: TermLike RewritingVariableName -> IO (OrPattern RewritingVariableName)
 simplify = runSimplifier testEnv . TermLike.simplify SideCondition.top
 
-simplifyUnification :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyUnification
+    :: TermLike RewritingVariableName -> IO (OrPattern RewritingVariableName)
 simplifyUnification = runSimplifier testEnvUnification . TermLike.simplify SideCondition.top
 
 evaluate
     :: BuiltinAndAxiomSimplifierMap
-    -> TermLike VariableName
-    -> IO (Pattern VariableName)
+    -> TermLike RewritingVariableName
+    -> IO (Pattern RewritingVariableName)
 evaluate functionIdToEvaluator termLike =
     runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator } $ do
         patterns <- TermLike.simplify SideCondition.top termLike
@@ -1024,7 +1037,7 @@ evaluate functionIdToEvaluator termLike =
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifierSMT testEnv
@@ -1032,7 +1045,7 @@ evaluateWith simplifier patt =
 
 evaluateWithUnification
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluateWithUnification simplifier patt =
     runSimplifier testEnvUnification
@@ -1042,8 +1055,8 @@ evaluateWithUnification simplifier patt =
 withApplied
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> [Equation VariableName]
-    -> TermLike VariableName
+    -> [Equation RewritingVariableName]
+    -> TermLike RewritingVariableName
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
@@ -1053,8 +1066,8 @@ withApplied check comment rules term =
 withAppliedUnification
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> [Equation VariableName]
-    -> TermLike VariableName
+    -> [Equation RewritingVariableName]
+    -> TermLike RewritingVariableName
     -> TestTree
 withAppliedUnification check comment rules term =
     testCase comment $ do
@@ -1063,8 +1076,8 @@ withAppliedUnification check comment rules term =
 
 applies, notApplies, appliesUnification, notAppliesUnification
     :: TestName
-    -> [Equation VariableName]
-    -> TermLike VariableName
+    -> [Equation RewritingVariableName]
+    -> TermLike RewritingVariableName
     -> TestTree
 applies =
     withApplied $ \attempted -> do
@@ -1108,13 +1121,14 @@ natSort =
         , sortActualSorts = []
         }
 
-natM, natN :: ElementVariable VariableName
-natM = mkElementVariable "M" natSort
-natN = mkElementVariable "N" natSort
+natMConfig, natNConfig
+    :: ElementVariable RewritingVariableName
+natMConfig = configElementVariableFromId "M" natSort
+natNConfig = configElementVariableFromId "N" natSort
 
-varM, varN :: TermLike VariableName
-varM = mkElemVar natM
-varN = mkElemVar natN
+varMConfig, varNConfig :: TermLike RewritingVariableName
+varMConfig = mkElemVar natMConfig
+varNConfig = mkElemVar natNConfig
 
 zeroSymbol, succSymbol :: Symbol
 zeroSymbol = Mock.symbol "Zero" [] natSort & constructor & functional
@@ -1128,28 +1142,29 @@ fibonacciSymbol, factorialSymbol :: Symbol
 fibonacciSymbol = Mock.symbol "fibonacci" [natSort] natSort & function
 factorialSymbol = Mock.symbol "factorial" [natSort] natSort & function
 
-zero :: TermLike VariableName
+zero :: TermLike RewritingVariableName
 zero = mkApplySymbol zeroSymbol []
 
-one, two :: TermLike VariableName
+one, two :: TermLike RewritingVariableName
 one = succ zero
 two = succ one
 
-succ, fibonacci, factorial :: TermLike VariableName -> TermLike VariableName
+succ, fibonacci, factorial
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 succ n = mkApplySymbol succSymbol [n]
 fibonacci n = mkApplySymbol fibonacciSymbol [n]
 factorial n = mkApplySymbol factorialSymbol [n]
 
 plus, times
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 plus n1 n2 = mkApplySymbol plusSymbol [n1, n2]
 times n1 n2 = mkApplySymbol timesSymbol [n1, n2]
 
 functionEvaluator
     :: Symbol
-    -> [Equation VariableName]  -- ^ Function definition rules
+    -> [Equation RewritingVariableName]  -- ^ Function definition rules
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionEvaluator symb rules =
     (AxiomIdentifier.Application ident, definitionEvaluation rules)
@@ -1158,7 +1173,7 @@ functionEvaluator symb rules =
 
 functionSimplifier
     :: Symbol
-    -> [Equation VariableName]  -- ^ Function simplification rule
+    -> [Equation RewritingVariableName]  -- ^ Function simplification rule
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionSimplifier symb rules =
     ( AxiomIdentifier.Application ident
@@ -1167,12 +1182,13 @@ functionSimplifier symb rules =
   where
     ident = symbolConstructor symb
 
-plusZeroRule, plusSuccRule :: Equation VariableName
-plusZeroRule = axiom_ (plus zero varN) varN
-plusSuccRule = axiom_ (plus (succ varM) varN) (succ (plus varM varN))
+plusZeroRule, plusSuccRule :: Equation RewritingVariableName
+plusZeroRule = axiom_ (plus zero varNConfig) varNConfig
+plusSuccRule =
+    axiom_ (plus (succ varMConfig) varNConfig) (succ (plus varMConfig varNConfig))
 
 
-plusRules :: [Equation VariableName]
+plusRules :: [Equation RewritingVariableName]
 plusRules = [plusZeroRule, plusSuccRule]
 
 plusEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1181,8 +1197,10 @@ plusEvaluator = functionEvaluator plusSymbol plusRules
 timesEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 timesEvaluator =
     functionEvaluator timesSymbol
-        [ axiom_ (times zero varN) zero
-        , axiom_ (times (succ varM) varN) (plus varN (times varM varN))
+        [ axiom_ (times zero varNConfig) zero
+        , axiom_
+            (times (succ varMConfig) varNConfig)
+            (plus varNConfig (times varMConfig varNConfig))
         ]
 
 fibonacciEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1191,15 +1209,17 @@ fibonacciEvaluator =
         [ axiom_ (fibonacci zero) one
         , axiom_ (fibonacci one)  one
         , axiom_
-            (fibonacci (succ (succ varN)))
-            (plus (fibonacci (succ varN)) (fibonacci varN))
+            (fibonacci (succ (succ varNConfig)))
+            (plus (fibonacci (succ varNConfig)) (fibonacci varNConfig))
         ]
 
 factorialEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 factorialEvaluator =
     functionEvaluator factorialSymbol
         [ axiom_ (factorial zero)        (succ zero)
-        , axiom_ (factorial (succ varN)) (times (succ varN) (factorial varN))
+        , axiom_
+            (factorial (succ varNConfig))
+            (times (succ varNConfig) (factorial varNConfig))
         ]
 
 natSimplifiers :: BuiltinAndAxiomSimplifierMap
@@ -1211,17 +1231,18 @@ natSimplifiers =
         , factorialEvaluator
         ]
 
-plusZeroRuleUnification, plusSuccRuleUnification :: Equation VariableName
+plusZeroRuleUnification, plusSuccRuleUnification
+    :: Equation RewritingVariableName
 plusZeroRuleUnification =
-    functionAxiomUnification_ plusSymbol [zero, varN] varN
+    functionAxiomUnification_ plusSymbol [zero, varNConfig] varNConfig
 plusSuccRuleUnification =
     functionAxiomUnification_
         plusSymbol
-        [succ varM, varN]
-        (succ (plus varM varN))
+        [succ varMConfig, varNConfig]
+        (succ (plus varMConfig varNConfig))
 
 
-plusRulesUnification :: [Equation VariableName]
+plusRulesUnification :: [Equation RewritingVariableName]
 plusRulesUnification = [plusZeroRuleUnification, plusSuccRuleUnification]
 
 plusEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1230,11 +1251,11 @@ plusEvaluatorUnification = functionEvaluator plusSymbol plusRulesUnification
 timesEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 timesEvaluatorUnification =
     functionEvaluator timesSymbol
-        [ functionAxiomUnification_ timesSymbol [zero, varN] zero
+        [ functionAxiomUnification_ timesSymbol [zero, varNConfig] zero
         , functionAxiomUnification_
             timesSymbol
-            [succ varM, varN]
-            (plus varN (times varM varN))
+            [succ varMConfig, varNConfig]
+            (plus varNConfig (times varMConfig varNConfig))
         ]
 
 fibonacciEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1243,8 +1264,8 @@ fibonacciEvaluatorUnification =
         [ functionAxiomUnification_ fibonacciSymbol [zero] one
         , functionAxiomUnification_ fibonacciSymbol [one]  one
         , functionAxiomUnification_
-            fibonacciSymbol [succ (succ varN)]
-            (plus (fibonacci (succ varN)) (fibonacci varN))
+            fibonacciSymbol [succ (succ varNConfig)]
+            (plus (fibonacci (succ varNConfig)) (fibonacci varNConfig))
         ]
 
 factorialEvaluatorUnification :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1256,8 +1277,8 @@ factorialEvaluatorUnification =
             (succ zero)
         , functionAxiomUnification_
             factorialSymbol
-            [succ varN]
-            (times (succ varN) (factorial varN))
+            [succ varNConfig]
+            (times (succ varNConfig) (factorial varNConfig))
         ]
 
 natSimplifiersUnification :: BuiltinAndAxiomSimplifierMap
@@ -1270,7 +1291,8 @@ natSimplifiersUnification =
         ]
 
 -- | Add an unsatisfiable requirement to the 'Equation'.
-requiresBottom :: Equation VariableName -> Equation VariableName
+requiresBottom
+    :: Equation RewritingVariableName -> Equation RewritingVariableName
 requiresBottom equation = equation { requires = makeEqualsPredicate zero one }
 
 {- | Add an unsatisfiable @\\equals@ requirement to the 'Equation'.
@@ -1279,7 +1301,8 @@ In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalEquals :: Equation VariableName -> Equation VariableName
+requiresFatalEquals
+    :: Equation RewritingVariableName -> Equation RewritingVariableName
 requiresFatalEquals equation =
     equation
         { requires =
@@ -1294,7 +1317,8 @@ In contrast to 'requiresBottom', @requiresFatalEquals@ also includes a
 requirement which results in a fatal error when evaluated.
 
  -}
-requiresFatalIn :: Equation VariableName -> Equation VariableName
+requiresFatalIn
+    :: Equation RewritingVariableName -> Equation RewritingVariableName
 requiresFatalIn equation =
     equation
         { requires =
@@ -1335,7 +1359,7 @@ evaluated.
 fatalSymbol :: Symbol
 fatalSymbol = Mock.symbol "fatal" [natSort] natSort & function
 
-fatal :: TermLike VariableName -> TermLike VariableName
+fatal :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 fatal x = mkApplySymbol fatalSymbol [x]
 
 fatalEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1356,7 +1380,7 @@ test_List =
         (lengthList unitList)
     , notApplies               "lengthList([]) => ... ~ lengthList(L)"
         [lengthListUnitRule]
-        (lengthList varL)
+        (lengthList varLConfig)
     , notApplies               "lengthList([]) => ... !~ lengthList([1])"
         [lengthListUnitRule]
         (lengthList (mkList [mkInt 1]))
@@ -1368,7 +1392,7 @@ test_List =
         (lengthList unitList)
     , notApplies               "lengthList(x : xs) => ... !~ lengthList(L)"
         [lengthListConsRule]
-        (lengthList varL)
+        (lengthList varLConfig)
     , applies                  "lengthList(x : xs) => ... ~ lengthList([1])"
         [lengthListConsRule]
         (lengthList (mkList [mkInt 1]))
@@ -1407,58 +1431,70 @@ listSort = Builtin.listSort
 intSort = Builtin.intSort
 mapSort = Builtin.mapSort
 
-mkList :: [TermLike VariableName] -> TermLike VariableName
+mkList :: [TermLike RewritingVariableName] -> TermLike RewritingVariableName
 mkList = List.asInternal
 
-mkInt :: Integer -> TermLike VariableName
+mkInt :: Integer -> TermLike RewritingVariableName
 mkInt = Int.asInternal
 
 mkMap
-    :: [(TermLike VariableName, TermLike VariableName)]
-    -> [TermLike VariableName]
-    -> TermLike VariableName
+    :: [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
 mkMap elements opaques =
     Ac.asInternal Builtin.testMetadataTools Builtin.mapSort
     $ Map.normalizedMap elements opaques
 
-removeMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+removeMap
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeMap = Builtin.removeMap
 
-addInt :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+addInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 addInt = Builtin.addInt
 
-unitList :: TermLike VariableName
+unitList :: TermLike RewritingVariableName
 unitList = mkList []
 
-varX, varY, varL, mMapTerm :: TermLike VariableName
-varX = mkElemVar xInt
-varY = mkElemVar yInt
-varL = mkElemVar (mkElementVariable (testId "lList") listSort)
-mMapTerm = mkElemVar mMap
+varXConfig, varYConfig, varLConfig, mMapConfigTerm :: TermLike RewritingVariableName
+varXConfig = mkElemVar xConfigInt
+varYConfig = mkElemVar yConfigInt
+varLConfig = mkElemVar (configElementVariableFromId (testId "lList") listSort)
+mMapConfigTerm = mkElemVar mMapConfig
 
-mMap :: ElementVariable VariableName
-mMap = mkElementVariable (testId "mMap") mapSort
+mMapConfig :: ElementVariable RewritingVariableName
+mMapConfig = configElementVariableFromId (testId "mMap") mapSort
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
 
-lengthList :: TermLike VariableName -> TermLike VariableName
+lengthList :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 lengthList l = mkApplySymbol lengthListSymbol [l]
 
-concatList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+concatList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatList = Builtin.concatList
 
-consList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+consList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 consList x xs = concatList (mkList [x]) xs
 
-lengthListUnitRule, lengthListConsRule :: Equation VariableName
+lengthListUnitRule, lengthListConsRule :: Equation RewritingVariableName
 lengthListUnitRule = axiom_ (lengthList unitList) (mkInt 0)
 lengthListConsRule =
     axiom_
-        (lengthList (consList varX varL))
-        (addInt (mkInt 1) (lengthList varL))
+        (lengthList (consList varXConfig varLConfig))
+        (addInt (mkInt 1) (lengthList varLConfig))
 
-lengthListRules :: [Equation VariableName]
+lengthListRules :: [Equation RewritingVariableName]
 lengthListRules = [ lengthListUnitRule , lengthListConsRule ]
 
 lengthListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1468,18 +1504,22 @@ removeListSymbol :: Symbol
 removeListSymbol =
     Mock.symbol "removeList" [listSort, mapSort] mapSort & function
 
-removeList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+removeList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeList l m = mkApplySymbol removeListSymbol [l, m]
 
-removeListUnitRule, removeListConsRule :: Equation VariableName
-removeListUnitRule = axiom_ (removeList unitList mMapTerm) mMapTerm
+removeListUnitRule, removeListConsRule :: Equation RewritingVariableName
+removeListUnitRule = axiom_ (removeList unitList mMapConfigTerm) mMapConfigTerm
 removeListConsRule =
     axiom_
-        (removeList (consList varX varL) mMapTerm)
-        (removeMap mMapTerm varX)
+        (removeList (consList varXConfig varLConfig) mMapConfigTerm)
+        (removeMap mMapConfigTerm varXConfig)
 
-removeListRules :: [Equation VariableName]
+removeListRules :: [Equation RewritingVariableName]
 removeListRules = [removeListUnitRule, removeListConsRule]
+
 
 removeListEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 removeListEvaluator = functionEvaluator removeListSymbol removeListRules
@@ -1522,8 +1562,8 @@ test_updateList =
     , notApplies "different abstract keys; evaluates requires with SMT"
         [updateListSimplifier]
         (updateList
-            (updateList varL (mkElemVar xInt) (mkInt 1))
-            (addInt (mkElemVar xInt) (mkInt 1))
+            (updateList varLConfig (mkElemVar xConfigInt) (mkInt 1))
+            (addInt (mkElemVar xConfigInt) (mkInt 1))
             (mkInt 2)
         )
     , notApplies "different keys; evaluates requires with function rule"
@@ -1549,33 +1589,33 @@ test_updateList =
     , applies "same abstract key"
         [updateListSimplifier]
         (updateList
-            (updateList singletonList (mkElemVar xInt) (mkInt 1))
-            (mkElemVar xInt)
+            (updateList singletonList (mkElemVar xConfigInt) (mkInt 1))
+            (mkElemVar xConfigInt)
             (mkInt 2)
         )
     ]
 
-singletonList :: TermLike VariableName
+singletonList :: TermLike RewritingVariableName
 singletonList = Builtin.elementList (mkInt 0)
 
-twoElementList :: TermLike VariableName
+twoElementList :: TermLike RewritingVariableName
 twoElementList = Builtin.concatList singletonList singletonList
 
 updateList
-    :: TermLike VariableName -- ^ List
-    -> TermLike VariableName -- ^ Index
-    -> TermLike VariableName -- ^ Value
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName -- ^ List
+    -> TermLike RewritingVariableName -- ^ Index
+    -> TermLike RewritingVariableName -- ^ Value
+    -> TermLike RewritingVariableName
 updateList = Builtin.updateList
 
-updateListSimplifier :: Equation VariableName
+updateListSimplifier :: Equation RewritingVariableName
 updateListSimplifier =
     axiom
-        (updateList (updateList varL u v) x y)
-        (updateList varL u y)
+        (updateList (updateList varLConfig u v) x y)
+        (updateList varLConfig u y)
         (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
   where
-    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+    [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
     injK = Builtin.inj Builtin.kSort
 
 test_lookupMap :: [TestTree]
@@ -1594,13 +1634,22 @@ test_lookupMap =
 lookupMapSymbol :: Symbol
 lookupMapSymbol = Builtin.lookupMapSymbol
 
-lookupMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+lookupMap
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 lookupMap = Builtin.lookupMap
 
-lookupMapRule :: Equation VariableName
-lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMapTerm]) varX) varY
+lookupMapRule :: Equation RewritingVariableName
+lookupMapRule =
+    axiom_
+        (lookupMap
+            (mkMap [(varXConfig, varYConfig)] [mMapConfigTerm])
+            varXConfig
+        )
+        varYConfig
 
-lookupMapRules :: [Equation VariableName]
+lookupMapRules :: [Equation RewritingVariableName]
 lookupMapRules = [lookupMapRule]
 
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
@@ -1611,22 +1660,22 @@ test_updateMap =
     [ notApplies "different concrete keys"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMapTerm (mkInt 0) (mkInt 1))
+            (updateMap mMapConfigTerm (mkInt 0) (mkInt 1))
             (mkInt 1)
             (mkInt 2)
         )
     , applies "same concrete key"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMapTerm (mkInt 0) (mkInt 1))
+            (updateMap mMapConfigTerm (mkInt 0) (mkInt 1))
             (mkInt 0)
             (mkInt 2)
         )
     , notApplies "different abstract keys; evaluates requires with SMT"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
-            (addInt (mkElemVar xInt) (mkInt 1))
+            (updateMap mMapConfigTerm (mkElemVar xConfigInt) (mkInt 1))
+            (addInt (mkElemVar xConfigInt) (mkInt 1))
             (mkInt 2)
         )
     , notApplies "different keys; evaluates requires with function rule"
@@ -1646,34 +1695,34 @@ test_updateMap =
     , applies "same abstract key"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
-            (mkElemVar xInt)
+            (updateMap mMapConfigTerm (mkElemVar xConfigInt) (mkInt 1))
+            (mkElemVar xConfigInt)
             (mkInt 2)
         )
     ]
 
 updateMap
-    :: TermLike VariableName  -- ^ Map
-    -> TermLike VariableName  -- ^ Key
-    -> TermLike VariableName  -- ^ Value
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName  -- ^ Map
+    -> TermLike RewritingVariableName  -- ^ Key
+    -> TermLike RewritingVariableName  -- ^ Value
+    -> TermLike RewritingVariableName
 updateMap = Builtin.updateMap
 
-updateMapSimplifier :: Equation VariableName
+updateMapSimplifier :: Equation RewritingVariableName
 updateMapSimplifier =
     axiom
-        (updateMap (updateMap mMapTerm u v) x y)
-        (updateMap mMapTerm u y)
+        (updateMap (updateMap mMapConfigTerm u v) x y)
+        (updateMap mMapConfigTerm u y)
         (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
   where
-    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+    [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
     injK = Builtin.inj Builtin.kSort
 
-dummyIntSimplifier :: Equation VariableName
+dummyIntSimplifier :: Equation RewritingVariableName
 dummyIntSimplifier =
-    axiom_ (Builtin.dummyInt (mkElemVar xInt)) (mkElemVar xInt)
+    axiom_ (Builtin.dummyInt (mkElemVar xConfigInt)) (mkElemVar xConfigInt)
 
-mkBool :: Bool -> TermLike VariableName
+mkBool :: Bool -> TermLike RewritingVariableName
 mkBool = Bool.asInternal
 
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
@@ -1681,49 +1730,54 @@ mapSimplifiers =
     Map.fromList
         [ lookupMapEvaluator
         , functionSimplifier Builtin.updateMapSymbol [updateMapSimplifier]
-        , functionEvaluator Builtin.dummyIntSymbol [dummyIntSimplifier]
+        , functionEvaluator
+            Builtin.dummyIntSymbol
+            [dummyIntSimplifier]
         ]
 
-uInt, vInt, xInt, yInt :: ElementVariable VariableName
-uInt = mkElementVariable (testId "uInt") intSort
-vInt = mkElementVariable (testId "vInt") intSort
-xInt = mkElementVariable (testId "xInt") intSort
-yInt = mkElementVariable (testId "yInt") intSort
+uConfigInt, vConfigInt, xConfigInt, yConfigInt :: ElementVariable RewritingVariableName
+uConfigInt = configElementVariableFromId (testId "uInt") intSort
+vConfigInt = configElementVariableFromId (testId "vInt") intSort
+xConfigInt = configElementVariableFromId (testId "xInt") intSort
+yConfigInt = configElementVariableFromId (testId "yInt") intSort
 
-xsInt :: SetVariable VariableName
-xsInt = mkSetVariable (testId "xsInt") intSort
+
+xsConfigInt :: SetVariable RewritingVariableName
+xsConfigInt =
+    mkSetVariable (testId "xsInt") intSort
+    & mapSetVariable (pure mkConfigVariable)
 
 test_Ceil :: [TestTree]
 test_Ceil =
     [ simplifies "\\ceil(dummy(X)) => ... ~ \\ceil(dummy(Y))"
         ceilDummyRule
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yConfigInt)
     , notSimplifies "\\ceil(dummy(X)) => \\not(\\equals(X, 0)) !~ dummy(Y)"
         ceilDummyRule
-        (Builtin.dummyInt $ mkElemVar yInt)
+        (Builtin.dummyInt $ mkElemVar yConfigInt)
     , simplifies "\\ceil(dummy(@X)) => ... ~ \\ceil(dummy(Y))"
         ceilDummySetRule
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yConfigInt)
     ]
 
-ceilDummyRule :: Equation VariableName
+ceilDummyRule :: Equation RewritingVariableName
 ceilDummyRule =
     axiom_
-        (mkCeil_ $ Builtin.dummyInt $ mkElemVar xInt)
-        (mkEquals_ (Builtin.eqInt (mkElemVar xInt) (mkInt 0)) (mkBool False))
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar xConfigInt)
+        (mkEquals_ (Builtin.eqInt (mkElemVar xConfigInt) (mkInt 0)) (mkBool False))
 
-ceilDummySetRule :: Equation VariableName
+ceilDummySetRule :: Equation RewritingVariableName
 ceilDummySetRule =
     axiom_
-        (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsInt)
-        (mkEquals_ (Builtin.eqInt (mkSetVar xsInt) (mkInt 0)) (mkBool False))
+        (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsConfigInt)
+        (mkEquals_ (Builtin.eqInt (mkSetVar xsConfigInt) (mkInt 0)) (mkBool False))
 
 -- Simplification tests: check that one or more rules applies or not
 withSimplified
     :: (CommonAttemptedAxiom -> Assertion)
     -> TestName
-    -> Equation VariableName
-    -> TermLike VariableName
+    -> Equation RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 withSimplified check comment rule term =
     testCase comment $ do
@@ -1732,8 +1786,8 @@ withSimplified check comment rule term =
 
 simplifies, notSimplifies
     :: TestName
-    -> Equation VariableName
-    -> TermLike VariableName
+    -> Equation RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 simplifies =
     withSimplified $ \attempted -> do
@@ -1752,16 +1806,16 @@ notSimplifies =
     withSimplified (assertBool "Expected NotApplicable" . isNotApplicable)
 
 axiomEvaluator
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate)
 
 axiomEvaluatorUnification
     :: Symbol
-    -> [TermLike VariableName]
-    -> TermLike VariableName
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorUnification symbol args right =
     simplificationEvaluation
@@ -1774,20 +1828,18 @@ appliedMockEvaluator result =
     $ mockEvaluator
     $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = OrPattern.fromPatterns
-            [Test.Kore.Step.Function.Integration.mapVariables result]
+            [Test.Kore.Step.Function.Integration.mapVariablesConfig result]
         , remainders = OrPattern.fromPatterns []
         }
 
-mapVariables
-    :: forall variable
-    .  InternalVariable variable
-    => Pattern VariableName
-    -> Pattern variable
-mapVariables =
+mapVariablesConfig
+    :: Pattern VariableName
+    -> Pattern RewritingVariableName
+mapVariablesConfig =
     Pattern.mapVariables (pure worker)
   where
-    worker :: VariableName -> variable
-    worker v = fromVariableName v { counter = Just (Element 1) }
+    worker :: VariableName -> RewritingVariableName
+    worker v = mkConfigVariable v { counter = Just (Element 1) }
 
 mockEvaluator
     :: Monad simplifier

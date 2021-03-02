@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Mu
     ( simplify
     , makeEvaluate
@@ -22,8 +24,7 @@ import qualified Kore.Internal.Pattern as Pattern
     , toTermLike
     )
 import Kore.Internal.TermLike
-    ( InternalVariable
-    , Mu (Mu)
+    ( Mu (Mu)
     , SetVariable
     , mkMu
     )
@@ -31,14 +32,16 @@ import qualified Kore.Internal.TermLike as TermLike
     ( setSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-|'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
 child.
 -}
 simplify
-    :: InternalVariable variable
-    => Mu variable (OrPattern variable)
-    -> OrPattern variable
+    :: Mu RewritingVariableName (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Mu { muVariable, muChild } =
     OrPattern.map (makeEvaluate muVariable) muChild
 
@@ -47,10 +50,9 @@ simplify Mu { muVariable, muChild } =
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => SetVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: SetVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 makeEvaluate variable patt =
     Pattern.fromTermLike
     $ TermLike.setSimplified (Pattern.simplifiedAttribute patt)

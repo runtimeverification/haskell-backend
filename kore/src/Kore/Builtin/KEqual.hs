@@ -14,6 +14,8 @@ builtin modules.
     import qualified Kore.Builtin.KEqual as KEqual
 @
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
@@ -65,6 +67,9 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
@@ -170,20 +175,20 @@ evalKEq true (valid :< app) =
             $ comparison termLike1 termLike2
 
 evalKIte
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
-        (TermLike variable)
-    -> simplifier (AttemptedAxiom variable)
+        (Attribute.Pattern RewritingVariableName)
+        (TermLike RewritingVariableName)
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where
-    evaluate :: TermLike variable -> Maybe Bool
+    evaluate :: TermLike RewritingVariableName -> Maybe Bool
     evaluate = Bool.matchBool
 
     evalIte expr t1 t2 =
@@ -213,14 +218,13 @@ matchKequalEq =
         & isJust
 
 unifyKequalsEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
@@ -249,13 +253,12 @@ matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
 matchIfThenElse _ = Nothing
 
 unifyIfThenElse
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren a b =
     worker a b <|> worker b a
   where

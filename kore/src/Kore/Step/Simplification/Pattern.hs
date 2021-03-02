@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     , simplify
@@ -34,9 +36,11 @@ import Kore.Internal.Substitution
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     , simplifyCondition
     , simplifyConditionalTerm
     )
@@ -48,16 +52,16 @@ import Kore.Substitute
 and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration patt = do
     simplified <- simplify patt
     return (OrPattern.map removeTopExists simplified)
   where
-    removeTopExists :: Pattern variable -> Pattern variable
+    removeTopExists
+        :: Pattern RewritingVariableName -> Pattern RewritingVariableName
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
         removeTopExists p {term = quantified}
     removeTopExists p = p
@@ -65,10 +69,9 @@ simplifyTopConfiguration patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplify = makeEvaluate SideCondition.top
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
@@ -77,11 +80,10 @@ This should only be used when it's certain that the
 the 'Pattern'.
  -}
 makeEvaluate
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition pattern' =
     OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'

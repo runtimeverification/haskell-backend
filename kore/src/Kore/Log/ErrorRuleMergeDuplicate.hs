@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Log.ErrorRuleMergeDuplicate
     ( ErrorRuleMergeDuplicateIds
@@ -37,8 +38,8 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.SourceLocation
     ( SourceLocation (..)
     )
-import Kore.Internal.TermLike
-    ( VariableName
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Step.RulePattern
     ( RewriteRule (..)
@@ -95,11 +96,11 @@ instance Pretty ErrorRuleMergeDuplicateLabels where
     pretty (ErrorRuleMergeDuplicateLabels duplicateLabels) =
         prettyErrorText "label" duplicateLabels
 
-errorRuleMergeDuplicateIds :: Map Text [RewriteRule VariableName] -> a
+errorRuleMergeDuplicateIds :: Map Text [RewriteRule RewritingVariableName] -> a
 errorRuleMergeDuplicateIds (getLocations -> duplicateIds) =
     throw (ErrorRuleMergeDuplicateIds duplicateIds)
 
-errorRuleMergeDuplicateLabels :: Map Text [RewriteRule VariableName] -> a
+errorRuleMergeDuplicateLabels :: Map Text [RewriteRule RewritingVariableName] -> a
 errorRuleMergeDuplicateLabels (getLocations -> duplicateLabels) =
     throw (ErrorRuleMergeDuplicateLabels duplicateLabels)
 
@@ -116,7 +117,7 @@ prettyErrorText type' = Map.foldMapWithKey accum
     duplicateNameType =
         Pretty.hsep ["all have the following", pretty type', ":"]
 
-getLocations :: Map Text [RewriteRule VariableName] -> Map Text [SourceLocation]
+getLocations :: Map Text [RewriteRule RewritingVariableName] -> Map Text [SourceLocation]
 getLocations =
     (fmap . fmap)
         ( Lens.view

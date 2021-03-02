@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Log.WarnBoundedModelChecker
     ( WarnBoundedModelChecker (..)

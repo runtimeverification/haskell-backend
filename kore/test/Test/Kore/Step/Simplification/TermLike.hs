@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Step.Simplification.TermLike
     ( test_simplify
     ) where
@@ -18,6 +19,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -35,7 +39,7 @@ test_simplify =
       $ simplifyEvaluated $ mkEvaluated $ Mock.f Mock.a
     ]
 
-simplifyEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyEvaluated :: TermLike RewritingVariableName -> IO (OrPattern RewritingVariableName)
 simplifyEvaluated original =
     runSimplifier env . getTestSimplifier
     $ TermLike.simplify SideCondition.top original
