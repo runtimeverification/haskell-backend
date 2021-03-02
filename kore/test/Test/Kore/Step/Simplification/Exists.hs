@@ -11,7 +11,7 @@ import Test.Tasty
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
-    ( Conditional (Conditional)
+    ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
@@ -178,7 +178,7 @@ test_makeEvaluate =
     , testCase "exists applies substitution if possible" $ do
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
-        let expect =
+        let expects =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.f gOfA
@@ -190,7 +190,7 @@ test_makeEvaluate =
                             [(inject Mock.yConfig, fOfA)]
                         }
                     ]
-        actual <-
+        actuals <-
             makeEvaluate
                 Mock.xConfig
                 Conditional
@@ -203,7 +203,7 @@ test_makeEvaluate =
                                 , (inject Mock.yConfig, fOfA)
                                 ]
                     }
-        assertEqual "exists with substitution" expect actual
+        Pattern.assertEquivalentPatterns expects actuals
 
     , testCase "exists disappears if variable not used" $ do
         -- exists x . (t and p and s)

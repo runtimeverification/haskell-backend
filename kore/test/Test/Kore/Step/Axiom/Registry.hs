@@ -48,9 +48,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable
@@ -460,7 +457,7 @@ test_functionRegistry =
         let expect = mkApplySymbol sHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify SideCondition.top
+            $ Pattern.simplify
             $ makePattern $ mkApplySymbol gHead []
         let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual
@@ -468,7 +465,7 @@ test_functionRegistry =
         let expect = mkApplySymbol tHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify SideCondition.top
+            $ Pattern.simplify
             $ makePattern $ mkApplySymbol pHead []
         let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual

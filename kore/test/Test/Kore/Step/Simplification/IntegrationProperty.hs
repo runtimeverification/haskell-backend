@@ -125,9 +125,7 @@ test_regressionGeneratedTerms =
                         )
                     )
         simplified <-
-            Pattern.simplify
-                SideCondition.top
-                (Pattern.fromTermLike term)
+            Pattern.simplify (Pattern.fromTermLike term)
             & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     ]
@@ -148,7 +146,7 @@ evaluateWithAxioms
     -> Pattern RewritingVariableName
     -> SMT.NoSMT (OrPattern RewritingVariableName)
 evaluateWithAxioms axioms =
-    Simplification.runSimplifier env . Pattern.simplify SideCondition.top
+    Simplification.runSimplifier env . Pattern.simplify
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

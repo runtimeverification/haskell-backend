@@ -8,10 +8,10 @@ License     : NCSA
 module Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
     , simplify
+    , makeEvaluate
     ) where
 
 import Prelude.Kore
-
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
@@ -28,7 +28,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
-    , topTODO
+    , top
     )
 import Kore.Internal.Substitution
     ( toMap
@@ -57,7 +57,7 @@ simplifyTopConfiguration
     => Pattern RewritingVariableName
     -> simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration patt = do
-    simplified <- simplify SideCondition.topTODO patt
+    simplified <- simplify patt
     return (OrPattern.map removeTopExists simplified)
   where
     removeTopExists
@@ -70,10 +70,21 @@ simplifyTopConfiguration patt = do
 -}
 simplify
     :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
+simplify = makeEvaluate SideCondition.top
+
+{- | Simplifies a 'Pattern' with a custom 'SideCondition'.
+This should only be used when it's certain that the
+'SideCondition' was not created from the 'Condition' of
+the 'Pattern'.
+ -}
+makeEvaluate
+    :: MonadSimplify simplifier
     => SideCondition RewritingVariableName
     -> Pattern RewritingVariableName
     -> simplifier (OrPattern RewritingVariableName)
-simplify sideCondition pattern' =
+makeEvaluate sideCondition pattern' =
     OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'
         let (term, simplifiedCondition) =

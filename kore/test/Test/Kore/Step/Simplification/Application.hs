@@ -51,6 +51,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     )
 import qualified Kore.Syntax.Variable as Variable
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -211,7 +212,7 @@ test_applicationSimplification =
                         (Just (Element 1))
                         Mock.z
                         & Variable.mapElementVariable (pure mkConfigVariable)
-                expect =
+                expects =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
@@ -229,7 +230,7 @@ test_applicationSimplification =
                                     ]
                             }
                         ]
-            actual <-
+            actuals <-
                 let
                     result :: AttemptedAxiom RewritingVariableName
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
@@ -277,7 +278,7 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            assertEqual "" expect actual
+            Pattern.assertEquivalentPatterns expects actuals
         ]
     ]
   where

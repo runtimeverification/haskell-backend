@@ -94,9 +94,6 @@ import Kore.Internal.Predicate
     , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    , topTODO
-    )
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
@@ -231,8 +228,7 @@ exec
         finals <-
             getFinalConfigsOf $ do
                 initialConfig <-
-                    Pattern.simplify SideCondition.top
-                        (Pattern.fromTermLike initialTerm)
+                    Pattern.simplify (Pattern.fromTermLike initialTerm)
                     >>= Logic.scatter
                 let
                     updateQueue = \as ->
@@ -390,8 +386,7 @@ search
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
-            Pattern.simplify SideCondition.top
-            $ Pattern.fromTermLike termLike
+            Pattern.simplify $ Pattern.fromTermLike termLike
         let
             initialPattern =
                 case toList simplifiedPatterns of
@@ -419,7 +414,7 @@ search
             searchGraph
                 searchConfig
                 (match
-                    SideCondition.topTODO
+                    SideCondition.top
                     (mkRewritingPattern searchPattern)
                 )
                 executionGraph

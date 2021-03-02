@@ -10,6 +10,8 @@ module Kore.Step.Simplification.Condition
     , simplify
     , simplifyPredicate
     , simplifyCondition
+    -- For testing
+    , simplifyPredicates
     ) where
 
 import Prelude.Kore
@@ -62,6 +64,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
     ( isConstructor
@@ -134,7 +137,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
-        simplified <- simplifyPredicate sideCondition predicate'
+        simplified <- simplifyPredicates sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -167,6 +170,50 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
             simplifySubstitution sideCondition substitution
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
+
+-- | Simplify a 'Predicate' by splitting it up into a conjunction of predicates
+-- and simplifying each one under the assumption that the others are true.
+simplifyPredicates
+    :: forall simplifier
+    .  HasCallStack
+    => MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> LogicT simplifier (Condition RewritingVariableName)
+simplifyPredicates
+    sideCondition
+    (toList . MultiAnd.fromPredicate -> predicates)
+  =
+    State.execStateT (worker predicates) Condition.top
+    >>= markConjunctionSimplified
+  where
+    worker
+        :: [Predicate RewritingVariableName]
+        -> StateT
+            (Condition RewritingVariableName)
+            (LogicT simplifier)
+            ()
+    worker [] = return ()
+    worker (pred' : rest) = do
+        condition <- State.get
+        let otherConds =
+                SideCondition.andCondition
+                    sideCondition
+                    (mkOtherConditions condition rest)
+        result <-
+            simplifyPredicate otherConds pred'
+            & lift
+        State.put (Condition.andCondition condition result)
+        worker rest
+
+    mkOtherConditions (Condition.toPredicate -> alreadySimplified) rest =
+        from @_ @(Condition _)
+        . MultiAnd.toPredicate
+        . MultiAnd.make
+        $ alreadySimplified : rest
+
+    markConjunctionSimplified =
+        return . Lens.over (field @"predicate") Predicate.markSimplified
 
 {- | Simplify the 'Predicate' once.
 
