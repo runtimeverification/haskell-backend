@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.38.0.0"; };
+      identifier = { name = "kore"; version = "0.40.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -93,7 +93,7 @@
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
           ];
         build-tools = [
-          (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+          (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
           ];
         buildable = true;
         modules = [
@@ -282,6 +282,7 @@
           "Kore/Log/KoreLogOptions"
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
+          "Kore/Log/WarnBoundedModelChecker"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnRetrySolverQuery"
@@ -434,7 +435,6 @@
           "Kore/Unification/Procedure"
           "Kore/Unification/SubstitutionNormalization"
           "Kore/Unification/SubstitutionSimplifier"
-          "Kore/Unification/UnificationProcedure"
           "Kore/Unification/UnifierT"
           "Kore/Unification/Unify"
           "Kore/Unparser"
@@ -443,6 +443,7 @@
           "Kore/Variables/Fresh"
           "Kore/Variables/Target"
           "Kore/Verified"
+          "Kore/VersionInfo"
           "Log"
           "Log/Entry"
           "Logic"
@@ -528,10 +529,10 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
+          modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/exec" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -600,10 +601,10 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
+          modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/format" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -672,10 +673,10 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
+          modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/parser" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -744,7 +745,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [ "Paths_kore" ];
@@ -814,10 +815,10 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
-          modules = [ "GlobalMain" "VersionInfo" "Paths_kore" ];
+          modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/repl" "app/share" ];
           mainPath = ([
             "Main.hs"
@@ -898,7 +899,7 @@
             (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
             ];
           build-tools = [
-            (hsPkgs.buildPackages.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover")))
+            (hsPkgs.buildPackages.tasty-discover.components.exes.tasty-discover or (pkgs.buildPackages.tasty-discover or (errorHandler.buildToolDepError "tasty-discover:tasty-discover")))
             ];
           buildable = true;
           modules = [

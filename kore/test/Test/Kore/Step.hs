@@ -58,6 +58,7 @@ import Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -230,13 +231,12 @@ test_stepStrategy =
                                         )
                                     )
                                 )
-                    assertEqual
-                        ""
-                        [ Step.Remaining firstRemainderPattern
-                        , Step.Remaining secondRemainderPattern
-                        , Step.Remaining finalRewrittenPattern
-                        ]
-                        actual
+                    let expected =
+                            [ Step.Remaining firstRemainderPattern
+                            , Step.Remaining secondRemainderPattern
+                            , Step.Remaining finalRewrittenPattern
+                            ]
+                    Pattern.assertEquivalentPatterns' expected actual
         in
         [ mkTest "strategy all" All
         , mkTest "strategy any" Any

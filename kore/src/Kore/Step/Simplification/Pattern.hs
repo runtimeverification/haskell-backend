@@ -13,7 +13,6 @@ module Kore.Step.Simplification.Pattern
 
 import Prelude.Kore
 
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern

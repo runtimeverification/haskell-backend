@@ -94,8 +94,6 @@ import Kore.Internal.Predicate
     , makeMultipleOrPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
 import Kore.Internal.TermLike
 import Kore.Log.ErrorRewriteLoop
     ( errorRewriteLoop
@@ -402,7 +400,7 @@ search depthLimit breadthLimit verifiedModule termLike searchPattern searchConfi
             searchGraph
                 searchConfig
                 (match
-                    SideCondition.topTODO
+                    SideCondition.top
                     (mkRewritingPattern searchPattern)
                 )
                 executionGraph
@@ -533,7 +531,7 @@ boundedModelCheck
     -> VerifiedModule StepperAttributes
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike VariableName))
+    -> smt (Bounded.CheckResult (TermLike VariableName) (ImplicationRule VariableName))
 boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ do
         initialized <- initializeAndSimplify definitionModule

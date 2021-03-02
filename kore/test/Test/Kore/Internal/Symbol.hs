@@ -8,6 +8,7 @@ import qualified Hedgehog.Gen as Gen
 
 import qualified Data.Default as Default
 
+import Kore.Attribute.SourceLocation
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
@@ -50,6 +51,7 @@ symbolAttributeGen =
         <*> klabelAttributeGen
         <*> symbolKywdAttributeGen
         <*> noEvaluatorsAttributeGen
+        <*> sourceLocationAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -89,3 +91,6 @@ symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
 
 noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
 noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
+
+sourceLocationAttributeGen :: Gen Kore.Attribute.SourceLocation.SourceLocation
+sourceLocationAttributeGen = pure Default.def

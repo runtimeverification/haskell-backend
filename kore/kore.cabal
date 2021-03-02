@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1eb807e1a58c0a657f51fd08934c8a7e171988a07bcd9e0e4c098055595b6ac4
+-- hash: 03c98e7a7113ac321409caf3539c3987574f8cb7fa4049e7fb285d8c462de491
 
 name:           kore
-version:        0.38.0.0
+version:        0.40.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -223,6 +223,7 @@ library
       Kore.Log.KoreLogOptions
       Kore.Log.Registry
       Kore.Log.SQLite
+      Kore.Log.WarnBoundedModelChecker
       Kore.Log.WarnFunctionWithoutEvaluators
       Kore.Log.WarnIfLowProductivity
       Kore.Log.WarnRetrySolverQuery
@@ -375,7 +376,6 @@ library
       Kore.Unification.Procedure
       Kore.Unification.SubstitutionNormalization
       Kore.Unification.SubstitutionSimplifier
-      Kore.Unification.UnificationProcedure
       Kore.Unification.UnifierT
       Kore.Unification.Unify
       Kore.Unparser
@@ -384,6 +384,7 @@ library
       Kore.Variables.Fresh
       Kore.Variables.Target
       Kore.Verified
+      Kore.VersionInfo
       Log
       Log.Entry
       Logic
@@ -477,7 +478,6 @@ executable kore-exec
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/exec
@@ -558,7 +558,6 @@ executable kore-format
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/format
@@ -639,7 +638,6 @@ executable kore-parser
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/parser
@@ -794,7 +792,6 @@ executable kore-repl
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/repl
