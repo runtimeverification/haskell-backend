@@ -33,7 +33,9 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
-import Data.Functor ((<&>))
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
