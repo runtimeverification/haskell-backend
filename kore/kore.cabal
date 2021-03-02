@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 999e1c394d84530678f479451e3ecface6622df87771c72c3aa313a406716b15
+-- hash: 03c98e7a7113ac321409caf3539c3987574f8cb7fa4049e7fb285d8c462de491
 
 name:           kore
-version:        0.39.0.0
+version:        0.40.0.0
 description:    Please see the [README](README.md) file.
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
@@ -384,6 +384,7 @@ library
       Kore.Variables.Fresh
       Kore.Variables.Target
       Kore.Verified
+      Kore.VersionInfo
       Log
       Log.Entry
       Logic
@@ -477,7 +478,6 @@ executable kore-exec
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/exec
@@ -558,7 +558,6 @@ executable kore-format
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/format
@@ -639,7 +638,6 @@ executable kore-parser
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/parser
@@ -794,7 +792,6 @@ executable kore-repl
   main-is: Main.hs
   other-modules:
       GlobalMain
-      VersionInfo
       Paths_kore
   hs-source-dirs:
       app/repl
