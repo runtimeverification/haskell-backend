@@ -493,7 +493,10 @@ mapVariables =
     Pattern.mapVariables (pure worker)
   where
     worker :: RewritingVariableName -> variable
-    worker v = fromVariableName $ (from v) { counter = Just (Sup.Element 1) }
+    worker v =
+        fromVariableName
+        $ (from @RewritingVariableName @VariableName v)
+            { counter = Just (Sup.Element 1) }
 
 makeCeil
     :: [Pattern RewritingVariableName]

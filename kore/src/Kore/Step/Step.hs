@@ -33,6 +33,7 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
+import Data.Functor ((<&>))
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -295,8 +296,7 @@ applyRemainder initial remainder = do
             remainder
     -- Add the simplified remainder to the initial conditions. We must preserve
     -- the initial conditions here!
-    r <-
-        Simplifier.simplifyCondition
-            SideCondition.topTODO
-            (Pattern.andCondition initial partial)
-    return (r & Pattern.mapVariables resetConfigVariable)
+    Simplifier.simplifyCondition
+        SideCondition.topTODO
+        (Pattern.andCondition initial partial)
+        <&> Pattern.mapVariables resetConfigVariable

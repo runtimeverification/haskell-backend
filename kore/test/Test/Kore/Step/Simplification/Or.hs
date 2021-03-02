@@ -126,7 +126,10 @@ Key for variable names:
 See also: 'orChild'
  -}
 type TestConfig =
-    (TermLike RewritingVariableName, TestPredicate, TestSubstitution)
+    ( TermLike RewritingVariableName
+    , Predicate RewritingVariableName
+    , Substitution RewritingVariableName
+    )
 
 tT :: TermLike RewritingVariableName
 tT = mkTop Mock.testSort
@@ -153,38 +156,34 @@ testVar ident =
     , variableSort = Mock.testSort
     }
 
-type TestPredicate = Predicate RewritingVariableName
-
-pT :: TestPredicate
+pT :: Predicate RewritingVariableName
 pT = makeTruePredicate
 
-pm :: TestPredicate
+pm :: Predicate RewritingVariableName
 pm =
     makeEqualsPredicate
         (mkElemVar $ testVar "left")
         (mkElemVar $ testVar "right")
 
-pM :: TestPredicate
+pM :: Predicate RewritingVariableName
 pM =
     makeEqualsPredicate
         (mkElemVar $ testVar "LEFT")
         (mkElemVar $ testVar "RIGHT")
 
-p_ :: TestPredicate
+p_ :: Predicate RewritingVariableName
 p_ = makeFalsePredicate
 
-type TestSubstitution = Substitution RewritingVariableName
-
-sT :: TestSubstitution
+sT :: Substitution RewritingVariableName
 sT = mempty
 
-sm :: TestSubstitution
+sm :: Substitution RewritingVariableName
 sm =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
     [(inject Mock.xConfig, Mock.a)] -- I'd rather these were meaningful
 
-sM :: TestSubstitution
+sM :: Substitution RewritingVariableName
 sM =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
@@ -274,7 +273,10 @@ stateIntention actualAndSoOn =
     Unparser.renderDefault $ Pretty.vsep ("expected: " : actualAndSoOn)
 
 orChild
-    :: (TermLike RewritingVariableName, TestPredicate, TestSubstitution)
+    ::  ( TermLike RewritingVariableName
+        , Predicate RewritingVariableName
+        , Substitution RewritingVariableName
+        )
     -> Pattern RewritingVariableName
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
@@ -282,6 +284,9 @@ orChild (term, predicate, substitution) =
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
 -- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
-    :: (TermLike RewritingVariableName, Predicate RewritingVariableName, Substitution RewritingVariableName)
-    -> OrPattern.OrPattern RewritingVariableName
+    ::  ( TermLike RewritingVariableName
+        , Predicate RewritingVariableName
+        , Substitution RewritingVariableName
+        )
+    ->  OrPattern.OrPattern RewritingVariableName
 wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]
