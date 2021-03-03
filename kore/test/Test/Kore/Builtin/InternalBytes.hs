@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.InternalBytes
     ( test_update
     , test_get
@@ -14,6 +16,7 @@ module Test.Kore.Builtin.InternalBytes
     , test_int2bytes
     , test_bytes2int
     , test_InternalBytes
+    , test_unparse
     ) where
 
 import Prelude.Kore
@@ -42,7 +45,13 @@ import qualified Data.Text as T
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
+import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Builtin.Builtin
@@ -252,8 +261,8 @@ test_substr =
     testSubstrBytes
         :: HasCallStack
         => TestName
-        -> [TermLike VariableName]  -- ^ arguments of @substrBytes@ symbol
-        -> Pattern VariableName  -- ^ expected result
+        -> [TermLike RewritingVariableName]  -- ^ arguments of @substrBytes@ symbol
+        -> Pattern RewritingVariableName  -- ^ expected result
         -> TestTree
     testSubstrBytes testName = testBytes testName substrBytesSymbol
 
@@ -580,7 +589,10 @@ test_bytes2int =
                       | otherwise               = integer
                     modulus = 0x100 ^ ByteString.length bytes
                     input = bytes2int (asInternal bytes) end sign
-                    expect = [Test.Int.asPattern int]
+                    expect =
+                        [ Test.Int.asPattern int
+                        & Pattern.mapVariables (pure mkConfigVariable)
+                        ]
                 actual <- simplify input
                 assertEqual "" expect actual
         name =
@@ -614,19 +626,28 @@ test_InternalBytes =
         assertEqual "" expect actual
     ]
 
+test_unparse :: [TestTree]
+test_unparse =
+    [ testCase "unparse using 8-bit encoding" $ do
+        let input = asInternal "\x00" :: TermLike RewritingVariableName
+            actual = (show . unparse) input
+            expect = "/* Fl Fn D Sfa Cl */ \\dv{Bytes{}}(\"\\x00\")"
+        assertEqual "" expect actual
+    ]
+
 -- * Helpers
 
-asInternal :: ByteString -> TermLike VariableName
+asInternal :: InternalVariable variable => ByteString -> TermLike variable
 asInternal = InternalBytes.asInternal bytesSort
 
-asPattern :: ByteString -> Pattern VariableName
+asPattern :: InternalVariable variable => ByteString -> Pattern variable
 asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testBytes name = testSymbolWithoutSolver evaluate name

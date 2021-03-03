@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Axiom.Matcher
     ( test_matcherEqualHeads
     , test_matcherVariableFunction
@@ -38,6 +40,11 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -59,31 +66,31 @@ test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testGroup "Application"
         [ matches "same symbol"
-            (Mock.plain10 (mkElemVar Mock.x))
+            (Mock.plain10 (mkElemVar Mock.xConfig))
             (Mock.plain10 Mock.a)
-            [(inject Mock.x, Mock.a)]
+            [(inject Mock.xConfig, Mock.a)]
         , matches "same symbol, set variables"
-            (Mock.plain10 (mkSetVar Mock.setX ))
+            (Mock.plain10 (mkSetVar Mock.setXConfig ))
             (Mock.plain10 (mkTop Mock.testSort))
-            [(inject Mock.setX, mkTop Mock.testSort)]
+            [(inject Mock.setXConfig, mkTop Mock.testSort)]
         , doesn'tMatch "different constructors"
-            (Mock.constr10 (mkElemVar Mock.x))
+            (Mock.constr10 (mkElemVar Mock.xConfig))
             (Mock.constr11 Mock.a)
         , doesn'tMatch "different functions"
             (Mock.f Mock.b)
             (Mock.g Mock.a)
         , doesn'tMatch "different functions with variable"
-            (Mock.f (mkElemVar Mock.x))
+            (Mock.f (mkElemVar Mock.xConfig))
             (Mock.g Mock.a)
         , doesn'tMatch "different symbols"
             (Mock.plain10 Mock.b)
             (Mock.plain11 Mock.a)
         , doesn'tMatch "different symbols with variable"
-            (Mock.plain10 (mkElemVar Mock.x))
+            (Mock.plain10 (mkElemVar Mock.xConfig))
             (Mock.plain11 Mock.a)
         , doesn'tMatch "inj{src, tgt1}(x:src) does not match inj{src, tgt2}(x:src)"
-            (Mock.sortInjection10     (mkElemVar Mock.x0))
-            (Mock.sortInjection0ToTop (mkElemVar Mock.x0))
+            (Mock.sortInjection10     (mkElemVar Mock.xConfig0))
+            (Mock.sortInjection0ToTop (mkElemVar Mock.xConfig0))
         ]
 
     , testCase "Bottom" $ do
@@ -95,11 +102,11 @@ test_matcherEqualHeads =
         let expect =
                 mkMatchResult
                     ( makeTruePredicate
-                    , Map.singleton (inject Mock.x) Mock.a
+                    , Map.singleton (inject Mock.xConfig) Mock.a
                     )
         actual <-
             matchDefinition
-                (mkCeil_ (Mock.plain10 (mkElemVar Mock.x)))
+                (mkCeil_ (Mock.plain10 (mkElemVar Mock.xConfig)))
                 (mkCeil_ (Mock.plain10 Mock.a))
         assertEqual "" expect actual
 
@@ -108,13 +115,19 @@ test_matcherEqualHeads =
                 mkMatchResult
                     ( makeTruePredicate
                     , Map.singleton
-                        (inject Mock.x)
-                        (mkElemVar Mock.y)
+                        (inject Mock.xConfig)
+                        (mkElemVar Mock.yConfig)
                     )
         actual <-
             matchDefinition
-                (mkEquals_ (Mock.plain10 (mkElemVar Mock.x)) (Mock.plain10 Mock.a))
-                (mkEquals_ (Mock.plain10 (mkElemVar Mock.y)) (Mock.plain10 Mock.a))
+                (mkEquals_
+                    (Mock.plain10 (mkElemVar Mock.xConfig))
+                    (Mock.plain10 Mock.a)
+                )
+                (mkEquals_
+                    (Mock.plain10 (mkElemVar Mock.yConfig))
+                    (Mock.plain10 Mock.a)
+                )
         assertEqual "" expect actual
 
     , testCase "Builtin" $ do
@@ -166,7 +179,7 @@ test_matcherEqualHeads =
         let expect = Nothing
         actual <-
             matchDefinition
-                (mkIff (Mock.plain10 Mock.a) (mkElemVar Mock.x))
+                (mkIff (Mock.plain10 Mock.a) (mkElemVar Mock.xConfig))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
         assertEqual "" expect actual
 
@@ -175,11 +188,11 @@ test_matcherEqualHeads =
             let expect =
                     mkMatchResult
                         ( makeTruePredicate
-                        , Map.singleton (inject Mock.x) Mock.a
+                        , Map.singleton (inject Mock.xConfig) Mock.a
                         )
             actual <-
                 matchSimplification
-                    (Mock.plain10 (mkElemVar Mock.x))
+                    (Mock.plain10 (mkElemVar Mock.xConfig))
                     (Mock.plain10 Mock.a)
             assertEqual "" expect actual
         ]
@@ -192,10 +205,10 @@ test_matcherVariableFunction =
                 mkMatchResult
                     ( makeTruePredicate
                     , Map.singleton
-                       (inject Mock.x)
+                       (inject Mock.xConfig)
                         Mock.functional00
                     )
-        actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
+        actual <- matchDefinition (mkElemVar Mock.xConfig) Mock.functional00
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Function" $ do
@@ -203,10 +216,10 @@ test_matcherVariableFunction =
                 mkMatchResult
                     ( makeTruePredicate
                     , Map.singleton
-                        (inject Mock.setX)
+                        (inject Mock.setXConfig)
                         Mock.cf
                     )
-        actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
+        actual <- matchDefinition (mkSetVar Mock.setXConfig) Mock.cf
         assertEqual "" expect actual
 
     , testCase "SetVariable vs Bottom" $ do
@@ -214,38 +227,39 @@ test_matcherVariableFunction =
                 mkMatchResult
                     ( makeTruePredicate
                     , Map.singleton
-                        (inject Mock.setX)
+                        (inject Mock.setXConfig)
                         (mkBottom Mock.testSort)
                     )
-        actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
+        actual <-
+            matchDefinition (mkSetVar Mock.setXConfig) (mkBottom Mock.testSort)
         assertEqual "" expect actual
 
     , testCase "Function" $ do
         let expect =
                 mkMatchResult
                     ( makeCeilPredicate Mock.cf
-                    , Map.singleton (inject Mock.x) Mock.cf
+                    , Map.singleton (inject Mock.xConfig) Mock.cf
                     )
-        actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
+        actual <- matchDefinition (mkElemVar Mock.xConfig) Mock.cf
         assertEqual "" expect actual
 
     , testCase "Non-functional" $ do
         let expect = Nothing
-        actual <- matchDefinition (mkElemVar Mock.x) (Mock.constr10 Mock.cf)
+        actual <- matchDefinition (mkElemVar Mock.xConfig) (Mock.constr10 Mock.cf)
         assertEqual "" expect actual
 
     , testCase "Unidirectional" $ do
         let expect = Nothing
         actual <-
             matchDefinition
-                (Mock.functional10 (mkElemVar Mock.y))
-                (mkElemVar Mock.x)
+                (Mock.functional10 (mkElemVar Mock.yConfig))
+                (mkElemVar Mock.xConfig)
         assertEqual "" expect actual
 
     , testCase "Injection" $ do
         let
             a = Mock.functional00SubSubSort
-            x = mkElementVariable (testId "x") Mock.subSort
+            x = configElementVariableFromId (testId "x") Mock.subSort
             expect =
                 mkMatchResult
                     ( makeTruePredicate
@@ -262,7 +276,7 @@ test_matcherVariableFunction =
     , testCase "Injection reverse" $ do
         let
             a = Mock.functional00SubSubSort
-            x = mkElementVariable (testId "x") Mock.subSort
+            x = configElementVariableFromId (testId "x") Mock.subSort
             expect = Nothing
         actual <-
             matchDefinition
@@ -279,7 +293,7 @@ test_matcherVariableFunction =
                         [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
-                        , ( inject Mock.x
+                        , ( inject Mock.xConfig
                           , Mock.functional10 Mock.a
                           )
                         ]
@@ -288,7 +302,7 @@ test_matcherVariableFunction =
             matchDefinition
                 (Mock.functionalTopConstr20
                     (Mock.sortInjectionSubToTop (mkElemVar xSub))
-                    (mkElemVar Mock.x)
+                    (mkElemVar Mock.xConfig)
                 )
                 (Mock.functionalTopConstr20
                     (Mock.sortInjectionSubSubToTop aSubSub)
@@ -305,7 +319,7 @@ test_matcherVariableFunction =
                         [ ( inject xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
                           )
-                        , ( inject Mock.x
+                        , ( inject Mock.xConfig
                           , Mock.functional10 Mock.a
                           )
                         ]
@@ -313,7 +327,7 @@ test_matcherVariableFunction =
         actual <-
             matchDefinition
                 (Mock.functionalTopConstr21
-                    (mkElemVar Mock.x)
+                    (mkElemVar Mock.xConfig)
                     (Mock.sortInjectionSubToTop (mkElemVar xSub))
                 )
                 (Mock.functionalTopConstr21
@@ -327,16 +341,16 @@ test_matcherVariableFunction =
             let expect =
                     mkMatchResult
                         ( makeCeilPredicate Mock.cf
-                        , Map.singleton (inject Mock.x) Mock.cf
+                        , Map.singleton (inject Mock.xConfig) Mock.cf
                         )
-            actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
+            actual <- matchSimplification (mkElemVar Mock.xConfig) Mock.cf
             assertEqual "" expect actual
 
         , testCase "Non-function" $ do
             let expect = Nothing
             actual <-
                 matchSimplification
-                    (mkElemVar Mock.x)
+                    (mkElemVar Mock.xConfig)
                     (Mock.constr10 Mock.cf)
             assertEqual "" expect actual
         ]
@@ -347,10 +361,10 @@ test_matcherVariableFunction =
                     mkMatchResult
                         ( makeTruePredicate
                         , Map.singleton
-                            (inject Mock.x)
+                            (inject Mock.xConfig)
                             evaluated
                         )
-            actual <- matchDefinition (mkElemVar Mock.x) evaluated
+            actual <- matchDefinition (mkElemVar Mock.xConfig) evaluated
             assertEqual "" expect actual
 
         , testCase "Function" $ do
@@ -359,23 +373,23 @@ test_matcherVariableFunction =
                     mkMatchResult
                         ( makeCeilPredicate evaluated
                         , Map.singleton
-                            (inject Mock.x)
+                            (inject Mock.xConfig)
                             evaluated
                         )
-            actual <- matchDefinition (mkElemVar Mock.x) evaluated
+            actual <- matchDefinition (mkElemVar Mock.xConfig) evaluated
             assertEqual "" expect actual
         ]
     ]
   where
     aSubSub = Mock.functional00SubSubSort
-    xSub = mkElementVariable (testId "xSub") Mock.subSort
+    xSub = configElementVariableFromId (testId "xSub") Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
     [ failure Mock.a Mock.b                 "no-var - no-var"
-    , failure (mkElemVar Mock.x) Mock.a         "var - no-var"
-    , failure Mock.a (mkElemVar Mock.x)         "no-var - var"
-    , failure (mkElemVar Mock.x) (mkElemVar Mock.y) "no-var - var"
+    , failure (mkElemVar Mock.xConfig) Mock.a         "var - no-var"
+    , failure Mock.a (mkElemVar Mock.xConfig)         "no-var - var"
+    , failure (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig) "no-var - var"
     ]
   where
     failure term1 term2 name =
@@ -388,15 +402,15 @@ test_matcherMergeSubresults =
                 mkMatchResult
                     ( makeCeilPredicate Mock.cf
                     , Map.fromList
-                        [ (inject Mock.x, Mock.cf)
-                        , (inject Mock.y, Mock.b)
+                        [ (inject Mock.xConfig, Mock.cf)
+                        , (inject Mock.yConfig, Mock.b)
                         ]
                     )
         actual <-
             matchDefinition
                 (Mock.plain20
-                    (mkElemVar Mock.x)
-                    (Mock.constr20 Mock.cf (mkElemVar Mock.y))
+                    (mkElemVar Mock.xConfig)
+                    (Mock.constr20 Mock.cf (mkElemVar Mock.yConfig))
                 )
                 (Mock.plain20
                     Mock.cf
@@ -408,8 +422,11 @@ test_matcherMergeSubresults =
         let expect = Nothing
         actual <-
             matchDefinition
-                (mkAnd (mkElemVar Mock.x) (mkElemVar Mock.x))
-                (mkAnd (mkElemVar Mock.y) (Mock.f (mkElemVar Mock.y)))
+                (mkAnd (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig))
+                (mkAnd
+                    (mkElemVar Mock.yConfig)
+                    (Mock.f (mkElemVar Mock.yConfig))
+                )
         assertEqual "" expect actual
     ]
 
@@ -424,15 +441,15 @@ test_matching_Bool =
         actual <- matchConcrete True False
         assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(inject Mock.xBool, True)]
-        actual <- matchVariable Mock.xBool True
+        let expect = substitution [(inject Mock.xConfigBool, True)]
+        actual <- matchVariable Mock.xConfigBool True
         assertEqual "" expect actual
     , doesn'tMatch "true does not match x:Bool"
         (mkBool True)
-        (mkElemVar Mock.xBool)
+        (mkElemVar Mock.xConfigBool)
     , doesn'tMatch "false does not match x:Bool"
         (mkBool False)
-        (mkElemVar Mock.xBool)
+        (mkElemVar Mock.xConfigBool)
     ]
   where
     top = topCondition
@@ -454,8 +471,8 @@ test_matching_Int =
         assertEqual "" expect actual
     , doesn'tMatch "1 does not match 2" (mkInt 1) (mkInt 2)
     , testCase "variable vs concrete" $ do
-        let expect = substitution [(inject Mock.xInt, 1)]
-        actual <- matchVariable Mock.xInt 1
+        let expect = substitution [(inject Mock.xConfigInt, 1)]
+        actual <- matchVariable Mock.xConfigInt 1
         assertEqual "" expect actual
     , doesn'tMatch "1 does not match x:Int"
         (mkInt 1)
@@ -484,12 +501,12 @@ test_matching_String =
         assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
         let expect =
-                substitution [(inject Mock.xString, "str")]
-        actual <- matchVariable Mock.xString "str"
+                substitution [(inject Mock.xConfigString, "str")]
+        actual <- matchVariable Mock.xConfigString "str"
         assertEqual "" expect actual
     , doesn'tMatch "\"str\" does not match x:String"
         (mkStr "str")
-        (mkElemVar Mock.xString)
+        (mkElemVar Mock.xConfigString)
     ]
   where
     substitution subst =
@@ -516,11 +533,11 @@ test_matching_List =
         (concreteList [1, 2, 3])
     , doesn'tMatch "[1] does not match x:List"
         (concreteList [1])
-        (mkElemVar Mock.xList)
+        (mkElemVar Mock.xConfigList)
     , matches "[1, x:Int] matches [1, 2]"
-        (mkList [mkInt 1, mkElemVar Mock.xInt])
+        (mkList [mkInt 1, mkElemVar Mock.xConfigInt])
         (concreteList [1, 2])
-        [(inject Mock.xInt, mkInt 2)]
+        [(inject Mock.xConfigInt, mkInt 2)]
     , matches "[x:Int, y:Int] matches [1, 2]"
         (mkList [mkElemVar xInt, mkElemVar yInt])
         (mkList [mkInt 1, mkInt 2])
@@ -639,8 +656,8 @@ test_matching_List =
         ]
     ]
   where
-    xList = inject $ mkElementVariable (testId "xList") Test.listSort
-    yList = inject $ mkElementVariable (testId "yList") Test.listSort
+    xList = inject $ configElementVariableFromId (testId "xList") Test.listSort
+    yList = inject $ configElementVariableFromId (testId "yList") Test.listSort
     one = mkInt 1
     two = mkInt 2
     concatList = Test.concatList
@@ -762,7 +779,10 @@ test_matching_Pair =
         [(inject xInt, mkElemVar zInt), (inject yInt, mkElemVar zInt)]
     ]
 
-mkPair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+mkPair
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 mkPair = Test.pair
 
 topCondition :: MatchResult
@@ -804,13 +824,16 @@ test_matching_Set =
         ]
     ]
 
-sSet :: SomeVariable VariableName
-sSet = inject $ mkElementVariable (testId "sSet") Test.setSort
+sSet :: SomeVariable RewritingVariableName
+sSet =
+    inject
+    $ mkElementVariable (testId "sSet") Test.setSort
+    & mapElementVariable (pure mkConfigVariable)
 
 mkSet
-    :: [TermLike VariableName]
-    -> [TermLike VariableName]
-    -> TermLike VariableName
+    :: [TermLike RewritingVariableName]
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
 mkSet elements opaques =
     Ac.asInternal Test.testMetadataTools Test.setSort
     $ Test.Set.normalizedSet elements opaques
@@ -1001,51 +1024,57 @@ test_matcherOverloading =
         ]
     ]
 
-xInt, yInt, zInt, mMap, nMap :: ElementVariable VariableName
-mMap = mkElementVariable (testId "mMap") Test.mapSort
-nMap = mkElementVariable (testId "nMap") Test.mapSort
-xInt = mkElementVariable (testId "xInt") Test.intSort
-yInt = mkElementVariable (testId "yInt") Test.intSort
-zInt = mkElementVariable (testId "zInt") Test.intSort
+xInt, yInt, zInt, mMap, nMap :: ElementVariable RewritingVariableName
+mMap = configElementVariableFromId (testId "mMap") Test.mapSort
+nMap = configElementVariableFromId (testId "nMap") Test.mapSort
+xInt = configElementVariableFromId (testId "xInt") Test.intSort
+yInt = configElementVariableFromId (testId "yInt") Test.intSort
+zInt = configElementVariableFromId (testId "zInt") Test.intSort
 
-mkInt :: Integer -> TermLike VariableName
+mkInt :: InternalVariable variable => Integer -> TermLike variable
 mkInt = Test.Int.asInternal
 
 mkMap
-    :: [(TermLike VariableName, TermLike VariableName)]
-    -> [TermLike VariableName]
-    -> TermLike VariableName
+    :: [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
 mkMap elements opaques =
     Ac.asInternal Test.testMetadataTools Test.mapSort
     $ Test.Map.normalizedMap elements opaques
 
 matchDefinition
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO MatchResult
 matchDefinition = match
 
 matchSimplification
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO MatchResult
 matchSimplification = matchDefinition
 
 type MatchResult =
     Maybe
-        ( Predicate VariableName
-        , Map.Map (SomeVariableName VariableName) (TermLike VariableName)
+        ( Predicate RewritingVariableName
+        , Map.Map
+            (SomeVariableName RewritingVariableName)
+            (TermLike RewritingVariableName)
         )
 
 mkMatchResult
-    :: (Predicate VariableName, Map (SomeVariable VariableName) (TermLike VariableName))
+    ::  ( Predicate RewritingVariableName
+        , Map
+            (SomeVariable RewritingVariableName)
+            (TermLike RewritingVariableName)
+        )
     -> MatchResult
 mkMatchResult (predicate, substitution) =
     Just (predicate, Map.mapKeys variableName substitution)
 
 match
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO MatchResult
 match first second =
     runSimplifier Mock.env matchResult
@@ -1056,8 +1085,8 @@ match first second =
 withMatch
     :: (MatchResult -> Assertion)
     -> TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 withMatch check comment term1 term2 =
     testCase comment $ do
@@ -1067,17 +1096,17 @@ withMatch check comment term1 term2 =
 doesn'tMatch
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 doesn'tMatch = withMatch (assertBool "" . isNothing)
 
 matches
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> [(SomeVariable VariableName, TermLike VariableName)]
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)]
     -> TestTree
 matches comment term1 term2 substs =
     matchesAux comment term1 term2
@@ -1086,10 +1115,10 @@ matches comment term1 term2 substs =
 matchesP
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> Predicate VariableName
-    -> [(SomeVariable VariableName, TermLike VariableName)]
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> [(SomeVariable RewritingVariableName, TermLike RewritingVariableName)]
     -> TestTree
 matchesP comment term1 term2 predicate substs =
     matchesAux comment term1 term2
@@ -1098,8 +1127,8 @@ matchesP comment term1 term2 predicate substs =
 matchesAux
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MatchResult
     -> TestTree
 matchesAux comment term1 term2 expect =

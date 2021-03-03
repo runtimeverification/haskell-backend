@@ -7,9 +7,10 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Unification.Procedure
     ( unificationProcedure
-    , unificationProcedureWorker
     ) where
 
 import Prelude.Kore
@@ -25,20 +26,18 @@ import Kore.Internal.TermLike
 import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , makeEvaluateTermCeil
+    ( makeEvaluateTermCeil
     , simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.UnificationProcedure
-import Kore.Unification.UnifierT
-    ( evalEnvUnifierT
-    )
 import Kore.Unification.Unify
     ( MonadUnify
     )
@@ -50,15 +49,13 @@ import Logic
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
-unificationProcedureWorker
-    ::  ( InternalVariable variable
-        , MonadUnify unifier
-        )
-    => SideCondition variable
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Condition variable)
-unificationProcedureWorker sideCondition p1 p2
+unificationProcedure
+    :: MonadUnify unifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Condition RewritingVariableName)
+unificationProcedure sideCondition p1 p2
   | p1Sort /= p2Sort =
     Monad.Unify.explainAndReturnBottom "Cannot unify different sorts."  p1 p2
   | otherwise = infoAttemptUnification p1 p2 $ do
@@ -72,11 +69,3 @@ unificationProcedureWorker sideCondition p1 p2
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
-
-unificationProcedure
-    :: MonadSimplify simplifier
-    => UnificationProcedure simplifier
-unificationProcedure =
-    UnificationProcedure $ \sideCondition term1 term2 ->
-        unificationProcedureWorker sideCondition term1 term2
-        & evalEnvUnifierT Not.notSimplifier

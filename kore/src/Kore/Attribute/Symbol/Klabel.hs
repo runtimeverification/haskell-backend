@@ -19,6 +19,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Pretty
 
 -- | @Klabel@ represents the @klabel@ attribute for symbols.
 newtype Klabel = Klabel { getKlabel :: Maybe Text }
@@ -30,6 +31,10 @@ newtype Klabel = Klabel { getKlabel :: Maybe Text }
 
 instance Default Klabel where
     def = Klabel Nothing
+
+instance Pretty Klabel where
+    pretty (Klabel (Just text)) = pretty text
+    pretty (Klabel Nothing) = "<no label>"
 
 -- | Kore identifier representing the @klabel@ attribute symbol.
 klabelId :: Id

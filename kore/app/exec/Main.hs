@@ -83,6 +83,9 @@ import System.IO
     , withFile
     )
 
+import Data.Functor
+    ( (<&>)
+    )
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -118,13 +121,15 @@ import Kore.Log
     , SomeEntry (..)
     , WithLog
     , logEntry
-    , logWarning
     , parseKoreLogOptions
     , runKoreLog
     , unparseKoreLogOptions
     )
 import Kore.Log.ErrorException
     ( errorException
+    )
+import Kore.Log.WarnBoundedModelChecker
+    ( warnBoundedModelChecker
     )
 import Kore.Log.WarnIfLowProductivity
     ( warnIfLowProductivity
@@ -145,6 +150,9 @@ import Kore.Reachability
 import qualified Kore.Reachability.Claim as Claim
 import Kore.Rewriting.RewritingVariable
 import Kore.Step
+import Kore.Step.RulePattern
+    ( mapRuleVariables
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
@@ -770,8 +778,8 @@ koreBmc execOptions proveOptions = do
                 graphSearch
         case checkResult of
             Bounded.Proved -> return success
-            Bounded.Unknown -> do
-                logWarning "The pattern does not terminate within the bound."
+            Bounded.Unknown claim -> do
+                warnBoundedModelChecker claim
                 return success
             Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
@@ -799,7 +807,9 @@ koreMerge execOptions mergeOptions = do
             lift $ Text.putStrLn err
             return (ExitFailure 1)
         (Right mergedRule) -> do
-            lift $ renderResult execOptions (vsep (map unparse mergedRule))
+            let mergedRule' =
+                    mergedRule <&> mapRuleVariables getRewritingVariable
+            lift $ renderResult execOptions (vsep (map unparse mergedRule'))
             return ExitSuccess
 
 loadRuleIds :: FilePath -> IO [Text]

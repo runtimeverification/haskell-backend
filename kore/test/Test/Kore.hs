@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore
     ( testId
     , Gen
@@ -19,6 +21,7 @@ module Test.Kore
     , predicateGen
     , predicateChildGen
     , elementVariableGen
+    , configElementVariableGen
     , setVariableGen
     , elementTargetVariableGen
     , setTargetVariableGen
@@ -57,6 +60,9 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
+import Data.Functor
+    ( (<&>)
+    )
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
@@ -83,6 +89,10 @@ import Kore.Parser
     )
 import Kore.Parser.Parser
     ( parseVariableCounter
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkElementConfigVariable
     )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
@@ -256,6 +266,10 @@ elementVariableGen patternSort = do
         variables = (fmap . fmap) unElementVariableName elementVariables
     variableGen' patternSort variables idGen
         & (fmap . fmap) ElementVariableName
+
+configElementVariableGen :: Sort -> Gen (ElementVariable RewritingVariableName)
+configElementVariableGen patternSort =
+    elementVariableGen patternSort <&> mkElementConfigVariable
 
 setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do

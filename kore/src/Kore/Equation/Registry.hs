@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Equation.Registry
     ( extractEquations
@@ -43,6 +44,9 @@ import qualified Kore.Equation.Equation as Equation
 import qualified Kore.Equation.Sentence as Equation
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
@@ -51,6 +55,7 @@ import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
 import qualified Kore.Verified as Verified
+import qualified Pretty
 
 {- | Create a mapping from symbol identifiers to their defining axioms.
 
@@ -102,15 +107,15 @@ identifyEquation axiom = do
 
 data PartitionedEquations =
     PartitionedEquations
-        { functionRules       :: ![Equation VariableName]
-        , simplificationRules :: ![Equation VariableName]
+        { functionRules       :: ![Equation RewritingVariableName]
+        , simplificationRules :: ![Equation RewritingVariableName]
         }
 
 -- | Filters and partitions a list of 'EqualityRule's to
 -- simplification rules and function rules. The function rules
 -- are also sorted in order of priority.
 partitionEquations
-    :: [Equation VariableName]
+    :: [Equation RewritingVariableName]
     -> PartitionedEquations
 partitionEquations equations =
     PartitionedEquations
@@ -134,7 +139,7 @@ evaluation or simplification, such as if it is an associativity or commutativity
 axiom.
 
  -}
-ignoreEquation :: Equation VariableName -> Bool
+ignoreEquation :: Equation RewritingVariableName -> Bool
 ignoreEquation Equation { attributes }
   | isAssoc = True
   | isComm = True
@@ -153,9 +158,14 @@ ignoreEquation Equation { attributes }
 
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
-ignoreDefinition :: Equation VariableName -> Bool
-ignoreDefinition Equation { left } =
-    assert isLeftFunctionLike False
+ignoreDefinition :: Equation RewritingVariableName -> Bool
+ignoreDefinition Equation { attributes, left }
+    | isLeftFunctionLike = False
+    | otherwise = (error . show . Pretty.vsep)
+        [ "left-hand side of equation was not function-like at:"
+        , Pretty.indent 4 $ Pretty.pretty sourceLocation
+        ]
   where
+    Attribute.Axiom { sourceLocation } = attributes
     isLeftFunctionLike =
         (Pattern.isFunction . Pattern.function) (extractAttributes left)

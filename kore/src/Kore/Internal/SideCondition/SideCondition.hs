@@ -9,10 +9,14 @@ module Kore.Internal.SideCondition.SideCondition
     ) where
 
 import Prelude.Kore
+import Pretty
+    ( Pretty (..)
+    )
 
 import Data.Hashable
     ( Hashed
     , hashed
+    , unhashed
     )
 
 import Data.Type.Equality
@@ -30,7 +34,7 @@ import Type.Reflection
     )
 
 data Representation where
-    Representation :: Ord a => !(TypeRep a) -> !(Hashed a) -> Representation
+    Representation :: (Ord a, Pretty a) => !(TypeRep a) -> !(Hashed a) -> Representation
 
 instance Eq Representation where
     (==) (Representation typeRep1 hashed1) (Representation typeRep2 hashed2) =
@@ -64,9 +68,12 @@ instance NFData Representation where
     rnf (Representation typeRep1 hashed1) = typeRep1 `seq` hashed1 `seq` ()
     {-# INLINE rnf #-}
 
+instance Pretty Representation where
+    pretty (Representation _ h) = pretty (unhashed h)
+
 -- | Creates a 'Representation'. Should not be used directly.
 -- See 'Kore.Internal.SideCondition.toRepresentation'.
-mkRepresentation :: (Ord a, Hashable a, Typeable a) => a -> Representation
+mkRepresentation :: (Ord a, Hashable a, Typeable a, Pretty a) => a -> Representation
 mkRepresentation = Representation typeRep . hashed
 
 instance Debug Representation where

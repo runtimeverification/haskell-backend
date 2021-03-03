@@ -13,6 +13,7 @@ module Kore.Internal.TermLike
     , Evaluated (..)
     , extractAttributes
     , isSimplified
+    , isSimplifiedSomeCondition
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
@@ -26,7 +27,6 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
-    , freshSymbolInstance
     , removeEvaluated
     , termLikeSort
     , hasFreeVariable
@@ -311,28 +311,6 @@ refreshVariables (FreeVariables.toNames -> avoid) term =
     originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
 
--- | Generates fresh variables as arguments for a symbol to create a pattern.
-freshSymbolInstance
-    :: forall variable
-     . InternalVariable variable
-    => FreeVariables variable
-    -> Symbol
-    -> Text
-    -> TermLike variable
-freshSymbolInstance freeVars sym base =
-    mkApplySymbol sym varTerms
-    & refreshVariables freeVars
-  where
-    sorts = applicationSortsOperands $ symbolSorts sym
-    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
-
-    mkVariable :: Integer -> Sort -> ElementVariable variable
-    mkVariable vIdx vSort =
-        mkElementVariable
-            (generatedId $ base <> (Text.pack . show) vIdx)
-            vSort
-        & (fmap . fmap) fromVariableName
-
 {- | Is the 'TermLike' a function pattern?
  -}
 isFunctionPattern :: TermLike variable -> Bool
@@ -425,9 +403,32 @@ fromConcrete
     -> TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)
 
+{- | Is the 'TermLike' fully simplified under the given side condition?
+
+See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under any side condition?
+
+See also: 'isSimplified', 'isSimplifiedSomeCondition'.
+
+ -}
+isSimplifiedAnyCondition :: TermLike variable -> Bool
+isSimplifiedAnyCondition =
+    Attribute.isSimplifiedAnyCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under some side condition?
+
+See also: 'isSimplified', 'isSimplifiedAnyCondition'.
+
+ -}
+isSimplifiedSomeCondition :: TermLike variable -> Bool
+isSimplifiedSomeCondition =
+    Attribute.isSimplifiedSomeCondition . extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 
@@ -441,9 +442,6 @@ forgetSimplified
     => TermLike variable
     -> TermLike variable
 forgetSimplified = resynthesize
-
-isFullySimplified :: TermLike variable -> Bool
-isFullySimplified = Attribute.isFullySimplified . extractAttributes
 
 simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
@@ -468,9 +466,9 @@ assertConstructorLikeKeys keys a
                 , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-    | any (not . isFullySimplified) keys =
+    | any (not . isSimplifiedAnyCondition) keys =
         let simplifiableKeys =
-                filter (not . isFullySimplified) $ Prelude.Kore.toList keys
+                filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected fully simplified patterns,\

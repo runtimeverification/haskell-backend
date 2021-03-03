@@ -50,6 +50,10 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
@@ -390,11 +394,16 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    mkEvaluatorRegistry $ extractEquations testIndexedModule
+    mkEvaluatorRegistry
+    $ Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable)
+    $ extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    partitionEquations <$> extractEquations testIndexedModule
+    partitionEquations
+    <$> Map.map
+            (fmap . Equation.mapVariables $ pure mkConfigVariable)
+            (extractEquations testIndexedModule)
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
@@ -484,5 +493,5 @@ test_functionRegistry =
         )
     ]
   where
-    makePattern :: TermLike VariableName -> Pattern VariableName
+    makePattern :: TermLike RewritingVariableName -> Pattern RewritingVariableName
     makePattern = Pattern.fromTermLike

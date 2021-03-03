@@ -14,7 +14,6 @@ module Kore.Step.Simplification.Pattern
 
 import Prelude.Kore
 
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
@@ -40,9 +39,11 @@ import Kore.Internal.TermLike
     ( pattern Exists_
     , TermLike
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     , simplifyCondition
     , simplifyConditionalTerm
     )
@@ -53,32 +54,32 @@ import Kore.Substitute
 {-| Simplifies the pattern and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration patt = do
     simplified <- simplify patt
     return (OrPattern.map removeTopExists simplified)
   where
-    removeTopExists :: Pattern variable -> Pattern variable
+    removeTopExists
+        :: Pattern RewritingVariableName -> Pattern RewritingVariableName
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
         removeTopExists p {term = quantified}
     removeTopExists p = p
 
 simplifyTopConfigurationDefined
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyTopConfigurationDefined patt defined = do
     simplified <- makeEvaluate sideCondition patt
     return (OrPattern.map removeTopExists simplified)
   where
-    removeTopExists :: Pattern variable -> Pattern variable
+    removeTopExists
+        :: Pattern RewritingVariableName
+        -> Pattern RewritingVariableName
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
         removeTopExists p {term = quantified}
     removeTopExists p = p
@@ -87,10 +88,9 @@ simplifyTopConfigurationDefined patt defined = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplify = makeEvaluate SideCondition.top
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
@@ -99,11 +99,10 @@ This should only be used when it's certain that the
 the 'Pattern'.
  -}
 makeEvaluate
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition pattern' =
     OrPattern.observeAllT $ do
         withSimplifiedCondition <- simplifyCondition sideCondition pattern'

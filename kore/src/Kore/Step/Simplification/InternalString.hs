@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.InternalString
     ( simplify
     ) where
@@ -14,9 +16,11 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 simplify
-    :: InternalVariable variable
-    => InternalString
-    -> OrPattern variable
+    :: InternalString
+    -> OrPattern RewritingVariableName
 simplify = OrPattern.fromPattern . pure . mkInternalString

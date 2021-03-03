@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Overload
     ( test_Overload
     , test_Attributes
@@ -18,6 +20,7 @@ import qualified Data.Map.Strict as Map
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
+import qualified Kore.Equation as Equation
 import Kore.Error
 import Kore.Internal.Symbol
     ( applicationSorts
@@ -26,6 +29,9 @@ import Kore.Internal.Symbol
     , toSymbolOrAlias
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( mkConfigVariable
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
 import Kore.Syntax.Definition hiding
@@ -131,7 +137,10 @@ test_dont_ignore =
                 assertFailure "Should not ignore overloaded production axiom"
             Just _ -> return ()
   where
-    evaluators = mkEvaluatorRegistry $ extractEquations indexedModule
+    evaluators =
+        mkEvaluatorRegistry
+        $ (Map.map . fmap . Equation.mapVariables $ pure mkConfigVariable)
+        $ extractEquations indexedModule
     verifiedModules =
         assertRight
         $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition

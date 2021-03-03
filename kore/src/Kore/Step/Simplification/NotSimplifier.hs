@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
@@ -14,16 +15,14 @@ import Kore.Internal.OrPattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
-import Kore.Internal.TermLike
-    ( InternalVariable
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 
 newtype NotSimplifier simplifier =
     NotSimplifier
         { runNotSimplifier
-            :: forall variable
-            .  InternalVariable variable
-            => SideCondition variable
-            -> OrPattern variable
-            -> simplifier (OrPattern variable)
+            :: SideCondition RewritingVariableName
+            -> OrPattern RewritingVariableName
+            -> simplifier (OrPattern RewritingVariableName)
         }

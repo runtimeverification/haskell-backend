@@ -102,6 +102,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( predicateSort
     )
@@ -490,11 +493,11 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    :: (MonadUnify unifier, InternalVariable variable)
+    :: MonadUnify unifier
     => SimplificationType
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Pattern RewritingVariableName)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
     orCondition <-

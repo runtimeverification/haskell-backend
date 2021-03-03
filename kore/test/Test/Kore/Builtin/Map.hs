@@ -103,6 +103,12 @@ import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkConfigVariable
+    , ruleElementVariableFromId
+    )
 import Kore.Step.RulePattern
 import SMT
     ( NoSMT
@@ -110,7 +116,7 @@ import SMT
 
 import Test.Expect
 import Test.Kore
-    ( elementVariableGen
+    ( configElementVariableGen
     , standaloneGen
     , testId
     )
@@ -140,14 +146,18 @@ genConcreteMap :: Gen a -> Gen (Map Key a)
 genConcreteMap genElement =
     Map.mapKeys Test.Int.asKey <$> genMapInteger genElement
 
-genMapPattern :: Gen (TermLike VariableName)
+genMapPattern :: Gen (TermLike RewritingVariableName)
 genMapPattern = asTermLike <$> genConcreteMap genIntegerPattern
 
-genMapSortedVariable :: Sort -> Gen a -> Gen (Map (ElementVariable VariableName) a)
+genMapSortedVariable
+    :: Sort -> Gen a -> Gen (Map (ElementVariable RewritingVariableName) a)
 genMapSortedVariable sort genElement =
     Gen.map
         (Range.linear 0 32)
-        ((,) <$> standaloneGen (elementVariableGen sort) <*> genElement)
+        ( (,)
+            <$> standaloneGen (configElementVariableGen sort)
+            <*> genElement
+        )
 
 test_lookupUnit :: [TestTree]
 test_lookupUnit =
@@ -636,7 +646,7 @@ test_simplify :: TestTree
 test_simplify =
     testCaseWithoutSMT "simplify builtin Map elements" $ do
         let
-            x = mkIntVar (testId "x")
+            x = mkIntConfigVar (testId "x")
             key = Test.Int.asKey 1
             original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
             expected = asPattern $ Map.fromList [(key, x)]
@@ -685,12 +695,15 @@ test_unifyConcrete =
                     (,) <$> genIntVariable <*> genIntVariable
                   where
                     genIntVariable =
-                        standaloneGen $ mkElemVar <$> elementVariableGen intSort
+                        standaloneGen
+                        $ mkElemVar <$> configElementVariableGen intSort
             map12 <- forAll (genConcreteMap genVariablePair)
             let map1 = fst <$> map12
                 map2 = snd <$> map12
-                patExpect = asTermLike $ uncurry mkAnd <$> map12
-                patActual = mkAnd (asTermLike map1) (asTermLike map2)
+                patExpect =
+                    asTermLike (uncurry mkAnd <$> map12)
+                patActual =
+                    mkAnd (asTermLike map1) (asTermLike map2)
                 predicate = mkEquals_ patExpect patActual
             expect <- evaluateT patExpect
             actual <- evaluateT patActual
@@ -704,11 +717,11 @@ test_unifyConcrete =
 -- `MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map`, or
 -- `Rest:Map MapItem(absInt(K:Int), absInt(V:Int))`, respectively.
 selectFunctionPattern
-    :: ElementVariable VariableName           -- ^key variable
-    -> ElementVariable VariableName           -- ^value variable
-    -> ElementVariable VariableName           -- ^map variable
+    :: ElementVariable RewritingVariableName           -- ^key variable
+    -> ElementVariable RewritingVariableName           -- ^value variable
+    -> ElementVariable RewritingVariableName           -- ^map variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
 selectFunctionPattern keyVar valueVar mapVar permutation  =
     mkApplySymbol concatMapSymbol $ permutation [singleton, mkElemVar mapVar]
   where
@@ -717,12 +730,16 @@ selectFunctionPattern keyVar valueVar mapVar permutation  =
     singleton = mkApplySymbol elementMapSymbol [ key, value ]
 
 makeElementSelect
-    :: ElementVariable VariableName -> ElementVariable VariableName -> TermLike VariableName
+    :: ElementVariable RewritingVariableName
+    -> ElementVariable RewritingVariableName
+    -> TermLike RewritingVariableName
 makeElementSelect keyVar valueVar =
     mkApplySymbol elementMapSymbol [mkElemVar keyVar, mkElemVar valueVar]
 
 makeElementLookup
-    :: TermLike Concrete -> ElementVariable VariableName -> TermLike VariableName
+    :: TermLike Concrete
+    -> ElementVariable RewritingVariableName
+    -> TermLike RewritingVariableName
 makeElementLookup key valueVar =
     mkApplySymbol
         elementMapSymbol
@@ -733,21 +750,21 @@ makeElementLookup key valueVar =
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
 -- respectively.
 selectPattern
-    :: ElementVariable VariableName           -- ^key variable
-    -> ElementVariable VariableName           -- ^value variable
-    -> ElementVariable VariableName           -- ^map variable
+    :: ElementVariable RewritingVariableName           -- ^key variable
+    -> ElementVariable RewritingVariableName           -- ^value variable
+    -> ElementVariable RewritingVariableName           -- ^map variable
     -> (forall a . [a] -> [a])            -- ^scrambling function
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
 selectPattern keyVar valueVar mapVar permutation  =
     mkApplySymbol concatMapSymbol $ permutation [element, mkElemVar mapVar]
   where
     element = makeElementSelect keyVar valueVar
 
 addSelectElement
-    :: ElementVariable VariableName          -- ^key variable
-    -> ElementVariable VariableName          -- ^value variable
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: ElementVariable RewritingVariableName          -- ^key variable
+    -> ElementVariable RewritingVariableName          -- ^value variable
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 addSelectElement keyVar valueVar mapPattern  =
     mkApplySymbol concatMapSymbol [element, mapPattern]
   where
@@ -755,9 +772,9 @@ addSelectElement keyVar valueVar mapPattern  =
 
 addLookupElement
     :: TermLike Concrete                 -- ^key
-    -> ElementVariable VariableName          -- ^value variable
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> ElementVariable RewritingVariableName          -- ^value variable
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 addLookupElement key valueVar mapPattern  =
     mkApplySymbol concatMapSymbol [element, mapPattern]
   where
@@ -771,6 +788,7 @@ test_unifyEmptyWithEmpty =
         -- mapUnit /\ Map.empty
         (emptyMapPattern `unifiesWithMulti` emptyMapDV) [expect]
   where
+    emptyMapDV :: TermLike RewritingVariableName
     emptyMapDV = asInternal []
     emptyMapPattern = asTermLike Map.empty
     expect =
@@ -783,9 +801,9 @@ test_unifyEmptyWithEmpty =
 test_unifySelectFromEmpty :: TestTree
 test_unifySelectFromEmpty =
     testPropertyWithSolver "unify an empty map with a selection pattern" $ do
-        keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
-        valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
-        mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
+        keyVar <- forAll (standaloneGen $ configElementVariableGen intSort)
+        valueVar <- forAll (standaloneGen $ configElementVariableGen intSort)
+        mapVar <- forAll (standaloneGen $ configElementVariableGen mapSort)
         let variables = [ keyVar, valueVar, mapVar ]
         unless (distinctVariables variables) discard
         let selectPat       = selectPattern keyVar valueVar mapVar id
@@ -817,9 +835,12 @@ test_unifySelectFromSingleton =
         (do
             key      <- forAll genIntegerPattern
             value    <- forAll genIntegerPattern
-            keyVar   <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            mapVar   <- forAll (standaloneGen $ elementVariableGen mapSort)
+            keyVar   <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            mapVar   <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
             let variables = [keyVar, valueVar, mapVar]
             unless (distinctVariables variables) discard
             let selectPat      = selectPattern keyVar valueVar mapVar id
@@ -851,8 +872,10 @@ test_unifySelectSingletonFromSingleton =
         (do
             key <- forAll genIntegerPattern
             value <- forAll genIntegerPattern
-            keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
+            keyVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let variables = [keyVar, valueVar]
             unless (distinctVariables variables) discard
             let
@@ -881,8 +904,10 @@ test_unifySelectFromSingletonWithoutLeftovers =
         (do
             key <- forAll genIntegerPattern
             value <- forAll genIntegerPattern
-            keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
+            keyVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
             let variables = [keyVar, valueVar]
             unless (distinctVariables variables) discard
             let selectPat = makeElementSelect keyVar valueVar
@@ -913,9 +938,12 @@ test_unifySelectFromTwoElementMap =
             value2 <- forAll genIntegerPattern
             when (key1 == key2) discard
 
-            keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
+            keyVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            mapVar <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
             let variables = [keyVar, valueVar, mapVar]
             unless (distinctVariables variables) discard
 
@@ -963,11 +991,16 @@ test_unifySelectTwoFromTwoElementMap =
             value2 <- forAll genIntegerPattern
             when (key1 == key2) discard
 
-            keyVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            keyVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
-            mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
+            keyVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            keyVar2 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar2 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            mapVar <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
             let variables = [keyVar1, keyVar2, valueVar1, valueVar2, mapVar]
             unless (distinctVariables variables) discard
 
@@ -1015,9 +1048,12 @@ test_unifySameSymbolicKey =
         (do
 
             value1 <- forAll genIntegerPattern
-            keyVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
+            keyVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            mapVar <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
             let variables = [keyVar1, valueVar1, mapVar]
             unless (distinctVariables variables) discard
 
@@ -1052,11 +1088,16 @@ test_unifySameSymbolicKeySymbolicOpaque =
             value1 <- forAll genIntegerPattern
             value2 <- forAll genIntegerPattern
 
-            keyVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
-            valueVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
-            mapVar1 <- forAll (standaloneGen $ elementVariableGen mapSort)
-            mapVar2 <- forAll (standaloneGen $ elementVariableGen mapSort)
+            keyVar2 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar1 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            valueVar2 <-
+                forAll (standaloneGen $ configElementVariableGen intSort)
+            mapVar1 <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
+            mapVar2 <-
+                forAll (standaloneGen $ configElementVariableGen mapSort)
             let variables = [keyVar2, valueVar1, valueVar2, mapVar1, mapVar2]
             unless (distinctVariables variables) discard
 
@@ -1099,9 +1140,9 @@ test_unifySameSymbolicKeySymbolicOpaque =
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
-    => TermLike VariableName
-    -> TermLike VariableName
-    -> Pattern VariableName
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Pattern RewritingVariableName
     -> PropertyT NoSMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
@@ -1109,9 +1150,9 @@ unifiesWith pat1 pat2 expected =
 -- use as (pat1 `unifiesWithMulti` pat2) expect
 unifiesWithMulti
     :: HasCallStack
-    => TermLike VariableName
-    -> TermLike VariableName
-    -> [Pattern VariableName]
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> [Pattern RewritingVariableName]
     -> PropertyT NoSMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
@@ -1159,8 +1200,10 @@ test_concretizeKeys =
             assertEqual "expected simplified Map" expected actual
   where
     x = mkElementVariable (testId "x") intSort
+        & mapElementVariable (pure mkConfigVariable)
     v = mkElementVariable (testId "v") intSort
-    key :: TermLike VariableName
+        & mapElementVariable (pure mkConfigVariable)
+    key :: TermLike RewritingVariableName
     key = fromConcrete $ Test.Int.asInternal 1
     val = Test.Int.asInternal 2
     concreteMap = asInternal [(key, val)]
@@ -1204,8 +1247,8 @@ test_concretizeKeysAxiom =
             actual <- runStep config axiom
             assertEqual "expected MAP.lookup" expected actual
   where
-    x = mkIntVar (testId "x")
-    v = mkIntVar (testId "v")
+    x = mkIntRuleVar (testId "x")
+    v = mkIntRuleVar (testId "v")
     key = Test.Int.asKey 1
     symbolicKey = from key
     val = Test.Int.asInternal 2
@@ -1247,8 +1290,8 @@ test_renormalize =
         (mkMap' [(from k1, v)] [] [mkMap' [(from k1, v)] [] []])
     ]
   where
-    x = mkIntVar (testId "x")
-    v = mkIntVar (testId "v")
+    x = mkIntConfigVar (testId "x")
+    v = mkIntConfigVar (testId "v")
 
     k1, k2 :: Key
     k1 = Test.Int.asKey 1
@@ -1257,9 +1300,9 @@ test_renormalize =
     becomes
         :: HasCallStack
         => TestName
-        -> NormalizedMap Key (TermLike VariableName)
+        -> NormalizedMap Key (TermLike RewritingVariableName)
         -- ^ original, (possibly) de-normalized map
-        -> NormalizedMap Key (TermLike VariableName)
+        -> NormalizedMap Key (TermLike RewritingVariableName)
         -- ^ expected normalized map
         -> TestTree
     becomes name origin expect =
@@ -1268,26 +1311,26 @@ test_renormalize =
     unchanged
         :: HasCallStack
         => TestName
-        -> NormalizedMap Key (TermLike VariableName)
+        -> NormalizedMap Key (TermLike RewritingVariableName)
         -> TestTree
     unchanged name origin = becomes name origin origin
 
     denorm
         :: HasCallStack
         => TestName
-        -> NormalizedMap Key (TermLike VariableName)
+        -> NormalizedMap Key (TermLike RewritingVariableName)
         -> TestTree
     denorm name origin =
         testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
     mkMap'
-        :: [(TermLike VariableName, TermLike VariableName)]
+        :: [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
         -- ^ abstract elements
-        -> [(Key, TermLike VariableName)]
+        -> [(Key, TermLike RewritingVariableName)]
         -- ^ concrete elements
-        -> [NormalizedMap Key (TermLike VariableName)]
+        -> [NormalizedMap Key (TermLike RewritingVariableName)]
         -- ^ opaque terms
-        -> NormalizedMap Key (TermLike VariableName)
+        -> NormalizedMap Key (TermLike RewritingVariableName)
     mkMap' abstract concrete opaque =
         wrapAc NormalizedAc
             { elementsWithVariables = MapElement <$> abstract
@@ -1340,7 +1383,7 @@ test_inKeys =
             actual <- inKeys (tdivInt y z) symbolicMap
             assertEqual "" (Just True) actual
         , testCase "symbolic key is undecided" $ do
-            let key = mkIntVar (testId "z")
+            let key = mkIntConfigVar (testId "z")
             actual <- inKeys key symbolicMap
             assertEqual "" Nothing actual
         , testCase "concrete key is undecided" $ do
@@ -1359,13 +1402,13 @@ test_inKeys =
         [ (Test.Int.asInternal 0, u)
         , (Test.Int.asInternal 1, v)
         ]
-    x, y, z, u, v, w :: TermLike VariableName
-    x = mkIntVar (testId "x")
-    y = mkIntVar (testId "y")
-    z = mkIntVar (testId "z")
-    u = mkIntVar (testId "u")
-    v = mkIntVar (testId "v")
-    w = mkIntVar (testId "w")
+    x, y, z, u, v, w :: TermLike RewritingVariableName
+    x = mkIntConfigVar (testId "x")
+    y = mkIntConfigVar (testId "y")
+    z = mkIntConfigVar (testId "z")
+    u = mkIntConfigVar (testId "u")
+    v = mkIntConfigVar (testId "v")
+    w = mkIntConfigVar (testId "w")
     symbolicMap =
         asInternal
         [ (x, u)
@@ -1374,8 +1417,8 @@ test_inKeys =
         ]
     inKeys
         :: HasCallStack
-        => TermLike VariableName
-        -> TermLike VariableName
+        => TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> IO (Maybe Bool)
     inKeys termKey termMap = do
         output <-
@@ -1412,8 +1455,8 @@ test_inKeys =
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
-    :: Map (TermLike VariableName) (TermLike VariableName)
-    -> TermLike VariableName
+    :: Map (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 asSymbolicPattern result
     | Map.null result =
         applyUnit
@@ -1425,14 +1468,19 @@ asSymbolicPattern result
     applyConcat map1 map2 = concatMap map1 map2
 
 -- | Specialize 'Map.asTermLike' to the builtin sort 'mapSort'.
-asTermLike :: Map Key (TermLike VariableName) -> TermLike VariableName
+asTermLike
+    :: InternalVariable variable
+    => Map Key (TermLike variable)
+    -> TermLike variable
 asTermLike =
     Reflection.give testMetadataTools Map.asTermLike
     . builtinMap
     . Map.toAscList
 
 -- | Specialize 'Map.asPattern' to the builtin sort 'mapSort'.
-asPattern :: Map Key (TermLike VariableName) -> Pattern VariableName
+asPattern
+    :: Map Key (TermLike RewritingVariableName)
+    -> Pattern RewritingVariableName
 asPattern concreteMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
@@ -1443,7 +1491,8 @@ asPattern concreteMap =
         }
 
 asVariablePattern
-    :: Map (TermLike VariableName) (TermLike VariableName) -> Pattern VariableName
+    :: Map (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+    -> Pattern RewritingVariableName
 asVariablePattern variableMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
@@ -1454,7 +1503,8 @@ asVariablePattern variableMap =
         }
 
 asVariableInternal
-    :: Map (TermLike VariableName) (TermLike VariableName) -> TermLike VariableName
+    :: Map (TermLike RewritingVariableName) (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 asVariableInternal variableMap =
     Ac.asInternal testMetadataTools mapSort
     $ wrapAc NormalizedAc
@@ -1465,8 +1515,9 @@ asVariableInternal variableMap =
 
 -- | Specialize 'Ac.asInternal' to the builtin sort 'mapSort'.
 asInternal
-    :: [(TermLike VariableName, TermLike VariableName)]
-    -> TermLike VariableName
+    :: InternalVariable variable
+    => [(TermLike variable, TermLike variable)]
+    -> TermLike variable
 asInternal elements =
     Ac.asInternal testMetadataTools mapSort
     $ wrapAc NormalizedAc
@@ -1488,11 +1539,11 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedMap
-    :: [(TermLike VariableName, TermLike VariableName)]
+    :: [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
     -- ^ (abstract or concrete) elements
-    -> [TermLike VariableName]
+    -> [TermLike RewritingVariableName]
     -- ^ opaque terms
-    -> NormalizedMap Key (TermLike VariableName)
+    -> NormalizedMap Key (TermLike RewritingVariableName)
 normalizedMap elements opaque =
     Maybe.fromJust . Ac.renormalize . wrapAc $ NormalizedAc
         { elementsWithVariables = MapElement <$> elements
@@ -1502,13 +1553,18 @@ normalizedMap elements opaque =
 
 -- * Constructors
 
-mkIntVar :: Id -> TermLike VariableName
-mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
+mkIntRuleVar :: Id -> TermLike RewritingVariableName
+mkIntRuleVar variableName =
+    mkElemVar $ ruleElementVariableFromId variableName intSort
 
-asVariableName :: ElementVariable VariableName -> Id
-asVariableName = base . unElementVariableName . variableName
+mkIntConfigVar :: Id -> TermLike RewritingVariableName
+mkIntConfigVar variableName =
+    mkElemVar $ configElementVariableFromId variableName intSort
 
-distinctVariables :: [ElementVariable VariableName] -> Bool
+asVariableName :: ElementVariable RewritingVariableName -> Id
+asVariableName = base . from . unElementVariableName . variableName
+
+distinctVariables :: [ElementVariable RewritingVariableName] -> Bool
 distinctVariables variables =
     length variableNames == length (List.nub variableNames)
   where

@@ -125,6 +125,9 @@ import Kore.Internal.Symbol
     ( symbolHook
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -430,14 +433,13 @@ This function is suitable only for equality simplification.
 
  -}
 unifyIntEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIntEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where

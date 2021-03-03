@@ -1,20 +1,20 @@
-/* Spc */
+/* Spu */
 \or{SortGeneratedTopCell{}}(
-    /* Spc */
+    /* Spu */
     \or{SortGeneratedTopCell{}}(
-        /* Spc */
+        /* Spu */
         \or{SortGeneratedTopCell{}}(
-            /* Spc */
+            /* Spu */
             \or{SortGeneratedTopCell{}}(
-                /* Spc */
+                /* Spu */
                 \or{SortGeneratedTopCell{}}(
-                    /* Spc */
+                    /* Spu */
                     \or{SortGeneratedTopCell{}}(
-                        /* Spc */
+                        /* Spu */
                         \or{SortGeneratedTopCell{}}(
-                            /* Spc */
+                            /* Spu */
                             \or{SortGeneratedTopCell{}}(
-                                /* Spc */
+                                /* Spu */
                                 \or{SortGeneratedTopCell{}}(
                                     /* Spc */
                                     \and{SortGeneratedTopCell{}}(
@@ -1525,113 +1525,113 @@
                                             )
                                         )
                                     ),
-                                    /* Spc */
+                                    /* Spu */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfc */
+                                        /* Sfu */
                                         \and{SortGeneratedTopCell{}}(
-                                            /* Sfc */
-                                            \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                /* Fn Sfc */
-                                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'3:SortMap{},
-                                                    /* Fl Fn D Sfa Cli */
-                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                    ),
-                                                    /* Fl Fn D Sfc */
-                                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'1:SortInt{}
-                                                    ),
-                                                    /* Fl Fn D Sfa Cli */
-                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                        /* Fl Fn D Sfa Cl */
-                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                    )
-                                                )
-                                            ),
-                                            /* Spc */
+                                            /* Spu */
                                             \and{SortGeneratedTopCell{}}(
-                                                /* Sfc */
-                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortBool{}}("true"),
-                                                    /* Fl Fn D Sfc */
-                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'1:SortInt{}
-                                                        ),
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{}
-                                                    )
-                                                ),
-                                                /* Spc */
+                                                /* Spu */
                                                 \and{SortGeneratedTopCell{}}(
                                                     /* Sfc */
-                                                    \not{SortGeneratedTopCell{}}(
-                                                        /* Sfc */
-                                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
-                                                            /* Fn Sfc */
-                                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                    \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                        /* Fn Sfc */
+                                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'3:SortMap{},
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                            ),
+                                                            /* Fl Fn D Sfc */
+                                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
                                                                 /* Fl Fn D Sfa */
-                                                                Var'QuesUnds'3:SortMap{},
-                                                                /* Fl Fn D Sfa Cli */
-                                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                    /* Fl Fn D Sfa Cl */
-                                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                ),
-                                                                /* Fl Fn D Sfc */
-                                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    Var'QuesUnds'1:SortInt{}
-                                                                ),
-                                                                /* Fl Fn D Sfa Cli */
-                                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                    /* Fl Fn D Sfa Cl */
-                                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                )
+                                                                Var'QuesUnds'1:SortInt{}
+                                                            ),
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                             )
                                                         )
                                                     ),
                                                     /* Sfc */
-                                                    \not{SortGeneratedTopCell{}}(
-                                                        /* Sfc */
-                                                        \exists{SortGeneratedTopCell{}}(
-                                                            VarV:SortData{},
-                                                            /* Sfc */
-                                                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                                /* Fn Sfc */
-                                                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    Var'QuesUnds'3:SortMap{},
-                                                                    /* Fl Fn D Sfa Cli */
-                                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                        /* Fl Fn D Sfa Cl */
-                                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                    ),
-                                                                    /* Fl Fn D Sfc */
-                                                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                                        /* Fl Fn D Sfa */
-                                                                        Var'QuesUnds'1:SortInt{}
-                                                                    ),
-                                                                    /* Fl Fn D Sfa Cli */
-                                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                        /* Fl Fn D Sfa Cl */
-                                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                    )
-                                                                ),
+                                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                        /* Fl Fn D Sfa Cl */
+                                                        \dv{SortBool{}}("true"),
+                                                        /* Fl Fn D Sfc */
+                                                        Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                                            /* Fl Fn D Sfc */
+                                                            /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                                 /* Fl Fn D Sfa */
-                                                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    VarV:SortData{}
-                                                                )
+                                                                Var'QuesUnds'1:SortInt{}
+                                                            ),
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'3:SortMap{}
+                                                        )
+                                                    )
+                                                ),
+                                                /* Sfc */
+                                                \not{SortGeneratedTopCell{}}(
+                                                    /* Sfc */
+                                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                        /* Fl Fn D Sfa Cl */
+                                                        LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
+                                                        /* Fn Sfc */
+                                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'3:SortMap{},
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                            ),
+                                                            /* Fl Fn D Sfc */
+                                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                                /* Fl Fn D Sfa */
+                                                                Var'QuesUnds'1:SortInt{}
+                                                            ),
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                             )
+                                                        )
+                                                    )
+                                                )
+                                            ),
+                                            /* Sfc */
+                                            \not{SortGeneratedTopCell{}}(
+                                                /* Sfc */
+                                                \exists{SortGeneratedTopCell{}}(
+                                                    VarV:SortData{},
+                                                    /* Sfc */
+                                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                        /* Fn Sfc */
+                                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'3:SortMap{},
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                            ),
+                                                            /* Fl Fn D Sfc */
+                                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                                /* Fl Fn D Sfa */
+                                                                Var'QuesUnds'1:SortInt{}
+                                                            ),
+                                                            /* Fl Fn D Sfa Cli */
+                                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                                /* Fl Fn D Sfa Cl */
+                                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                            )
+                                                        ),
+                                                        /* Fl Fn D Sfa */
+                                                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                                            /* Fl Fn D Sfa */
+                                                            VarV:SortData{}
                                                         )
                                                     )
                                                 )
@@ -3354,34 +3354,11 @@
                                         )
                                     )
                                 ),
-                                /* Spc */
+                                /* Spu */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfc */
+                                    /* Sfu */
                                     \and{SortGeneratedTopCell{}}(
-                                        /* Sfc */
-                                        \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                            /* Fn Sfc */
-                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{},
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                ),
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                )
-                                            )
-                                        ),
-                                        /* Spc */
+                                        /* Spu */
                                         \and{SortGeneratedTopCell{}}(
                                             /* Sfc */
                                             \equals{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -3411,38 +3388,35 @@
                                                     VarV:SortData{}
                                                 )
                                             ),
-                                            /* Spc */
-                                            \and{SortGeneratedTopCell{}}(
-                                                /* Sfc */
-                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortBool{}}("true"),
+                                            /* Sfc */
+                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortBool{}}("true"),
+                                                /* Fl Fn D Sfc */
+                                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                                     /* Fl Fn D Sfc */
-                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'1:SortInt{}
-                                                        ),
+                                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                         /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{}
-                                                    )
-                                                ),
-                                                /* Sfc */
-                                                \not{SortGeneratedTopCell{}}(
-                                                    /* Sfc */
-                                                    \exists{SortGeneratedTopCell{}}(
-                                                        VarI2:SortInt{},
-                                                        /* Spc */
-                                                        \equals{SortData{}, SortGeneratedTopCell{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            VarV:SortData{},
-                                                            /* Fl Fn D Sfc */
-                                                            /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                                /* Fl Fn D Sfa */
-                                                                VarI2:SortInt{}
-                                                            )
-                                                        )
+                                                        Var'QuesUnds'1:SortInt{}
+                                                    ),
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'3:SortMap{}
+                                                )
+                                            )
+                                        ),
+                                        /* Sfc */
+                                        \not{SortGeneratedTopCell{}}(
+                                            /* Sfc */
+                                            \exists{SortGeneratedTopCell{}}(
+                                                VarI2:SortInt{},
+                                                /* Spc */
+                                                \equals{SortData{}, SortGeneratedTopCell{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    VarV:SortData{},
+                                                    /* Fl Fn D Sfc */
+                                                    /* Inj: */ inj{SortInt{}, SortData{}}(
+                                                        /* Fl Fn D Sfa */
+                                                        VarI2:SortInt{}
                                                     )
                                                 )
                                             )
@@ -5088,12 +5062,14 @@
                                     )
                                 )
                             ),
-                            /* Spc */
+                            /* Spu */
                             \and{SortGeneratedTopCell{}}(
-                                /* Sfc */
+                                /* Sfu */
                                 \and{SortGeneratedTopCell{}}(
                                     /* Sfc */
-                                    \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
+                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
                                         /* Fn Sfc */
                                         Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
                                             /* Fl Fn D Sfa */
@@ -5115,47 +5091,19 @@
                                             )
                                         )
                                     ),
-                                    /* Spc */
-                                    \and{SortGeneratedTopCell{}}(
-                                        /* Sfc */
-                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
-                                            /* Fn Sfc */
-                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{},
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                ),
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa Cli */
-                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                )
-                                            )
-                                        ),
-                                        /* Sfc */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("true"),
+                                    /* Sfc */
+                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        \dv{SortBool{}}("true"),
+                                        /* Fl Fn D Sfc */
+                                        Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
                                             /* Fl Fn D Sfc */
-                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
+                                            /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{}
-                                            )
+                                                Var'QuesUnds'1:SortInt{}
+                                            ),
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'3:SortMap{}
                                         )
                                     )
                                 ),
@@ -6656,61 +6604,138 @@
                                 )
                             )
                         ),
-                        /* Spc */
+                        /* Spu */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfc */
+                            /* Sfu */
                             \and{SortGeneratedTopCell{}}(
-                                /* Sfc */
-                                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                    /* Fn Sfc */
-                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'3:SortMap{},
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        ),
-                                        /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'1:SortInt{}
-                                        ),
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        )
-                                    )
-                                ),
-                                /* Spc */
+                                /* Spu */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfc */
-                                    \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                        /* Fn Sfc */
-                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'3:SortMap{},
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    /* Spu */
+                                    \and{SortGeneratedTopCell{}}(
+                                        /* Spu */
+                                        \and{SortGeneratedTopCell{}}(
+                                            /* Spu */
+                                            \and{SortGeneratedTopCell{}}(
+                                                /* Sfc */
+                                                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                    /* Fn Sfc */
+                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                        /* Fl Fn D Sfa */
+                                                        Var'QuesUnds'3:SortMap{},
+                                                        /* Fl Fn D Sfa Cli */
+                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                            /* Fl Fn D Sfa Cl */
+                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                        ),
+                                                        /* Fl Fn D Sfc */
+                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'4:SortInt{}
+                                                        ),
+                                                        /* Fl Fn D Sfa Cli */
+                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                            /* Fl Fn D Sfa Cl */
+                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                        )
+                                                    )
+                                                ),
+                                                /* Sfc */
+                                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                                    /* Fn Sfc */
+                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                        /* Fl Fn D Sfa */
+                                                        Var'QuesUnds'3:SortMap{},
+                                                        /* Fl Fn D Sfa Cli */
+                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                            /* Fl Fn D Sfa Cl */
+                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                        ),
+                                                        /* Fl Fn D Sfc */
+                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                            /* Fl Fn D Sfa */
+                                                            Var'QuesUnds'1:SortInt{}
+                                                        ),
+                                                        /* Fl Fn D Sfa Cli */
+                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                            /* Fl Fn D Sfa Cl */
+                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                        )
+                                                    ),
+                                                    /* Fl Fn D Sfc */
+                                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                                        /* Fl Fn D Sfc */
+                                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                                            /* Fl Fn D Sfa */
+                                                            VarI2:SortInt{}
+                                                        )
+                                                    )
+                                                )
                                             ),
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                            /* Sfa */
+                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortBool{}}("false"),
                                                 /* Fl Fn D Sfa */
-                                                Var'QuesUnds'4:SortInt{}
-                                            ),
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'4:SortInt{},
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                )
+                                            )
+                                        ),
+                                        /* Sfc */
+                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            \dv{SortBool{}}("true"),
+                                            /* Fl Fn D Sfc */
+                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'3:SortMap{}
                                             )
                                         )
                                     ),
-                                    /* Spc */
-                                    \and{SortGeneratedTopCell{}}(
+                                    /* Sfc */
+                                    \not{SortGeneratedTopCell{}}(
+                                        /* Sfc */
+                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
+                                            /* Fn Sfc */
+                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'3:SortMap{},
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                ),
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'4:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+                                /* Sfc */
+                                \not{SortGeneratedTopCell{}}(
+                                    /* Sfc */
+                                    \exists{SortGeneratedTopCell{}}(
+                                        VarV:SortData{},
                                         /* Sfc */
                                         \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                             /* Fn Sfc */
@@ -6724,8 +6749,9 @@
                                                 ),
                                                 /* Fl Fn D Sfc */
                                                 /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                                     /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
+                                                    Var'QuesUnds'4:SortInt{}
                                                 ),
                                                 /* Fl Fn D Sfa Cli */
                                                 /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
@@ -6733,114 +6759,10 @@
                                                     Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                                 )
                                             ),
-                                            /* Fl Fn D Sfc */
+                                            /* Fl Fn D Sfa */
                                             LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    VarI2:SortInt{}
-                                                )
-                                            )
-                                        ),
-                                        /* Spc */
-                                        \and{SortGeneratedTopCell{}}(
-                                            /* Sfa */
-                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                \dv{SortBool{}}("false"),
                                                 /* Fl Fn D Sfa */
-                                                Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'4:SortInt{},
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                )
-                                            ),
-                                            /* Spc */
-                                            \and{SortGeneratedTopCell{}}(
-                                                /* Sfc */
-                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortBool{}}("true"),
-                                                    /* Fl Fn D Sfc */
-                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'1:SortInt{}
-                                                        ),
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{}
-                                                    )
-                                                ),
-                                                /* Spc */
-                                                \and{SortGeneratedTopCell{}}(
-                                                    /* Sfc */
-                                                    \not{SortGeneratedTopCell{}}(
-                                                        /* Sfc */
-                                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
-                                                            /* Fn Sfc */
-                                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                                /* Fl Fn D Sfa */
-                                                                Var'QuesUnds'3:SortMap{},
-                                                                /* Fl Fn D Sfa Cli */
-                                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                    /* Fl Fn D Sfa Cl */
-                                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                ),
-                                                                /* Fl Fn D Sfc */
-                                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                                                    /* Fl Fn D Sfa */
-                                                                    Var'QuesUnds'4:SortInt{}
-                                                                ),
-                                                                /* Fl Fn D Sfa Cli */
-                                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                    /* Fl Fn D Sfa Cl */
-                                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                )
-                                                            )
-                                                        )
-                                                    ),
-                                                    /* Sfc */
-                                                    \not{SortGeneratedTopCell{}}(
-                                                        /* Sfc */
-                                                        \exists{SortGeneratedTopCell{}}(
-                                                            VarV:SortData{},
-                                                            /* Sfc */
-                                                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                                                /* Fn Sfc */
-                                                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    Var'QuesUnds'3:SortMap{},
-                                                                    /* Fl Fn D Sfa Cli */
-                                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                        /* Fl Fn D Sfa Cl */
-                                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                    ),
-                                                                    /* Fl Fn D Sfc */
-                                                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                                                        /* Fl Fn D Sfa */
-                                                                        Var'QuesUnds'4:SortInt{}
-                                                                    ),
-                                                                    /* Fl Fn D Sfa Cli */
-                                                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                                        /* Fl Fn D Sfa Cl */
-                                                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                                    )
-                                                                ),
-                                                                /* Fl Fn D Sfa */
-                                                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                                    /* Fl Fn D Sfa */
-                                                                    VarV:SortData{}
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                )
+                                                VarV:SortData{}
                                             )
                                         )
                                     )
@@ -8925,93 +8847,47 @@
                             )
                         )
                     ),
-                    /* Spc */
+                    /* Spu */
                     \and{SortGeneratedTopCell{}}(
-                        /* Sfc */
+                        /* Sfu */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfc */
-                            \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                /* Fn Sfc */
-                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    ),
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    )
-                                )
-                            ),
-                            /* Spc */
+                            /* Spu */
                             \and{SortGeneratedTopCell{}}(
-                                /* Sfc */
-                                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                    /* Fn Sfc */
-                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'3:SortMap{},
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        ),
-                                        /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'4:SortInt{}
-                                        ),
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        )
-                                    )
-                                ),
-                                /* Spc */
+                                /* Spu */
                                 \and{SortGeneratedTopCell{}}(
-                                    /* Sfc */
-                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                        /* Fn Sfc */
-                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'3:SortMap{},
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    /* Spu */
+                                    \and{SortGeneratedTopCell{}}(
+                                        /* Sfc */
+                                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                            /* Fn Sfc */
+                                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                                /* Fl Fn D Sfa */
+                                                Var'QuesUnds'3:SortMap{},
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                ),
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    Var'QuesUnds'1:SortInt{}
+                                                ),
+                                                /* Fl Fn D Sfa Cli */
+                                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                                    /* Fl Fn D Sfa Cl */
+                                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                                )
                                             ),
                                             /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'1:SortInt{}
-                                            ),
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                                /* Fl Fn D Sfc */
+                                                /* Inj: */ inj{SortInt{}, SortData{}}(
+                                                    /* Fl Fn D Sfa */
+                                                    VarI2:SortInt{}
+                                                )
                                             )
                                         ),
-                                        /* Fl Fn D Sfc */
-                                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                /* Fl Fn D Sfa */
-                                                VarI2:SortInt{}
-                                            )
-                                        )
-                                    ),
-                                    /* Spc */
-                                    \and{SortGeneratedTopCell{}}(
                                         /* Sfc */
                                         \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                             /* Fn Sfc */
@@ -9041,56 +8917,48 @@
                                                 /* Fl Fn D Sfa */
                                                 VarV0:SortData{}
                                             )
+                                        )
+                                    ),
+                                    /* Sfa */
+                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        \dv{SortBool{}}("false"),
+                                        /* Fl Fn D Sfa */
+                                        Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'4:SortInt{},
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
+                                        )
+                                    )
+                                ),
+                                /* Sfc */
+                                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    \dv{SortBool{}}("true"),
+                                    /* Fl Fn D Sfc */
+                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'1:SortInt{}
                                         ),
-                                        /* Spc */
-                                        \and{SortGeneratedTopCell{}}(
-                                            /* Sfa */
-                                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                \dv{SortBool{}}("false"),
-                                                /* Fl Fn D Sfa */
-                                                Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'4:SortInt{},
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                )
-                                            ),
-                                            /* Spc */
-                                            \and{SortGeneratedTopCell{}}(
-                                                /* Sfc */
-                                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                                    /* Fl Fn D Sfa Cl */
-                                                    \dv{SortBool{}}("true"),
-                                                    /* Fl Fn D Sfc */
-                                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'1:SortInt{}
-                                                        ),
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{}
-                                                    )
-                                                ),
-                                                /* Sfc */
-                                                \not{SortGeneratedTopCell{}}(
-                                                    /* Sfc */
-                                                    \exists{SortGeneratedTopCell{}}(
-                                                        VarI2:SortInt{},
-                                                        /* Spc */
-                                                        \equals{SortData{}, SortGeneratedTopCell{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            VarV0:SortData{},
-                                                            /* Fl Fn D Sfc */
-                                                            /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                                /* Fl Fn D Sfa */
-                                                                VarI2:SortInt{}
-                                                            )
-                                                        )
-                                                    )
-                                                )
-                                            )
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{}
+                                    )
+                                )
+                            ),
+                            /* Sfc */
+                            \not{SortGeneratedTopCell{}}(
+                                /* Sfc */
+                                \exists{SortGeneratedTopCell{}}(
+                                    VarI2:SortInt{},
+                                    /* Spc */
+                                    \equals{SortData{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfa */ VarV0:SortData{},
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                            /* Fl Fn D Sfa */ VarI2:SortInt{}
                                         )
                                     )
                                 )
@@ -11103,57 +10971,13 @@
                         )
                     )
                 ),
-                /* Spc */
+                /* Spu */
                 \and{SortGeneratedTopCell{}}(
-                    /* Sfc */
+                    /* Sfu */
                     \and{SortGeneratedTopCell{}}(
-                        /* Sfc */
-                        \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfc */
-                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                ),
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                                ),
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                )
-                            )
-                        ),
-                        /* Spc */
+                        /* Spu */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfc */
-                            \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                                /* Fn Sfc */
-                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    ),
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'4:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    )
-                                )
-                            ),
-                            /* Spc */
+                            /* Spu */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
                                 \equals{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -11185,65 +11009,53 @@
                                         )
                                     )
                                 ),
-                                /* Spc */
-                                \and{SortGeneratedTopCell{}}(
-                                    /* Sfc */
-                                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
-                                        /* Fn Sfc */
-                                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'3:SortMap{},
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                            ),
-                                            /* Fl Fn D Sfc */
-                                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'4:SortInt{}
-                                            ),
-                                            /* Fl Fn D Sfa Cli */
-                                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                /* Fl Fn D Sfa Cl */
-                                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                            )
-                                        )
-                                    ),
-                                    /* Spc */
-                                    \and{SortGeneratedTopCell{}}(
-                                        /* Sfa */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Sfc */
+                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    LblNone'Unds'MICHELSON-COMMON-SYNTAX'Unds'OptionData{}(),
+                                    /* Fn Sfc */
+                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{},
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("false"),
-                                            /* Fl Fn D Sfa */
-                                            Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'4:SortInt{},
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'1:SortInt{}
-                                            )
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                         ),
-                                        /* Sfc */
-                                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'4:SortInt{}
+                                        ),
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
                                             /* Fl Fn D Sfa Cl */
-                                            \dv{SortBool{}}("true"),
-                                            /* Fl Fn D Sfc */
-                                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                                    /* Fl Fn D Sfa */
-                                                    Var'QuesUnds'1:SortInt{}
-                                                ),
-                                                /* Fl Fn D Sfa */
-                                                Var'QuesUnds'3:SortMap{}
-                                            )
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                         )
                                     )
                                 )
+                            ),
+                            /* Sfa */
+                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
+                                /* Fl Fn D Sfa */
+                                Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                                )
+                            )
+                        ),
+                        /* Sfc */
+                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                            /* Fl Fn D Sfc */
+                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                                ),
+                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                             )
                         )
                     ),
@@ -12810,171 +12622,143 @@
                     )
                 )
             ),
-            /* Spc */
+            /* Spu */
             \and{SortGeneratedTopCell{}}(
-                /* Sfc */
+                /* Sfu */
                 \and{SortGeneratedTopCell{}}(
-                    /* Sfc */
-                    \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                        /* Fn Sfc */
-                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                            /* Fl Fn D Sfa Cli */
-                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                /* Fl Fn D Sfa Cl */
-                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                            ),
-                            /* Fl Fn D Sfc */
-                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                            ),
-                            /* Fl Fn D Sfa Cli */
-                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                /* Fl Fn D Sfa Cl */
-                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                            )
-                        )
-                    ),
-                    /* Spc */
+                    /* Spu */
                     \and{SortGeneratedTopCell{}}(
-                        /* Sfc */
-                        \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfc */
-                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                ),
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                    /* Fl Fn D Sfa */
-                                    Var'QuesUnds'4:SortInt{}
-                                ),
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                )
-                            )
-                        ),
-                        /* Spc */
+                        /* Spu */
                         \and{SortGeneratedTopCell{}}(
-                            /* Sfc */
-                            \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                                /* Fn Sfc */
-                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    ),
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa Cli */
-                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                    )
-                                ),
-                                /* Fl Fn D Sfc */
-                                LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortData{}}(
-                                        /* Fl Fn D Sfa */ VarI2:SortInt{}
-                                    )
-                                )
-                            ),
-                            /* Spc */
+                            /* Spu */
                             \and{SortGeneratedTopCell{}}(
                                 /* Sfc */
-                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortBool{}}("true"),
-                                    /* Fl Fn D Sfc */
-                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
+                                    /* Fn Sfc */
+                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{},
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        ),
                                         /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'4:SortInt{}
+                                        ),
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        )
+                                    )
+                                ),
+                                /* Sfc */
+                                \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                                    /* Fn Sfc */
+                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{},
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        ),
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
                                             /* Fl Fn D Sfa */
                                             Var'QuesUnds'1:SortInt{}
                                         ),
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'3:SortMap{}
-                                    )
-                                ),
-                                /* Spc */
-                                \and{SortGeneratedTopCell{}}(
-                                    /* Sfa */
-                                    \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                        /* Fl Fn D Sfa Cl */
-                                        \dv{SortBool{}}("true"),
-                                        /* Fl Fn D Sfa */
-                                        Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'4:SortInt{},
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'1:SortInt{}
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                         )
                                     ),
-                                    /* Sfc */
-                                    \not{SortGeneratedTopCell{}}(
-                                        /* Sfc */
-                                        \equals{SortInt{}, SortGeneratedTopCell{}}(
-                                            /* Fn Sfc */
-                                            Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
-                                                /* Fl Fn D Sfc */
-                                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                                    /* Fl Fn D Sfc */
-                                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortData{}}(
-                                                            /* Fl Fn D Sfa */
-                                                            Lbl'UndsPlus'Int'Unds'{}(
-                                                                /* Fl Fn D Sfa */
-                                                                VarI2:SortInt{},
-                                                                /* Fl Fn D Sfa Cl */
-                                                                \dv{SortInt{}}("1")
-                                                            )
-                                                        )
-                                                    )
-                                                ),
-                                                /* Fn Sfc */
-                                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                                    /* Fn Sfc */
-                                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                                        /* Fl Fn D Sfa */
-                                                        Var'QuesUnds'3:SortMap{},
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        ),
-                                                        /* Fl Fn D Sfc */
-                                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                                            /* Fl Fn D Sfa */
-                                                            Var'QuesUnds'4:SortInt{}
-                                                        ),
-                                                        /* Fl Fn D Sfa Cli */
-                                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                                            /* Fl Fn D Sfa Cl */
-                                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                                        )
-                                                    )
-                                                )
-                                            ),
-                                            /* Fl Fn D Sfa Cl */
-                                            \dv{SortInt{}}("0")
+                                    /* Fl Fn D Sfc */
+                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                            /* Fl Fn D Sfa */ VarI2:SortInt{}
                                         )
                                     )
                                 )
+                            ),
+                            /* Sfc */
+                            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                                /* Fl Fn D Sfc */
+                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                    /* Fl Fn D Sfc */
+                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'1:SortInt{}
+                                    ),
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
+                                )
                             )
+                        ),
+                        /* Sfa */
+                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                            /* Fl Fn D Sfa */
+                            Lbl'UndsEqlsEqls'Int'Unds'{}(
+                                /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
+                                /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                            )
+                        )
+                    ),
+                    /* Sfc */
+                    \not{SortGeneratedTopCell{}}(
+                        /* Sfc */
+                        \equals{SortInt{}, SortGeneratedTopCell{}}(
+                            /* Fn Sfc */
+                            Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
+                                    /* Fl Fn D Sfc */
+                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortData{}}(
+                                            /* Fl Fn D Sfa */
+                                            Lbl'UndsPlus'Int'Unds'{}(
+                                                /* Fl Fn D Sfa */
+                                                VarI2:SortInt{},
+                                                /* Fl Fn D Sfa Cl */
+                                                \dv{SortInt{}}("1")
+                                            )
+                                        )
+                                    )
+                                ),
+                                /* Fn Sfc */
+                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
+                                    /* Fn Sfc */
+                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                        /* Fl Fn D Sfa */
+                                        Var'QuesUnds'3:SortMap{},
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        ),
+                                        /* Fl Fn D Sfc */
+                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                            /* Fl Fn D Sfa */
+                                            Var'QuesUnds'4:SortInt{}
+                                        ),
+                                        /* Fl Fn D Sfa Cli */
+                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                            /* Fl Fn D Sfa Cl */
+                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                        )
+                                    )
+                                )
+                            ),
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
                         )
                     )
                 ),
@@ -14740,107 +14524,39 @@
                 )
             )
         ),
-        /* Spc */
+        /* Spu */
         \and{SortGeneratedTopCell{}}(
-            /* Sfc */
+            /* Sfu */
             \and{SortGeneratedTopCell{}}(
-                /* Sfc */
-                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                    /* Fn Sfc */
-                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                        /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                        /* Fl Fn D Sfa Cli */
-                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                            /* Fl Fn D Sfa Cl */
-                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                        ),
-                        /* Fl Fn D Sfc */
-                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                        ),
-                        /* Fl Fn D Sfa Cli */
-                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                            /* Fl Fn D Sfa Cl */
-                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                        )
-                    )
-                ),
-                /* Spc */
+                /* Spu */
                 \and{SortGeneratedTopCell{}}(
-                    /* Sfc */
-                    \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                        /* Fn Sfc */
-                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                            /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                            /* Fl Fn D Sfa Cli */
-                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                /* Fl Fn D Sfa Cl */
-                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                            ),
-                            /* Fl Fn D Sfc */
-                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                /* Fl Fn D Sfa */
-                                Var'QuesUnds'4:SortInt{}
-                            ),
-                            /* Fl Fn D Sfa Cli */
-                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                /* Fl Fn D Sfa Cl */
-                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                            )
-                        )
-                    ),
-                    /* Spc */
+                    /* Spu */
                     \and{SortGeneratedTopCell{}}(
-                        /* Sfc */
-                        \equals{SortInt{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfc */
-                            Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                    /* Fl Fn D Sfc */
-                                    LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                        /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortData{}}(
-                                            /* Fl Fn D Sfa */
-                                            Lbl'UndsPlus'Int'Unds'{}(
-                                                /* Fl Fn D Sfa */
-                                                VarI2:SortInt{},
-                                                /* Fl Fn D Sfa Cl */
-                                                \dv{SortInt{}}("1")
-                                            )
-                                        )
-                                    )
-                                ),
+                        /* Spu */
+                        \and{SortGeneratedTopCell{}}(
+                            /* Sfc */
+                            \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
                                 /* Fn Sfc */
-                                /* Inj: */ inj{SortOptionData{}, SortData{}}(
-                                    /* Fn Sfc */
-                                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                    ),
+                                    /* Fl Fn D Sfc */
+                                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                        /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                         /* Fl Fn D Sfa */
-                                        Var'QuesUnds'3:SortMap{},
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        ),
-                                        /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'4:SortInt{}
-                                        ),
-                                        /* Fl Fn D Sfa Cli */
-                                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                        )
+                                        Var'QuesUnds'4:SortInt{}
+                                    ),
+                                    /* Fl Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                        /* Fl Fn D Sfa Cl */
+                                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                     )
                                 )
                             ),
-                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
-                        ),
-                        /* Spc */
-                        \and{SortGeneratedTopCell{}}(
                             /* Sfc */
                             \equals{SortOptionData{}, SortGeneratedTopCell{}}(
                                 /* Fn Sfc */
@@ -14869,35 +14585,70 @@
                                         /* Fl Fn D Sfa */ VarI2:SortInt{}
                                     )
                                 )
-                            ),
-                            /* Spc */
-                            \and{SortGeneratedTopCell{}}(
-                                /* Sfc */
-                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortBool{}}("true"),
-                                    /* Fl Fn D Sfc */
-                                    Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                        /* Fl Fn D Sfc */
-                                        /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                            /* Fl Fn D Sfa */
-                                            Var'QuesUnds'1:SortInt{}
-                                        ),
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'3:SortMap{}
-                                    )
+                            )
+                        ),
+                        /* Sfc */
+                        \equals{SortBool{}, SortGeneratedTopCell{}}(
+                            /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                            /* Fl Fn D Sfc */
+                            Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
                                 ),
-                                /* Sfa */
-                                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    \dv{SortBool{}}("true"),
+                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
+                            )
+                        )
+                    ),
+                    /* Sfa */
+                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                        /* Fl Fn D Sfa */
+                        Lbl'UndsEqlsEqls'Int'Unds'{}(
+                            /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
+                            /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                        )
+                    )
+                ),
+                /* Sfc */
+                \equals{SortInt{}, SortGeneratedTopCell{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0"),
+                    /* Fn Sfc */
+                    Lbl'Hash'DoCompare'LParUndsCommUndsRParUnds'MICHELSON'Unds'Int'Unds'Data'Unds'Data{}(
+                        /* Fl Fn D Sfc */
+                        /* Inj: */ inj{SortOptionData{}, SortData{}}(
+                            /* Fl Fn D Sfc */
+                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortData{}}(
                                     /* Fl Fn D Sfa */
-                                    Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'4:SortInt{},
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
+                                    Lbl'UndsPlus'Int'Unds'{}(
+                                        /* Fl Fn D Sfa */ VarI2:SortInt{},
+                                        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
                                     )
+                                )
+                            )
+                        ),
+                        /* Fn Sfc */
+                        /* Inj: */ inj{SortOptionData{}, SortData{}}(
+                            /* Fn Sfc */
+                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                                /* Fl Fn D Sfa Cli */
+                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
+                                ),
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                    /* Fl Fn D Sfa */
+                                    Var'QuesUnds'4:SortInt{}
+                                ),
+                                /* Fl Fn D Sfa Cli */
+                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                                 )
                             )
                         )
@@ -16463,57 +16214,13 @@
             )
         )
     ),
-    /* Spc */
+    /* Spu */
     \and{SortGeneratedTopCell{}}(
-        /* Sfc */
+        /* Sfu */
         \and{SortGeneratedTopCell{}}(
-            /* Sfc */
-            \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                /* Fn Sfc */
-                Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                    /* Fl Fn D Sfa Cli */
-                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                        /* Fl Fn D Sfa Cl */
-                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                    ),
-                    /* Fl Fn D Sfc */
-                    /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                        /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                    ),
-                    /* Fl Fn D Sfa Cli */
-                    /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                        /* Fl Fn D Sfa Cl */
-                        Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                    )
-                )
-            ),
-            /* Spc */
+            /* Spu */
             \and{SortGeneratedTopCell{}}(
-                /* Sfc */
-                \ceil{SortOptionData{}, SortGeneratedTopCell{}}(
-                    /* Fn Sfc */
-                    Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                        /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                        /* Fl Fn D Sfa Cli */
-                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                            /* Fl Fn D Sfa Cl */
-                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                        ),
-                        /* Fl Fn D Sfc */
-                        /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                            /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                            /* Fl Fn D Sfa */
-                            Var'QuesUnds'4:SortInt{}
-                        ),
-                        /* Fl Fn D Sfa Cli */
-                        /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                            /* Fl Fn D Sfa Cl */
-                            Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                        )
-                    )
-                ),
-                /* Spc */
+                /* Spu */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfc */
                     \equals{SortOptionData{}, SortGeneratedTopCell{}}(
@@ -16543,66 +16250,59 @@
                             )
                         )
                     ),
-                    /* Spc */
-                    \and{SortGeneratedTopCell{}}(
-                        /* Sfc */
-                        \equals{SortOptionData{}, SortGeneratedTopCell{}}(
-                            /* Fn Sfc */
-                            Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
-                                /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                ),
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
-                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                    /* Fl Fn D Sfa */
-                                    Var'QuesUnds'4:SortInt{}
-                                ),
-                                /* Fl Fn D Sfa Cli */
-                                /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
-                                    /* Fl Fn D Sfa Cl */
-                                    Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
-                                )
+                    /* Sfc */
+                    \equals{SortOptionData{}, SortGeneratedTopCell{}}(
+                        /* Fn Sfc */
+                        Lbl'Hash'lookup'LParUndsCommUndsCommUndsCommUndsRParUnds'MICHELSON'Unds'OptionData'Unds'Map'Unds'TypeName'Unds'SimpleData'Unds'TypeName{}(
+                            /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{},
+                            /* Fl Fn D Sfa Cli */
+                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                /* Fl Fn D Sfa Cl */
+                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                             ),
                             /* Fl Fn D Sfc */
-                            LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
-                                /* Fl Fn D Sfc */
-                                /* Inj: */ inj{SortInt{}, SortData{}}(
-                                    /* Created: Kore.Step.RewriteStep.resetResultPattern */
-                                    /* Fl Fn D Sfa */
-                                    VarI3:SortInt{}
-                                )
+                            /* Inj: */ inj{SortInt{}, SortSimpleData{}}(
+                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
+                                /* Fl Fn D Sfa */
+                                Var'QuesUnds'4:SortInt{}
+                            ),
+                            /* Fl Fn D Sfa Cli */
+                            /* Inj: */ inj{SortNumTypeName{}, SortTypeName{}}(
+                                /* Fl Fn D Sfa Cl */
+                                Lblint'Unds'MICHELSON-COMMON-SYNTAX'Unds'NumTypeName{}()
                             )
                         ),
-                        /* Spc */
-                        \and{SortGeneratedTopCell{}}(
-                            /* Sfa */
-                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
+                        /* Fl Fn D Sfc */
+                        LblSome'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'OptionData'Unds'Data{}(
+                            /* Fl Fn D Sfc */
+                            /* Inj: */ inj{SortInt{}, SortData{}}(
+                                /* Created: Kore.Step.RewriteStep.resetResultPattern */
                                 /* Fl Fn D Sfa */
-                                Lbl'UndsEqlsEqls'Int'Unds'{}(
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
-                                )
-                            ),
-                            /* Sfc */
-                            \equals{SortBool{}, SortGeneratedTopCell{}}(
-                                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
-                                /* Fl Fn D Sfc */
-                                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
-                                    /* Fl Fn D Sfc */
-                                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                        /* Fl Fn D Sfa */
-                                        Var'QuesUnds'1:SortInt{}
-                                    ),
-                                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
-                                )
+                                VarI3:SortInt{}
                             )
                         )
                     )
+                ),
+                /* Sfa */
+                \equals{SortBool{}, SortGeneratedTopCell{}}(
+                    /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false"),
+                    /* Fl Fn D Sfa */
+                    Lbl'UndsEqlsEqls'Int'Unds'{}(
+                        /* Fl Fn D Sfa */ Var'QuesUnds'4:SortInt{},
+                        /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                    )
+                )
+            ),
+            /* Sfc */
+            \equals{SortBool{}, SortGeneratedTopCell{}}(
+                /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                /* Fl Fn D Sfc */
+                Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map{}(
+                    /* Fl Fn D Sfc */
+                    /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                        /* Fl Fn D Sfa */ Var'QuesUnds'1:SortInt{}
+                    ),
+                    /* Fl Fn D Sfa */ Var'QuesUnds'3:SortMap{}
                 )
             )
         ),

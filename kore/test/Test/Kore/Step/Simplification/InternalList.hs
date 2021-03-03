@@ -28,6 +28,9 @@ import Kore.Step.Simplification.InternalList
     ( simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -69,8 +72,8 @@ test_simplify =
     becomes
         :: HasCallStack
         => TestName
-        -> InternalList (OrPattern VariableName)
-        -> [Pattern VariableName]
+        -> InternalList (OrPattern RewritingVariableName)
+        -> [Pattern RewritingVariableName]
         -> TestTree
     becomes name origin expect =
         testCase name
@@ -88,5 +91,5 @@ mkList children =
         , internalListChild = Seq.fromList children
         }
 
-evaluate :: InternalList (OrPattern VariableName) -> OrPattern VariableName
+evaluate :: InternalList (OrPattern RewritingVariableName) -> OrPattern RewritingVariableName
 evaluate = simplify

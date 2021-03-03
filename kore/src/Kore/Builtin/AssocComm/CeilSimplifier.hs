@@ -59,6 +59,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import Kore.Step.Simplification.CeilSimplifier
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -83,13 +86,12 @@ type MkNotMember normalized variable =
     ->  Predicate variable
 
 newSetCeilSimplifier
-    ::  forall variable simplifier
-    .   InternalVariable variable
-    =>  MonadReader (SideCondition variable) simplifier
+    ::  forall simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm NormalizedSet variable)
-            (OrCondition variable)
+            (BuiltinAssocComm NormalizedSet RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newSetCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
@@ -110,13 +112,12 @@ newSetCeilSimplifier =
             ceil
 
 newMapCeilSimplifier
-    ::  forall variable simplifier
-    .   InternalVariable variable
-    =>  MonadReader (SideCondition variable) simplifier
+    ::  forall simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
     =>  MonadSimplify simplifier
     =>  CeilSimplifier simplifier
-            (BuiltinAssocComm NormalizedMap variable)
-            (OrCondition variable)
+            (BuiltinAssocComm NormalizedMap RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil { ceilChild } -> do
         let mkInternalAc normalizedAc =
@@ -169,19 +170,18 @@ generalizeMapElement freeVariables' element =
     variable = refreshElementVariable avoiding x & fromMaybe x
 
 newBuiltinAssocCommCeilSimplifier
-    :: forall normalized variable simplifier
-    .   InternalVariable variable
-    =>  Ord (Element normalized (TermLike variable))
-    =>  Ord (Value normalized (TermLike variable))
-    =>  MonadReader (SideCondition variable) simplifier
+    :: forall normalized simplifier
+    .   MonadReader (SideCondition RewritingVariableName) simplifier
+    =>  Ord (Element normalized (TermLike RewritingVariableName))
+    =>  Ord (Value normalized (TermLike RewritingVariableName ))
     =>  MonadSimplify simplifier
     =>  Traversable (Value normalized)
     =>  AcWrapper normalized
-    =>  MkBuiltinAssocComm normalized variable
-    ->  MkNotMember normalized variable
+    =>  MkBuiltinAssocComm normalized RewritingVariableName
+    ->  MkNotMember normalized RewritingVariableName
     ->  CeilSimplifier simplifier
-            (BuiltinAssocComm normalized variable)
-            (OrCondition variable)
+            (BuiltinAssocComm normalized RewritingVariableName)
+            (OrCondition RewritingVariableName)
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil { ceilChild } -> do
         let internalAc@InternalAc { builtinAcChild } = ceilChild
@@ -211,9 +211,11 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         And.simplifyEvaluatedMultiPredicate sideCondition conditions
   where
     defineValue
-        :: SideCondition variable
-        -> Value normalized (TermLike variable)
-        -> MaybeT simplifier (MultiAnd (OrCondition variable))
+        :: SideCondition RewritingVariableName
+        -> Value normalized (TermLike RewritingVariableName)
+        -> MaybeT
+            simplifier
+            (MultiAnd (OrCondition RewritingVariableName))
     defineValue sideCondition = foldlM worker mempty
       where
         worker multiAnd termLike = do
@@ -221,16 +223,15 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             return (multiAnd <> MultiAnd.singleton evaluated)
 
 definePairWiseElements
-    :: forall variable normalized simplifier
+    :: forall normalized simplifier
     .  MonadSimplify simplifier
-    => InternalVariable variable
-    => MonadReader (SideCondition variable) simplifier
+    => MonadReader (SideCondition RewritingVariableName) simplifier
     => AcWrapper normalized
-    => MkBuiltinAssocComm normalized variable
-    -> MkNotMember normalized variable
-    -> InternalAc Key normalized (TermLike variable)
-    -> PairWiseElements normalized Key (TermLike variable)
-    -> MaybeT simplifier (MultiAnd (OrCondition variable))
+    => MkBuiltinAssocComm normalized RewritingVariableName
+    -> MkNotMember normalized RewritingVariableName
+    -> InternalAc Key normalized (TermLike RewritingVariableName)
+    -> PairWiseElements normalized Key (TermLike RewritingVariableName)
+    -> MaybeT simplifier (MultiAnd (OrCondition RewritingVariableName))
 definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
@@ -264,7 +265,7 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     symbolicConcreteKeyPairs =
         Bifunctor.bimap
             (fst . unwrapElement)
-            (from @Key @(TermLike variable) . fst)
+            (from @Key @(TermLike _) . fst)
         <$> symbolicConcretePairs
     concreteOpaquePairs' =
         Bifunctor.first
@@ -272,8 +273,10 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
         <$> concreteOpaquePairs
 
     distinctKey
-        :: (TermLike variable, TermLike variable)
-        -> MaybeT simplifier (OrCondition variable)
+        :: ( TermLike RewritingVariableName
+           , TermLike RewritingVariableName
+           )
+        -> MaybeT simplifier (OrCondition RewritingVariableName)
     distinctKey (t1, t2) = do
         sideCondition <- Reader.ask
         Equals.makeEvaluateTermsToPredicate tMin tMax sideCondition
@@ -283,16 +286,20 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
         (tMin, tMax) = minMax t1 t2
 
     notMember
-        :: (Element normalized (TermLike variable), TermLike variable)
-        -> MultiAnd (OrCondition variable)
+        :: ( Element normalized (TermLike RewritingVariableName)
+           , TermLike RewritingVariableName
+           )
+        -> MultiAnd (OrCondition RewritingVariableName)
     notMember (element, termLike) =
         mkNotMember element termLike
         & OrCondition.fromPredicate
         & MultiAnd.singleton
 
     defineOpaquePair
-        :: (TermLike variable, TermLike variable)
-        -> MultiAnd (OrCondition variable)
+        :: ( TermLike RewritingVariableName
+           , TermLike RewritingVariableName
+           )
+        -> MultiAnd (OrCondition RewritingVariableName)
     defineOpaquePair (opaque1, opaque2) =
         internalAc
             { builtinAcChild =
@@ -310,8 +317,8 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
 
 fromElement
     :: AcWrapper normalized
-    => Element normalized (TermLike variable)
-    -> NormalizedAc normalized Key (TermLike variable)
+    => Element normalized (TermLike RewritingVariableName)
+    -> NormalizedAc normalized Key (TermLike RewritingVariableName)
 fromElement element
   | Just concreteKey <- retractKey symbolicKey
   = emptyNormalizedAc { concreteElements = Map.singleton concreteKey value }

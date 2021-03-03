@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Equation.Common
     ( Equation'
     , concrete
@@ -31,43 +33,47 @@ import Kore.Attribute.Axiom.Symbolic
 import Kore.Equation.Equation
 import Kore.Internal.TermLike
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRuleVariable
+    )
 import Test.Kore
     ( testId
     )
-import Test.Kore.Internal.Pattern
 import Test.Kore.Internal.Predicate
 
-type Equation' = Equation VariableName
+type Equation' = Equation RewritingVariableName
 
 axiom
-    :: TestTerm
-    -> TestTerm
-    -> TestPredicate
-    -> Equation'
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
 axiom left right requires =
     (mkEquation left right) { requires }
 
 axiom_
-    :: TestTerm
-    -> TestTerm
-    -> Equation'
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
 axiom_ left right = axiom left right makeTruePredicate
 
 functionAxiomUnification
     :: Symbol
-    -> [TestTerm]
-    -> TestTerm
-    -> TestPredicate
-    -> Equation'
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> Equation RewritingVariableName
 functionAxiomUnification symbol args right requires =
     case args of
         [] -> (mkEquation (mkApplySymbol symbol []) right) { requires }
         _  -> (mkEquation left right) { requires, argument }
   where
-    left = mkApplySymbol symbol variables
+    ~left = mkApplySymbol symbol variables
     sorts = fmap termLikeSort args
-    variables = generateVariables (intToNatural (length args)) sorts
-    generateVariables n sorts' =
+    ~variables = generateVariables (intToNatural (length args)) sorts
+    generateVariables ~n sorts' =
+        -- lazy argument to prevent arithmetic underflow
         fmap makeElementVariable (zip [0..n - 1] sorts')
     argument =
         Just
@@ -81,25 +87,32 @@ functionAxiomUnification symbol args right requires =
         Variable
             { variableName =
                 ElementVariableName
-                    VariableName { base, counter = Just (Element counter) }
+                    $ mkRuleVariable
+                    $ VariableName { base, counter = Just (Element counter) }
             , variableSort
             }
 
 functionAxiomUnification_
     :: Symbol
-    -> [TestTerm]
-    -> TestTerm
-    -> Equation'
+    -> [TermLike RewritingVariableName]
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
 functionAxiomUnification_ symbol args right =
     functionAxiomUnification symbol args right makeTruePredicate
 
-concrete :: [TestTerm] -> Equation' -> Equation'
+concrete
+    :: [TermLike RewritingVariableName]
+    -> Equation RewritingVariableName
+    -> Equation RewritingVariableName
 concrete vars =
     Lens.set
         (field @"attributes" . field @"concrete")
         (Concrete $ foldMap freeVariables vars)
 
-symbolic :: [TestTerm] -> Equation' -> Equation'
+symbolic
+    :: [TermLike RewritingVariableName]
+    -> Equation RewritingVariableName
+    -> Equation RewritingVariableName
 symbolic vars =
     Lens.set
         (field @"attributes" . field @"symbolic")

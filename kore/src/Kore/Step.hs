@@ -70,7 +70,13 @@ import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Unification.Procedure as Unification
+import Kore.Unparser
+    ( Unparse (..)
+    )
+import Pretty
+    ( Pretty
+    )
+import qualified Pretty
 
 {- | The program's state during symbolic execution.
 -}
@@ -88,6 +94,23 @@ data ProgramState a
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance Unparse a => Pretty (ProgramState a) where
+    pretty (Start a) =
+        Pretty.vsep
+            [ "start:"
+            , Pretty.indent 4 $ unparse a
+            ]
+    pretty (Rewritten a) =
+        Pretty.vsep
+            [ "rewritten:"
+            , Pretty.indent 4 $ unparse a
+            ]
+    pretty (Remaining a) =
+        Pretty.vsep
+            [ "remaining:"
+            , Pretty.indent 4 $ unparse a
+            ]
 
 extractProgramState :: ProgramState a -> a
 extractProgramState (Rewritten a) = a
@@ -192,7 +215,6 @@ transitionRule rewriteGroups = transitionRuleWorker
         transitionRewrite' applied rewrites
           | Just config' <- retractRemaining applied =
             Step.applyRewriteRulesParallel
-                Unification.unificationProcedure
                 rewrites
                 config'
                 & lift
@@ -207,7 +229,6 @@ transitionRule rewriteGroups = transitionRuleWorker
         let rules = concat rewriteGroups
         results <-
             Step.applyRewriteRulesSequence
-                Unification.unificationProcedure
                 config
                 rules
         deriveResults results

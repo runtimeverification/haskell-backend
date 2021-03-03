@@ -132,11 +132,11 @@ import Kore.Syntax.Definition
     , getModuleNameForError
     )
 import qualified Kore.Verified as Verified
+import Kore.VersionInfo
 
 import qualified Paths_kore as MetaData
     ( version
     )
-import VersionInfo
 
 type Main = LoggerT IO
 

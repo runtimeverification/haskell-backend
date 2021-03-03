@@ -110,6 +110,9 @@ import Kore.Log.InfoProofDepth
 import Kore.Log.InfoReachability
     ( InfoReachability
     )
+import Kore.Log.WarnBoundedModelChecker
+    ( WarnBoundedModelChecker
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -178,6 +181,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         , mk $ Proxy @WarnFunctionWithoutEvaluators
         , mk $ Proxy @WarnSymbolSMTRepresentation
         , mk $ Proxy @WarnStuckClaimState
+        , mk $ Proxy @WarnBoundedModelChecker
         , mk $ Proxy @WarnIfLowProductivity
         , mk $ Proxy @WarnTrivialClaim
         , mk $ Proxy @WarnRetrySolverQuery
