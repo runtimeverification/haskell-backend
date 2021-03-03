@@ -96,7 +96,7 @@
                                                         Lbl'-LT-'program'-GT-'{}(
                                                             /* Fl Fn D Sfa Cl */
                                                             \dv{SortBytes{}}(
-                                                                "6003600401600814600c57fe5b00"
+                                                                "`\x03`\x04\x01`\x08\x14`\x0cW\xfe[\x00"
                                                             )
                                                         ),
                                                         /* Fl Fn D Sfa Cl */
@@ -333,7 +333,7 @@
                 \equals{SortModeCell{}, SortGeneratedTopCell{}}(
                     /* Fl Fn D Sfa */ Var'Unds'13:SortModeCell{},
                     /* Fl Fn D Sfa Cl */
-                    Lbl'-LT-'mode'-GT-'{}(/* Fl Fn D Sfa Cl */ LblVMTESTS{}())
+                    Lbl'-LT-'mode'-GT-'{}(/* Fl Fn D Sfa Cl */ LblNORMAL{}())
                 )
             ),
             /* Spa */
@@ -341,7 +341,7 @@
                 /* Fl Fn D Sfa */ Var'Unds'14:SortScheduleCell{},
                 /* Fl Fn D Sfa Cl */
                 Lbl'-LT-'schedule'-GT-'{}(
-                    /* Fl Fn D Sfa Cl */ LblDEFAULT'Unds'EVM{}()
+                    /* Fl Fn D Sfa Cl */ LblISTANBUL'Unds'EVM{}()
                 )
             )
         ),
