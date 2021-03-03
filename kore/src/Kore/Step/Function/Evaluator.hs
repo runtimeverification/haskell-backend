@@ -46,6 +46,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -138,7 +139,9 @@ evaluateApplication
 
     canMemoize
       | Symbol.isMemo symbol
-      , (isTop childrenCondition && isTop sideCondition)
+      , ( isTop childrenCondition
+        && isTop (SideCondition.toPredicate sideCondition)
+        )
         || all TermLike.isConstructorLike application
       = traverse asConcrete application
       | otherwise
