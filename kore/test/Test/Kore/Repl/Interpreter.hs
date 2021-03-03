@@ -69,14 +69,12 @@ import Kore.Step.ClaimPattern
     , mkClaimPattern
     )
 import Kore.Step.RulePattern
-    ( mkRewritingRule
-    , rulePattern
+    ( rulePattern
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
-import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure
     )
@@ -658,8 +656,8 @@ add1 :: Axiom
 add1 =
     mkNamedAxiom n plusOne "add1Axiom"
   where
-    one     = Int.asInternal intSort 1
-    n       = mkElemVar $ mkElementVariable "x" intSort
+    one = Int.asInternal intSort 1
+    n = mkElemVar $ ruleElementVariableFromId "x" intSort
     plusOne = n `addInt` one
 
 zeroToTen :: SomeClaim
@@ -683,15 +681,14 @@ zeroToZero =
     zero = Int.asInternal intSort 0
 
 mkNamedAxiom
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
     -> Axiom
 mkNamedAxiom left right name =
     rulePattern left right
     & Lens.set (field @"attributes" . typed @Attribute.Label) label
     & RewriteRule
-    & mkRewritingRule
     & coerce
   where
     label = Attribute.Label . pure $ pack name
@@ -713,13 +710,12 @@ claimWithName leftTerm rightTerm name =
     label = Attribute.Label . pure $ pack name
 
 mkAxiom
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Axiom
 mkAxiom left right =
     rulePattern left right
     & RewriteRule
-    & mkRewritingRule
     & coerce
 
 run
@@ -857,8 +853,8 @@ mkConfig logger =
 
 formatUnificationError
     :: Pretty.Doc ()
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO ReplOutput
 formatUnificationError info first second = do
     res <- runSimplifier testEnv . runUnifierWithExplanation $ do

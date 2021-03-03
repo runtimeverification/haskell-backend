@@ -30,6 +30,12 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , getRewritingPattern
+    , mkConfigVariable
+    , mkRewritingTerm
+    )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -104,10 +110,17 @@ simplifyWithSideCondition
     :: SideCondition VariableName
     -> TermLike VariableName
     -> IO (OrPattern VariableName)
-simplifyWithSideCondition sideCondition =
-    runSimplifier Mock.env . TermLike.simplify sideCondition
+simplifyWithSideCondition
+    (SideCondition.mapVariables (pure mkConfigVariable) -> sideCondition)
+  =
+    fmap (OrPattern.map getRewritingPattern)
+    <$> runSimplifier Mock.env
+    . TermLike.simplify sideCondition
+    . mkRewritingTerm
 
-simplifyEvaluated :: TermLike VariableName -> IO (OrPattern VariableName)
+simplifyEvaluated
+    :: TermLike RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 simplifyEvaluated original =
     runSimplifier env . getTestSimplifier
     $ TermLike.simplify SideCondition.top original

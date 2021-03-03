@@ -43,6 +43,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -70,15 +73,14 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify
-    ::  forall simplifier variable any
+    ::  forall simplifier any
     .   ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
-    ->  SideCondition variable
-    ->  Conditional variable any
-    ->  LogicT simplifier (Conditional variable any)
+    ->  SideCondition RewritingVariableName
+    ->  Conditional RewritingVariableName any
+    ->  LogicT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
     normalize >=> worker
   where
@@ -110,8 +112,8 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
 
     normalize
         ::  forall any'
-        .   Conditional variable any'
-        ->  LogicT simplifier (Conditional variable any')
+        .   Conditional RewritingVariableName any'
+        ->  LogicT simplifier (Conditional RewritingVariableName any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
         predicates' <- lift $
@@ -122,13 +124,12 @@ simplify SubstitutionSimplifier { simplifySubstitution } sideCondition =
 -- | Simplify a 'Predicate' by splitting it up into a conjunction of predicates
 -- and simplifying each one under the assumption that the others are true.
 simplifyPredicates
-    :: forall variable simplifier
+    :: forall simplifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadSimplify simplifier
-    => SideCondition variable
-    -> Predicate variable
-    -> LogicT simplifier (Condition variable)
+    => SideCondition RewritingVariableName
+    -> Predicate RewritingVariableName
+    -> LogicT simplifier (Condition RewritingVariableName)
 simplifyPredicates
     sideCondition
     (toList . MultiAnd.fromPredicate -> predicates)
@@ -137,9 +138,9 @@ simplifyPredicates
     >>= markConjunctionSimplified
   where
     worker
-        :: [Predicate variable]
+        :: [Predicate RewritingVariableName]
         -> StateT
-            (Condition variable)
+            (Condition RewritingVariableName)
             (LogicT simplifier)
             ()
     worker [] = return ()
@@ -174,12 +175,11 @@ See also: 'simplify'
 -}
 simplifyPredicate
     ::  ( HasCallStack
-        , InternalVariable variable
         , MonadSimplify simplifier
         )
-    =>  SideCondition variable
-    ->  Predicate variable
-    ->  LogicT simplifier (Condition variable)
+    =>  SideCondition RewritingVariableName
+    ->  Predicate RewritingVariableName
+    ->  LogicT simplifier (Condition RewritingVariableName)
 simplifyPredicate sideCondition predicate = do
     patternOr <-
         lift
@@ -199,9 +199,8 @@ simplifyPredicate sideCondition predicate = do
             ]
 
 simplifyConjunctions
-    :: InternalVariable variable
-    => Predicate variable
-    -> Changed (Predicate variable)
+    :: Predicate RewritingVariableName
+    -> Changed (Predicate RewritingVariableName)
 simplifyConjunctions original@(MultiAnd.fromPredicate -> predicates) =
     case SideCondition.simplifyConjunctionByAssumption predicates of
             Unchanged _ -> Unchanged original

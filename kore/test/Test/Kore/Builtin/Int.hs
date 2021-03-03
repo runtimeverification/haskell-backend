@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Int
     ( test_gt, test_ge, test_eq, test_le, test_lt, test_ne
     , test_min, test_max
@@ -78,6 +80,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -90,8 +96,9 @@ import Kore.Unification.UnifierT
     ( evalEnvUnifierT
     )
 
+
 import Test.Kore
-    ( elementVariableGen
+    ( configElementVariableGen
     , standaloneGen
     , testId
     )
@@ -104,7 +111,7 @@ import Test.Tasty.HUnit.Ext
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: Gen (TermLike VariableName)
+genIntegerPattern :: InternalVariable variable => Gen (TermLike variable)
 genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (TermLike Concrete)
@@ -386,7 +393,7 @@ test_euclidian_division_theorem =
             (asInternal <$> [a, b])
         & evaluateT
         & fmap extractValue
-    extractValue :: Pattern VariableName -> Integer
+    extractValue :: Pattern RewritingVariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
             InternalInt_ InternalInt { internalIntValue } ->
@@ -444,7 +451,7 @@ test_log2 :: TestTree
 test_log2 = testPartialUnary log2IntSymbol log2
 
 -- | Another name for asInternal.
-intLiteral :: Integer -> TermLike VariableName
+intLiteral :: Integer -> TermLike RewritingVariableName
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
@@ -459,18 +466,19 @@ asConcretePattern :: Integer -> TermLike Concrete
 asConcretePattern = asInternal
 
 -- | Specialize 'Int.asPattern' to the builtin sort 'intSort'.
-asPattern :: Integer -> Pattern VariableName
+asPattern :: InternalVariable variable => Integer -> Pattern variable
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern :: Maybe Integer -> Pattern VariableName
+asPartialPattern
+    :: InternalVariable variable => Maybe Integer -> Pattern variable
 asPartialPattern = Int.asPartialPattern intSort
 
 testInt
     :: String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testInt name = testSymbolWithoutSolver evaluate name
 
@@ -520,7 +528,8 @@ test_unifyAndEqual_Equal =
 test_unifyAnd_Fn :: TestTree
 test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
-        var <- forAll (standaloneGen $ elementVariableGen intSort)
+        var <-
+            forAll (standaloneGen $ configElementVariableGen intSort)
         let dv = asInternal 2
             fnPat = mkApplySymbol absIntSymbol  [mkElemVar var]
             expect =
@@ -549,8 +558,9 @@ test_symbolic_eq_not_conclusive =
         actual <- evaluate $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
 
-ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-idName `ofSort` sort = mkElementVariable (testId idName) sort
+ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+idName `ofSort` sort =
+    configElementVariableFromId (testId idName) sort
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genInteger)
@@ -622,14 +632,14 @@ test_unifyIntEq =
             assertEqual "" [expect { term = () }] actual
     ]
   where
-    x, y :: ElementVariable VariableName
+    x, y :: ElementVariable RewritingVariableName
     x = "x" `ofSort` intSort
     y = "y" `ofSort` intSort
 
     unifyIntEq
-        :: TermLike VariableName
-        -> TermLike VariableName
-        -> IO [Maybe (Pattern VariableName)]
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> IO [Maybe (Pattern RewritingVariableName)]
     unifyIntEq term1 term2 =
         Int.unifyIntEq
             (termUnification Not.notSimplifier)
@@ -642,8 +652,8 @@ test_unifyIntEq =
         & runNoSMT
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv
@@ -666,13 +676,13 @@ test_contradiction =
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
   where
-    x, y :: TermLike VariableName
+    x, y :: TermLike RewritingVariableName
     x = mkElemVar $ ofSort "x" intSort
     y = mkElemVar $ ofSort "y" intSort
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv

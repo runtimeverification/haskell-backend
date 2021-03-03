@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -20,14 +21,18 @@ module Kore.Rewriting.RewritingVariable
     , mkConfigVariable
     , mkRuleVariable
     , mkElementConfigVariable
+    , configElementVariableFromId
+    , ruleElementVariableFromId
     , mkElementRuleVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
     , mkRewritingPattern
+    , mkRewritingTerm
     , resetResultPattern
     , getRemainderPredicate
     , assertRemainderPattern
     , resetConfigVariable
+    , resetRuleVariable
     , getRewritingVariable
     -- * Exported for unparsing/testing
     , getRewritingPattern
@@ -42,6 +47,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
+    ( AstWithLocation (..)
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -123,12 +131,25 @@ instance From VariableName RewritingVariableName where
 
 instance FreshName RewritingVariableName
 
+instance AstWithLocation RewritingVariableName where
+    locationFromAst = locationFromAst . base . from @RewritingVariableName @VariableName
+
 type RewritingVariable = Variable RewritingVariableName
 
 mkElementConfigVariable
     :: ElementVariable VariableName
     -> ElementVariable RewritingVariableName
 mkElementConfigVariable = (fmap . fmap) ConfigVariableName
+
+configElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+configElementVariableFromId identifier sort =
+    mkElementConfigVariable (mkElementVariable identifier sort)
+
+ruleElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+ruleElementVariableFromId identifier sort =
+    mkElementRuleVariable (mkElementVariable identifier sort)
 
 mkElementRuleVariable
     :: ElementVariable VariableName
@@ -177,6 +198,12 @@ resetConfigVariable
         (RewritingVariableName -> RewritingVariableName)
 resetConfigVariable =
     pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
+
+resetRuleVariable
+    :: AdjSomeVariableName
+        (RewritingVariableName -> RewritingVariableName)
+resetRuleVariable =
+    pure (.) <*> pure mkRuleVariable <*> getRewritingVariable
 
 getRewritingVariable
     :: AdjSomeVariableName (RewritingVariableName -> VariableName)
@@ -235,6 +262,9 @@ resetResultPattern initial config@Conditional { substitution } =
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
 mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
+
+mkRewritingTerm :: TermLike VariableName -> TermLike RewritingVariableName
+mkRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
 getRemainderPredicate
     :: Predicate RewritingVariableName

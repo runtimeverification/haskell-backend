@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.Signedness
     ( test_verify
     , test_match
@@ -28,6 +30,9 @@ import Kore.Unification.UnifierT
     ( runUnifierT
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Axiom.Matcher
@@ -84,9 +89,9 @@ test_unify =
     unifies
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> [Assignment VariableName]
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> [Assignment RewritingVariableName]
         -> TestTree
     unifies name term1 term2 solution =
         testCase name $ do
@@ -98,8 +103,8 @@ test_unify =
     doesn'tUnify
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> TestTree
     doesn'tUnify name term1 term2 =
         testCase name $ do
@@ -108,9 +113,9 @@ test_unify =
 
 unify
     :: HasCallStack
-    => TermLike VariableName
-    -> TermLike VariableName
-    -> IO [Pattern VariableName]
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO [Pattern RewritingVariableName]
 unify term1 term2 =
     runNoSMT
     $ runSimplifier testEnv

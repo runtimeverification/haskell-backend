@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Bottom
     ( test_bottomSimplification
     ) where
@@ -18,8 +20,10 @@ import Kore.Step.Simplification.Bottom
     ( simplify
     )
 import Kore.Syntax.Bottom
-import Kore.Syntax.Variable
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -32,5 +36,7 @@ test_bottomSimplification =
         )
     ]
 
-evaluate :: Bottom Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Bottom Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

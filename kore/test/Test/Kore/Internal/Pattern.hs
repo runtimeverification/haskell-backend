@@ -331,11 +331,11 @@ makeEquals p1 p2 = makeEqualsPredicate p1 p2
 
 -- Representation for test patterns where the predicate's top level
 -- conjunction is flattened.
-data NormalizedAndPattern =
+data NormalizedAndPattern variable =
     NormalizedAndPattern
-        { term :: TermLike VariableName
-        , predicate :: MultiAnd (Predicate VariableName)
-        , substitution :: Substitution VariableName
+        { term :: TermLike variable
+        , predicate :: MultiAnd (Predicate variable)
+        , substitution :: Substitution variable
         }
     deriving (Eq, Show)
     deriving (GHC.Generic)
@@ -343,8 +343,9 @@ data NormalizedAndPattern =
     deriving anyclass (Debug, Diff)
 
 normalizeConj
-    :: Pattern VariableName
-    -> NormalizedAndPattern
+    :: InternalVariable variable
+    => Pattern variable
+    -> NormalizedAndPattern variable
 normalizeConj Conditional { term, predicate, substitution } =
     NormalizedAndPattern
         { term
@@ -354,8 +355,10 @@ normalizeConj Conditional { term, predicate, substitution } =
 
 assertEquivalentPatterns
     :: Foldable t
-    => t (Pattern VariableName)
-    -> t (Pattern VariableName)
+    => InternalVariable variable
+    => Diff variable
+    => t (Pattern variable)
+    -> t (Pattern variable)
     -> IO ()
 assertEquivalentPatterns expects actuals =
     for_ (align (toList expects) (toList actuals)) $ \these -> do
@@ -364,10 +367,11 @@ assertEquivalentPatterns expects actuals =
 
 assertEquivalentPatterns'
     :: Foldable t
+    => InternalVariable variable
     => Functor f
-    => Diff (f NormalizedAndPattern)
-    => t (f (Pattern VariableName))
-    -> t (f (Pattern VariableName))
+    => Diff (f (NormalizedAndPattern variable))
+    => t (f (Pattern variable))
+    -> t (f (Pattern variable))
     -> IO ()
 assertEquivalentPatterns' expects actuals =
     for_ (align (toList expects) (toList actuals)) $ \these -> do
@@ -375,21 +379,24 @@ assertEquivalentPatterns' expects actuals =
         assertEquivalent' (assertEqual "") expect actual
 
 assertEquivalent
-    :: forall m
-    .  (forall a . (Eq a, Show a, Diff a) => a -> a -> m ())
-    -> Pattern VariableName
-    -> Pattern VariableName
+    :: forall m variable
+    .  InternalVariable variable
+    => Diff variable
+    => (forall a . (Eq a, Show a, Diff a) => a -> a -> m ())
+    -> Pattern variable
+    -> Pattern variable
     -> m ()
 assertEquivalent assertion expect actual =
     on assertion normalizeConj expect actual
 
 assertEquivalent'
-    :: forall m f
+    :: forall m f variable
     .  Functor f
-    => Diff (f NormalizedAndPattern)
+    => InternalVariable variable
+    => Diff (f (NormalizedAndPattern variable))
     => (forall a . Diff a => a -> a -> m ())
-    -> f (Pattern VariableName)
-    -> f (Pattern VariableName)
+    -> f (Pattern variable)
+    -> f (Pattern variable)
     -> m ()
 assertEquivalent' assertion expect actual =
     on assertion (fmap normalizeConj) expect actual

@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     , normalize
@@ -30,6 +32,9 @@ import Kore.Internal.SideCondition
 import Kore.Internal.Substitution
     ( Substitution
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -42,14 +47,13 @@ import Logic
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
-    :: forall variable term simplifier
-    .  InternalVariable variable
-    => Ord term
+    :: forall term simplifier
+    .  Ord term
     => TopBottom term
     => MonadSimplify simplifier
-    => SideCondition variable
-    -> Conditional variable term
-    -> LogicT simplifier (Conditional variable term)
+    => SideCondition RewritingVariableName
+    -> Conditional RewritingVariableName term
+    -> LogicT simplifier (Conditional RewritingVariableName term)
 normalize sideCondition conditional@Conditional { substitution } = do
     results <- simplifySubstitution sideCondition substitution & lift
     scatter (MultiOr.map applyTermPredicate results)
@@ -67,13 +71,12 @@ If it does not know how to merge the substitutions, it will transform them into
 predicates and redo the merge.
 -}
 mergePredicatesAndSubstitutions
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> [Predicate variable]
-    -> [Substitution variable]
-    -> LogicT simplifier (Condition variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> [Predicate RewritingVariableName]
+    -> [Substitution RewritingVariableName]
+    -> LogicT simplifier (Condition RewritingVariableName)
 mergePredicatesAndSubstitutions topCondition predicates substitutions =
     simplifyCondition
         topCondition

@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Or
     ( simplifyEvaluated
     , simplify
@@ -15,6 +17,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 -- * Driver
 
@@ -25,9 +30,8 @@ merging its children.
 
 -}
 simplify
-    :: InternalVariable variable
-    => Or Sort (OrPattern variable)
-    -> OrPattern variable
+    :: Or Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Or { orFirst = first, orSecond = second } =
     simplifyEvaluated first second
 
@@ -37,10 +41,9 @@ See also: 'simplify'
 
 -}
 simplifyEvaluated
-    :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
-    -> OrPattern variable
+    :: OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 
 {-
 
