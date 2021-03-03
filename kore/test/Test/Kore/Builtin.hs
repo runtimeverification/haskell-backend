@@ -166,11 +166,11 @@ test_internalize =
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet
-        :: [TermLike VariableName]
+        :: [TermLike RewritingVariableName]
         -> Bool
         -> Bool
         -> Bool
-        -> TermLike VariableName
+        -> TermLike RewritingVariableName
     mkSet elems hasUnit hasElement hasConcat = mkInternalSet InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = Attribute.Unit $
