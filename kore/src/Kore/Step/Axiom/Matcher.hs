@@ -182,6 +182,7 @@ matchOne pair =
     <|> matchInj         pair
     <|> matchOverload    pair
     <|> matchDefined     pair
+    <|> matchAnd         pair
     )
     & Error.maybeT (defer pair) return
 
@@ -427,6 +428,15 @@ matchDefined (Pair term1 term2)
   | Defined_ def1 <- term1 = push (Pair def1 term2)
   | Defined_ def2 <- term2 = push (Pair term1 def2)
   | otherwise = empty
+
+matchAnd 
+    :: (MatchingVariable variable, MonadSimplify simplifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable simplifier) ()
+matchAnd (Pair term1 term2)
+    | And_ _ conj1 conj2 <- term1 =
+        push (Pair conj1 term2) >> push (Pair conj2 term2)
+    | otherwise = empty
 
 -- * Implementation
 
