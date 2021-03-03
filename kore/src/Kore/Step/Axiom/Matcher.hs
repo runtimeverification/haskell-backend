@@ -429,7 +429,7 @@ matchDefined (Pair term1 term2)
   | Defined_ def2 <- term2 = push (Pair term1 def2)
   | otherwise = empty
 
-matchAnd 
+matchAnd
     :: (MatchingVariable variable, MonadSimplify simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
