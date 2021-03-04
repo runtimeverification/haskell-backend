@@ -1444,7 +1444,7 @@ test_inKeys =
                             pure (makeCeilPredicate termKey)
                         , do
                             (guard . not)
-                                (SideCondition.isDefined SideCondition.top termKey)
+                                (SideCondition.isDefined SideCondition.top termMap)
                             pure (makeCeilPredicate termMap)
                         ]
                 assertEqual "" expectPredicate (predicate condition)

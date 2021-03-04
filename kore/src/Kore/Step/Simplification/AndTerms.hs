@@ -33,6 +33,7 @@ import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
+import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Builtin.String as Builtin.String
 import Kore.Internal.Condition as Condition
@@ -178,7 +179,9 @@ maybeTermEquals notSimplifier childTransformers first second = asum
         second
     , Builtin.Endianness.unifyEquals first second
     , Builtin.Signedness.unifyEquals first second
+    , Builtin.Map.unifyEquals childTransformers first second
     , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
+    , Builtin.Set.unifyEquals childTransformers first second
     , Builtin.List.unifyEquals
         SimplificationType.Equals
         childTransformers
@@ -230,6 +233,8 @@ maybeTermAnd notSimplifier childTransformers first second = asum
     , Builtin.KEqual.unifyIfThenElse childTransformers first second
     , Builtin.Endianness.unifyEquals first second
     , Builtin.Signedness.unifyEquals first second
+    , Builtin.Map.unifyEquals childTransformers first second
+    , Builtin.Set.unifyEquals childTransformers first second
     , Builtin.List.unifyEquals
         SimplificationType.And
         childTransformers

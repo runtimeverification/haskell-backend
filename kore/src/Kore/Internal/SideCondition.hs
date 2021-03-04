@@ -745,17 +745,23 @@ isDefined sideCondition@SideCondition { definedTerms } term =
 
     isSymbolicSingleton
         :: AcWrapper normalized
+        => Foldable (Value normalized)
         => InternalAc Key normalized (TermLike variable)
         -> Bool
     isSymbolicSingleton InternalAc { builtinAcChild }
       | numberOfElements == 1 =
           all (isDefined sideCondition) symbolicKeys
           && all (isDefined sideCondition) opaqueElems
+          && all (isDefined sideCondition) values
       | otherwise = False
       where
         symbolicKeys = getSymbolicKeysOfAc builtinAcChild
         concreteKeys = getConcreteKeysOfAc builtinAcChild
         opaqueElems = opaque . unwrapAc $ builtinAcChild
+        values =
+            getSymbolicValuesOfAc builtinAcChild
+            <> getConcreteValuesOfAc builtinAcChild
+            & foldMap toList
         numberOfElements =
             length symbolicKeys
             + length concreteKeys

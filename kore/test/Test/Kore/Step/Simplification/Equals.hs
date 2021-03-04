@@ -852,7 +852,7 @@ test_equalsSimplification_TermLike =
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
-        , testCase "TESTING framed Map with concrete Map"
+        , testCase "framed Map with concrete Map"
             (assertTermEqualsMulti
                 [ Conditional
                     { term = ()
@@ -1040,11 +1040,6 @@ assertTermEqualsMultiGeneric expectPure first second = do
             OrPattern.fromPatterns
                 (map predSubstToPattern expectPure)
     actualExpanded <- evaluate (termToPattern first) (termToPattern second)
-    -- traceM
-    --     $ "\nExpected:\n"
-    --     <> unlines (unparseToString <$> toList expectExpanded)
-    --     <> "\nActual:\n"
-    --     <> unlines (unparseToString <$> toList actualExpanded)
     assertEqual
         "Pattern"
         expectExpanded
