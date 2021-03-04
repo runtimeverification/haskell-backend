@@ -94,7 +94,8 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName, freeEquationVariableName
+    ( RewritingVariableName
+    , freeEquationVariableName
     )
 import Kore.Step.Axiom.Matcher
     ( MatchResult

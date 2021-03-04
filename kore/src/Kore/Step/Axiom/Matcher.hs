@@ -33,6 +33,9 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Bifunctor as Bifunctor
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import Data.Map.Strict
@@ -51,7 +54,6 @@ import qualified Data.Set as Set
 import Data.These
     ( These (..)
     )
-import Data.Functor ((<&>))
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
@@ -89,7 +91,8 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName, freeEquationVariableName
+    ( RewritingVariableName
+    , freeEquationVariableName
     )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
