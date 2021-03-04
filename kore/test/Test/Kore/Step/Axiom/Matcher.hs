@@ -805,7 +805,6 @@ test_matching_And =
         (mkInt 2)
     ]
 
-mkPair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
 mkPair
     :: TermLike RewritingVariableName
     -> TermLike RewritingVariableName
