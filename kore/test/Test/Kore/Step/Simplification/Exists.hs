@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Exists
     ( test_makeEvaluate
     , test_simplify
@@ -19,18 +21,19 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Unparser
 import qualified Pretty
 
 import Test.Kore.Internal.OrPattern
     ( OrPattern
-    , OrTestPattern
     )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern
     ( Pattern
-    , TestPattern
     )
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
@@ -60,52 +63,62 @@ test_simplify =
         $ "substitution"
     ]
   where
-    plain10 = pure $ Mock.plain10 (mkElemVar Mock.x)
-    plain11 = pure $ Mock.plain11 (mkElemVar Mock.x)
-    plain10' = mkExists Mock.x <$> plain10
-    plain11' = mkExists Mock.x <$> plain11
+    plain10 = pure $ Mock.plain10 (mkElemVar Mock.xConfig)
+    plain11 = pure $ Mock.plain11 (mkElemVar Mock.xConfig)
+    plain10' = mkExists Mock.xConfig <$> plain10
+    plain11' = mkExists Mock.xConfig <$> plain11
     equals =
         (Pattern.topOf Mock.testSort)
             { Conditional.predicate =
                 Predicate.makeEqualsPredicate
-                    (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
-                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
+                    (Mock.functional20
+                        (mkElemVar Mock.yConfig)
+                        (mkElemVar Mock.zConfig)
+                    )
+                    (Mock.sigma
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.zConfig)
+                    )
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
             { Conditional.predicate =
-                Predicate.makeExistsPredicate Mock.x predicate
+                Predicate.makeExistsPredicate Mock.xConfig predicate
             }
     quantifySubstitution predicated@Conditional { predicate, substitution } =
         predicated
             { Conditional.predicate =
                 Predicate.makeAndPredicate predicate
-                $ Predicate.makeExistsPredicate Mock.x
+                $ Predicate.makeExistsPredicate Mock.xConfig
                 $ Substitution.toPredicate substitution
             , Conditional.substitution = mempty
             }
     substForX =
         (Pattern.topOf Mock.testSort)
             { Conditional.substitution = Substitution.unsafeWrap
-                [   ( inject Mock.x
-                    , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
+                [   ( inject Mock.xConfig
+                    , Mock.sigma
+                        (mkElemVar Mock.yConfig)
+                        (mkElemVar Mock.zConfig)
                     )
                 ]
             }
     substToX =
         (Pattern.topOf Mock.testSort)
             { Conditional.substitution =
-                Substitution.unsafeWrap [(inject Mock.y, mkElemVar Mock.x)] }
+                Substitution.unsafeWrap
+                    [(inject Mock.yConfig, mkElemVar Mock.xConfig)]
+            }
     substOfX =
         (Pattern.topOf Mock.testSort)
             { Conditional.substitution = Substitution.unsafeWrap
-                [ ( inject Mock.y
-                  , Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z)
+                [ ( inject Mock.yConfig
+                  , Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.zConfig)
                   )
                 ]
             }
     f = Mock.f
-    y = mkElemVar Mock.y
+    y = mkElemVar Mock.yConfig
     predicateCycleY =
         Condition.fromPredicate
         $ Predicate.makeAndPredicate
@@ -118,19 +131,19 @@ test_simplify =
                 . Substitution.wrap
                 . Substitution.mkUnwrappedSubstitution
               )
-                [(inject Mock.y, f y)]
+                [(inject Mock.yConfig, f y)]
             ]
     substForXWithCycleY = substForX `Pattern.andCondition` substCycleY
 
     simplifiesTo
         :: HasCallStack
-        => [TestPattern]
-        -> [TestPattern]
+        => [Pattern RewritingVariableName]
+        -> [Pattern RewritingVariableName]
         -> String
         -> TestTree
     simplifiesTo original expected testName =
         testCase testName $ do
-            actual <- simplify (makeExists Mock.x original)
+            actual <- simplify (makeExists Mock.xConfig original)
             let message =
                     (show . Pretty.vsep)
                         [ "expected:"
@@ -147,12 +160,18 @@ test_makeEvaluate =
     [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [ Pattern.top ]
-            actual <- makeEvaluate Mock.x (Pattern.top :: TestPattern)
+            actual <-
+                makeEvaluate
+                    Mock.xConfig
+                    (Pattern.top :: Pattern RewritingVariableName)
             assertEqual "" expect actual
 
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
-            actual <- makeEvaluate Mock.x (Pattern.bottom :: TestPattern)
+            actual <-
+                makeEvaluate
+                    Mock.xConfig
+                    (Pattern.bottom :: Pattern RewritingVariableName)
             assertEqual "" expect actual
         ]
 
@@ -168,18 +187,21 @@ test_makeEvaluate =
                                 (makeCeilPredicate gOfA)
                                 (makeCeilPredicate (Mock.h gOfA))
                         , substitution = Substitution.unsafeWrap
-                            [(inject Mock.y, fOfA)]
+                            [(inject Mock.yConfig, fOfA)]
                         }
                     ]
         actuals <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
-                    { term = Mock.f (mkElemVar Mock.x)
-                    , predicate = makeCeilPredicate (Mock.h (mkElemVar Mock.x))
+                    { term = Mock.f (mkElemVar Mock.xConfig)
+                    , predicate =
+                        makeCeilPredicate (Mock.h (mkElemVar Mock.xConfig))
                     , substitution =
                         Substitution.wrap . Substitution.mkUnwrappedSubstitution
-                            $ [(inject Mock.x, gOfA), (inject Mock.y, fOfA)]
+                            $   [ (inject Mock.xConfig, gOfA)
+                                , (inject Mock.yConfig, fOfA)
+                                ]
                     }
         Pattern.assertEquivalentPatterns expects actuals
 
@@ -197,7 +219,7 @@ test_makeEvaluate =
                     ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate gOfA
@@ -212,14 +234,14 @@ test_makeEvaluate =
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkExists Mock.x fOfX
+                        { term = mkExists Mock.xConfig fOfX
                         , predicate = makeCeilPredicate gOfA
                         , substitution = mempty
                         }
                     ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeCeilPredicate gOfA
@@ -236,13 +258,15 @@ test_makeEvaluate =
                     [ Conditional
                         { term = fOfA
                         , predicate =
-                            makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
+                            makeExistsPredicate
+                                Mock.xConfig
+                                (makeCeilPredicate fOfX)
                         , substitution = mempty
                         }
                     ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
@@ -254,14 +278,14 @@ test_makeEvaluate =
         -- error for exists x . (t(x) and p(x) and s)
         assertErrorIO (const (return ())) $
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, hOfA)]
+                        [(inject Mock.yConfig, hOfA)]
                     }
 
     , testCase "exists reevaluates" $ do
@@ -270,14 +294,14 @@ test_makeEvaluate =
         let expect = OrPattern.fromPatterns [ Pattern.top ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.x, gOfA)]
+                        [(inject Mock.xConfig, gOfA)]
                     }
         assertEqual "exists reevaluates" expect actual
     , testCase "exists matches equality if result is top" $ do
@@ -290,19 +314,19 @@ test_makeEvaluate =
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfA)]
+                        [(inject Mock.yConfig, fOfA)]
                     }
                 ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeEqualsPredicate (Mock.f Mock.a) fOfX
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfA)]
+                        [(inject Mock.yConfig, fOfA)]
                     }
         assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
@@ -313,53 +337,57 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate =
                         makeExistsPredicate
-                            Mock.x
+                            Mock.xConfig
                             (makeAndPredicate
                                 (makeEqualsPredicate (Mock.f Mock.a) fOfX)
-                                (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
+                                (makeEqualsPredicate
+                                    (mkElemVar Mock.yConfig)
+                                    fOfX
+                                )
                             )
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.z, fOfA)]
+                        [(inject Mock.zConfig, fOfA)]
                     }
                 ]
         actual <-
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution =
                         Substitution.wrap . Substitution.mkUnwrappedSubstitution
-                            $ [(inject Mock.y, fOfX), (inject Mock.z, fOfA)]
+                            $   [ (inject Mock.yConfig, fOfX)
+                                , (inject Mock.zConfig, fOfA)
+                                ]
                     }
         assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in term" $
         -- error for exists x . (f(x) = f(a)) and (y=f(x))
         assertErrorIO (const (return ())) $
             makeEvaluate
-                Mock.x
+                Mock.xConfig
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfA)]
+                        [(inject Mock.yConfig, fOfA)]
                     }
     ]
   where
     fOfA = Mock.f Mock.a
-    fOfX = Mock.f (mkElemVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.xConfig)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
 
 makeExists
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> [Pattern variable]
-    -> Exists Sort variable (OrPattern variable)
+    :: ElementVariable RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> Exists Sort RewritingVariableName (OrPattern RewritingVariableName)
 makeExists variable patterns =
     Exists
         { existsSort = testSort
@@ -371,14 +399,14 @@ testSort :: Sort
 testSort = Mock.testSort
 
 simplify
-    :: Exists Sort VariableName OrTestPattern
-    -> IO OrTestPattern
+    :: Exists Sort RewritingVariableName (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 simplify = runSimplifier Mock.env . Exists.simplify SideCondition.top
 
 makeEvaluate
-    :: ElementVariable VariableName
-    -> TestPattern
-    -> IO OrTestPattern
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 makeEvaluate variable child =
     runSimplifier Mock.env
     $ Exists.makeEvaluate SideCondition.top [variable] child

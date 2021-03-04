@@ -87,6 +87,9 @@ import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
     ( matchOverloading
@@ -167,9 +170,9 @@ pair, it is deferred until we have more information.
 
  -}
 matchOne
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MatcherT variable simplifier ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MatcherT RewritingVariableName simplifier ()
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
@@ -193,15 +196,19 @@ deferred constraints, then matching fails.
 
  -}
 matchIncremental
-    :: forall variable simplifier
-    .  (MatchingVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> simplifier (Maybe (MatchResult variable))
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (Maybe (MatchResult RewritingVariableName))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    matcher
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -218,7 +225,11 @@ matchIncremental termLike1 termLike2 =
     free2 = (FreeVariables.toNames . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    done
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -226,7 +237,11 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable simplifier (MatchResult variable)
+    assembleResult
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (MatchResult RewritingVariableName)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
@@ -313,9 +328,9 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     someVariableName2 = variableName someVariable2
 
 matchVariable
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchVariable (Pair (Var_ variable1) (Var_ variable2))
   | variable1 == variable2 = return ()
 matchVariable (Pair (ElemVar_ variable1) term2) = do
@@ -415,9 +430,9 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
 matchInj _ = empty
 
 matchOverload
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
 
 matchDefined
@@ -511,11 +526,11 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
 
  -}
 substitute
-    :: forall simplifier variable
-    .  (MatchingVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
-    -> TermLike variable
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => ElementVariable RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 substitute eVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
@@ -551,14 +566,18 @@ substitute eVariable termLike = do
     subst = Map.singleton variableName termLike
 
     substitute2
-        :: Constraint variable
-        -> MaybeT (MatcherT variable simplifier) (Constraint variable)
+        :: Constraint RewritingVariableName
+        -> MaybeT
+            (MatcherT RewritingVariableName simplifier)
+            (Constraint RewritingVariableName)
     substitute2 (Constraint pair) =
         Constraint <$> traverse substitute1 pair
 
     substitute1
-        :: TermLike variable
-        -> MaybeT (MatcherT variable simplifier) (TermLike variable)
+        :: TermLike RewritingVariableName
+        -> MaybeT
+            (MatcherT RewritingVariableName simplifier)
+            (TermLike RewritingVariableName)
     substitute1 termLike' = do
         injSimplifier <- Simplifier.askInjSimplifier
         termLike'

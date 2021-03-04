@@ -32,7 +32,7 @@ import Kore.Reachability
     ( OnePathClaim (..)
     )
 import Kore.Rewriting.RewritingVariable
-    ( mkElementRuleVariable
+    ( ruleElementVariableFromId
     )
 import Kore.Step.AxiomPattern
     ( AxiomPattern (..)
@@ -105,11 +105,7 @@ patternFreeVarInRHS =
         , existentials = []
         , right =
             Pattern.fromTermAndPredicate
-                ( mkElemVar
-                    ( mkElementVariable "x" Mock.testSort
-                    & mkElementRuleVariable
-                    )
-                )
+                (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
                 makeTruePredicate
             & OrPattern.fromPattern
         , attributes = Default.def
@@ -127,16 +123,10 @@ patternNoFreeVarInRHS =
                 (mkTop Mock.testSort)
                 makeTruePredicate
         , existentials =
-            [ mkElementVariable "x" Mock.testSort
-            & mkElementRuleVariable
-            ]
+            [ruleElementVariableFromId "x" Mock.testSort]
         , right =
             Pattern.fromTermAndPredicate
-                ( mkElemVar
-                    ( mkElementVariable "x" Mock.testSort
-                    & mkElementRuleVariable
-                    )
-                )
+                (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
                 makeTruePredicate
             & OrPattern.fromPattern
         , attributes = Default.def

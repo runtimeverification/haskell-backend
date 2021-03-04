@@ -93,6 +93,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
     )
@@ -514,12 +517,15 @@ internalize tools termLike
     reject the definition.
  -}
 unifyEquals
-    :: forall variable unifier
-    .  (InternalVariable variable, MonadUnify unifier)
-    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    =>  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals
     unifyEqualsChildren
     first
@@ -537,9 +543,9 @@ unifyEquals
 
     -- | Unify the two argument patterns.
     unifyEquals0
-        :: TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
     unifyEquals0 (InternalSet_ normalized1) (InternalSet_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
@@ -556,8 +562,8 @@ unifyEquals
         unifyEquals0 firstDomain secondDomain
       where
         asDomain
-            :: TermLike variable
-            -> MaybeT unifier (TermLike variable)
+            :: TermLike RewritingVariableName
+            -> MaybeT unifier (TermLike RewritingVariableName)
         asDomain patt =
             case normalizedOrBottom of
                 Ac.Normalized normalized -> do
@@ -570,5 +576,5 @@ unifyEquals
                         second
           where
             normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedSet variable
+                :: Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt

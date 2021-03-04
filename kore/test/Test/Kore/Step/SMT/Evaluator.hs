@@ -31,6 +31,10 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import SMT
@@ -202,22 +206,22 @@ evaluateSMT = lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Id -> TermLike VariableName
-vInt s = mkElemVar (mkElementVariable s Builtin.intSort)
+vInt :: Id -> TermLike RewritingVariableName
+vInt s = mkElemVar (configElementVariableFromId s Builtin.intSort)
 
-a, b, c :: TermLike VariableName
+a, b, c :: TermLike RewritingVariableName
 a = vInt (testId "a")
 b = vInt (testId "b")
 c = vInt (testId "c")
 
-vBool :: Id -> TermLike VariableName
-vBool s = mkElemVar (mkElementVariable s Builtin.boolSort)
+vBool :: Id -> TermLike RewritingVariableName
+vBool s = mkElemVar (configElementVariableFromId s Builtin.boolSort)
 
-p, q :: TermLike VariableName
+p, q :: TermLike RewritingVariableName
 p = vBool (testId "p")
 q = vBool (testId "q")
 
-assertRefuted :: HasCallStack => Predicate VariableName -> Assertion
+assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
@@ -225,11 +229,11 @@ assertRefuted prop = do
         & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 
-true, false :: TermLike VariableName
+true, false :: TermLike RewritingVariableName
 true = Builtin.Bool.asInternal True
 false = Builtin.Bool.asInternal False
 
-int :: Integer -> TermLike VariableName
+int :: Integer -> TermLike RewritingVariableName
 int = Builtin.Int.intLiteral
 
 test_Int_contradictions :: [TestTree]

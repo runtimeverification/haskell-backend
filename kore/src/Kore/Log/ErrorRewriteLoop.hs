@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Log.ErrorRewriteLoop
     ( ErrorRewriteLoop
@@ -26,13 +27,13 @@ import GHC.Stack
 import Kore.Attribute.Axiom
     ( Axiom (..)
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.RulePattern
     ( RewriteRule
     , RulePattern (..)
     , getRewriteRule
-    )
-import Kore.Syntax.Variable
-    ( VariableName
     )
 import Pretty
 
@@ -40,7 +41,7 @@ import Log
 
 data ErrorRewriteLoop =
     ErrorRewriteLoop
-        { rule :: !(RewriteRule VariableName)
+        { rule :: !(RewriteRule RewritingVariableName)
         , errorCallStack :: !CallStack
         }
     deriving (Show)
@@ -65,7 +66,7 @@ instance Entry ErrorRewriteLoop where
 
 errorRewriteLoop
     :: HasCallStack
-    => RewriteRule VariableName
+    => RewriteRule RewritingVariableName
     -> log a
 errorRewriteLoop rule =
     throw ErrorRewriteLoop { rule, errorCallStack = callStack }

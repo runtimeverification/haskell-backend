@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.DomainValue
     ( test_simplify
     ) where
@@ -15,6 +17,9 @@ import Kore.Step.Simplification.DomainValue
     ( simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
@@ -39,5 +44,7 @@ test_simplify =
         )
     ]
 
-evaluate :: DomainValue Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: DomainValue Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify

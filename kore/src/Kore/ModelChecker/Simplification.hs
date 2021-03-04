@@ -2,6 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
@@ -32,6 +33,9 @@ import Kore.Internal.TermLike
     , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyTopConfiguration
     )
@@ -48,8 +52,8 @@ import qualified Pretty
 
 checkImplicationIsTop
     :: MonadSimplify m
-    => Pattern VariableName
-    -> TermLike VariableName
+    => Pattern RewritingVariableName
+    -> TermLike RewritingVariableName
     -> m Bool
 checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
@@ -87,8 +91,10 @@ checkImplicationIsTop lhs rhs =
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
-    :: TermLike VariableName
-    -> (Set.Set (ElementVariable VariableName), TermLike VariableName)
+    :: TermLike RewritingVariableName
+    ->  ( Set.Set (ElementVariable RewritingVariableName)
+        , TermLike RewritingVariableName
+        )
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

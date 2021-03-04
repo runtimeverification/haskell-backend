@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Axiom.EvaluationStrategy
     ( test_definitionEvaluation
     , test_firstFullEvaluation
@@ -35,6 +37,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -74,19 +79,19 @@ test_attemptEquations =
         attemptEquationAndAccumulateErrors condition term equation
     applicable =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.a
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a)
     notApplicable1 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.c
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.c)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c)
     notApplicable2 =
         axiom
-          (Mock.functionalConstr10 (mkElemVar Mock.x))
+          (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
           Mock.b
-          (makeEqualsPredicate (mkElemVar Mock.x) Mock.b)
+          (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -107,8 +112,8 @@ test_definitionEvaluation =
             evaluate
                 (definitionEvaluation
                     [ axiom
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                         makeTruePredicate
                     ]
                 )
@@ -207,14 +212,14 @@ test_definitionEvaluation =
                         , remainders = OrPattern.fromPatterns []
                         }
 
-            symbolicTerm = Mock.functionalConstr10 (mkElemVar Mock.y)
+            symbolicTerm = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
                 [ axiom_
-                    (Mock.functionalConstr10 (mkElemVar Mock.x))
-                    (Mock.g (mkElemVar Mock.x))
-                    & concrete [mkElemVar Mock.x]
+                    (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                    (Mock.g (mkElemVar Mock.xConfig))
+                    & concrete [mkElemVar Mock.xConfig]
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
@@ -243,8 +248,8 @@ test_firstFullEvaluation =
             evaluate
                 (firstFullEvaluation
                     [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        (Mock.g (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                        (Mock.g (mkElemVar Mock.xConfig))
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
@@ -269,7 +274,7 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -301,11 +306,11 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     , testCase "None matching" $ do
         let
@@ -321,7 +326,7 @@ test_firstFullEvaluation =
                         (Mock.g Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
         assertEqual "" expect actual
     , testCase "Skip when remainder" $ do
         let expect =
@@ -468,7 +473,7 @@ test_simplifierWithFallback =
                         (Mock.g Mock.a)
                     )
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                     )
                 )
@@ -541,7 +546,7 @@ test_simplifierWithFallback =
                         (Mock.g Mock.a)
                     )
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                     )
                 )
@@ -610,31 +615,31 @@ failingEvaluator =
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> Predicate VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluatorWithRequires left right requires =
     simplificationEvaluation (axiom left right requires)
 
 axiomEvaluator
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate)
 
 evaluate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluate simplifier term =
     evaluateWithPredicate simplifier term makeTruePredicate
 
 evaluateWithPredicate
     :: BuiltinAndAxiomSimplifier
-    -> TermLike VariableName
-    -> Predicate VariableName
+    -> TermLike RewritingVariableName
+    -> Predicate RewritingVariableName
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifierSMT Mock.env

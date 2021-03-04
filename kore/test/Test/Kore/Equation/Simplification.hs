@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Equation.Simplification
     ( test_simplifyEquation
     ) where
@@ -20,6 +21,9 @@ import Test.Kore.Step.Simplification
     ( runSimplifier
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
@@ -69,31 +73,33 @@ test_simplifyEquation =
     --   don't have an 'argument' are not simplified
     ]
 
-a, b, c, xMap, symbolicMap :: TermLike VariableName
+a, b, c :: InternalVariable variable => TermLike variable
 a = Mock.a
 b = Mock.b
 c = Mock.c
-f :: TermLike VariableName -> TermLike VariableName
+f :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.f
-xMap = mkElemVar Mock.xMap
+xMap :: TermLike RewritingVariableName
+xMap = mkElemVar Mock.xMapConfig
+symbolicMap :: TermLike RewritingVariableName
 symbolicMap =
     Mock.concatMap
         (Mock.elementMap
-            (mkElemVar Mock.x)
-            (mkElemVar Mock.y)
+            (mkElemVar Mock.xConfig)
+            (mkElemVar Mock.yConfig)
         )
         xMap
 
 mkSimplifiedEquation
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> Equation VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> Equation RewritingVariableName
 mkSimplifiedEquation leftTerm rightTerm =
     mkEquation leftTerm rightTerm
 
 simplify
-    :: Equation VariableName
-    -> IO (MultiAnd (Equation VariableName))
+    :: Equation RewritingVariableName
+    -> IO (MultiAnd (Equation RewritingVariableName))
 simplify equation =
     simplifyEquation equation
     & runSimplifier Mock.env

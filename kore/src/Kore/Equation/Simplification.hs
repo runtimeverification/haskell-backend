@@ -39,10 +39,12 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -54,9 +56,9 @@ See also: 'Kore.Equation.Registry.extractEquations'
 
  -}
 simplifyExtractedEquations
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Map identifier [Equation variable]
-    -> simplifier (Map identifier [Equation variable])
+    :: MonadSimplify simplifier
+    => Map identifier [Equation RewritingVariableName]
+    -> simplifier (Map identifier [Equation RewritingVariableName])
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
     return $ collectResults results
@@ -75,9 +77,9 @@ returns the original equation.
 
  -}
 simplifyEquation
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Equation variable
-    -> simplifier (MultiAnd (Equation variable))
+    :: MonadSimplify simplifier
+    => Equation RewritingVariableName
+    -> simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         simplifiedResults <-
@@ -126,9 +128,9 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
 
 -- | Simplify a 'Pattern' using only matching logic rules.
 simplifyPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Pattern variable
-    -> simplifier (OrPattern variable)
-simplifyPattern patt =
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
+simplifyPattern =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify patt
+    . Pattern.simplify
