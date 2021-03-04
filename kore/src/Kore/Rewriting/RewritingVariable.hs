@@ -11,6 +11,8 @@ module Kore.Rewriting.RewritingVariable
     , isEquationVariable
     , isConfigVariable
     , isRuleVariable
+    , isSomeEquationVariable
+    , isSomeEquationVariableName
     , isSomeConfigVariable
     , isSomeConfigVariableName
     , isSomeRuleVariable
@@ -34,6 +36,7 @@ module Kore.Rewriting.RewritingVariable
     , resetConfigVariable
     , resetRuleVariable
     , getRewritingVariable
+    , freeEquationVariableName
     -- * Exported for unparsing/testing
     , getRewritingPattern
     , getRewritingTerm
@@ -51,7 +54,7 @@ import Kore.AST.AstWithLocation
     ( AstWithLocation (..)
     )
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( FreeVariables, HasFreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Pattern as Pattern
@@ -285,6 +288,12 @@ assertRemainderPattern pattern' =
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
+isSomeEquationVariable :: SomeVariable RewritingVariableName -> Bool
+isSomeEquationVariable = isSomeEquationVariableName . variableName
+
+isSomeEquationVariableName :: SomeVariableName RewritingVariableName -> Bool
+isSomeEquationVariableName = foldSomeVariableName (pure isEquationVariable)
+
 isSomeConfigVariable :: SomeVariable RewritingVariableName -> Bool
 isSomeConfigVariable = isSomeConfigVariableName . variableName
 
@@ -302,3 +311,10 @@ isElementRuleVariable = isElementRuleVariableName . variableName
 
 isElementRuleVariableName :: ElementVariableName RewritingVariableName -> Bool
 isElementRuleVariableName = any isRuleVariable
+
+freeEquationVariableName
+    :: HasFreeVariables pat RewritingVariableName => pat -> Bool
+freeEquationVariableName pat =
+    any
+        isSomeEquationVariableName
+        (from @_ @(Set.Set _) . freeVariables @_ @RewritingVariableName $ pat)

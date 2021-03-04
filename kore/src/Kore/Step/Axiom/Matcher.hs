@@ -51,6 +51,7 @@ import qualified Data.Set as Set
 import Data.These
     ( These (..)
     )
+import Data.Functor ((<&>))
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
@@ -88,7 +89,7 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    ( RewritingVariableName, freeEquationVariableName
     )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
@@ -200,8 +201,9 @@ matchIncremental
     => TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> simplifier (Maybe (MatchResult RewritingVariableName))
-matchIncremental termLike1 termLike2 =
+matchIncremental termLike1 termLike2 = do
     Monad.State.evalStateT matcher initial
+    <&> assertNoFreeEquationVariableName
   where
     matcher
         :: MatcherT
@@ -246,6 +248,19 @@ matchIncremental termLike1 termLike2 =
         let MatcherState { predicate, substitution } = final
             predicate' = MultiAnd.toPredicate predicate
         return (predicate', substitution)
+
+    assertNoFreeEquationVariableName
+        :: Maybe (MatchResult RewritingVariableName)
+        -> Maybe (MatchResult RewritingVariableName)
+    assertNoFreeEquationVariableName = fmap $ \(predicate, substitution) ->
+        let predicate' =
+                assert (not . freeEquationVariableName $ predicate) predicate
+            substitution' =
+                Map.map
+                    (\t -> assert (not . freeEquationVariableName $ t) t)
+                    substitution
+        in
+            (predicate', substitution')
 
 matchEqualHeads
     :: Ord variable

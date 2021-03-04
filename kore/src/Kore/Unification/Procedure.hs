@@ -17,6 +17,7 @@ import Prelude.Kore
 
 import Kore.Internal.Condition
     ( Condition
+    , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition
@@ -27,7 +28,7 @@ import Kore.Log.InfoAttemptUnification
     ( infoAttemptUnification
     )
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
+    ( RewritingVariableName, freeEquationVariableName
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -45,6 +46,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Logic
     ( lowerLogicT
     )
+import Kore.Internal.Substitution (mapTerms)
 
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
@@ -64,8 +66,24 @@ unificationProcedure sideCondition p1 p2
     let (term, conditions) = Conditional.splitTerm pat
     orCeil <- makeEvaluateTermCeil sideCondition term
     ceil' <- Monad.Unify.scatter orCeil
-    lowerLogicT . simplifyCondition sideCondition
-        $ Conditional.andCondition ceil' conditions
+    condition <-
+        lowerLogicT . simplifyCondition sideCondition
+            $ Conditional.andCondition ceil' conditions
+    pure $ assertNoFreeEquationVariableName condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
+
+    assertNoFreeEquationVariableName
+        :: Condition RewritingVariableName
+        -> Condition RewritingVariableName
+    assertNoFreeEquationVariableName (Conditional () predicate substitution) =
+        let
+            predicate' =
+                assert (not . freeEquationVariableName $ predicate) predicate
+            substitution' =
+                mapTerms
+                    (\t -> assert (not . freeEquationVariableName $ t) t)
+                    substitution
+        in
+            Conditional () predicate' substitution'
