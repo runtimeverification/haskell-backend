@@ -200,7 +200,7 @@ matchIncremental
     => TermLike RewritingVariableName
     -> TermLike RewritingVariableName
     -> simplifier (Maybe (MatchResult RewritingVariableName))
-matchIncremental termLike1 termLike2 = do
+matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
     matcher
