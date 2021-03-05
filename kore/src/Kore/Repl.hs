@@ -15,7 +15,7 @@ import Prelude.Kore
 
 import Control.Concurrent.MVar
 import Control.Exception
-    ( AsyncException (UserInterrupt)
+    ( AsyncException (UserInterrupt), fromException
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -98,7 +98,7 @@ import System.Clock
     , TimeSpec
     , getTime
     )
-import qualified Pretty
+import Kore.Log.ErrorException (errorException)
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -277,9 +277,10 @@ runRepl
 
     catchEverything :: a -> m a -> m a
     catchEverything a =
-        Exception.handleAll $ \e -> liftIO $ do
-            putStrLn "Stepper evaluation errored."
-            print (Pretty.prettyException e)
+        Exception.handleAll $ \e -> do
+            case fromException e of
+                Just (Log.SomeEntry entry) -> Log.logEntry entry
+                Nothing -> errorException e
             pure a
 
     replGreeting :: m ()
