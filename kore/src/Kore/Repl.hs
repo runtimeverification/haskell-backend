@@ -98,6 +98,7 @@ import System.Clock
     , TimeSpec
     , getTime
     )
+import qualified Pretty
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
@@ -278,7 +279,7 @@ runRepl
     catchEverything a =
         Exception.handleAll $ \e -> liftIO $ do
             putStrLn "Stepper evaluation errored."
-            print e
+            print (Pretty.prettyException e)
             pure a
 
     replGreeting :: m ()
