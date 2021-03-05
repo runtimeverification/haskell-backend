@@ -1,5 +1,5 @@
 {-|
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
 -}
 
@@ -28,8 +28,11 @@ newtype Element symbol = Element { getElement :: Maybe symbol }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-mergeElement :: (Eq symbol , Unparse symbol)
-    => Element symbol -> Element symbol -> Element symbol
+mergeElement
+    :: (Eq symbol , Unparse symbol)
+    => Element symbol
+    -> Element symbol
+    -> Element symbol
 mergeElement (Element Nothing) b = b
 mergeElement a (Element Nothing) = a
 mergeElement a@(Element (Just aSymbol)) (Element (Just bSymbol))
@@ -39,7 +42,7 @@ mergeElement a@(Element (Just aSymbol)) (Element (Just bSymbol))
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term.  This is a bug in the Haskell backend."
+        ++ " inside term.  This is a bug."
 
 instance Default (Element symbol) where
     def = Element { getElement = Nothing }

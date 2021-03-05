@@ -1,10 +1,6 @@
 {-|
-Module      : Kore.Attribute.Unit
-Description : Unit attribute
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
 
 {-# LANGUAGE Strict #-}
@@ -32,8 +28,11 @@ newtype Unit symbol = Unit { getUnit :: Maybe symbol }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-mergeUnit :: (Eq symbol , Unparse symbol)
-    => Unit symbol -> Unit symbol -> Unit symbol
+mergeUnit
+    :: (Eq symbol , Unparse symbol)
+    => Unit symbol
+    -> Unit symbol
+    -> Unit symbol
 mergeUnit (Unit Nothing) b = b
 mergeUnit a (Unit Nothing) = a
 mergeUnit a@(Unit (Just aSymbol)) (Unit (Just bSymbol))
@@ -43,7 +42,7 @@ mergeUnit a@(Unit (Just aSymbol)) (Unit (Just bSymbol))
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term. This is a bug in the Haskell backend."
+        ++ " inside term. This is a bug."
 
 instance Default (Unit symbol) where
     def = Unit { getUnit = Nothing }

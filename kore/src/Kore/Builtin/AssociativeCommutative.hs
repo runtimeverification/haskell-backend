@@ -272,7 +272,14 @@ instance TermWrapper NormalizedMap where
 
     simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
+{- | Normalizes and internalizes an term representing an internal map
 
+This function was written to combine asInternal and toNormalized from above
+into a single function. The problem with having them separate was that
+information about the internal's unit, element or concat symbols was lost
+while now it can be carried over so that using MetadataTools (the first
+argument of asInternal) for lookup is no longer required.
+-}
 toNormalizedInternalMap
     :: HasCallStack
     => InternalVariable variable
@@ -288,6 +295,8 @@ toNormalizedInternalMap termLike =
           | otherwise -> TermLike.mkInternalMap internal
         Nothing -> TermLike.mkBottom (termLikeSort termLike)
 
+{- | Helper function called in toNormalizedInternalMap
+-}
 toNormalizedInternalMapWorker
     :: HasCallStack
     => InternalVariable variable
@@ -354,7 +363,6 @@ toNormalizedInternalMapWorker term =
     Just (emptyInternalAc @NormalizedMap (termLikeSort term))
         { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
         }
-
 
 instance TermWrapper NormalizedSet where
     {- | Render a 'NormalizedSet' as an 'InternalAc'.
@@ -426,6 +434,14 @@ instance TermWrapper NormalizedSet where
 
     simplifiedAttributeValue SetValue = mempty
 
+{- | Normalizes and internalizes an term representing an internal map
+
+This function was written to combine asInternal and toNormalized from above
+into a single function. The problem with having them separate was that
+information about the internal's unit, element or concat symbols was lost
+while now it can be carried over so that using MetadataTools (the first
+argument of asInternal) for lookup is no longer required.
+-}
 toNormalizedInternalSet
     :: HasCallStack
     => InternalVariable variable
@@ -441,6 +457,8 @@ toNormalizedInternalSet termLike =
           | otherwise -> TermLike.mkInternalSet internal
         Nothing -> TermLike.mkBottom (termLikeSort termLike)
 
+{- | Helper function called in toNormalizedInternalSet
+-}
 toNormalizedInternalSetWorker
     :: HasCallStack
     => InternalVariable variable

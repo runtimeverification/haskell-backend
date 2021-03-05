@@ -1,10 +1,6 @@
 {-|
-Module      : Kore.Attribute.Concat
-Description : Concat attribute
-Copyright   : (c) Runtime Verification, 2019
+Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
 
 {-# LANGUAGE Strict #-}
@@ -32,8 +28,11 @@ newtype Concat symbol = Concat { getConcat :: Maybe symbol }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-mergeConcat :: (Eq symbol , Unparse symbol)
-    => Concat symbol -> Concat symbol -> Concat symbol
+mergeConcat
+    :: (Eq symbol , Unparse symbol)
+    => Concat symbol
+    -> Concat symbol
+    -> Concat symbol
 mergeConcat (Concat Nothing) b = b
 mergeConcat a (Concat Nothing) = a
 mergeConcat a@(Concat (Just aSymbol)) (Concat (Just bSymbol))
@@ -43,7 +42,7 @@ mergeConcat a@(Concat (Just aSymbol)) (Concat (Just bSymbol))
         ++ unparseToString aSymbol
         ++ " and "
         ++ unparseToString bSymbol
-        ++ " inside term. This is a bug in the Haskell backend."
+        ++ " inside term. This is a bug."
 
 instance Default (Concat symbol) where
     def = Concat { getConcat = Nothing }
