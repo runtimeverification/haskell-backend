@@ -93,12 +93,12 @@ import Kore.Unification.Procedure
 import Kore.Unparser
     ( unparseToString
     )
+import qualified Pretty
 import System.Clock
     ( Clock (Monotonic)
     , TimeSpec
     , getTime
     )
-import qualified Pretty
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step
