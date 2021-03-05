@@ -176,6 +176,7 @@ matchOne
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
+    <|> matchAnd         pair
     <|> matchExists      pair
     <|> matchForall      pair
     <|> matchApplication pair
@@ -185,7 +186,6 @@ matchOne pair =
     <|> matchInj         pair
     <|> matchOverload    pair
     <|> matchDefined     pair
-    <|> matchAnd         pair
     )
     & Error.maybeT (defer pair) return
 
