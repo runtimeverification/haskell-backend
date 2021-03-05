@@ -54,7 +54,8 @@ import Kore.AST.AstWithLocation
     ( AstWithLocation (..)
     )
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables, HasFreeVariables
+    ( FreeVariables
+    , HasFreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Pattern as Pattern
