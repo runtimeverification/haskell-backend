@@ -36,7 +36,7 @@ module Kore.Rewriting.RewritingVariable
     , resetConfigVariable
     , resetRuleVariable
     , getRewritingVariable
-    , hasFreeEquationVariableName
+    , withoutEquationVariables
     -- * Exported for unparsing/testing
     , getRewritingPattern
     , getRewritingTerm
@@ -55,7 +55,7 @@ import Kore.AST.AstWithLocation
     )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    , HasFreeVariables
+    , toNames
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Pattern as Pattern
@@ -313,9 +313,7 @@ isElementRuleVariable = isElementRuleVariableName . variableName
 isElementRuleVariableName :: ElementVariableName RewritingVariableName -> Bool
 isElementRuleVariableName = any isRuleVariable
 
-hasFreeEquationVariableName
-    :: HasFreeVariables pat RewritingVariableName => pat -> Bool
-hasFreeEquationVariableName pat =
-    any
-        isSomeEquationVariableName
-        (from @_ @(Set.Set _) . freeVariables @_ @RewritingVariableName $ pat)
+withoutEquationVariables
+    :: FreeVariables RewritingVariableName -> Bool
+withoutEquationVariables fv =
+    all (not . isSomeEquationVariableName) (toNames fv)
