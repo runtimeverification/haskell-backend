@@ -6,12 +6,27 @@ set_results() {
     echo $last_result $next_result
 }
 
+kore_exec_args=()
+while [[ $# -gt 0 ]]
+do
+    case "$1" in
+        --pattern)
+            last_result="$2"
+            shift
+            ;;
+        *)
+            kore_exec_args+=("$1")
+    esac
+    shift
+done
+
 (( next = 0 ))
-last_result="input.kore"
 next_result="result-0000.kore"
 while ! [[ -f $next_result ]] || ! diff "$last_result" "$next_result" >/dev/null
 do
-    kore-exec $@ --pattern "$last_result" --output "$next_result" --depth 1
+    command time -f '%S,%U,%M' -o "kore-exec-time.csv" -a -q \
+        kore-exec "${kore_exec_args[@]}" \
+            --pattern "${last_result:?}" --output "${next_result:?}" --depth 1
     (( last = next ))
     (( next += 1 ))
     set_results
