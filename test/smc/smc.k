@@ -4,13 +4,13 @@ module SMC-SYNTAX
   syntax AExp  ::= Int | Id
                  | "-" Int                    [format(%1%2)]
                  | AExp "/" AExp              [left, color(pink)]
-                 > AExp "+" AExp              [left, color(pink)]
                  | "(" AExp ")"               [bracket]
+                 > AExp "+" AExp              [left, color(pink)]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [latex({#1}\leq{#2}), color(pink)]
                  | "!" BExp                   [color(pink)]
-                 > BExp "&&" BExp             [left, color(pink)]
                  | "(" BExp ")"               [bracket]
+                 > BExp "&&" BExp             [left, color(pink)]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
