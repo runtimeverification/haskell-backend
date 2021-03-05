@@ -15,6 +15,7 @@ import Prelude.Kore
 
 import Data.Default
 import qualified Generics.SOP as SOP
+import qualified Pretty
 
 import Kore.Attribute.Parser
 import Kore.Debug
@@ -37,12 +38,13 @@ mergeConcat (Concat Nothing) b = b
 mergeConcat a (Concat Nothing) = a
 mergeConcat a@(Concat (Just aSymbol)) (Concat (Just bSymbol))
       | aSymbol == bSymbol = a
-      | otherwise = error $
-        "Concat symbol mismatch error! Found both "
-        ++ unparseToString aSymbol
-        ++ " and "
-        ++ unparseToString bSymbol
-        ++ " inside term. This is a bug."
+      | otherwise = (error . show . Pretty.vsep)
+          [ "Concat symbol mismatch error! Found both"
+          , Pretty.indent 4 (unparse aSymbol)
+          , "and"
+          , Pretty.indent 4 (unparse bSymbol)
+          , "inside term. This is a bug."
+          ]
 
 instance Default (Concat symbol) where
     def = Concat { getConcat = Nothing }

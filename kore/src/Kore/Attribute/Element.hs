@@ -15,6 +15,7 @@ import Prelude.Kore
 
 import Data.Default
 import qualified Generics.SOP as SOP
+import qualified Pretty
 
 import Kore.Attribute.Parser
 import Kore.Debug
@@ -37,12 +38,13 @@ mergeElement (Element Nothing) b = b
 mergeElement a (Element Nothing) = a
 mergeElement a@(Element (Just aSymbol)) (Element (Just bSymbol))
       | aSymbol == bSymbol = a
-      | otherwise = error $
-        "Element symbol mismatch error! Found both "
-        ++ unparseToString aSymbol
-        ++ " and "
-        ++ unparseToString bSymbol
-        ++ " inside term.  This is a bug."
+      | otherwise = (error . show . Pretty.vsep)
+          [ "Element symbol mismatch error! Found both"
+          , Pretty.indent 4 (unparse aSymbol)
+          , "and"
+          , Pretty.indent 4 (unparse bSymbol)
+          , "inside term. This is a bug."
+          ]
 
 instance Default (Element symbol) where
     def = Element { getElement = Nothing }
