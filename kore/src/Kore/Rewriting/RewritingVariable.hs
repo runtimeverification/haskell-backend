@@ -36,7 +36,7 @@ module Kore.Rewriting.RewritingVariable
     , resetConfigVariable
     , resetRuleVariable
     , getRewritingVariable
-    , freeEquationVariableName
+    , hasFreeEquationVariableName
     -- * Exported for unparsing/testing
     , getRewritingPattern
     , getRewritingTerm
@@ -312,9 +312,9 @@ isElementRuleVariable = isElementRuleVariableName . variableName
 isElementRuleVariableName :: ElementVariableName RewritingVariableName -> Bool
 isElementRuleVariableName = any isRuleVariable
 
-freeEquationVariableName
+hasFreeEquationVariableName
     :: HasFreeVariables pat RewritingVariableName => pat -> Bool
-freeEquationVariableName pat =
+hasFreeEquationVariableName pat =
     any
         isSomeEquationVariableName
         (from @_ @(Set.Set _) . freeVariables @_ @RewritingVariableName $ pat)

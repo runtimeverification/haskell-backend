@@ -94,7 +94,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName, freeEquationVariableName
+    ( RewritingVariableName, hasFreeEquationVariableName
     )
 import Kore.Step.Axiom.Matcher
     ( MatchResult
@@ -155,11 +155,8 @@ attemptEquation
     -> TermLike RewritingVariableName
     -> Equation RewritingVariableName
     -> simplifier (AttemptEquationResult RewritingVariableName)
-attemptEquation
-    sideCondition
-    (not . freeEquationVariableName >>= assert -> termLike)
-    equation
-  =
+attemptEquation sideCondition termLike equation =
+    assert (not $ hasFreeEquationVariableName termLike) $
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
         (equation', predicate) <- matchAndApplyResults left argument antiLeft
@@ -196,10 +193,13 @@ attemptEquation
               & whileMatch
           (equation', predicate) <-
               applyAndSelectMatchResult matchResults
-          return
-              ( equation'
-              , makeAndPredicate predicate matchPredicate
-              )
+
+          assert (not . hasFreeEquationVariableName $ equation')
+              $ assert (not . hasFreeEquationVariableName $ predicate)
+                  $ return
+                      ( equation'
+                      , makeAndPredicate predicate matchPredicate
+                      )
 
     applyAndSelectMatchResult
         :: [MatchResult RewritingVariableName]
