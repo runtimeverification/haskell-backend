@@ -38,7 +38,7 @@ module SMC
 
   syntax Int ::= stackSize(ValStack) [function, functional, smtlib(stackSize)]
   rule stackSize(.ValStack) => 0
-  rule stackSize(V:Val : S:ValStack) => 1 +Int stackSize(S)
+  rule stackSize(_:Val : S:ValStack) => 1 +Int stackSize(S)
 
   configuration <T color="yellow">
                   <k color="green"> $PGM:Pgm </k>
@@ -49,7 +49,7 @@ module SMC
   rule <k> X:Id => I ...</k> <mem>... X |-> I ...</mem>
   rule <k> I:Int => . ...</k> <stack> S:ValStack => I : S </stack>
     requires stackSize(S) <Int 8
-  rule <k> I:Int => STUCK ...</k> <stack> S:ValStack => S </stack>
+  rule <k> _:Int => STUCK ...</k> <stack> S:ValStack => S </stack>
     requires stackSize(S) >=Int 8
 
 
@@ -75,7 +75,7 @@ module SMC
        <stack> B:Bool : S:ValStack => notBool(B) : S </stack>
 
   rule E1:BExp && E2:BExp => E1 ~> && E2
-  rule <k> && E => . ...</k>
+  rule <k> && _ => . ...</k>
        <stack> false : S:ValStack => false : S </stack>
   rule <k> && E => E ...</k>
        <stack> true : S:ValStack => S </stack>
