@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Implies
     ( simplify
     , simplifyEvaluated
@@ -26,6 +28,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
@@ -52,10 +57,10 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Implies Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Implies Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
     Implies { impliesFirst = first, impliesSecond = second }
@@ -81,11 +86,11 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition first second
   | OrPattern.isTrue first   = return second
   | OrPattern.isFalse first  = return OrPattern.top
@@ -97,11 +102,11 @@ simplifyEvaluated sideCondition first second
       >>= simplifyEvaluateHalfImplies sideCondition first
 
 simplifyEvaluateHalfImplies
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> Pattern variable
-    -> LogicT simplifier (Pattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> LogicT simplifier (Pattern RewritingVariableName)
 simplifyEvaluateHalfImplies
     sideCondition
     first
@@ -120,11 +125,11 @@ simplifyEvaluateHalfImplies
             >>= Logic.scatter
 
 distributeEvaluateImplies
-    :: (MonadSimplify simplifier, InternalVariable variable)
-    => SideCondition variable
-    -> [Pattern variable]
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 distributeEvaluateImplies sideCondition firsts second =
     And.simplify
         Not.notSimplifier
@@ -134,10 +139,9 @@ distributeEvaluateImplies sideCondition firsts second =
     implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
@@ -152,10 +156,9 @@ makeEvaluateImplies
     makeEvaluateImpliesNonBool first second
 
 makeEvaluateImpliesNonBool
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.String
     ( test_eq
     , test_lt
@@ -44,6 +46,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -391,24 +397,24 @@ test_string2Token =
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
-asInternal :: Text -> TermLike VariableName
+asInternal :: InternalVariable variable => Text -> TermLike variable
 asInternal = String.asInternal stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> Pattern VariableName
+asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
 
 testString
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testString name = testSymbolWithoutSolver evaluate name
 
-ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-idName `ofSort` sort = mkElementVariable (testId idName) sort
+ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+idName `ofSort` sort = configElementVariableFromId (testId idName) sort
 
 test_unifyStringEq :: [TestTree]
 test_unifyStringEq =
@@ -452,9 +458,9 @@ test_unifyStringEq =
     ]
   where
     unifyStringEq
-        :: TermLike VariableName
-        -> TermLike VariableName
-        -> IO [Maybe (Pattern VariableName)]
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
         String.unifyStringEq
             (termUnification Not.notSimplifier)
@@ -467,14 +473,14 @@ test_unifyStringEq =
         & runNoSMT
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv
         & runNoSMT
 
-x, y :: ElementVariable VariableName
+x, y :: ElementVariable RewritingVariableName
 x = "x" `ofSort` stringSort
 y = "y" `ofSort` stringSort
 
@@ -496,8 +502,8 @@ test_contradiction =
         assertEqual "expected bottom" [] actual
   where
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv

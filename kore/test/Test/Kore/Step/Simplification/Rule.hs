@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Rule
     ( test_simplifyRulePattern ) where
 
@@ -7,6 +9,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkRewritingTerm
+    )
 import Kore.Step.RulePattern
     ( RulePattern
     , rulePattern
@@ -33,8 +39,8 @@ test_simplifyRulePattern =
     andBool = Builtin.andBool
     unitList = Builtin.unitList
     sizeList = Builtin.sizeList
-    x = mkElemVar (mkElementVariable "x" Builtin.boolSort)
-    y = mkElemVar (mkElementVariable "y" Builtin.boolSort)
+    x = mkElemVar (mkElementVariable "x" Builtin.boolSort) & mkRewritingTerm
+    y = mkElemVar (mkElementVariable "y" Builtin.boolSort) & mkRewritingTerm
     mkBool = Test.Bool.asInternal
     true = mkBool True
     false = mkBool False
@@ -42,26 +48,28 @@ test_simplifyRulePattern =
 
 withSimplified
     :: TestName
-    -> (RulePattern VariableName -> Assertion)
-    -> RulePattern VariableName
+    -> (RulePattern RewritingVariableName -> Assertion)
+    -> RulePattern RewritingVariableName
     -> TestTree
 withSimplified testName check origin =
     testCase testName (check =<< simplifyRulePattern origin)
 
 simplifies
     :: TestName
-    -> RulePattern VariableName
-    -> RulePattern VariableName
+    -> RulePattern RewritingVariableName
+    -> RulePattern RewritingVariableName
     -> TestTree
 simplifies testName origin expect =
     withSimplified testName (assertEqual "" expect) origin
 
 notSimplifies
     :: TestName
-    -> RulePattern VariableName
+    -> RulePattern RewritingVariableName
     -> TestTree
 notSimplifies testName origin =
     withSimplified testName (assertEqual "" origin) origin
 
-simplifyRulePattern :: RulePattern VariableName -> IO (RulePattern VariableName)
+simplifyRulePattern
+    :: RulePattern RewritingVariableName
+    -> IO (RulePattern RewritingVariableName)
 simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern

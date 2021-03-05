@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Top
     ( simplify
     ) where
@@ -17,7 +19,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Variable
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
 import Kore.Syntax.Top
 
@@ -25,7 +29,6 @@ import Kore.Syntax.Top
 -}
 -- TODO (virgil): Preserve pattern sorts under simplification.
 simplify
-    :: InternalVariable variable
-    => Top Sort child
-    -> OrPattern variable
+    :: Top Sort child
+    -> OrPattern RewritingVariableName
 simplify _ = OrPattern.top

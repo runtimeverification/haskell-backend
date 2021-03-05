@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Application
     ( test_applicationSimplification
     ) where
@@ -32,6 +34,10 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
     )
@@ -43,7 +49,9 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
+import qualified Kore.Syntax.Variable as Variable
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -156,8 +164,8 @@ test_applicationSimplification =
                                     )
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (inject Mock.x, fOfA)
-                                , (inject Mock.y, gOfA)
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.yConfig, gOfA)
                                 ]
                             }
                         ]
@@ -172,7 +180,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -181,7 +189,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
@@ -203,7 +211,8 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
-                expect =
+                        & Variable.mapElementVariable (pure mkConfigVariable)
+                expects =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
@@ -216,17 +225,14 @@ test_applicationSimplification =
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (inject z', gOfB)
-                                    , (inject Mock.x, fOfA)
-                                    , (inject Mock.y, gOfA)
+                                    , (inject Mock.xConfig, fOfA)
+                                    , (inject Mock.yConfig, gOfA)
                                     ]
                             }
                         ]
-            actual <-
+            actuals <-
                 let
-                    result
-                        :: forall variable
-                        .  InternalVariable variable
-                        => AttemptedAxiom variable
+                    result :: AttemptedAxiom RewritingVariableName
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
                             [ Conditional
@@ -235,14 +241,11 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject zvar, gOfB) ]
+                                    [ (inject z', gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
                         }
-                      where
-                        zvar :: ElementVariable variable
-                        zvar = fmap from <$> z'
                 in
                     evaluate
                         (Map.singleton
@@ -261,7 +264,7 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
@@ -270,16 +273,16 @@ test_applicationSimplification =
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
                     )
-            assertEqual "" expect actual
+            Pattern.assertEquivalentPatterns expects actuals
         ]
     ]
   where
-    fOfA, fOfB, gOfA, gOfB :: InternalVariable variable => TermLike variable
+    fOfA, fOfB, gOfA, gOfB :: TermLike RewritingVariableName
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
@@ -306,7 +309,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded :: InternalVariable variable => Pattern variable
+    gOfAExpanded :: Pattern RewritingVariableName
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -319,10 +322,9 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: InternalVariable variable
-    => Symbol
-    -> [[Pattern variable]]
-    -> Application Symbol (OrPattern variable)
+    :: Symbol
+    -> [[Pattern RewritingVariableName]]
+    -> Application Symbol (OrPattern RewritingVariableName)
 makeApplication symbol patterns =
     Application
         { applicationSymbolOrAlias = symbol
@@ -332,8 +334,8 @@ makeApplication symbol patterns =
 evaluate
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Application Symbol (OrPattern VariableName)
-    -> IO (OrPattern VariableName)
+    -> Application Symbol (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env { simplifierAxioms }

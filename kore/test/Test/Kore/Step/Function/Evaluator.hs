@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Function.Evaluator
     ( test_evaluateApplication ) where
 
@@ -27,9 +29,11 @@ import Kore.Internal.TermLike
     ( Application
     , Symbol
     , TermLike
-    , VariableName
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Kore
@@ -51,8 +55,8 @@ test_evaluateApplication =
     evaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> TermLike VariableName
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> TermLike RewritingVariableName
         -> TestTree
     evaluates name origin expect =
         makeTest
@@ -62,8 +66,8 @@ test_evaluateApplication =
     notEvaluates
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> (TermLike VariableName -> TermLike VariableName)
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> (TermLike RewritingVariableName -> TermLike RewritingVariableName)
         -> TestTree
     notEvaluates name origin mkExpect =
         makeTest
@@ -74,8 +78,8 @@ test_evaluateApplication =
     makeTest
         :: HasCallStack
         => TestName
-        -> Application Symbol (TermLike VariableName)
-        -> OrPattern VariableName
+        -> Application Symbol (TermLike RewritingVariableName)
+        -> OrPattern RewritingVariableName
         -> TestTree
     makeTest name origin expect =
         testCase name $ do
@@ -90,22 +94,29 @@ f, g :: child -> Application Symbol child
 f x = Application fSymbol [x]
 g x = Application gSymbol [x]
 
-mkApplySymbol :: Application Symbol (TermLike VariableName) -> TermLike VariableName
+mkApplySymbol
+    :: Application Symbol (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
 mkApplySymbol = synthesize . TermLike.ApplySymbolF
+
+mkApplySymbol'
+    :: Application Symbol (TermLike RewritingVariableName)
+    -> TermLike RewritingVariableName
+mkApplySymbol' = synthesize . TermLike.ApplySymbolF
 
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
 fEvaluator =
     Kore.simplificationEvaluation
     $ Equation.mkEquation left right
   where
-    left = mkApplySymbol (f x)
+    left = mkApplySymbol' (f x)
     right = x
-    x = TermLike.mkElemVar Mock.x
+    x = TermLike.mkElemVar Mock.xConfig
 
 evaluateApplication
-    :: Condition VariableName
-    -> Application Symbol (TermLike VariableName)
-    -> IO (OrPattern VariableName)
+    :: Condition RewritingVariableName
+    -> Application Symbol (TermLike RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluateApplication predicate =
     Test.runSimplifier env
     . Kore.evaluateApplication SideCondition.top predicate

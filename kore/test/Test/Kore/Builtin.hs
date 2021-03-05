@@ -37,6 +37,10 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Test.Kore.Step.SMT.Builders
     ( indexModule
     )
@@ -122,21 +126,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
-    l = mkElemVar (mkElementVariable "l" listSort)
+    l = mkElemVar (configElementVariableFromId "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal
-    m = mkElemVar (mkElementVariable "m" mapSort)
+    m = mkElemVar (configElementVariableFromId "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
-    s = mkElemVar (mkElementVariable "s" setSort)
+    s = mkElemVar (configElementVariableFromId "s" setSort)
 
     mkInt :: InternalVariable variable => Integer -> TermLike variable
     mkInt = Int.asInternal
@@ -144,13 +148,13 @@ test_internalize =
     zero, one :: InternalVariable variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    x = mkElemVar (mkElementVariable "x" intSort)
-    y = mkElemVar (mkElementVariable "y" intSort)
+    x = mkElemVar (configElementVariableFromId "x" intSort)
+    y = mkElemVar (configElementVariableFromId "y" intSort)
 
 withInternalized
-    :: (TermLike VariableName -> Assertion)
+    :: (TermLike RewritingVariableName -> Assertion)
     -> TestName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 withInternalized check name origin =
     testCase name (check $ Kore.internalize metadata origin)
@@ -158,8 +162,8 @@ withInternalized check name origin =
 internalizes
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 internalizes name origin expect =
     withInternalized (assertEqual "" expect) name origin
@@ -167,7 +171,7 @@ internalizes name origin expect =
 notInternalizes
     :: HasCallStack
     => TestName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
     -> TestTree
 notInternalizes name origin =
     withInternalized (assertEqual "" origin) name origin
