@@ -39,7 +39,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVaariable
+    ( InternalVariable
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
@@ -61,7 +61,7 @@ simplifyExtractedEquations = do
   where
     collectResults = (fmap . fmap) (concatMap toList)
 
-{- | Simplify an 'Equation' using only Matching Logic rules.
+{- | Simplify an 'Equation' using only Matching Logic rules. 
 
 It attempts to unify the argument of the equation, creating new
 equations where the argument is substituted in the rest of the
