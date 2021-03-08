@@ -39,8 +39,7 @@ import Kore.Rewriting.RewritingVariable
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -73,9 +72,9 @@ returns the original equation.
 
  -}
 simplifyEquation
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Equation variable
-    -> simplifier (MultiAnd (Equation variable))
+    :: MonadSimplify simplifier
+    => Equation RewritingVariableName
+    -> simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation =
     do
         simplifiedCond <-
