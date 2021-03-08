@@ -40,6 +40,7 @@ import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( Exception (..)
     , SomeException (..)
@@ -603,6 +604,7 @@ simplify' lensClaimPattern claim = do
 
     simplifyLeftHandSide =
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
+            Monad.guard (not . isBottom . Conditional.term $ config)
             let definedConfig =
                     Pattern.andCondition config
                     $ from $ makeCeilPredicate (Conditional.term config)
