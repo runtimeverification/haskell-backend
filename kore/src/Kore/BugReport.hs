@@ -19,11 +19,8 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception
     ( AsyncException (UserInterrupt)
-    , fromException, IOException
-    )
-import GHC.IO.Exception
-    ( IOErrorType(..)
-    , IOException (ioe_type)
+    , IOException
+    , fromException
     )
 import Control.Monad.Catch
     ( ExitCase (..)
@@ -35,6 +32,10 @@ import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Debug
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import GHC.IO.Exception
+    ( IOErrorType (..)
+    , IOException (ioe_type)
+    )
 import Options.Applicative
 import System.Directory
     ( listDirectory
