@@ -19,7 +19,11 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception
     ( AsyncException (UserInterrupt)
-    , fromException
+    , fromException, IOException
+    )
+import GHC.IO.Exception
+    ( IOErrorType(..)
+    , IOException (ioe_type)
     )
 import Control.Monad.Catch
     ( ExitCase (..)
@@ -137,6 +141,10 @@ withBugReport exeName bugReportOption act =
                     {- User exits the repl after the proof was finished -} ->
                     optionalWriteBugReport tmpDir
               | Just UserInterrupt == fromException someException ->
+                    optionalWriteBugReport tmpDir
+              | Just (ioe :: IOException) <- fromException someException
+              , NoSuchThing <- ioe_type ioe -> do
+                    putStrLn $ displayException someException
                     optionalWriteBugReport tmpDir
               | otherwise -> do
                     let message = displayException someException
