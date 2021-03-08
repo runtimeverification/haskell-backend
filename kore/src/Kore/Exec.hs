@@ -228,7 +228,8 @@ exec
         finals <-
             getFinalConfigsOf $ do
                 initialConfig <-
-                    Pattern.simplify (Pattern.fromTermLike initialTerm)
+                    Pattern.simplify
+                        (Pattern.fromTermLike initialTerm)
                     >>= Logic.scatter
                 let
                     updateQueue = \as ->
@@ -386,7 +387,8 @@ search
         initialized <- initializeAndSimplify verifiedModule
         let Initialized { rewriteRules } = initialized
         simplifiedPatterns <-
-            Pattern.simplify $ Pattern.fromTermLike termLike
+            Pattern.simplify
+            $ Pattern.fromTermLike termLike
         let
             initialPattern =
                 case toList simplifiedPatterns of
