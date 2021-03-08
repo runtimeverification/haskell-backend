@@ -39,7 +39,8 @@ import Kore.Rewriting.RewritingVariable
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
+    ( InternalVaariable
+    , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
