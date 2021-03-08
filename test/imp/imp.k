@@ -117,7 +117,7 @@ abstraction mechanism is at work here!  That means that the rewrites in the
 rules below all happen at the beginning of the \textsf{k} cell.  */
 
   // Introduce symbolic variables
-  rule ?Int => ?I:Int
+  rule ?Int => ?_I:Int
 
   rule I1 / I2 => I1 /Int I2  requires I2 =/=Int 0
   rule I1 + I2 => I1 +Int I2

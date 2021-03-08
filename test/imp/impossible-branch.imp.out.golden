@@ -4,15 +4,15 @@
       </k>
       <state>
         r |-> 0
-        x |-> ?I:Int
-        y |-> ?I0:Int
+        x |-> ?_I:Int
+        y |-> ?_I0:Int
       </state>
     </T>
   #And
     {
       false
     #Equals
-      ?I:Int <=Int ?I0:Int
+      ?_I:Int <=Int ?_I0:Int
     }
 #Or
     <T>
@@ -21,13 +21,13 @@
       </k>
       <state>
         r |-> 0
-        x |-> ?I:Int
-        y |-> ?I0:Int
+        x |-> ?_I:Int
+        y |-> ?_I0:Int
       </state>
     </T>
   #And
     {
       true
     #Equals
-      ?I:Int <=Int ?I0:Int
+      ?_I:Int <=Int ?_I0:Int
     }
