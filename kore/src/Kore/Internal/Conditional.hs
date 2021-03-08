@@ -90,7 +90,7 @@ quadratic complexity.
  -}
 data Conditional variable child =
     Conditional
-        { term :: child
+        { term :: !child
         , predicate :: !(Predicate variable)
         , substitution :: !(Substitution variable)
         }
