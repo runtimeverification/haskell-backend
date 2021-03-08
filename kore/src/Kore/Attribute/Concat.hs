@@ -73,7 +73,7 @@ instance From (Concat SymbolOrAlias) Attributes where
 toConcat :: symbol -> Concat symbol
 toConcat sym = Concat { getConcat = Just sym }
 
-fromConcat :: Concat symbol -> symbol
+fromConcat :: HasCallStack => Concat symbol -> symbol
 fromConcat Concat {getConcat = Just sym} = sym
 fromConcat _ = error "There is no concat symbol to extract"
 

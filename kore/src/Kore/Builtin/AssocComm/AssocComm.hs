@@ -70,6 +70,7 @@ newtype Opaque variable =
 asTermLike
     :: forall variable
     .  InternalVariable variable
+    => HasCallStack
     => Unit Symbol
     -> Concat Symbol
     -> ConcreteElements variable

@@ -148,6 +148,7 @@ isSymbolInclusion = Builtin.isSymbol inclusionKey
 asTermLike
     :: forall variable
     .  InternalVariable variable
+    => HasCallStack
     => InternalSet Key (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -188,7 +189,8 @@ asTermLike builtin =
     concreteElement (key, value) = element (from @Key key, value)
 
     element
-        :: (TermLike variable, SetValue (TermLike variable))
+        :: HasCallStack
+        => (TermLike variable, SetValue (TermLike variable))
         -> TermLike variable
     element (key, SetValue) =
         mkApplySymbol (fromElement elementSymbol) [key]

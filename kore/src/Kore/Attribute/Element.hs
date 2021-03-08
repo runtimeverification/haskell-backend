@@ -90,6 +90,6 @@ instance From (Element SymbolOrAlias) Attributes where
 toElement :: symbol -> Element symbol
 toElement sym = Element { getElement = Just sym }
 
-fromElement :: Element symbol -> symbol
+fromElement :: HasCallStack => Element symbol -> symbol
 fromElement Element {getElement = Just sym} = sym
 fromElement _ = error "There is no element symbol to extract"

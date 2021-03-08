@@ -448,6 +448,7 @@ emptyInternalAc sort = InternalAc
 
 unparseInternalAc
     :: (AcWrapper normalized)
+    => HasCallStack
     => (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> InternalAc normalized key child

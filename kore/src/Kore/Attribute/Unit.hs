@@ -73,7 +73,7 @@ instance From (Unit SymbolOrAlias) Attributes where
 toUnit :: symbol -> Unit symbol
 toUnit sym = Unit { getUnit = Just sym }
 
-fromUnit :: Unit symbol -> symbol
+fromUnit :: HasCallStack => Unit symbol -> symbol
 fromUnit Unit {getUnit = Just sym} = sym
 fromUnit _ = error "There is no unit symbol to extract"
 
