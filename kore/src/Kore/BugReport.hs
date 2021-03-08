@@ -21,7 +21,6 @@ import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception
     ( AsyncException (UserInterrupt)
-    , IOException
     , fromException
     )
 import Control.Monad.Catch
