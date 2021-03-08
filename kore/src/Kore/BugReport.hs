@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.BugReport
     ( BugReport (..)
     , BugReportOption (..)
