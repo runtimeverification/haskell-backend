@@ -34,9 +34,12 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -48,9 +51,9 @@ See also: 'Kore.Equation.Registry.extractEquations'
 
  -}
 simplifyExtractedEquations
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Map identifier [Equation variable]
-    -> simplifier (Map identifier [Equation variable])
+    :: MonadSimplify simplifier
+    => Map identifier [Equation RewritingVariableName]
+    -> simplifier (Map identifier [Equation RewritingVariableName])
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
     return $ collectResults results

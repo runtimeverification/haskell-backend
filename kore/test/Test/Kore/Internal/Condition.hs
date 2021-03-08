@@ -1,9 +1,13 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Internal.Condition
     ( TestCondition
     , module Kore.Internal.Condition
     ) where
 
 import Kore.Internal.Condition
-import Kore.Syntax.Variable
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
-type TestCondition = Condition VariableName
+type TestCondition = Condition RewritingVariableName

@@ -2,6 +2,9 @@ module Test.Kore.Internal.Pattern
     ( test_expandedPattern
     , test_hasSimplifiedChildren
     , internalPatternGen
+    , assertEquivalent
+    , assertEquivalentPatterns
+    , assertEquivalentPatterns'
     -- * Re-exports
     , TestPattern
     , module Pattern
@@ -12,7 +15,12 @@ import Prelude.Kore
 
 import Test.Tasty
 
+import Data.Align
+    ( align
+    )
 import qualified Data.Map.Strict as Map
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.Simplified
     ( Condition (..)
@@ -21,6 +29,10 @@ import Kore.Attribute.Pattern.Simplified
     )
 import qualified Kore.Internal.Condition as Condition
 
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
@@ -36,9 +48,13 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+import Kore.Internal.Substitution
+    ( Substitution
+    )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 
+import Test.Expect
 import Test.Kore
     ( Gen
     , sortGen
@@ -312,3 +328,75 @@ makeEquals
     :: InternalVariable var
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
+
+-- Representation for test patterns where the predicate's top level
+-- conjunction is flattened.
+data NormalizedAndPattern variable =
+    NormalizedAndPattern
+        { term :: TermLike variable
+        , predicate :: MultiAnd (Predicate variable)
+        , substitution :: Substitution variable
+        }
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
+normalizeConj
+    :: InternalVariable variable
+    => Pattern variable
+    -> NormalizedAndPattern variable
+normalizeConj Conditional { term, predicate, substitution } =
+    NormalizedAndPattern
+        { term
+        , predicate = MultiAnd.fromPredicate predicate
+        , substitution
+        }
+
+assertEquivalentPatterns
+    :: Foldable t
+    => InternalVariable variable
+    => Diff variable
+    => t (Pattern variable)
+    -> t (Pattern variable)
+    -> IO ()
+assertEquivalentPatterns expects actuals =
+    for_ (align (toList expects) (toList actuals)) $ \these -> do
+        (expect, actual) <- expectThese these
+        assertEquivalent (assertEqual "") expect actual
+
+assertEquivalentPatterns'
+    :: Foldable t
+    => InternalVariable variable
+    => Functor f
+    => Diff (f (NormalizedAndPattern variable))
+    => t (f (Pattern variable))
+    -> t (f (Pattern variable))
+    -> IO ()
+assertEquivalentPatterns' expects actuals =
+    for_ (align (toList expects) (toList actuals)) $ \these -> do
+        (expect, actual) <- expectThese these
+        assertEquivalent' (assertEqual "") expect actual
+
+assertEquivalent
+    :: forall m variable
+    .  InternalVariable variable
+    => Diff variable
+    => (forall a . (Eq a, Show a, Diff a) => a -> a -> m ())
+    -> Pattern variable
+    -> Pattern variable
+    -> m ()
+assertEquivalent assertion expect actual =
+    on assertion normalizeConj expect actual
+
+assertEquivalent'
+    :: forall m f variable
+    .  Functor f
+    => InternalVariable variable
+    => Diff (f (NormalizedAndPattern variable))
+    => (forall a . Diff a => a -> a -> m ())
+    -> f (Pattern variable)
+    -> f (Pattern variable)
+    -> m ()
+assertEquivalent' assertion expect actual =
+    on assertion (fmap normalizeConj) expect actual

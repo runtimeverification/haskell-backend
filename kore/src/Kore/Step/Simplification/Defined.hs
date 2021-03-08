@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Defined
     ( simplify
     ) where
@@ -15,14 +17,17 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 -- | Marks the terms of an 'OrPattern' resulted
 -- from simplification as 'Defined'. Does not
 -- do any actual simplification.
 simplify
-    :: InternalVariable variable
-    => Defined (OrPattern variable)
-    -> OrPattern variable
+    :: InternalVariable RewritingVariableName
+    => Defined (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Defined { getDefined = defined } =
     OrPattern.map
         ( Pattern.markSimplified

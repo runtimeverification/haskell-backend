@@ -12,8 +12,9 @@ module Kore.Attribute.Pattern
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
-    , isFullySimplified
     , isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     , setSimplified
     , simplifiedAttribute
     , constructorLikeAttribute
@@ -63,12 +64,14 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified hiding
-    ( isFullySimplified
-    , isSimplified
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
-    ( isFullySimplified
-    , isSimplified
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -156,17 +159,26 @@ isSimplified sideCondition patt@Pattern {simplified} =
     assertSimplifiedConsistency patt
     $ Simplified.isSimplified sideCondition simplified
 
+{- Checks whether the pattern is simplified relative to some side condition.
+-}
+isSimplifiedSomeCondition
+    :: HasCallStack
+    => Pattern variable -> Bool
+isSimplifiedSomeCondition patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt
+    $ Simplified.isSimplifiedSomeCondition simplified
+
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
-isFullySimplified :: HasCallStack => Pattern variable -> Bool
-isFullySimplified patt@Pattern {simplified} =
+isSimplifiedAnyCondition :: HasCallStack => Pattern variable -> Bool
+isSimplifiedAnyCondition patt@Pattern {simplified} =
     assertSimplifiedConsistency patt
-    $ Simplified.isFullySimplified simplified
+    $ Simplified.isSimplifiedAnyCondition simplified
 
 assertSimplifiedConsistency :: HasCallStack => Pattern variable -> a -> a
 assertSimplifiedConsistency Pattern {constructorLike, simplified}
   | isConstructorLike constructorLike
-  , not (Simplified.isFullySimplified simplified) =
+  , not (Simplified.isSimplifiedAnyCondition simplified) =
     error "Inconsistent attributes, constructorLike implies fully simplified."
   | otherwise = id
 

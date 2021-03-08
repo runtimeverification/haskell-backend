@@ -2,6 +2,7 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.And
     ( makeEvaluate
@@ -53,6 +54,9 @@ import Kore.Internal.TermLike
     , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
@@ -98,12 +102,11 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify
-    :: InternalVariable variable
-    => MonadSimplify simplifier
+    :: MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> MultiAnd (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    -> SideCondition RewritingVariableName
+    -> MultiAnd (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- MultiAnd.traverse scatter orPatterns
@@ -113,28 +116,26 @@ simplify notSimplifier sideCondition orPatterns =
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    :: forall variable simplifier
+    :: forall simplifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> MultiAnd (Pattern variable)
-    -> LogicT simplifier (Pattern variable)
+    -> SideCondition RewritingVariableName
+    -> MultiAnd (Pattern RewritingVariableName)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 makeEvaluate notSimplifier sideCondition patterns
   | isBottom patterns = empty
   | Pattern.isTop patterns = return Pattern.top
   | otherwise = makeEvaluateNonBool notSimplifier sideCondition patterns
 
 makeEvaluateNonBool
-    :: forall variable simplifier
+    :: forall simplifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadSimplify simplifier
     => NotSimplifier (UnifierT simplifier)
-    -> SideCondition variable
-    -> MultiAnd (Pattern variable)
-    -> LogicT simplifier (Pattern variable)
+    -> SideCondition RewritingVariableName
+    -> MultiAnd (Pattern RewritingVariableName)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 makeEvaluateNonBool notSimplifier sideCondition patterns = do
     let unify pattern1 term2 = do
             let (term1, condition1) = Pattern.splitTerm pattern1
@@ -152,7 +153,7 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
         from @_ @(Condition _) substitutions
         & Substitution.normalize sideCondition
     let substitution = Pattern.substitution normalized
-        predicates :: MultiAnd (Predicate variable)
+        predicates :: MultiAnd (Predicate RewritingVariableName)
         predicates =
             mconcat
                 [ MultiAnd.fromPredicate (predicate unified)
@@ -170,9 +171,8 @@ makeEvaluateNonBool notSimplifier sideCondition patterns = do
             & return
 
 applyAndIdempotenceAndFindContradictions
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
         then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
@@ -187,23 +187,26 @@ applyAndIdempotenceAndFindContradictions patt =
             (mkAnd a b)
 
 splitIntoTermsAndNegations
-    :: forall variable
-    .  Ord variable
-    => TermLike variable
-    -> (Set (TermLike variable), Set (TermLike variable))
+    :: TermLike RewritingVariableName
+    ->  ( Set (TermLike RewritingVariableName)
+        , Set (TermLike RewritingVariableName)
+        )
 splitIntoTermsAndNegations =
     bimap Set.fromList Set.fromList
         . partitionWith termOrNegation
         . children
   where
-    children :: TermLike variable -> [TermLike variable]
+    children
+        :: TermLike RewritingVariableName -> [TermLike RewritingVariableName]
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
 
     -- Left is for regular terms, Right is negated terms
     termOrNegation
-        :: TermLike variable
-        -> Either (TermLike variable) (TermLike variable)
+        :: TermLike RewritingVariableName
+        -> Either
+            (TermLike RewritingVariableName)
+            (TermLike RewritingVariableName)
     termOrNegation t@(Not_ _ _) = Right t
     termOrNegation t            = Left t
 
@@ -214,22 +217,21 @@ partitionWith f = partitionEithers . fmap f
 The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => HasCallStack
     => NotSimplifier (UnifierT simplifier)
-    -> TermLike variable
-    -> TermLike variable
-    -> LogicT simplifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> LogicT simplifier (Pattern RewritingVariableName)
 termAnd notSimplifier p1 p2 =
     Logic.scatter
     =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
   where
     termAndWorker
-        :: TermLike variable
-        -> TermLike variable
-        -> UnifierT simplifier (Pattern variable)
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> UnifierT simplifier (Pattern RewritingVariableName)
     termAndWorker first second = do
         let maybeTermAnd' = maybeTermAnd notSimplifier termAndWorker first second
         patt <- runMaybeT maybeTermAnd'

@@ -38,6 +38,7 @@ import Test.Kore.Internal.Predicate
 import Test.Kore.Internal.TermLike hiding
     ( forgetSimplified
     , isSimplified
+    , isSimplifiedSomeCondition
     , mapVariables
     , markSimplified
     , simplifiedAttribute

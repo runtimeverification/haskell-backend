@@ -3,10 +3,12 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , RewritingVariable
+    , isEquationVariable
     , isConfigVariable
     , isRuleVariable
     , isSomeConfigVariable
@@ -15,17 +17,22 @@ module Kore.Rewriting.RewritingVariable
     , isSomeRuleVariableName
     , isElementRuleVariable
     , isElementRuleVariableName
+    , mkEquationVariable
     , mkConfigVariable
     , mkRuleVariable
     , mkElementConfigVariable
+    , configElementVariableFromId
+    , ruleElementVariableFromId
     , mkElementRuleVariable
     , mkUnifiedRuleVariable
     , mkUnifiedConfigVariable
     , mkRewritingPattern
+    , mkRewritingTerm
     , resetResultPattern
     , getRemainderPredicate
     , assertRemainderPattern
     , resetConfigVariable
+    , resetRuleVariable
     , getRewritingVariable
     -- * Exported for unparsing/testing
     , getRewritingPattern
@@ -40,6 +47,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.AST.AstWithLocation
+    ( AstWithLocation (..)
+    )
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
@@ -59,7 +69,8 @@ import Kore.Variables.Fresh
 {- | The name of a 'RewritingVariable'.
  -}
 data RewritingVariableName
-    = ConfigVariableName !VariableName
+    = EquationVariableName !VariableName
+    | ConfigVariableName !VariableName
     | RuleVariableName   !VariableName
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -68,7 +79,11 @@ data RewritingVariableName
     deriving anyclass (Debug, Diff)
 
 instance SubstitutionOrd RewritingVariableName where
+    compareSubstitution (EquationVariableName _) (RuleVariableName _) = LT
+    compareSubstitution (EquationVariableName _) (ConfigVariableName _) = LT
+    compareSubstitution (RuleVariableName _) (EquationVariableName _) = GT
     compareSubstitution (RuleVariableName _) (ConfigVariableName _) = LT
+    compareSubstitution (ConfigVariableName _) (EquationVariableName _) = GT
     compareSubstitution (ConfigVariableName _) (RuleVariableName _) = GT
     compareSubstitution variable1 variable2 =
         on compareSubstitution toVariableName variable1 variable2
@@ -76,16 +91,20 @@ instance SubstitutionOrd RewritingVariableName where
 instance FreshPartialOrd RewritingVariableName where
     minBoundName =
         \case
-            RuleVariableName var   -> RuleVariableName (minBoundName var)
-            ConfigVariableName var -> ConfigVariableName (minBoundName var)
+            EquationVariableName var -> EquationVariableName (minBoundName var)
+            RuleVariableName var     -> RuleVariableName (minBoundName var)
+            ConfigVariableName var   -> ConfigVariableName (minBoundName var)
     {-# INLINE minBoundName #-}
 
     maxBoundName =
         \case
-            RuleVariableName var   -> RuleVariableName (maxBoundName var)
-            ConfigVariableName var -> ConfigVariableName (maxBoundName var)
+            EquationVariableName var -> EquationVariableName (maxBoundName var)
+            RuleVariableName var     -> RuleVariableName (maxBoundName var)
+            ConfigVariableName var   -> ConfigVariableName (maxBoundName var)
     {-# INLINE maxBoundName #-}
 
+    nextName (EquationVariableName name1) (EquationVariableName name2) =
+        EquationVariableName <$> nextName name1 name2
     nextName (RuleVariableName name1) (RuleVariableName name2) =
         RuleVariableName <$> nextName name1 name2
     nextName (ConfigVariableName name1) (ConfigVariableName name2) =
@@ -94,13 +113,16 @@ instance FreshPartialOrd RewritingVariableName where
     {-# INLINE nextName #-}
 
 instance Unparse RewritingVariableName where
+    unparse (EquationVariableName variable) = "Equation" <> unparse variable
     unparse (ConfigVariableName variable) = "Config" <> unparse variable
     unparse (RuleVariableName variable) = "Rule" <> unparse variable
 
+    unparse2 (EquationVariableName variable) = "Equation" <> unparse2 variable
     unparse2 (ConfigVariableName variable) = "Config" <> unparse2 variable
     unparse2 (RuleVariableName variable) = "Rule" <> unparse2 variable
 
 instance From RewritingVariableName VariableName where
+    from (EquationVariableName variable) = variable
     from (ConfigVariableName variable) = variable
     from (RuleVariableName variable) = variable
 
@@ -109,12 +131,25 @@ instance From VariableName RewritingVariableName where
 
 instance FreshName RewritingVariableName
 
+instance AstWithLocation RewritingVariableName where
+    locationFromAst = locationFromAst . base . from @RewritingVariableName @VariableName
+
 type RewritingVariable = Variable RewritingVariableName
 
 mkElementConfigVariable
     :: ElementVariable VariableName
     -> ElementVariable RewritingVariableName
 mkElementConfigVariable = (fmap . fmap) ConfigVariableName
+
+configElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+configElementVariableFromId identifier sort =
+    mkElementConfigVariable (mkElementVariable identifier sort)
+
+ruleElementVariableFromId
+    :: Id -> Sort -> ElementVariable RewritingVariableName
+ruleElementVariableFromId identifier sort =
+    mkElementRuleVariable (mkElementVariable identifier sort)
 
 mkElementRuleVariable
     :: ElementVariable VariableName
@@ -164,15 +199,28 @@ resetConfigVariable
 resetConfigVariable =
     pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
 
+resetRuleVariable
+    :: AdjSomeVariableName
+        (RewritingVariableName -> RewritingVariableName)
+resetRuleVariable =
+    pure (.) <*> pure mkRuleVariable <*> getRewritingVariable
+
 getRewritingVariable
     :: AdjSomeVariableName (RewritingVariableName -> VariableName)
 getRewritingVariable = pure (from @RewritingVariableName @VariableName)
+
+mkEquationVariable :: VariableName -> RewritingVariableName
+mkEquationVariable = EquationVariableName
 
 mkConfigVariable :: VariableName -> RewritingVariableName
 mkConfigVariable = ConfigVariableName
 
 mkRuleVariable :: VariableName -> RewritingVariableName
 mkRuleVariable = RuleVariableName
+
+isEquationVariable :: RewritingVariableName -> Bool
+isEquationVariable (EquationVariableName _) = True
+isEquationVariable _ = False
 
 isConfigVariable :: RewritingVariableName -> Bool
 isConfigVariable (ConfigVariableName _) = True
@@ -214,6 +262,9 @@ resetResultPattern initial config@Conditional { substitution } =
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
 mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
+
+mkRewritingTerm :: TermLike VariableName -> TermLike RewritingVariableName
+mkRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
 getRemainderPredicate
     :: Predicate RewritingVariableName

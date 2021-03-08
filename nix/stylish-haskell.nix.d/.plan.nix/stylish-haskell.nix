@@ -10,8 +10,8 @@
   {
     flags = {};
     package = {
-      specVersion = "1.8";
-      identifier = { name = "stylish-haskell"; version = "0.11.0.0"; };
+      specVersion = "1.10";
+      identifier = { name = "stylish-haskell"; version = "0.11.0.3"; };
       license = "BSD-3-Clause";
       copyright = "2012 Jasper Van der Jeugt";
       maintainer = "Jasper Van der Jeugt <m@jaspervdj.be>";
@@ -24,7 +24,7 @@
       isLocal = true;
       detailLevel = "FullDetails";
       licenseFiles = [ "LICENSE" ];
-      dataDir = "";
+      dataDir = ".";
       dataFiles = [];
       extraSrcFiles = [
         "CHANGELOG"
@@ -165,6 +165,4 @@
           };
         };
       };
-    } // rec {
-    src = (pkgs.lib).mkDefault ./.;
-    }
+    } // rec { src = (pkgs.lib).mkDefault ../.; }

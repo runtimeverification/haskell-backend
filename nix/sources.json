@@ -17,11 +17,12 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "7078b145e981e8b14fc7ea62126fab3378090ef4",
-        "sha256": "01vwsz14nkjd4qggxxmscmvvfcsbch0lf0frvldf8p4w1rwl54va",
+        "rev": "05f99684cb3b86703e910da6be1e619447788c7b",
+        "sha256": "0hw7y1yv7w358786kbxrv3bgwlhjaqxhg1yw05vmiyclf5afsaaq",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/7078b145e981e8b14fc7ea62126fab3378090ef4.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/05f99684cb3b86703e910da6be1e619447788c7b.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "05f99684cb3b86703e910da6be1e619447788c7b"
     },
     "hlint": {
         "branch": "v3.2.7",
@@ -60,6 +61,18 @@
         "url": "https://github.com/nmattia/niv/archive/98c74a80934123cb4c3bf3314567f67311eb711a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "nix-haskell-hls": {
+        "branch": "master",
+        "description": "Nix builds of Haskell Language Server",
+        "homepage": null,
+        "owner": "shajra",
+        "repo": "nix-haskell-hls",
+        "rev": "09ec467622955de95ff36c9036d0d25c1c0c4846",
+        "sha256": "0191spxr30vfj0rgv1qvjwl1nbshd3gw5q1mgdhk29rsf8dan3bn",
+        "type": "tarball",
+        "url": "https://github.com/shajra/nix-haskell-hls/archive/09ec467622955de95ff36c9036d0d25c1c0c4846.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "master",
         "description": "Nix Packages collection",
@@ -73,16 +86,16 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "stylish-haskell": {
-        "branch": "master",
+        "branch": "v0.11.0.3",
         "description": "Haskell code prettifier",
         "homepage": "",
         "owner": "jaspervdj",
         "repo": "stylish-haskell",
-        "rev": "f1569c0454fa0b7243a9787746e7bdf7e8ae5879",
-        "sha256": "1402jz6ds37khk7c5hq7b2zf9vbk4zfklqvickc4s24wlbs3x0zd",
+        "rev": "771b82f3c4af465a2f2b675ca9a28d18d3a27c1b",
+        "sha256": "02hphd5yxyml5hnz53y78cl9fp9d7rf8ag88m3n3kyrgk8hqmixf",
         "type": "tarball",
-        "url": "https://github.com/jaspervdj/stylish-haskell/archive/f1569c0454fa0b7243a9787746e7bdf7e8ae5879.tar.gz",
+        "url": "https://github.com/jaspervdj/stylish-haskell/archive/771b82f3c4af465a2f2b675ca9a28d18d3a27c1b.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
-        "version": "v0.11.0.0"
+        "version": "v0.11.0.3"
     }
 }
