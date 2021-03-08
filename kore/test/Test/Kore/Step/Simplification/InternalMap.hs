@@ -150,9 +150,10 @@ test_unparse =
                 (void . return)
                 (Exception.evaluate $ force $ show unparsedMap)
       where
-        (unitText, mockUnitSymbol) = if hasUnit
-            then (" withUnit", toUnit Mock.unitMapSymbol)
-            else (" withoutUnit", Unit Nothing)
+        (unitText, mockUnitSymbol) =
+            if hasUnit
+                then (" withUnit", toUnit Mock.unitMapSymbol)
+                else (" withoutUnit", Unit Nothing)
         (elementText, mockElementSymbol) = if hasElement
             then (" withElement", toElement Mock.elementMapSymbol)
             else (" withoutElement", Element Nothing)
