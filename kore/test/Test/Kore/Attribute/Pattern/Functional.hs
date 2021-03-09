@@ -143,5 +143,5 @@ test_instance_Synthetic =
 
     asSetBuiltin
         :: NormalizedAc NormalizedSet Key Functional
-        -> InternalAc Key NormalizedSet Functional
+        -> InternalAc NormalizedSet Key Functional
     asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

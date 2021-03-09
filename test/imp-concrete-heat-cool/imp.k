@@ -5,13 +5,13 @@ module IMP-SYNTAX
   syntax AExp  ::= Int | Id
                  | "-" Int
                  | AExp "/" AExp              [left/*, strict*/]
-                 > AExp "+" AExp              [left/*, strict*/]
                  | "(" AExp ")"               [bracket]
+                 > AExp "+" AExp              [left/*, strict*/]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [/*seqstrict,*/ latex({#1}\leq{#2})]
                  | "!" BExp                   /*[strict]*/
-                 > BExp "&&" BExp             [left/*, strict(1)*/]
                  | "(" BExp ")"               [bracket]
+                 > BExp "&&" BExp             [left/*, strict(1)*/]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"
   syntax Stmt  ::= Block
@@ -79,7 +79,7 @@ module SYMBOLIC-INT
   imports IMP-SYNTAX
   imports INT
   syntax AExp ::= "symInt"
-  rule symInt => ?I:Int
+  rule symInt => ?_I:Int
 endmodule
 
 module IMP
