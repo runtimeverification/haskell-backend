@@ -88,7 +88,7 @@ definitionEvaluation
     :: [Equation RewritingVariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
-    BuiltinAndAxiomSimplifier $ \term ~condition -> do
+    BuiltinAndAxiomSimplifier $ \term condition -> do
         let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
         result <-
             attemptEquations
@@ -278,7 +278,7 @@ applyFirstSimplifierThatWorksWorker
     -> simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return AttemptedAxiom.NotApplicable
-applyFirstSimplifierThatWorksWorker [] _ Conditional _ ~sideCondition =
+applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
     return
     $ AttemptedAxiom.NotApplicableUntilConditionChanges
     $ SideCondition.toRepresentation sideCondition

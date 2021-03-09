@@ -376,7 +376,7 @@ makeSimplifiedCeil
     -> simplifier (OrCondition RewritingVariableName)
 makeSimplifiedCeil
     sideCondition
-    ~maybeCurrentCondition
+    maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF)
   = do
     childCeils <- if needsChildCeils
