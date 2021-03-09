@@ -74,7 +74,7 @@ simplifyEquation
     :: MonadSimplify simplifier
     => Equation RewritingVariableName
     -> simplifier (MultiAnd (Equation RewritingVariableName))
-simplifyEquation equation =
+simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         simplifiedCond <-
             Simplifier.simplifyCondition
