@@ -191,7 +191,7 @@ simplify sideCondition = \termLike ->
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
-    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+    ~sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
     simplifyChildren
         :: Traversable t
@@ -462,7 +462,7 @@ ensureSimplifiedResult
     -> TermLike RewritingVariableName
     -> OrPattern RewritingVariableName
     -> simplifier (OrPattern RewritingVariableName)
-ensureSimplifiedResult repr termLike results
+ensureSimplifiedResult ~repr termLike results
   | OrPattern.hasSimplifiedChildrenIgnoreConditions results =
       pure results
   | otherwise =
@@ -482,7 +482,7 @@ ensureSimplifiedCondition
     -> TermLike RewritingVariableName
     -> Condition RewritingVariableName
     -> simplifier (Condition RewritingVariableName)
-ensureSimplifiedCondition repr termLike condition
+ensureSimplifiedCondition ~repr termLike condition
   | Condition.isSimplified repr condition = pure condition
   | otherwise =
     (error . show . Pretty.vsep)

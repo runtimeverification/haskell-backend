@@ -4,7 +4,7 @@ License     : NCSA
 
  -}
 
-{-# LANGUAGE Strict #-}
+-- {-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
