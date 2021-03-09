@@ -685,7 +685,7 @@ assumeDefined term =
     getDefinedElementsOfAc
         :: forall normalized
         .  AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
+        => InternalAc normalized Key (TermLike variable)
         -> HashSet (TermLike variable)
     getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
         let symbolicKeys = getSymbolicKeysOfAc normalizedAc
@@ -736,7 +736,7 @@ isDefined sideCondition@SideCondition { definedTerms } term =
 
     isSymbolicSingleton
         :: AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
+        => InternalAc normalized Key (TermLike variable)
         -> Bool
     isSymbolicSingleton InternalAc { builtinAcChild }
       | numberOfElements == 1 =
@@ -762,8 +762,8 @@ generateNormalizedAcs
     => Ord (normalized Key (TermLike variable))
     => Hashable (normalized Key (TermLike variable))
     => AcWrapper normalized
-    => InternalAc Key normalized (TermLike variable)
-    -> HashSet (InternalAc Key normalized (TermLike variable))
+    => InternalAc normalized Key (TermLike variable)
+    -> HashSet (InternalAc normalized Key (TermLike variable))
 generateNormalizedAcs internalAc =
     [ symbolicToAc <$> symbolicPairs
     , concreteToAc <$> concretePairs
