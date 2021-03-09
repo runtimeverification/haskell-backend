@@ -229,7 +229,7 @@ definePairWiseElements
     => AcWrapper normalized
     => MkBuiltinAssocComm normalized RewritingVariableName
     -> MkNotMember normalized RewritingVariableName
-    -> InternalAc Key normalized (TermLike RewritingVariableName)
+    -> InternalAc normalized Key (TermLike RewritingVariableName)
     -> PairWiseElements normalized Key (TermLike RewritingVariableName)
     -> MaybeT simplifier (MultiAnd (OrCondition RewritingVariableName))
 definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
