@@ -3,13 +3,13 @@ module IMP-SYNTAX
   syntax AExp  ::= "AInt" Int | "AId" Id
                  | "-" Int
                  | AExp "/" AExp              [left/*, strict*/]
-                 > AExp "+" AExp              [left/*, strict*/]
                  | "(" AExp ")"               [bracket]
+                 > AExp "+" AExp              [left/*, strict*/]
   syntax BExp  ::= "ABool" Bool
                  | AExp "<=" AExp             [/*seqstrict,*/ latex({#1}\leq{#2})]
                  | "!" BExp                   /*[strict]*/
-                 > BExp "&&" BExp             [left/*, strict(1)*/]
                  | "(" BExp ")"               [bracket]
+                 > BExp "&&" BExp             [left/*, strict(1)*/]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"
   syntax Stmt  ::= "ABlock" Block
@@ -84,13 +84,13 @@ module IMP-STATE
   syntax Bool ::= inState(State, Id) [function]
 
   rule inState(.State, _) => false
-  rule inState((K:Id |-> _:Int) S:State, K:Id) => true
+  rule inState((K:Id |-> _:Int) _:State, K:Id) => true
   rule inState((K:Id |-> _:Int) S:State, K':Id) => inState(S, K')
        requires K =/=K K'
 
   syntax Int ::= get(State, Id) [function, partial]
 
-  rule get((K:Id |-> V:Int) S:State, K:Id) => V
+  rule get((K:Id |-> V:Int) _:State, K:Id) => V
   rule get((X:Id |-> _:Int) S:State, Y:Id) => get(S, Y)
        requires X =/=K Y
 
@@ -100,7 +100,7 @@ module SYMBOLIC-INT
   imports IMP-SYNTAX
   imports INT
   syntax AExp ::= "symInt"
-  rule symInt => AInt ?I:Int
+  rule symInt => AInt ?_I:Int
 endmodule
 
 module IMP

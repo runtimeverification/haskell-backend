@@ -658,6 +658,21 @@ test_proveClaims =
         [ mkTest "OnePath" simpleOnePathClaim
         , mkTest "AllPath" simpleAllPathClaim
         ]
+    , testGroup "LHS is undefined" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claims = [mkSimpleClaim mkBottom_ Mock.a]
+                    actual <- proveClaims_
+                        Unlimited
+                        Unlimited
+                        []
+                        claims
+                        []
+                    assertEqual "Result is \\top" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
     ]
 
 simpleAxiom

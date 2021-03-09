@@ -28,13 +28,13 @@ argument, because we want to give it a short-circuit semantics. */
   syntax AExp  ::= Int | Id | "?Int"
                  | "-" Int                    [format(%1%2)]
                  | AExp "/" AExp              [left, seqstrict, color(pink)]
-                 > AExp "+" AExp              [left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
+                 > AExp "+" AExp              [left, seqstrict, color(pink)]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
                  | "!" BExp                   [strict, color(pink)]
-                 > BExp "&&" BExp             [left, strict(1), color(pink)]
                  | "(" BExp ")"               [bracket]
+                 > BExp "&&" BExp             [left, strict(1), color(pink)]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
@@ -117,7 +117,7 @@ abstraction mechanism is at work here!  That means that the rewrites in the
 rules below all happen at the beginning of the \textsf{k} cell.  */
 
   // Introduce symbolic variables
-  rule ?Int => ?I:Int
+  rule ?Int => ?_I:Int
 
   rule I1 / I2 => I1 /Int I2  requires I2 =/=Int 0
   rule I1 + I2 => I1 +Int I2
