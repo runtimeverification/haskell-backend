@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.40.0.0"; };
+      identifier = { name = "kore"; version = "0.41.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -129,7 +129,9 @@
           "Kore/Attribute/Axiom/Symbolic"
           "Kore/Attribute/Axiom/Unit"
           "Kore/Attribute/Comm"
+          "Kore/Attribute/Concat"
           "Kore/Attribute/Constructor"
+          "Kore/Attribute/Element"
           "Kore/Attribute/Function"
           "Kore/Attribute/Functional"
           "Kore/Attribute/Hook"
@@ -160,12 +162,9 @@
           "Kore/Attribute/Smtlib/Smthook"
           "Kore/Attribute/Smtlib/Smtlib"
           "Kore/Attribute/Sort"
-          "Kore/Attribute/Sort/Concat"
           "Kore/Attribute/Sort/Constructors"
           "Kore/Attribute/Sort/ConstructorsBuilder"
-          "Kore/Attribute/Sort/Element"
           "Kore/Attribute/Sort/HasDomainValues"
-          "Kore/Attribute/Sort/Unit"
           "Kore/Attribute/SortInjection"
           "Kore/Attribute/Source"
           "Kore/Attribute/SourceLocation"
@@ -179,6 +178,7 @@
           "Kore/Attribute/Synthetic"
           "Kore/Attribute/Trusted"
           "Kore/Attribute/UniqueId"
+          "Kore/Attribute/Unit"
           "Kore/BugReport"
           "Kore/Builtin"
           "Kore/Builtin/AssocComm/AssocComm"
@@ -947,7 +947,6 @@
             "Test/Kore/Attribute/Smtlib"
             "Test/Kore/Attribute/Sort/ConstructorsBuilder"
             "Test/Kore/Attribute/Sort/HasDomainValues"
-            "Test/Kore/Attribute/Sort/Unit"
             "Test/Kore/Attribute/SortInjection"
             "Test/Kore/Attribute/Subsort"
             "Test/Kore/Attribute/Symbol"
@@ -958,6 +957,7 @@
             "Test/Kore/Attribute/Symbol/SymbolKywd"
             "Test/Kore/Attribute/Trusted"
             "Test/Kore/Attribute/UniqueId"
+            "Test/Kore/Attribute/Unit"
             "Test/Kore/BugReport"
             "Test/Kore/Builtin"
             "Test/Kore/Builtin/AssocComm/CeilSimplifier"

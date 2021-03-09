@@ -17,7 +17,7 @@ module ADD-STACK-SPEC
 sum = 1 + 1;
 => .K
     </k>
-    <mem> sum |-> (I:Int => 2) </mem>
+    <mem> sum |-> (_:Int => 2) </mem>
     <stack> S:ValStack </stack>
     requires stackSize(S) <=Int 6
 

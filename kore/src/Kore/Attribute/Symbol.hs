@@ -53,6 +53,9 @@ module Kore.Attribute.Symbol
     , NoEvaluators (..)
     , noEvaluatorsAttribute
     -- * Derived attributes
+    , Unit (..)
+    , Element (..)
+    , Concat (..)
     , isConstructorLike
     , isFunctional
     , isFunction
@@ -71,7 +74,9 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
+import Kore.Attribute.Element
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -79,6 +84,7 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Parser
     ( Attributes
     , ParseAttributes (..)
+    , SymbolOrAlias (..)
     )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
@@ -89,6 +95,7 @@ import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
+import Kore.Attribute.Unit
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -120,6 +127,10 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
+    , unitHook      :: !(Unit SymbolOrAlias)
+    , elementHook   :: !(Element SymbolOrAlias)
+    , concatHook    :: !(Concat SymbolOrAlias)
+    -- ^ The above three are only populated if the symbol is a concat
     , sourceLocation :: !SourceLocation
     -- ^ Location in the original (source) file.
     }
@@ -148,6 +159,9 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
+        >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
         >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
@@ -166,6 +180,9 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
+            , from . unitHook
+            , from . elementHook
+            , from . concatHook
             , from . sourceLocation
             ]
 
@@ -187,6 +204,9 @@ defaultSymbolAttributes =
         , klabel         = def
         , symbolKywd     = def
         , noEvaluators   = def
+        , unitHook       = def
+        , elementHook    = def
+        , concatHook     = def
         , sourceLocation = def
         }
 
