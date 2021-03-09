@@ -119,7 +119,7 @@ evaluateApplication
         :: Monad m
         => Maybe SideCondition.Representation
         -> m (OrPattern RewritingVariableName)
-    unevaluated ~maybeSideCondition =
+    unevaluated maybeSideCondition =
         return
         $ OrPattern.fromPattern
         $ Pattern.withCondition
