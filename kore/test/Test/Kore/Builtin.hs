@@ -63,6 +63,24 @@ import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
 
+withUnit :: Bool
+withUnit = True
+
+withoutUnit :: Bool
+withoutUnit = False
+
+withElement :: Bool
+withElement = True
+
+withoutElement :: Bool
+withoutElement = False
+
+withConcat :: Bool
+withConcat = True
+
+withoutConcat :: Bool
+withoutConcat = False
+
 test_internalize :: [TestTree]
 test_internalize =
     [ internalizes  "unitList"
@@ -89,50 +107,50 @@ test_internalize =
 
     , internalizes  "unitMap"
         unitMap
-        (mkMap [] True False False)
+        (mkMap [] withUnit withoutElement withoutConcat)
     , internalizes  "elementMap"
         (elementMap zero x)
-        (mkMap [(zero, x)] False True False)
+        (mkMap [(zero, x)] withoutUnit withElement withoutConcat)
     , internalizes  "concatMap(internal, internal)"
         (concatMap
-            (mkMap [(zero, x)] False True False)
-            (mkMap [(one , y)] False True False)
+            (mkMap [(zero, x)] withoutUnit withElement withoutConcat)
+            (mkMap [(one , y)] withoutUnit withElement withoutConcat)
         )
-        (mkMap [(zero, x), (one, y)] False True True)
+        (mkMap [(zero, x), (one, y)] withoutUnit withElement withConcat)
     , internalizes  "concatMap(element, element)"
         (concatMap (elementMap zero x) (elementMap one y))
-        (mkMap [(zero, x), (one, y)] False True True)
+        (mkMap [(zero, x), (one, y)] withoutUnit withElement withConcat)
     , internalizes  "concatMap(element, unit)"
         (concatMap (elementMap zero x) unitMap)
-        (mkMap [(zero, x)] True True True)
+        (mkMap [(zero, x)] withUnit withElement withConcat)
     , internalizes  "concatMap(unit, element)"
         (concatMap unitMap (elementMap one y))
-        (mkMap [(one, y)] True True True)
+        (mkMap [(one, y)] withUnit withElement withConcat)
     , notInternalizes "m:Map" m
     , internalizes "concatMap(m:Map, unit)" (concatMap m unitMap) m
     , internalizes "concatMap(unit, m:Map)" (concatMap unitMap m) m
 
     , internalizes  "unitSet"
         unitSet
-        (mkSet [] True False False)
+        (mkSet [] withUnit withoutElement withoutConcat)
     , internalizes  "elementSet"
         (elementSet zero)
-        (mkSet [zero] False True False)
+        (mkSet [zero] withoutUnit withElement withoutConcat)
     , internalizes  "concatSet(internal, internal)"
         (concatSet
-            (mkSet [zero] False True False)
-            (mkSet [one] False True False)
+            (mkSet [zero] withoutUnit withElement withoutConcat)
+            (mkSet [one] withoutUnit withElement withoutConcat)
         )
-        (mkSet [zero, one] False True True)
+        (mkSet [zero, one] withoutUnit withElement withConcat)
     , internalizes  "concatSet(element, element)"
         (concatSet (elementSet zero) (elementSet one))
-        (mkSet [zero, one] False True True)
+        (mkSet [zero, one] withoutUnit withElement withConcat)
     , internalizes  "concatSet(element, unit)"
         (concatSet (elementSet zero) unitSet)
-        (mkSet [zero] True True True)
+        (mkSet [zero] withUnit withElement withConcat)
     , internalizes  "concatSet(unit, element)"
         (concatSet unitSet (elementSet one))
-        (mkSet [one] True True True)
+        (mkSet [one] withUnit withElement withConcat)
     , notInternalizes "s:Set" s
     , internalizes "concatSet(s:Set, unit)" (concatSet s unitSet) s
     , internalizes "concatSet(unit, s:Set)" (concatSet unitSet s) s

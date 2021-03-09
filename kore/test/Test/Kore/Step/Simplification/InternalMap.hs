@@ -54,6 +54,30 @@ import Kore.Rewriting.RewritingVariable
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
+shouldSucceed :: Bool
+shouldSucceed = True
+
+shouldFail :: Bool
+shouldFail = False
+
+withUnit :: Bool
+withUnit = True
+
+withoutUnit :: Bool
+withoutUnit = False
+
+withElement :: Bool
+withElement = True
+
+withoutElement :: Bool
+withoutElement = False
+
+withConcat :: Bool
+withConcat = True
+
+withoutConcat :: Bool
+withoutConcat = False
+
 test_simplify :: [TestTree]
 test_simplify =
     [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
@@ -119,19 +143,61 @@ test_simplify =
 
 test_unparse :: [TestTree]
 test_unparse =
-    [ unparseTest "empty" False False True True $ wrapAc emptyNormalizedAc
-    , unparseTest "empty" True True False False $ wrapAc emptyNormalizedAc
-    , unparseTest "one element" False True False True
+    [ unparseTest
+        "empty"
+        shouldFail
+        withoutUnit
+        withElement
+        withConcat
+        $ wrapAc emptyNormalizedAc
+    , unparseTest
+        "empty"
+        shouldSucceed
+        withUnit
+        withoutElement
+        withoutConcat
+        $ wrapAc emptyNormalizedAc
+    , unparseTest
+        "one element"
+        shouldFail
+        withUnit
+        withoutElement
+        withConcat
         $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
-    , unparseTest "one element" True False True False
+    , unparseTest
+        "one element"
+        shouldSucceed
+        withoutUnit
+        withElement
+        withoutConcat
         $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
-    , unparseTest "two elements" False True True False
+    , unparseTest
+        "two elements"
+        shouldFail
+        withUnit
+        withElement
+        withoutConcat
         $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
-    , unparseTest "two elements" True False True True
+    , unparseTest
+        "two elements"
+        shouldSucceed
+        withoutUnit
+        withElement
+        withConcat
         $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
-    , unparseTest "two opaque elements" False True True False
+    , unparseTest
+        "two opaque elements"
+        shouldFail
+        withUnit
+        withElement
+        withoutConcat
         $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
-    , unparseTest "two opaque elements" True False False True
+    , unparseTest
+        "two opaque elements"
+        shouldSucceed
+        withoutUnit
+        withoutElement
+        withConcat
         $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
     ]
   where
