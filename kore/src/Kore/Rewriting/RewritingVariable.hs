@@ -316,4 +316,4 @@ isElementRuleVariableName = any isRuleVariable
 withoutEquationVariables
     :: FreeVariables RewritingVariableName -> Bool
 withoutEquationVariables fv =
-    all (not . isSomeEquationVariableName) (toNames fv)
+    (not . any isSomeEquationVariableName) (toNames fv)
