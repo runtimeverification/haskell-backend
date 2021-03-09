@@ -14,6 +14,18 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+## [0.41.0.0] - 2021-03-05
+
+### Changed
+
+- Clauses in the side condition of a configuration are considered when
+  simplifying applying equations to other clauses in the side condition (#2393).
+
+### Fixed
+
+- Values of the `BYTES.Bytes` sort are unparsed in the correct 8-bit encoding
+  instead of the base-16 encoding. (#2411)
+
 ## [0.40.0.0] - 2021-02-17
 
 ### Fixed

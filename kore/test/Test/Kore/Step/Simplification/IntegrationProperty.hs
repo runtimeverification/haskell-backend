@@ -125,7 +125,8 @@ test_regressionGeneratedTerms =
                         )
                     )
         simplified <-
-            Pattern.simplify (Pattern.fromTermLike term)
+            Pattern.simplify
+                (Pattern.fromTermLike term)
             & runSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     ]

@@ -131,6 +131,6 @@ simplifyPattern
     :: MonadSimplify simplifier
     => Pattern RewritingVariableName
     -> simplifier (OrPattern RewritingVariableName)
-simplifyPattern patt =
+simplifyPattern =
     Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify patt
+    . Pattern.simplify

@@ -48,8 +48,7 @@ import Kore.Substitute
     ( substitute
     )
 
-{-| Simplifies the pattern without a side-condition (i.e. it's top)
-and removes the exists quantifiers at the top.
+{-| Simplifies the pattern and removes the exists quantifiers at the top.
 -}
 simplifyTopConfiguration
     :: forall simplifier

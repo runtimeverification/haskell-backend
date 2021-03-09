@@ -15,6 +15,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Exists
     , test_matching_Forall
     , test_matching_Equals
+    , test_matching_And
     , test_matcherOverloading
     , match
     , MatchResult
@@ -776,6 +777,32 @@ test_matching_Pair =
         (mkPair (mkElemVar yInt) (mkElemVar xInt))
         (mkPair (mkElemVar zInt) (mkElemVar yInt))
         [(inject xInt, mkElemVar zInt), (inject yInt, mkElemVar zInt)]
+    ]
+
+test_matching_And :: [TestTree]
+test_matching_And =
+    [ matches        "and(x, x) matches x"
+        (mkAnd (mkElemVar xInt) (mkElemVar xInt))
+        (mkElemVar xInt)
+        []
+    , matches        "and(x, y) matches y"
+        (mkAnd (mkElemVar xInt) (mkElemVar yInt))
+        (mkElemVar yInt)
+        [(inject xInt, mkElemVar yInt)]
+    , matches        "and(y, x) matches y"
+        (mkAnd (mkElemVar yInt) (mkElemVar xInt))
+        (mkElemVar yInt)
+        [(inject xInt, mkElemVar yInt)]
+    , matches        "and(x, y) matches z"
+        (mkAnd (mkElemVar xInt) (mkElemVar yInt))
+        (mkElemVar zInt)
+        [(inject xInt, mkElemVar zInt), (inject yInt, mkElemVar zInt)]
+    , doesn'tMatch   "and(x, 1) does not match 2"
+        (mkAnd (mkElemVar xInt) (mkInt 1))
+        (mkInt 2)
+    , doesn'tMatch   "and(1, x) does not match 2"
+        (mkAnd (mkInt 1) (mkElemVar xInt))
+        (mkInt 2)
     ]
 
 mkPair

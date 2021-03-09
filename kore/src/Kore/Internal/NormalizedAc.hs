@@ -29,6 +29,8 @@ module Kore.Internal.NormalizedAc
     , normalizedAcConstructorLike
     , normalizedAcFunctional
     , unparseInternalAc
+    , PairWiseElements (..)
+    , generatePairWiseElements
     ) where
 
 import Prelude.Kore
@@ -40,6 +42,9 @@ import Control.Lens.Iso
 import Data.Default
 import Data.Kind
     ( Type
+    )
+import Data.List.Extra
+    ( nubOrdBy
     )
 import Data.Map.Strict
     ( Map
@@ -549,3 +554,54 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
                 pairIsConstructorLike (key, value) =
                     assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
+
+-- | 'PairWiseElements' is a representation of the elements of all subcollections
+-- necessary for proving the definedness of a collection.
+data PairWiseElements normalized key child =
+    PairWiseElements
+        { symbolicPairs
+            :: [(Element normalized child, Element normalized child)]
+        , concretePairs
+            :: [((key, Value normalized child), (key, Value normalized child))]
+        , opaquePairs
+            :: [(child, child)]
+        , symbolicConcretePairs
+            :: [(Element normalized child, (key, Value normalized child))]
+        , symbolicOpaquePairs
+            :: [(Element normalized child, child)]
+        , concreteOpaquePairs
+            :: [((key, Value normalized child), child)]
+        }
+
+-- | Generates the 'PairWiseElements' for a 'AcWrapper' collection.
+generatePairWiseElements
+    :: AcWrapper normalized
+    => Ord key
+    => Ord child
+    => Ord (Element normalized child)
+    => Ord (Value normalized child)
+    => normalized key child
+    -> PairWiseElements normalized key child
+generatePairWiseElements (unwrapAc -> normalized) =
+    PairWiseElements
+        { symbolicPairs = pairWiseElemsOfSameType symbolicElems
+        , concretePairs = pairWiseElemsOfSameType concreteElems
+        , opaquePairs   = pairWiseElemsOfSameType opaqueElems
+        , symbolicConcretePairs =
+            (,) <$> symbolicElems <*> concreteElems
+        , symbolicOpaquePairs =
+            (,) <$> symbolicElems <*> opaqueElems
+        , concreteOpaquePairs =
+            (,) <$> concreteElems <*> opaqueElems
+        }
+  where
+    symbolicElems = elementsWithVariables normalized
+    concreteElems = Map.toList . concreteElements $ normalized
+    opaqueElems = opaque normalized
+    pairWiseElemsOfSameType elems =
+        [ (x, y) | x <- elems, y <- elems, x /= y ]
+        & nubOrdBy applyComm
+    applyComm p1 p2
+      | p1 == p2 = EQ
+      | swap p1 == p2 = EQ
+      | otherwise = compare p1 p2
