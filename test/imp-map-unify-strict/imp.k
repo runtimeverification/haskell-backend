@@ -29,7 +29,7 @@ module SYMBOLIC-INT
   imports IMP-SYNTAX
   imports INT
   syntax AExp ::= "symInt"
-  rule symInt => ?I:Int
+  rule symInt => ?_I:Int
 endmodule
 
 module IMP
