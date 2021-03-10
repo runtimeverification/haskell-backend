@@ -1,5 +1,5 @@
 ARG K_COMMIT
-FROM runtimeverificationinc/kframework-k:ubuntu-bionic-${K_COMMIT}
+FROM runtimeverificationinc/kframework-k:ubuntu-focal-${K_COMMIT}
 
 ENV TZ=America/Chicago
 RUN    ln --symbolic --no-dereference --force /usr/share/zoneinfo/$TZ /etc/localtime \

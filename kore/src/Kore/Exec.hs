@@ -24,6 +24,7 @@ module Kore.Exec
 
 import Prelude.Kore
 
+import Control.Error (hoistMaybe)
 import Control.Concurrent.MVar
 import Control.DeepSeq
     ( deepseq
@@ -259,6 +260,7 @@ exec
         infoExecDepth (maximum depths)
         let finalConfigs' =
                 MultiOr.make
+                $ catMaybes
                 $ extractProgramState
                 <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
@@ -407,11 +409,9 @@ search
         executionGraph <-
             runStrategy' (Start initialPattern)
         let
-            match target config1 config2 =
-                Search.matchWith
-                    target
-                    config1
-                    (extractProgramState config2)
+            match target config1 config2 = do
+                extracted <- hoistMaybe $ extractProgramState config2
+                Search.matchWith target config1 extracted
         solutionsLists <-
             searchGraph
                 searchConfig

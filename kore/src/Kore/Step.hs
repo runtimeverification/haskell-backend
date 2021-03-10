@@ -6,6 +6,8 @@ Strategy-based interface to rule application (step-wise execution).
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Step
     ( ExecutionMode (..)
     , ProgramState (..)
@@ -89,6 +91,8 @@ data ProgramState a
     | Remaining !a
     -- ^ The configuration is a remainder resulting
     -- from rewrite rule application.
+    | Bottom
+    -- ^ The execution step yields no children
     deriving (Eq, Ord, Show)
     deriving (Functor)
     deriving (GHC.Generic)
@@ -111,11 +115,13 @@ instance Unparse a => Pretty (ProgramState a) where
             [ "remaining:"
             , Pretty.indent 4 $ unparse a
             ]
+    pretty Bottom = "\\bottom"
 
-extractProgramState :: ProgramState a -> a
-extractProgramState (Rewritten a) = a
-extractProgramState (Remaining a) = a
-extractProgramState (Start a) = a
+extractProgramState :: ProgramState a -> Maybe a
+extractProgramState (Rewritten a) = Just a
+extractProgramState (Remaining a) = Just a
+extractProgramState (Start a) = Just a
+extractProgramState Bottom = Nothing
 
 retractRemaining :: ProgramState a -> Maybe a
 retractRemaining (Remaining a) = Just a
@@ -184,13 +190,16 @@ transitionRule rewriteGroups = transitionRuleWorker
     transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
     transitionRuleWorker _ Begin state@(Start _) = pure state
+    transitionRuleWorker _ Begin Bottom = empty
 
     transitionRuleWorker _ Simplify (Rewritten patt) =
-        Rewritten <$> transitionSimplify patt
+        transitionSimplify Rewritten patt
     transitionRuleWorker _ Simplify (Remaining patt) =
-        Remaining <$> transitionSimplify patt
+        transitionSimplify Remaining patt
     transitionRuleWorker _ Simplify (Start patt) =
-        Start <$> transitionSimplify patt
+        transitionSimplify Start patt
+    transitionRuleWorker _ Simplify Bottom =
+        empty
 
     transitionRuleWorker mode Rewrite (Remaining patt) =
         transitionRewrite mode patt
@@ -198,39 +207,35 @@ transitionRule rewriteGroups = transitionRuleWorker
         transitionRewrite mode patt
     transitionRuleWorker _ Rewrite state@(Rewritten _) =
         pure state
+    transitionRuleWorker _ Rewrite Bottom =
+        empty
 
-    transitionSimplify config = do
+    transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        asum (pure <$> toList filteredConfigs)
+        if filteredConfigs == mempty
+            then pure Bottom
+            else prim <$> asum (pure <$> toList filteredConfigs)
 
-    transitionRewrite All patt =
-        transitionAllRewrite patt
-    transitionRewrite Any patt =
-        transitionAnyRewrite patt
+    transitionRewrite All patt = transitionAllRewrite patt
+    transitionRewrite Any patt = transitionAnyRewrite patt
 
     transitionAllRewrite config =
         foldM transitionRewrite' (Remaining config) rewriteGroups
       where
         transitionRewrite' applied rewrites
           | Just config' <- retractRemaining applied =
-            Step.applyRewriteRulesParallel
-                rewrites
-                config'
+            Step.applyRewriteRulesParallel rewrites config'
                 & lift
             >>= deriveResults
             >>= simplifyRemainder
           | otherwise = pure applied
-        simplifyRemainder (Remaining p) =
-            Remaining <$> transitionSimplify p
+        simplifyRemainder (Remaining p) = transitionSimplify Remaining p
         simplifyRemainder p = return p
 
     transitionAnyRewrite config = do
         let rules = concat rewriteGroups
-        results <-
-            Step.applyRewriteRulesSequence
-                config
-                rules
+        results <- Step.applyRewriteRulesSequence config rules
         deriveResults results
 
 deriveResults
@@ -238,7 +243,9 @@ deriveResults
     => Result.Results (w (RulePattern variable)) a
     -> TransitionT (RewriteRule variable) m (ProgramState a)
 deriveResults Result.Results { results, remainders } =
-    addResults results <|> addRemainders remainders
+    if null results && null remainders
+        then pure Bottom
+        else addResults results <|> addRemainders remainders
   where
     addResults results' = asum (addResult <$> results')
     addResult Result.Result { appliedRule, result } = do
