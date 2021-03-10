@@ -25,8 +25,8 @@ module UNREACHABLE-SPEC
       => .K
     </k>
     <state>
-      a |-> A:Int
-      b |-> B:Int
-      r |-> R:Int
+      a |-> _:Int
+      b |-> _:Int
+      r |-> _:Int
     </state>
 endmodule

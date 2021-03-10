@@ -181,6 +181,7 @@ matchOne
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
+    <|> matchAnd         pair
     <|> matchExists      pair
     <|> matchForall      pair
     <|> matchApplication pair
@@ -439,6 +440,15 @@ matchOverload
     => Pair (TermLike RewritingVariableName)
     -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
+
+matchAnd
+    :: (MatchingVariable variable, MonadSimplify simplifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable simplifier) ()
+matchAnd (Pair term1 term2)
+    | And_ _ conj1 conj2 <- term1 =
+        push (Pair conj1 term2) >> push (Pair conj2 term2)
+    | otherwise = empty
 
 -- * Implementation
 

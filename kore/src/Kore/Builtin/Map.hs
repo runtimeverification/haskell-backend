@@ -482,6 +482,7 @@ operates at the top-most level, it does not descend into the 'TermLike' to
 internalize subterms.
 
  -}
+
 internalize
     :: InternalVariable variable
     => SmtMetadataTools Attribute.Symbol
@@ -492,19 +493,7 @@ internalize tools termLike
   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
   -- apply it if we know the term head is a constructor-like symbol.
   , App_ symbol _ <- termLike
-  , isConstructorModulo_ symbol =
-    case Ac.toNormalized @NormalizedMap termLike of
-        Ac.Bottom                    -> TermLike.mkBottom sort'
-        Ac.Normalized termNormalized
-          | let unwrapped = unwrapAc termNormalized
-          , null (elementsWithVariables unwrapped)
-          , null (concreteElements unwrapped)
-          , [singleOpaqueTerm] <- opaque unwrapped
-          ->
-            -- When the 'normalized' term consists of a single opaque Map-sorted
-            -- term, we should prefer to return only that term.
-            singleOpaqueTerm
-          | otherwise -> Ac.asInternal tools sort' termNormalized
+  , isConstructorModulo_ symbol = Ac.toNormalizedInternalMap termLike
   | otherwise = termLike
   where
     sort' = termLikeSort termLike
