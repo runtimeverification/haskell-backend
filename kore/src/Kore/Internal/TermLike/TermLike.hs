@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
--- {-# LANGUAGE Strict               #-}
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike.TermLike
@@ -927,7 +927,7 @@ traverseVariables
     => AdjSomeVariableName (variable1 -> m variable2)
     -> TermLike variable1
     -> m (TermLike variable2)
-traverseVariables adj termLike =
+traverseVariables adj ~termLike =
     renameFreeVariables adj (freeVariables @_ @variable1 termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
@@ -948,9 +948,9 @@ traverseVariables adj termLike =
                 (TermLike variable1)
                 (RenamingT variable1 variable2 m (TermLike variable2))
         ->  RenamingT variable1 variable2 m (TermLike variable2)
-    worker (attrs :< termLikeF) = do
-        attrs' <- Attribute.traverseVariables askSomeVariableName attrs
-        let avoiding = freeVariables attrs'
+    worker (~attrs :< termLikeF) = do
+        ~attrs' <- Attribute.traverseVariables askSomeVariableName attrs
+        let ~avoiding = freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
                 unifiedVariable' <- askSomeVariable unifiedVariable
