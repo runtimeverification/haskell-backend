@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin.Map
 Description : Built-in key-value maps
@@ -11,111 +13,109 @@ builtin modules.
 @
     import qualified Kore.Builtin.Map as Map
 @
- -}
+-}
+module Kore.Builtin.Map (
+    sort,
+    verifiers,
+    builtinFunctions,
+    Map.asTermLike,
+    internalize,
 
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.Map
-    ( sort
-    , verifiers
-    , builtinFunctions
-    , Map.asTermLike
-    , internalize
     -- * Unification
-    , unifyEquals
-    , unifyNotInKeys
+    unifyEquals,
+    unifyNotInKeys,
+
     -- * Raw evaluators
-    , evalConcat
-    , evalElement
-    , evalUnit
-    , evalInKeys
-    ) where
+    evalConcat,
+    evalElement,
+    evalUnit,
+    evalInKeys,
+) where
 
 import Prelude.Kore
 
-import Control.Error
-    ( MaybeT (MaybeT)
-    , hoistMaybe
-    , runMaybeT
-    )
+import Control.Error (
+    MaybeT (MaybeT),
+    hoistMaybe,
+    runMaybeT,
+ )
 import qualified Control.Monad as Monad
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import Kore.Builtin.Attributes
-    ( isConstructorModulo_
-    )
+import Kore.Builtin.Attributes (
+    isConstructorModulo_,
+ )
 import qualified Kore.Builtin.Bool as Bool
-import Kore.Builtin.Builtin
-    ( acceptAnySort
-    )
+import Kore.Builtin.Builtin (
+    acceptAnySort,
+ )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
-import Kore.Internal.InternalSet
-    ( Value (SetValue)
-    )
+import Kore.Internal.InternalSet (
+    Value (SetValue),
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Condition
-    , Pattern
-    )
+import Kore.Internal.Pattern (
+    Condition,
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    , symbolHook
-    )
-import Kore.Internal.TermLike
-    ( pattern App_
-    , pattern InternalMap_
-    , Key
-    , TermLike
-    , retractKey
-    , termLikeSort
-    )
+import Kore.Internal.Symbol (
+    Symbol (..),
+    symbolHook,
+ )
+import Kore.Internal.TermLike (
+    Key,
+    TermLike,
+    retractKey,
+    termLikeSort,
+    pattern App_,
+    pattern InternalMap_,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Sort
-    ( Sort
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Sort (
+    Sort,
+ )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Syntax.Sentence
-    ( SentenceSort (..)
-    )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Unify
+import Kore.Syntax.Sentence (
+    SentenceSort (..),
+ )
+import Kore.Unification.Unify (
+    MonadUnify,
+ )
 import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.Unify as Unify
 
-{- | Builtin name of the @Map@ sort.
- -}
+-- | Builtin name of the @Map@ sort.
 sort :: Text
 sort = "MAP.Map"
 
@@ -130,8 +130,7 @@ isMapSort = Builtin.isSort sort
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
   See also: 'sort', 'Builtin.verifySort'
-
- -}
+-}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
 
@@ -146,11 +145,10 @@ verifiers =
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
-
- -}
+-}
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
 sortDeclVerifiers =
-    HashMap.fromList [ (sort, verifySortDecl) ]
+    HashMap.fromList [(sort, verifySortDecl)]
   where
     verifySortDecl indexedModule sentenceSort attrs = do
         Builtin.verifySortDecl indexedModule sentenceSort attrs
@@ -165,77 +163,93 @@ sortDeclVerifiers =
         Builtin.assertSymbolResultSort indexedModule concatId expectedSort
         return ()
       where
-        SentenceSort { sentenceSortName } = sentenceSort
+        SentenceSort{sentenceSortName} = sentenceSort
         expectedSort = TermLike.mkSort sentenceSortName
 
 {- | Verify that hooked symbol declarations are well-formed.
 
   See also: 'Builtin.verifySymbol'
-
- -}
+-}
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( Map.concatKey
-      , Builtin.verifySymbol assertSort [assertSort , assertSort]
-      )
-    , ( Map.elementKey
-      , Builtin.verifySymbol assertSort [acceptAnySort, acceptAnySort]
-      )
-    , ( Map.lookupKey
-      , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
-      )
-    , ( Map.lookupOrDefaultKey
-      , Builtin.verifySymbol acceptAnySort
-            [assertSort, acceptAnySort, acceptAnySort]
-      )
-    , ( Map.unitKey
-      , Builtin.verifySymbol assertSort []
-      )
-    , ( Map.updateKey
-      , Builtin.verifySymbol assertSort
-            [assertSort, acceptAnySort, acceptAnySort]
-      )
-    , ( Map.in_keysKey
-      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
-      )
-    , ( Map.keysKey
-      , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
-      )
-    , ( Map.keys_listKey
-      , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
-      )
-    , ( Map.removeKey
-      , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
-      )
-    , ( Map.removeAllKey
-      , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
-      )
-    , ( Map.sizeKey
-      , Builtin.verifySymbol Int.assertSort [assertSort]
-      )
-    , ( Map.valuesKey
-      , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
-      )
-    , ( Map.inclusionKey
-      , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
-      )
-    ]
+        [
+            ( Map.concatKey
+            , Builtin.verifySymbol assertSort [assertSort, assertSort]
+            )
+        ,
+            ( Map.elementKey
+            , Builtin.verifySymbol assertSort [acceptAnySort, acceptAnySort]
+            )
+        ,
+            ( Map.lookupKey
+            , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
+            )
+        ,
+            ( Map.lookupOrDefaultKey
+            , Builtin.verifySymbol
+                acceptAnySort
+                [assertSort, acceptAnySort, acceptAnySort]
+            )
+        ,
+            ( Map.unitKey
+            , Builtin.verifySymbol assertSort []
+            )
+        ,
+            ( Map.updateKey
+            , Builtin.verifySymbol
+                assertSort
+                [assertSort, acceptAnySort, acceptAnySort]
+            )
+        ,
+            ( Map.in_keysKey
+            , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
+            )
+        ,
+            ( Map.keysKey
+            , Builtin.verifySymbol Builtin.Set.assertSort [assertSort]
+            )
+        ,
+            ( Map.keys_listKey
+            , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
+            )
+        ,
+            ( Map.removeKey
+            , Builtin.verifySymbol assertSort [assertSort, acceptAnySort]
+            )
+        ,
+            ( Map.removeAllKey
+            , Builtin.verifySymbol assertSort [assertSort, Builtin.Set.assertSort]
+            )
+        ,
+            ( Map.sizeKey
+            , Builtin.verifySymbol Int.assertSort [assertSort]
+            )
+        ,
+            ( Map.valuesKey
+            , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
+            )
+        ,
+            ( Map.inclusionKey
+            , Builtin.verifySymbol Bool.assertSort [assertSort, assertSort]
+            )
+        ]
 
 {- | Abort function evaluation if the argument is not a Map domain value.
 
     If the operand pattern is not a domain value, the function is simply
     'NotApplicable'. If the operand is a domain value, but not represented
     by a 'BuiltinDomainMap', it is a bug.
-
- -}
-expectBuiltinMap
-    :: Monad m
-    => Text  -- ^ Context for error message
-    -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Ac.TermNormalizedAc NormalizedMap variable)
+-}
+expectBuiltinMap ::
+    Monad m =>
+    -- | Context for error message
+    Text ->
+    -- | Operand pattern
+    TermLike variable ->
+    MaybeT m (Ac.TermNormalizedAc NormalizedMap variable)
 expectBuiltinMap _ (InternalMap_ internalMap) = do
-    let InternalAc { builtinAcChild } = internalMap
+    let InternalAc{builtinAcChild} = internalMap
     return builtinAcChild
 expectBuiltinMap _ _ = empty
 
@@ -244,11 +258,13 @@ which consists only of concrete elements.
 
 Returns the @Map@ of concrete elements otherwise.
 -}
-expectConcreteBuiltinMap
-    :: MonadSimplify m
-    => Text  -- ^ Context for error message
-    -> TermLike variable  -- ^ Operand pattern
-    -> MaybeT m (Map Key (MapValue (TermLike variable)))
+expectConcreteBuiltinMap ::
+    MonadSimplify m =>
+    -- | Context for error message
+    Text ->
+    -- | Operand pattern
+    TermLike variable ->
+    MaybeT m (Map Key (MapValue (TermLike variable)))
 expectConcreteBuiltinMap ctx _map = do
     _map <- expectBuiltinMap ctx _map
     case unwrapAc _map of
@@ -262,11 +278,11 @@ expectConcreteBuiltinMap ctx _map = do
 {- | Converts a @Map@ of concrete elements to a @NormalizedMap@ and returns it
 as a function result.
 -}
-returnConcreteMap
-    :: (MonadSimplify m, InternalVariable variable)
-    => Sort
-    -> Map Key (MapValue (TermLike variable))
-    -> m (Pattern variable)
+returnConcreteMap ::
+    (MonadSimplify m, InternalVariable variable) =>
+    Sort ->
+    Map Key (MapValue (TermLike variable)) ->
+    m (Pattern variable)
 returnConcreteMap = Ac.returnConcreteAc
 
 evalLookup :: Builtin.Function
@@ -282,7 +298,7 @@ evalLookup resultSort [_map, _key] = do
             (return . maybeBottom)
                 (getMapValue <$> Map.lookup _key _map)
     emptyMap <|> bothConcrete
-    where
+  where
     maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
 evalLookup _ _ = Builtin.wrongArity Map.lookupKey
 
@@ -302,16 +318,16 @@ evalElement resultSort [_key, _value] =
     case retractKey _key of
         Just concrete ->
             Map.singleton concrete (MapValue _value)
-            & returnConcreteMap resultSort
-            & TermLike.assertConstructorLikeKeys [_key]
+                & returnConcreteMap resultSort
+                & TermLike.assertConstructorLikeKeys [_key]
         Nothing ->
             (Ac.returnAc resultSort . wrapAc)
-            NormalizedAc
-                { elementsWithVariables =
-                    [MapElement (_key, _value)]
-                , concreteElements = Map.empty
-                , opaque = []
-                }
+                NormalizedAc
+                    { elementsWithVariables =
+                        [MapElement (_key, _value)]
+                    , concreteElements = Map.empty
+                    , opaque = []
+                    }
 evalElement _ _ = Builtin.wrongArity Map.elementKey
 
 -- | evaluates the map concat builtin.
@@ -342,9 +358,9 @@ evalInKeys resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.top
-      | otherwise =
-        Condition.fromPredicate (makeCeilPredicate termLike)
+        | TermLike.isDefinedPattern termLike = Condition.top
+        | otherwise =
+            Condition.fromPredicate (makeCeilPredicate termLike)
 
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments
@@ -368,16 +384,15 @@ evalInKeys resultSort arguments@[_key, _map] =
         _map <- expectBuiltinMap Map.in_keysKey _map
         let inKeys =
                 (or . catMaybes)
-                -- The key may be concrete or symbolic.
-                [ do
-                    _key <- retractKey _key
-                    pure (isConcreteKeyOfAc _key _map)
-                , pure (isSymbolicKeyOfAc _key _map)
-                ]
+                    -- The key may be concrete or symbolic.
+                    [ do
+                        _key <- retractKey _key
+                        pure (isConcreteKeyOfAc _key _map)
+                    , pure (isSymbolicKeyOfAc _key _map)
+                    ]
         Monad.guard inKeys
         -- We cannot decide if the key is absent because the Map is symbolic.
         Bool.asPattern resultSort True & returnPattern
-
 evalInKeys _ _ = Builtin.wrongArity Map.in_keysKey
 
 evalInclusion :: Builtin.Function
@@ -454,8 +469,7 @@ evalValues resultSort [_map] = do
         & Builtin.List.returnList resultSort
 evalValues _ _ = Builtin.wrongArity Map.valuesKey
 
-{- | Implement builtin function evaluation.
- -}
+-- | Implement builtin function evaluation.
 builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
 builtinFunctions =
     Map.fromList
@@ -480,21 +494,20 @@ builtinFunctions =
 The 'TermLike' is unmodified if it is not Map-sorted. @internalize@ only
 operates at the top-most level, it does not descend into the 'TermLike' to
 internalize subterms.
-
- -}
-
-internalize
-    :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
+-}
+internalize ::
+    InternalVariable variable =>
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike variable ->
+    TermLike variable
 internalize tools termLike
-  | fromMaybe False (isMapSort tools sort')
-  -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
-  -- apply it if we know the term head is a constructor-like symbol.
-  , App_ symbol _ <- termLike
-  , isConstructorModulo_ symbol = Ac.toNormalizedInternalMap termLike
-  | otherwise = termLike
+    | fromMaybe False (isMapSort tools sort')
+      , -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+        -- apply it if we know the term head is a constructor-like symbol.
+        App_ symbol _ <- termLike
+      , isConstructorModulo_ symbol =
+        Ac.toNormalizedInternalMap termLike
+    | otherwise = termLike
   where
     sort' = termLikeSort termLike
 
@@ -507,13 +520,13 @@ The maps are assumed to have the same sort, but this is not checked. If
 multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
-unifyEquals
-    :: forall unifier
-    .  MonadUnify unifier
-    => TermSimplifier RewritingVariableName unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyEquals ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT unifier (Pattern RewritingVariableName)
 unifyEquals unifyEqualsChildren first second = do
     tools <- Simplifier.askMetadataTools
     (Monad.guard . fromMaybe False) (isMapSort tools sort1)
@@ -525,11 +538,10 @@ unifyEquals unifyEqualsChildren first second = do
   where
     sort1 = termLikeSort first
 
-    -- | Unify the two argument patterns.
-    unifyEquals0
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> MaybeT unifier (Pattern RewritingVariableName)
+    unifyEquals0 ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        MaybeT unifier (Pattern RewritingVariableName)
     unifyEquals0 (InternalMap_ normalized1) (InternalMap_ normalized2) = do
         tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
@@ -539,129 +551,128 @@ unifyEquals unifyEqualsChildren first second = do
             unifyEqualsChildren
             normalized1
             normalized2
-
     unifyEquals0 pat1 pat2 = do
         firstDomain <- asDomain pat1
         secondDomain <- asDomain pat2
         unifyEquals0 firstDomain secondDomain
       where
-        asDomain
-            :: TermLike RewritingVariableName
-            -> MaybeT unifier (TermLike RewritingVariableName)
+        asDomain ::
+            TermLike RewritingVariableName ->
+            MaybeT unifier (TermLike RewritingVariableName)
         asDomain patt =
             case normalizedOrBottom of
                 Ac.Normalized normalized -> do
                     tools <- Simplifier.askMetadataTools
                     return (Ac.asInternal tools sort1 normalized)
                 Ac.Bottom ->
-                    lift $ Monad.Unify.explainAndReturnBottom
-                        "Duplicated elements in normalization."
-                        first
-                        second
+                    lift $
+                        Monad.Unify.explainAndReturnBottom
+                            "Duplicated elements in normalization."
+                            first
+                            second
           where
-            normalizedOrBottom
-                :: Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
+            normalizedOrBottom ::
+                Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
             normalizedOrBottom = Ac.toNormalized patt
 
-data InKeys term =
-    InKeys
-        { symbol :: !Symbol
-        , keyTerm, mapTerm :: !term
-        }
+data InKeys term = InKeys
+    { symbol :: !Symbol
+    , keyTerm, mapTerm :: !term
+    }
 
 instance
-    InternalVariable variable
-    => Injection (TermLike variable) (InKeys (TermLike variable))
-  where
-    inject InKeys { symbol, keyTerm, mapTerm } =
+    InternalVariable variable =>
+    Injection (TermLike variable) (InKeys (TermLike variable))
+    where
+    inject InKeys{symbol, keyTerm, mapTerm} =
         TermLike.mkApplySymbol symbol [keyTerm, mapTerm]
 
     retract (App_ symbol [keyTerm, mapTerm]) = do
         hook2 <- (getHook . symbolHook) symbol
         Monad.guard (hook2 == Map.in_keysKey)
-        return InKeys { symbol, keyTerm, mapTerm }
+        return InKeys{symbol, keyTerm, mapTerm}
     retract _ = empty
 
-matchInKeys
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe (InKeys (TermLike variable))
+matchInKeys ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (InKeys (TermLike variable))
 matchInKeys = retract
 
-unifyNotInKeys
-    :: forall unifier
-    .  MonadUnify unifier
-    => TermSimplifier RewritingVariableName unifier
-    -> NotSimplifier unifier
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> MaybeT unifier (Pattern RewritingVariableName)
+unifyNotInKeys ::
+    forall unifier.
+    MonadUnify unifier =>
+    TermSimplifier RewritingVariableName unifier ->
+    NotSimplifier unifier ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT unifier (Pattern RewritingVariableName)
 unifyNotInKeys unifyChildren (NotSimplifier notSimplifier) a b =
     worker a b <|> worker b a
   where
-    normalizedOrBottom
-       :: InternalVariable variable
-       => TermLike variable
-       -> Ac.NormalizedOrBottom NormalizedMap variable
+    normalizedOrBottom ::
+        InternalVariable variable =>
+        TermLike variable ->
+        Ac.NormalizedOrBottom NormalizedMap variable
     normalizedOrBottom = Ac.toNormalized
 
-    defineTerm
-        :: TermLike RewritingVariableName
-        -> MaybeT unifier (Condition RewritingVariableName)
+    defineTerm ::
+        TermLike RewritingVariableName ->
+        MaybeT unifier (Condition RewritingVariableName)
     defineTerm termLike =
         makeEvaluateTermCeil SideCondition.topTODO termLike
-        >>= Unify.scatter
-        & lift
+            >>= Unify.scatter
+            & lift
 
     eraseTerm =
         Pattern.fromCondition_ . Pattern.withoutTerm
 
-    unifyAndNegate t1 t2 = do
-        -- Erasing the unified term is valid here because
-        -- the terms are all wrapped in \ceil below.
-        unificationSolutions <-
-            fmap eraseTerm
-            <$> Unify.gather (unifyChildren t1 t2)
-        notSimplifier
-            SideCondition.top
-            (OrPattern.fromPatterns unificationSolutions)
-        >>= Unify.scatter
+    unifyAndNegate t1 t2 =
+        do
+            -- Erasing the unified term is valid here because
+            -- the terms are all wrapped in \ceil below.
+            unificationSolutions <-
+                fmap eraseTerm
+                    <$> Unify.gather (unifyChildren t1 t2)
+            notSimplifier
+                SideCondition.top
+                (OrPattern.fromPatterns unificationSolutions)
+            >>= Unify.scatter
 
     collectConditions terms = fold terms & Pattern.fromCondition_
 
-    worker
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> MaybeT unifier (Pattern RewritingVariableName)
+    worker ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        MaybeT unifier (Pattern RewritingVariableName)
     worker termLike1 termLike2
-      | Just boolValue <- Bool.matchBool termLike1
-      , not boolValue
-      , Just inKeys@InKeys { keyTerm, mapTerm } <- matchInKeys termLike2
-      , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm
-      = do
-        let symbolicKeys = getSymbolicKeysOfAc normalizedMap
-            concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
-            mapKeys = symbolicKeys <> concreteKeys
-            opaqueElements = opaque . unwrapAc $ normalizedMap
-        if null mapKeys && null opaqueElements then
-            return Pattern.top
-        else do
-            Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
-            -- Concrete keys are constructor-like, therefore they are defined
-            TermLike.assertConstructorLikeKeys concreteKeys $ return ()
-            definedKey <- defineTerm keyTerm
-            definedMap <- defineTerm mapTerm
-            keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
+        | Just boolValue <- Bool.matchBool termLike1
+          , not boolValue
+          , Just inKeys@InKeys{keyTerm, mapTerm} <- matchInKeys termLike2
+          , Ac.Normalized normalizedMap <- normalizedOrBottom mapTerm =
+            do
+                let symbolicKeys = getSymbolicKeysOfAc normalizedMap
+                    concreteKeys = from @Key <$> getConcreteKeysOfAc normalizedMap
+                    mapKeys = symbolicKeys <> concreteKeys
+                    opaqueElements = opaque . unwrapAc $ normalizedMap
+                if null mapKeys && null opaqueElements
+                    then return Pattern.top
+                    else do
+                        Monad.guard (not (null mapKeys) || (length opaqueElements > 1))
+                        -- Concrete keys are constructor-like, therefore they are defined
+                        TermLike.assertConstructorLikeKeys concreteKeys $ return ()
+                        definedKey <- defineTerm keyTerm
+                        definedMap <- defineTerm mapTerm
+                        keyConditions <- lift $ traverse (unifyAndNegate keyTerm) mapKeys
 
-            let keyInKeysOpaque =
-                    (\term -> inject @(TermLike _) inKeys { mapTerm = term })
-                    <$> opaqueElements
+                        let keyInKeysOpaque =
+                                (\term -> inject @(TermLike _) inKeys{mapTerm = term})
+                                    <$> opaqueElements
 
-            opaqueConditions <-
-                lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
-            let conditions =
-                    fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
-                    <> [definedKey, definedMap]
-            return $ collectConditions conditions
-
+                        opaqueConditions <-
+                            lift $ traverse (unifyChildren termLike1) keyInKeysOpaque
+                        let conditions =
+                                fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
+                                    <> [definedKey, definedMap]
+                        return $ collectConditions conditions
     worker _ _ = empty

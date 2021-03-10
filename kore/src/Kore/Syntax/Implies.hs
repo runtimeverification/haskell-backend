@@ -1,17 +1,15 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.Implies
-    ( Implies (..)
-    ) where
+module Kore.Syntax.Implies (
+    Implies (..),
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
@@ -20,16 +18,15 @@ import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
 
-{-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
+{- |'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
 'impliesSort' is both the sort of the operands and the sort of the result.
-
 -}
 data Implies sort child = Implies
-    { impliesSort   :: !sort
-    , impliesFirst  :: child
+    { impliesSort :: !sort
+    , impliesFirst :: child
     , impliesSecond :: child
     }
     deriving (Eq, Ord, Show)
@@ -40,37 +37,41 @@ data Implies sort child = Implies
     deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Implies Sort child) where
-    unparse Implies { impliesSort, impliesFirst, impliesSecond } =
+    unparse Implies{impliesSort, impliesFirst, impliesSecond} =
         "\\implies"
-        <> parameters [impliesSort]
-        <> arguments [impliesFirst, impliesSecond]
+            <> parameters [impliesSort]
+            <> arguments [impliesFirst, impliesSecond]
 
-    unparse2 Implies { impliesFirst, impliesSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\implies"
-            , unparse2 impliesFirst
-            , unparse2 impliesSecond
-            ])
+    unparse2 Implies{impliesFirst, impliesSecond} =
+        Pretty.parens
+            ( Pretty.fillSep
+                [ "\\implies"
+                , unparse2 impliesFirst
+                , unparse2 impliesSecond
+                ]
+            )
 
 instance Unparse child => Unparse (Implies () child) where
-    unparse Implies { impliesFirst, impliesSecond } =
+    unparse Implies{impliesFirst, impliesSecond} =
         "\\implies"
-        <> arguments [impliesFirst, impliesSecond]
+            <> arguments [impliesFirst, impliesSecond]
 
-    unparse2 Implies { impliesFirst, impliesSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\implies"
-            , unparse2 impliesFirst
-            , unparse2 impliesSecond
-            ])
+    unparse2 Implies{impliesFirst, impliesSecond} =
+        Pretty.parens
+            ( Pretty.fillSep
+                [ "\\implies"
+                , unparse2 impliesFirst
+                , unparse2 impliesSecond
+                ]
+            )
 
 instance Ord variable => Synthetic (FreeVariables variable) (Implies sort) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Implies Sort) where
-    synthetic Implies { impliesSort, impliesFirst, impliesSecond } =
+    synthetic Implies{impliesSort, impliesFirst, impliesSecond} =
         impliesSort
-        & seq (matchSort impliesSort impliesFirst)
-        . seq (matchSort impliesSort impliesSecond)
+            & seq (matchSort impliesSort impliesFirst)
+                . seq (matchSort impliesSort impliesSecond)
     {-# INLINE synthetic #-}

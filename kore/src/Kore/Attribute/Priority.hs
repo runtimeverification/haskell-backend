@@ -1,18 +1,20 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-module Kore.Attribute.Priority
-    ( Priority (..)
-    , defaultPriority, owisePriority
-    , priorityId, prioritySymbol, priorityAttribute
-    ) where
+module Kore.Attribute.Priority (
+    Priority (..),
+    defaultPriority,
+    owisePriority,
+    priorityId,
+    prioritySymbol,
+    priorityAttribute,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
@@ -23,8 +25,8 @@ import Kore.Debug
     rules with a 'RulePattern' or a 'EqualityRule' representation.
     'Kore.Step.RulePattern.getPriorityOfRule'
     or 'Kore.Step.EqualityPattern.getPriorityOfRule' should be used instead.
- -}
-newtype Priority = Priority { getPriority :: Maybe Integer }
+-}
+newtype Priority = Priority {getPriority :: Maybe Integer}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -38,8 +40,9 @@ instance Default Priority where
 defaultPriority :: Integer
 defaultPriority = 50
 
--- | Priority for 'EqualityRule' and 'RulePattern' with the
--- 'owise' attribute.
+{- | Priority for 'EqualityRule' and 'RulePattern' with the
+ 'owise' attribute.
+-}
 owisePriority :: Integer
 owisePriority = 200
 
@@ -68,7 +71,7 @@ instance ParseAttributes Priority where
             stringLiteral <- Parser.getStringLiteral arg
             integer <- Parser.parseInteger stringLiteral
             unless (isNothing priority) failDuplicate'
-            return Priority { getPriority = Just integer }
+            return Priority{getPriority = Just integer}
       where
         withApplication' = Parser.withApplication priorityId
         failDuplicate' = Parser.failDuplicate priorityId

@@ -1,36 +1,33 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Pattern.Function
-    ( Function (..)
-    , alwaysFunction
-    ) where
+-}
+module Kore.Attribute.Pattern.Function (
+    Function (..),
+    alwaysFunction,
+) where
 
 import Prelude.Kore
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
-{- | A pattern is 'Function' if it matches zero or one elements.
- -}
-newtype Function = Function { isFunction :: Bool }
+-- | A pattern is 'Function' if it matches zero or one elements.
+newtype Function = Function {isFunction :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -53,8 +50,9 @@ instance Synthetic Function (Bottom sort) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
--- | An 'Application' pattern is 'Function' if its symbol is a function and its
--- arguments are 'Function'.
+{- | An 'Application' pattern is 'Function' if its symbol is a function and its
+ arguments are 'Function'.
+-}
 instance Synthetic Function (Application Internal.Symbol) where
     synthetic application =
         functionSymbol <> fold children

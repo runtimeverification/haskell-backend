@@ -1,29 +1,27 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.Inhabitant
-    ( Inhabitant (..)
-    ) where
+module Kore.Syntax.Inhabitant (
+    Inhabitant (..),
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , emptyFreeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    emptyFreeVariables,
+ )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
-newtype Inhabitant child = Inhabitant { inhSort :: Sort }
+newtype Inhabitant child = Inhabitant {inhSort :: Sort}
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)

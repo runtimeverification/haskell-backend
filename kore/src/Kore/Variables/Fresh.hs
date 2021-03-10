@@ -1,34 +1,35 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
- -}
-module Kore.Variables.Fresh
-    ( FreshPartialOrd (..)
-    , FreshName (..)
-    , defaultRefreshName
-    , refreshVariable
-    , refreshElementVariable
-    , refreshSetVariable
-    , refreshVariables
-    , refreshVariables'
+-}
+module Kore.Variables.Fresh (
+    FreshPartialOrd (..),
+    FreshName (..),
+    defaultRefreshName,
+    refreshVariable,
+    refreshElementVariable,
+    refreshSetVariable,
+    refreshVariables,
+    refreshVariables',
+
     -- * Re-exports
-    , module Kore.Syntax.Variable
-    ) where
+    module Kore.Syntax.Variable,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import Data.Generics.Product
-    ( field
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Generics.Product (
+    field,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
 import Data.Void
 
@@ -70,57 +71,52 @@ Bounding:
 prop> x < maxBoundName x ==> Just (minBoundName x) < nextName x x
 
 prop> x < maxBoundName x ==> nextName x x < Just (maxBoundName x)
-
- -}
+-}
 class Ord name => FreshPartialOrd name where
     minBoundName :: name -> name
 
-    {- | @maxBoundName x@ is the greatest name related to @x@.
-
-    In the typical implementation, the counter has type
-    @'Maybe' ('Sup' 'Natural')@
-    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
-
-     -}
+    -- | @maxBoundName x@ is the greatest name related to @x@.
+    --
+    --    In the typical implementation, the counter has type
+    --    @'Maybe' ('Sup' 'Natural')@
+    --    so that @maxBoundName x@ has a counter @'Just' 'Sup'@.
     maxBoundName :: name -> name
 
-    {- | @nextName a b@ is the least name greater than @a@ and @b@.
-
-    The result shares any properties (besides its name) with the first argument.
-
-     -}
+    -- | @nextName a b@ is the least name greater than @a@ and @b@.
+    --
+    --    The result shares any properties (besides its name) with the first argument.
     nextName :: name -> name -> Maybe name
 
 instance FreshPartialOrd VariableName where
-    minBoundName variable = variable { counter = Nothing }
+    minBoundName variable = variable{counter = Nothing}
     {-# INLINE minBoundName #-}
 
-    maxBoundName variable = variable { counter = Just Sup }
+    maxBoundName variable = variable{counter = Just Sup}
     {-# INLINE maxBoundName #-}
 
     nextName name1 name2 =
         name1
-        & Lens.set (field @"counter") counter'
-        & Lens.set (field @"base" . field @"idLocation") generated
-        & Just
+            & Lens.set (field @"counter") counter'
+            & Lens.set (field @"base" . field @"idLocation") generated
+            & Just
       where
         generated = AstLocationGeneratedVariable
         counter' =
             case Lens.view (field @"counter") name2 of
-                Nothing          -> Just (Element 0)
+                Nothing -> Just (Element 0)
                 Just (Element n) -> Just (Element (succ n))
-                Just Sup         -> illegalVariableCounter
+                Just Sup -> illegalVariableCounter
     {-# INLINE nextName #-}
 
 instance FreshPartialOrd Void where
-    minBoundName = \case {}
-    maxBoundName = \case {}
-    nextName = \case {}
+    minBoundName = \case
+    maxBoundName = \case
+    nextName = \case
 
 instance
-    FreshPartialOrd variable
-    => FreshPartialOrd (ElementVariableName variable)
-  where
+    FreshPartialOrd variable =>
+    FreshPartialOrd (ElementVariableName variable)
+    where
     minBoundName = fmap minBoundName
     {-# INLINE minBoundName #-}
 
@@ -132,9 +128,9 @@ instance
     {-# INLINE nextName #-}
 
 instance
-    FreshPartialOrd variable
-    => FreshPartialOrd (SetVariableName variable)
-  where
+    FreshPartialOrd variable =>
+    FreshPartialOrd (SetVariableName variable)
+    where
     minBoundName = fmap minBoundName
     {-# INLINE minBoundName #-}
 
@@ -146,9 +142,9 @@ instance
     {-# INLINE nextName #-}
 
 instance
-    FreshPartialOrd variable
-    => FreshPartialOrd (SomeVariableName variable)
-  where
+    FreshPartialOrd variable =>
+    FreshPartialOrd (SomeVariableName variable)
+    where
     minBoundName = fmap minBoundName
     {-# INLINE minBoundName #-}
 
@@ -162,34 +158,33 @@ instance
     nextName _ _ = Nothing
     {-# INLINE nextName #-}
 
-{- | A @FreshName@ can be renamed to avoid colliding with a set of names.
--}
+-- | A @FreshName@ can be renamed to avoid colliding with a set of names.
 class Ord name => FreshName name where
-    {- | Refresh a name, renaming it avoid the given set.
-
-    If the given name occurs in the set, @refreshName@ must return
-    'Just' a fresh name which does not occur in the set. If the given
-    name does /not/ occur in the set, @refreshName@ /may/ return
-    'Nothing'.
-
-     -}
-    refreshName
-        :: Set name  -- ^ names to avoid
-        -> name      -- ^ original name
-        -> Maybe name
-    default refreshName
-        :: FreshPartialOrd name
-        => Set name
-        -> name
-        -> Maybe name
+    -- | Refresh a name, renaming it avoid the given set.
+    --
+    --    If the given name occurs in the set, @refreshName@ must return
+    --    'Just' a fresh name which does not occur in the set. If the given
+    --    name does /not/ occur in the set, @refreshName@ /may/ return
+    --    'Nothing'.
+    refreshName ::
+        -- | names to avoid
+        Set name ->
+        -- | original name
+        name ->
+        Maybe name
+    default refreshName ::
+        FreshPartialOrd name =>
+        Set name ->
+        name ->
+        Maybe name
     refreshName = defaultRefreshName
     {-# INLINE refreshName #-}
 
-defaultRefreshName
-    :: FreshPartialOrd variable
-    => Set variable
-    -> variable
-    -> Maybe variable
+defaultRefreshName ::
+    FreshPartialOrd variable =>
+    Set variable ->
+    variable ->
+    Maybe variable
 defaultRefreshName avoiding original = do
     Monad.guard (Set.member original avoiding)
     let sup = maxBoundName original
@@ -200,7 +195,7 @@ defaultRefreshName avoiding original = do
 {-# INLINE defaultRefreshName #-}
 
 instance FreshName Void where
-    refreshName _ = \case {}
+    refreshName _ = \case
     {-# INLINE refreshName #-}
 
 instance FreshName VariableName
@@ -211,29 +206,29 @@ instance FreshPartialOrd variable => FreshName (SetVariableName variable)
 
 instance FreshPartialOrd variable => FreshName (SomeVariableName variable)
 
-refreshVariable
-    :: FreshName variable
-    => Set variable
-    -> Variable variable
-    -> Maybe (Variable variable)
+refreshVariable ::
+    FreshName variable =>
+    Set variable ->
+    Variable variable ->
+    Maybe (Variable variable)
 refreshVariable avoiding = traverse (refreshName avoiding)
 {-# INLINE refreshVariable #-}
 
-refreshElementVariable
-    :: FreshName (SomeVariableName variable)
-    => Set (SomeVariableName variable)
-    -> ElementVariable variable
-    -> Maybe (ElementVariable variable)
+refreshElementVariable ::
+    FreshName (SomeVariableName variable) =>
+    Set (SomeVariableName variable) ->
+    ElementVariable variable ->
+    Maybe (ElementVariable variable)
 refreshElementVariable avoiding =
     -- expectElementVariable is safe because the FreshVariable instance of
     -- SomeVariable (above) conserves the ElemVar constructor.
     fmap expectElementVariable . refreshVariable avoiding . inject
 
-refreshSetVariable
-    :: FreshName (SomeVariableName variable)
-    => Set (SomeVariableName variable)
-    -> SetVariable variable
-    -> Maybe (SetVariable variable)
+refreshSetVariable ::
+    FreshName (SomeVariableName variable) =>
+    Set (SomeVariableName variable) ->
+    SetVariable variable ->
+    Maybe (SetVariable variable)
 refreshSetVariable avoiding =
     -- expectElementVariable is safe because the FreshVariable instance of
     -- SomeVariable (above) conserves the SetVar constructor.
@@ -254,36 +249,39 @@ result with 'Kore.Internal.TermLike.mkVar':
     :: 'Kore.Internal.TermLike.TermLike' Variable
     -> 'Kore.Internal.TermLike.TermLike' Variable
 @
+-}
+refreshVariables ::
+    FreshName variable =>
+    -- | variables to avoid
+    Set variable ->
+    -- | variables to rename
+    Set (Variable variable) ->
+    Map variable (Variable variable)
+refreshVariables avoid rename =
+    Map.mapKeys variableName $
+        refreshVariables' avoid rename
 
- -}
-refreshVariables
-    :: FreshName variable
-    => Set variable  -- ^ variables to avoid
-    -> Set (Variable variable)  -- ^ variables to rename
-    -> Map variable (Variable variable)
-refreshVariables avoid rename = Map.mapKeys variableName
-    $ refreshVariables' avoid rename
-
-
-refreshVariables'
-    :: FreshName variable
-    => Set variable  -- ^ variables to avoid
-    -> Set (Variable variable)  -- ^ variables to rename
-    -> Map (Variable variable) (Variable variable)
+refreshVariables' ::
+    FreshName variable =>
+    -- | variables to avoid
+    Set variable ->
+    -- | variables to rename
+    Set (Variable variable) ->
+    Map (Variable variable) (Variable variable)
 refreshVariables' avoid0 =
     snd <$> foldl' refreshVariablesWorker (avoid0, Map.empty)
   where
     refreshVariablesWorker (avoid, rename) var
-      | Just var' <- refreshVariable avoid var =
-        let avoid' =
-                -- Avoid the freshly-generated variable in future renamings.
-                Set.insert (variableName var') avoid
-            rename' =
-                -- Record a mapping from the original variable to the
-                -- freshly-generated variable.
-                Map.insert var var' rename
-        in (avoid', rename')
-      | otherwise =
-        -- The variable does not collide with any others, so renaming is not
-        -- necessary.
-        (Set.insert (variableName var) avoid, rename)
+        | Just var' <- refreshVariable avoid var =
+            let avoid' =
+                    -- Avoid the freshly-generated variable in future renamings.
+                    Set.insert (variableName var') avoid
+                rename' =
+                    -- Record a mapping from the original variable to the
+                    -- freshly-generated variable.
+                    Map.insert var var' rename
+             in (avoid', rename')
+        | otherwise =
+            -- The variable does not collide with any others, so renaming is not
+            -- necessary.
+            (Set.insert (variableName var) avoid, rename)

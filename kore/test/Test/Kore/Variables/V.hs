@@ -1,16 +1,18 @@
-module Test.Kore.Variables.V
-    ( V (..), mkV, var'
-    , sortVariable
-    ) where
+module Test.Kore.Variables.V (
+    V (..),
+    mkV,
+    var',
+    sortVariable,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
-import qualified Generics.SOP as SOP
+import Data.Generics.Product (
+    field,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Numeric.Natural
 
 import Data.Sup
@@ -20,8 +22,7 @@ import Kore.Unparser
 import Kore.Variables.Fresh
 import Pretty
 
-data V =
-    V { value :: Integer, counter :: Maybe (Sup Natural) }
+data V = V {value :: Integer, counter :: Maybe (Sup Natural)}
     deriving (Show, Eq, Ord)
     deriving (GHC.Generic)
     deriving anyclass (Hashable)
@@ -31,9 +32,9 @@ data V =
 mkV :: Integer -> Variable V
 mkV value =
     Variable
-    { variableName = V { value, counter = Nothing }
-    , variableSort = sortVariable
-    }
+        { variableName = V{value, counter = Nothing}
+        , variableSort = sortVariable
+        }
 
 instance Unparse V where
     unparse (V n _) = "V" <> pretty n <> ":" <> unparse sortVariable
@@ -46,8 +47,8 @@ instance From V VariableName where
     from = error "Not implemented"
 
 instance FreshPartialOrd V where
-    minBoundName v = v { counter = Nothing }
-    maxBoundName v = v { counter = Just Sup }
+    minBoundName v = v{counter = Nothing}
+    maxBoundName v = v{counter = Just Sup}
     nextName v1 v2 =
         Just $ Lens.set (field @"counter") counter' v1
       where

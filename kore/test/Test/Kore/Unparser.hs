@@ -1,22 +1,22 @@
-module Test.Kore.Unparser
-    ( test_parse
-    , test_unparse
-    , test_unparseGeneric
-    ) where
+module Test.Kore.Unparser (
+    test_parse,
+    test_unparse,
+    test_unparseGeneric,
+) where
 
 import Prelude.Kore
 
-import Hedgehog
-    ( Gen
-    , Property
-    , (===)
-    )
+import Hedgehog (
+    Gen,
+    Property,
+    (===),
+ )
 import qualified Hedgehog
 import Test.Tasty
 import Test.Tasty.Hedgehog
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Parser.Lexer
 import Kore.Parser.Parser
@@ -25,12 +25,12 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 
-import Test.Kore hiding
-    ( Gen
-    )
-import Test.Kore.Parser
-    ( parse'
-    )
+import Test.Kore hiding (
+    Gen,
+ )
+import Test.Kore.Parser (
+    parse',
+ )
 import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 
@@ -39,54 +39,73 @@ test_unparse =
     testGroup
         "Unparse"
         [ unparseTest
-            (asSentence
-                (SentenceSort
+            ( asSentence
+                ( SentenceSort
                     { sentenceSortName = testId "x"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                )
-                :: ParsedSentence
+                ) ::
+                ParsedSentence
             )
             "sort x{} []"
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ embedParsedPattern (TopF Top
-                        { topSort = SortVariableSort SortVariable
-                            { getSortVariable = testId "#Fm" }
-                        })
-                    , embedParsedPattern (InF In
-                        { inOperandSort = SortActualSort SortActual
-                            { sortActualName = testId "B"
-                            , sortActualSorts = []
-                            }
-                        , inResultSort = SortActualSort SortActual
-                            { sortActualName = testId "G"
-                            , sortActualSorts = []
-                            }
-                        , inContainedChild =
-                            embedParsedPattern $ VariableF $ Const $ inject
-                            $ mkElementVariable
-                                (testId "T")
-                                (SortVariableSort SortVariable
-                                    { getSortVariable = testId "C" }
-                                )
-                        , inContainingChild =
-                            embedParsedPattern
-                            $ StringLiteralF $ Const
-                                StringLiteral { getStringLiteral = "" }
-                        })
+                    [ embedParsedPattern
+                        ( TopF
+                            Top
+                                { topSort =
+                                    SortVariableSort
+                                        SortVariable
+                                            { getSortVariable = testId "#Fm"
+                                            }
+                                }
+                        )
+                    , embedParsedPattern
+                        ( InF
+                            In
+                                { inOperandSort =
+                                    SortActualSort
+                                        SortActual
+                                            { sortActualName = testId "B"
+                                            , sortActualSorts = []
+                                            }
+                                , inResultSort =
+                                    SortActualSort
+                                        SortActual
+                                            { sortActualName = testId "G"
+                                            , sortActualSorts = []
+                                            }
+                                , inContainedChild =
+                                    embedParsedPattern $
+                                        VariableF $
+                                            Const $
+                                                inject $
+                                                    mkElementVariable
+                                                        (testId "T")
+                                                        ( SortVariableSort
+                                                            SortVariable
+                                                                { getSortVariable = testId "C"
+                                                                }
+                                                        )
+                                , inContainingChild =
+                                    embedParsedPattern $
+                                        StringLiteralF $
+                                            Const
+                                                StringLiteral{getStringLiteral = ""}
+                                }
+                        )
                     ]
                 }
             "[\\top{#Fm}(), \\in{B{}, G{}}(T:C, \"\")]"
         , unparseTest
-            (Module
+            ( Module
                 { moduleName = ModuleName "t"
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
-                }
-                :: ParsedModule
+                } ::
+                ParsedModule
             )
             "module t\n\
             \endmodule\n\
@@ -94,37 +113,37 @@ test_unparse =
         , unparseParseTest
             parseDefinition
             Definition
-                { definitionAttributes = Attributes {getAttributes = []}
+                { definitionAttributes = Attributes{getAttributes = []}
                 , definitionModules =
                     [ Module
-                        { moduleName = ModuleName {getModuleName = "i"}
+                        { moduleName = ModuleName{getModuleName = "i"}
                         , moduleSentences = []
-                        , moduleAttributes = Attributes {getAttributes = []}
+                        , moduleAttributes = Attributes{getAttributes = []}
                         }
                     , Module
-                        { moduleName = ModuleName {getModuleName = "k"}
+                        { moduleName = ModuleName{getModuleName = "k"}
                         , moduleSentences = []
-                        , moduleAttributes = Attributes {getAttributes = []}
+                        , moduleAttributes = Attributes{getAttributes = []}
                         }
                     ]
                 }
         , unparseTest
-            (Definition
-                { definitionAttributes = Attributes {getAttributes = []}
+            ( Definition
+                { definitionAttributes = Attributes{getAttributes = []}
                 , definitionModules =
                     [ Module
-                        { moduleName = ModuleName {getModuleName = "i"}
+                        { moduleName = ModuleName{getModuleName = "i"}
                         , moduleSentences = []
-                        , moduleAttributes = Attributes {getAttributes = []}
+                        , moduleAttributes = Attributes{getAttributes = []}
                         }
                     , Module
-                        { moduleName = ModuleName {getModuleName = "k"}
+                        { moduleName = ModuleName{getModuleName = "k"}
                         , moduleSentences = []
-                        , moduleAttributes = Attributes {getAttributes = []}
+                        , moduleAttributes = Attributes{getAttributes = []}
                         }
                     ]
-                }
-                :: ParsedDefinition
+                } ::
+                ParsedDefinition
             )
             "[]\n\
             \module i\n\
@@ -134,34 +153,40 @@ test_unparse =
             \endmodule\n\
             \[]"
         , unparseTest
-            ( SentenceImportSentence SentenceImport
-                { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
-                , sentenceImportAttributes =
-                    Attributes { getAttributes = [] } :: Attributes
-                }
-                :: ParsedSentence
+            ( SentenceImportSentence
+                SentenceImport
+                    { sentenceImportModuleName = ModuleName{getModuleName = "sl"}
+                    , sentenceImportAttributes =
+                        Attributes{getAttributes = []} :: Attributes
+                    } ::
+                ParsedSentence
             )
             "import sl []"
         , unparseTest
-            (Attributes
+            ( Attributes
                 { getAttributes =
                     [ embedParsedPattern
-                        ( TopF Top
-                            { topSort = SortActualSort SortActual
-                                { sortActualName = testId "#CharList"
-                                , sortActualSorts = []
+                        ( TopF
+                            Top
+                                { topSort =
+                                    SortActualSort
+                                        SortActual
+                                            { sortActualName = testId "#CharList"
+                                            , sortActualSorts = []
+                                            }
                                 }
-                            }
                         )
                     ]
-                }::Attributes
+                } ::
+                Attributes
             )
             "[\\top{#CharList{}}()]"
         ]
 
 test_parse :: TestTree
 test_parse =
-    testGroup "Parse"
+    testGroup
+        "Parse"
         [ testProperty "Generic testId" $ roundtrip idGen parseId
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen parseStringLiteral
@@ -194,37 +219,41 @@ test_parse =
                 parseDefinition
         ]
 
-roundtrip
-    :: (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
+roundtrip ::
+    (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
         parse' parser (unparseToText generated) === Right generated
 
-unparseParseTest
-    :: (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
+unparseParseTest ::
+    (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
-        (assertEqual ""
+        ( assertEqual
+            ""
             (Right astInput)
-            (parse' parser (unparseToText astInput)))
+            (parse' parser (unparseToText astInput))
+        )
 
 unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"
-        (assertEqual (show $ debug astInput)
+        ( assertEqual
+            (show $ debug astInput)
             expected
-            (unparseToString astInput))
+            (unparseToString astInput)
+        )
 
 -- -----------------------------------------------------------------------------
 -- Generic unparsing tests
 
 -- Three simple symbols
-data A = A deriving GHC.Generic
-data B = B deriving GHC.Generic
-data C = C deriving GHC.Generic
+data A = A deriving (GHC.Generic)
+data B = B deriving (GHC.Generic)
+data C = C deriving (GHC.Generic)
 
 instance Unparse A where
     unparse A = "A"
@@ -240,28 +269,28 @@ instance Unparse C where
 
 -- A sum type with three different symbols
 data S = SA A | SB B | SC C
-    deriving GHC.Generic
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 -- A product type with three different symbols
 data P = P A B C
-    deriving GHC.Generic
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 -- A complex algebraic type with sums and products
 data D = D0 | D1 A | D2 A B | D3 A B C
-    deriving GHC.Generic
+    deriving (GHC.Generic)
     deriving anyclass (SOP.Generic)
 
 test_unparseGeneric :: [TestTree]
 test_unparseGeneric =
-    [ SA A     `yields` "A"
-    , SB B     `yields` "B"
-    , SC C     `yields` "C"
-    , P A B C  `yields` "A B C"
-    , D0       `yields` ""
-    , D1 A     `yields` "A"
-    , D2 A B   `yields` "A B"
+    [ SA A `yields` "A"
+    , SB B `yields` "B"
+    , SC C `yields` "C"
+    , P A B C `yields` "A B C"
+    , D0 `yields` ""
+    , D1 A `yields` "A"
+    , D2 A B `yields` "A B"
     , D3 A B C `yields` "A B C"
     ]
   where

@@ -1,49 +1,46 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    toList,
+    toSet,
+    toNames,
+    nullFreeVariables,
+    emptyFreeVariables,
+    freeVariable,
+    isFreeVariable,
+    bindVariable,
+    bindVariables,
+    mapFreeVariables,
+    traverseFreeVariables,
+    getFreeElementVariables,
+    HasFreeVariables (..),
+) where
 
- -}
-
-module Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , toList
-    , toSet
-    , toNames
-    , nullFreeVariables
-    , emptyFreeVariables
-    , freeVariable
-    , isFreeVariable
-    , bindVariable
-    , bindVariables
-    , mapFreeVariables
-    , traverseFreeVariables
-    , getFreeElementVariables
-    , HasFreeVariables (..)
-    ) where
-
-import Prelude.Kore hiding
-    ( toList
-    )
+import Prelude.Kore hiding (
+    toList,
+ )
 
 import Data.Functor.Const
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
 
-newtype FreeVariables variable =
-    FreeVariables { getFreeVariables :: Map (SomeVariableName variable) Sort }
+newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -55,9 +52,7 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt = hashWithSalt salt . toList
     {-# INLINE hashWithSalt #-}
 
-instance
-    Synthetic (FreeVariables variable) (Const (SomeVariable variable))
-  where
+instance Synthetic (FreeVariables variable) (Const (SomeVariable variable)) where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
 
@@ -77,19 +72,19 @@ toList :: FreeVariables variable -> [SomeVariable variable]
 toList = map (uncurry Variable) . Map.toAscList . getFreeVariables
 {-# INLINE toList #-}
 
-fromList
-    :: Ord variable
-    => [SomeVariable variable]
-    -> FreeVariables variable
+fromList ::
+    Ord variable =>
+    [SomeVariable variable] ->
+    FreeVariables variable
 fromList = foldMap freeVariable
 {-# INLINE fromList #-}
 
 toSet :: FreeVariables variable -> Set (SomeVariable variable)
 toSet =
     Set.fromDistinctAscList
-    . map (uncurry Variable)
-    . Map.toAscList
-    . getFreeVariables
+        . map (uncurry Variable)
+        . Map.toAscList
+        . getFreeVariables
 {-# INLINE toSet #-}
 
 toNames :: FreeVariables variable -> Set (SomeVariableName variable)
@@ -104,56 +99,57 @@ emptyFreeVariables :: FreeVariables variable
 emptyFreeVariables = FreeVariables Map.empty
 {-# INLINE emptyFreeVariables #-}
 
-bindVariable
-    :: Ord variable
-    => SomeVariable variable
-    -> FreeVariables variable
-    -> FreeVariables variable
-bindVariable Variable { variableName } (FreeVariables freeVars) =
+bindVariable ::
+    Ord variable =>
+    SomeVariable variable ->
+    FreeVariables variable ->
+    FreeVariables variable
+bindVariable Variable{variableName} (FreeVariables freeVars) =
     FreeVariables (Map.delete variableName freeVars)
 {-# INLINE bindVariable #-}
 
-bindVariables
-    :: Ord variable
-    => Foldable f
-    => f (SomeVariable variable)
-    -> FreeVariables variable
-    -> FreeVariables variable
+bindVariables ::
+    Ord variable =>
+    Foldable f =>
+    f (SomeVariable variable) ->
+    FreeVariables variable ->
+    FreeVariables variable
 bindVariables bound free = foldl' (flip bindVariable) free bound
 {-# INLINE bindVariables #-}
 
-isFreeVariable
-    :: Ord variable
-    => SomeVariableName variable
-    -> FreeVariables variable
-    -> Bool
+isFreeVariable ::
+    Ord variable =>
+    SomeVariableName variable ->
+    FreeVariables variable ->
+    Bool
 isFreeVariable someVariableName (FreeVariables freeVars) =
     Map.member someVariableName freeVars
 {-# INLINE isFreeVariable #-}
 
 freeVariable :: SomeVariable variable -> FreeVariables variable
-freeVariable Variable { variableName, variableSort } =
+freeVariable Variable{variableName, variableSort} =
     FreeVariables (Map.singleton variableName variableSort)
 {-# INLINE freeVariable #-}
 
-mapFreeVariables
-    :: Ord variable2
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> FreeVariables variable1 -> FreeVariables variable2
+mapFreeVariables ::
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    FreeVariables variable1 ->
+    FreeVariables variable2
 mapFreeVariables adj = fromList . map (mapSomeVariable adj) . toList
 {-# INLINE mapFreeVariables #-}
 
-traverseFreeVariables
-    :: Applicative f
-    => Ord variable2
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> FreeVariables variable1 -> f (FreeVariables variable2)
+traverseFreeVariables ::
+    Applicative f =>
+    Ord variable2 =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    FreeVariables variable1 ->
+    f (FreeVariables variable2)
 traverseFreeVariables adj =
     fmap fromList . traverse (traverseSomeVariable adj) . toList
 {-# INLINE traverseFreeVariables #-}
 
-{- | Extracts the list of free element variables
--}
+-- | Extracts the list of free element variables
 getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
 getFreeElementVariables = mapMaybe retractElementVariable . toList
 

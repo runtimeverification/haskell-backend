@@ -1,89 +1,88 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-
-module Kore.Step.AntiLeft
-    ( AntiLeft (..)
-    , antiLeftPredicate
-    , forgetSimplified
-    , mapVariables
-    , parse
-    , substitute
-    , toTermLike
-    ) where
+module Kore.Step.AntiLeft (
+    AntiLeft (..),
+    antiLeftPredicate,
+    forgetSimplified,
+    mapVariables,
+    parse,
+    substitute,
+    toTermLike,
+) where
 
 import Prelude.Kore
 
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
-import Debug
-    ( Debug
-    , Diff
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (freeVariables)
-    , bindVariables
-    )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-    ( toNames
-    )
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeMultipleExists
-    , makeMultipleOrPredicate
-    , makeOrPredicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
-    ( forgetSimplified
-    , mapVariables
-    , substitute
-    , wrapPredicate
-    )
-import Kore.Internal.TermLike
-    ( pattern And_
-    , pattern ApplyAlias_
-    , pattern Bottom_
-    , pattern Exists_
-    , pattern Or_
-    , TermLike
-    , mkAnd
-    , mkElemVar
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( forgetSimplified
-    , mapVariables
-    , substitute
-    )
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
-import Kore.Step.Simplification.ExpandAlias
-    ( substituteInAlias
-    )
-import Kore.Syntax.Variable
-    ( AdjSomeVariableName
-    , ElementVariable
-    , SomeVariableName (SomeVariableNameElement)
-    , Variable (variableName)
-    , mapElementVariable
-    )
-import Kore.Variables.Fresh
-    ( refreshElementVariable
-    )
+import Debug (
+    Debug,
+    Diff,
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (freeVariables),
+    bindVariables,
+ )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables (
+    toNames,
+ )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeMultipleExists,
+    makeMultipleOrPredicate,
+    makeOrPredicate,
+ )
+import qualified Kore.Internal.Predicate as Predicate (
+    forgetSimplified,
+    mapVariables,
+    substitute,
+    wrapPredicate,
+ )
+import Kore.Internal.TermLike (
+    TermLike,
+    mkAnd,
+    mkElemVar,
+    pattern And_,
+    pattern ApplyAlias_,
+    pattern Bottom_,
+    pattern Exists_,
+    pattern Or_,
+ )
+import qualified Kore.Internal.TermLike as TermLike (
+    forgetSimplified,
+    mapVariables,
+    substitute,
+ )
+import Kore.Internal.Variable (
+    InternalVariable,
+ )
+import Kore.Step.Simplification.ExpandAlias (
+    substituteInAlias,
+ )
+import Kore.Syntax.Variable (
+    AdjSomeVariableName,
+    ElementVariable,
+    SomeVariableName (SomeVariableNameElement),
+    Variable (variableName),
+    mapElementVariable,
+ )
+import Kore.Variables.Fresh (
+    refreshElementVariable,
+ )
 
-{-| The part of an antileft pattern corresponding to a single rule.
+{- | The part of an antileft pattern corresponding to a single rule.
 
 Normally an AntiLeftLhs pattern is an alias that expands to
 
@@ -108,7 +107,6 @@ the fully expanded AntiLeftLhs pattern would be
 @
 exists X . and(X<5, f(X))
 @
-
 -}
 data AntiLeftLhs variable = AntiLeftLhs
     { existentials :: ![ElementVariable variable]
@@ -121,7 +119,7 @@ data AntiLeftLhs variable = AntiLeftLhs
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-{-| Expansion of an antileft alias.
+{- | Expansion of an antileft alias.
 
 Note that the alias usually occurs under a `not`, which is not represented here.
 
@@ -134,15 +132,14 @@ or(nextAntiLeft, or(lhs1, or(lhs2, ... or(lhsn, bottom) ... )))
 where nextAntiLeft is optional. The lhsi patterns correspund to rules that have
 the same priority. If present, the nextAntiLeft corrensponds to rules with
 higher priority (i.e. lower priority number)
-
 -}
 data AntiLeft variable = AntiLeft
-    { aliasTerm :: !(TermLike variable)
-    -- ^ The alias that was expanded.
-    , maybeInner :: !(Maybe (AntiLeft variable))
-    -- ^ The nextAntiLeft, if any.
-    , leftHands :: ![AntiLeftLhs variable]
-    -- ^ patterns corresponding to rules with the same priority number.
+    { -- | The alias that was expanded.
+      aliasTerm :: !(TermLike variable)
+    , -- | The nextAntiLeft, if any.
+      maybeInner :: !(Maybe (AntiLeft variable))
+    , -- | patterns corresponding to rules with the same priority number.
+      leftHands :: ![AntiLeftLhs variable]
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -151,36 +148,36 @@ data AntiLeft variable = AntiLeft
     deriving anyclass (Debug, Diff)
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (AntiLeft variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (AntiLeft variable) variable
+    where
     freeVariables antiLeft@(AntiLeft _ _ _) =
         freeVariables aliasTerm
-        <> fold
-            (  toList (freeVariables <$> maybeInner)
-            ++ map freeVariables leftHands
-            )
+            <> fold
+                ( toList (freeVariables <$> maybeInner)
+                    ++ map freeVariables leftHands
+                )
       where
-        AntiLeft { aliasTerm, maybeInner, leftHands } = antiLeft
+        AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
 
 instance
-    InternalVariable variable
-    => HasFreeVariables (AntiLeftLhs variable) variable
-  where
+    InternalVariable variable =>
+    HasFreeVariables (AntiLeftLhs variable) variable
+    where
     freeVariables antiLeft@(AntiLeftLhs _ _ _) =
         bindVariables
             (map (fmap SomeVariableNameElement) existentials)
-            (  freeVariables predicate
-            <> freeVariables term
+            ( freeVariables predicate
+                <> freeVariables term
             )
       where
-        AntiLeftLhs { existentials, predicate, term } = antiLeft
+        AntiLeftLhs{existentials, predicate, term} = antiLeft
 
-mapVariables
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> AntiLeft variable1
-    -> AntiLeft variable2
+mapVariables ::
+    (InternalVariable variable1, InternalVariable variable2) =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    AntiLeft variable1 ->
+    AntiLeft variable2
 mapVariables adj antiLeft@(AntiLeft _ _ _) =
     AntiLeft
         { aliasTerm = TermLike.mapVariables adj aliasTerm
@@ -188,13 +185,13 @@ mapVariables adj antiLeft@(AntiLeft _ _ _) =
         , leftHands = map (mapVariablesLeft adj) leftHands
         }
   where
-    AntiLeft {aliasTerm, maybeInner, leftHands} = antiLeft
+    AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
 
-mapVariablesLeft
-    :: (InternalVariable variable1, InternalVariable variable2)
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> AntiLeftLhs variable1
-    -> AntiLeftLhs variable2
+mapVariablesLeft ::
+    (InternalVariable variable1, InternalVariable variable2) =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    AntiLeftLhs variable1 ->
+    AntiLeftLhs variable2
 mapVariablesLeft adj antiLeft@(AntiLeftLhs _ _ _) =
     AntiLeftLhs
         { existentials = map (mapElementVariable adj) existentials
@@ -202,13 +199,13 @@ mapVariablesLeft adj antiLeft@(AntiLeftLhs _ _ _) =
         , term = TermLike.mapVariables adj term
         }
   where
-    AntiLeftLhs {existentials, predicate, term} = antiLeft
+    AntiLeftLhs{existentials, predicate, term} = antiLeft
 
-substitute
-    :: InternalVariable variable
-    => Map (SomeVariableName variable) (TermLike variable)
-    -> AntiLeft variable
-    -> AntiLeft variable
+substitute ::
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (TermLike variable) ->
+    AntiLeft variable ->
+    AntiLeft variable
 substitute subst antiLeft@(AntiLeft _ _ _) =
     AntiLeft
         { aliasTerm = TermLike.substitute subst aliasTerm
@@ -216,13 +213,13 @@ substitute subst antiLeft@(AntiLeft _ _ _) =
         , leftHands = map (substituteLeft subst) leftHands
         }
   where
-    AntiLeft {aliasTerm, maybeInner, leftHands} = antiLeft
+    AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
 
-substituteLeft
-    :: InternalVariable variable
-    => Map (SomeVariableName variable) (TermLike variable)
-    -> AntiLeftLhs variable
-    -> AntiLeftLhs variable
+substituteLeft ::
+    InternalVariable variable =>
+    Map (SomeVariableName variable) (TermLike variable) ->
+    AntiLeftLhs variable ->
+    AntiLeftLhs variable
 substituteLeft subst antiLeft@(AntiLeftLhs _ _ _) =
     AntiLeftLhs
         { existentials
@@ -230,16 +227,17 @@ substituteLeft subst antiLeft@(AntiLeftLhs _ _ _) =
         , term = TermLike.substitute subst' term
         }
   where
-    AntiLeftLhs {existentials, predicate, term} = antiLeft
-    subst' = foldl'
-        (flip Map.delete)
-        subst
-        (map (SomeVariableNameElement . variableName) existentials)
+    AntiLeftLhs{existentials, predicate, term} = antiLeft
+    subst' =
+        foldl'
+            (flip Map.delete)
+            subst
+            (map (SomeVariableNameElement . variableName) existentials)
 
-forgetSimplified
-    :: InternalVariable variable
-    => AntiLeft variable
-    -> AntiLeft variable
+forgetSimplified ::
+    InternalVariable variable =>
+    AntiLeft variable ->
+    AntiLeft variable
 forgetSimplified antiLeft@(AntiLeft _ _ _) =
     AntiLeft
         { aliasTerm = TermLike.forgetSimplified aliasTerm
@@ -247,12 +245,12 @@ forgetSimplified antiLeft@(AntiLeft _ _ _) =
         , leftHands = map forgetSimplifiedLeft leftHands
         }
   where
-    AntiLeft {aliasTerm, maybeInner, leftHands} = antiLeft
+    AntiLeft{aliasTerm, maybeInner, leftHands} = antiLeft
 
-forgetSimplifiedLeft
-    :: InternalVariable variable
-    => AntiLeftLhs variable
-    -> AntiLeftLhs variable
+forgetSimplifiedLeft ::
+    InternalVariable variable =>
+    AntiLeftLhs variable ->
+    AntiLeftLhs variable
 forgetSimplifiedLeft antiLeftLhs@(AntiLeftLhs _ _ _) =
     AntiLeftLhs
         { existentials
@@ -260,10 +258,10 @@ forgetSimplifiedLeft antiLeftLhs@(AntiLeftLhs _ _ _) =
         , term = TermLike.forgetSimplified term
         }
   where
-    AntiLeftLhs {existentials, predicate, term} = antiLeftLhs
+    AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
 
 toTermLike :: AntiLeft variable -> TermLike variable
-toTermLike AntiLeft {aliasTerm} = aliasTerm
+toTermLike AntiLeft{aliasTerm} = aliasTerm
 
 {-
 Supported syntax:
@@ -280,9 +278,10 @@ exists x1 . exists x2 . ... exists xn . lhsTermAlias(x1, ..., xn)
 lhsTermAlias expands to
 and(lhsPredicate, lhsTerm)
 -}
-parse
-    :: InternalVariable variable
-    => TermLike variable -> Maybe (AntiLeft variable)
+parse ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (AntiLeft variable)
 parse aliasTerm@(ApplyAlias_ alias params) = do
     (maybeInner, lhss) <-
         case substituteInAlias alias params of
@@ -293,12 +292,13 @@ parse aliasTerm@(ApplyAlias_ alias params) = do
                     Nothing -> Just (Nothing, substituted)
             _ -> Nothing
     leftHands <- parseLhss lhss
-    return AntiLeft {aliasTerm, maybeInner, leftHands}
+    return AntiLeft{aliasTerm, maybeInner, leftHands}
 parse _ = Nothing
 
-parseLhss
-    :: InternalVariable variable
-    => TermLike variable -> Maybe [AntiLeftLhs variable]
+parseLhss ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe [AntiLeftLhs variable]
 parseLhss (Or_ _ first nexts) = do
     firstParsed <- parseLhs first
     nextsParsed <- parseLhss nexts
@@ -306,31 +306,32 @@ parseLhss (Or_ _ first nexts) = do
 parseLhss (Bottom_ _) = Just []
 parseLhss _ = Nothing
 
-parseLhs
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe (AntiLeftLhs variable)
+parseLhs ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (AntiLeftLhs variable)
 parseLhs lhs = case aliasTerm of
     (ApplyAlias_ alias params) -> case substituteInAlias alias params of
         (And_ _ predicate term) ->
-            Just AntiLeftLhs
-                { existentials
-                , predicate = Predicate.wrapPredicate predicate
-                , term
-                }
+            Just
+                AntiLeftLhs
+                    { existentials
+                    , predicate = Predicate.wrapPredicate predicate
+                    , term
+                    }
         _ -> Nothing
     _ -> Nothing
   where
     (existentials, aliasTerm) = stripExistentials lhs
 
-    stripExistentials
-        :: TermLike variable -> ([ElementVariable variable], TermLike variable)
+    stripExistentials ::
+        TermLike variable -> ([ElementVariable variable], TermLike variable)
     stripExistentials (Exists_ _ var term) = (var : vars, remaining)
       where
         (vars, remaining) = stripExistentials term
     stripExistentials term = ([], term)
 
-{-| Creates the AntiLeft predicate as described in
+{- | Creates the AntiLeft predicate as described in
 docs/2020-06-30-Combining-Priority-Axioms.md
 
 Note that, in the document, an antileft is encoded as an and(not)
@@ -360,20 +361,25 @@ The negation at the top of the antileft should be handled by the caller:
 * the antiLeftPredicate function also does not add a @not@ on top of the
   generated predicate, and relies on the caller doing that.
 -}
-antiLeftPredicate
-    :: InternalVariable variable
-    => AntiLeft variable -> TermLike variable -> Predicate variable
+antiLeftPredicate ::
+    InternalVariable variable =>
+    AntiLeft variable ->
+    TermLike variable ->
+    Predicate variable
 antiLeftPredicate antiLeft@(AntiLeft _ _ _) term = case antiLeft of
-    AntiLeft {maybeInner = Nothing, leftHands} ->
+    AntiLeft{maybeInner = Nothing, leftHands} ->
         antiLeftHandsPredicate leftHands term
-    AntiLeft {maybeInner = Just inner, leftHands} ->
+    AntiLeft{maybeInner = Just inner, leftHands} ->
         makeOrPredicate
             (antiLeftPredicate inner term)
             (antiLeftHandsPredicate leftHands term)
 
-antiLeftHandsPredicate
-    :: forall variable . InternalVariable variable
-    => [AntiLeftLhs variable] -> TermLike variable -> Predicate variable
+antiLeftHandsPredicate ::
+    forall variable.
+    InternalVariable variable =>
+    [AntiLeftLhs variable] ->
+    TermLike variable ->
+    Predicate variable
 antiLeftHandsPredicate antiLefts termLike =
     makeMultipleOrPredicate (map antiLeftHandPredicate antiLefts)
   where
@@ -381,7 +387,7 @@ antiLeftHandsPredicate antiLefts termLike =
     antiLeftHandPredicate antiLeftLhs@(AntiLeftLhs _ _ _) =
         makeMultipleExists
             existentials
-            (makeAndPredicate
+            ( makeAndPredicate
                 predicate
                 (makeCeilPredicate (mkAnd termLike term))
             )
@@ -391,64 +397,65 @@ antiLeftHandsPredicate antiLefts termLike =
 
         refreshedAntiLeftLhs = refreshAntiLeftExistentials used antiLeftLhs
 
-        AntiLeftLhs {existentials, predicate, term} = refreshedAntiLeftLhs
+        AntiLeftLhs{existentials, predicate, term} = refreshedAntiLeftLhs
 
-refreshAntiLeftExistentials
-    :: forall variable
-    .  InternalVariable variable
-    => Set (SomeVariableName variable)
-    -> AntiLeftLhs variable
-    -> AntiLeftLhs variable
+refreshAntiLeftExistentials ::
+    forall variable.
+    InternalVariable variable =>
+    Set (SomeVariableName variable) ->
+    AntiLeftLhs variable ->
+    AntiLeftLhs variable
 refreshAntiLeftExistentials
     alreadyUsed
-    antiLeftLhs@(AntiLeftLhs _ _ _)
-  = AntiLeftLhs
-    { existentials = map renameVar existentials
-    , predicate = Predicate.substitute substitution predicate
-    , term = TermLike.substitute substitution term
-    }
-  where
-    AntiLeftLhs {existentials, predicate, term} = antiLeftLhs
-
-    refreshVariable
-        :: Set (SomeVariableName variable)
-        -> ElementVariable variable
-        -> ElementVariable variable
-    refreshVariable avoiding x =
-        refreshElementVariable avoiding x & fromMaybe x
-
-    refreshAndAvoid
-        :: Set (SomeVariableName variable)
-        -> ElementVariable variable
-        -> (Set (SomeVariableName variable),  ElementVariable variable)
-    refreshAndAvoid avoiding x =
-        ( Set.insert (SomeVariableNameElement $ variableName refreshed) avoiding
-        , refreshed
-        )
-      where refreshed = refreshVariable avoiding x
-
-    refreshMap
-        :: Set (SomeVariableName variable)
-        -> [ElementVariable variable]
-        -> Map (SomeVariableName variable) (ElementVariable variable)
-    refreshMap _ [] = Map.empty
-    refreshMap avoiding (var:vars) =
-        Map.insert
-            (SomeVariableNameElement $ variableName var)
-            refreshedVar
-            (refreshMap newAvoiding vars)
-        where
-        (newAvoiding, refreshedVar) = refreshAndAvoid avoiding var
-
-    varSubstitution
-        :: Map (SomeVariableName variable) (ElementVariable variable)
-    varSubstitution = refreshMap alreadyUsed existentials
-
-    substitution :: Map (SomeVariableName variable) (TermLike variable)
-    substitution = fmap mkElemVar varSubstitution
-
-    renameVar :: ElementVariable variable -> ElementVariable variable
-    renameVar var =
-        fromMaybe var (Map.lookup someVariableName varSubstitution)
+    antiLeftLhs@(AntiLeftLhs _ _ _) =
+        AntiLeftLhs
+            { existentials = map renameVar existentials
+            , predicate = Predicate.substitute substitution predicate
+            , term = TermLike.substitute substitution term
+            }
       where
-        someVariableName = SomeVariableNameElement (variableName var)
+        AntiLeftLhs{existentials, predicate, term} = antiLeftLhs
+
+        refreshVariable ::
+            Set (SomeVariableName variable) ->
+            ElementVariable variable ->
+            ElementVariable variable
+        refreshVariable avoiding x =
+            refreshElementVariable avoiding x & fromMaybe x
+
+        refreshAndAvoid ::
+            Set (SomeVariableName variable) ->
+            ElementVariable variable ->
+            (Set (SomeVariableName variable), ElementVariable variable)
+        refreshAndAvoid avoiding x =
+            ( Set.insert (SomeVariableNameElement $ variableName refreshed) avoiding
+            , refreshed
+            )
+          where
+            refreshed = refreshVariable avoiding x
+
+        refreshMap ::
+            Set (SomeVariableName variable) ->
+            [ElementVariable variable] ->
+            Map (SomeVariableName variable) (ElementVariable variable)
+        refreshMap _ [] = Map.empty
+        refreshMap avoiding (var : vars) =
+            Map.insert
+                (SomeVariableNameElement $ variableName var)
+                refreshedVar
+                (refreshMap newAvoiding vars)
+          where
+            (newAvoiding, refreshedVar) = refreshAndAvoid avoiding var
+
+        varSubstitution ::
+            Map (SomeVariableName variable) (ElementVariable variable)
+        varSubstitution = refreshMap alreadyUsed existentials
+
+        substitution :: Map (SomeVariableName variable) (TermLike variable)
+        substitution = fmap mkElemVar varSubstitution
+
+        renameVar :: ElementVariable variable -> ElementVariable variable
+        renameVar var =
+            fromMaybe var (Map.lookup someVariableName varSubstitution)
+          where
+            someVariableName = SomeVariableNameElement (variableName var)

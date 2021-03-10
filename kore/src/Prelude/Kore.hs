@@ -1,179 +1,199 @@
 {- |
 Copyright : (c) 2020 Runtime Verification
 License   : NCSA
+-}
+module Prelude.Kore (
+    module Prelude,
+    module Debug.Trace,
 
- -}
-
-module Prelude.Kore
-    ( module Prelude
-    , module Debug.Trace
     -- * Ord
-    , minMax
-    , minMaxBy
+    minMax,
+    minMaxBy,
+
     -- * Functions
-    , (&)
-    , on
+    (&),
+    on,
+
     -- * Maybe
-    , isJust
-    , isNothing
-    , fromMaybe
-    , headMay
+    isJust,
+    isNothing,
+    fromMaybe,
+    headMay,
+
     -- * Either
-    , either
-    , fromLeft, fromRight
-    , isLeft, isRight
-    , partitionEithers
+    either,
+    fromLeft,
+    fromRight,
+    isLeft,
+    isRight,
+    partitionEithers,
+
     -- * Filterable
-    , Filterable (..)
+    Filterable (..),
+
     -- * Witherable
-    , Witherable (..)
+    Witherable (..),
+
     -- * Errors
-    , HasCallStack
-    , assert
+    HasCallStack,
+    assert,
+
     -- * Applicative and Alternative
-    , Applicative (..)
-    , Alternative (..)
-    , optional
+    Applicative (..),
+    Alternative (..),
+    optional,
+
     -- * From
-    , module From
+    module From,
+
     -- * Comonad
-    , module Control.Comonad
-    , Cofree
-    , CofreeF (..)
+    module Control.Comonad,
+    Cofree,
+    CofreeF (..),
+
     -- * Hashable
-    , Hashable (..)
+    Hashable (..),
+
     -- * NFData
-    , NFData (..)
+    NFData (..),
+
     -- * Monad
-    , Monad (..)
-    , MonadPlus (..)
-    , MonadIO (..)
-    , MonadTrans (..)
-    , unless
-    , when
+    Monad (..),
+    MonadPlus (..),
+    MonadIO (..),
+    MonadTrans (..),
+    unless,
+    when,
+
     -- * Typeable
-    , Typeable
+    Typeable,
+
     -- * Injection
-    , module Injection
+    module Injection,
+
     -- * Category
-    , Category (..)
-    , (<<<)
-    , (>>>)
+    Category (..),
+    (<<<),
+    (>>>),
+
     -- * Semigroup
-    , Semigroup (..)
+    Semigroup (..),
+
     -- * NonEmpty
-    , NonEmpty (..)
+    NonEmpty (..),
+
     -- * Tuple
-    , module Data.Tuple
+    module Data.Tuple,
+
     -- * Foldable
-    , module Data.Foldable
+    module Data.Foldable,
+
     -- * Traversable
-    , module Data.Traversable
-    ) where
+    module Data.Traversable,
+) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
 -- documentation is complete.
 
-import Control.Applicative
-    ( Alternative (..)
-    , Applicative (..)
-    , optional
-    )
-import Control.Category
-    ( Category (..)
-    , (<<<)
-    , (>>>)
-    )
+import Control.Applicative (
+    Alternative (..),
+    Applicative (..),
+    optional,
+ )
+import Control.Category (
+    Category (..),
+    (<<<),
+    (>>>),
+ )
 import Control.Comonad
-import Control.Comonad.Trans.Cofree
-    ( Cofree
-    , CofreeF (..)
-    )
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import Control.Error
-    ( either
-    , headMay
-    , isLeft
-    , isRight
-    )
-import Control.Exception
-    ( assert
-    )
-import Control.Monad
-    ( Monad (..)
-    , MonadPlus (..)
-    , unless
-    , when
-    )
-import Control.Monad.IO.Class
-    ( MonadIO (..)
-    )
-import Control.Monad.Trans.Class
-    ( MonadTrans (..)
-    )
-import Data.Either
-    ( fromLeft
-    , fromRight
-    , partitionEithers
-    )
+import Control.Comonad.Trans.Cofree (
+    Cofree,
+    CofreeF (..),
+ )
+import Control.DeepSeq (
+    NFData (..),
+ )
+import Control.Error (
+    either,
+    headMay,
+    isLeft,
+    isRight,
+ )
+import Control.Exception (
+    assert,
+ )
+import Control.Monad (
+    Monad (..),
+    MonadPlus (..),
+    unless,
+    when,
+ )
+import Control.Monad.IO.Class (
+    MonadIO (..),
+ )
+import Control.Monad.Trans.Class (
+    MonadTrans (..),
+ )
+import Data.Either (
+    fromLeft,
+    fromRight,
+    partitionEithers,
+ )
 import Data.Foldable
-import Data.Function
-    ( on
-    , (&)
-    )
-import Data.Hashable
-    ( Hashable (..)
-    )
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
-import Data.Maybe
-    ( fromMaybe
-    , isJust
-    , isNothing
-    )
-import Data.Semigroup
-    ( Semigroup (..)
-    )
+import Data.Function (
+    on,
+    (&),
+ )
+import Data.Hashable (
+    Hashable (..),
+ )
+import Data.List.NonEmpty (
+    NonEmpty (..),
+ )
+import Data.Maybe (
+    fromMaybe,
+    isJust,
+    isNothing,
+ )
+import Data.Semigroup (
+    Semigroup (..),
+ )
 import Data.Traversable
 import Data.Tuple
-import Data.Typeable
-    ( Typeable
-    )
-import Data.Witherable
-    ( Filterable (..)
-    , Witherable (..)
-    )
-import Debug.Trace hiding
-    ( traceEvent
-    , traceEventIO
-    )
-import GHC.Stack
-    ( HasCallStack
-    )
-import Prelude hiding
-    ( Applicative (..)
-    , Monad (..)
-    , either
-    , filter
-    , id
-    , log
-    , (.)
-    )
+import Data.Typeable (
+    Typeable,
+ )
+import Data.Witherable (
+    Filterable (..),
+    Witherable (..),
+ )
+import Debug.Trace hiding (
+    traceEvent,
+    traceEventIO,
+ )
+import GHC.Stack (
+    HasCallStack,
+ )
+import Prelude hiding (
+    Applicative (..),
+    Monad (..),
+    either,
+    filter,
+    id,
+    log,
+    (.),
+ )
 
 import From
 import Injection
 
-{- | Simultaneously compute the (@min@, @max@) of two values.
- -}
+-- | Simultaneously compute the (@min@, @max@) of two values.
 minMax :: Ord a => a -> a -> (a, a)
 minMax a b
-  | a < b     = (a, b)
-  | otherwise = (b, a)
+    | a < b = (a, b)
+    | otherwise = (b, a)
 
 minMaxBy :: (a -> a -> Ordering) -> a -> a -> (a, a)
 minMaxBy cmp a b
-  | cmp a b == LT = (a, b)
-  | otherwise = (b, a)
+    | cmp a b == LT = (a, b)
+    | otherwise = (b, a)

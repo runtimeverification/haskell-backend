@@ -1,91 +1,90 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 This should be imported qualified.
 -}
-
-module Kore.Reachability.Prove
-    ( CommonClaimState
-    , ProveClaimsResult (..)
-    , StuckClaim (..)
-    , StuckClaims
-    , AllClaims (..)
-    , Axioms (..)
-    , ToProve (..)
-    , AlreadyProven (..)
-    , proveClaims
-    , proveClaimStep
-    , lhsClaimStateTransformer
-    ) where
+module Kore.Reachability.Prove (
+    CommonClaimState,
+    ProveClaimsResult (..),
+    StuckClaim (..),
+    StuckClaims,
+    AllClaims (..),
+    Axioms (..),
+    ToProve (..),
+    AlreadyProven (..),
+    proveClaims,
+    proveClaimStep,
+    lhsClaimStateTransformer,
+) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( deepseq
-    )
+import Control.DeepSeq (
+    deepseq,
+ )
 import qualified Control.Lens as Lens
-import Control.Monad
-    ( (>=>)
-    )
-import Control.Monad.Catch
-    ( MonadCatch
-    , MonadMask
-    , handle
-    , handleAll
-    , throwM
-    )
-import Control.Monad.Except
-    ( ExceptT
-    , MonadError
-    , runExceptT
-    )
+import Control.Monad (
+    (>=>),
+ )
+import Control.Monad.Catch (
+    MonadCatch,
+    MonadMask,
+    handle,
+    handleAll,
+    throwM,
+ )
+import Control.Monad.Except (
+    ExceptT,
+    MonadError,
+    runExceptT,
+ )
 import qualified Control.Monad.Except as Monad.Except
-import Control.Monad.State.Strict
-    ( StateT
-    , runStateT
-    )
+import Control.Monad.State.Strict (
+    StateT,
+    runStateT,
+ )
 import qualified Control.Monad.State.Strict as State
-import Data.Coerce
-    ( coerce
-    )
+import Data.Coerce (
+    coerce,
+ )
 import qualified Data.Graph.Inductive.Graph as Graph
-import Data.List.Extra
-    ( groupSortOn
-    )
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.List.Extra (
+    groupSortOn,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
-import Numeric.Natural
-    ( Natural
-    )
+import qualified Generics.SOP as SOP
+import Numeric.Natural (
+    Natural,
+ )
 
-import Data.Limit
-    ( Limit
-    )
+import Data.Limit (
+    Limit,
+ )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Debug
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , pattern PredicateCeil
-    , pattern PredicateNot
-    , getMultiAndPredicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    getMultiAndPredicate,
+    pattern PredicateCeil,
+    pattern PredicateNot,
+ )
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
@@ -93,44 +92,44 @@ import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState
-    , ClaimStateTransformer (..)
-    , extractStuck
-    , extractUnproven
-    )
+import Kore.Reachability.ClaimState (
+    ClaimState,
+    ClaimStateTransformer (..),
+    extractStuck,
+    extractUnproven,
+ )
 import qualified Kore.Reachability.ClaimState as ClaimState
-import qualified Kore.Reachability.Prim as Prim
-    ( Prim (..)
-    )
+import qualified Kore.Reachability.Prim as Prim (
+    Prim (..),
+ )
 import Kore.Reachability.SomeClaim
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , getRewritingPattern
-    )
-import Kore.Step.ClaimPattern
-    ( mkGoal
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingPattern,
+ )
+import Kore.Step.ClaimPattern (
+    mkGoal,
+ )
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Strategy
-    ( ExecutionGraph (..)
-    , GraphSearchOrder
-    , Strategy
-    , executionHistoryStep
-    )
+import Kore.Step.Strategy (
+    ExecutionGraph (..),
+    GraphSearchOrder,
+    Strategy,
+    executionHistoryStep,
+ )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Step.Transition
-    ( runTransitionT
-    )
+import Kore.Step.Transition (
+    runTransitionT,
+ )
 import qualified Kore.Step.Transition as Transition
 import Kore.TopBottom
 import Kore.Unparser
-import Log
-    ( MonadLog (..)
-    )
-import Logic
-    ( LogicT
-    )
+import Log (
+    MonadLog (..),
+ )
+import Logic (
+    LogicT,
+ )
 import qualified Logic
 import qualified Pretty
 import Prof
@@ -140,11 +139,12 @@ type CommonClaimState = ClaimState.ClaimState SomeClaim
 type CommonTransitionRule m =
     TransitionRule m (AppliedRule SomeClaim) CommonClaimState
 
--- | Extracts the left hand side (configuration) from the
--- 'CommonClaimState'. If the 'ClaimState' is 'Proven', then
--- the configuration will be '\\bottom'.
-lhsClaimStateTransformer
-    :: ClaimStateTransformer
+{- | Extracts the left hand side (configuration) from the
+ 'CommonClaimState'. If the 'ClaimState' is 'Proven', then
+ the configuration will be '\\bottom'.
+-}
+lhsClaimStateTransformer ::
+    ClaimStateTransformer
         SomeClaim
         (Pattern RewritingVariableName)
 lhsClaimStateTransformer =
@@ -160,8 +160,7 @@ lhsClaimStateTransformer =
 
 The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
-
- -}
+-}
 type VerifierT = ExceptT StuckClaims
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
@@ -169,7 +168,7 @@ newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
 newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
 
-newtype StuckClaim = StuckClaim { getStuckClaim :: SomeClaim }
+newtype StuckClaim = StuckClaim {getStuckClaim :: SomeClaim}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -184,80 +183,80 @@ type StuckClaims = MultiAnd StuckClaim
 type ProvenClaims = MultiAnd SomeClaim
 
 -- | The result of proving some claims.
-data ProveClaimsResult =
-    ProveClaimsResult
-    { stuckClaims :: !StuckClaims
-    -- ^ The conjuction of stuck claims, that is: of claims which must still be
-    -- proven. If all claims were proved, then the remaining claims are @\\top@.
-    , provenClaims :: !ProvenClaims
-    -- ^ The conjunction of all claims which were proven.
+data ProveClaimsResult = ProveClaimsResult
+    { -- | The conjuction of stuck claims, that is: of claims which must still be
+      -- proven. If all claims were proved, then the remaining claims are @\\top@.
+      stuckClaims :: !StuckClaims
+    , -- | The conjunction of all claims which were proven.
+      provenClaims :: !ProvenClaims
     }
 
-proveClaims
-    :: forall simplifier
-    .  MonadMask simplifier
-    => MonadSimplify simplifier
-    => MonadProf simplifier
-    => Limit Natural
-    -> GraphSearchOrder
-    -> AllClaims SomeClaim
-    -> Axioms SomeClaim
-    -> AlreadyProven
-    -> ToProve SomeClaim
-    -- ^ List of claims, together with a maximum number of verification steps
+proveClaims ::
+    forall simplifier.
+    MonadMask simplifier =>
+    MonadSimplify simplifier =>
+    MonadProf simplifier =>
+    Limit Natural ->
+    GraphSearchOrder ->
+    AllClaims SomeClaim ->
+    Axioms SomeClaim ->
+    AlreadyProven ->
+    -- | List of claims, together with a maximum number of verification steps
     -- for each.
-    -> simplifier ProveClaimsResult
+    ToProve SomeClaim ->
+    simplifier ProveClaimsResult
 proveClaims
     breadthLimit
     searchOrder
     claims
     axioms
     (AlreadyProven alreadyProven)
-    (ToProve toProve)
-  = do
-    (result, provenClaims) <-
-        proveClaimsWorker breadthLimit searchOrder claims axioms unproven
-        & runExceptT
-        & flip runStateT (MultiAnd.make stillProven)
-    pure ProveClaimsResult
-        { stuckClaims = fromLeft MultiAnd.top result
-        , provenClaims
-        }
-  where
-    unproven :: ToProve SomeClaim
-    stillProven :: [SomeClaim]
-    (unproven, stillProven) =
-        (ToProve newToProve, newAlreadyProven)
+    (ToProve toProve) =
+        do
+            (result, provenClaims) <-
+                proveClaimsWorker breadthLimit searchOrder claims axioms unproven
+                    & runExceptT
+                    & flip runStateT (MultiAnd.make stillProven)
+            pure
+                ProveClaimsResult
+                    { stuckClaims = fromLeft MultiAnd.top result
+                    , provenClaims
+                    }
       where
-        (newToProve, newAlreadyProven) =
-            partitionEithers (map lookupEither toProve)
-        lookupEither
-            :: (SomeClaim, Limit Natural)
-            -> Either (SomeClaim, Limit Natural) SomeClaim
-        lookupEither claim@(rule, _) =
-            if unparseToText2 rule `elem` alreadyProven
-                then Right rule
-                else Left claim
+        unproven :: ToProve SomeClaim
+        stillProven :: [SomeClaim]
+        (unproven, stillProven) =
+            (ToProve newToProve, newAlreadyProven)
+          where
+            (newToProve, newAlreadyProven) =
+                partitionEithers (map lookupEither toProve)
+            lookupEither ::
+                (SomeClaim, Limit Natural) ->
+                Either (SomeClaim, Limit Natural) SomeClaim
+            lookupEither claim@(rule, _) =
+                if unparseToText2 rule `elem` alreadyProven
+                    then Right rule
+                    else Left claim
 
-proveClaimsWorker
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => MonadMask simplifier
-    => MonadProf simplifier
-    => Limit Natural
-    -> GraphSearchOrder
-    -> AllClaims SomeClaim
-    -> Axioms SomeClaim
-    -> ToProve SomeClaim
-    -- ^ List of claims, together with a maximum number of verification steps
+proveClaimsWorker ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    MonadMask simplifier =>
+    MonadProf simplifier =>
+    Limit Natural ->
+    GraphSearchOrder ->
+    AllClaims SomeClaim ->
+    Axioms SomeClaim ->
+    -- | List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
+    ToProve SomeClaim ->
+    ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
     traverse_ verifyWorker toProve
   where
-    verifyWorker
-        :: (SomeClaim, Limit Natural)
-        -> ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
+    verifyWorker ::
+        (SomeClaim, Limit Natural) ->
+        ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
     verifyWorker unprovenClaim@(claim, _) = do
         proveClaim breadthLimit searchOrder claims axioms unprovenClaim
         addProvenClaim claim
@@ -265,108 +264,107 @@ proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
     addProvenClaim claim =
         State.modify' (mappend (MultiAnd.singleton claim))
 
-proveClaim
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => MonadMask simplifier
-    => MonadProf simplifier
-    => Limit Natural
-    -> GraphSearchOrder
-    -> AllClaims SomeClaim
-    -> Axioms SomeClaim
-    -> (SomeClaim, Limit Natural)
-    -> ExceptT StuckClaims simplifier ()
+proveClaim ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    MonadMask simplifier =>
+    MonadProf simplifier =>
+    Limit Natural ->
+    GraphSearchOrder ->
+    AllClaims SomeClaim ->
+    Axioms SomeClaim ->
+    (SomeClaim, Limit Natural) ->
+    ExceptT StuckClaims simplifier ()
 proveClaim
     breadthLimit
     searchOrder
     (AllClaims claims)
     (Axioms axioms)
-    (goal, depthLimit)
-  =
-    traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
-    let
-        startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
-        limitedStrategy =
-            strategy
-            & toList
-            & Limit.takeWithin depthLimit
-    proofDepths <-
-        Strategy.leavesM
-            updateQueue
-            (Strategy.unfoldTransition transit)
-            (limitedStrategy, (ProofDepth 0, startGoal))
-            & fmap discardStrategy
-            & throwUnproven
-            & handle handleLimitExceeded
-    let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
-    infoProvenDepth maxProofDepth
-    warnProvenClaimZeroDepth maxProofDepth goal
-  where
-    discardStrategy = snd
-
-    handleLimitExceeded
-        :: Strategy.LimitExceeded (ProofDepth, CommonClaimState)
-        -> VerifierT simplifier a
-    handleLimitExceeded (Strategy.LimitExceeded states) = do
-        let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
-            stuckClaims = mapMaybe extractStuckClaim states
-        Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
-
-    updateQueue = \as ->
-        Strategy.unfoldSearchOrder searchOrder as
-        >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
-        >=> ( \queue ->
-                infoExecBreadth (ExecBreadth $ genericLength queue)
-                >> return queue
-            )
+    (goal, depthLimit) =
+        traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
+            let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
+                limitedStrategy =
+                    strategy
+                        & toList
+                        & Limit.takeWithin depthLimit
+            proofDepths <-
+                Strategy.leavesM
+                    updateQueue
+                    (Strategy.unfoldTransition transit)
+                    (limitedStrategy, (ProofDepth 0, startGoal))
+                    & fmap discardStrategy
+                    & throwUnproven
+                    & handle handleLimitExceeded
+            let maxProofDepth = sconcat (ProofDepth 0 :| proofDepths)
+            infoProvenDepth maxProofDepth
+            warnProvenClaimZeroDepth maxProofDepth goal
       where
-        genericLength = fromIntegral . length
+        discardStrategy = snd
 
-    throwUnproven
-        :: LogicT (VerifierT simplifier) (ProofDepth, CommonClaimState)
-        -> VerifierT simplifier [ProofDepth]
-    throwUnproven acts =
-        do
-            (proofDepth, proofState) <- acts
-            let maybeUnproven = extractUnproven proofState
-            for_ maybeUnproven $ \unproven -> do
-                infoUnprovenDepth proofDepth
-                throwStuckClaim unproven
-            pure proofDepth
-        & Logic.observeAllT
+        handleLimitExceeded ::
+            Strategy.LimitExceeded (ProofDepth, CommonClaimState) ->
+            VerifierT simplifier a
+        handleLimitExceeded (Strategy.LimitExceeded states) = do
+            let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
+                stuckClaims = mapMaybe extractStuckClaim states
+            Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
 
-    discardAppliedRules = map fst
+        updateQueue = \as ->
+            Strategy.unfoldSearchOrder searchOrder as
+                >=> lift . Strategy.applyBreadthLimit breadthLimit discardStrategy
+                >=> ( \queue ->
+                        infoExecBreadth (ExecBreadth $ genericLength queue)
+                            >> return queue
+                    )
+          where
+            genericLength = fromIntegral . length
 
-    transit instr config =
-        Strategy.transitionRule
-            (transitionRule' claims axioms
-                & trackProofDepth
-                & throwStuckClaims
-            )
-            instr
-            config
-        & runTransitionT
-        & fmap discardAppliedRules
-        & traceProf ":transit"
-        & lift
+        throwUnproven ::
+            LogicT (VerifierT simplifier) (ProofDepth, CommonClaimState) ->
+            VerifierT simplifier [ProofDepth]
+        throwUnproven acts =
+            do
+                (proofDepth, proofState) <- acts
+                let maybeUnproven = extractUnproven proofState
+                for_ maybeUnproven $ \unproven -> do
+                    infoUnprovenDepth proofDepth
+                    throwStuckClaim unproven
+                pure proofDepth
+                & Logic.observeAllT
 
--- | Attempts to perform a single proof step, starting at the configuration
--- in the execution graph designated by the provided node. Re-constructs the
--- execution graph by inserting this step.
-proveClaimStep
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => MonadMask simplifier
-    => MonadProf simplifier
-    => [SomeClaim]
-    -- ^ list of claims in the spec module
-    -> [Rule SomeClaim]
-    -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonClaimState (AppliedRule SomeClaim)
-    -- ^ current execution graph
-    -> Graph.Node
-    -- ^ selected node in the graph
-    -> simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
+        discardAppliedRules = map fst
+
+        transit instr config =
+            Strategy.transitionRule
+                ( transitionRule' claims axioms
+                    & trackProofDepth
+                    & throwStuckClaims
+                )
+                instr
+                config
+                & runTransitionT
+                & fmap discardAppliedRules
+                & traceProf ":transit"
+                & lift
+
+{- | Attempts to perform a single proof step, starting at the configuration
+ in the execution graph designated by the provided node. Re-constructs the
+ execution graph by inserting this step.
+-}
+proveClaimStep ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    MonadMask simplifier =>
+    MonadProf simplifier =>
+    -- | list of claims in the spec module
+    [SomeClaim] ->
+    -- | list of axioms in the main module
+    [Rule SomeClaim] ->
+    -- | current execution graph
+    ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
+    -- | selected node in the graph
+    Graph.Node ->
+    simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
 proveClaimStep claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
@@ -385,7 +383,7 @@ proveClaimStep claims axioms executionGraph node =
     followupStep :: Strategy Prim
     followupStep = reachabilityNextStep
 
-    ExecutionGraph { root } = executionGraph
+    ExecutionGraph{root} = executionGraph
 
     isRoot :: Bool
     isRoot = node == root
@@ -400,16 +398,17 @@ proveClaimStep claims axioms executionGraph node =
         | otherwise =
             transitionRule' claims axioms prim state
 
-transitionRule'
-    :: MonadSimplify simplifier
-    => MonadProf simplifier
-    => MonadMask simplifier
-    => [SomeClaim]
-    -> [Rule SomeClaim]
-    -> CommonTransitionRule simplifier
+transitionRule' ::
+    MonadSimplify simplifier =>
+    MonadProf simplifier =>
+    MonadMask simplifier =>
+    [SomeClaim] ->
+    [Rule SomeClaim] ->
+    CommonTransitionRule simplifier
 transitionRule' claims axioms = \prim proofState ->
-    deepseq proofState
-        (transitionRule claims axiomGroups
+    deepseq
+        proofState
+        ( transitionRule claims axiomGroups
             & withWarnings
             & profTransitionRule
             & withConfiguration
@@ -418,15 +417,16 @@ transitionRule' claims axioms = \prim proofState ->
             & logTransitionRule
             & checkStuckConfiguration
         )
-        prim proofState
+        prim
+        proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
-withWarnings
-    :: forall m
-    .  MonadSimplify m
-    => CommonTransitionRule m
-    -> CommonTransitionRule m
+withWarnings ::
+    forall m.
+    MonadSimplify m =>
+    CommonTransitionRule m ->
+    CommonTransitionRule m
 withWarnings rule prim claimState = do
     claimState' <- rule prim claimState
     case prim of
@@ -438,11 +438,11 @@ withWarnings rule prim claimState = do
         _ -> return ()
     return claimState'
 
-profTransitionRule
-    :: forall m
-    .  MonadProf m
-    => CommonTransitionRule m
-    -> CommonTransitionRule m
+profTransitionRule ::
+    forall m.
+    MonadProf m =>
+    CommonTransitionRule m ->
+    CommonTransitionRule m
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -453,19 +453,19 @@ profTransitionRule rule prim proofState =
   where
     tracing name =
         lift (traceProf name (runTransitionT (rule prim proofState)))
-        >>= Transition.scatter
+            >>= Transition.scatter
 
-logTransitionRule
-    :: forall m
-    .  MonadSimplify m
-    => CommonTransitionRule m
-    -> CommonTransitionRule m
+logTransitionRule ::
+    forall m.
+    MonadSimplify m =>
+    CommonTransitionRule m ->
+    CommonTransitionRule m
 logTransitionRule rule prim proofState =
     whileReachability prim $ rule prim proofState
 
-checkStuckConfiguration
-    :: CommonTransitionRule m
-    -> CommonTransitionRule m
+checkStuckConfiguration ::
+    CommonTransitionRule m ->
+    CommonTransitionRule m
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
     for_ (extractStuck proofState) $ \rule' -> do
@@ -487,15 +487,18 @@ checkStuckConfiguration rule prim proofState = do
 throwStuckClaim :: MonadError StuckClaims m => SomeClaim -> m x
 throwStuckClaim = Monad.Except.throwError . MultiAnd.singleton . StuckClaim
 
-{- | Terminate the prover at the first stuck step.
- -}
-throwStuckClaims
-    ::  forall m rule
-    .   MonadLog m
-    =>  TransitionRule (VerifierT m) rule
-            (ProofDepth, ClaimState SomeClaim)
-    ->  TransitionRule (VerifierT m) rule
-            (ProofDepth, ClaimState SomeClaim)
+-- | Terminate the prover at the first stuck step.
+throwStuckClaims ::
+    forall m rule.
+    MonadLog m =>
+    TransitionRule
+        (VerifierT m)
+        rule
+        (ProofDepth, ClaimState SomeClaim) ->
+    TransitionRule
+        (VerifierT m)
+        rule
+        (ProofDepth, ClaimState SomeClaim)
 throwStuckClaims rule prim state = do
     state'@(proofDepth', proofState') <- rule prim state
     case proofState' of
@@ -504,12 +507,11 @@ throwStuckClaims rule prim state = do
             throwStuckClaim unproven
         _ -> return state'
 
-{- | Modify a 'TransitionRule' to track the depth of a proof.
- -}
-trackProofDepth
-    :: forall m rule goal
-    .  TransitionRule m rule (ClaimState goal)
-    -> TransitionRule m rule (ProofDepth, ClaimState goal)
+-- | Modify a 'TransitionRule' to track the depth of a proof.
+trackProofDepth ::
+    forall m rule goal.
+    TransitionRule m rule (ClaimState goal) ->
+    TransitionRule m rule (ProofDepth, ClaimState goal)
 trackProofDepth rule prim (!proofDepth, proofState) = do
     proofState' <- rule prim proofState
     let proofDepth' = (if didRewrite proofState' then succ else id) proofDepth
@@ -517,101 +519,103 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
   where
     didRewrite proofState' =
         isApply prim
-        && ClaimState.isRewritable proofState
-        && isRewritten proofState'
+            && ClaimState.isRewritable proofState
+            && isRewritten proofState'
 
     isApply Prim.ApplyClaims = True
     isApply Prim.ApplyAxioms = True
-    isApply _                = False
+    isApply _ = False
 
     isRewritten (ClaimState.Rewritten _) = True
-    isRewritten  ClaimState.Proven       = True
-    isRewritten _                        = False
+    isRewritten ClaimState.Proven = True
+    isRewritten _ = False
 
-debugClaimStateBracket
-    :: forall monad
-    .  MonadLog monad
-    => ClaimState SomeClaim
-    -- ^ current proof state
-    -> Prim
-    -- ^ transition
-    -> monad (ClaimState SomeClaim)
-    -- ^ action to be computed
-    -> monad (ClaimState SomeClaim)
+debugClaimStateBracket ::
+    forall monad.
+    MonadLog monad =>
+    -- | current proof state
+    ClaimState SomeClaim ->
+    -- | transition
+    Prim ->
+    -- | action to be computed
+    monad (ClaimState SomeClaim) ->
+    monad (ClaimState SomeClaim)
 debugClaimStateBracket
     proofState
     (coerce -> transition)
-    action
-  = do
-    result <- action
-    logEntry DebugClaimState
-        { proofState
-        , transition
-        , result = Just result
-        }
-    return result
+    action =
+        do
+            result <- action
+            logEntry
+                DebugClaimState
+                    { proofState
+                    , transition
+                    , result = Just result
+                    }
+            return result
 
-debugClaimStateFinal
-    :: forall monad
-    .  Alternative monad
-    => MonadLog monad
-    => ClaimState SomeClaim
-    -- ^ current proof state
-    -> Prim
-    -- ^ transition
-    -> monad (ClaimState SomeClaim)
+debugClaimStateFinal ::
+    forall monad.
+    Alternative monad =>
+    MonadLog monad =>
+    -- | current proof state
+    ClaimState SomeClaim ->
+    -- | transition
+    Prim ->
+    monad (ClaimState SomeClaim)
 debugClaimStateFinal proofState (coerce -> transition) = do
-    logEntry DebugClaimState
-        { proofState
-        , transition
-        , result = Nothing
-        }
+    logEntry
+        DebugClaimState
+            { proofState
+            , transition
+            , result = Nothing
+            }
     empty
 
-withDebugClaimState
-    :: forall monad
-    .  MonadLog monad
-    => CommonTransitionRule monad
-    -> CommonTransitionRule monad
+withDebugClaimState ::
+    forall monad.
+    MonadLog monad =>
+    CommonTransitionRule monad ->
+    CommonTransitionRule monad
 withDebugClaimState transitionFunc =
     \transition state ->
         Transition.orElse
-            (debugClaimStateBracket
+            ( debugClaimStateBracket
                 state
                 transition
                 (transitionFunc transition state)
             )
-            (debugClaimStateFinal
+            ( debugClaimStateFinal
                 state
                 transition
             )
 
-withDebugProven
-    :: forall monad
-    .  MonadLog monad
-    => CommonTransitionRule monad
-    -> CommonTransitionRule monad
+withDebugProven ::
+    forall monad.
+    MonadLog monad =>
+    CommonTransitionRule monad ->
+    CommonTransitionRule monad
 withDebugProven rule prim state =
     rule prim state >>= debugProven
   where
     debugProven state'
-      | ClaimState.Proven <- state'
-      , Just claim <- extractUnproven state
-      = do
-        Log.logEntry DebugProven { claim }
-        pure state'
-      | otherwise = pure state'
+        | ClaimState.Proven <- state'
+          , Just claim <- extractUnproven state =
+            do
+                Log.logEntry DebugProven{claim}
+                pure state'
+        | otherwise = pure state'
 
-withConfiguration
-    :: MonadCatch monad
-    => CommonTransitionRule monad
-    -> CommonTransitionRule monad
+withConfiguration ::
+    MonadCatch monad =>
+    CommonTransitionRule monad ->
+    CommonTransitionRule monad
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where
     config = extractUnproven proofState & fmap getConfiguration
     handle' = maybe id handleConfig config
     handleConfig config' =
-        handleAll
-        $ throwM
-        . WithConfiguration (getRewritingPattern config')
+        handleAll $
+            throwM
+                . WithConfiguration (getRewritingPattern config')

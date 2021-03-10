@@ -1,42 +1,40 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-module Kore.Builtin.Signedness
-    ( verifiers
-    , signedKey
-    , unsignedKey
-    , unifyEquals
-    , module Kore.Builtin.Signedness.Signedness
-    ) where
+-}
+module Kore.Builtin.Signedness (
+    verifiers,
+    signedKey,
+    unsignedKey,
+    unifyEquals,
+    module Kore.Builtin.Signedness.Signedness,
+) where
 
 import Prelude.Kore
 
-import Control.Error
-    ( MaybeT
-    )
+import Control.Error (
+    MaybeT,
+ )
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
-import Data.String
-    ( IsString
-    )
+import Data.String (
+    IsString,
+ )
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Builtin
 import Kore.Builtin.Signedness.Signedness
 import Kore.Error
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Unification.Unify
-    ( MonadUnify
-    , explainAndReturnBottom
-    )
+import Kore.Unification.Unify (
+    MonadUnify,
+    explainAndReturnBottom,
+ )
 import qualified Kore.Verified as Verified
 
 verifiers :: Verifiers
@@ -44,7 +42,7 @@ verifiers =
     mempty
         { patternVerifierHook =
             (applicationPatternVerifierHooks . HashMap.fromList)
-                [ (KlabelSymbolKey signedKey  , signedVerifier  )
+                [ (KlabelSymbolKey signedKey, signedVerifier)
                 , (KlabelSymbolKey unsignedKey, unsignedVerifier)
                 ]
         }
@@ -55,16 +53,17 @@ signedKey = "signedBytes"
 unsignedKey :: IsString str => str
 unsignedKey = "unsignedBytes"
 
-signednessVerifier
-    :: (Symbol -> Signedness)  -- ^ Constructor
-    -> ApplicationVerifier Verified.Pattern
+signednessVerifier ::
+    -- | Constructor
+    (Symbol -> Signedness) ->
+    ApplicationVerifier Verified.Pattern
 signednessVerifier ctor =
     ApplicationVerifier worker
   where
     worker application = do
         -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
         unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
+        let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
         unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
         return (SignednessF . Const $ ctor symbol)
@@ -78,17 +77,18 @@ signedVerifier = signednessVerifier Signed
 unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
 
-unifyEquals
-    :: InternalVariable variable
-    => MonadUnify unifier
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+unifyEquals ::
+    InternalVariable variable =>
+    MonadUnify unifier =>
+    TermLike variable ->
+    TermLike variable ->
+    MaybeT unifier (Pattern variable)
 unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
-  | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
-  | otherwise =
-    lift $ explainAndReturnBottom
-        "Cannot unify distinct constructors."
-        termLike1
-        termLike2
+    | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
+    | otherwise =
+        lift $
+            explainAndReturnBottom
+                "Cannot unify distinct constructors."
+                termLike1
+                termLike2
 unifyEquals _ _ = empty

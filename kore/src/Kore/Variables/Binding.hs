@@ -1,36 +1,35 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Variables.Binding (
+    Binding (..),
+    matchWith,
+    SomeVariableType,
+    ElementVariableType,
+    SetVariableType,
 
- -}
-
-module Kore.Variables.Binding
-    ( Binding (..)
-    , matchWith
-    , SomeVariableType
-    , ElementVariableType
-    , SetVariableType
     -- * Binders
-    , Binder (..)
-    , existsBinder
-    , forallBinder
-    , muBinder
-    , nuBinder
-    ) where
+    Binder (..),
+    existsBinder,
+    forallBinder,
+    muBinder,
+    nuBinder,
+) where
 
 import Prelude.Kore
 
 import Control.Comonad.Trans.Env
-import Control.Lens
-    ( (%~)
-    )
+import Control.Lens (
+    (%~),
+ )
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
-import Data.Monoid
-    ( Any (..)
-    )
+import Data.Generics.Product (
+    field,
+ )
+import Data.Monoid (
+    Any (..),
+ )
 import qualified GHC.Generics as GHC
 
 import Kore.Syntax.Exists
@@ -43,16 +42,15 @@ import Kore.Syntax.Variable
 
 @traverseBinder@ and @traverseVariable@ should be empty if the pattern is not
 respectively a binder or a variable at the top level.
-
- -}
+-}
 class Binding binding where
     type VariableType binding
 
     -- | Traverse the binder at the top of a pattern.
-    traverseBinder
-        ::  Lens.Traversal'
-                binding
-                (Binder (SomeVariableType binding) binding)
+    traverseBinder ::
+        Lens.Traversal'
+            binding
+            (Binder (SomeVariableType binding) binding)
     traverseBinder traversal binding =
         fromMaybe (pure binding) (matchElem <|> matchSet)
       where
@@ -60,65 +58,66 @@ class Binding binding where
         matchElem = matchWith traverseElementBinder traversalElem binding
         traversalSet =
             fmap (field @"binderVariable" %~ expectSetVariable)
-            . traversal
-            . (field @"binderVariable" %~ inject)
+                . traversal
+                . (field @"binderVariable" %~ inject)
         traversalElem =
             fmap (field @"binderVariable" %~ expectElementVariable)
-            . traversal
-            . (field @"binderVariable" %~ inject)
+                . traversal
+                . (field @"binderVariable" %~ inject)
 
     -- | Traverse the element variable binder at the top of a pattern.
-    traverseElementBinder
-        ::  Lens.Traversal'
-                binding
-                (Binder (ElementVariableType binding) binding)
+    traverseElementBinder ::
+        Lens.Traversal'
+            binding
+            (Binder (ElementVariableType binding) binding)
 
     -- | Traverse the set variable binder at the top of a pattern.
-    traverseSetBinder
-        ::  Lens.Traversal'
-                binding
-                (Binder (SetVariableType binding) binding)
+    traverseSetBinder ::
+        Lens.Traversal'
+            binding
+            (Binder (SetVariableType binding) binding)
 
     -- | Traverse the variable at the top of a pattern.
     traverseVariable :: Lens.Traversal' binding (SomeVariableType binding)
 
     -- | Traverse the element variable at the top of a pattern.
-    traverseElementVariable
-        :: Lens.Traversal' binding (ElementVariableType binding)
+    traverseElementVariable ::
+        Lens.Traversal' binding (ElementVariableType binding)
     traverseElementVariable = traverseVariable . injection
     {-# INLINE traverseElementVariable #-}
 
     -- | Traverse the element variable at the top of a pattern.
-    traverseSetVariable
-        :: Lens.Traversal' binding (SetVariableType binding)
+    traverseSetVariable ::
+        Lens.Traversal' binding (SetVariableType binding)
     traverseSetVariable = traverseVariable . injection
     {-# INLINE traverseSetVariable #-}
 
-type SomeVariableType    binding = SomeVariable    (VariableType binding)
+type SomeVariableType binding = SomeVariable (VariableType binding)
 type ElementVariableType binding = ElementVariable (VariableType binding)
-type SetVariableType     binding = SetVariable     (VariableType binding)
+type SetVariableType binding = SetVariable (VariableType binding)
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
 The result is 'Nothing' if the 'Lens.Traversal' is empty, or 'Just' if the
 traversing function was ever applied.
-
- -}
-matchWith
-    :: Applicative f
-    => Lens.ATraversal s t a b  -- ^ 'Lens.Traversal'
-    -> (a -> f b)  -- ^ Traversing function
-    -> s -> Maybe (f t)
+-}
+matchWith ::
+    Applicative f =>
+    -- | 'Lens.Traversal'
+    Lens.ATraversal s t a b ->
+    -- | Traversing function
+    (a -> f b) ->
+    s ->
+    Maybe (f t)
 matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
     let (getAny -> matched, ft) = runEnvT (traverse' (EnvT (Any True) . afb) s)
-    in if matched then Just ft else Nothing
+     in if matched then Just ft else Nothing
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
-data Binder variable child =
-    Binder
-        { binderVariable :: variable
-        , binderChild :: !child
-        }
+data Binder variable child = Binder
+    { binderVariable :: variable
+    , binderChild :: !child
+    }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -128,14 +127,13 @@ data Binder variable child =
 @existsBinder@ may be used to implement 'traverseBinder'.
 
 See also: 'forallBinder'.
-
- -}
-existsBinder
-    ::  Lens.Lens
-            (Exists sort variable1 child1)
-            (Exists sort variable2 child2)
-            (Binder (ElementVariable variable1) child1)
-            (Binder (ElementVariable variable2) child2)
+-}
+existsBinder ::
+    Lens.Lens
+        (Exists sort variable1 child1)
+        (Exists sort variable2 child2)
+        (Binder (ElementVariable variable1) child1)
+        (Binder (ElementVariable variable2) child2)
 existsBinder mapping exists =
     finish <$> mapping binder
   where
@@ -145,78 +143,75 @@ existsBinder mapping exists =
             , binderChild = existsChild
             }
       where
-        Exists { existsVariable, existsChild } = exists
-    finish Binder { binderVariable, binderChild } =
-        exists { existsVariable = binderVariable, existsChild = binderChild }
+        Exists{existsVariable, existsChild} = exists
+    finish Binder{binderVariable, binderChild} =
+        exists{existsVariable = binderVariable, existsChild = binderChild}
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
 
 @forallBinder@ may be used to implement 'traverseBinder'.
 
 See also: 'existsBinder'.
-
- -}
-forallBinder
-    ::  Lens.Lens
-            (Forall sort variable1 child1)
-            (Forall sort variable2 child2)
-            (Binder (ElementVariable variable1) child1)
-            (Binder (ElementVariable variable2) child2)
+-}
+forallBinder ::
+    Lens.Lens
+        (Forall sort variable1 child1)
+        (Forall sort variable2 child2)
+        (Binder (ElementVariable variable1) child1)
+        (Binder (ElementVariable variable2) child2)
 forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = forallVariable, binderChild }
+        Binder{binderVariable = forallVariable, binderChild}
       where
-        Forall { forallVariable } = forall
-        Forall { forallChild    = binderChild    } = forall
-    finish Binder { binderVariable, binderChild } =
-        forall { forallVariable = binderVariable, forallChild = binderChild }
+        Forall{forallVariable} = forall
+        Forall{forallChild = binderChild} = forall
+    finish Binder{binderVariable, binderChild} =
+        forall{forallVariable = binderVariable, forallChild = binderChild}
 
 {- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
 
 @muBinder@ may be used to implement 'traverseBinder'.
 
 See also: 'nuBinder'.
-
- -}
-muBinder
-    ::  Lens.Lens
-            (Mu variable1 child1)
-            (Mu variable2 child2)
-            (Binder (SetVariable variable1) child1)
-            (Binder (SetVariable variable2) child2)
+-}
+muBinder ::
+    Lens.Lens
+        (Mu variable1 child1)
+        (Mu variable2 child2)
+        (Binder (SetVariable variable1) child1)
+        (Binder (SetVariable variable2) child2)
 muBinder mapping mu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = muVariable, binderChild }
+        Binder{binderVariable = muVariable, binderChild}
       where
-        Mu { muVariable } = mu
-        Mu { muChild    = binderChild    } = mu
-    finish Binder { binderVariable, binderChild } =
-        mu { muVariable = binderVariable, muChild = binderChild }
+        Mu{muVariable} = mu
+        Mu{muChild = binderChild} = mu
+    finish Binder{binderVariable, binderChild} =
+        mu{muVariable = binderVariable, muChild = binderChild}
 
 {- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
 
 @nuBinder@ may be used to implement 'traverseBinder'.
 
 See also: 'muBinder'.
-
- -}
-nuBinder
-    ::  Lens.Lens
-            (Nu variable1 child1)
-            (Nu variable2 child2)
-            (Binder (SetVariable variable1) child1)
-            (Binder (SetVariable variable2) child2)
+-}
+nuBinder ::
+    Lens.Lens
+        (Nu variable1 child1)
+        (Nu variable2 child2)
+        (Binder (SetVariable variable1) child1)
+        (Binder (SetVariable variable2) child2)
 nuBinder mapping nu =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable = nuVariable, binderChild }
+        Binder{binderVariable = nuVariable, binderChild}
       where
-        Nu { nuVariable } = nu
-        Nu { nuChild    = binderChild    } = nu
-    finish Binder { binderVariable, binderChild } =
-        nu { nuVariable = binderVariable, nuChild = binderChild }
+        Nu{nuVariable} = nu
+        Nu{nuChild = binderChild} = nu
+    finish Binder{binderVariable, binderChild} =
+        nu{nuVariable = binderVariable, nuChild = binderChild}

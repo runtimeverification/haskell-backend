@@ -1,4 +1,6 @@
-{-|
+{-# LANGUAGE UndecidableInstances #-}
+
+{- |
 Module      : Kore.Internal.MultiOr
 Description : Data structures and functions for manipulating
               Or with any number of children.
@@ -8,67 +10,64 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+module Kore.Internal.MultiOr (
+    MultiOr,
+    bottom,
+    filterOr,
+    flatten,
+    distributeAnd,
+    distributeApplication,
+    gather,
+    observeAllT,
+    observeAll,
+    make,
+    merge,
+    mergeAll,
+    singleton,
+    map,
+    traverse,
 
-{-# LANGUAGE UndecidableInstances #-}
-
-module Kore.Internal.MultiOr
-    ( MultiOr
-    , bottom
-    , filterOr
-    , flatten
-    , distributeAnd
-    , distributeApplication
-    , gather
-    , observeAllT
-    , observeAll
-    , make
-    , merge
-    , mergeAll
-    , singleton
-    , map
-    , traverse
     -- * Re-exports
-    , Alternative (..)
-    ) where
+    Alternative (..),
+) where
 
-import Prelude.Kore hiding
-    ( map
-    , traverse
-    )
+import Prelude.Kore hiding (
+    map,
+    traverse,
+ )
 
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
-import qualified Generics.SOP as SOP
-import GHC.Exts
-    ( IsList
-    )
+import GHC.Exts (
+    IsList,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Debug
-import Kore.Internal.MultiAnd
-    ( MultiAnd
-    )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
+ )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Logic
-    ( Logic
-    , LogicT
-    , MonadLogic
-    )
+import Kore.Syntax.Application (
+    Application (..),
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Logic (
+    Logic,
+    LogicT,
+    MonadLogic,
+ )
 import qualified Logic
 
-{-| 'MultiOr' is a Matching logic or of its children
+-- | 'MultiOr' is a Matching logic or of its children
 
--}
 {- TODO (virgil): Make 'getMultiOr' a non-empty list ("Data.NonEmpty").
 
 An empty 'MultiOr' corresponding to 'Bottom' actually discards information about
@@ -79,7 +78,7 @@ A non-empty 'MultiOr' would also have a nice symmetry between 'Top' and 'Bottom'
 patterns.
 
 -}
-newtype MultiOr child = MultiOr { getMultiOr :: [child] }
+newtype MultiOr child = MultiOr {getMultiOr :: [child]}
     deriving (Eq, Ord, Show)
     deriving (Foldable)
     deriving (GHC.Generic)
@@ -117,7 +116,7 @@ instance From (MultiOr child) [child] where
 bottom :: MultiOr term
 bottom = MultiOr []
 
-{-| 'OrBool' is an some sort of Bool data type used when evaluating things
+{- | 'OrBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiOr'.
 -}
 data OrBool = OrTrue | OrFalse | OrUnknown
@@ -129,12 +128,11 @@ idempotency property of disjunction (@\\or(φ,φ)=φ@) is applied to remove
 duplicated items from the result.
 
 See also: 'filterUnique'
-
 -}
-filterOr
-    :: (Ord term, TopBottom term)
-    => MultiOr term
-    -> MultiOr term
+filterOr ::
+    (Ord term, TopBottom term) =>
+    MultiOr term ->
+    MultiOr term
 filterOr = filterGeneric patternToOrBool . filterUnique
 
 {- | Simplify the disjunction by eliminating duplicate elements.
@@ -147,149 +145,143 @@ to account separately for things like α-equivalence, so, if that is not
 included in the Ord instance, items containing @\\forall@ and
 @\\exists@ may be considered inequal although they are equivalent in
 a logical sense.
-
 -}
 filterUnique :: Ord a => MultiOr a -> MultiOr a
 filterUnique = MultiOr . Set.toList . Set.fromList . getMultiOr
 
-{-| 'make' constructs a normalized 'MultiOr'.
--}
-make
-    :: (Ord term, TopBottom term)
-    => [term]
-    -> MultiOr term
+-- | 'make' constructs a normalized 'MultiOr'.
+make ::
+    (Ord term, TopBottom term) =>
+    [term] ->
+    MultiOr term
 make patts = filterOr (MultiOr patts)
 
-{- | Construct a normalized 'MultiOr' from a single pattern.
--}
-singleton
-    :: TopBottom term
-    => term
-    -> MultiOr term
+-- | Construct a normalized 'MultiOr' from a single pattern.
+singleton ::
+    TopBottom term =>
+    term ->
+    MultiOr term
 singleton term
-  | isBottom term = MultiOr []
-  | otherwise     = MultiOr [term]
+    | isBottom term = MultiOr []
+    | otherwise = MultiOr [term]
 
-distributeAnd
-    :: Ord term
-    => TopBottom term
-    => MultiAnd (MultiOr term)
-    -> MultiOr (MultiAnd term)
+distributeAnd ::
+    Ord term =>
+    TopBottom term =>
+    MultiAnd (MultiOr term) ->
+    MultiOr (MultiAnd term)
 distributeAnd =
     foldr (crossProductGeneric and') (singleton MultiAnd.top)
   where
     and' term ma =
         MultiAnd.singleton term <> ma
 
-distributeApplication
-    :: Ord head
-    => Ord term
-    => TopBottom term
-    => Application head (MultiOr term)
-    -> MultiOr (Application head term)
+distributeApplication ::
+    Ord head =>
+    Ord term =>
+    TopBottom term =>
+    Application head (MultiOr term) ->
+    MultiOr (Application head term)
 distributeApplication
     Application
         { applicationSymbolOrAlias
         , applicationChildren
-        }
-  =
-    foldr
-        (crossProductGeneric applyTo)
-        (singleton application)
-        applicationChildren
-  where
-      applyTo term = Lens.over (field @"applicationChildren") (term :)
-      application =
-          Application { applicationSymbolOrAlias, applicationChildren = [] }
+        } =
+        foldr
+            (crossProductGeneric applyTo)
+            (singleton application)
+            applicationChildren
+      where
+        applyTo term = Lens.over (field @"applicationChildren") (term :)
+        application =
+            Application{applicationSymbolOrAlias, applicationChildren = []}
 
-{-| 'flatten' transforms a MultiOr (MultiOr term)
+{- | 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
 -}
-flatten
-    :: (Ord term, TopBottom term)
-    => MultiOr (MultiOr term)
-    -> MultiOr term
+flatten ::
+    (Ord term, TopBottom term) =>
+    MultiOr (MultiOr term) ->
+    MultiOr term
 flatten ors =
     filterOr (flattenGeneric ors)
 
-{-| 'patternToOrBool' does a very simple attempt to check whether a pattern
+{- | 'patternToOrBool' does a very simple attempt to check whether a pattern
 is top or bottom.
 -}
-patternToOrBool
-    :: TopBottom term
-    => term -> OrBool
+patternToOrBool ::
+    TopBottom term =>
+    term ->
+    OrBool
 patternToOrBool patt
-  | isTop patt = OrTrue
-  | isBottom patt = OrFalse
-  | otherwise = OrUnknown
+    | isTop patt = OrTrue
+    | isBottom patt = OrFalse
+    | otherwise = OrUnknown
 
-{-| 'filterGeneric' simplifies a MultiOr according to a function which
+{- | 'filterGeneric' simplifies a MultiOr according to a function which
 evaluates its children to true/false/unknown.
 -}
-filterGeneric
-    :: (child -> OrBool)
-    -> MultiOr child
-    -> MultiOr child
+filterGeneric ::
+    (child -> OrBool) ->
+    MultiOr child ->
+    MultiOr child
 filterGeneric orFilter (MultiOr patts) =
     go orFilter [] patts
   where
-    go  :: (child -> OrBool)
-        -> [child]
-        -> [child]
-        -> MultiOr child
+    go ::
+        (child -> OrBool) ->
+        [child] ->
+        [child] ->
+        MultiOr child
     go _ filtered [] = MultiOr (reverse filtered)
-    go filterOr' filtered (element:unfiltered) =
+    go filterOr' filtered (element : unfiltered) =
         case filterOr' element of
             OrTrue -> MultiOr [element]
             OrFalse -> go filterOr' filtered unfiltered
-            OrUnknown -> go filterOr' (element:filtered) unfiltered
+            OrUnknown -> go filterOr' (element : filtered) unfiltered
 
 {- | Merge two disjunctions of items.
 
 The result is simplified with the 'filterOr' function.
-
 -}
-merge
-    :: (Ord term, TopBottom term)
-    => MultiOr term
-    -> MultiOr term
-    -> MultiOr term
+merge ::
+    (Ord term, TopBottom term) =>
+    MultiOr term ->
+    MultiOr term ->
+    MultiOr term
 merge patts1 patts2 =
     filterOr (mergeGeneric patts1 patts2)
 
 {- | Merge any number of disjunctions of items.
 
 The result is simplified with the 'filterOr' function.
-
 -}
-mergeAll
-    :: (Ord term, TopBottom term, Foldable f)
-    => f (MultiOr term)
-    -> MultiOr term
+mergeAll ::
+    (Ord term, TopBottom term, Foldable f) =>
+    f (MultiOr term) ->
+    MultiOr term
 mergeAll ors =
     filterOr (foldl' mergeGeneric (make []) ors)
 
-{-| 'merge' merges two 'MultiOr'.
--}
-mergeGeneric
-    :: MultiOr child
-    -> MultiOr child
-    -> MultiOr child
+-- | 'merge' merges two 'MultiOr'.
+mergeGeneric ::
+    MultiOr child ->
+    MultiOr child ->
+    MultiOr child
 -- TODO(virgil): All *Generic functions should also receive a filter,
 -- otherwise we could have unexpected results when a caller uses the generic
 -- version but produces a result with Patterns.
 mergeGeneric (MultiOr patts1) (MultiOr patts2) =
     MultiOr (patts1 ++ patts2)
 
-{-| 'flattenGeneric' merges all 'MultiOr's inside a 'MultiOr'.
--}
-flattenGeneric
-    :: MultiOr (MultiOr child)
-    -> MultiOr child
+-- | 'flattenGeneric' merges all 'MultiOr's inside a 'MultiOr'.
+flattenGeneric ::
+    MultiOr (MultiOr child) ->
+    MultiOr child
 flattenGeneric (MultiOr []) = MultiOr []
 flattenGeneric (MultiOr ors) = foldr1 mergeGeneric ors
 
-{-| 'crossProductGeneric' makes all pairs between the elements of two ors,
+{- | 'crossProductGeneric' makes all pairs between the elements of two ors,
 then applies the given function to the result.
 
 As an example,
@@ -312,15 +304,14 @@ makeGeneric
     , f(a2, b2)
     ]
 @
-
 -}
-crossProductGeneric
-    :: Ord child3
-    => TopBottom child3
-    => (child1 -> child2 -> child3)
-    -> MultiOr child1
-    -> MultiOr child2
-    -> MultiOr child3
+crossProductGeneric ::
+    Ord child3 =>
+    TopBottom child3 =>
+    (child1 -> child2 -> child3) ->
+    MultiOr child1 ->
+    MultiOr child2 ->
+    MultiOr child3
 crossProductGeneric joiner (MultiOr first) (MultiOr second) =
     make $ joiner <$> first <*> second
 
@@ -336,22 +327,22 @@ observeAll :: (Ord a, TopBottom a) => Logic a -> MultiOr a
 observeAll = make . Logic.observeAll
 {-# INLINE observeAll #-}
 
-map
-    :: Ord child2
-    => TopBottom child2
-    => (child1 -> child2)
-    -> MultiOr child1
-    -> MultiOr child2
+map ::
+    Ord child2 =>
+    TopBottom child2 =>
+    (child1 -> child2) ->
+    MultiOr child1 ->
+    MultiOr child2
 map f = make . fmap f . toList
 {-# INLINE map #-}
 
 -- | Warning: 'traverse' should not be used with 'LogicT'.
-traverse
-    :: Ord child2
-    => TopBottom child2
-    => Applicative f
-    => (child1 -> f child2)
-    -> MultiOr child1
-    -> f (MultiOr child2)
+traverse ::
+    Ord child2 =>
+    TopBottom child2 =>
+    Applicative f =>
+    (child1 -> f child2) ->
+    MultiOr child1 ->
+    f (MultiOr child2)
 traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}

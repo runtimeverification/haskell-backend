@@ -1,75 +1,73 @@
-{-|
-Copyright   : (c) Runtime Verification, 2019-2020
-License     : NCSA
-
--}
-
-{-# LANGUAGE Strict               #-}
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Kore.Internal.TermLike.TermLike
-    ( Evaluated (..)
-    , Defined (..)
-    , TermLike (..)
-    , TermLikeF (..)
-    , retractKey
-    , extractAttributes
-    , freeVariables
-    , mapVariables
-    , traverseVariables
-    , mkVar
-    , traverseVariablesF
-    , updateCallStack
-    , depth
-    ) where
+{- |
+Copyright   : (c) Runtime Verification, 2019-2020
+License     : NCSA
+-}
+module Kore.Internal.TermLike.TermLike (
+    Evaluated (..),
+    Defined (..),
+    TermLike (..),
+    TermLikeF (..),
+    retractKey,
+    extractAttributes,
+    freeVariables,
+    mapVariables,
+    traverseVariables,
+    mkVar,
+    traverseVariablesF,
+    updateCallStack,
+    depth,
+) where
 
 import Prelude.Kore
 
-import Control.Comonad.Trans.Cofree
-    ( tailF
-    )
-import Control.Lens
-    ( Lens'
-    )
+import Control.Comonad.Trans.Cofree (
+    tailF,
+ )
+import Control.Lens (
+    Lens',
+ )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import qualified Data.Generics.Product as Lens.Product
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern as Pattern
-import Kore.Attribute.Pattern.ConstructorLike
-    ( HasConstructorLike (extractConstructorLike)
-    )
+import Kore.Attribute.Pattern.ConstructorLike (
+    HasConstructorLike (extractConstructorLike),
+ )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Simplified as Simplified
-    ( unparseTag
-    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified (
+    unparseTag,
+ )
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness.Endianness
-    ( Endianness
-    )
-import Kore.Builtin.Signedness.Signedness
-    ( Signedness
-    )
+import Kore.Builtin.Endianness.Endianness (
+    Endianness,
+ )
+import Kore.Builtin.Signedness.Signedness (
+    Signedness,
+ )
 import Kore.Debug
 import Kore.Internal.Alias
 import Kore.Internal.Inj
@@ -80,14 +78,14 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Key
-    ( Key
-    , KeyF
-    )
+import Kore.Internal.Key (
+    Key,
+    KeyF,
+ )
 import qualified Kore.Internal.Key as Key
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+ )
 import Kore.Internal.TermLike.Renaming
 import Kore.Internal.Variable
 import Kore.Sort
@@ -113,9 +111,9 @@ import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.TopBottom
-import Kore.Unparser
-    ( Unparse (..)
-    )
+import Kore.Unparser (
+    Unparse (..),
+ )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
 import qualified Pretty
@@ -125,9 +123,8 @@ import qualified SQL
 
 Fully-evaluated patterns will not be simplified further because no progress
 could be made.
-
- -}
-newtype Evaluated child = Evaluated { getEvaluated :: child }
+-}
+newtype Evaluated child = Evaluated {getEvaluated :: child}
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -153,9 +150,8 @@ instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
 
 This avoids re-checking the definedness of terms which are already
 known to be defined.
-
- -}
-newtype Defined child = Defined { getDefined :: child }
+-}
+newtype Defined child = Defined {getDefined :: child}
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -177,46 +173,44 @@ instance {-# OVERLAPS #-} Synthetic Pattern.Defined Defined where
     synthetic = const (Pattern.Defined True)
     {-# INLINE synthetic #-}
 
-{- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
-
--}
+-- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child
-    = AndF            !(And Sort child)
-    | ApplySymbolF    !(Application Symbol child)
-    -- TODO (thomas.tuegel): Expand aliases during validation?
-    | ApplyAliasF     !(Application (Alias (TermLike VariableName)) child)
-    | BottomF         !(Bottom Sort child)
-    | CeilF           !(Ceil Sort child)
-    | DomainValueF    !(DomainValue Sort child)
-    | EqualsF         !(Equals Sort child)
-    | ExistsF         !(Exists Sort variable child)
-    | FloorF          !(Floor Sort child)
-    | ForallF         !(Forall Sort variable child)
-    | IffF            !(Iff Sort child)
-    | ImpliesF        !(Implies Sort child)
-    | InF             !(In Sort child)
-    | MuF             !(Mu variable child)
-    | NextF           !(Next Sort child)
-    | NotF            !(Not Sort child)
-    | NuF             !(Nu variable child)
-    | OrF             !(Or Sort child)
-    | RewritesF       !(Rewrites Sort child)
-    | TopF            !(Top Sort child)
-    | InhabitantF     !(Inhabitant child)
-    | EvaluatedF      !(Evaluated child)
-    | StringLiteralF  !(Const StringLiteral child)
-    | InternalBoolF   !(Const InternalBool child)
-    | InternalBytesF  !(Const InternalBytes child)
-    | InternalIntF    !(Const InternalInt child)
+    = AndF !(And Sort child)
+    | ApplySymbolF !(Application Symbol child)
+    | -- TODO (thomas.tuegel): Expand aliases during validation?
+      ApplyAliasF !(Application (Alias (TermLike VariableName)) child)
+    | BottomF !(Bottom Sort child)
+    | CeilF !(Ceil Sort child)
+    | DomainValueF !(DomainValue Sort child)
+    | EqualsF !(Equals Sort child)
+    | ExistsF !(Exists Sort variable child)
+    | FloorF !(Floor Sort child)
+    | ForallF !(Forall Sort variable child)
+    | IffF !(Iff Sort child)
+    | ImpliesF !(Implies Sort child)
+    | InF !(In Sort child)
+    | MuF !(Mu variable child)
+    | NextF !(Next Sort child)
+    | NotF !(Not Sort child)
+    | NuF !(Nu variable child)
+    | OrF !(Or Sort child)
+    | RewritesF !(Rewrites Sort child)
+    | TopF !(Top Sort child)
+    | InhabitantF !(Inhabitant child)
+    | EvaluatedF !(Evaluated child)
+    | StringLiteralF !(Const StringLiteral child)
+    | InternalBoolF !(Const InternalBool child)
+    | InternalBytesF !(Const InternalBytes child)
+    | InternalIntF !(Const InternalInt child)
     | InternalStringF !(Const InternalString child)
-    | InternalListF   !(InternalList child)
-    | InternalMapF    !(InternalMap Key child)
-    | InternalSetF    !(InternalSet Key child)
-    | VariableF       !(Const (SomeVariable variable) child)
-    | EndiannessF     !(Const Endianness child)
-    | SignednessF     !(Const Signedness child)
-    | InjF            !(Inj child)
-    | DefinedF        !(Defined child)
+    | InternalListF !(InternalList child)
+    | InternalMapF !(InternalMap Key child)
+    | InternalSetF !(InternalSet Key child)
+    | VariableF !(Const (SomeVariable variable) child)
+    | EndiannessF !(Const Endianness child)
+    | SignednessF !(Const Signedness child)
+    | InjF !(Inj child)
+    | DefinedF !(Defined child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -224,15 +218,11 @@ data TermLikeF variable child
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    (Unparse variable, Unparse child) => Unparse (TermLikeF variable child)
-  where
+instance (Unparse variable, Unparse child) => Unparse (TermLikeF variable child) where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
 
-instance
-    Ord variable => Synthetic (FreeVariables variable) (TermLikeF variable)
-  where
+instance Ord variable => Synthetic (FreeVariables variable) (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -528,16 +518,14 @@ define a @newtype@ over @Cofree@, it is defined inline for performance. The
 performance advantage owes to the fact that the instances of 'Recursive.project'
 and 'Recursive.embed' correspond to unwrapping and wrapping the @newtype@,
 respectively, which is free at runtime.
-
- -}
-newtype TermLike variable =
-    TermLike
-        { getTermLike
-            ::  CofreeF
-                    (TermLikeF variable)
-                    (Attribute.Pattern variable)
-                    (TermLike variable)
-        }
+-}
+newtype TermLike variable = TermLike
+    { getTermLike ::
+        CofreeF
+            (TermLikeF variable)
+            (Attribute.Pattern variable)
+            (TermLike variable)
+    }
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -546,32 +534,31 @@ newtype TermLike variable =
 instance (Debug variable, Diff variable) => Diff (TermLike variable) where
     diffPrec
         termLike1@(Recursive.project -> attrs1 :< termLikeF1)
-        termLike2@(Recursive.project -> _      :< termLikeF2)
-      =
-        -- If the patterns differ, do not display the difference in the
-        -- attributes, which would overload the user with redundant information.
-        diffPrecGeneric
-            (Recursive.embed (attrs1 :< termLikeF1))
-            (Recursive.embed (attrs1 :< termLikeF2))
-        <|> diffPrecGeneric termLike1 termLike2
+        termLike2@(Recursive.project -> _ :< termLikeF2) =
+            -- If the patterns differ, do not display the difference in the
+            -- attributes, which would overload the user with redundant information.
+            diffPrecGeneric
+                (Recursive.embed (attrs1 :< termLikeF1))
+                (Recursive.embed (attrs1 :< termLikeF2))
+                <|> diffPrecGeneric termLike1 termLike2
 
 instance
-    (Eq variable, Eq (TermLikeF variable (TermLike variable)))
-    => Eq (TermLike variable)
-  where
+    (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
+    Eq (TermLike variable)
+    where
     (==)
         (Recursive.project -> _ :< pat1)
-        (Recursive.project -> _ :< pat2)
-      = pat1 == pat2
+        (Recursive.project -> _ :< pat2) =
+            pat1 == pat2
 
 instance
-    (Ord variable, Ord (TermLikeF variable (TermLike variable)))
-    => Ord (TermLike variable)
-  where
+    (Ord variable, Ord (TermLikeF variable (TermLike variable))) =>
+    Ord (TermLike variable)
+    where
     compare
         (Recursive.project -> _ :< pat1)
-        (Recursive.project -> _ :< pat2)
-      = compare pat1 pat2
+        (Recursive.project -> _ :< pat2) =
+            compare pat1 pat2
 
 instance Hashable variable => Hashable (TermLike variable) where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
@@ -585,16 +572,16 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project term of
             (attrs :< termLikeF)
-              | hasKnownCreator created ->
-                Pretty.sep
-                    [ Pretty.pretty created
-                    , attributeRepresentation
-                    , unparse termLikeF
-                    ]
-              | otherwise ->
-                Pretty.sep [attributeRepresentation, unparse termLikeF]
+                | hasKnownCreator created ->
+                    Pretty.sep
+                        [ Pretty.pretty created
+                        , attributeRepresentation
+                        , unparse termLikeF
+                        ]
+                | otherwise ->
+                    Pretty.sep [attributeRepresentation, unparse termLikeF]
               where
-                Attribute.Pattern { created } = attrs
+                Attribute.Pattern{created} = attrs
 
                 attributeRepresentation = case attrs of
                     (Attribute.Pattern _ _ _ _ _ _ _ _) ->
@@ -604,20 +591,20 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                             " */"
                   where
                     representation =
-                        addFunctionalRepresentation
-                        $ addFunctionRepresentation
-                        $ addDefinedRepresentation
-                        $ addSimplifiedRepresentation
-                        $ addConstructorLikeRepresentation []
+                        addFunctionalRepresentation $
+                            addFunctionRepresentation $
+                                addDefinedRepresentation $
+                                    addSimplifiedRepresentation $
+                                        addConstructorLikeRepresentation []
                 addFunctionalRepresentation
-                  | Pattern.isFunctional $ Attribute.functional attrs = ("Fl" :)
-                  | otherwise = id
+                    | Pattern.isFunctional $ Attribute.functional attrs = ("Fl" :)
+                    | otherwise = id
                 addFunctionRepresentation
-                  | Pattern.isFunction $ Attribute.function attrs = ("Fn" :)
-                  | otherwise = id
+                    | Pattern.isFunction $ Attribute.function attrs = ("Fn" :)
+                    | otherwise = id
                 addDefinedRepresentation
-                  | Pattern.isDefined $ Attribute.defined attrs = ("D" :)
-                  | otherwise = id
+                    | Pattern.isDefined $ Attribute.defined attrs = ("D" :)
+                    | otherwise = id
                 addSimplifiedRepresentation =
                     case simplifiedTag of
                         Just result -> (result :)
@@ -638,10 +625,11 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
 
     unparse2 term =
         case Recursive.project term of
-          (_ :< pat) -> unparse2 pat
+            (_ :< pat) -> unparse2 pat
 
-type instance Base (TermLike variable) =
-    CofreeF (TermLikeF variable) (Attribute.Pattern variable)
+type instance
+    Base (TermLike variable) =
+        CofreeF (TermLikeF variable) (Attribute.Pattern variable)
 
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
@@ -656,9 +644,9 @@ instance Corecursive (TermLike variable) where
     {-# INLINE embed #-}
 
 instance TopBottom (TermLike variable) where
-    isTop (Recursive.project -> _ :< TopF Top {}) = True
+    isTop (Recursive.project -> _ :< TopF Top{}) = True
     isTop _ = False
-    isBottom (Recursive.project -> _ :< BottomF Bottom {}) = True
+    isBottom (Recursive.project -> _ :< BottomF Bottom{}) = True
     isBottom _ = False
 
 instance InternalVariable variable => Binding (TermLike variable) where
@@ -699,9 +687,9 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance
-    (FreshPartialOrd variable)
-    => From (TermLike Concrete) (TermLike variable)
-  where
+    (FreshPartialOrd variable) =>
+    From (TermLike Concrete) (TermLike variable)
+    where
     from = mapVariables (pure $ from @Concrete)
     {-# INLINE from #-}
 
@@ -716,8 +704,7 @@ instance Ord variable => From Key (TermLike variable) where
             attrs' = Attribute.mapVariables (pure coerceVariable) attrs
             coerceVariable = from @Concrete @variable
 
-{- | Ensure that a 'TermLike' is a concrete, constructor-like term.
- -}
+-- | Ensure that a 'TermLike' is a concrete, constructor-like term.
 retractKey :: TermLike variable -> Maybe Key
 retractKey =
     Recursive.fold worker
@@ -757,75 +744,73 @@ instance
     , AstWithLocation child
     ) =>
     AstWithLocation (TermLikeF variable child)
-  where
+    where
     locationFromAst =
         \case
-            AndF And { andSort } -> locationFromAst andSort
-            ApplySymbolF Application { applicationSymbolOrAlias } ->
+            AndF And{andSort} -> locationFromAst andSort
+            ApplySymbolF Application{applicationSymbolOrAlias} ->
                 locationFromAst applicationSymbolOrAlias
-            ApplyAliasF Application { applicationSymbolOrAlias } ->
+            ApplyAliasF Application{applicationSymbolOrAlias} ->
                 locationFromAst applicationSymbolOrAlias
-            BottomF Bottom { bottomSort } -> locationFromAst bottomSort
-            CeilF Ceil { ceilResultSort } -> locationFromAst ceilResultSort
+            BottomF Bottom{bottomSort} -> locationFromAst bottomSort
+            CeilF Ceil{ceilResultSort} -> locationFromAst ceilResultSort
             DomainValueF domain -> locationFromAst $ domainValueSort domain
-            EqualsF Equals { equalsResultSort } ->
+            EqualsF Equals{equalsResultSort} ->
                 locationFromAst equalsResultSort
-            ExistsF Exists { existsSort } -> locationFromAst existsSort
-            FloorF Floor { floorResultSort } ->
+            ExistsF Exists{existsSort} -> locationFromAst existsSort
+            FloorF Floor{floorResultSort} ->
                 locationFromAst floorResultSort
-            ForallF Forall { forallSort } -> locationFromAst forallSort
-            IffF Iff { iffSort } -> locationFromAst iffSort
-            ImpliesF Implies { impliesSort } ->
+            ForallF Forall{forallSort} -> locationFromAst forallSort
+            IffF Iff{iffSort} -> locationFromAst iffSort
+            ImpliesF Implies{impliesSort} ->
                 locationFromAst impliesSort
-            InF In { inResultSort } -> locationFromAst inResultSort
-            MuF Mu { muVariable } -> locationFromAst muVariable
-            NextF Next { nextSort } -> locationFromAst nextSort
-            NotF Not { notSort } -> locationFromAst notSort
-            NuF Nu { nuVariable } -> locationFromAst nuVariable
-            OrF Or { orSort } -> locationFromAst orSort
-            RewritesF Rewrites { rewritesSort } ->
+            InF In{inResultSort} -> locationFromAst inResultSort
+            MuF Mu{muVariable} -> locationFromAst muVariable
+            NextF Next{nextSort} -> locationFromAst nextSort
+            NotF Not{notSort} -> locationFromAst notSort
+            NuF Nu{nuVariable} -> locationFromAst nuVariable
+            OrF Or{orSort} -> locationFromAst orSort
+            RewritesF Rewrites{rewritesSort} ->
                 locationFromAst rewritesSort
             StringLiteralF _ -> AstLocationUnknown
-            TopF Top { topSort } -> locationFromAst topSort
+            TopF Top{topSort} -> locationFromAst topSort
             VariableF (Const variable) -> locationFromAst variable
-            InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
-            EvaluatedF Evaluated { getEvaluated } ->
+            InhabitantF Inhabitant{inhSort} -> locationFromAst inhSort
+            EvaluatedF Evaluated{getEvaluated} ->
                 locationFromAst getEvaluated
-            InjF Inj { injChild } -> locationFromAst injChild
+            InjF Inj{injChild} -> locationFromAst injChild
             SignednessF (Const signedness) -> locationFromAst signedness
             EndiannessF (Const endianness) -> locationFromAst endianness
-            InternalBoolF (Const InternalBool { internalBoolSort }) ->
+            InternalBoolF (Const InternalBool{internalBoolSort}) ->
                 locationFromAst internalBoolSort
-            InternalBytesF (Const InternalBytes { internalBytesSort }) ->
+            InternalBytesF (Const InternalBytes{internalBytesSort}) ->
                 locationFromAst internalBytesSort
-            InternalIntF (Const InternalInt { internalIntSort }) ->
+            InternalIntF (Const InternalInt{internalIntSort}) ->
                 locationFromAst internalIntSort
-            InternalStringF (Const InternalString { internalStringSort }) ->
+            InternalStringF (Const InternalString{internalStringSort}) ->
                 locationFromAst internalStringSort
-            InternalListF InternalList { internalListSort } ->
+            InternalListF InternalList{internalListSort} ->
                 locationFromAst internalListSort
-            InternalMapF InternalAc { builtinAcSort } ->
+            InternalMapF InternalAc{builtinAcSort} ->
                 locationFromAst builtinAcSort
-            InternalSetF InternalAc { builtinAcSort } ->
+            InternalSetF InternalAc{builtinAcSort} ->
                 locationFromAst builtinAcSort
-            DefinedF Defined { getDefined } ->
+            DefinedF Defined{getDefined} ->
                 locationFromAst getDefined
 
-instance AstWithLocation variable => AstWithLocation (TermLike variable)
-  where
+instance AstWithLocation variable => AstWithLocation (TermLike variable) where
     locationFromAst = locationFromAst . tailF . Recursive.project
 
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
 __Warning__: @traverseVariablesF@ will capture variables if the provided
 traversal is not injective!
-
 -}
-traverseVariablesF
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> TermLikeF variable1 child
-    -> f (TermLikeF variable2 child)
+traverseVariablesF ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    TermLikeF variable1 child ->
+    f (TermLikeF variable2 child)
 traverseVariablesF adj =
     \case
         -- Non-trivial cases
@@ -870,17 +855,17 @@ traverseVariablesF adj =
     trSetVar = traverse $ traverseSetVariableName adj
     traverseConstVariable (Const variable) =
         Const <$> traverseSomeVariable adj variable
-    traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
+    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
         Exists existsSort
-        <$> trElemVar existsVariable
-        <*> pure existsChild
-    traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
+            <$> trElemVar existsVariable
+            <*> pure existsChild
+    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
         Forall forallSort
-        <$> trElemVar forallVariable
-        <*> pure forallChild
-    traverseVariablesMu Mu { muVariable, muChild } =
+            <$> trElemVar forallVariable
+            <*> pure forallChild
+    traverseVariablesMu Mu{muVariable, muChild} =
         Mu <$> trSetVar muVariable <*> pure muChild
-    traverseVariablesNu Nu { nuVariable, nuChild } =
+    traverseVariablesNu Nu{nuVariable, nuChild} =
         Nu <$> trSetVar nuVariable <*> pure nuChild
 
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
@@ -896,15 +881,14 @@ demanded. Intermediate allocation from composing multiple transformations with
 @mapVariables@ is amortized; the intermediate trees are never fully resident.
 
 See also: 'traverseVariables'
-
- -}
-mapVariables
-    :: forall variable1 variable2
-    .  Ord variable1
-    => FreshPartialOrd variable2
-    => AdjSomeVariableName (variable1 -> variable2)
-    -> TermLike variable1
-    -> TermLike variable2
+-}
+mapVariables ::
+    forall variable1 variable2.
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    AdjSomeVariableName (variable1 -> variable2) ->
+    TermLike variable1 ->
+    TermLike variable2
 mapVariables adj termLike =
     runIdentity (traverseVariables ((.) pure <$> adj) termLike)
 {-# INLINE mapVariables #-}
@@ -917,19 +901,18 @@ intermediate trees will be fully allocated; @mapVariables@ is more composable in
 this respect.
 
 See also: 'mapVariables'
-
- -}
-traverseVariables
-    :: forall variable1 variable2 m
-    .  Ord variable1
-    => FreshPartialOrd variable2
-    => Monad m
-    => AdjSomeVariableName (variable1 -> m variable2)
-    -> TermLike variable1
-    -> m (TermLike variable2)
+-}
+traverseVariables ::
+    forall variable1 variable2 m.
+    Ord variable1 =>
+    FreshPartialOrd variable2 =>
+    Monad m =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    TermLike variable1 ->
+    m (TermLike variable2)
 traverseVariables adj termLike =
     renameFreeVariables adj (freeVariables @_ @variable1 termLike)
-    >>= Reader.runReaderT (Recursive.fold worker termLike)
+        >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
     adjReader = (.) lift <$> adj
     trElemVar = traverse $ traverseElementVariableName adjReader
@@ -943,11 +926,11 @@ traverseVariables adj termLike =
     traverseNu avoiding =
         nuBinder (renameSetBinder trSetVar avoiding)
 
-    worker
-        ::  Base
-                (TermLike variable1)
-                (RenamingT variable1 variable2 m (TermLike variable2))
-        ->  RenamingT variable1 variable2 m (TermLike variable2)
+    worker ::
+        Base
+            (TermLike variable1)
+            (RenamingT variable1 variable2 m (TermLike variable2)) ->
+        RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
         attrs' <- Attribute.traverseVariables askSomeVariableName attrs
         let avoiding = freeVariables attrs'
@@ -960,17 +943,18 @@ traverseVariables adj termLike =
             MuF mu -> MuF <$> traverseMu avoiding mu
             NuF nu -> NuF <$> traverseNu avoiding nu
             _ ->
-                sequence termLikeF >>=
-                -- traverseVariablesF will not actually call the traversals
-                -- because all the cases with variables are handled above.
-                traverseVariablesF askSomeVariableName
+                sequence termLikeF
+                    >>=
+                    -- traverseVariablesF will not actually call the traversals
+                    -- because all the cases with variables are handled above.
+                    traverseVariablesF askSomeVariableName
         (pure . Recursive.embed) (attrs' :< termLikeF')
 
-updateCallStack
-    :: forall variable
-    .  HasCallStack
-    => TermLike variable
-    -> TermLike variable
+updateCallStack ::
+    forall variable.
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 updateCallStack = Lens.set created callstack
   where
     created = _attributes . Lens.Product.field @"created"
@@ -981,17 +965,16 @@ updateCallStack = Lens.set created callstack
     _attributes =
         Lens.lens
             (\(TermLike (attrs :< _)) -> attrs)
-            (\(TermLike (_ :< termLikeF)) attrs ->
+            ( \(TermLike (_ :< termLikeF)) attrs ->
                 TermLike (attrs :< termLikeF)
             )
 
-{- | Construct a variable pattern.
- -}
-mkVar
-    :: HasCallStack
-    => Ord variable
-    => SomeVariable variable
-    -> TermLike variable
+-- | Construct a variable pattern.
+mkVar ::
+    HasCallStack =>
+    Ord variable =>
+    SomeVariable variable ->
+    TermLike variable
 mkVar = updateCallStack . synthesize . VariableF . Const
 
 depth :: TermLike variable -> Int

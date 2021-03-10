@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin
 Description : Built-in sorts and symbols
@@ -12,46 +14,43 @@ This module is intended to be imported qualified.
 @
     import qualified Kore.Builtin as Builtin
 @
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin
-    ( Builtin.Verifiers (..)
-    , Builtin.ApplicationVerifiers
-    , BuiltinAndAxiomSimplifier
-    , Builtin.SymbolVerifier (..)
-    , Builtin.SortVerifier (..)
-    , Builtin.ApplicationVerifier (..)
-    , Builtin.SymbolKey (..)
-    , Builtin.PatternVerifierHook (..)
-    , Builtin.lookupApplicationVerifier
-    , Builtin.sortDeclVerifier
-    , Builtin.symbolVerifier
-    , koreVerifiers
-    , koreEvaluators
-    , evaluators
-    , externalize
-    , internalize
-    ) where
+-}
+module Kore.Builtin (
+    Builtin.Verifiers (..),
+    Builtin.ApplicationVerifiers,
+    BuiltinAndAxiomSimplifier,
+    Builtin.SymbolVerifier (..),
+    Builtin.SortVerifier (..),
+    Builtin.ApplicationVerifier (..),
+    Builtin.SymbolKey (..),
+    Builtin.PatternVerifierHook (..),
+    Builtin.lookupApplicationVerifier,
+    Builtin.sortDeclVerifier,
+    Builtin.symbolVerifier,
+    koreVerifiers,
+    koreEvaluators,
+    evaluators,
+    externalize,
+    internalize,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Functor.Foldable as Recursive
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
-import Kore.Attribute.Symbol
-    ( StepperAttributes
-    )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
+import Kore.Attribute.Symbol (
+    StepperAttributes,
+ )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -68,46 +67,45 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
-import Kore.IndexedModule.IndexedModule
-    ( IndexedModule (..)
-    , VerifiedModule
-    )
+import Kore.IndexedModule.IndexedModule (
+    IndexedModule (..),
+    VerifiedModule,
+ )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import Kore.Internal.TermLike
-import Kore.Step.Axiom.Identifier
-    ( AxiomIdentifier
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( AxiomIdentifier (..)
-    )
-import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifier
-    )
+import Kore.Step.Axiom.Identifier (
+    AxiomIdentifier,
+ )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
+import Kore.Step.Simplification.Simplify (
+    BuiltinAndAxiomSimplifier,
+ )
 
 {- | Verifiers for Kore builtin sorts.
 
   If you aren't sure which verifiers you need, use these.
-
- -}
+-}
 koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
     mempty
-    <> Bool.verifiers
-    <> Endianness.verifiers
-    <> Inj.verifiers
-    <> Int.verifiers
-    <> InternalBytes.verifiers
-    <> KEqual.verifiers
-    <> Krypto.verifiers
-    <> List.verifiers
-    <> Map.verifiers
-    <> Set.verifiers
-    <> Signedness.verifiers
-    <> String.verifiers
-    <> Kreflection.verifiers
+        <> Bool.verifiers
+        <> Endianness.verifiers
+        <> Inj.verifiers
+        <> Int.verifiers
+        <> InternalBytes.verifiers
+        <> KEqual.verifiers
+        <> Krypto.verifiers
+        <> List.verifiers
+        <> Map.verifiers
+        <> Set.verifiers
+        <> Signedness.verifiers
+        <> String.verifiers
+        <> Kreflection.verifiers
 
 {- | Construct an evaluation context for Kore builtin functions.
 
@@ -115,12 +113,11 @@ koreVerifiers =
   evaluation in the context of the given module.
 
   See also: 'Data.Step.Step.step'
-
- -}
-koreEvaluators
-    :: VerifiedModule StepperAttributes
-    -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
+-}
+koreEvaluators ::
+    -- | Module under which evaluation takes place
+    VerifiedModule StepperAttributes ->
+    Map AxiomIdentifier BuiltinAndAxiomSimplifier
 koreEvaluators = evaluators builtins
   where
     builtins :: Map Text BuiltinAndAxiomSimplifier
@@ -143,41 +140,40 @@ koreEvaluators = evaluators builtins
   evaluation in the context of the given module.
 
   See also: 'Data.Step.Step.step', 'koreEvaluators'
-
- -}
-evaluators
-    :: Map Text BuiltinAndAxiomSimplifier
-    -- ^ Builtin functions indexed by name
-    -> VerifiedModule StepperAttributes
-    -- ^ Module under which evaluation takes place
-    -> Map AxiomIdentifier BuiltinAndAxiomSimplifier
+-}
+evaluators ::
+    -- | Builtin functions indexed by name
+    Map Text BuiltinAndAxiomSimplifier ->
+    -- | Module under which evaluation takes place
+    VerifiedModule StepperAttributes ->
+    Map AxiomIdentifier BuiltinAndAxiomSimplifier
 evaluators builtins indexedModule =
     Map.mapMaybe
         lookupBuiltins
-        (Map.mapKeys
+        ( Map.mapKeys
             AxiomIdentifier.Application
             (hookedSymbolAttributes indexedModule)
         )
   where
-    hookedSymbolAttributes
-        :: VerifiedModule StepperAttributes
-        -> Map Id StepperAttributes
+    hookedSymbolAttributes ::
+        VerifiedModule StepperAttributes ->
+        Map Id StepperAttributes
     hookedSymbolAttributes im =
         Map.union
             (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
-            (Map.unions
+            ( Map.unions
                 (importHookedSymbolAttributes <$> indexedModuleImports im)
             )
       where
         justAttributes (attrs, _) = attrs
 
-    importHookedSymbolAttributes
-        ::  (a, b, VerifiedModule StepperAttributes)
-        -> Map Id StepperAttributes
+    importHookedSymbolAttributes ::
+        (a, b, VerifiedModule StepperAttributes) ->
+        Map Id StepperAttributes
     importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
 
     lookupBuiltins :: StepperAttributes -> Maybe BuiltinAndAxiomSimplifier
-    lookupBuiltins Attribute.Symbol { Attribute.hook = Hook { getHook } } =
+    lookupBuiltins Attribute.Symbol{Attribute.hook = Hook{getHook}} =
         do
             name <- getHook
             Map.lookup name builtins
@@ -186,18 +182,17 @@ evaluators builtins indexedModule =
 
 @internalize@ modifies the term recursively from the bottom up, so any internal
 representations are fully normalized.
-
- -}
-internalize
-    :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
+-}
+internalize ::
+    InternalVariable variable =>
+    SmtMetadataTools Attribute.Symbol ->
+    TermLike variable ->
+    TermLike variable
 internalize tools =
     Recursive.fold (internalize1 . Recursive.embed)
   where
     internalize1 =
-            List.internalize tools
-        .   Map.internalize tools
-        .   Set.internalize tools
-        .   InternalBytes.internalize
+        List.internalize tools
+            . Map.internalize tools
+            . Set.internalize tools
+            . InternalBytes.internalize

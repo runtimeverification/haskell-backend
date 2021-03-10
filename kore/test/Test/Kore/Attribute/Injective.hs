@@ -1,10 +1,10 @@
-module Test.Kore.Attribute.Injective
-    ( test_injective
-    , test_Attributes
-    , test_duplicate
-    , test_arguments
-    , test_parameters
-    ) where
+module Test.Kore.Attribute.Injective (
+    test_injective,
+    test_Attributes,
+    test_duplicate,
+    test_arguments,
+    test_parameters,
+) where
 
 import Prelude.Kore
 
@@ -21,37 +21,37 @@ parseInjective = parseAttributes
 
 test_injective :: TestTree
 test_injective =
-    testCase "[injective{}()] :: Injective"
-        $ expectSuccess Injective { isDeclaredInjective = True }
-        $ parseInjective $ Attributes [ injectiveAttribute ]
+    testCase "[injective{}()] :: Injective" $
+        expectSuccess Injective{isDeclaredInjective = True} $
+            parseInjective $ Attributes [injectiveAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[injective{}()] :: Attributes"
-        $ expectSuccess attrs $ parseAttributes attrs
+    testCase "[injective{}()] :: Attributes" $
+        expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ injectiveAttribute ]
+    attrs = Attributes [injectiveAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[injective{}(), injective{}()]"
-        $ expectFailure
-        $ parseInjective $ Attributes [ injectiveAttribute, injectiveAttribute ]
+    testCase "[injective{}(), injective{}()]" $
+        expectFailure $
+            parseInjective $ Attributes [injectiveAttribute, injectiveAttribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[injective{}(\"illegal\")]"
-        $ expectFailure
-        $ parseInjective $ Attributes [ illegalAttribute ]
+    testCase "[injective{}(\"illegal\")]" $
+        expectFailure $
+            parseInjective $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern injectiveSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[injective{illegal}()]"
-        $ expectFailure
-        $ parseInjective $ Attributes [ illegalAttribute ]
+    testCase "[injective{illegal}()]" $
+        expectFailure $
+            parseInjective $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -60,7 +60,7 @@ test_parameters =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = injectiveId
                         , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
+                            [SortVariableSort (SortVariable "illegal")]
                         }
                 , applicationChildren = []
                 }

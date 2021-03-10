@@ -1,27 +1,27 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-module Kore.Attribute.Symbol.Memo
-    ( Memo (..)
-    , memoId, memoSymbol, memoAttribute
-    ) where
+-}
+module Kore.Attribute.Symbol.Memo (
+    Memo (..),
+    memoId,
+    memoSymbol,
+    memoAttribute,
+) where
 
 import Prelude.Kore
 
-import Data.Monoid
-    ( Any (..)
-    )
-import qualified Generics.SOP as SOP
+import Data.Monoid (
+    Any (..),
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @Memo@ represents the @memo@ attribute for symbols.
-newtype Memo = Memo { isMemo :: Bool }
+newtype Memo = Memo {isMemo :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

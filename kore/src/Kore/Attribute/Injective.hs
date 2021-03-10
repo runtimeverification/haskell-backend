@@ -1,27 +1,27 @@
-{-|
+{- |
 Module      : Kore.Attribute.Injective
 Description : Injective symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.Injective
-    ( Injective (..)
-    , injectiveId, injectiveSymbol, injectiveAttribute
-    ) where
+module Kore.Attribute.Injective (
+    Injective (..),
+    injectiveId,
+    injectiveSymbol,
+    injectiveAttribute,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
-{- | @Injective@ represents the @injective@ attribute for symbols.
- -}
-newtype Injective = Injective { isDeclaredInjective :: Bool }
+-- | @Injective@ represents the @injective@ attribute for symbols.
+newtype Injective = Injective {isDeclaredInjective :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

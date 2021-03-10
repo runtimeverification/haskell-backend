@@ -7,72 +7,89 @@ This module is intended to be imported qualified:
 @
 import qualified Kore.Attribute.Symbol as Attribute
 @
+-}
+module Kore.Attribute.Symbol (
+    Symbol (..),
+    StepperAttributes,
+    defaultSymbolAttributes,
 
- -}
-
-module Kore.Attribute.Symbol
-    ( Symbol (..)
-    , StepperAttributes
-    , defaultSymbolAttributes
     -- * Function symbols
-    , Function (..)
-    , functionAttribute
+    Function (..),
+    functionAttribute,
+
     -- * Functional symbols
-    , Functional (..)
-    , functionalAttribute
+    Functional (..),
+    functionalAttribute,
+
     -- * Constructor symbols
-    , Constructor (..)
-    , constructorAttribute
+    Constructor (..),
+    constructorAttribute,
+
     -- * Injective symbols
-    , Injective (..)
-    , injectiveAttribute
+    Injective (..),
+    injectiveAttribute,
+
     -- * Anywhere symbols
-    , Anywhere (..)
-    , anywhereAttribute
+    Anywhere (..),
+    anywhereAttribute,
+
     -- * Sort injection symbols
-    , SortInjection (..)
-    , sortInjectionAttribute
+    SortInjection (..),
+    sortInjectionAttribute,
+
     -- * Hooked symbols
-    , Hook (..)
-    , hookAttribute
+    Hook (..),
+    hookAttribute,
+
     -- * SMT symbols
-    , Smthook (..)
-    , smthookAttribute
-    , Smtlib (..)
-    , smtlibAttribute
+    Smthook (..),
+    smthookAttribute,
+    Smtlib (..),
+    smtlibAttribute,
+
     -- * Memoized functions
-    , Memo (..)
-    , memoAttribute
+    Memo (..),
+    memoAttribute,
+
     -- * K labels
-    , Klabel (..)
-    , klabelAttribute
+    Klabel (..),
+    klabelAttribute,
+
     -- * Symbols
-    , SymbolKywd (..)
-    , symbolKywdAttribute
+    SymbolKywd (..),
+    symbolKywdAttribute,
+
     -- * Functions with no evaluators
-    , NoEvaluators (..)
-    , noEvaluatorsAttribute
+    NoEvaluators (..),
+    noEvaluatorsAttribute,
+
+    -- * Unit symbols
+    Unit (..),
+
+    -- * Element symbols
+    Element (..),
+
+    -- * Concat symbols
+    Concat (..),
+
     -- * Derived attributes
-    , Unit (..)
-    , Element (..)
-    , Concat (..)
-    , isConstructorLike
-    , isFunctional
-    , isFunction
-    , isTotal
-    , isInjective
-    ) where
+    isConstructorLike,
+    isFunctional,
+    isFunction,
+    isTotal,
+    isInjective,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
-import Control.Monad
-    ( (>=>)
-    )
+import Control.Monad (
+    (>=>),
+ )
 import Data.Default
 import Data.Generics.Product
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
@@ -81,11 +98,11 @@ import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
-import Kore.Attribute.Parser
-    ( Attributes
-    , ParseAttributes (..)
-    , SymbolOrAlias (..)
-    )
+import Kore.Attribute.Parser (
+    Attributes,
+    ParseAttributes (..),
+    SymbolOrAlias (..),
+ )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
@@ -104,35 +121,33 @@ import Kore.Debug
 attributes can be different; for example, constructors and sort injections are
 injective, even if their declaration is not given the @injective@ attribute. To
 view the effective attributes, use the functions defined in this module.
-
- -}
-data Symbol =
-    Symbol
-    { function      :: !Function
-      -- ^ Whether a symbol represents a function
-    , functional    :: !Functional
-      -- ^ Whether a symbol is functional
-    , constructor   :: !Constructor
-      -- ^ Whether a symbol represents a constructor
-    , injective     :: !Injective
-      -- ^ Whether a symbol represents an injective function
-    , sortInjection :: !SortInjection
-      -- ^ Whether a symbol is a sort injection
-    , anywhere      :: !Anywhere
-    , hook          :: !Hook
-      -- ^ The builtin sort or symbol hooked to a sort or symbol
-    , smtlib        :: !Smtlib
-    , smthook       :: !Smthook
-    , memo          :: !Memo
-    , klabel        :: !Klabel
-    , symbolKywd    :: !SymbolKywd
-    , noEvaluators  :: !NoEvaluators
-    , unitHook      :: !(Unit SymbolOrAlias)
-    , elementHook   :: !(Element SymbolOrAlias)
-    , concatHook    :: !(Concat SymbolOrAlias)
-    -- ^ The above three are only populated if the symbol is a concat
-    , sourceLocation :: !SourceLocation
-    -- ^ Location in the original (source) file.
+-}
+data Symbol = Symbol
+    { -- | Whether a symbol represents a function
+      function :: !Function
+    , -- | Whether a symbol is functional
+      functional :: !Functional
+    , -- | Whether a symbol represents a constructor
+      constructor :: !Constructor
+    , -- | Whether a symbol represents an injective function
+      injective :: !Injective
+    , -- | Whether a symbol is a sort injection
+      sortInjection :: !SortInjection
+    , anywhere :: !Anywhere
+    , -- | The builtin sort or symbol hooked to a sort or symbol
+      hook :: !Hook
+    , smtlib :: !Smtlib
+    , smthook :: !Smthook
+    , memo :: !Memo
+    , klabel :: !Klabel
+    , symbolKywd :: !SymbolKywd
+    , noEvaluators :: !NoEvaluators
+    , unitHook :: !(Unit SymbolOrAlias)
+    , elementHook :: !(Element SymbolOrAlias)
+    , -- | The above three are only populated if the symbol is a concat
+      concatHook :: !(Concat SymbolOrAlias)
+    , -- | Location in the original (source) file.
+      sourceLocation :: !SourceLocation
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -147,66 +162,67 @@ instance Diff Symbol
 instance ParseAttributes Symbol where
     parseAttribute attr =
         typed @Function (parseAttribute attr)
-        >=> typed @Functional (parseAttribute attr)
-        >=> typed @Constructor (parseAttribute attr)
-        >=> typed @SortInjection (parseAttribute attr)
-        >=> typed @Injective (parseAttribute attr)
-        >=> typed @Anywhere (parseAttribute attr)
-        >=> typed @Hook (parseAttribute attr)
-        >=> typed @Smtlib (parseAttribute attr)
-        >=> typed @Smthook (parseAttribute attr)
-        >=> typed @Memo (parseAttribute attr)
-        >=> typed @Klabel (parseAttribute attr)
-        >=> typed @SymbolKywd (parseAttribute attr)
-        >=> typed @NoEvaluators (parseAttribute attr)
-        >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
-        >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
-        >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
-        >=> typed @SourceLocation (parseAttribute attr)
+            >=> typed @Functional (parseAttribute attr)
+            >=> typed @Constructor (parseAttribute attr)
+            >=> typed @SortInjection (parseAttribute attr)
+            >=> typed @Injective (parseAttribute attr)
+            >=> typed @Anywhere (parseAttribute attr)
+            >=> typed @Hook (parseAttribute attr)
+            >=> typed @Smtlib (parseAttribute attr)
+            >=> typed @Smthook (parseAttribute attr)
+            >=> typed @Memo (parseAttribute attr)
+            >=> typed @Klabel (parseAttribute attr)
+            >=> typed @SymbolKywd (parseAttribute attr)
+            >=> typed @NoEvaluators (parseAttribute attr)
+            >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
+            >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
+            >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
+            >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
-        mconcat . sequence
-            [ from . function
-            , from . functional
-            , from . constructor
-            , from . injective
-            , from . sortInjection
-            , from . anywhere
-            , from . hook
-            , from . smtlib
-            , from . smthook
-            , from . memo
-            , from . klabel
-            , from . symbolKywd
-            , from . noEvaluators
-            , from . unitHook
-            , from . elementHook
-            , from . concatHook
-            , from . sourceLocation
-            ]
+        mconcat
+            . sequence
+                [ from . function
+                , from . functional
+                , from . constructor
+                , from . injective
+                , from . sortInjection
+                , from . anywhere
+                , from . hook
+                , from . smtlib
+                , from . smthook
+                , from . memo
+                , from . klabel
+                , from . symbolKywd
+                , from . noEvaluators
+                , from . unitHook
+                , from . elementHook
+                , from . concatHook
+                , from . sourceLocation
+                ]
 
 type StepperAttributes = Symbol
 
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
-        { function       = def
-        , functional     = def
-        , constructor    = def
-        , injective      = def
-        , sortInjection  = def
-        , anywhere       = def
-        , hook           = def
-        , smtlib         = def
-        , smthook        = def
-        , memo           = def
-        , klabel         = def
-        , symbolKywd     = def
-        , noEvaluators   = def
-        , unitHook       = def
-        , elementHook    = def
-        , concatHook     = def
+        { function = def
+        , functional = def
+        , constructor = def
+        , injective = def
+        , sortInjection = def
+        , anywhere = def
+        , hook = def
+        , smtlib = def
+        , smthook = def
+        , memo = def
+        , klabel = def
+        , symbolKywd = def
+        , noEvaluators = def
+        , unitHook = def
+        , elementHook = def
+        , concatHook = def
         , sourceLocation = def
         }
 
@@ -227,8 +243,7 @@ A symbol is a function if it is given the @function@ attribute or if it is
 functional.
 
 See also: 'functionAttribute', 'isFunctional'
-
- -}
+-}
 isFunction :: StepperAttributes -> Bool
 isFunction = do
     Function isFunction' <- Lens.view typed
@@ -241,8 +256,7 @@ A symbol is functional if it is given the @functional@ attribute or the
 @sortInjection@ attribute.
 
 See also: 'functionalAttribute', 'sortInjectionAttribute'
-
- -}
+-}
 isFunctional :: StepperAttributes -> Bool
 isFunctional = do
     Functional isFunctional' <- functional
@@ -263,12 +277,12 @@ A symbol is injective if it is given the @injective@ attribute, the
 @constructor@ attribute, or the @sortInjection@ attribute.
 
 See also: 'injectiveAttribute', 'constructorAttribute', 'sortInjectionAttribute'
-
- -}
+-}
 isInjective :: StepperAttributes -> Bool
 isInjective =
-    or . sequence
-        [ isDeclaredInjective . injective
-        , isConstructor       . constructor
-        , isSortInjection     . sortInjection
-        ]
+    or
+        . sequence
+            [ isDeclaredInjective . injective
+            , isConstructor . constructor
+            , isSortInjection . sortInjection
+            ]

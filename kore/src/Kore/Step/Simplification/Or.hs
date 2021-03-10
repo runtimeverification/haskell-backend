@@ -1,25 +1,24 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Step.Simplification.Or
-    ( simplifyEvaluated
-    , simplify
-    ) where
+module Kore.Step.Simplification.Or (
+    simplifyEvaluated,
+    simplify,
+) where
 
 import Prelude.Kore ()
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 
 -- * Driver
 
@@ -27,24 +26,21 @@ import Kore.Rewriting.RewritingVariable
 
 'simplify' is the driver responsible for breaking down an @\\or@ pattern and
 merging its children.
-
 -}
-simplify
-    :: Or Sort (OrPattern RewritingVariableName)
-    -> OrPattern RewritingVariableName
-simplify Or { orFirst = first, orSecond = second } =
+simplify ::
+    Or Sort (OrPattern RewritingVariableName) ->
+    OrPattern RewritingVariableName
+simplify Or{orFirst = first, orSecond = second} =
     simplifyEvaluated first second
 
 {- | Simplify an 'Or' given its two 'OrPattern' children.
 
 See also: 'simplify'
-
 -}
-simplifyEvaluated
-    :: OrPattern RewritingVariableName
-    -> OrPattern RewritingVariableName
-    -> OrPattern RewritingVariableName
-
+simplifyEvaluated ::
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName
 {-
 
 __TODO__ (virgil): Preserve pattern sorts under simplification.

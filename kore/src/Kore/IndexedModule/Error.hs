@@ -1,23 +1,22 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-
-module Kore.IndexedModule.Error
-    ( noSort
-    , noSortText
-    , noHead
-    , noAlias
-    , noAliasText
-    , noSymbol
-    , noSymbolText
-    ) where
+module Kore.IndexedModule.Error (
+    noSort,
+    noSortText,
+    noHead,
+    noAlias,
+    noAliasText,
+    noSymbol,
+    noSymbolText,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 
 import Kore.Syntax

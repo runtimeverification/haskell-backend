@@ -1,29 +1,29 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Test.Kore.Step.Strategy
-    ( prop_SeqContinueIdentity
-    , prop_SeqStuckDominate
-    , prop_AndStuckIdentity
-    , prop_OrStuckIdentity
-    , prop_Stuck
-    , prop_Continue
-    , test_And
-    , test_Or
-    , prop_depthLimit
-    , prop_pickLongest
-    , prop_pickFinal
-    , prop_pickOne
-    , prop_pickStar
-    , prop_pickPlus
-    ) where
+module Test.Kore.Step.Strategy (
+    prop_SeqContinueIdentity,
+    prop_SeqStuckDominate,
+    prop_AndStuckIdentity,
+    prop_OrStuckIdentity,
+    prop_Stuck,
+    prop_Continue,
+    test_And,
+    test_Or,
+    prop_depthLimit,
+    prop_pickLongest,
+    prop_pickFinal,
+    prop_pickOne,
+    prop_pickStar,
+    prop_pickPlus,
+) where
 
-import Prelude.Kore hiding
-    ( and
-    , const
-    , or
-    , seq
-    )
+import Prelude.Kore hiding (
+    and,
+    const,
+    or,
+    seq,
+ )
 
 import Test.QuickCheck.Instances ()
 import Test.Tasty
@@ -31,23 +31,23 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 import qualified Control.Exception as Exception
-import Control.Monad.Catch.Pure
-    ( Catch
-    , runCatch
-    )
+import Control.Monad.Catch.Pure (
+    Catch,
+    runCatch,
+ )
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq
 import Numeric.Natural
 
-import Data.Limit
-    ( Limit (..)
-    )
+import Data.Limit (
+    Limit (..),
+ )
 import qualified Data.Limit as Limit
-import Kore.Step.Strategy
-    ( ExecutionGraph (..)
-    , Strategy
-    , TransitionT
-    )
+import Kore.Step.Strategy (
+    ExecutionGraph (..),
+    Strategy,
+    TransitionT,
+ )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 
@@ -79,16 +79,16 @@ instance Arbitrary prim => Arbitrary (Strategy prim) where
         \case
             Strategy.Seq a b ->
                 [a, b]
-                ++ (Strategy.Seq <$> shrink a <*> pure b)
-                ++ (Strategy.Seq            a <$> shrink b)
+                    ++ (Strategy.Seq <$> shrink a <*> pure b)
+                    ++ (Strategy.Seq a <$> shrink b)
             Strategy.And a b ->
                 [a, b]
-                ++ (Strategy.And <$> shrink a <*> pure b)
-                ++ (Strategy.And            a <$> shrink b)
+                    ++ (Strategy.And <$> shrink a <*> pure b)
+                    ++ (Strategy.And a <$> shrink b)
             Strategy.Or a b ->
                 [a, b]
-                ++ (Strategy.Or <$> shrink a <*> pure b)
-                ++ (Strategy.Or            a <$> shrink b)
+                    ++ (Strategy.Or <$> shrink a <*> pure b)
+                    ++ (Strategy.Or a <$> shrink b)
             Strategy.Apply _ -> []
             Strategy.Stuck -> []
             Strategy.Continue -> []
@@ -98,8 +98,8 @@ transitionPrim rule n = do
     Transition.addRule rule
     case rule of
         Const i -> pure i
-        Succ    -> pure (succ n)
-        Throw   -> empty
+        Succ -> pure (succ n)
+        Throw -> empty
 
 apply :: Prim -> Strategy Prim
 apply = Strategy.apply
@@ -128,106 +128,86 @@ const = apply . Const
 succ_ :: Strategy Prim
 succ_ = apply Succ
 
-runStrategy
-    :: [Strategy Prim]
-    -> Natural
-    -> ExecutionGraph Natural Prim
+runStrategy ::
+    [Strategy Prim] ->
+    Natural ->
+    ExecutionGraph Natural Prim
 runStrategy strategy z =
     Strategy.runStrategy Unlimited transitionPrim strategy z
-    & runCatch
-    & either Exception.throw id
+        & runCatch
+        & either Exception.throw id
 
 prop_SeqContinueIdentity :: Strategy Prim -> Natural -> Property
 prop_SeqContinueIdentity a n =
-    let
-        expect = runStrategy [a] n
+    let expect = runStrategy [a] n
         left = runStrategy [seq continue a] n
         right = runStrategy [seq a continue] n
-    in
-        (expect === left) .&&. (expect === right)
+     in (expect === left) .&&. (expect === right)
 
 prop_SeqStuckDominate :: Strategy Prim -> Natural -> Property
 prop_SeqStuckDominate a n =
-    let
-        expect = runStrategy [stuck] n
+    let expect = runStrategy [stuck] n
         left = runStrategy [seq stuck a] n
         right = runStrategy [seq a stuck] n
-    in
-        (expect === left) .&&. (expect === right)
+     in (expect === left) .&&. (expect === right)
 
 prop_AndStuckIdentity :: Strategy Prim -> Natural -> Property
 prop_AndStuckIdentity a n =
-    let
-        expect = runStrategy [a] n
+    let expect = runStrategy [a] n
         left = runStrategy [and stuck a] n
         right = runStrategy [and a stuck] n
-    in
-        (expect === left) .&&. (expect === right)
+     in (expect === left) .&&. (expect === right)
 
 prop_OrStuckIdentity :: Strategy Prim -> Natural -> Property
 prop_OrStuckIdentity a n =
-    let
-        expect = runStrategy [a] n
+    let expect = runStrategy [a] n
         left = runStrategy [or stuck a] n
         right = runStrategy [or a stuck] n
-    in
-        (expect === left) .&&. (expect === right)
+     in (expect === left) .&&. (expect === right)
 
 prop_Stuck :: Natural -> Property
 prop_Stuck n =
-    let
-        expect = Graph.mkGraph [(0, n)] []
+    let expect = Graph.mkGraph [(0, n)] []
         actual = Strategy.graph $ runStrategy [stuck] n
-    in
-        expect === actual
+     in expect === actual
 
 prop_Continue :: Natural -> Property
 prop_Continue n =
-    let
-        expect =
+    let expect =
             Graph.mkGraph
-                [ (0, n) , (1, n) ]
-                [ (0, 1, Seq.empty) ]
+                [(0, n), (1, n)]
+                [(0, 1, Seq.empty)]
         actual = Strategy.graph $ runStrategy [continue] n
-    in
-        expect === actual
+     in expect === actual
 
 test_And :: [TestTree]
 test_And =
-    let
-        expect =
+    let expect =
             Graph.mkGraph
-                [ (0, 0) , (1, 1) ]
-                [ (0, 1, Seq.fromList [Const 1]) ]
-    in
-        [ testCase "Stuck on left" $ do
-            let
-                strategy = [and stuck (const 1)]
+                [(0, 0), (1, 1)]
+                [(0, 1, Seq.fromList [Const 1])]
+     in [ testCase "Stuck on left" $ do
+            let strategy = [and stuck (const 1)]
                 actual = Strategy.graph $ runStrategy strategy 0
             expect @=? actual
         , testCase "Stuck on right" $ do
-            let
-                strategy = [and (const 1) stuck]
+            let strategy = [and (const 1) stuck]
                 actual = Strategy.graph $ runStrategy strategy 0
             expect @=? actual
         ]
 
 test_Or :: [TestTree]
 test_Or =
-    let
-        expect =
+    let expect =
             Graph.mkGraph
-                [ (0, 0) , (1, 1) ]
-                [ (0, 1, Seq.fromList [Const 1]) ]
-    in
-        [ testCase "Throw on left" $ do
-            let
-                strategy = [or throw (const 1)]
+                [(0, 0), (1, 1)]
+                [(0, 1, Seq.fromList [Const 1])]
+     in [ testCase "Throw on left" $ do
+            let strategy = [or throw (const 1)]
                 actual = Strategy.graph $ runStrategy strategy 0
             expect @=? actual
         , testCase "Throw on right" $ do
-            let
-                strategy = [or (const 1) throw]
+            let strategy = [or (const 1) throw]
                 actual = Strategy.graph $ runStrategy strategy 0
             expect @=? actual
         ]
@@ -241,7 +221,7 @@ prop_depthLimit i =
         Graph.mkGraph nodes edges
       where
         nodes = do
-            j <- [0..n]
+            j <- [0 .. n]
             return (fromIntegral j, j)
         edges = do
             (j, _) <- init nodes
@@ -249,9 +229,10 @@ prop_depthLimit i =
     actual = Strategy.graph $ enumerate n
 
 -- | Enumerate values from zero to @n@, then get stuck.
-enumerate
-    :: Natural  -- ^ @n@
-    -> ExecutionGraph Natural Prim
+enumerate ::
+    -- | @n@
+    Natural ->
+    ExecutionGraph Natural Prim
 enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
 
 prop_pickLongest :: Integer -> Property
@@ -283,7 +264,7 @@ prop_pickStar i =
     (i >= 0) ==> (expect == actual)
   where
     n = fromInteger i
-    expect = [0..n]
+    expect = [0 .. n]
     actual = Strategy.pickStar (enumerate n)
 
 prop_pickPlus :: Integer -> Property
@@ -291,5 +272,5 @@ prop_pickPlus i =
     (i >= 1) ==> (expect == actual)
   where
     n = fromInteger i
-    expect = [1..n]
+    expect = [1 .. n]
     actual = Strategy.pickPlus (enumerate n)

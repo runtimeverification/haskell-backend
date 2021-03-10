@@ -1,34 +1,32 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Internal.ApplicationSorts
-    ( ApplicationSorts (..)
-    , applicationSorts
-    , symbolOrAliasSorts
-    ) where
+module Kore.Internal.ApplicationSorts (
+    ApplicationSorts (..),
+    applicationSorts,
+    symbolOrAliasSorts,
+) where
 
 import Prelude.Kore
 
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Debug
 import Kore.Error
-import Kore.Sort hiding
-    ( substituteSortVariables
-    )
+import Kore.Sort hiding (
+    substituteSortVariables,
+ )
 import Kore.Syntax.Sentence
 
 data ApplicationSorts = ApplicationSorts
     { applicationSortsOperands :: ![Sort]
-    , applicationSortsResult   :: !Sort
+    , applicationSortsResult :: !Sort
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -39,14 +37,14 @@ data ApplicationSorts = ApplicationSorts
 applicationSorts :: [Sort] -> Sort -> ApplicationSorts
 applicationSorts = ApplicationSorts
 
-{-|'symbolOrAliasSorts' builds the return and operand sorts for an application
+{- |'symbolOrAliasSorts' builds the return and operand sorts for an application
 pattern from the given sort parameters.
 -}
-symbolOrAliasSorts
-    :: (SentenceSymbolOrAlias sentence, MonadError (Error e) m)
-    => [Sort]
-    -> sentence
-    -> m ApplicationSorts
+symbolOrAliasSorts ::
+    (SentenceSymbolOrAlias sentence, MonadError (Error e) m) =>
+    [Sort] ->
+    sentence ->
+    m ApplicationSorts
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -60,42 +58,43 @@ symbolOrAliasSorts params sentence = do
         mapM
             (substituteSortVariables (Map.fromList variableToSort))
             parametrizedArgumentSorts
-    return ApplicationSorts
-        { applicationSortsOperands = operandSorts
-        , applicationSortsResult = fullReturnSort
-        }
+    return
+        ApplicationSorts
+            { applicationSortsOperands = operandSorts
+            , applicationSortsResult = fullReturnSort
+            }
   where
     paramVariables = getSentenceSymbolOrAliasSortParams sentence
     parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
     parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
 
-substituteSortVariables
-    :: MonadError (Error e) m
-    => Map SortVariable Sort
-    -> Sort
-    -> m Sort
+substituteSortVariables ::
+    MonadError (Error e) m =>
+    Map SortVariable Sort ->
+    Sort ->
+    m Sort
 substituteSortVariables variableToSort (SortVariableSort variable) =
     Map.lookup variable variableToSort
-    & maybe missingSortVariable return
+        & maybe missingSortVariable return
   where
     missingSortVariable =
         koreFail
-            (  "Sort variable not found: '"
-            ++ getIdForError (getSortVariable variable)
-            ++ "'."
+            ( "Sort variable not found: '"
+                ++ getIdForError (getSortVariable variable)
+                ++ "'."
             )
 substituteSortVariables
     variableToSort
-    (SortActualSort sort@SortActual { sortActualSorts = sortList })
-  = do
-    substituted <- mapM (substituteSortVariables variableToSort) sortList
-    return (SortActualSort sort { sortActualSorts = substituted })
+    (SortActualSort sort@SortActual{sortActualSorts = sortList}) =
+        do
+            substituted <- mapM (substituteSortVariables variableToSort) sortList
+            return (SortActualSort sort{sortActualSorts = substituted})
 
-pairVariablesToSorts
-    :: MonadError (Error e) m
-    => [SortVariable]
-    -> [Sort]
-    -> m [(SortVariable, Sort)]
+pairVariablesToSorts ::
+    MonadError (Error e) m =>
+    [SortVariable] ->
+    [Sort] ->
+    m [(SortVariable, Sort)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."

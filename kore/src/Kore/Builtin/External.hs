@@ -1,27 +1,25 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.External
-    ( externalize
-    ) where
+-}
+module Kore.Builtin.External (
+    externalize,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Data.Functor.Const
-    ( Const (..)
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
 import qualified Data.Functor.Foldable as Recursive
 
 import qualified Kore.Attribute.Null as Attribute
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Endianness.Endianness as Endianness
 import qualified Kore.Builtin.Int.Int as Int
@@ -42,21 +40,20 @@ import qualified Kore.Syntax.Pattern as Syntax
 All builtins will be rendered using their concrete Kore syntax.
 
 See also: 'asPattern'
-
- -}
-externalize
-    ::  forall variable
-    .   InternalVariable variable
-    =>  TermLike variable
-    ->  Syntax.Pattern variable Attribute.Null
+-}
+externalize ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    Syntax.Pattern variable Attribute.Null
 externalize =
     Recursive.unfold worker
   where
-    worker
-        ::  TermLike variable
-        ->  Recursive.Base
-                (Syntax.Pattern variable Attribute.Null)
-                (TermLike variable)
+    worker ::
+        TermLike variable ->
+        Recursive.Base
+            (Syntax.Pattern variable Attribute.Null)
+            (TermLike variable)
     worker termLike =
         -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
@@ -86,66 +83,66 @@ externalize =
       where
         termLikeBase@(_ :< termLikeF) = Recursive.project termLike
 
-    toPatternF
-        :: HasCallStack
-        => Recursive.Base (TermLike variable) (TermLike variable)
-        -> Recursive.Base
+    toPatternF ::
+        HasCallStack =>
+        Recursive.Base (TermLike variable) (TermLike variable) ->
+        Recursive.Base
             (Syntax.Pattern variable Attribute.Null)
             (TermLike variable)
     toPatternF (_ :< termLikeF) =
-        (Attribute.Null :<)
-        $ case termLikeF of
-            AndF andF -> Syntax.AndF andF
-            ApplyAliasF applyAliasF ->
-                Syntax.ApplicationF
-                $ mapHead Alias.toSymbolOrAlias applyAliasF
-            ApplySymbolF applySymbolF ->
-                Syntax.ApplicationF
-                $ mapHead Symbol.toSymbolOrAlias applySymbolF
-            BottomF bottomF -> Syntax.BottomF bottomF
-            CeilF ceilF -> Syntax.CeilF ceilF
-            DomainValueF domainValueF -> Syntax.DomainValueF domainValueF
-            EqualsF equalsF -> Syntax.EqualsF equalsF
-            ExistsF existsF -> Syntax.ExistsF existsF
-            FloorF floorF -> Syntax.FloorF floorF
-            ForallF forallF -> Syntax.ForallF forallF
-            IffF iffF -> Syntax.IffF iffF
-            ImpliesF impliesF -> Syntax.ImpliesF impliesF
-            InF inF -> Syntax.InF inF
-            MuF muF -> Syntax.MuF muF
-            NextF nextF -> Syntax.NextF nextF
-            NotF notF -> Syntax.NotF notF
-            NuF nuF -> Syntax.NuF nuF
-            OrF orF -> Syntax.OrF orF
-            RewritesF rewritesF -> Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF ->
-                Syntax.StringLiteralF stringLiteralF
-            TopF topF -> Syntax.TopF topF
-            VariableF variableF -> Syntax.VariableF variableF
-            InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
-            EvaluatedF evaluatedF ->
-                Cofree.tailF
-                $ worker
-                $ getEvaluated evaluatedF
-            EndiannessF endiannessF ->
-                Syntax.ApplicationF
-                $ mapHead Symbol.toSymbolOrAlias
-                $ Endianness.toApplication
-                $ getConst endiannessF
-            SignednessF signednessF ->
-                Syntax.ApplicationF
-                $ mapHead Symbol.toSymbolOrAlias
-                $ Signedness.toApplication
-                $ getConst signednessF
-            DefinedF definedF ->
-                Cofree.tailF
-                $ worker
-                $ getDefined definedF
-            InjF _ -> error "Unexpected sort injection"
-            InternalBoolF _ -> error "Unexpected internal builtin"
-            InternalBytesF _ -> error "Unexpected internal builtin"
-            InternalIntF _ -> error "Unexpected internal builtin"
-            InternalStringF _ -> error "Unexpected internal builtin"
-            InternalListF _ -> error "Unexpected internal builtin"
-            InternalMapF _ -> error "Unexpected internal builtin"
-            InternalSetF _ -> error "Unexpected internal builtin"
+        (Attribute.Null :<) $
+            case termLikeF of
+                AndF andF -> Syntax.AndF andF
+                ApplyAliasF applyAliasF ->
+                    Syntax.ApplicationF $
+                        mapHead Alias.toSymbolOrAlias applyAliasF
+                ApplySymbolF applySymbolF ->
+                    Syntax.ApplicationF $
+                        mapHead Symbol.toSymbolOrAlias applySymbolF
+                BottomF bottomF -> Syntax.BottomF bottomF
+                CeilF ceilF -> Syntax.CeilF ceilF
+                DomainValueF domainValueF -> Syntax.DomainValueF domainValueF
+                EqualsF equalsF -> Syntax.EqualsF equalsF
+                ExistsF existsF -> Syntax.ExistsF existsF
+                FloorF floorF -> Syntax.FloorF floorF
+                ForallF forallF -> Syntax.ForallF forallF
+                IffF iffF -> Syntax.IffF iffF
+                ImpliesF impliesF -> Syntax.ImpliesF impliesF
+                InF inF -> Syntax.InF inF
+                MuF muF -> Syntax.MuF muF
+                NextF nextF -> Syntax.NextF nextF
+                NotF notF -> Syntax.NotF notF
+                NuF nuF -> Syntax.NuF nuF
+                OrF orF -> Syntax.OrF orF
+                RewritesF rewritesF -> Syntax.RewritesF rewritesF
+                StringLiteralF stringLiteralF ->
+                    Syntax.StringLiteralF stringLiteralF
+                TopF topF -> Syntax.TopF topF
+                VariableF variableF -> Syntax.VariableF variableF
+                InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
+                EvaluatedF evaluatedF ->
+                    Cofree.tailF $
+                        worker $
+                            getEvaluated evaluatedF
+                EndiannessF endiannessF ->
+                    Syntax.ApplicationF $
+                        mapHead Symbol.toSymbolOrAlias $
+                            Endianness.toApplication $
+                                getConst endiannessF
+                SignednessF signednessF ->
+                    Syntax.ApplicationF $
+                        mapHead Symbol.toSymbolOrAlias $
+                            Signedness.toApplication $
+                                getConst signednessF
+                DefinedF definedF ->
+                    Cofree.tailF $
+                        worker $
+                            getDefined definedF
+                InjF _ -> error "Unexpected sort injection"
+                InternalBoolF _ -> error "Unexpected internal builtin"
+                InternalBytesF _ -> error "Unexpected internal builtin"
+                InternalIntF _ -> error "Unexpected internal builtin"
+                InternalStringF _ -> error "Unexpected internal builtin"
+                InternalListF _ -> error "Unexpected internal builtin"
+                InternalMapF _ -> error "Unexpected internal builtin"
+                InternalSetF _ -> error "Unexpected internal builtin"

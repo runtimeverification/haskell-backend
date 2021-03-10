@@ -1,19 +1,18 @@
-{-|
+{- |
 Description : Rule index attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
-module Kore.Attribute.RuleIndex
-    ( RuleIndex (..)
-    , RuleIndexCase (..)
-    ) where
+module Kore.Attribute.RuleIndex (
+    RuleIndex (..),
+    RuleIndexCase (..),
+) where
 
 import Prelude.Kore
 
 import Data.Default
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Debug
 
@@ -28,8 +27,8 @@ data RuleIndexCase
 
 {- | This attribute is used in the REPL for tagging
     and uniquely identifiying axioms and claims.
- -}
-newtype RuleIndex = RuleIndex { getRuleIndex :: Maybe RuleIndexCase }
+-}
+newtype RuleIndex = RuleIndex {getRuleIndex :: Maybe RuleIndexCase}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

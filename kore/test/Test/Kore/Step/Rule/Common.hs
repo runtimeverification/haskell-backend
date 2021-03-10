@@ -1,7 +1,7 @@
-module Test.Kore.Step.Rule.Common
-    ( Pair (..)
-    , RuleBase (..)
-    ) where
+module Test.Kore.Step.Rule.Common (
+    Pair (..),
+    RuleBase (..),
+) where
 
 import Prelude.Kore
 
@@ -9,29 +9,28 @@ import qualified Data.Default as Default
 
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeTruePredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-    ( TermLike
-    , VariableName
-    )
+import Kore.Internal.TermLike (
+    TermLike,
+    VariableName,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability
-    ( OnePathClaim (..)
-    , mkOnePathClaim
-    )
-import Kore.Rewriting.RewritingVariable
-    ( mkRuleVariable
-    )
-import Kore.Step.RulePattern
-    ( RHS (RHS)
-    , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
-    )
+import Kore.Reachability (
+    OnePathClaim (..),
+    mkOnePathClaim,
+ )
+import Kore.Rewriting.RewritingVariable (
+    mkRuleVariable,
+ )
+import Kore.Step.RulePattern (
+    RHS (RHS),
+    RewriteRule (RewriteRule),
+    RulePattern (RulePattern),
+ )
 import qualified Kore.Step.RulePattern as OLD
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
@@ -57,32 +56,34 @@ instance RuleBase Pair OnePathClaim where
 instance RuleBase TermLike OnePathClaim where
     t1 `rewritesTo` t2 =
         Pair (t1, makeTruePredicate)
-        `rewritesTo` Pair (t2, makeTruePredicate)
+            `rewritesTo` Pair (t2, makeTruePredicate)
 
     t1 `rewritesToWithSort` t2 =
         Pair (t1, makeTruePredicate)
-        `rewritesToWithSort` Pair (t2, makeTruePredicate)
+            `rewritesToWithSort` Pair (t2, makeTruePredicate)
 
 instance RuleBase Pair (RewriteRule VariableName) where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
-        RewriteRule RulePattern
-            { OLD.left = t1
-            , OLD.requires = p1
-            , OLD.rhs = RHS
-                { OLD.existentials = []
-                , OLD.right = t2
-                , OLD.ensures = p2
+        RewriteRule
+            RulePattern
+                { OLD.left = t1
+                , OLD.requires = p1
+                , OLD.rhs =
+                    RHS
+                        { OLD.existentials = []
+                        , OLD.right = t2
+                        , OLD.ensures = p2
+                        }
+                , OLD.antiLeft = Nothing
+                , OLD.attributes = Default.def
                 }
-            , OLD.antiLeft = Nothing
-            , OLD.attributes = Default.def
-            }
     rewritesToWithSort = rewritesTo
 
 instance RuleBase TermLike (RewriteRule VariableName) where
     t1 `rewritesTo` t2 =
         Pair (t1, makeTruePredicate)
-        `rewritesTo` Pair (t2, makeTruePredicate)
+            `rewritesTo` Pair (t2, makeTruePredicate)
 
     t1 `rewritesToWithSort` t2 =
         Pair (t1, makeTruePredicate)
-        `rewritesToWithSort` Pair (t2, makeTruePredicate)
+            `rewritesToWithSort` Pair (t2, makeTruePredicate)

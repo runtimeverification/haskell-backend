@@ -1,99 +1,98 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
-    ) where
+module Kore.Step.Simplification.OrPattern (
+    simplifyConditionsWithSmt,
+) where
 
 import Prelude.Kore
 
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
-    ( bottom
-    , fromPredicate
-    , toPredicate
-    )
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
-import qualified Kore.Internal.Conditional as Conditional
-    ( Conditional (..)
-    )
+import Kore.Internal.Condition (
+    Condition,
+ )
+import qualified Kore.Internal.Condition as Condition (
+    bottom,
+    fromPredicate,
+    toPredicate,
+ )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
+import qualified Kore.Internal.Conditional as Conditional (
+    Conditional (..),
+ )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( splitTerm
-    , withCondition
-    )
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toPredicate
-    , top
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , simplifyCondition
-    )
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-    ( filterMultiOr
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
-import Logic
-    ( LogicT
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    splitTerm,
+    withCondition,
+ )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toPredicate,
+    top,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+    simplifyCondition,
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Logic (
+    LogicT,
+ )
 import qualified Logic
 
-simplifyConditionsWithSmt
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => SideCondition RewritingVariableName
-    -> OrPattern RewritingVariableName
-    -> simplifier (OrPattern RewritingVariableName)
+simplifyConditionsWithSmt ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
 simplifyConditionsWithSmt sideCondition unsimplified =
     OrPattern.observeAllT $ do
         unsimplified1 <- Logic.scatter unsimplified
         simplifyAndPrune unsimplified1
   where
-    simplifyAndPrune
-        :: Pattern RewritingVariableName
-        -> LogicT simplifier (Pattern RewritingVariableName)
+    simplifyAndPrune ::
+        Pattern RewritingVariableName ->
+        LogicT simplifier (Pattern RewritingVariableName)
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
         filtered <-
             return simplified
-            & resultWithFilter pruneCondition
-            & resultWithFilter rejectCondition
-            & lift
+                & resultWithFilter pruneCondition
+                & resultWithFilter rejectCondition
+                & lift
         return (term `Pattern.withCondition` filtered)
 
-    resultWithFilter
-        :: (Condition RewritingVariableName -> simplifier (Maybe Bool))
-        -> simplifier (Condition RewritingVariableName)
-        -> simplifier (Condition RewritingVariableName)
+    resultWithFilter ::
+        (Condition RewritingVariableName -> simplifier (Maybe Bool)) ->
+        simplifier (Condition RewritingVariableName) ->
+        simplifier (Condition RewritingVariableName)
     resultWithFilter conditionFilter previousResult = do
         previous <- previousResult
         if isTop previous || isBottom previous
@@ -108,58 +107,46 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                         -- can detect that 'not v=a' is not satisfiable
                         -- so we may remove a substitution here. However,
                         -- we are not able to handle that properly.
-                        return previous
-                            { Conditional.predicate = makeTruePredicate }
+                        return
+                            previous
+                                { Conditional.predicate = makeTruePredicate
+                                }
                     Just False -> return Condition.bottom
                     Nothing -> return previous
-
-    {- | Check if the side condition implies the argument. If so, then
-    returns @Just True@. If the side condition never implies the argument,
-    returns False. Otherwise, returns Nothing.
-
-    Note that the SMT evaluators currently only allow us to detect the
-    @Just True@ branch.
-
-    The side condition implies the argument, i.e. @side → arg@, iff
-    @¬side ∨ arg@ iff @not(side ∧ ¬arg)@.
-
-    In other words:
-
-    @side ∧ ¬arg@ is not satisfiable iff @side → arg@ is @⊤@.
-    @side ∧ ¬arg@ is always true iff @side → arg@ is @⊥@
-    -}
     pruneCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
     pruneCondition condition = do
         implicationNegation <-
-            makeAndPredicate sidePredicate
+            makeAndPredicate
+                sidePredicate
                 (makeNotPredicate $ Condition.toPredicate condition)
-            & Condition.fromPredicate
-            & simplifyCondition SideCondition.top
-            & OrCondition.observeAllT
+                & Condition.fromPredicate
+                & simplifyCondition SideCondition.top
+                & OrCondition.observeAllT
         filteredConditions <- SMT.Evaluator.filterMultiOr implicationNegation
         if isTop filteredConditions
             then return (Just False)
-            else if isBottom filteredConditions
-                then return (Just True)
-                else return Nothing
+            else
+                if isBottom filteredConditions
+                    then return (Just True)
+                    else return Nothing
 
     rejectCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
     rejectCondition condition = do
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
-            & OrCondition.observeAllT
+                & OrCondition.observeAllT
         filteredConditions <- SMT.Evaluator.filterMultiOr simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)
-            else if isTop filteredConditions
-                then return (Just True)
-                else return Nothing
-
+            else
+                if isTop filteredConditions
+                    then return (Just True)
+                    else return Nothing
 
     sidePredicate = SideCondition.toPredicate sideCondition
 
-    addPredicate
-        :: Conditional RewritingVariableName term
-        -> Conditional RewritingVariableName term
-    addPredicate c@Conditional {predicate} =
-        c {Conditional.predicate = makeAndPredicate predicate sidePredicate}
+    addPredicate ::
+        Conditional RewritingVariableName term ->
+        Conditional RewritingVariableName term
+    addPredicate c@Conditional{predicate} =
+        c{Conditional.predicate = makeAndPredicate predicate sidePredicate}

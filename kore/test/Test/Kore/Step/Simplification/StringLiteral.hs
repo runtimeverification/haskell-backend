@@ -1,38 +1,40 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.StringLiteral
-    ( test_stringLiteralSimplification
-    ) where
+module Test.Kore.Step.Simplification.StringLiteral (
+    test_stringLiteralSimplification,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    )
-import Kore.Internal.Predicate
-    ( makeTruePredicate
-    )
+import Kore.Internal.Pattern (
+    Conditional (..),
+ )
+import Kore.Internal.Predicate (
+    makeTruePredicate,
+ )
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Step.Simplification.StringLiteral
-    ( simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Step.Simplification.StringLiteral (
+    simplify,
+ )
 
 import Test.Tasty.HUnit.Ext
 
 test_stringLiteralSimplification :: [TestTree]
 test_stringLiteralSimplification =
-    [ testCase "StringLiteral evaluates to StringLiteral"
-        (assertEqual ""
-            (OrPattern.fromPatterns
+    [ testCase
+        "StringLiteral evaluates to StringLiteral"
+        ( assertEqual
+            ""
+            ( OrPattern.fromPatterns
                 [ Conditional
                     { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
@@ -40,7 +42,7 @@ test_stringLiteralSimplification =
                     }
                 ]
             )
-            (evaluate
+            ( evaluate
                 (StringLiteral "a")
             )
         )

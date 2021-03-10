@@ -1,7 +1,7 @@
-module Test.Kore.Reachability.Claim
-    ( test_checkImplication
-    , test_simplifyRightHandSide
-    ) where
+module Test.Kore.Reachability.Claim (
+    test_checkImplication,
+    test_simplifyRightHandSide,
+) where
 
 import Prelude.Kore
 
@@ -9,56 +9,55 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import qualified Control.Lens as Lens
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeEqualsPredicate
-    , makeExistsPredicate
-    , makeNotPredicate
-    , makeOrPredicate
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeExistsPredicate,
+    makeNotPredicate,
+    makeOrPredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( ElementVariable
-    , VariableName
-    , mkElemVar
-    )
+import Kore.Internal.TermLike (
+    ElementVariable,
+    VariableName,
+    mkElemVar,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability.Claim
-    ( CheckImplicationResult (..)
-    , checkImplicationWorker
-    , simplifyRightHandSide
-    )
-import Kore.Rewriting.RewritingVariable
-    ( mkConfigVariable
-    , mkRewritingPattern
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern
-    , mkClaimPattern
-    )
+import Kore.Reachability.Claim (
+    CheckImplicationResult (..),
+    checkImplicationWorker,
+    simplifyRightHandSide,
+ )
+import Kore.Rewriting.RewritingVariable (
+    mkConfigVariable,
+    mkRewritingPattern,
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern,
+    mkClaimPattern,
+ )
 import qualified Logic
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
-    ( runSimplifierSMT
-    )
+import Test.Kore.Step.Simplification (
+    runSimplifierSMT,
+ )
 
 test_checkImplication :: [TestTree]
 test_checkImplication =
@@ -78,10 +77,11 @@ test_checkImplication =
         let goal =
                 Lens.over
                     (field @"left")
-                    (flip Pattern.andCondition
-                        (makeEqualsPredicate (mkElemVar Mock.x) Mock.a
-                        & Predicate.mapVariables (pure mkConfigVariable)
-                        & from
+                    ( flip
+                        Pattern.andCondition
+                        ( makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                            & Predicate.mapVariables (pure mkConfigVariable)
+                            & from
                         )
                     )
                     aToB
@@ -91,9 +91,10 @@ test_checkImplication =
     , testCase "does not unify, with right condition" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
-                Pattern.withCondition Mock.b
+                Pattern.withCondition
+                    Mock.b
                     (makeEqualsPredicate (mkElemVar Mock.x) Mock.a & from)
-                & OrPattern.fromPattern
+                    & OrPattern.fromPattern
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <-
@@ -105,16 +106,16 @@ test_checkImplication =
                     (mkElemVar Mock.x)
                     ( Substitution.wrap
                         [Substitution.assign (inject Mock.x) Mock.a]
-                    & Condition.fromSubstitution
+                        & Condition.fromSubstitution
                     )
             dest =
                 Pattern.withCondition
                     (mkElemVar Mock.y)
                     ( Substitution.wrap
                         [Substitution.assign (inject Mock.y) Mock.a]
-                    & Condition.fromSubstitution
+                        & Condition.fromSubstitution
                     )
-                & OrPattern.fromPattern
+                    & OrPattern.fromPattern
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
@@ -125,20 +126,21 @@ test_checkImplication =
                     (mkElemVar Mock.x)
                     ( Substitution.wrap
                         [Substitution.assign (inject Mock.x) Mock.a]
-                    & Condition.fromSubstitution
+                        & Condition.fromSubstitution
                     )
             dest =
                 Pattern.withCondition
                     (mkElemVar Mock.y)
                     ( Substitution.wrap
                         [Substitution.assign (inject Mock.y) Mock.b]
-                    & Condition.fromSubstitution
+                        & Condition.fromSubstitution
                     )
-                & OrPattern.fromPattern
+                    & OrPattern.fromPattern
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
             stuckConfig =
-                Pattern.withCondition Mock.a
+                Pattern.withCondition
+                    Mock.a
                     (Condition.assign (inject Mock.x) Mock.a)
             stuckGoal =
                 mkGoal stuckConfig dest existentials
@@ -148,19 +150,20 @@ test_checkImplication =
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
                 Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
-                & OrPattern.fromPattern
+                    & OrPattern.fromPattern
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
             stuckConfig =
                 Pattern.fromTermAndPredicate
                     (Mock.f (mkElemVar Mock.x))
-                    (makeAndPredicate
-                        (makeCeilPredicate
+                    ( makeAndPredicate
+                        ( makeCeilPredicate
                             (Mock.f (mkElemVar Mock.x))
                         )
-                        (makeNotPredicate
-                            (makeExistsPredicate Mock.y
-                                (makeEqualsPredicate
+                        ( makeNotPredicate
+                            ( makeExistsPredicate
+                                Mock.y
+                                ( makeEqualsPredicate
                                     (Mock.f (mkElemVar Mock.x))
                                     (Mock.f (mkElemVar Mock.y))
                                 )
@@ -177,7 +180,7 @@ test_checkImplication =
                 [ Mock.a & Pattern.fromTermLike
                 , Mock.b & Pattern.fromTermLike
                 ]
-                & OrPattern.fromPatterns
+                    & OrPattern.fromPatterns
             existentials = []
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
@@ -187,18 +190,18 @@ test_checkImplication =
             dest =
                 [ Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
-                    (makeEqualsPredicate
+                    ( makeEqualsPredicate
                         (mkElemVar Mock.x)
                         Mock.a
                     )
                 , Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
-                    (makeEqualsPredicate
+                    ( makeEqualsPredicate
                         (mkElemVar Mock.x)
                         Mock.b
                     )
                 ]
-                & OrPattern.fromPatterns
+                    & OrPattern.fromPatterns
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
@@ -208,17 +211,17 @@ test_checkImplication =
             dest =
                 Pattern.fromTermAndPredicate
                     (mkElemVar Mock.x)
-                    (makeOrPredicate
-                        (makeEqualsPredicate
+                    ( makeOrPredicate
+                        ( makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.a
                         )
-                        (makeEqualsPredicate
+                        ( makeEqualsPredicate
                             (mkElemVar Mock.x)
                             Mock.b
                         )
                     )
-                & OrPattern.fromPattern
+                    & OrPattern.fromPattern
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
@@ -243,14 +246,14 @@ test_simplifyRightHandSide =
         let unsatisfiableBranch =
                 Pattern.fromTermAndPredicate
                     Mock.b
-                    (makeEqualsPredicate
+                    ( makeEqualsPredicate
                         TermLike.mkTop_
                         (Mock.builtinInt 3 `Mock.lessInt` Mock.builtinInt 2)
                     )
             claim =
                 mkGoal
                     Pattern.top
-                    ([Pattern.fromTermLike Mock.a, unsatisfiableBranch]
+                    ( [Pattern.fromTermLike Mock.a, unsatisfiableBranch]
                         & OrPattern.fromPatterns
                     )
                     []
@@ -264,23 +267,22 @@ test_simplifyRightHandSide =
                 id
                 SideCondition.top
                 claim
-            & runSimplifierSMT Mock.env
+                & runSimplifierSMT Mock.env
         assertEqual "" expected actual
     ]
 
-mkGoal
-    :: Pattern VariableName
-    -> OrPattern VariableName
-    -> [ElementVariable VariableName]
-    -> ClaimPattern
+mkGoal ::
+    Pattern VariableName ->
+    OrPattern VariableName ->
+    [ElementVariable VariableName] ->
+    ClaimPattern
 mkGoal
     (mkRewritingPattern -> leftPatt)
     (OrPattern.map mkRewritingPattern -> rightPatts)
-    (fmap (TermLike.mapElementVariable (pure mkConfigVariable)) ->
-        existentialVars
-    )
-  =
-    mkClaimPattern leftPatt rightPatts existentialVars
+    ( fmap (TermLike.mapElementVariable (pure mkConfigVariable)) ->
+            existentialVars
+        ) =
+        mkClaimPattern leftPatt rightPatts existentialVars
 
 aToB :: ClaimPattern
 aToB =
@@ -292,5 +294,5 @@ aToB =
 checkImplication :: ClaimPattern -> IO [CheckImplicationResult ClaimPattern]
 checkImplication claim =
     checkImplicationWorker claim
-    & Logic.observeAllT
-    & runSimplifierSMT Mock.env
+        & Logic.observeAllT
+        & runSimplifierSMT Mock.env

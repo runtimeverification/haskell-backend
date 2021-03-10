@@ -1,53 +1,54 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-module Kore.Syntax.Pattern
-    ( Pattern (..)
-    , asPattern
-    , fromPattern
-    , eraseAnnotations
-    , traverseVariables
-    , mapVariables
-    , asConcretePattern
-    , isConcrete
-    , fromConcretePattern
+module Kore.Syntax.Pattern (
+    Pattern (..),
+    asPattern,
+    fromPattern,
+    eraseAnnotations,
+    traverseVariables,
+    mapVariables,
+    asConcretePattern,
+    isConcrete,
+    fromConcretePattern,
+
     -- * Re-exports
-    , Base, CofreeF (..)
-    , PatternF (..)
-    , Const (..)
-    , module Control.Comonad
-    ) where
+    Base,
+    CofreeF (..),
+    PatternF (..),
+    Const (..),
+    module Control.Comonad,
+) where
 
 import Prelude.Kore
 
 import Control.Comonad
-import Control.Comonad.Trans.Cofree
-    ( ComonadCofree (..)
-    )
+import Control.Comonad.Trans.Cofree (
+    ComonadCofree (..),
+ )
 import qualified Control.Comonad.Trans.Env as Env
 import qualified Data.Bifunctor as Bifunctor
-import Data.Functor.Compose
-    ( Compose (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Compose (
+    Compose (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import Data.Functor.Identity
-    ( Identity (..)
-    )
-import Data.Kind
-    ( Type
-    )
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Functor.Identity (
+    Identity (..),
+ )
+import Data.Kind (
+    Type,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
@@ -70,18 +71,18 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
-import Kore.Syntax.PatternF
-    ( Const (..)
-    , PatternF (..)
-    )
+import Kore.Syntax.PatternF (
+    Const (..),
+    PatternF (..),
+ )
 import qualified Kore.Syntax.PatternF as PatternF
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
 import Kore.Unparser
 import qualified Pretty
 import qualified SQL
@@ -93,14 +94,12 @@ import qualified SQL
 @annotation@ is the type of annotations decorating each node of the abstract
 syntax tree. @Pattern@ is a 'Traversable' 'Comonad' over the type of
 annotations.
-
 -}
-newtype Pattern
-    (variable :: Type)
-    (annotation :: Type)
-  =
+newtype
     Pattern
-        { getPattern :: Cofree (PatternF variable) annotation }
+        (variable :: Type)
+        (annotation :: Type) = Pattern
+    {getPattern :: Cofree (PatternF variable) annotation}
     deriving (Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -112,9 +111,8 @@ instance Eq variable => Eq (Pattern variable annotation) where
       where
         eqWorker
             (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2)
-          =
-            pat1 == pat2
+            (Recursive.project -> _ :< pat2) =
+                pat1 == pat2
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Pattern variable annotation) where
@@ -122,9 +120,8 @@ instance Ord variable => Ord (Pattern variable annotation) where
       where
         compareWorker
             (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2)
-          =
-            compare pat1 pat2
+            (Recursive.project -> _ :< pat2) =
+                compare pat1 pat2
     {-# INLINE compare #-}
 
 instance Hashable variable => Hashable (Pattern variable annotation) where
@@ -134,19 +131,20 @@ instance Hashable variable => Hashable (Pattern variable annotation) where
 instance
     (NFData annotation, NFData variable) =>
     NFData (Pattern variable annotation)
-  where
+    where
     rnf (Recursive.project -> annotation :< pat) =
         rnf annotation `seq` rnf pat
 
 instance
     (Unparse variable) =>
     Unparse (Pattern variable annotation)
-  where
+    where
     unparse (Recursive.project -> _ :< pat) = unparse pat
     unparse2 (Recursive.project -> _ :< pat) = unparse2 pat
 
-type instance Base (Pattern variable annotation) =
-    CofreeF (PatternF variable) annotation
+type instance
+    Base (Pattern variable annotation) =
+        CofreeF (PatternF variable) annotation
 
 -- This instance implements all class functions for the Pattern newtype
 -- because the their implementations for the inner type may be specialized.
@@ -167,8 +165,8 @@ instance Recursive (Pattern variable annotation) where
 
     para alg = \(Pattern fixed) ->
         Recursive.para
-            (\(Compose (Identity base)) ->
-                 alg (Bifunctor.first Pattern <$> base)
+            ( \(Compose (Identity base)) ->
+                alg (Bifunctor.first Pattern <$> base)
             )
             fixed
     {-# INLINE para #-}
@@ -213,8 +211,8 @@ instance Corecursive (Pattern variable annotation) where
       where
         apo0 =
             Recursive.apo
-                (\a ->
-                     (Compose . Identity)
+                ( \a ->
+                    (Compose . Identity)
                         (Bifunctor.first getPattern <$> coalg a)
                 )
     {-# INLINE apo #-}
@@ -265,7 +263,7 @@ instance
     From
         (And Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -273,7 +271,7 @@ instance
     From
         (Application SymbolOrAlias (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -281,7 +279,7 @@ instance
     From
         (Bottom Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -289,7 +287,7 @@ instance
     From
         (Ceil Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -297,7 +295,7 @@ instance
     From
         (DomainValue Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -305,7 +303,7 @@ instance
     From
         (Equals Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -313,7 +311,7 @@ instance
     From
         (Exists Sort variable (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -321,7 +319,7 @@ instance
     From
         (Floor Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -329,7 +327,7 @@ instance
     From
         (Forall Sort variable (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -337,7 +335,7 @@ instance
     From
         (Iff Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -345,7 +343,7 @@ instance
     From
         (Implies Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -353,7 +351,7 @@ instance
     From
         (In Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -361,7 +359,7 @@ instance
     From
         (Mu variable (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -369,7 +367,7 @@ instance
     From
         (Next Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -377,7 +375,7 @@ instance
     From
         (Not Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -385,7 +383,7 @@ instance
     From
         (Nu variable (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -393,7 +391,7 @@ instance
     From
         (Or Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -401,7 +399,7 @@ instance
     From
         (Rewrites Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -409,7 +407,7 @@ instance
     From
         (Top Sort (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -417,7 +415,7 @@ instance
     From
         (Inhabitant (Pattern variable Attribute.Null))
         (Pattern variable Attribute.Null)
-  where
+    where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
@@ -429,24 +427,24 @@ instance From (SomeVariable variable) (Pattern variable Attribute.Null) where
     from = Recursive.embed . (:<) Attribute.Null . from
     {-# INLINE CONLIKE from #-}
 
-fromPattern
-    :: Pattern variable annotation
-    -> Base
+fromPattern ::
+    Pattern variable annotation ->
+    Base
         (Pattern variable annotation)
         (Pattern variable annotation)
 fromPattern = Recursive.project
 
-asPattern
-    :: Base
+asPattern ::
+    Base
         (Pattern variable annotation)
-        (Pattern variable annotation)
-    -> Pattern variable annotation
+        (Pattern variable annotation) ->
+    Pattern variable annotation
 asPattern = Recursive.embed
 
 -- | Erase the annotations from any 'Pattern'.
-eraseAnnotations
-    :: Pattern variable erased
-    -> Pattern variable Attribute.Null
+eraseAnnotations ::
+    Pattern variable erased ->
+    Pattern variable Attribute.Null
 eraseAnnotations = (<$) Attribute.Null
 
 {- | Use the provided traversal to replace all variables in a 'Pattern'.
@@ -457,24 +455,23 @@ intermediate trees will be fully allocated; @mapVariables@ is more composable in
 this respect.
 
 See also: 'mapVariables'
-
- -}
-traverseVariables
-    :: forall m variable1 variable2 annotation
-    .  Monad m
-    => AdjSomeVariableName (variable1 -> m variable2)
-    -> Pattern variable1 annotation
-    -> m (Pattern variable2 annotation)
+-}
+traverseVariables ::
+    forall m variable1 variable2 annotation.
+    Monad m =>
+    AdjSomeVariableName (variable1 -> m variable2) ->
+    Pattern variable1 annotation ->
+    m (Pattern variable2 annotation)
 traverseVariables adj =
     Recursive.fold traverseVariablesWorker
   where
     traverseF = PatternF.traverseVariables adj
 
-    traverseVariablesWorker
-        :: Base
+    traverseVariablesWorker ::
+        Base
             (Pattern variable1 annotation)
-            (m (Pattern variable2 annotation))
-        -> m (Pattern variable2 annotation)
+            (m (Pattern variable2 annotation)) ->
+        m (Pattern variable2 annotation)
     traverseVariablesWorker (a :< pat) =
         reannotate <$> (traverseF =<< sequence pat)
       where
@@ -487,12 +484,11 @@ demanded. Intermediate allocation from composing multiple transformations with
 @mapVariables@ is amortized; the intermediate trees are never fully resident.
 
 See also: 'traverseVariables'
-
- -}
-mapVariables
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> Pattern variable1 annotation
-    -> Pattern variable2 annotation
+-}
+mapVariables ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    Pattern variable1 annotation ->
+    Pattern variable2 annotation
 mapVariables adj =
     Recursive.ana (mapVariablesWorker . Recursive.project)
   where
@@ -508,11 +504,10 @@ contains any variables, the result is @Nothing@.
 @asConcretePattern@ is strict, i.e. it traverses its argument entirely,
 because the entire tree must be traversed to inspect for variables before
 deciding if the result is @Nothing@ or @Just _@.
-
- -}
-asConcretePattern
-    :: Pattern variable annotation
-    -> Maybe (Pattern Concrete annotation)
+-}
+asConcretePattern ::
+    Pattern variable annotation ->
+    Maybe (Pattern Concrete annotation)
 asConcretePattern = traverseVariables (pure toConcrete)
 
 isConcrete :: Pattern variable annotation -> Bool
@@ -525,9 +520,8 @@ polymorphic in the variable type.
 
 @fromConcretePattern@ unfolds the resulting syntax tree lazily, so it
 composes with other tree transformations without allocating intermediates.
-
- -}
-fromConcretePattern
-    :: Pattern Concrete annotation
-    -> Pattern variable annotation
+-}
+fromConcretePattern ::
+    Pattern Concrete annotation ->
+    Pattern variable annotation
 fromConcretePattern = mapVariables (pure $ from @Concrete)

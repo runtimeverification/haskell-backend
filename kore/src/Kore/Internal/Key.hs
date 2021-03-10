@@ -1,32 +1,31 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
- -}
-
-module Kore.Internal.Key
-    ( Key (..)
-    , KeyF (..)
-    , simplifiedAttribute
-    ) where
+-}
+module Kore.Internal.Key (
+    Key (..),
+    KeyF (..),
+    simplifiedAttribute,
+) where
 
 import Prelude.Kore
 
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Foldable
-    ( Base
-    , Corecursive
-    , Recursive
-    )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Foldable (
+    Base,
+    Corecursive,
+    Recursive,
+ )
 import qualified Data.Functor.Foldable as Recursive
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
-import qualified Kore.Attribute.Pattern as Attribute
-    ( Pattern
-    , simplifiedAttribute
-    )
+import qualified Kore.Attribute.Pattern as Attribute (
+    Pattern,
+    simplifiedAttribute,
+ )
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -35,9 +34,9 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
 import Kore.Internal.InternalInt
@@ -45,27 +44,26 @@ import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.InternalString
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import Kore.Sort
-    ( Sort
-    )
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.Syntax.DomainValue
-    ( DomainValue (..)
-    )
+import Kore.Internal.Symbol (
+    Symbol,
+ )
+import Kore.Sort (
+    Sort,
+ )
+import Kore.Syntax.Application (
+    Application (..),
+ )
+import Kore.Syntax.DomainValue (
+    DomainValue (..),
+ )
 import Kore.Syntax.StringLiteral
-import Kore.Syntax.Variable
-    ( Concrete
-    )
+import Kore.Syntax.Variable (
+    Concrete,
+ )
 import Kore.Unparser
 
-{- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
- -}
-newtype Key = Key { getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key }
+-- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
+newtype Key = Key {getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key}
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -88,31 +86,27 @@ instance Corecursive Key where
 instance Diff Key where
     diffPrec
         key1@(Recursive.project -> attrs1 :< keyF1)
-        key2@(Recursive.project -> _      :< keyF2)
-      =
-        -- If the patterns differ, do not display the difference in the
-        -- attributes, which would overload the user with redundant information.
-        diffPrecGeneric
-            (Recursive.embed (attrs1 :< keyF1))
-            (Recursive.embed (attrs1 :< keyF2))
-        <|> diffPrecGeneric key1 key2
+        key2@(Recursive.project -> _ :< keyF2) =
+            -- If the patterns differ, do not display the difference in the
+            -- attributes, which would overload the user with redundant information.
+            diffPrecGeneric
+                (Recursive.embed (attrs1 :< keyF1))
+                (Recursive.embed (attrs1 :< keyF2))
+                <|> diffPrecGeneric key1 key2
 
-{- | This instance ignores the difference in attributes.
- -}
+-- | This instance ignores the difference in attributes.
 instance Eq Key where
     (==) (Recursive.project -> _ :< keyF1) (Recursive.project -> _ :< keyF2) =
         keyF1 == keyF2
 
-{- | This instance ignores the difference in attributes.
- -}
+-- | This instance ignores the difference in attributes.
 instance Ord Key where
     compare
         (Recursive.project -> _ :< pat1)
-        (Recursive.project -> _ :< pat2)
-      = compare pat1 pat2
+        (Recursive.project -> _ :< pat2) =
+            compare pat1 pat2
 
-{- | This instance ignores the difference in attributes.
- -}
+-- | This instance ignores the difference in attributes.
 instance Hashable Key where
     hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
     {-# INLINE hashWithSalt #-}
@@ -145,20 +139,19 @@ instance From InternalString Key where
     from = synthesize . from
     {-# INLINE from #-}
 
-{- | The base functor of 'Key'; the branching structure of the syntax tree.
- -}
+-- | The base functor of 'Key'; the branching structure of the syntax tree.
 data KeyF child
-    = ApplySymbolF    !(Application Symbol child)
-    | InjF            !(Inj child)
-    | DomainValueF    !(DomainValue Sort child)
-    | InternalBoolF   !(Const InternalBool child)
-    | InternalBytesF  !(Const InternalBytes child)
-    | InternalIntF    !(Const InternalInt child)
-    | InternalListF   !(InternalList child)
-    | InternalMapF    !(InternalMap Key child)
-    | InternalSetF    !(InternalSet Key child)
+    = ApplySymbolF !(Application Symbol child)
+    | InjF !(Inj child)
+    | DomainValueF !(DomainValue Sort child)
+    | InternalBoolF !(Const InternalBool child)
+    | InternalBytesF !(Const InternalBytes child)
+    | InternalIntF !(Const InternalInt child)
+    | InternalListF !(InternalList child)
+    | InternalMapF !(InternalMap Key child)
+    | InternalSetF !(InternalSet Key child)
     | InternalStringF !(Const InternalString child)
-    | StringLiteralF  !(Const StringLiteral child)
+    | StringLiteralF !(Const StringLiteral child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)

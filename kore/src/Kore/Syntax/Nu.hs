@@ -1,17 +1,15 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.Nu
-    ( Nu (..)
-    ) where
+module Kore.Syntax.Nu (
+    Nu (..),
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
@@ -21,15 +19,14 @@ import Kore.Syntax.Variable
 import Kore.Unparser
 import qualified Pretty
 
-{-|'Nu' corresponds to the @ν@ syntactic category from the
+{- |'Nu' corresponds to the @ν@ syntactic category from the
  Syntax of the MμL
 
 The sort of the variable is the same as the sort of the result.
-
 -}
 data Nu variable child = Nu
     { nuVariable :: !(SetVariable variable)
-    , nuChild    :: child
+    , nuChild :: child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -38,33 +35,33 @@ data Nu variable child = Nu
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance
-    (Unparse variable, Unparse child) => Unparse (Nu variable child)
-  where
-    unparse Nu {nuVariable, nuChild } =
+instance (Unparse variable, Unparse child) => Unparse (Nu variable child) where
+    unparse Nu{nuVariable, nuChild} =
         "\\nu"
-        <> parameters ([] :: [Sort])
-        <> arguments' [unparse nuVariable, unparse nuChild]
+            <> parameters ([] :: [Sort])
+            <> arguments' [unparse nuVariable, unparse nuChild]
 
-    unparse2 Nu {nuVariable, nuChild } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\nu"
-            , unparse2SortedVariable nuVariable
-            , unparse2 nuChild
-            ])
+    unparse2 Nu{nuVariable, nuChild} =
+        Pretty.parens
+            ( Pretty.fillSep
+                [ "\\nu"
+                , unparse2SortedVariable nuVariable
+                , unparse2 nuChild
+                ]
+            )
 
 instance
     Ord variable =>
     Synthetic (FreeVariables variable) (Nu variable)
-  where
-    synthetic Nu { nuVariable, nuChild } =
+    where
+    synthetic Nu{nuVariable, nuChild} =
         bindVariable (inject nuVariable) nuChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Nu variable) where
-    synthetic Nu { nuVariable, nuChild } =
+    synthetic Nu{nuVariable, nuChild} =
         nuSort
-        & seq (matchSort nuSort nuChild)
+            & seq (matchSort nuSort nuChild)
       where
-        Variable { variableSort = nuSort } = nuVariable
+        Variable{variableSort = nuSort} = nuVariable
     {-# INLINE synthetic #-}

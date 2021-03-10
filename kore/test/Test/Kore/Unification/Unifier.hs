@@ -1,41 +1,41 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Unification.Unifier
-    ( test_unification
-    , test_unsupportedConstructs
-    , test_evaluated
-    ) where
+module Test.Kore.Unification.Unifier (
+    test_unification,
+    test_unsupportedConstructs,
+    test_evaluated,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Exception
-    ( ErrorCall (ErrorCall)
-    , catch
-    , evaluate
-    )
+import Control.Exception (
+    ErrorCall (ErrorCall),
+    catch,
+    evaluate,
+ )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Map.Strict as Map
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    , topTODO
-    )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , runSimplifier
-    )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+    topTODO,
+ )
+import Kore.Step.Simplification.Data (
+    Env (..),
+    runSimplifier,
+ )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifierMap
-    , MonadSimplify
-    )
+import Kore.Step.Simplification.Simplify (
+    BuiltinAndAxiomSimplifierMap,
+    MonadSimplify,
+ )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
@@ -43,12 +43,12 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import qualified Pretty
 
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Test.Kore
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
@@ -57,9 +57,9 @@ import qualified Test.Kore.Internal.TermLike as TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
-import Test.SMT
-    ( runNoSMT
-    )
+import Test.SMT (
+    runNoSMT,
+ )
 import Test.Tasty.HUnit.Ext
 
 var :: Text -> Sort -> Mock.MockRewritingElementVariable
@@ -82,21 +82,21 @@ b = Mock.b
 f :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.constr10
 
-ef
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+ef ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 ef = Mock.functionalConstr30
 
 eg, eh :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 eg = Mock.functionalConstr10
 eh = Mock.functionalConstr11
 
-nonLinF
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+nonLinF ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 nonLinF = Mock.functionalConstr20
 
 nonLinG :: TermLike RewritingVariableName -> TermLike RewritingVariableName
@@ -107,10 +107,10 @@ nonLinA = Mock.d
 nonLinX = mkElemVar Mock.xConfig
 nonLinY = mkElemVar Mock.yConfig
 
-expBin
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
+expBin ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName
 expBin = Mock.functionalConstr21
 
 expA, expX, expY :: TermLike RewritingVariableName
@@ -124,33 +124,34 @@ ex2 = mkElemVar $ var "ex2" Mock.testSort
 ex3 = mkElemVar $ var "ex3" Mock.testSort
 ex4 = mkElemVar $ var "ex4" Mock.testSort
 
-
 dv1, dv2 :: TermLike RewritingVariableName
 dv1 =
-    mkDomainValue DomainValue
-        { domainValueSort = Mock.testSort
-        , domainValueChild = mkStringLiteral "dv1"
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = Mock.testSort
+            , domainValueChild = mkStringLiteral "dv1"
+            }
 dv2 =
-    mkDomainValue DomainValue
-        { domainValueSort = Mock.testSort
-        , domainValueChild = mkStringLiteral "dv2"
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = Mock.testSort
+            , domainValueChild = mkStringLiteral "dv2"
+            }
 
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv = Mock.env
 
-unificationProblem
-    :: UnificationTerm
-    -> UnificationTerm
-    -> TermLike RewritingVariableName
+unificationProblem ::
+    UnificationTerm ->
+    UnificationTerm ->
+    TermLike RewritingVariableName
 unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
     mkAnd term1 term2
 
 type Substitution = [(Text, TermLike RewritingVariableName)]
 
-unificationSubstitution
-    :: Substitution -> [ Substitution.Assignment RewritingVariableName ]
+unificationSubstitution ::
+    Substitution -> [Substitution.Assignment RewritingVariableName]
 unificationSubstitution = map trans
   where
     trans (v, p) =
@@ -158,13 +159,12 @@ unificationSubstitution = map trans
 
 unificationResult :: UnificationResult -> Pattern RewritingVariableName
 unificationResult
-    UnificationResult { term, substitution, predicate }
-  =
-    unificationSubstitution substitution
-    & Substitution.unsafeWrapFromAssignments
-    & Condition.fromSubstitution
-    & (<>) (Condition.fromPredicate predicate)
-    & Pattern.withCondition term
+    UnificationResult{term, substitution, predicate} =
+        unificationSubstitution substitution
+            & Substitution.unsafeWrapFromAssignments
+            & Condition.fromSubstitution
+            & (<>) (Condition.fromPredicate predicate)
+            & Pattern.withCondition term
 
 newtype UnificationTerm = UnificationTerm (TermLike RewritingVariableName)
 
@@ -172,35 +172,34 @@ instance Unparse UnificationTerm where
     unparse (UnificationTerm term) = unparse term
     unparse2 (UnificationTerm term) = unparse2 term
 
-data UnificationResult =
-    UnificationResult
-        { term :: TermLike RewritingVariableName
-        , substitution :: Substitution
-        , predicate :: Predicate RewritingVariableName
-        }
+data UnificationResult = UnificationResult
+    { term :: TermLike RewritingVariableName
+    , substitution :: Substitution
+    , predicate :: Predicate RewritingVariableName
+    }
 
-simplifyAnds
-    :: Monad.Unify.MonadUnify unifier
-    => NonEmpty (TermLike RewritingVariableName)
-    -> unifier (Pattern RewritingVariableName)
+simplifyAnds ::
+    Monad.Unify.MonadUnify unifier =>
+    NonEmpty (TermLike RewritingVariableName) ->
+    unifier (Pattern RewritingVariableName)
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
         (Unification.unificationMakeAnd Not.notSimplifier)
         SideCondition.top
 
-andSimplify
-    :: HasCallStack
-    => UnificationTerm
-    -> UnificationTerm
-    -> [UnificationResult]
-    -> Assertion
+andSimplify ::
+    HasCallStack =>
+    UnificationTerm ->
+    UnificationTerm ->
+    [UnificationResult] ->
+    Assertion
 andSimplify term1 term2 results = do
     let expect = map unificationResult results
     subst' <-
-        runNoSMT
-        $ runSimplifier testEnv
-        $ Monad.Unify.runUnifierT Not.notSimplifier
-        $ simplifyAnds (unificationProblem term1 term2 :| [])
+        runNoSMT $
+            runSimplifier testEnv $
+                Monad.Unify.runUnifierT Not.notSimplifier $
+                    simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual (message expect subst') expect subst'
   where
     message expected actual =
@@ -215,72 +214,72 @@ andSimplify term1 term2 results = do
             , Pretty.indent 4 (foldMap unparse actual)
             ]
 
-andSimplifyException
-    :: HasCallStack
-    => String
-    -> UnificationTerm
-    -> UnificationTerm
-    -> String
-    -> TestTree
+andSimplifyException ::
+    HasCallStack =>
+    String ->
+    UnificationTerm ->
+    UnificationTerm ->
+    String ->
+    TestTree
 andSimplifyException message term1 term2 exceptionMessage =
     testCase message (catch test handler)
-    where
-        test = do
-            assignment <-
-                runNoSMT $ runSimplifier testEnv
-                $ Monad.Unify.runUnifierT Not.notSimplifier
-                $ simplifyAnds (unificationProblem term1 term2 :| [])
-            _ <- evaluate assignment
-            assertFailure "This evaluation should fail"
-        handler (ErrorCall s) = assertEqual "" exceptionMessage s
+  where
+    test = do
+        assignment <-
+            runNoSMT $
+                runSimplifier testEnv $
+                    Monad.Unify.runUnifierT Not.notSimplifier $
+                        simplifyAnds (unificationProblem term1 term2 :| [])
+        _ <- evaluate assignment
+        assertFailure "This evaluation should fail"
+    handler (ErrorCall s) = assertEqual "" exceptionMessage s
 
-unificationProcedureSuccessWithSimplifiers
-    :: HasCallStack
-    => TestName
-    -> BuiltinAndAxiomSimplifierMap
-    -> UnificationTerm
-    -> UnificationTerm
-    ->  [   ( [Substitution.Assignment RewritingVariableName]
-            , Predicate RewritingVariableName
-            )
-        ]
-    -> TestTree
+unificationProcedureSuccessWithSimplifiers ::
+    HasCallStack =>
+    TestName ->
+    BuiltinAndAxiomSimplifierMap ->
+    UnificationTerm ->
+    UnificationTerm ->
+    [ ( [Substitution.Assignment RewritingVariableName]
+      , Predicate RewritingVariableName
+      )
+    ] ->
+    TestTree
 unificationProcedureSuccessWithSimplifiers
     message
     axiomIdToSimplifier
     (UnificationTerm term1)
     (UnificationTerm term2)
-    expect
-  =
-    testCase message $ do
-        let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
-        results <-
-            unificationProcedure
-                SideCondition.topTODO
-                term1
-                term2
-            & Monad.Unify.runUnifierT Not.notSimplifier
-            & runSimplifier mockEnv
-            & runNoSMT
-        let
-            normalize
-                :: Condition RewritingVariableName
-                ->  ( [ Substitution.Assignment RewritingVariableName]
+    expect =
+        testCase message $ do
+            let mockEnv = testEnv{simplifierAxioms = axiomIdToSimplifier}
+            results <-
+                unificationProcedure
+                    SideCondition.topTODO
+                    term1
+                    term2
+                    & Monad.Unify.runUnifierT Not.notSimplifier
+                    & runSimplifier mockEnv
+                    & runNoSMT
+            let normalize ::
+                    Condition RewritingVariableName ->
+                    ( [Substitution.Assignment RewritingVariableName]
                     , Predicate RewritingVariableName
                     )
-            normalize Conditional { substitution, predicate } =
-                (Substitution.unwrap substitution, predicate)
-        assertEqual ""
-            expect
-            (map normalize results)
+                normalize Conditional{substitution, predicate} =
+                    (Substitution.unwrap substitution, predicate)
+            assertEqual
+                ""
+                expect
+                (map normalize results)
 
-unificationProcedureSuccess
-    :: HasCallStack
-    => TestName
-    -> UnificationTerm
-    -> UnificationTerm
-    -> [(Substitution, Predicate RewritingVariableName)]
-    -> TestTree
+unificationProcedureSuccess ::
+    HasCallStack =>
+    TestName ->
+    UnificationTerm ->
+    UnificationTerm ->
+    [(Substitution, Predicate RewritingVariableName)] ->
+    TestTree
 unificationProcedureSuccess message term1 term2 substPredicate =
     unificationProcedureSuccessWithSimplifiers
         message
@@ -289,11 +288,11 @@ unificationProcedureSuccess message term1 term2 substPredicate =
         term2
         expect
   where
-    expect
-        ::  [   ( [Substitution.Assignment RewritingVariableName]
-                , Predicate RewritingVariableName
-                )
-            ]
+    expect ::
+        [ ( [Substitution.Assignment RewritingVariableName]
+          , Predicate RewritingVariableName
+          )
+        ]
     expect =
         map (Bifunctor.first unificationSubstitution) substPredicate
 
@@ -349,8 +348,8 @@ test_unification =
                 , predicate = Predicate.makeTruePredicate
                 }
             ]
-    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
-        $ andSimplify
+    , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3" $
+        andSimplify
             (UnificationTerm (ef ex1 (eh ex1) ex2))
             (UnificationTerm (ef (eg ex3) ex4 ex3))
             [ UnificationResult
@@ -365,7 +364,6 @@ test_unification =
             ]
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
         andSimplify
-
             (UnificationTerm (nonLinF (nonLinG nonLinX) nonLinX))
             (UnificationTerm (nonLinF nonLinY nonLinA))
             [ UnificationResult
@@ -377,8 +375,8 @@ test_unification =
                 , predicate = Predicate.makeTruePredicate
                 }
             ]
-    , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
-        $ andSimplify
+    , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))" $
+        andSimplify
             (UnificationTerm (expBin (expBin expA expY) expX))
             (UnificationTerm (expBin expX (expBin expY expA)))
             [ UnificationResult
@@ -399,7 +397,9 @@ test_unification =
         "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
         (UnificationTerm (expBin (expBin expA expY) expX))
         (UnificationTerm (expBin expX (expBin expY expA)))
-        [   (   [ ("a", expY)
+        [
+            (
+                [ ("a", expY)
                 , ("x", expBin expY expY)
                 ]
             , Predicate.makeTruePredicate
@@ -409,12 +409,13 @@ test_unification =
         "Unifying two non-ctors results in equals predicate"
         (UnificationTerm a2)
         (UnificationTerm a4)
-        [ ([], makeEqualsPredicate a2 a4) ]
+        [([], makeEqualsPredicate a2 a4)]
     , unificationProcedureSuccess
         "Unifying function and variable results in ceil predicate"
         (UnificationTerm (mkElemVar Mock.xConfig))
         (UnificationTerm a5)
-        [   ( [("x", a5)]
+        [
+            ( [("x", a5)]
             , Predicate.makeCeilPredicate a5
             )
         ]
@@ -429,13 +430,15 @@ test_unification =
             (UnificationTerm dv1)
             (UnificationTerm dv2)
             []
-    , andSimplifyException "Unmatching constructor constant + domain value"
+    , andSimplifyException
+        "Unmatching constructor constant + domain value"
         (UnificationTerm a)
         (UnificationTerm dv2)
         "Cannot handle Constructor and DomainValue:\n\
         \/* Fl Fn D Sfa Cl */ a{}()\n\
         \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv2\")\n"
-    , andSimplifyException "Unmatching domain value + constructor constant"
+    , andSimplifyException
+        "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a)
         "Cannot handle DomainValue and Constructor:\n\
@@ -518,18 +521,20 @@ test_unification =
             (UnificationTerm (f a))
             (UnificationTerm (f a1))
             []
-          {- currently this cannot even be built because of builder checks
-    , andSimplifyFailure "Unmatching sorts"
-        (UnificationTerm aA)
-        (UnificationTerm bA)
-        UnificationError
-        -}
-    , testCase "Maps substitution variables"
-        (assertEqual ""
-            (Substitution.mkUnwrappedSubstitution
+    , {- currently this cannot even be built because of builder checks
+      , andSimplifyFailure "Unmatching sorts"
+          (UnificationTerm aA)
+          (UnificationTerm bA)
+          UnificationError
+          -}
+      testCase
+        "Maps substitution variables"
+        ( assertEqual
+            ""
+            ( Substitution.mkUnwrappedSubstitution
                 [(inject . ElementVariableName <$> mkW "1", war' "2")]
             )
-            (Substitution.unwrap
+            ( Substitution.unwrap
                 . Substitution.mapVariables showUnifiedVar
                 . Substitution.wrap
                 . Substitution.mkUnwrappedSubstitution
@@ -537,120 +542,120 @@ test_unification =
             )
         )
     , testCase "framed Map with concrete Map" $
-            andSimplify
-                (UnificationTerm
-                    (Mock.concatMap
-                        (Mock.builtinMap [(a, mkElemVar Mock.xConfig)])
+        andSimplify
+            ( UnificationTerm
+                ( Mock.concatMap
+                    (Mock.builtinMap [(a, mkElemVar Mock.xConfig)])
+                    (mkElemVar Mock.mConfig)
+                )
+            )
+            ( UnificationTerm
+                (Mock.builtinMap [(a, constr a), (b, constr b)])
+            )
+            [ UnificationResult
+                { term =
+                    Mock.builtinMap [(a, constr a), (b, constr b)]
+                , predicate = Predicate.makeTruePredicate
+                , substitution =
+                    [ ("x", constr a)
+                    , ("m", Mock.builtinMap [(Mock.b, constr b)])
+                    ]
+                }
+            ]
+    , testCase "key outside of map" $
+        andSimplify
+            ( UnificationTerm
+                ( constr20
+                    y
+                    ( Mock.concatMap
+                        (Mock.builtinMap [(y, x)])
                         (mkElemVar Mock.mConfig)
                     )
                 )
-                (UnificationTerm
+            )
+            ( UnificationTerm
+                ( constr20
+                    Mock.a
                     (Mock.builtinMap [(a, constr a), (b, constr b)])
                 )
-                [ UnificationResult
-                    { term =
-                        Mock.builtinMap [(a, constr a) , (b, constr b)]
-                    , predicate = Predicate.makeTruePredicate
-                    , substitution =
-                        [ ("x", constr a)
-                        , ("m", Mock.builtinMap [(Mock.b, constr b)])
-                        ]
-                    }
-                ]
-    , testCase "key outside of map" $
-            andSimplify
-                (UnificationTerm
-                    (constr20
-                        y
-                        (Mock.concatMap
-                            (Mock.builtinMap [(y, x)])
-                            (mkElemVar Mock.mConfig)
-                        )
-                    )
-                )
-                (UnificationTerm
-                    (constr20
+            )
+            [ UnificationResult
+                { term =
+                    constr20
                         Mock.a
                         (Mock.builtinMap [(a, constr a), (b, constr b)])
-                    )
-                )
-                [ UnificationResult
-                    { term =
-                        constr20
-                            Mock.a
-                            (Mock.builtinMap [(a, constr a), (b, constr b)])
-                    , predicate = Predicate.makeTruePredicate
-                    , substitution =
-                        [ ("x", constr a)
-                        , ("y", a)
-                        , ("m", Mock.builtinMap [(Mock.b, constr b)])
-                        ]
-                    }
-                ]
+                , predicate = Predicate.makeTruePredicate
+                , substitution =
+                    [ ("x", constr a)
+                    , ("y", a)
+                    , ("m", Mock.builtinMap [(Mock.b, constr b)])
+                    ]
+                }
+            ]
     , testCase "key outside of map, symbolic opaque terms" $
-            andSimplify
-                (UnificationTerm
-                    (constr20
-                        y
-                        (Mock.concatMap
-                            (Mock.builtinMap [(y, x)])
-                            (mkElemVar Mock.mConfig)
-                        )
+        andSimplify
+            ( UnificationTerm
+                ( constr20
+                    y
+                    ( Mock.concatMap
+                        (Mock.builtinMap [(y, x)])
+                        (mkElemVar Mock.mConfig)
                     )
                 )
-                (UnificationTerm
-                    (constr20
+            )
+            ( UnificationTerm
+                ( constr20
+                    Mock.a
+                    ( Mock.concatMap
+                        (Mock.builtinMap [(a, constr a)])
+                        (mkElemVar Mock.xMapConfig)
+                    )
+                )
+            )
+            [ UnificationResult
+                { term =
+                    constr20
                         Mock.a
-                        (Mock.concatMap
+                        ( Mock.concatMap
                             (Mock.builtinMap [(a, constr a)])
                             (mkElemVar Mock.xMapConfig)
                         )
-                    )
-                )
-                [ UnificationResult
-                    { term =
-                        constr20
-                            Mock.a
-                            (Mock.concatMap
-                                (Mock.builtinMap [(a, constr a)])
-                                (mkElemVar Mock.xMapConfig)
-                            )
-                    , predicate =
-                        Predicate.makeAndPredicate
-                            (Predicate.makeNotPredicate
-                                (Predicate.makeCeilPredicate
-                                    (Mock.concatMap
-                                        (Mock.builtinMap [(a, constr a)])
-                                        (mkElemVar Mock.xMapConfig)
-                                    )
+                , predicate =
+                    Predicate.makeAndPredicate
+                        ( Predicate.makeNotPredicate
+                            ( Predicate.makeCeilPredicate
+                                ( Mock.concatMap
+                                    (Mock.builtinMap [(a, constr a)])
+                                    (mkElemVar Mock.xMapConfig)
                                 )
                             )
-                            ( Predicate.makeNotPredicate
-                                ( Predicate.makeCeilPredicate
-                                    (Mock.concatMap
-                                        (Mock.builtinMap [(a, x)])
-                                        (mkElemVar Mock.mConfig)
-                                    )
+                        )
+                        ( Predicate.makeNotPredicate
+                            ( Predicate.makeCeilPredicate
+                                ( Mock.concatMap
+                                    (Mock.builtinMap [(a, x)])
+                                    (mkElemVar Mock.mConfig)
                                 )
                             )
-                    , substitution = [ ("y", a) ]
-                    }
-                , UnificationResult
-                    { term =
-                        constr20
-                            Mock.a
-                            (Mock.concatMap
-                                (Mock.builtinMap [(a, constr a)])
-                                (mkElemVar Mock.xMapConfig)
-                            )
-                    , predicate = Predicate.makeTruePredicate
-                    , substitution =
-                        [ ("x", constr a)
-                        , ("y", a)
-                        , ("m", mkElemVar Mock.xMapConfig)
-                        ]
-                    }
-                ]
+                        )
+                , substitution = [("y", a)]
+                }
+            , UnificationResult
+                { term =
+                    constr20
+                        Mock.a
+                        ( Mock.concatMap
+                            (Mock.builtinMap [(a, constr a)])
+                            (mkElemVar Mock.xMapConfig)
+                        )
+                , predicate = Predicate.makeTruePredicate
+                , substitution =
+                    [ ("x", constr a)
+                    , ("y", a)
+                    , ("m", mkElemVar Mock.xMapConfig)
+                    ]
+                }
+            ]
     ]
   where
     constr = Mock.functionalConstr10
@@ -675,7 +680,8 @@ test_evaluated =
         "variable and non-functional term"
         (UnificationTerm (mkElemVar Mock.xConfig))
         (UnificationTerm (mkEvaluated a5))
-        [   ( [("x", mkEvaluated a5)]
+        [
+            ( [("x", mkEvaluated a5)]
             , Predicate.makeCeilPredicate (mkEvaluated a5)
             )
         ]
@@ -699,7 +705,7 @@ injUnificationTests :: [TestTree]
 injUnificationTests =
     [ testCase "Injected Variable" $
         andSimplify
-            (UnificationTerm
+            ( UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xConfigSubSort))
             )
             (UnificationTerm (Mock.sortInjectionSubToTop Mock.aSubsort))
@@ -722,13 +728,13 @@ injUnificationTests =
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
         term2 <-
-            simplifyPattern
-            $ UnificationTerm
-                (Mock.sortInjectionSubToTop
-                    (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                )
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionSubToTop
+                        (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                    )
         andSimplify
-            (UnificationTerm
+            ( UnificationTerm
                 (Mock.sortInjectionSubSubToTop (mkElemVar Mock.xConfigSubSubSort))
             )
             term2
@@ -739,12 +745,14 @@ injUnificationTests =
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
-        term1 <- simplifyPattern $ UnificationTerm
-            (Mock.sortInjectionSubToTop
-                (Mock.sortInjectionSubSubToSub
-                    (mkElemVar Mock.xConfigSubSubSort)
-                )
-            )
+        term1 <-
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionSubToTop
+                        ( Mock.sortInjectionSubSubToSub
+                            (mkElemVar Mock.xConfigSubSubSort)
+                        )
+                    )
         andSimplify
             term1
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
@@ -755,16 +763,20 @@ injUnificationTests =
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
-        term1 <- simplifyPattern $ UnificationTerm
-            (Mock.sortInjectionSubToTop
-                (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-            )
-        term2 <- simplifyPattern $ UnificationTerm
-            (Mock.sortInjectionOtherToTop
-                (Mock.sortInjectionSubSubToOther
-                    (mkElemVar Mock.xConfigSubSubSort)
-                )
-            )
+        term1 <-
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionSubToTop
+                        (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                    )
+        term2 <-
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionOtherToTop
+                        ( Mock.sortInjectionSubSubToOther
+                            (mkElemVar Mock.xConfigSubSubSort)
+                        )
+                    )
         andSimplify
             term1
             term2
@@ -781,17 +793,17 @@ injUnificationTests =
             []
     , testCase "unmatching nested injections" $ do
         term1 <-
-            simplifyPattern
-            $ UnificationTerm
-                (Mock.sortInjectionSubToTop
-                    (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                )
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionSubToTop
+                        (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                    )
         term2 <-
-            simplifyPattern
-            $ UnificationTerm
-                (Mock.sortInjectionOtherToTop
-                    (Mock.sortInjectionSubOtherToOther Mock.aSubOthersort)
-                )
+            simplifyPattern $
+                UnificationTerm
+                    ( Mock.sortInjectionOtherToTop
+                        (Mock.sortInjectionSubOtherToOther Mock.aSubOthersort)
+                    )
         andSimplify
             term1
             term2
@@ -799,13 +811,14 @@ injUnificationTests =
     , testCase "matching injections" $
         andSimplify
             (UnificationTerm (Mock.sortInjectionSubSubToTop Mock.aSubSubsort))
-            (UnificationTerm
+            ( UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xConfigSubSort))
             )
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution =
-                    [   ( "xSubSort"
+                    [
+                        ( "xSubSort"
                         , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                         )
                     ]
@@ -815,7 +828,7 @@ injUnificationTests =
     , testCase "unmatching injections" $
         andSimplify
             (UnificationTerm (Mock.sortInjectionOtherToTop Mock.aOtherSort))
-            (UnificationTerm
+            ( UnificationTerm
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xConfigSubSort))
             )
             []
@@ -823,7 +836,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runNoSMT $ runSimplifier testEnv simplifier
+    Conditional{term = term'} <- runNoSMT $ runSimplifier testEnv simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
@@ -834,8 +847,8 @@ simplifyPattern (UnificationTerm term) = do
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term
 
-makeEqualsPredicate
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Predicate RewritingVariableName
+makeEqualsPredicate ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Predicate RewritingVariableName
 makeEqualsPredicate = Predicate.makeEqualsPredicate

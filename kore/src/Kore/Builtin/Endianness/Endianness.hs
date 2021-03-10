@@ -1,23 +1,22 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Builtin.Endianness.Endianness
-    ( Endianness (..)
-    , toApplication
-    ) where
+-}
+module Kore.Builtin.Endianness.Endianness (
+    Endianness (..),
+    toApplication,
+) where
 
 import Prelude.Kore
 
 import Data.Functor.Const
-import Data.Void
-    ( Void
-    )
-import qualified Generics.SOP as SOP
+import Data.Void (
+    Void,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Debug
 import Kore.AST.AstWithLocation
@@ -30,9 +29,9 @@ import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Internal.Symbol
 import Kore.Sort
-import Kore.Syntax.Application
-    ( Application (..)
-    )
+import Kore.Syntax.Application (
+    Application (..),
+ )
 import Kore.Unparser
 
 data Endianness

@@ -1,7 +1,6 @@
 {-# LANGUAGE Strict #-}
-
-{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module Test.Kore.Step.MockSymbols where
 
@@ -37,29 +36,29 @@ import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 
 import Data.Sup
 import qualified Kore.Attribute.Concat as Attribute
 import qualified Kore.Attribute.Element as Attribute
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
-import Kore.Attribute.Pattern.ConstructorLike
-    ( isConstructorLike
-    )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
+import Kore.Attribute.Pattern.ConstructorLike (
+    isConstructorLike,
+ )
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Constructors as Attribute
-    ( Constructors
-    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute (
+    Constructors,
+ )
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Attribute.Synthetic
-    ( synthesize
-    )
+import Kore.Attribute.Synthetic (
+    synthesize,
+ )
 import qualified Kore.Attribute.Unit as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
@@ -69,66 +68,66 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as Builtin.String
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.Symbol hiding
-    ( isConstructorLike
-    , sortInjection
-    )
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
-    , retractKey
-    )
+import Kore.Internal.Symbol hiding (
+    isConstructorLike,
+    sortInjection,
+ )
+import Kore.Internal.TermLike (
+    InternalVariable,
+    TermLike,
+    retractKey,
+ )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
-import Kore.Step.Axiom.EvaluationStrategy
-    ( builtinEvaluation
-    )
-import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-    ( AxiomIdentifier (..)
-    )
+import Kore.Step.Axiom.EvaluationStrategy (
+    builtinEvaluation,
+ )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
+    AxiomIdentifier (..),
+ )
 import qualified Kore.Step.Function.Memo as Memo
+import qualified Kore.Step.SMT.AST as SMT
+import qualified Kore.Step.SMT.Representation.Resolve as SMT (
+    resolve,
+ )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
-import Kore.Step.Simplification.Data
-    ( Env (Env)
-    , MonadSimplify
-    )
+import Kore.Step.Simplification.Data (
+    Env (Env),
+    MonadSimplify,
+ )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.OverloadSimplifier
-import Kore.Step.Simplification.Simplify
-    ( BuiltinAndAxiomSimplifierMap
-    , ConditionSimplifier
-    )
+import Kore.Step.Simplification.Simplify (
+    BuiltinAndAxiomSimplifierMap,
+    ConditionSimplifier,
+ )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
-import qualified Kore.Step.SMT.AST as SMT
-import qualified Kore.Step.SMT.Representation.Resolve as SMT
-    ( resolve
-    )
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkConfigVariable
-    , mkRuleVariable
-    )
-import qualified Test.ConsistentKore as ConsistentKore
-    ( CollectionSorts (..)
-    , Setup (..)
-    )
-import Test.Kore
-    ( testId
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+    mkRuleVariable,
+ )
+import qualified Test.ConsistentKore as ConsistentKore (
+    CollectionSorts (..),
+    Setup (..),
+ )
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -448,7 +447,8 @@ constr20Symbol = symbol constr20Id [testSort, testSort] testSort & constructor
 constrFunct20TestMapSymbol :: Symbol
 constrFunct20TestMapSymbol =
     symbol constrFunct20TestMapId [testSort, mapSort] testSort
-    & constructor & function
+        & constructor
+        & function
 
 function20MapTestSymbol :: Symbol
 function20MapTestSymbol =
@@ -493,27 +493,32 @@ functionalConstr12Symbol =
 functionalConstr20Symbol :: Symbol
 functionalConstr20Symbol =
     symbol functionalConstr20Id [testSort, testSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 functionalConstr21Symbol :: Symbol
 functionalConstr21Symbol =
     symbol functionalConstr21Id [testSort, testSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 functionalConstr30Symbol :: Symbol
 functionalConstr30Symbol =
     symbol functionalConstr30Id [testSort, testSort, testSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 functionalTopConstr20Symbol :: Symbol
 functionalTopConstr20Symbol =
     symbol functionalTopConstr20Id [topSort, testSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
     symbol functionalTopConstr21Id [testSort, topSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 fMapSymbol :: Symbol
 fMapSymbol =
@@ -526,12 +531,13 @@ injective11Symbol :: Symbol
 injective11Symbol = symbol injective11Id [testSort] testSort & injective
 
 sortInjectionSymbol :: Sort -> Sort -> Symbol
-sortInjectionSymbol fromSort toSort = Symbol
-    { symbolConstructor = sortInjectionId
-    , symbolParams      = [fromSort, toSort]
-    , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [fromSort] toSort
-    }
+sortInjectionSymbol fromSort toSort =
+    Symbol
+        { symbolConstructor = sortInjectionId
+        , symbolParams = [fromSort, toSort]
+        , symbolAttributes = Mock.sortInjectionAttributes
+        , symbolSorts = applicationSorts [fromSort] toSort
+        }
 
 sortInjection10Symbol :: Symbol
 sortInjection10Symbol = sortInjectionSymbol testSort0 testSort
@@ -604,54 +610,63 @@ topOverloadSymbol =
 unitMapSymbol :: Symbol
 unitMapSymbol =
     symbol unitMapId [] mapSort
-    & functional & hook "MAP.unit"
+        & functional
+        & hook "MAP.unit"
 
 elementMapSymbol :: Symbol
 elementMapSymbol =
     symbol elementMapId [testSort, testSort] mapSort
-    & functional & hook "MAP.element"
+        & functional
+        & hook "MAP.element"
 
 concatMapSymbol :: Symbol
 concatMapSymbol =
     symbol concatMapId [mapSort, mapSort] mapSort
-    & function & hook "MAP.concat"
+        & function
+        & hook "MAP.concat"
 
 opaqueMapSymbol :: Symbol
 opaqueMapSymbol =
     symbol opaqueMapId [testSort] mapSort
-    & function
+        & function
 
 inKeysMapSymbol :: Symbol
 inKeysMapSymbol =
     symbol inKeysMapId [testSort, mapSort] boolSort
-    & hook "MAP.in_keys"
+        & hook "MAP.in_keys"
 
 lessIntSymbol :: Symbol
 lessIntSymbol =
     symbol lessIntId [intSort, intSort] boolSort
-    & functional & hook "INT.lt" & smthook "<"
+        & functional
+        & hook "INT.lt"
+        & smthook "<"
 
 greaterEqIntSymbol :: Symbol
 greaterEqIntSymbol =
     symbol greaterEqIntId [intSort, intSort] boolSort
-    & functional & hook "INT.ge" & smthook ">="
+        & functional
+        & hook "INT.ge"
+        & smthook ">="
 
 tdivIntSymbol :: Symbol
 tdivIntSymbol =
     symbol tdivIntId [intSort, intSort] intSort
-    & function
-    & hook "INT.tdiv"
-    & smthook "div"
+        & function
+        & hook "INT.tdiv"
+        & smthook "div"
 
 concatListSymbol :: Symbol
 concatListSymbol =
     symbol concatListId [listSort, listSort] listSort
-    & functional & hook "LIST.concat"
+        & functional
+        & hook "LIST.concat"
 
 elementListSymbol :: Symbol
 elementListSymbol =
     symbol elementListId [testSort] listSort
-    & functional & hook "LIST.element"
+        & functional
+        & hook "LIST.element"
 
 unitListSymbol :: Symbol
 unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
@@ -659,7 +674,8 @@ unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
 concatSetSymbol :: Symbol
 concatSetSymbol =
     symbol concatSetId [setSort, setSort] setSort
-    & function & hook "SET.concat"
+        & function
+        & hook "SET.concat"
 
 elementSetSymbol :: Symbol
 elementSetSymbol =
@@ -672,25 +688,28 @@ unitSetSymbol =
 keqBoolSymbol :: Symbol
 keqBoolSymbol =
     symbol keqBoolId [testSort, testSort] boolSort
-    & function & functional & hook "KEQUAL.eq"
+        & function
+        & functional
+        & hook "KEQUAL.eq"
 
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
     symbol opaqueSetId [testSort] setSort
-    & function
+        & function
 
 sigmaSymbol :: Symbol
 sigmaSymbol =
     symbol sigmaId [testSort, testSort] testSort
-    & functional & constructor
+        & functional
+        & constructor
 
 anywhereSymbol :: Symbol
 anywhereSymbol =
     symbol anywhereId [] testSort
-    & functional
-    & Lens.set
-        (typed @Attribute.Symbol . typed @Attribute.Anywhere)
-        (Attribute.Anywhere True)
+        & functional
+        & Lens.set
+            (typed @Attribute.Symbol . typed @Attribute.Anywhere)
+            (Attribute.Anywhere True)
 
 functionSMTSymbol :: Symbol
 functionSMTSymbol =
@@ -702,66 +721,66 @@ functionalSMTSymbol =
 
 type MockElementVariable = ElementVariable VariableName
 
-pattern MockElementVariable
-    :: Id -> VariableCounter -> Sort -> MockElementVariable
+pattern MockElementVariable ::
+    Id -> VariableCounter -> Sort -> MockElementVariable
 pattern MockElementVariable base counter variableSort =
     Variable
-    { variableName = ElementVariableName VariableName { base, counter }
-    , variableSort
-    }
+        { variableName = ElementVariableName VariableName{base, counter}
+        , variableSort
+        }
 
 type MockRewritingElementVariable = ElementVariable RewritingVariableName
 
-mkRuleElementVariable
-    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkRuleElementVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingElementVariable
 mkRuleElementVariable base counter variableSort =
     Variable
-    { variableName =
-        ElementVariableName
-        $ mkRuleVariable VariableName { base, counter }
-    , variableSort
-    }
-mkConfigElementVariable
-    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+        { variableName =
+            ElementVariableName $
+                mkRuleVariable VariableName{base, counter}
+        , variableSort
+        }
+mkConfigElementVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingElementVariable
 mkConfigElementVariable base counter variableSort =
     Variable
-    { variableName =
-        ElementVariableName
-        $ mkConfigVariable VariableName { base, counter }
-    , variableSort
-    }
+        { variableName =
+            ElementVariableName $
+                mkConfigVariable VariableName{base, counter}
+        , variableSort
+        }
 
 type MockSetVariable = SetVariable VariableName
 
-pattern MockSetVariable
-    :: Id -> VariableCounter -> Sort -> MockSetVariable
+pattern MockSetVariable ::
+    Id -> VariableCounter -> Sort -> MockSetVariable
 pattern MockSetVariable base counter variableSort =
     Variable
-    { variableName = SetVariableName VariableName { base, counter }
-    , variableSort
-    }
+        { variableName = SetVariableName VariableName{base, counter}
+        , variableSort
+        }
 
 type MockRewritingSetVariable = SetVariable RewritingVariableName
 
-mkRuleSetVariable
-    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkRuleSetVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingSetVariable
 mkRuleSetVariable base counter variableSort =
     Variable
-    { variableName
-        = SetVariableName
-        $ mkRuleVariable VariableName { base, counter }
-    , variableSort
-    }
+        { variableName =
+            SetVariableName $
+                mkRuleVariable VariableName{base, counter}
+        , variableSort
+        }
 
-mkConfigSetVariable
-    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkConfigSetVariable ::
+    Id -> VariableCounter -> Sort -> MockRewritingSetVariable
 mkConfigSetVariable base counter variableSort =
     Variable
-    { variableName =
-        SetVariableName
-        $ mkConfigVariable VariableName { base, counter }
-    , variableSort
-    }
+        { variableName =
+            SetVariableName $
+                mkConfigVariable VariableName{base, counter}
+        , variableSort
+        }
 
 var_x_0 :: MockElementVariable
 var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
@@ -938,29 +957,29 @@ xConfigStringMetaSort =
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
     Variable
-    { variableSort
-    , variableName
-    }
+        { variableSort
+        , variableName
+        }
   where
     variableName =
-        injectVariableName VariableName { base = testId name, counter = mempty }
+        injectVariableName VariableName{base = testId name, counter = mempty}
     injectVariableName
-      | Text.head name == '@' = inject . SetVariableName
-      | otherwise = inject . ElementVariableName
+        | Text.head name == '@' = inject . SetVariableName
+        | otherwise = inject . ElementVariableName
 
 makeSomeConfigVariable :: Text -> Sort -> SomeVariable RewritingVariableName
 makeSomeConfigVariable name variableSort =
     Variable
-    { variableSort
-    , variableName
-    }
+        { variableSort
+        , variableName
+        }
   where
     variableName =
-        injectVariableName
-        $ mkConfigVariable VariableName { base = testId name, counter = mempty }
+        injectVariableName $
+            mkConfigVariable VariableName{base = testId name, counter = mempty}
     injectVariableName
-      | Text.head name == '@' = inject . SetVariableName
-      | otherwise = inject . ElementVariableName
+        | Text.head name == '@' = inject . SetVariableName
+        | otherwise = inject . ElementVariableName
 
 makeTestSomeVariable :: Text -> SomeVariable VariableName
 makeTestSomeVariable = (`makeSomeVariable` testSort)
@@ -1019,20 +1038,23 @@ d = Internal.mkApplySymbol dSymbol []
 e :: InternalVariable variable => TermLike variable
 e = Internal.mkApplySymbol eSymbol []
 
-f, g, h
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+f
+    , g
+    , h ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
 
-fSort0, gSort0
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fSort0
+    , gSort0 ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 fSort0 arg = Internal.mkApplySymbol fSort0Symbol [arg]
 gSort0 arg = Internal.mkApplySymbol gSort0Symbol [arg]
 
@@ -1054,47 +1076,47 @@ cgSort0 = Internal.mkApplySymbol cgSort0Symbol []
 ch :: InternalVariable variable => TermLike variable
 ch = Internal.mkApplySymbol chSymbol []
 
-fSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fSet ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fSet arg = Internal.mkApplySymbol fSetSymbol [arg]
 
-fTestInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fTestInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
 
-fTestFunctionalInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fTestFunctionalInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fTestFunctionalInt arg =
     Internal.mkApplySymbol fTestFunctionalIntSymbol [arg]
 
-fInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
 
-fBool
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fBool ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fBool arg = Internal.mkApplySymbol fBoolSymbol [arg]
 
-fString
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+fString ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 fString arg = Internal.mkApplySymbol fStringSymbol [arg]
 
 plain00 :: InternalVariable variable => TermLike variable
@@ -1112,53 +1134,55 @@ plain00OtherSort = Internal.mkApplySymbol plain00OtherSortSymbol []
 plain00SubSubsort :: InternalVariable variable => TermLike variable
 plain00SubSubsort = Internal.mkApplySymbol plain00SubSubsortSymbol []
 
-plain10, plain11
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+plain10
+    , plain11 ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 plain10 arg = Internal.mkApplySymbol plain10Symbol [arg]
 plain11 arg = Internal.mkApplySymbol plain11Symbol [arg]
 
-plain20
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+plain20 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 plain20 arg1 arg2 = Internal.mkApplySymbol plain20Symbol [arg1, arg2]
 
 constr00 :: InternalVariable variable => HasCallStack => TermLike variable
 constr00 = Internal.mkApplySymbol constr00Symbol []
 
-constr10, constr11
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+constr10
+    , constr11 ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 constr10 arg = Internal.mkApplySymbol constr10Symbol [arg]
 constr11 arg = Internal.mkApplySymbol constr11Symbol [arg]
 
-constr20
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+constr20 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 constr20 arg1 arg2 = Internal.mkApplySymbol constr20Symbol [arg1, arg2]
 
-constrFunct20TestMap
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+constrFunct20TestMap ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 constrFunct20TestMap arg1 arg2 =
     Internal.mkApplySymbol constrFunct20TestMapSymbol [arg1, arg2]
 
-function20MapTest
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+function20MapTest ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 function20MapTest arg1 arg2 =
     Internal.mkApplySymbol function20MapTestSymbol [arg1, arg2]
 
@@ -1168,398 +1192,400 @@ functional00 = Internal.mkApplySymbol functional00Symbol []
 functional01 :: InternalVariable variable => TermLike variable
 functional01 = Internal.mkApplySymbol functional01Symbol []
 
-functional10
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+functional10 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 functional10 arg = Internal.mkApplySymbol functional10Symbol [arg]
 
-functional11
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+functional11 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 functional11 arg = Internal.mkApplySymbol functional11Symbol [arg]
 
-functional20
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functional20 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functional20 arg1 arg2 = Internal.mkApplySymbol functional20Symbol [arg1, arg2]
 
 functional00SubSubSort :: InternalVariable variable => TermLike variable
 functional00SubSubSort =
     Internal.mkApplySymbol functional00SubSubSortSymbol []
 
-functionalInjective00
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
+functionalInjective00 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable
 functionalInjective00 =
     Internal.mkApplySymbol functionalInjective00Symbol []
 
-functionalConstr10
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+functionalConstr10 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 functionalConstr10 arg =
     Internal.mkApplySymbol functionalConstr10Symbol [arg]
 
-functionalConstr11
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+functionalConstr11 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 functionalConstr11 arg = Internal.mkApplySymbol functionalConstr11Symbol [arg]
 
-functionalConstr12
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+functionalConstr12 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 functionalConstr12 arg = Internal.mkApplySymbol functionalConstr12Symbol [arg]
 
-functionalConstr20
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functionalConstr20 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functionalConstr20 arg1 arg2 =
     Internal.mkApplySymbol functionalConstr20Symbol [arg1, arg2]
 
-functionalConstr21
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functionalConstr21 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functionalConstr21 arg1 arg2 =
     Internal.mkApplySymbol functionalConstr21Symbol [arg1, arg2]
 
-functionalConstr30
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functionalConstr30 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functionalConstr30 arg1 arg2 arg3 =
     Internal.mkApplySymbol functionalConstr30Symbol [arg1, arg2, arg3]
 
-functionalTopConstr20
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functionalTopConstr20 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functionalTopConstr20 arg1 arg2 =
     Internal.mkApplySymbol functionalTopConstr20Symbol [arg1, arg2]
 
-functionalTopConstr21
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+functionalTopConstr21 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 functionalTopConstr21 arg1 arg2 =
     Internal.mkApplySymbol functionalTopConstr21Symbol [arg1, arg2]
 
-subsubOverload
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+subsubOverload ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 subsubOverload arg1 =
     Internal.mkApplySymbol subsubOverloadSymbol [arg1]
 
-subOverload
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+subOverload ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 subOverload arg1 =
     Internal.mkApplySymbol subOverloadSymbol [arg1]
 
-otherOverload
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+otherOverload ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 otherOverload arg1 =
     Internal.mkApplySymbol otherOverloadSymbol [arg1]
 
-topOverload
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+topOverload ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 topOverload arg1 =
     Internal.mkApplySymbol topOverloadSymbol [arg1]
 
-injective10
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+injective10 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 injective10 arg = Internal.mkApplySymbol injective10Symbol [arg]
 
-injective11
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+injective11 ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 injective11 arg = Internal.mkApplySymbol injective11Symbol [arg]
 
-sortInjection
-    :: InternalVariable variable
-    => Sort
-    -> TermLike variable
-    -> TermLike variable
+sortInjection ::
+    InternalVariable variable =>
+    Sort ->
+    TermLike variable ->
+    TermLike variable
 sortInjection injTo termLike =
-    (synthesize . Internal.InjF) Internal.Inj
-        { injConstructor
-        , injFrom
-        , injTo
-        , injChild = termLike
-        , injAttributes
-        }
+    (synthesize . Internal.InjF)
+        Internal.Inj
+            { injConstructor
+            , injFrom
+            , injTo
+            , injChild = termLike
+            , injAttributes
+            }
   where
     injFrom = Internal.termLikeSort termLike
-    Symbol { symbolConstructor = injConstructor } = symbol'
-    Symbol { symbolAttributes = injAttributes } = symbol'
+    Symbol{symbolConstructor = injConstructor} = symbol'
+    Symbol{symbolAttributes = injAttributes} = symbol'
     symbol' = sortInjectionSymbol injFrom injTo
 
-sortInjection10
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjection10 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjection10 = sortInjection testSort
 
-sortInjection11
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjection11 ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjection11 = sortInjection testSort
 
-sortInjection0ToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjection0ToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjection0ToTop = sortInjection topSort
 
-sortInjectionSubToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubToTop = sortInjection topSort
 
-sortInjectionSubSubToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubSubToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubSubToTop = sortInjection topSort
 
-sortInjectionSubSubToSub
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubSubToSub ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubSubToSub = sortInjection subSort
 
-sortInjectionSubSubToOther
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubSubToOther ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubSubToOther = sortInjection otherSort
 
-sortInjectionSubOtherToOther
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubOtherToOther ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubOtherToOther = sortInjection otherSort
 
-sortInjectionSubOtherToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubOtherToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubOtherToTop = sortInjection topSort
 
-sortInjectionOtherToOverTheTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionOtherToOverTheTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionOtherToOverTheTop = sortInjection overTheTopSort
 
-sortInjectionSubToOverTheTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubToOverTheTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubToOverTheTop = sortInjection overTheTopSort
 
-sortInjectionTopToOverTheTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionTopToOverTheTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionTopToOverTheTop = sortInjection overTheTopSort
 
-sortInjectionSubToTest
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubToTest ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubToTest = sortInjection testSort
 
-sortInjectionTestToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionTestToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionTestToTop = sortInjection topSort
 
-sortInjectionOtherToTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionOtherToTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionOtherToTop = sortInjection topSort
 
-sortInjectionOtherToOtherTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionOtherToOtherTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionOtherToOtherTop = sortInjection otherTopSort
 
-sortInjectionSubToOtherTop
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
+sortInjectionSubToOtherTop ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable
 sortInjectionSubToOtherTop = sortInjection otherTopSort
 
 unitMap :: InternalVariable variable => TermLike variable
 unitMap = Internal.mkApplySymbol unitMapSymbol []
 
-elementMap
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+elementMap ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 elementMap m1 m2 = Internal.mkApplySymbol elementMapSymbol [m1, m2]
 
-concatMap
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+concatMap ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 concatMap m1 m2 = Internal.mkApplySymbol concatMapSymbol [m1, m2]
 
-opaqueMap
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+opaqueMap ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 opaqueMap term = Internal.mkApplySymbol opaqueMapSymbol [term]
 
-inKeysMap
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+inKeysMap ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 inKeysMap element m1 = Internal.mkApplySymbol inKeysMapSymbol [element, m1]
 
 unitSet :: InternalVariable variable => TermLike variable
 unitSet = Internal.mkApplySymbol unitSetSymbol []
 
-elementSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+elementSet ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 elementSet s1 = Internal.mkApplySymbol elementSetSymbol [s1]
 
-concatSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+concatSet ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 concatSet s1 s2 = Internal.mkApplySymbol concatSetSymbol [s1, s2]
 
-opaqueSet
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+opaqueSet ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 opaqueSet term = Internal.mkApplySymbol opaqueSetSymbol [term]
 
-lessInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+lessInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 lessInt i1 i2 = Internal.mkApplySymbol lessIntSymbol [i1, i2]
 
-greaterEqInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+greaterEqInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 greaterEqInt i1 i2 = Internal.mkApplySymbol greaterEqIntSymbol [i1, i2]
 
-tdivInt
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+tdivInt ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 tdivInt i1 i2 = Internal.mkApplySymbol tdivIntSymbol [i1, i2]
 
-concatList
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+concatList ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 concatList l1 l2 = Internal.mkApplySymbol concatListSymbol [l1, l2]
 
-elementList
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+elementList ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable
 elementList element = Internal.mkApplySymbol elementListSymbol [element]
 
-unitList
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
+unitList ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable
 unitList = Internal.mkApplySymbol unitListSymbol []
 
-keqBool
-    :: InternalVariable variable
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+keqBool ::
+    InternalVariable variable =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 keqBool t1 t2 = Internal.mkApplySymbol keqBoolSymbol [t1, t2]
 
-sigma
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> TermLike variable
+sigma ::
+    InternalVariable variable =>
+    HasCallStack =>
+    TermLike variable ->
+    TermLike variable ->
+    TermLike variable
 sigma child1 child2 = Internal.mkApplySymbol sigmaSymbol [child1, child2]
 
 anywhere :: InternalVariable variable => TermLike variable
 anywhere = Internal.mkApplySymbol anywhereSymbol []
 
-functionSMT, functionalSMT
-    :: InternalVariable variable
-    => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+functionSMT
+    , functionalSMT ::
+        InternalVariable variable =>
+        HasCallStack =>
+        TermLike variable ->
+        TermLike variable
 functionSMT arg =
     Internal.mkApplySymbol functionSMTSymbol [arg]
 functionalSMT arg =
@@ -1673,34 +1699,44 @@ symbols =
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
 sortAttributesMapping =
-    [   ( testSort
+    [
+        ( testSort
         , Default.def
         )
-    ,   ( testSort0
+    ,
+        ( testSort0
         , Default.def
         )
-    ,   ( testSort1
+    ,
+        ( testSort1
         , Default.def
         )
-    ,   ( topSort
+    ,
+        ( topSort
         , Default.def
         )
-    ,   ( subSort
+    ,
+        ( subSort
         , Default.def
         )
-    ,   ( subOthersort
+    ,
+        ( subOthersort
         , Default.def
         )
-    ,   ( subSubsort
+    ,
+        ( subSubsort
         , Default.def
         )
-    ,   ( otherSort
+    ,
+        ( otherSort
         , Default.def
         )
-    ,   ( otherTopSort
+    ,
+        ( otherTopSort
         , Default.def
         )
-    ,   ( mapSort
+    ,
+        ( mapSort
         , Default.def
             { Attribute.hook = Hook (Just "MAP.Map")
             , Attribute.unit =
@@ -1711,7 +1747,8 @@ sortAttributesMapping =
                 Attribute.Concat (Just $ toSymbolOrAlias concatMapSymbol)
             }
         )
-    ,   ( listSort
+    ,
+        ( listSort
         , Default.def
             { Attribute.hook = Hook (Just "LIST.List")
             , Attribute.unit =
@@ -1722,7 +1759,8 @@ sortAttributesMapping =
                 Attribute.Concat (Just $ toSymbolOrAlias concatListSymbol)
             }
         )
-    ,   ( setSort
+    ,
+        ( setSort
         , Default.def
             { Attribute.hook = Hook (Just "SET.Set")
             , Attribute.unit =
@@ -1733,19 +1771,22 @@ sortAttributesMapping =
                 Attribute.Concat (Just $ toSymbolOrAlias concatSetSymbol)
             }
         )
-    ,   ( intSort
-        , Default.def { Attribute.hook = Hook (Just "INT.Int") }
+    ,
+        ( intSort
+        , Default.def{Attribute.hook = Hook (Just "INT.Int")}
         )
-    ,   ( boolSort
-        , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
+    ,
+        ( boolSort
+        , Default.def{Attribute.hook = Hook (Just "BOOL.Bool")}
         )
-    ,   ( stringSort
-        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
+    ,
+        ( stringSort
+        , Default.def{Attribute.hook = Hook (Just "STRING.String")}
         )
+    , -- Also add attributes for the implicitly defined sorts.
 
-    -- Also add attributes for the implicitly defined sorts.
-    ,   ( stringMetaSort
-        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
+        ( stringMetaSort
+        , Default.def{Attribute.hook = Hook (Just "STRING.String")}
         )
     ]
 
@@ -1757,10 +1798,12 @@ zeroarySmtSort :: Id -> SMT.UnresolvedSort
 zeroarySmtSort sortId =
     SMT.Sort
         { smtFromSortArgs = const (const (Just encodedId))
-        , declaration = SMT.SortDeclarationSort SMT.SortDeclaration
-            { name = SMT.encodable sortId
-            , arity = 0
-            }
+        , declaration =
+            SMT.SortDeclarationSort
+                SMT.SortDeclaration
+                    { name = SMT.encodable sortId
+                    , arity = 0
+                    }
         }
   where
     encodedId = SMT.encode (SMT.encodable sortId)
@@ -1772,30 +1815,32 @@ builtinZeroarySmtSort sExpr =
         , declaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
-smtBuiltinSymbol
-    :: Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
+smtBuiltinSymbol ::
+    Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
-            SMT.SymbolBuiltin SMT.IndirectSymbolDeclaration
-                { name = SMT.AlreadyEncoded $ SMT.Atom builtin
-                , sortDependencies =
-                    SMT.SortReference <$> resultSort : argumentSorts
-                }
+            SMT.SymbolBuiltin
+                SMT.IndirectSymbolDeclaration
+                    { name = SMT.AlreadyEncoded $ SMT.Atom builtin
+                    , sortDependencies =
+                        SMT.SortReference <$> resultSort : argumentSorts
+                    }
         }
 
-smtDeclaredSymbol
-    :: Text -> Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
+smtDeclaredSymbol ::
+    Text -> Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtDeclaredSymbol smtName id' argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom smtName)))
         , declaration =
-            SMT.SymbolDeclaredDirectly SMT.FunctionDeclaration
-                { name = SMT.encodable id'
-                , inputSorts = SMT.SortReference <$> argumentSorts
-                , resultSort = SMT.SortReference resultSort
-                }
+            SMT.SymbolDeclaredDirectly
+                SMT.FunctionDeclaration
+                    { name = SMT.encodable id'
+                    , inputSorts = SMT.SortReference <$> argumentSorts
+                    , resultSort = SMT.SortReference resultSort
+                    }
         }
 
 emptySmtDeclarations :: SMT.SmtDeclarations
@@ -1809,35 +1854,41 @@ smtDeclarations :: SMT.SmtDeclarations
 smtDeclarations = SMT.resolve smtUnresolvedDeclarations
 
 smtUnresolvedDeclarations :: SMT.UnresolvedDeclarations
-smtUnresolvedDeclarations = SMT.Declarations
-    { sorts = Map.fromList
-        [ (testSort0Id, zeroarySmtSort testSort0Id)
-        , (testSort1Id, zeroarySmtSort testSort1Id)
-        , (topSortId, zeroarySmtSort topSortId)
-        , (topSortId, zeroarySmtSort subSortId)
-        , (topSortId, zeroarySmtSort subSubsortId)
-        , (topSortId, zeroarySmtSort otherSortId)
-        -- TODO(virgil): testSort has constructors, it should have a
-        -- constructor-based definition. The same for others.
-        , (testSortId, zeroarySmtSort testSortId)
-        , (intSortId, builtinZeroarySmtSort SMT.tInt)
-        , (boolSortId, builtinZeroarySmtSort SMT.tBool)
-        ]
-    , symbols = Map.fromList
-        [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
-        , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
-        , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
-        , ( functional00Id
-            , smtDeclaredSymbol "functional00" functional00Id [] testSort
-          )
-        , ( functionSMTId
-            , smtDeclaredSymbol "functionSMT" functionSMTId [testSort] testSort
-          )
-        , ( functionalSMTId
-            , smtDeclaredSymbol "functionalSMT" functionalSMTId [testSort] testSort
-          )
-        ]
-    }
+smtUnresolvedDeclarations =
+    SMT.Declarations
+        { sorts =
+            Map.fromList
+                [ (testSort0Id, zeroarySmtSort testSort0Id)
+                , (testSort1Id, zeroarySmtSort testSort1Id)
+                , (topSortId, zeroarySmtSort topSortId)
+                , (topSortId, zeroarySmtSort subSortId)
+                , (topSortId, zeroarySmtSort subSubsortId)
+                , (topSortId, zeroarySmtSort otherSortId)
+                , -- TODO(virgil): testSort has constructors, it should have a
+                  -- constructor-based definition. The same for others.
+                  (testSortId, zeroarySmtSort testSortId)
+                , (intSortId, builtinZeroarySmtSort SMT.tInt)
+                , (boolSortId, builtinZeroarySmtSort SMT.tBool)
+                ]
+        , symbols =
+            Map.fromList
+                [ (lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+                , (greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
+                , (tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
+                ,
+                    ( functional00Id
+                    , smtDeclaredSymbol "functional00" functional00Id [] testSort
+                    )
+                ,
+                    ( functionSMTId
+                    , smtDeclaredSymbol "functionSMT" functionSMTId [testSort] testSort
+                    )
+                ,
+                    ( functionalSMTId
+                    , smtDeclaredSymbol "functionalSMT" functionalSMTId [testSort] testSort
+                    )
+                ]
+        }
 
 sortConstructors :: Map.Map Id Attribute.Constructors
 sortConstructors =
@@ -1874,115 +1925,131 @@ stringSortId = testId "stringSort"
 
 testSort :: Sort
 testSort =
-    SortActualSort SortActual
-        { sortActualName  = testSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testSortId
+            , sortActualSorts = []
+            }
 
 testSort0 :: Sort
 testSort0 =
-    SortActualSort SortActual
-        { sortActualName  = testSort0Id
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testSort0Id
+            , sortActualSorts = []
+            }
 
 testSort1 :: Sort
 testSort1 =
-    SortActualSort SortActual
-        { sortActualName  = testSort1Id
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testSort1Id
+            , sortActualSorts = []
+            }
 
 topSort :: Sort
 topSort =
-    SortActualSort SortActual
-        { sortActualName  = topSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = topSortId
+            , sortActualSorts = []
+            }
 
 overTheTopSort :: Sort
 overTheTopSort =
-    SortActualSort SortActual
-        { sortActualName  = overTheTopSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = overTheTopSortId
+            , sortActualSorts = []
+            }
 
 subSort :: Sort
 subSort =
-    SortActualSort SortActual
-        { sortActualName  = subSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = subSortId
+            , sortActualSorts = []
+            }
 
 subOthersort :: Sort
 subOthersort =
-    SortActualSort SortActual
-        { sortActualName  = subOthersortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = subOthersortId
+            , sortActualSorts = []
+            }
 
 subSubsort :: Sort
 subSubsort =
-    SortActualSort SortActual
-        { sortActualName  = subSubsortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = subSubsortId
+            , sortActualSorts = []
+            }
 
 otherSort :: Sort
 otherSort =
-    SortActualSort SortActual
-        { sortActualName = otherSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = otherSortId
+            , sortActualSorts = []
+            }
 
 otherTopSort :: Sort
 otherTopSort =
-    SortActualSort SortActual
-        { sortActualName = otherTopSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = otherTopSortId
+            , sortActualSorts = []
+            }
 
 mapSort :: Sort
 mapSort =
-    SortActualSort SortActual
-        { sortActualName  = testId "mapSort"
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testId "mapSort"
+            , sortActualSorts = []
+            }
 
 setSort :: Sort
 setSort =
-    SortActualSort SortActual
-        { sortActualName  = testId "setSort"
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testId "setSort"
+            , sortActualSorts = []
+            }
 
 listSort :: Sort
 listSort =
-    SortActualSort SortActual
-        { sortActualName  = testId "listSort"
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = testId "listSort"
+            , sortActualSorts = []
+            }
 
 intSort :: Sort
 intSort =
-    SortActualSort SortActual
-        { sortActualName  = intSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = intSortId
+            , sortActualSorts = []
+            }
 
 stringSort :: Sort
 stringSort =
-    SortActualSort SortActual
-        { sortActualName  = stringSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = stringSortId
+            , sortActualSorts = []
+            }
 
 boolSort :: Sort
 boolSort =
-    SortActualSort SortActual
-        { sortActualName  = boolSortId
-        , sortActualSorts = []
-        }
+    SortActualSort
+        SortActual
+            { sortActualName = boolSortId
+            , sortActualSorts = []
+            }
 
 subsorts :: [(Sort, Sort)]
 subsorts =
@@ -2011,10 +2078,10 @@ overloads =
     , (topOverloadSymbol, otherOverloadSymbol)
     ]
 
-builtinMap
-    :: InternalVariable variable
-    => [(TermLike variable, TermLike variable)]
-    -> TermLike variable
+builtinMap ::
+    InternalVariable variable =>
+    [(TermLike variable, TermLike variable)] ->
+    TermLike variable
 builtinMap elements = framedMap elements []
 
 test_builtinMap :: [TestTree]
@@ -2027,55 +2094,58 @@ test_builtinMap =
         assertBool "" (not $ isConstructorLike input)
     ]
 
-framedMap
-    :: InternalVariable variable
-    => [(TermLike variable, TermLike variable)]
-    -> [TermLike variable]
-    -> TermLike variable
+framedMap ::
+    InternalVariable variable =>
+    [(TermLike variable, TermLike variable)] ->
+    [TermLike variable] ->
+    TermLike variable
 framedMap elements opaque =
     framedInternalMap elements opaque & Internal.mkInternalMap
 
-framedInternalMap
-    :: [(TermLike variable, TermLike variable)]
-    -> [TermLike variable]
-    -> InternalMap Internal.Key (TermLike variable)
+framedInternalMap ::
+    [(TermLike variable, TermLike variable)] ->
+    [TermLike variable] ->
+    InternalMap Internal.Key (TermLike variable)
 framedInternalMap elements opaque =
     InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = Attribute.toUnit unitMapSymbol
         , builtinAcElement = Attribute.toElement elementMapSymbol
         , builtinAcConcat = Attribute.toConcat concatMapSymbol
-        , builtinAcChild = NormalizedMap NormalizedAc
-            { elementsWithVariables = wrapElement <$> abstractElements
-            , concreteElements
-            , opaque
-            }
+        , builtinAcChild =
+            NormalizedMap
+                NormalizedAc
+                    { elementsWithVariables = wrapElement <$> abstractElements
+                    , concreteElements
+                    , opaque
+                    }
         }
   where
     asConcrete element@(key, value) =
         (,) <$> retractKey key <*> pure value
-        & maybe (Left element) Right
+            & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete . Bifunctor.second MapValue <$> elements
-        & partitionEithers
+            & partitionEithers
 
-builtinList
-    :: InternalVariable variable
-    => [TermLike variable]
-    -> TermLike variable
+builtinList ::
+    InternalVariable variable =>
+    [TermLike variable] ->
+    TermLike variable
 builtinList child =
-    Internal.mkInternalList InternalList
-        { internalListSort = listSort
-        , internalListUnit = unitListSymbol
-        , internalListElement = elementListSymbol
-        , internalListConcat = concatListSymbol
-        , internalListChild = Seq.fromList child
-        }
+    Internal.mkInternalList
+        InternalList
+            { internalListSort = listSort
+            , internalListUnit = unitListSymbol
+            , internalListElement = elementListSymbol
+            , internalListConcat = concatListSymbol
+            , internalListChild = Seq.fromList child
+            }
 
-builtinSet
-    :: InternalVariable variable
-    => [TermLike variable]
-    -> TermLike variable
+builtinSet ::
+    InternalVariable variable =>
+    [TermLike variable] ->
+    TermLike variable
 builtinSet elements = framedSet elements []
 
 test_builtinSet :: [TestTree]
@@ -2088,56 +2158,58 @@ test_builtinSet =
         assertBool "" (not $ isConstructorLike input)
     ]
 
-framedSet
-    :: InternalVariable variable
-    => [TermLike variable]
-    -> [TermLike variable]
-    -> TermLike variable
+framedSet ::
+    InternalVariable variable =>
+    [TermLike variable] ->
+    [TermLike variable] ->
+    TermLike variable
 framedSet elements opaque =
     framedInternalSet elements opaque & Internal.mkInternalSet
 
-framedInternalSet
-    :: [TermLike variable]
-    -> [TermLike variable]
-    -> InternalSet Internal.Key (TermLike variable)
+framedInternalSet ::
+    [TermLike variable] ->
+    [TermLike variable] ->
+    InternalSet Internal.Key (TermLike variable)
 framedInternalSet elements opaque =
     InternalAc
         { builtinAcSort = setSort
         , builtinAcUnit = Attribute.toUnit unitSetSymbol
         , builtinAcElement = Attribute.toElement elementSetSymbol
         , builtinAcConcat = Attribute.toConcat concatSetSymbol
-        , builtinAcChild = NormalizedSet NormalizedAc
-            { elementsWithVariables = wrapElement <$> abstractElements
-            , concreteElements
-            , opaque
-            }
+        , builtinAcChild =
+            NormalizedSet
+                NormalizedAc
+                    { elementsWithVariables = wrapElement <$> abstractElements
+                    , concreteElements
+                    , opaque
+                    }
         }
   where
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
             (,) <$> retractKey key <*> pure SetValue
-        & maybe (Left (key, SetValue)) Right
+            & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
-        & partitionEithers
+            & partitionEithers
 
-builtinInt
-    :: InternalVariable variable
-    => Integer
-    -> TermLike variable
+builtinInt ::
+    InternalVariable variable =>
+    Integer ->
+    TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
 
-builtinBool
-    :: InternalVariable variable
-    => Bool
-    -> TermLike variable
+builtinBool ::
+    InternalVariable variable =>
+    Bool ->
+    TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort
 
-builtinString
-    :: InternalVariable variable
-    => Text
-    -> TermLike variable
+builtinString ::
+    InternalVariable variable =>
+    Text ->
+    TermLike variable
 builtinString = Builtin.String.asInternal stringSort
 
 emptyMetadataTools :: SmtMetadataTools Attribute.Symbol
@@ -2161,14 +2233,15 @@ metadataTools =
 axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
-predicateSimplifier
-    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+predicateSimplifier ::
+    MonadSimplify simplifier => ConditionSimplifier simplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 sortGraph :: SortGraph.SortGraph
-sortGraph = SortGraph.fromSubsorts
-        [ Subsort { subsort, supersort } | (subsort, supersort) <- subsorts ]
+sortGraph =
+    SortGraph.fromSubsorts
+        [Subsort{subsort, supersort} | (subsort, supersort) <- subsorts]
 
 injSimplifier :: InjSimplifier
 injSimplifier = mkInjSimplifier sortGraph
@@ -2200,66 +2273,81 @@ generatorSetup =
         , freeSetVariables = Set.empty
         , maybeIntSort = Just intSort
         , maybeBoolSort = Just boolSort
-        , maybeListSorts = Just ConsistentKore.CollectionSorts
-            { collectionSort = listSort
-            , elementSort = testSort
-            }
+        , maybeListSorts =
+            Just
+                ConsistentKore.CollectionSorts
+                    { collectionSort = listSort
+                    , elementSort = testSort
+                    }
         , maybeMapSorts = Nothing
-        -- TODO(virgil): fill the maybeMapSorts field after implementing
-        -- map generators.
-        , maybeSetSorts = Nothing
-        -- TODO(virgil): fill the maybeSetSorts field after implementing
-        -- map generators
-        , maybeStringLiteralSort = Just stringMetaSort
+        , -- TODO(virgil): fill the maybeMapSorts field after implementing
+          -- map generators.
+          maybeSetSorts = Nothing
+        , -- TODO(virgil): fill the maybeSetSorts field after implementing
+          -- map generators
+          maybeStringLiteralSort = Just stringMetaSort
         , maybeStringBuiltinSort = Just stringSort
         , metadataTools = metadataTools
         }
   where
-    doesNotHaveArguments Symbol {symbolParams} = null symbolParams
+    doesNotHaveArguments Symbol{symbolParams} = null symbolParams
 
 builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
 builtinSimplifiers =
     Map.fromList
-        [   ( AxiomIdentifier.Application unitMapId
+        [
+            ( AxiomIdentifier.Application unitMapId
             , Builtin.functionEvaluator Map.evalUnit
             )
-        ,   ( AxiomIdentifier.Application elementMapId
+        ,
+            ( AxiomIdentifier.Application elementMapId
             , Builtin.functionEvaluator Map.evalElement
             )
-        ,   ( AxiomIdentifier.Application concatMapId
+        ,
+            ( AxiomIdentifier.Application concatMapId
             , Builtin.functionEvaluator Map.evalConcat
             )
-        ,   ( AxiomIdentifier.Application unitSetId
+        ,
+            ( AxiomIdentifier.Application unitSetId
             , Builtin.functionEvaluator Set.evalUnit
             )
-        ,   ( AxiomIdentifier.Application elementSetId
+        ,
+            ( AxiomIdentifier.Application elementSetId
             , Builtin.functionEvaluator Set.evalElement
             )
-        ,   ( AxiomIdentifier.Application concatSetId
+        ,
+            ( AxiomIdentifier.Application concatSetId
             , Builtin.functionEvaluator Set.evalConcat
             )
-        ,   ( AxiomIdentifier.Application unitListId
+        ,
+            ( AxiomIdentifier.Application unitListId
             , Builtin.functionEvaluator List.evalUnit
             )
-        ,   ( AxiomIdentifier.Application elementListId
+        ,
+            ( AxiomIdentifier.Application elementListId
             , Builtin.functionEvaluator List.evalElement
             )
-        ,   ( AxiomIdentifier.Application concatListId
+        ,
+            ( AxiomIdentifier.Application concatListId
             , Builtin.functionEvaluator List.evalConcat
             )
-        ,   ( AxiomIdentifier.Application tdivIntId
+        ,
+            ( AxiomIdentifier.Application tdivIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.tdivKey)
             )
-        ,   ( AxiomIdentifier.Application lessIntId
+        ,
+            ( AxiomIdentifier.Application lessIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.ltKey)
             )
-        ,   ( AxiomIdentifier.Application greaterEqIntId
+        ,
+            ( AxiomIdentifier.Application greaterEqIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
             )
-        ,   ( AxiomIdentifier.Application keqBoolId
+        ,
+            ( AxiomIdentifier.Application keqBoolId
             , builtinEvaluation
                 (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )

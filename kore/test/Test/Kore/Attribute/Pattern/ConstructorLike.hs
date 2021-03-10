@@ -1,6 +1,6 @@
-module Test.Kore.Attribute.Pattern.ConstructorLike
-    ( test_TermLike
-    ) where
+module Test.Kore.Attribute.Pattern.ConstructorLike (
+    test_TermLike,
+) where
 
 import Prelude.Kore
 
@@ -29,10 +29,10 @@ test_TermLike =
         Mock.builtinMap [] `shouldBeConstructorLike` True
     , testCase "Simplifiable constructor-like BuiltinMap" $
         Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.c)]
-        `shouldBeConstructorLike` True
+            `shouldBeConstructorLike` True
     , testCase "Simplifiable non-constructor-like BuiltinMap" $
         Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.f Mock.c)]
-        `shouldBeConstructorLike` False
+            `shouldBeConstructorLike` False
     , testCase "Single constructor is constructor-like" $
         Mock.a `shouldBeConstructorLike` True
     , testCase "Constructor-like with constructor at the top" $
@@ -45,16 +45,16 @@ test_TermLike =
                 Mock.testSort
                 (Mock.builtinInt 3)
             )
-        `shouldBeConstructorLike` True
+            `shouldBeConstructorLike` True
     , testCase "Two consecutive sort injections are simplifiable" $
         Mock.sortInjection
             Mock.intSort
             ( Mock.sortInjection
                 Mock.testSort
-                (Mock.builtinInt 3
+                ( Mock.builtinInt 3
                 )
             )
-        `shouldBeConstructorLike` False
+            `shouldBeConstructorLike` False
     , testCase "Constructor-like pattern with two non-consecutive sort injections" $
         Mock.sortInjection
             Mock.intSort
@@ -64,17 +64,17 @@ test_TermLike =
                     (Mock.builtinInt 3)
                 )
             )
-        `shouldBeConstructorLike` True
+            `shouldBeConstructorLike` True
     ]
   where
     domainValue =
         mkDomainValue $ DomainValue Mock.testSort (mkStringLiteral "testDV")
 
-shouldBeConstructorLike
-    :: HasCallStack
-    => TermLike VariableName
-    -> Bool
-    -> IO ()
+shouldBeConstructorLike ::
+    HasCallStack =>
+    TermLike VariableName ->
+    Bool ->
+    IO ()
 shouldBeConstructorLike term expected = do
     let actual = isConstructorLike term
     assertEqual "" actual expected

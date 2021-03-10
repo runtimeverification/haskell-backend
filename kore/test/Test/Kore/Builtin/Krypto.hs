@@ -1,19 +1,19 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-{-# LANGUAGE Strict              #-}
 
-module Test.Kore.Builtin.Krypto
-    ( test_ecdsaRecover
-    , test_secp256k1EcdsaRecover
-    , test_keccak256
-    , test_hashKeccak256
-    , test_sha256
-    , test_hashSha256
-    , test_sha3256
-    , test_hashSha3_256
-    , test_ripemd160
-    , test_hashRipemd160
-    ) where
+module Test.Kore.Builtin.Krypto (
+    test_ecdsaRecover,
+    test_secp256k1EcdsaRecover,
+    test_keccak256,
+    test_hashKeccak256,
+    test_sha256,
+    test_hashSha256,
+    test_sha3256,
+    test_hashSha3_256,
+    test_ripemd160,
+    test_hashRipemd160,
+) where
 
 import Prelude.Kore
 
@@ -23,9 +23,9 @@ import qualified Control.Lens as Lens
 import Data.Generics.Sum.Constructors
 import qualified Data.Map.Strict as Map
 import Data.Proxy
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 import qualified GHC.TypeLits as TypeLits
 
@@ -33,33 +33,33 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+ )
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Data
-    ( runSimplifier
-    )
-import Kore.Step.Simplification.Simplify
-    ( AttemptedAxiomResults (..)
-    , BuiltinAndAxiomSimplifier (..)
-    )
+import Kore.Step.Simplification.Data (
+    runSimplifier,
+ )
+import Kore.Step.Simplification.Simplify (
+    AttemptedAxiomResults (..),
+    BuiltinAndAxiomSimplifier (..),
+ )
 import qualified Kore.TopBottom as TopBottom
 
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Test.Kore.Builtin.Builtin hiding
-    ( evaluate
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Test.Kore.Builtin.Builtin hiding (
+    evaluate,
+ )
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
-import Test.SMT
-    ( runNoSMT
-    )
+import Test.SMT (
+    runNoSMT,
+ )
 import Test.Tasty.HUnit.Ext
 
 test_ecdsaRecover :: [TestTree]
@@ -87,12 +87,12 @@ test_ecdsaRecover =
                     (Test.Int.asInternal v)
                     (String.asInternal stringSort r)
                     (String.asInternal stringSort s)
-                & evaluate "KRYPTO.ecdsaRecover"
+                    & evaluate "KRYPTO.ecdsaRecover"
             assertEqual "" expect actual
       where
         Just name =
-            Attribute.getHook . Attribute.hook
-            $ symbolAttributes ecdsaRecoverSymbol
+            Attribute.getHook . Attribute.hook $
+                symbolAttributes ecdsaRecoverSymbol
 
 test_secp256k1EcdsaRecover :: [TestTree]
 test_secp256k1EcdsaRecover =
@@ -119,20 +119,20 @@ test_secp256k1EcdsaRecover =
                     (Test.Int.asInternal v)
                     (String.asInternal stringSort r)
                     (String.asInternal stringSort s)
-                & evaluate "SECP256K1.ecdsaRecover"
+                    & evaluate "SECP256K1.ecdsaRecover"
             assertEqual "" expect actual
       where
         Just name =
-            Attribute.getHook . Attribute.hook
-            $ symbolAttributes ecdsaRecoverSymbol
+            Attribute.getHook . Attribute.hook $
+                symbolAttributes ecdsaRecoverSymbol
 
 test_keccak256 :: [TestTree]
 test_keccak256 =
     [ test
-         "\249\SOH\245\160\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\160\GS\204M\232\222\199]z\171\133\181g\182\204\212\SUB\211\DC2E\ESC\148\138t\DC3\240\161B\253@\212\147G\148*\220%fP\CAN\170\US\224\230\188fm\172\143\194i\DEL\249\186\160h\172|e\163\163\ESC}\139\230!\217\157/\"w\SOHX]\232s\219\218\162\181\248\215K\225Z\241\178\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\185\SOH\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\131\STX\NUL\NUL\128\131\SIB@\128\130\ETX\182B\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\136\SOH\STX\ETX\EOT\ENQ\ACK\a\b"
+        "\249\SOH\245\160\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\160\GS\204M\232\222\199]z\171\133\181g\182\204\212\SUB\211\DC2E\ESC\148\138t\DC3\240\161B\253@\212\147G\148*\220%fP\CAN\170\US\224\230\188fm\172\143\194i\DEL\249\186\160h\172|e\163\163\ESC}\139\230!\217\157/\"w\SOHX]\232s\219\218\162\181\248\215K\225Z\241\178\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\185\SOH\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\131\STX\NUL\NUL\128\131\SIB@\128\130\ETX\182B\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\136\SOH\STX\ETX\EOT\ENQ\ACK\a\b"
         "417ece6e4175ae7f1bf6b8ed90b4ea22206353a7450aa10bdd5e2ba3cb2bd953"
-    -- from the frontend's test suite:
-    , test
+    , -- from the frontend's test suite:
+      test
         "testing"
         "5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02"
     ]
@@ -142,16 +142,16 @@ test_keccak256 =
             let expect = String.asPattern stringSort result
             actual <-
                 keccak256Krypto (String.asInternal stringSort input)
-                & evaluate "KRYPTO.keccak256"
+                    & evaluate "KRYPTO.keccak256"
             assertEqual "" expect actual
 
 test_hashKeccak256 :: [TestTree]
 test_hashKeccak256 =
     [ test
-         "\249\SOH\245\160\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\160\GS\204M\232\222\199]z\171\133\181g\182\204\212\SUB\211\DC2E\ESC\148\138t\DC3\240\161B\253@\212\147G\148*\220%fP\CAN\170\US\224\230\188fm\172\143\194i\DEL\249\186\160h\172|e\163\163\ESC}\139\230!\217\157/\"w\SOHX]\232s\219\218\162\181\248\215K\225Z\241\178\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\185\SOH\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\131\STX\NUL\NUL\128\131\SIB@\128\130\ETX\182B\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\136\SOH\STX\ETX\EOT\ENQ\ACK\a\b"
+        "\249\SOH\245\160\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\160\GS\204M\232\222\199]z\171\133\181g\182\204\212\SUB\211\DC2E\ESC\148\138t\DC3\240\161B\253@\212\147G\148*\220%fP\CAN\170\US\224\230\188fm\172\143\194i\DEL\249\186\160h\172|e\163\163\ESC}\139\230!\217\157/\"w\SOHX]\232s\219\218\162\181\248\215K\225Z\241\178\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\185\SOH\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\131\STX\NUL\NUL\128\131\SIB@\128\130\ETX\182B\160V\232\US\ETB\ESC\204U\166\255\131E\230\146\192\248n[H\224\ESC\153l\173\192\SOHb/\181\227c\180!\136\SOH\STX\ETX\EOT\ENQ\ACK\a\b"
         "417ece6e4175ae7f1bf6b8ed90b4ea22206353a7450aa10bdd5e2ba3cb2bd953"
-    -- from the frontend's test suite:
-    , test
+    , -- from the frontend's test suite:
+      test
         "testing"
         "5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02"
     ]
@@ -161,7 +161,7 @@ test_hashKeccak256 =
             let expect = String.asPattern stringSort result
             actual <-
                 keccak256Krypto (String.asInternal stringSort input)
-                & evaluate "HASH.keccak256"
+                    & evaluate "HASH.keccak256"
             assertEqual "" expect actual
 
 test_sha256 :: [TestTree]
@@ -180,7 +180,7 @@ test_sha256 =
             let expect = String.asPattern stringSort result
             actual <-
                 sha256Krypto (String.asInternal stringSort input)
-                & evaluate "KRYPTO.sha256"
+                    & evaluate "KRYPTO.sha256"
             assertEqual "" expect actual
 
 test_hashSha256 :: [TestTree]
@@ -199,7 +199,7 @@ test_hashSha256 =
             let expect = String.asPattern stringSort result
             actual <-
                 sha256Krypto (String.asInternal stringSort input)
-                & evaluate "HASH.sha256"
+                    & evaluate "HASH.sha256"
             assertEqual "" expect actual
 
 test_sha3256 :: [TestTree]
@@ -218,7 +218,7 @@ test_sha3256 =
             let expect = String.asPattern stringSort result
             actual <-
                 sha3256Krypto (String.asInternal stringSort input)
-                & evaluate "KRYPTO.sha3256"
+                    & evaluate "KRYPTO.sha3256"
             assertEqual "" expect actual
 
 test_hashSha3_256 :: [TestTree]
@@ -237,7 +237,7 @@ test_hashSha3_256 =
             let expect = String.asPattern stringSort result
             actual <-
                 sha3256Krypto (String.asInternal stringSort input)
-                & evaluate "HASH.sha3_256"
+                    & evaluate "HASH.sha3_256"
             assertEqual "" expect actual
 
 test_ripemd160 :: [TestTree]
@@ -262,7 +262,7 @@ test_ripemd160 =
             let expect = String.asPattern stringSort result
             actual <-
                 ripemd160Krypto (String.asInternal stringSort input)
-                & evaluate "KRYPTO.ripemd160"
+                    & evaluate "KRYPTO.ripemd160"
             assertEqual "" expect actual
 
 test_hashRipemd160 :: [TestTree]
@@ -287,35 +287,35 @@ test_hashRipemd160 =
             let expect = String.asPattern stringSort result
             actual <-
                 ripemd160Krypto (String.asInternal stringSort input)
-                & evaluate "HASH.ripemd160"
+                    & evaluate "HASH.ripemd160"
             assertEqual "" expect actual
 
-evaluate
-    :: Text
-    -> TermLike RewritingVariableName
-    -> IO (Pattern RewritingVariableName)
+evaluate ::
+    Text ->
+    TermLike RewritingVariableName ->
+    IO (Pattern RewritingVariableName)
 evaluate builtin termLike = do
     evaluator <-
         Map.lookup builtin Krypto.builtinFunctions
-        & expectConstructor @"Just"
+            & expectConstructor @"Just"
     attempt <-
         runBuiltinAndAxiomSimplifier evaluator termLike SideCondition.top
-        & runSimplifier testEnv
-        & runNoSMT
+            & runSimplifier testEnv
+            & runNoSMT
     attemptResults <- expectConstructor @"Applied" attempt
-    let AttemptedAxiomResults { results, remainders } = attemptResults
+    let AttemptedAxiomResults{results, remainders} = attemptResults
     assertBool "Expected no remainders" $ TopBottom.isBottom remainders
     case OrPattern.toPatterns results of
         [actual] -> return actual
         _ -> assertFailure "Expected one result"
 
-expectConstructor
-    :: forall (ctor :: TypeLits.Symbol) s a
-    .  (AsConstructor' ctor s a, TypeLits.KnownSymbol ctor)
-    => HasCallStack
-    => (s -> IO a)
+expectConstructor ::
+    forall (ctor :: TypeLits.Symbol) s a.
+    (AsConstructor' ctor s a, TypeLits.KnownSymbol ctor) =>
+    HasCallStack =>
+    (s -> IO a)
 expectConstructor s =
     Lens.preview (_Ctor' @ctor) s
-    & maybe failure return
+        & maybe failure return
   where
     failure = assertFailure ("Expected " ++ TypeLits.symbolVal (Proxy @ctor))

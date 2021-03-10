@@ -1,36 +1,33 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Pattern.Functional
-    ( Functional (..)
-    , alwaysFunctional
-    ) where
+-}
+module Kore.Attribute.Pattern.Functional (
+    Functional (..),
+    alwaysFunctional,
+) where
 
 import Prelude.Kore
 
 import Data.Functor.Const
 import Data.Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
-{- | A pattern is 'Functional' if it matches exactly one element.
- -}
-newtype Functional = Functional { isFunctional :: Bool }
+-- | A pattern is 'Functional' if it matches exactly one element.
+newtype Functional = Functional {isFunctional :: Bool}
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
     deriving anyclass (Hashable, NFData)
@@ -49,8 +46,9 @@ instance Synthetic Functional (Bottom sort) where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
--- | An 'Application' pattern is 'Functional' if its symbol is functional and
--- its arguments are 'Functional'.
+{- | An 'Application' pattern is 'Functional' if its symbol is functional and
+ its arguments are 'Functional'.
+-}
 instance Synthetic Functional (Application Internal.Symbol) where
     synthetic application =
         functionalSymbol <> fold children

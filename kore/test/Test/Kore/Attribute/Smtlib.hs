@@ -1,14 +1,14 @@
-module Test.Kore.Attribute.Smtlib
-    ( test_extracted_smtlib
-    , test_extracted_smthook
-    , test_fill_SExpr_templates
-    ) where
+module Test.Kore.Attribute.Smtlib (
+    test_extracted_smtlib,
+    test_extracted_smthook,
+    test_fill_SExpr_templates,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 
 import Test.Tasty
@@ -76,11 +76,11 @@ test_extracted_smtlib =
     map test extracted
   where
     test arg =
-        testCase caseName
-            $ assertBool "expected successful parse"
-            $ isRightAndJust $ parseSmtlib attrs
+        testCase caseName $
+            assertBool "expected successful parse" $
+                isRightAndJust $ parseSmtlib attrs
       where
-        attrs = Attributes [ smtlibAttribute arg ]
+        attrs = Attributes [smtlibAttribute arg]
         caseName = "[smtlib{}(\"" ++ Text.unpack arg ++ "\")]"
 
 parseSmtlib :: Attributes -> Parser Smtlib
@@ -89,7 +89,7 @@ parseSmtlib = parseAttributes
 isRightAndJust :: Parser Smtlib -> Bool
 isRightAndJust =
     \case
-        Right Smtlib { getSmtlib } ->
+        Right Smtlib{getSmtlib} ->
             case getSmtlib of
                 Nothing -> False
                 Just sExpr ->
@@ -101,18 +101,18 @@ test_extracted_smthook =
     map test extracted
   where
     test arg =
-        testCase caseName
-            $ assertBool "expected successful parse"
-            $ isSmthookRightAndJust $ parseSmthook attrs
+        testCase caseName $
+            assertBool "expected successful parse" $
+                isSmthookRightAndJust $ parseSmthook attrs
       where
-        attrs = Attributes [ smthookAttribute arg ]
+        attrs = Attributes [smthookAttribute arg]
         caseName = "[smt-hook{}(\"" ++ Text.unpack arg ++ "\")]"
 
 test_fill_SExpr_templates :: TestTree
 test_fill_SExpr_templates =
-    testCase "applySExpr atom [1, 2] == applySExpr (atom #1 #2) [1, 2]"
-        $ assertBool ""
-        $ (==) left right
+    testCase "applySExpr atom [1, 2] == applySExpr (atom #1 #2) [1, 2]" $
+        assertBool "" $
+            (==) left right
   where
     left = applySExpr (Atom "atom") arguments
     right = applySExpr (List [Atom "atom", Atom "#1", Atom "#2"]) arguments
@@ -124,7 +124,7 @@ parseSmthook = parseAttributes
 isSmthookRightAndJust :: Parser Smthook -> Bool
 isSmthookRightAndJust =
     \case
-        Right Smthook { getSmthook } ->
+        Right Smthook{getSmthook} ->
             case getSmthook of
                 Nothing -> False
                 Just sExpr ->

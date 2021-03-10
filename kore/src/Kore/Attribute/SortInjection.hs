@@ -1,27 +1,28 @@
-{-|
+{- |
 Module      : Kore.Attribute.SortInjection
 Description : Sort injection symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.SortInjection
-    ( SortInjection (..)
-    , sortInjectionId, sortInjectionSymbol, sortInjectionAttribute
-    ) where
+module Kore.Attribute.SortInjection (
+    SortInjection (..),
+    sortInjectionId,
+    sortInjectionSymbol,
+    sortInjectionAttribute,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
-newtype SortInjection = SortInjection { isSortInjection :: Bool }
+newtype SortInjection = SortInjection {isSortInjection :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -50,15 +51,15 @@ sortInjectionAttribute = attributePattern sortInjectionSymbol []
 
 instance ParseAttributes SortInjection where
     parseAttribute =
-        withApplication' $ \params args SortInjection { isSortInjection } -> do
+        withApplication' $ \params args SortInjection{isSortInjection} -> do
             Parser.getZeroParams params
             Parser.getZeroArguments args
             when isSortInjection failDuplicate'
-            return SortInjection { isSortInjection = True }
+            return SortInjection{isSortInjection = True}
       where
         withApplication' = Parser.withApplication sortInjectionId
         failDuplicate' = Parser.failDuplicate sortInjectionId
 
 instance From SortInjection Attributes where
-    from SortInjection { isSortInjection } =
+    from SortInjection{isSortInjection} =
         Attributes [sortInjectionAttribute | isSortInjection]

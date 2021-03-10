@@ -1,6 +1,6 @@
-module Test.Kore.Log.WarnFunctionWithoutEvaluators
-    ( test_instance_Table_WarnFunctionWithoutEvaluators
-    ) where
+module Test.Kore.Log.WarnFunctionWithoutEvaluators (
+    test_instance_Table_WarnFunctionWithoutEvaluators,
+) where
 
 import Prelude.Kore ()
 

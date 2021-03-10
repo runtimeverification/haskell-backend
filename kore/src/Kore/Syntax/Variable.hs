@@ -1,3 +1,5 @@
+{-# LANGUAGE EmptyDataDeriving #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -5,80 +7,80 @@ License     : NCSA
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
+module Kore.Syntax.Variable (
+    illegalVariableCounter,
+    externalizeFreshVariableName,
+    Variable (..),
+    SomeVariable,
+    mkSomeVariable,
+    foldSomeVariable,
+    mapSomeVariable,
+    traverseSomeVariable,
+    retractElementVariable,
+    isElementVariable,
+    expectElementVariable,
+    retractSetVariable,
+    isSetVariable,
+    expectSetVariable,
+    ElementVariable,
+    mkElementVariable,
+    mapElementVariable,
+    traverseElementVariable,
+    SetVariable,
+    mkSetVariable,
+    mapSetVariable,
+    traverseSetVariable,
 
-{-# LANGUAGE EmptyDataDeriving #-}
-
-module Kore.Syntax.Variable
-    ( illegalVariableCounter
-    , externalizeFreshVariableName
-    , Variable (..)
-    , SomeVariable
-    , mkSomeVariable
-    , foldSomeVariable
-    , mapSomeVariable
-    , traverseSomeVariable
-    , retractElementVariable
-    , isElementVariable
-    , expectElementVariable
-    , retractSetVariable
-    , isSetVariable
-    , expectSetVariable
-    , ElementVariable
-    , mkElementVariable
-    , mapElementVariable
-    , traverseElementVariable
-    , SetVariable
-    , mkSetVariable
-    , mapSetVariable
-    , traverseSetVariable
     -- * Variable names
-    , VariableName (..)
-    , mkVariableName
-    , VariableCounter
-    , ElementVariableName (..)
-    , SetVariableName (..)
-    , SomeVariableName (..)
-    , AdjSomeVariableName (..)
-    , foldSomeVariableName
-    , mapSomeVariableName
-    , mapElementVariableName
-    , mapSetVariableName
-    , traverseSomeVariableName
-    , traverseElementVariableName
-    , traverseSetVariableName
-    , toVariableName
-    , fromVariableName
+    VariableName (..),
+    mkVariableName,
+    VariableCounter,
+    ElementVariableName (..),
+    SetVariableName (..),
+    SomeVariableName (..),
+    AdjSomeVariableName (..),
+    foldSomeVariableName,
+    mapSomeVariableName,
+    mapElementVariableName,
+    mapSetVariableName,
+    traverseSomeVariableName,
+    traverseElementVariableName,
+    traverseSetVariableName,
+    toVariableName,
+    fromVariableName,
+
     -- * Variable sorts
-    , unparse2SortedVariable
+    unparse2SortedVariable,
+
     -- * Concrete
-    , Concrete
-    , toConcrete
-    ) where
+    Concrete,
+    toConcrete,
+) where
 
 import Prelude.Kore
 
-import Data.Distributive
-    ( Distributive (..)
-    )
-import Data.Functor.Adjunction
-    ( Adjunction (..)
-    , extractL
-    , indexAdjunction
-    , tabulateAdjunction
-    )
-import Data.Functor.Const
-    ( Const (..)
-    )
-import Data.Functor.Rep
-    ( Representable (..)
-    )
-import Data.Generics.Sum
-    ( _Ctor
-    )
+import Data.Distributive (
+    Distributive (..),
+ )
+import Data.Functor.Adjunction (
+    Adjunction (..),
+    extractL,
+    indexAdjunction,
+    tabulateAdjunction,
+ )
+import Data.Functor.Const (
+    Const (..),
+ )
+import Data.Functor.Rep (
+    Representable (..),
+ )
+import Data.Generics.Sum (
+    _Ctor,
+ )
 import qualified Data.Text as Text
 import Data.Void
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Numeric.Natural
 
 import Data.Sup
@@ -88,8 +90,7 @@ import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
 
-{- | Error thrown when 'variableCounter' takes an illegal value.
- -}
+-- | Error thrown when 'variableCounter' takes an illegal value.
 illegalVariableCounter :: a
 illegalVariableCounter =
     error "Illegal use of Variable { variableCounter = Just Sup }"
@@ -98,11 +99,10 @@ illegalVariableCounter =
 
 @externalizeFreshVariableName@ is not injective and is unsafe if used with
 'mapVariables'. See 'Kore.Internal.Pattern.externalizeFreshVariables' instead.
-
- -}
+-}
 externalizeFreshVariableName :: VariableName -> VariableName
-externalizeFreshVariableName VariableName { base, counter } =
-    VariableName { base = base', counter = Nothing }
+externalizeFreshVariableName VariableName{base, counter} =
+    VariableName{base = base', counter = Nothing}
   where
     base' =
         base
@@ -114,12 +114,12 @@ externalizeFreshVariableName VariableName { base, counter } =
             , idLocation = AstLocationGeneratedVariable
             }
 
-fromVariableName
-    :: forall variable. From VariableName variable => VariableName -> variable
+fromVariableName ::
+    forall variable. From VariableName variable => VariableName -> variable
 fromVariableName = from @VariableName @variable
 
-toVariableName
-    :: forall variable. From variable VariableName => variable -> VariableName
+toVariableName ::
+    forall variable. From variable VariableName => variable -> VariableName
 toVariableName = from @variable @VariableName
 
 {- | Unparse a 'Variable' in an Applicative Kore binder.
@@ -128,13 +128,12 @@ Variables occur without their sorts as subterms in Applicative Kore patterns,
 but with their sorts in binders like @\\exists@ and
 @\\forall@. @unparse2SortedVariable@ adds the sort ascription to the unparsed
 variable for the latter case.
-
- -}
-unparse2SortedVariable
-    :: Unparse variable
-    => Variable variable
-    -> Pretty.Doc ann
-unparse2SortedVariable Variable { variableName, variableSort } =
+-}
+unparse2SortedVariable ::
+    Unparse variable =>
+    Variable variable ->
+    Pretty.Doc ann
+unparse2SortedVariable Variable{variableName, variableSort} =
     unparse2 variableName <> Pretty.colon <> unparse variableSort
 
 instance From VariableName Void where
@@ -145,8 +144,7 @@ instance From VariableName Void where
 
 type VariableCounter = Maybe (Sup Natural)
 
-data VariableName =
-    VariableName
+data VariableName = VariableName
     { base :: !Id
     , counter :: !VariableCounter
     }
@@ -157,13 +155,13 @@ data VariableName =
     deriving anyclass (Debug, Diff)
 
 mkVariableName :: Id -> VariableName
-mkVariableName base = VariableName { base, counter = mempty }
+mkVariableName base = VariableName{base, counter = mempty}
 
 instance Unparse VariableName where
-    unparse VariableName { base, counter } =
+    unparse VariableName{base, counter} =
         unparse base <> Pretty.pretty counter
 
-    unparse2 VariableName { base, counter } =
+    unparse2 VariableName{base, counter} =
         unparse base <> Pretty.pretty counter
 
 instance From VariableName VariableName where
@@ -172,8 +170,7 @@ instance From VariableName VariableName where
 
 -- * Element variables
 
-newtype ElementVariableName variable =
-    ElementVariableName { unElementVariableName :: variable }
+newtype ElementVariableName variable = ElementVariableName {unElementVariableName :: variable}
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -211,13 +208,12 @@ instance Unparse variable => Unparse (ElementVariableName variable) where
 -- * Set variables
 
 instance
-    From variable VariableName
-    => From (ElementVariableName variable) VariableName
-  where
+    From variable VariableName =>
+    From (ElementVariableName variable) VariableName
+    where
     from = from . unElementVariableName
 
-newtype SetVariableName variable =
-    SetVariableName { unSetVariableName :: variable }
+newtype SetVariableName variable = SetVariableName {unSetVariableName :: variable}
     deriving (Eq, Ord, Show)
     deriving (Functor)
     deriving (Foldable, Traversable)
@@ -252,9 +248,7 @@ instance Unparse variable => Unparse (SetVariableName variable) where
     unparse2 = unparse2Generic
     {-# INLINE unparse2 #-}
 
-instance
-    From variable VariableName => From (SetVariableName variable) VariableName
-  where
+instance From variable VariableName => From (SetVariableName variable) VariableName where
     from = from . unSetVariableName
 
 -- * Variable occurrences
@@ -264,10 +258,8 @@ instance
 The @variable@ parameter is the type of variable names.
 
 Every occurrence of a variable carries the 'Sort' of the variable.
-
- -}
-data Variable variable =
-    Variable
+-}
+data Variable variable = Variable
     { variableName :: !variable
     , variableSort :: !Sort
     }
@@ -279,16 +271,14 @@ data Variable variable =
     deriving anyclass (Debug, Diff)
 
 instance Unparse variable => Unparse (Variable variable) where
-    unparse Variable { variableName, variableSort } =
+    unparse Variable{variableName, variableSort} =
         unparse variableName
-        <> Pretty.colon
-        <> unparse variableSort
+            <> Pretty.colon
+            <> unparse variableSort
 
-    unparse2 Variable { variableName } = unparse2 variableName
+    unparse2 Variable{variableName} = unparse2 variableName
 
-instance
-    Injection into from => Injection (Variable into) (Variable from)
-  where
+instance Injection into from => Injection (Variable into) (Variable from) where
     inject = fmap inject
     {-# INLINE inject #-}
 
@@ -305,19 +295,21 @@ type ElementVariable variable = Variable (ElementVariableName variable)
 mkElementVariable :: Id -> Sort -> ElementVariable VariableName
 mkElementVariable base variableSort =
     Variable
-    { variableName = ElementVariableName (mkVariableName base)
-    , variableSort
-    }
+        { variableName = ElementVariableName (mkVariableName base)
+        , variableSort
+        }
 
-mapElementVariable
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> ElementVariable variable1 -> ElementVariable variable2
+mapElementVariable ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    ElementVariable variable1 ->
+    ElementVariable variable2
 mapElementVariable adj = fmap (mapElementVariableName adj)
 
-traverseElementVariable
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> ElementVariable variable1 -> f (ElementVariable variable2)
+traverseElementVariable ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    ElementVariable variable1 ->
+    f (ElementVariable variable2)
 traverseElementVariable adj = traverse (traverseElementVariableName adj)
 
 -- | Kore set variables
@@ -326,29 +318,30 @@ type SetVariable variable = Variable (SetVariableName variable)
 mkSetVariable :: Id -> Sort -> SetVariable VariableName
 mkSetVariable base variableSort =
     Variable
-    { variableName = SetVariableName (mkVariableName base)
-    , variableSort
-    }
+        { variableName = SetVariableName (mkVariableName base)
+        , variableSort
+        }
 
-mapSetVariable
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> SetVariable variable1 -> SetVariable variable2
+mapSetVariable ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    SetVariable variable1 ->
+    SetVariable variable2
 mapSetVariable adj = fmap (mapSetVariableName adj)
 
-traverseSetVariable
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> SetVariable variable1 -> f (SetVariable variable2)
+traverseSetVariable ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    SetVariable variable1 ->
+    f (SetVariable variable2)
 traverseSetVariable adj = traverse (traverseSetVariableName adj)
 
 {- | @SomeVariableName@ is the name of a variable in a pattern.
 
 @SomeVariableName@ may be an 'ElementVariableName' or a 'SetVariableName'.
-
- -}
+-}
 data SomeVariableName variable
     = SomeVariableNameElement !(ElementVariableName variable)
-    | SomeVariableNameSet     !(SetVariableName     variable)
+    | SomeVariableNameSet !(SetVariableName variable)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -363,28 +356,22 @@ instance Unparse variable => Unparse (SomeVariableName variable) where
     unparse2 = unparse2Generic
     {-# INLINE unparse2 #-}
 
-instance
-    Injection (SomeVariableName variable) (ElementVariableName variable)
-  where
+instance Injection (SomeVariableName variable) (ElementVariableName variable) where
     injection = _Ctor @"SomeVariableNameElement"
     {-# INLINE injection #-}
 
-instance
-    Injection (SomeVariableName variable) (SetVariableName variable)
-  where
+instance Injection (SomeVariableName variable) (SetVariableName variable) where
     injection = _Ctor @"SomeVariableNameSet"
     {-# INLINE injection #-}
 
-instance
-    From variable VariableName => From (SomeVariableName variable) VariableName
-  where
+instance From variable VariableName => From (SomeVariableName variable) VariableName where
     from = extractL . fmap from
     {-# INLINE from #-}
 
 instance
-    From variable1 variable2
-    => From (SomeVariableName variable1) (SomeVariableName variable2)
-  where
+    From variable1 variable2 =>
+    From (SomeVariableName variable1) (SomeVariableName variable2)
+    where
     from = fmap from
     {-# INLINE from #-}
 
@@ -410,14 +397,12 @@ set) variables respectively.
 instance. @'pure' x@ constructs an 'AdjSomeVariableName' with the same value @x@
 in both fields. @f '<*>' a@ composes two 'AdjSomeVariableName' by applying the
 function in each field of @f@ to the value in the corresponding field of @a@.
-
- -}
-data AdjSomeVariableName a =
-    AdjSomeVariableName
-    { adjSomeVariableNameElement :: ElementVariableName a
-    -- ^ compare to: 'SomeVariableNameElement'
-    , adjSomeVariableNameSet     :: SetVariableName     a
-    -- ^ compare to: 'SomeVariableNameSet'
+-}
+data AdjSomeVariableName a = AdjSomeVariableName
+    { -- | compare to: 'SomeVariableNameElement'
+      adjSomeVariableNameElement :: ElementVariableName a
+    , -- | compare to: 'SomeVariableNameSet'
+      adjSomeVariableNameSet :: SetVariableName a
     }
     deriving (Functor)
     deriving (GHC.Generic1)
@@ -425,17 +410,17 @@ data AdjSomeVariableName a =
 instance Semigroup a => Semigroup (AdjSomeVariableName a) where
     (<>) a b =
         AdjSomeVariableName
-        { adjSomeVariableNameElement = on (<>) adjSomeVariableNameElement a b
-        , adjSomeVariableNameSet = on (<>) adjSomeVariableNameSet a b
-        }
+            { adjSomeVariableNameElement = on (<>) adjSomeVariableNameElement a b
+            , adjSomeVariableNameSet = on (<>) adjSomeVariableNameSet a b
+            }
     {-# INLINE (<>) #-}
 
 instance Monoid a => Monoid (AdjSomeVariableName a) where
     mempty =
         AdjSomeVariableName
-        { adjSomeVariableNameElement = mempty
-        , adjSomeVariableNameSet = mempty
-        }
+            { adjSomeVariableNameElement = mempty
+            , adjSomeVariableNameSet = mempty
+            }
     {-# INLINE mempty #-}
 
 instance Applicative AdjSomeVariableName where
@@ -444,19 +429,19 @@ instance Applicative AdjSomeVariableName where
 
     (<*>) fs as =
         AdjSomeVariableName
-        { adjSomeVariableNameElement =
-            adjSomeVariableNameElement fs <*> adjSomeVariableNameElement as
-        , adjSomeVariableNameSet =
-            adjSomeVariableNameSet fs <*> adjSomeVariableNameSet as
-        }
+            { adjSomeVariableNameElement =
+                adjSomeVariableNameElement fs <*> adjSomeVariableNameElement as
+            , adjSomeVariableNameSet =
+                adjSomeVariableNameSet fs <*> adjSomeVariableNameSet as
+            }
     {-# INLINE (<*>) #-}
 
 instance Distributive AdjSomeVariableName where
     distribute f =
         AdjSomeVariableName
-        { adjSomeVariableNameElement = collect adjSomeVariableNameElement f
-        , adjSomeVariableNameSet = collect adjSomeVariableNameSet f
-        }
+            { adjSomeVariableNameElement = collect adjSomeVariableNameElement f
+            , adjSomeVariableNameSet = collect adjSomeVariableNameSet f
+            }
     {-# INLINE distribute #-}
 
 instance Representable AdjSomeVariableName where
@@ -473,98 +458,104 @@ instance Adjunction SomeVariableName AdjSomeVariableName where
 
     counit (SomeVariableNameElement adj) =
         unElementVariableName
-        . adjSomeVariableNameElement
-        . unElementVariableName
-        $ adj
+            . adjSomeVariableNameElement
+            . unElementVariableName
+            $ adj
     counit (SomeVariableNameSet adj) =
         unSetVariableName
-        . adjSomeVariableNameSet
-        . unSetVariableName
-        $ adj
+            . adjSomeVariableNameSet
+            . unSetVariableName
+            $ adj
     {-# INLINE counit #-}
 
-foldSomeVariableName
-    :: AdjSomeVariableName (variable1 -> r)
-    -> SomeVariableName variable1 -> r
+foldSomeVariableName ::
+    AdjSomeVariableName (variable1 -> r) ->
+    SomeVariableName variable1 ->
+    r
 foldSomeVariableName adj =
     rightAdjunct (\variable1 -> ($ variable1) <$> adj)
 
-mapSomeVariableName
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> SomeVariableName variable1 -> SomeVariableName variable2
+mapSomeVariableName ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    SomeVariableName variable1 ->
+    SomeVariableName variable2
 mapSomeVariableName adj variable1 =
     fmap (index adj idx) variable1
   where
     idx = () <$ variable1
 
-mapElementVariableName
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> ElementVariableName variable1
-    -> ElementVariableName variable2
+mapElementVariableName ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    ElementVariableName variable1 ->
+    ElementVariableName variable2
 mapElementVariableName adj =
     (<*>) (adjSomeVariableNameElement adj)
 
-mapSetVariableName
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> SetVariableName variable1
-    -> SetVariableName variable2
+mapSetVariableName ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    SetVariableName variable1 ->
+    SetVariableName variable2
 mapSetVariableName adj =
     (<*>) (adjSomeVariableNameSet adj)
 
-traverseSomeVariableName
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> SomeVariableName variable1 -> f (SomeVariableName variable2)
+traverseSomeVariableName ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    SomeVariableName variable1 ->
+    f (SomeVariableName variable2)
 traverseSomeVariableName adj variable1 =
     traverse (index adj idx) variable1
   where
     idx = () <$ variable1
 
-traverseElementVariableName
-    :: forall variable1 variable2 f
-    .  Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> ElementVariableName variable1
-    -> f (ElementVariableName variable2)
+traverseElementVariableName ::
+    forall variable1 variable2 f.
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    ElementVariableName variable1 ->
+    f (ElementVariableName variable2)
 traverseElementVariableName adj =
     sequenceA . (<*>) (adjSomeVariableNameElement adj)
 
-traverseSetVariableName
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> SetVariableName variable1
-    -> f (SetVariableName variable2)
+traverseSetVariableName ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    SetVariableName variable1 ->
+    f (SetVariableName variable2)
 traverseSetVariableName adj =
     sequenceA . (<*>) (adjSomeVariableNameSet adj)
 
 type SomeVariable variable = Variable (SomeVariableName variable)
 
-mkSomeVariable
-    :: forall variable f
-    .  Injection (SomeVariable variable) (Variable (f variable))
-    => Variable (f variable)
-    -> SomeVariable variable
+mkSomeVariable ::
+    forall variable f.
+    Injection (SomeVariable variable) (Variable (f variable)) =>
+    Variable (f variable) ->
+    SomeVariable variable
 mkSomeVariable = inject
 
-foldSomeVariable
-    :: AdjSomeVariableName (variable1 -> r)
-    -> SomeVariable variable1 -> r
+foldSomeVariable ::
+    AdjSomeVariableName (variable1 -> r) ->
+    SomeVariable variable1 ->
+    r
 foldSomeVariable adj = foldSomeVariableName adj . variableName
 
-mapSomeVariable
-    :: AdjSomeVariableName (variable1 -> variable2)
-    -> SomeVariable variable1 -> SomeVariable variable2
+mapSomeVariable ::
+    AdjSomeVariableName (variable1 -> variable2) ->
+    SomeVariable variable1 ->
+    SomeVariable variable2
 mapSomeVariable adj = fmap (mapSomeVariableName adj)
 
-traverseSomeVariable
-    :: Applicative f
-    => AdjSomeVariableName (variable1 -> f variable2)
-    -> SomeVariable variable1 -> f (SomeVariable variable2)
+traverseSomeVariable ::
+    Applicative f =>
+    AdjSomeVariableName (variable1 -> f variable2) ->
+    SomeVariable variable1 ->
+    f (SomeVariable variable2)
 traverseSomeVariable adj = traverse (traverseSomeVariableName adj)
 
-retractElementVariable
-    :: SomeVariable variable
-    -> Maybe (ElementVariable variable)
+retractElementVariable ::
+    SomeVariable variable ->
+    Maybe (ElementVariable variable)
 retractElementVariable = retract
 
 isElementVariable :: SomeVariable variable -> Bool
@@ -577,25 +568,24 @@ It is an error if the 'SomeVariable' is not the 'ElemVar' constructor.
 Use @expectElementVariable@ when maintaining the invariant outside the type
 system that the 'SomeVariable' is an 'ElementVariable', but please include a
 comment at the call site describing how the invariant is maintained.
-
- -}
-expectElementVariable
-    :: HasCallStack
-    => SomeVariable variable
-    -> ElementVariable variable
+-}
+expectElementVariable ::
+    HasCallStack =>
+    SomeVariable variable ->
+    ElementVariable variable
 expectElementVariable unifiedVariable =
     retractElementVariable unifiedVariable
-    & fromMaybe (error "Expected element variable")
+        & fromMaybe (error "Expected element variable")
 
-retractSetVariable
-    :: SomeVariable variable
-    -> Maybe (SetVariable variable)
+retractSetVariable ::
+    SomeVariable variable ->
+    Maybe (SetVariable variable)
 retractSetVariable = retract
 
 isSetVariable :: forall variable. SomeVariable variable -> Bool
 isSetVariable unifiedVariable
-  | Just _ <- retract @_ @(SetVariable variable) unifiedVariable = True
-  | otherwise                                                    = False
+    | Just _ <- retract @_ @(SetVariable variable) unifiedVariable = True
+    | otherwise = False
 
 {- | Extract an 'SetVariable' from a 'SomeVariable'.
 
@@ -604,18 +594,16 @@ It is an error if the 'SomeVariable' is not the 'SetVar' constructor.
 Use @expectSetVariable@ when maintaining the invariant outside the type system
 that the 'SomeVariable' is an 'SetVariable', but please include a comment at the
 call site describing how the invariant is maintained.
-
- -}
-expectSetVariable
-    :: HasCallStack
-    => SomeVariable variable
-    -> SetVariable variable
+-}
+expectSetVariable ::
+    HasCallStack =>
+    SomeVariable variable ->
+    SetVariable variable
 expectSetVariable unifiedVariable =
     retractSetVariable unifiedVariable
-    & fromMaybe (error "Expected set variable")
+        & fromMaybe (error "Expected set variable")
 
-{- | 'Concrete' patterns contain no variables.
- -}
+-- | 'Concrete' patterns contain no variables.
 type Concrete = Void
 
 toConcrete :: any -> Maybe Void

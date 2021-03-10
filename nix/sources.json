@@ -5,10 +5,10 @@
         "homepage": "",
         "owner": "parsonsmatt",
         "repo": "fourmolu",
-        "rev": "f4e3b56d644b9bbf1eedee72616475028ea6e15a",
-        "sha256": "1r8qjdmcr2wk5ycvik02wn8ip3021zw4whaxcyz2pj8y190za7fn",
+        "rev": "727e095ccce4c4737d6a8cd82addab360edb47f3",
+        "sha256": "17dy4giyp3flfshqfrkp6mb2wnym4iz1ncas6wv2nhp3li0wd1xs",
         "type": "tarball",
-        "url": "https://github.com/parsonsmatt/fourmolu/archive/f4e3b56d644b9bbf1eedee72616475028ea6e15a.tar.gz",
+        "url": "https://github.com/parsonsmatt/fourmolu/archive/727e095ccce4c4737d6a8cd82addab360edb47f3.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "ghcide": {

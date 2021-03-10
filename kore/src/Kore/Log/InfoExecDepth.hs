@@ -1,29 +1,27 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Kore.Log.InfoExecDepth
-    ( InfoExecDepth (..)
-    , ExecDepth (..)
-    , infoExecDepth
-    ) where
+module Kore.Log.InfoExecDepth (
+    InfoExecDepth (..),
+    ExecDepth (..),
+    infoExecDepth,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Semigroup as Semigroup
-import Numeric.Natural
-    ( Natural
-    )
+import Numeric.Natural (
+    Natural,
+ )
 
 import Log
-import Pretty
-    ( Pretty
-    )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
-newtype ExecDepth = ExecDepth { getExecDepth :: Natural }
+newtype ExecDepth = ExecDepth {getExecDepth :: Natural}
     deriving (Eq, Ord, Show)
     deriving (Enum)
     deriving (Semigroup) via (Semigroup.Max Natural)

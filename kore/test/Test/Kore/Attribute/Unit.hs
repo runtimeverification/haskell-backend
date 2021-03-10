@@ -1,11 +1,11 @@
-module Test.Kore.Attribute.Unit
-    ( test_Unit
-    , test_Attributes
-    , test_duplicate
-    , test_arity
-    , test_arguments
-    , test_parameters
-    ) where
+module Test.Kore.Attribute.Unit (
+    test_Unit,
+    test_Attributes,
+    test_duplicate,
+    test_arity,
+    test_arguments,
+    test_parameters,
+) where
 
 import Prelude.Kore
 
@@ -23,32 +23,32 @@ parseUnit = parseAttributes
 
 test_Unit :: TestTree
 test_Unit =
-    testCase "[unit{}(unit{}())] :: Unit"
-    $ expectSuccess (toUnit unitSymbol)
-    $ parseUnit $ Attributes [ unitAttribute unitSymbol ]
+    testCase "[unit{}(unit{}())] :: Unit" $
+        expectSuccess (toUnit unitSymbol) $
+            parseUnit $ Attributes [unitAttribute unitSymbol]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[unit{}(unit{}())] :: Attributes"
-    $ expectSuccess attrs $ parseAttributes attrs
+    testCase "[unit{}(unit{}())] :: Attributes" $
+        expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ unitAttribute unitSymbol ]
+    attrs = Attributes [unitAttribute unitSymbol]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[unit{}(_), unit{}(_)]"
-    $ expectFailure
-    $ parseUnit
-    $ Attributes
-        [ unitAttribute unitSymbol
-        , unitAttribute unitSymbol
-        ]
+    testCase "[unit{}(_), unit{}(_)]" $
+        expectFailure $
+            parseUnit $
+                Attributes
+                    [ unitAttribute unitSymbol
+                    , unitAttribute unitSymbol
+                    ]
 
 test_arity :: TestTree
 test_arity =
-    testCase "[unit{}(unit{}(), unit{}())]"
-    $ expectFailure
-    $ parseUnit $ Attributes [ illegalAttribute ]
+    testCase "[unit{}(unit{}(), unit{}())]" $
+        expectFailure $
+            parseUnit $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -70,17 +70,17 @@ test_arity =
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[unit{}(\"illegal\")]"
-    $ expectFailure
-    $ parseUnit $ Attributes [ illegalAttribute ]
+    testCase "[unit{}(\"illegal\")]" $
+        expectFailure $
+            parseUnit $ Attributes [illegalAttribute]
   where
     illegalAttribute = attributePattern unitSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[unit{illegal}()]"
-    $ expectFailure
-    $ parseUnit $ Attributes [ illegalAttribute ]
+    testCase "[unit{illegal}()]" $
+        expectFailure $
+            parseUnit $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -89,7 +89,7 @@ test_parameters =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = unitId
                         , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
+                            [SortVariableSort (SortVariable "illegal")]
                         }
                 , applicationChildren = []
                 }

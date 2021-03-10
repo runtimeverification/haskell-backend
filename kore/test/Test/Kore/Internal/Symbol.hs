@@ -1,6 +1,6 @@
-module Test.Kore.Internal.Symbol
-    ( symbolGen
-    ) where
+module Test.Kore.Internal.Symbol (
+    symbolGen,
+) where
 
 import Prelude.Kore
 
@@ -15,12 +15,12 @@ import Kore.Internal.Symbol
 import Kore.Sort
 import Kore.Syntax.Application
 
-import Test.Kore
-    ( Gen
-    , couple
-    , idGen
-    , sortGen
-    )
+import Test.Kore (
+    Gen,
+    couple,
+    idGen,
+    sortGen,
+ )
 
 symbolGen :: Sort -> Gen Symbol
 symbolGen resultSort =

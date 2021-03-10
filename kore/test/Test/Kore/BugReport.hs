@@ -1,7 +1,7 @@
-module Test.Kore.BugReport
-    ( test_Parse_BugReportOption
-    , test_parse
-    ) where
+module Test.Kore.BugReport (
+    test_Parse_BugReportOption,
+    test_parse,
+) where
 
 import Prelude.Kore
 
@@ -15,31 +15,31 @@ import qualified Hedgehog.Range as Range
 
 import qualified Pretty
 
-import Kore.BugReport
-    ( BugReport (..)
-    , BugReportOption (..)
-    , parseBugReportOption
-    )
-import Kore.Log
-    ( parseKoreLogOptions
-    , unparseKoreLogOptions
-    )
-import Kore.Log.KoreLogOptions
-    ( ExeName (..)
-    , KoreLogOptions
-    )
-import Kore.Log.Registry
-    ( entryTypeReps
-    )
-import System.Clock
-    ( fromNanoSecs
-    )
+import Kore.BugReport (
+    BugReport (..),
+    BugReportOption (..),
+    parseBugReportOption,
+ )
+import Kore.Log (
+    parseKoreLogOptions,
+    unparseKoreLogOptions,
+ )
+import Kore.Log.KoreLogOptions (
+    ExeName (..),
+    KoreLogOptions,
+ )
+import Kore.Log.Registry (
+    entryTypeReps,
+ )
+import System.Clock (
+    fromNanoSecs,
+ )
 
 import Options.Applicative
 
 import Test.Tasty
-import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
+import Test.Tasty.Hedgehog
 
 test_parse :: TestTree
 test_parse =
@@ -50,59 +50,73 @@ test_parse =
   where
     myProperty = property $ do
         logType <- forAll $ element [[], ["--log", "logFile.log"]]
-        logLevel <- forAllFlags
+        logLevel <-
+            forAllFlags
                 [ ["--log-level", level]
-                    | level <- ["debug", "info", "warning", "error"]
+                | level <- ["debug", "info", "warning", "error"]
                 ]
-        timestampsSwitch <- forAllFlags
-            [["--enable-log-timestamps"], ["--disable-log-timestamps"]]
+        timestampsSwitch <-
+            forAllFlags
+                [["--enable-log-timestamps"], ["--disable-log-timestamps"]]
         logEntries <- forAll $ do
             shuffled <- Gen.shuffle (fmap show entryTypeReps)
             subseq <- Gen.subsequence shuffled
             let values = [List.intercalate "," subseq]
             return $ "--log-entries" : values
-        debugSolverOptions <- forAllFlags
-            [["--solver-transcript", "transcriptFile"]]
+        debugSolverOptions <-
+            forAllFlags
+                [["--solver-transcript", "transcriptFile"]]
         logSQLiteOptions <- forAllFlags [["--sqlog", "sqlogFile"]]
         warningSwitch <- forAllFlags [["--warnings-to-errors"]]
         optionsNumber <- forAll $ Gen.integral (Range.linear 0 (3 :: Int))
-        let debugApplyEquationOptions = concat
-                [ ["--debug-apply-equation", "eq" <> show index]
-                    | index <- [0..optionsNumber]
-                ]
-            debugAttemptEquationOptions = concat
-                [ ["--debug-attempt-equation", "eq" <> show index]
-                    | index <- [0..optionsNumber]
-                ]
-            debugEquationOptions = concat
-                [ ["--debug-equation", "eq" <> show index]
-                    | index <- [0..optionsNumber]
-                ]
+        let debugApplyEquationOptions =
+                concat
+                    [ ["--debug-apply-equation", "eq" <> show index]
+                    | index <- [0 .. optionsNumber]
+                    ]
+            debugAttemptEquationOptions =
+                concat
+                    [ ["--debug-attempt-equation", "eq" <> show index]
+                    | index <- [0 .. optionsNumber]
+                    ]
+            debugEquationOptions =
+                concat
+                    [ ["--debug-equation", "eq" <> show index]
+                    | index <- [0 .. optionsNumber]
+                    ]
 
-        let arguments = concat
-                [ logType, logLevel, timestampsSwitch, logEntries
-                , debugSolverOptions, logSQLiteOptions, warningSwitch
-                , debugApplyEquationOptions, debugAttemptEquationOptions
-                , debugEquationOptions
-                ]
-        let
-            expect :: ParserResult KoreLogOptions
+        let arguments =
+                concat
+                    [ logType
+                    , logLevel
+                    , timestampsSwitch
+                    , logEntries
+                    , debugSolverOptions
+                    , logSQLiteOptions
+                    , warningSwitch
+                    , debugApplyEquationOptions
+                    , debugAttemptEquationOptions
+                    , debugEquationOptions
+                    ]
+        let expect :: ParserResult KoreLogOptions
             expect = parseKoreLogOpts arguments
-        let
-            actual :: ParserResult KoreLogOptions
+        let actual :: ParserResult KoreLogOptions
             actual = expect >>= parseKoreLogOpts . unparseKoreLogOptions
         getParseResult expect === getParseResult actual
 
 test_Parse_BugReportOption :: [TestTree]
 test_Parse_BugReportOption =
-        [ testParse "Parse BugReportEnable" ["--bug-report", "fileName"]
-            (BugReportEnable $ BugReport "fileName")
-        , testParse "Parse BugReportDisable" ["--no-bug-report"]
-            BugReportDisable
-        , testParse "Parse BugReportOnError" [] BugReportOnError
-        ]
+    [ testParse
+        "Parse BugReportEnable"
+        ["--bug-report", "fileName"]
+        (BugReportEnable $ BugReport "fileName")
+    , testParse
+        "Parse BugReportDisable"
+        ["--no-bug-report"]
+        BugReportDisable
+    , testParse "Parse BugReportOnError" [] BugReportOnError
+    ]
   where
-
     testParse :: TestName -> [String] -> BugReportOption -> TestTree
     testParse testName arguments opt =
         testCase testName $ assertParse arguments opt
@@ -110,12 +124,13 @@ test_Parse_BugReportOption =
     assertParse :: HasCallStack => [String] -> BugReportOption -> Assertion
     assertParse arguments opt =
         assertEqual
-            (show $ Pretty.vsep
-                [ "while parsing:"
-                , Pretty.indent 4 (debug arguments)
-                , "expected:"
-                , Pretty.indent 4 (debug opt)
-                ]
+            ( show $
+                Pretty.vsep
+                    [ "while parsing:"
+                    , Pretty.indent 4 (debug arguments)
+                    , "expected:"
+                    , Pretty.indent 4 (debug opt)
+                    ]
             )
             (Just opt)
             (getParseResult $ parseBugReportOpts arguments)
@@ -143,4 +158,4 @@ element list = do
     pure $ list !! index
 
 forAllFlags :: [[String]] -> PropertyT IO [String]
-forAllFlags = forAll . element . ([]:)
+forAllFlags = forAll . element . ([] :)

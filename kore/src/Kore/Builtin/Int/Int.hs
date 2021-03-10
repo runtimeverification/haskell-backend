@@ -1,62 +1,60 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Builtin.Int.Int (
+    sort,
+    asTermLike,
+    asBuiltin,
+    asInternal,
+    asPattern,
+    asPartialPattern,
 
- -}
-
-module Kore.Builtin.Int.Int
-    ( sort
-    , asTermLike
-    , asBuiltin
-    , asInternal
-    , asPattern
-    , asPartialPattern
-      -- * keys
-    , randKey
-    , srandKey
-    , gtKey
-    , geKey
-    , eqKey
-    , leKey
-    , ltKey
-    , neKey
-    , minKey
-    , maxKey
-    , addKey
-    , subKey
-    , mulKey
-    , absKey
-    , edivKey
-    , emodKey
-    , tdivKey
-    , tmodKey
-    , andKey
-    , orKey
-    , xorKey
-    , notKey
-    , shlKey
-    , shrKey
-    , powKey
-    , powmodKey
-    , log2Key
-    ) where
+    -- * keys
+    randKey,
+    srandKey,
+    gtKey,
+    geKey,
+    eqKey,
+    leKey,
+    ltKey,
+    neKey,
+    minKey,
+    maxKey,
+    addKey,
+    subKey,
+    mulKey,
+    absKey,
+    edivKey,
+    emodKey,
+    tdivKey,
+    tmodKey,
+    andKey,
+    orKey,
+    xorKey,
+    notKey,
+    shlKey,
+    shrKey,
+    powKey,
+    powmodKey,
+    log2Key,
+) where
 
 import Prelude.Kore
 
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 
-{- | Builtin name of the @Int@ sort.
- -}
+-- | Builtin name of the @Int@ sort.
 sort :: Text
 sort = "INT.Int"
 
@@ -66,23 +64,26 @@ The result sort should be hooked to the builtin @Int@ sort, but this is not
 checked.
 
 See also: 'sort'
-
- -}
-asInternal
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asInternal ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Integer ->
+    TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    TermLike.fromConcrete . TermLike.markSimplified . mkInternalInt
-    $ asBuiltin builtinIntSort builtinIntValue
+    TermLike.fromConcrete . TermLike.markSimplified . mkInternalInt $
+        asBuiltin builtinIntSort builtinIntValue
 
-asBuiltin
-    :: Sort  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
-    -> InternalInt
+asBuiltin ::
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Integer ->
+    InternalInt
 asBuiltin internalIntSort internalIntValue =
-    InternalInt { internalIntSort, internalIntValue }
+    InternalInt{internalIntSort, internalIntValue}
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -90,32 +91,37 @@ asBuiltin internalIntSort internalIntValue =
   checked.
 
   See also: 'sort'
-
- -}
-asTermLike
-    :: InternalVariable variable
-    => InternalInt  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asTermLike ::
+    InternalVariable variable =>
+    -- | builtin value to render
+    InternalInt ->
+    TermLike variable
 asTermLike builtin =
-    mkDomainValue DomainValue
-        { domainValueSort = internalIntSort
-        , domainValueChild = mkStringLiteral . Text.pack $ show internalIntValue
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = internalIntSort
+            , domainValueChild = mkStringLiteral . Text.pack $ show internalIntValue
+            }
   where
-    InternalInt { internalIntSort, internalIntValue } = builtin
+    InternalInt{internalIntSort, internalIntValue} = builtin
 
-asPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Integer  -- ^ builtin value to render
-    -> Pattern variable
+asPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Integer ->
+    Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
-asPartialPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Maybe Integer  -- ^ builtin value to render
-    -> Pattern variable
+asPartialPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Maybe Integer ->
+    Pattern variable
 asPartialPattern resultSort =
     maybe Pattern.bottom (asPattern resultSort)
 

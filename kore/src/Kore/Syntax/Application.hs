@@ -1,4 +1,4 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
@@ -13,17 +13,16 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-
-module Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    , Application (..)
-    , mapHead
-    ) where
+module Kore.Syntax.Application (
+    SymbolOrAlias (..),
+    Application (..),
+    mapHead,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Debug
 import Kore.Sort
@@ -34,10 +33,10 @@ import qualified Pretty
 {- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @head@ syntactic category from the Semantics of K,
 Section 9.1.3 (Heads).
- -}
+-}
 data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
-    , symbolOrAliasParams      :: ![Sort]
+    , symbolOrAliasParams :: ![Sort]
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -50,23 +49,22 @@ instance Unparse SymbolOrAlias where
         SymbolOrAlias
             { symbolOrAliasConstructor
             , symbolOrAliasParams
-            }
-      =
-        unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
-    unparse2 SymbolOrAlias { symbolOrAliasConstructor } =
-        Pretty.parens $ Pretty.fillSep [ unparse2 symbolOrAliasConstructor ]
+            } =
+            unparse symbolOrAliasConstructor <> parameters symbolOrAliasParams
+    unparse2 SymbolOrAlias{symbolOrAliasConstructor} =
+        Pretty.parens $ Pretty.fillSep [unparse2 symbolOrAliasConstructor]
 
 instance From SymbolOrAlias SymbolOrAlias where
     from = id
 
-{-|'Application' corresponds to the @head(pattern-list)@ branches of the
+{- |'Application' corresponds to the @head(pattern-list)@ branches of the
 @pattern@ syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
 This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
 data Application head child = Application
     { applicationSymbolOrAlias :: !head
-    , applicationChildren      :: [child]
+    , applicationChildren :: [child]
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -77,32 +75,36 @@ data Application head child = Application
 instance (Debug head, Debug child) => Debug (Application head child)
 
 instance
-    ( Debug head, Diff head
-    , Debug child, Diff child
-    )
-    => Diff (Application head child)
+    ( Debug head
+    , Diff head
+    , Debug child
+    , Diff child
+    ) =>
+    Diff (Application head child)
 
 instance (Unparse head, Unparse child) => Unparse (Application head child) where
-    unparse Application { applicationSymbolOrAlias, applicationChildren } =
+    unparse Application{applicationSymbolOrAlias, applicationChildren} =
         unparse applicationSymbolOrAlias <> arguments applicationChildren
 
-    unparse2 Application { applicationSymbolOrAlias, applicationChildren } =
+    unparse2 Application{applicationSymbolOrAlias, applicationChildren} =
         case applicationChildren of
             [] ->
                 Pretty.parens (unparse2 applicationSymbolOrAlias)
             children ->
-                Pretty.parens (Pretty.fillSep
-                    [ unparse2 applicationSymbolOrAlias
-                    , arguments2 children
-                    ])
+                Pretty.parens
+                    ( Pretty.fillSep
+                        [ unparse2 applicationSymbolOrAlias
+                        , arguments2 children
+                        ]
+                    )
 
 instance TopBottom child => TopBottom (Application head child) where
     isTop _ = False
     isBottom = any isBottom
 
-mapHead
-    :: (head1 -> head2)
-    -> Application head1 child
-    -> Application head2 child
+mapHead ::
+    (head1 -> head2) ->
+    Application head1 child ->
+    Application head2 child
 mapHead mapping app =
-    app { applicationSymbolOrAlias = mapping (applicationSymbolOrAlias app) }
+    app{applicationSymbolOrAlias = mapping (applicationSymbolOrAlias app)}

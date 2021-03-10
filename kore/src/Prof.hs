@@ -1,60 +1,58 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Prof
-    ( MonadProf (..)
-    , defaultTraceProf
-    ) where
+module Prof (
+    MonadProf (..),
+    defaultTraceProf,
+) where
 
 import Prelude.Kore
 
-import Control.Monad.Catch
-    ( MonadMask
-    , bracket_
-    )
-import Control.Monad.RWS.Strict
-    ( RWST
-    )
-import Control.Monad.Trans.Except
-    ( ExceptT
-    )
-import Control.Monad.Trans.Reader
-    ( ReaderT
-    )
-import qualified Control.Monad.Trans.State.Lazy as Lazy
-    ( StateT
-    )
-import qualified Control.Monad.Trans.State.Strict as Strict
-    ( StateT
-    )
-import Data.Text
-    ( Text
-    )
+import Control.Monad.Catch (
+    MonadMask,
+    bracket_,
+ )
+import Control.Monad.RWS.Strict (
+    RWST,
+ )
+import Control.Monad.Trans.Except (
+    ExceptT,
+ )
+import Control.Monad.Trans.Reader (
+    ReaderT,
+ )
+import qualified Control.Monad.Trans.State.Lazy as Lazy (
+    StateT,
+ )
+import qualified Control.Monad.Trans.State.Strict as Strict (
+    StateT,
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Debug.Trace.Text
-    ( traceEventIO
-    )
+import Debug.Trace.Text (
+    traceEventIO,
+ )
 
 class Monad prof => MonadProf prof where
-    {- | Attribute an action to a particular name for profiling.
-     -}
-    traceProf
-        :: Text  -- ^ name for profiling
-        -> prof a  -- ^ action
-        -> prof a
-    default traceProf
-        :: MonadMask prof
-        => Text
-        -> prof a
-        -> prof a
+    -- | Attribute an action to a particular name for profiling.
+    traceProf ::
+        -- | name for profiling
+        Text ->
+        -- | action
+        prof a ->
+        prof a
+    default traceProf ::
+        MonadMask prof =>
+        Text ->
+        prof a ->
+        prof a
     traceProf = defaultTraceProf
     {-# INLINE traceProf #-}
 
-    {- | For internal use only.
-     -}
+    -- | For internal use only.
     traceEvent :: Text -> prof ()
 
 instance MonadProf IO where
@@ -70,31 +68,31 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (ReaderT r prof) where
     {-# INLINE traceEvent #-}
 
 instance
-    (MonadMask prof, MonadProf prof)
-    => MonadProf (Lazy.StateT s prof)
-  where
+    (MonadMask prof, MonadProf prof) =>
+    MonadProf (Lazy.StateT s prof)
+    where
     traceEvent name = lift (traceEvent name)
     {-# INLINE traceEvent #-}
 
 instance
-    (MonadMask prof, MonadProf prof)
-    => MonadProf (Strict.StateT s prof)
-  where
+    (MonadMask prof, MonadProf prof) =>
+    MonadProf (Strict.StateT s prof)
+    where
     traceEvent name = lift (traceEvent name)
     {-# INLINE traceEvent #-}
 
 instance
-    (MonadMask prof, MonadProf prof)
-    => MonadProf (RWST r () s prof)
-  where
+    (MonadMask prof, MonadProf prof) =>
+    MonadProf (RWST r () s prof)
+    where
     traceEvent name = lift (traceEvent name)
     {-# INLINE traceEvent #-}
 
-defaultTraceProf
-    :: (MonadProf prof, MonadMask prof)
-    => Text
-    -> prof a
-    -> prof a
+defaultTraceProf ::
+    (MonadProf prof, MonadMask prof) =>
+    Text ->
+    prof a ->
+    prof a
 defaultTraceProf name =
     bracket_ open close
   where

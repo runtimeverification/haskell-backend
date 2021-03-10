@@ -1,25 +1,24 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
- -}
-module Injection
-    ( Injection (..)
-    , Prism'
-    ) where
+-}
+module Injection (
+    Injection (..),
+    Prism',
+) where
 
 import Prelude
 
-import Control.Lens
-    ( Prism'
-    )
+import Control.Lens (
+    Prism',
+ )
 import qualified Control.Lens as Lens
-import Data.Dynamic
-    ( Dynamic
-    , Typeable
-    , fromDynamic
-    , toDyn
-    )
+import Data.Dynamic (
+    Dynamic,
+    Typeable,
+    fromDynamic,
+    toDyn,
+ )
 import Data.Void
 
 {- | The canonical injection or inclusion of @from ↪ into@.
@@ -51,10 +50,9 @@ retract x = Just a => x = inject a
 
 Note: invertibility is actually implied by the left identity property, provided
 @inject@ and @retract@ are total functions.
-
- -}
+-}
 class Injection into from where
-    {-# MINIMAL injection | ( inject, retract ) #-}
+    {-# MINIMAL injection | (inject, retract) #-}
 
     injection :: Prism' into from
     injection = Lens.prism' inject retract
@@ -85,9 +83,9 @@ instance Typeable a => Injection Dynamic a where
 {- | 'Void' can be 'inject'ed into any type by the principle of /ex falso
 quodlibet/.  Because 'Void' contains no data, it can likewise be 'retract'ed
 from any type.
- -}
+-}
 instance Injection a Void where
-    inject = \case {}
+    inject = \case
     {-# INLINE inject #-}
 
     retract = const Nothing

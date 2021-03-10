@@ -1,4 +1,4 @@
-{-|
+{- |
 Module      : Kore.Step.Axiom.Identifier
 Description : Data structures and manipulation helpers used for axiom
               evaluation identifiers.
@@ -18,57 +18,56 @@ import Kore.Step.Axiom.Identifier ( AxiomIdentifier )
 import Kore.Step.Axiom.Identifier as AxiomIdentifier
 @
 -}
-
-module Kore.Step.Axiom.Identifier
-    ( AxiomIdentifier (..)
-    , matchAxiomIdentifier
-    ) where
+module Kore.Step.Axiom.Identifier (
+    AxiomIdentifier (..),
+    matchAxiomIdentifier,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Functor.Foldable as Recursive
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import qualified Kore.Builtin.External as Builtin
 import Kore.Debug
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , TermLike
-    )
+import Kore.Internal.TermLike (
+    InternalVariable,
+    TermLike,
+ )
 import qualified Kore.Syntax.Application as Syntax
 import qualified Kore.Syntax.Ceil as Syntax
 import qualified Kore.Syntax.Equals as Syntax
 import qualified Kore.Syntax.Exists as Syntax
-import Kore.Syntax.Id
-    ( Id (..)
-    )
+import Kore.Syntax.Id (
+    Id (..),
+ )
 import Kore.Syntax.PatternF
-import Kore.Unparser
-    ( unparse
-    )
-import Pretty
-    ( Pretty (..)
-    )
+import Kore.Unparser (
+    unparse,
+ )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-{-| Identifer for the left-hand-side of axioms and for the terms with which
+{- | Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.
 
 The expectation is that an axiom can be applied to a term only if the
 identifier of its left-hand-side is the same as the term's identifier.
 -}
 data AxiomIdentifier
-    = Application !Id
-    -- ^ An application pattern with the given symbol identifier.
-    | Ceil !AxiomIdentifier
-    -- ^ A @\\ceil@ pattern with the given child.
-    | Equals !AxiomIdentifier !AxiomIdentifier
-    -- ^ An @\\equals@ pattern with the given children.
-    | Exists !AxiomIdentifier
-    -- ^ An @\\exists@ pattern with the given child.
-    | Variable
-    -- ^ Any variable pattern.
+    = -- | An application pattern with the given symbol identifier.
+      Application !Id
+    | -- | A @\\ceil@ pattern with the given child.
+      Ceil !AxiomIdentifier
+    | -- | An @\\equals@ pattern with the given children.
+      Equals !AxiomIdentifier !AxiomIdentifier
+    | -- | An @\\exists@ pattern with the given child.
+      Exists !AxiomIdentifier
+    | -- | Any variable pattern.
+      Variable
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable)
@@ -80,8 +79,9 @@ instance Pretty AxiomIdentifier where
     pretty (Ceil axiomIdentifier) =
         "\\ceil" <> Pretty.parens (pretty axiomIdentifier)
     pretty (Equals first second) =
-        "\\equals" <> Pretty.parens
-            (pretty first Pretty.<+> "," Pretty.<+> pretty second)
+        "\\equals"
+            <> Pretty.parens
+                (pretty first Pretty.<+> "," Pretty.<+> pretty second)
     pretty (Exists axiomIdentifier) =
         "\\exists" <> Pretty.parens (pretty axiomIdentifier)
     pretty Variable = "_"
@@ -90,12 +90,11 @@ instance Pretty AxiomIdentifier where
 
 Returns 'Nothing' if the 'TermLike' does not conform to one of the structures we
 recognize.
-
- -}
-matchAxiomIdentifier
-    :: InternalVariable variable
-    => TermLike variable
-    -> Maybe AxiomIdentifier
+-}
+matchAxiomIdentifier ::
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe AxiomIdentifier
 matchAxiomIdentifier = Recursive.fold matchWorker . Builtin.externalize
   where
     matchWorker (_ :< patternF) =

@@ -1,35 +1,35 @@
-module Test.Kore.Step.SMT.Translate
-    ( test_translatePredicateWith
-    ) where
+module Test.Kore.Step.SMT.Translate (
+    test_translatePredicateWith,
+) where
 
-import Prelude.Kore hiding
-    ( and
-    )
+import Prelude.Kore hiding (
+    and,
+ )
 
 import Test.Tasty
 
-import Control.Error
-    ( runMaybeT
-    )
-import Data.Reflection
-    ( give
-    )
+import Control.Error (
+    runMaybeT,
+ )
+import Data.Reflection (
+    give,
+ )
 import qualified Data.Text as Text
 
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-    ( TermLike
-    )
+import Kore.Internal.TermLike (
+    TermLike,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import qualified Kore.Step.SMT.Evaluator as Evaluator
-import Kore.Step.SMT.Translate
-    ( Translator
-    , evalTranslator
-    )
+import Kore.Step.SMT.Translate (
+    Translator,
+    evalTranslator,
+ )
 import qualified Kore.Step.SMT.Translate as SMT
 import SMT
 import qualified SMT.SimpleSMT
@@ -45,105 +45,100 @@ test_translatePredicateWith =
         translatingPred true `yields` smtTrue
     , testCase "n = n" $
         translatingPred (n `peq` n)
-        `yields` (var 0 `eq` var 0)
+            `yields` (var 0 `eq` var 0)
     , testCase "exists n. true" $
         translatingPred (pexists n true)
-        `yields` smtTrue
+            `yields` smtTrue
     , testCase "exists n. n = n" $
         translatingPred (pexists n $ n `peq` n)
-        `yields` exists 0 (var 0 `eq` var 0)
+            `yields` exists 0 (var 0 `eq` var 0)
     , testCase "exists n. n = m" $
         translatingPred (pexists n $ n `peq` m)
-        `yields` exists 0 (var 0 `eq` var 1)
+            `yields` exists 0 (var 0 `eq` var 1)
     , testCase "exists x. x = x where x not of a builtin sort" $
         translatingPred (pexists x $ x `peq` x)
-        `yields` existst 0 (var 0 `eq` var 0)
+            `yields` existst 0 (var 0 `eq` var 0)
     , testCase "n = n and (exists n. n = n)" $
         translatingPred ((n `peq` n) `pand` pexists n (n `peq` n))
-        `yields` ((var 0 `eq` var 0) `and` exists 1 (var 1 `eq` var 1))
+            `yields` ((var 0 `eq` var 0) `and` exists 1 (var 1 `eq` var 1))
     , testCase "exists n. ⌈n⌉" $
         translatingPred (pexists n $ pceil n)
-        `yields` exists 0 (fun 1 [var 0])
+            `yields` exists 0 (fun 1 [var 0])
     , testCase "exists n. ⌈n⌉ and ⌈n < m⌉" $
         translatingPred (pexists n $ pceil n `pand` pceil (n `pleq` m))
-        `yields` exists 0 (fun 1 [var 0] `and` fun 2 [var 0])
+            `yields` exists 0 (fun 1 [var 0] `and` fun 2 [var 0])
     , testCase "exists n. (⌈n⌉ and ⌈n < m⌉) and ⌈n⌉" $
         translatingPred
             (pexists n $ (pceil n `pand` pceil (n `pleq` m)) `pand` pceil n)
-        `yields`
-            exists 0 ((fun 1 [var 0] `and` fun 2 [var 0]) `and` fun 1 [var 0])
+            `yields` exists 0 ((fun 1 [var 0] `and` fun 2 [var 0]) `and` fun 1 [var 0])
     , testCase "(exists n. ⌈n⌉) and ⌈n⌉" $
         translatingPred (pexists n (pceil n) `pand` pceil n)
-        `yields` (exists 0 (fun 1 [var 0]) `and` var 2)
+            `yields` (exists 0 (fun 1 [var 0]) `and` var 2)
     , testCase "(exists n. ⌈n⌉ and n = n) and (exists n. ⌈n⌉)" $
         translatingPred
-            (      pexists n (pceil n `pand` (n `peq` n))
-            `pand` pexists n (pceil n)
+            ( pexists n (pceil n `pand` (n `peq` n))
+                `pand` pexists n (pceil n)
             )
-        `yields`
-            (     exists 0 (fun 1 [var 0] `and` (var 0 `eq` var 0))
-            `and` exists 2 (fun 1 [var 2])
-            )
+            `yields` ( exists 0 (fun 1 [var 0] `and` (var 0 `eq` var 0))
+                        `and` exists 2 (fun 1 [var 2])
+                     )
     , testCase "(exists n. exists m. ⌈n⌉ and ⌈m⌉) and (exists n. ⌈n⌉)" $
         translatingPred
-            (      pexists n (pexists m (pceil n `pand` pceil m))
-            `pand` pexists n (pceil n)
+            ( pexists n (pexists m (pceil n `pand` pceil m))
+                `pand` pexists n (pceil n)
             )
-        `yields`
-            (     exists 0 (exists 1 (fun 2 [var 0] `and` fun 3 [var 1]))
-            `and` exists 4 (fun 2 [var 4])
+            `yields` ( exists 0 (exists 1 (fun 2 [var 0] `and` fun 3 [var 1]))
+                        `and` exists 4 (fun 2 [var 4])
+                     )
+    , testCase
+        "(exists n. exists m. ⌈n⌉ and ⌈m⌉)\
+        \ and (exists m. exists n. ⌈n⌉ and ⌈m⌉)"
+        $ translatingPred
+            ( pexists m (pexists n (pceil n `pand` pceil m))
+                `pand` pexists n (pexists m (pceil n `pand` pceil m))
             )
-    , testCase "(exists n. exists m. ⌈n⌉ and ⌈m⌉)\
-               \ and (exists m. exists n. ⌈n⌉ and ⌈m⌉)" $
-        translatingPred
-            (      pexists m (pexists n (pceil n `pand` pceil m))
-            `pand` pexists n (pexists m (pceil n `pand` pceil m))
-            )
-        `yields`
-            (     exists 0 (exists 1 (fun 2 [var 1] `and` fun 3 [var 0]))
-            `and` exists 4 (exists 5 (fun 2 [var 4] `and` fun 3 [var 5]))
-            )
+            `yields` ( exists 0 (exists 1 (fun 2 [var 1] `and` fun 3 [var 0]))
+                        `and` exists 4 (exists 5 (fun 2 [var 4] `and` fun 3 [var 5]))
+                     )
     , testCase "(exists n. exists m. ⌈n⌉ and ⌈m⌉) and (exists m. ⌈n⌉)" $
         translatingPred
-            (      pexists n (pexists m (pceil n `pand` pceil m))
-            `pand` pexists m (pceil n)
+            ( pexists n (pexists m (pceil n `pand` pceil m))
+                `pand` pexists m (pceil n)
             )
-        `yields`
-            (     exists 0 (exists 1 (fun 2 [var 0] `and` fun 3 [var 1]))
-            `and` exists 4 (var 5)
-            )
+            `yields` ( exists 0 (exists 1 (fun 2 [var 0] `and` fun 3 [var 1]))
+                        `and` exists 4 (var 5)
+                     )
     , testCase "exists n. exists m. ⌈n < m⌉" $
         translatingPred (pexists n $ pexists m $ pceil (n `pleq` m))
-        `yields` exists 0 (exists 1 $ fun 2 [var 0, var 1])
-    , testCase "(exists n. exists m. ⌈n < m⌉) and (exists m. exists n. ⌈n < m⌉)"
+            `yields` exists 0 (exists 1 $ fun 2 [var 0, var 1])
+    , testCase "(exists n. exists m. ⌈n < m⌉) and (exists m. exists n. ⌈n < m⌉)" $
+        translatingPred
+            ( pexists n (pexists m $ pceil (n `pleq` m))
+                `pand` pexists m (pexists n $ pceil (n `pleq` m))
+            )
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
+                        `and` exists 3 (exists 4 $ fun 2 [var 4, var 3])
+                     )
+    , testCase
+        "(exists n. exists m. ⌈n < m⌉) and\
+        \ (exists m. exists p. exists n. ⌈n < m⌉)"
         $ translatingPred
-            (      pexists n (pexists m $ pceil (n `pleq` m))
-            `pand` pexists m (pexists n $ pceil (n `pleq` m))
+            ( pexists n (pexists m $ pceil (n `pleq` m))
+                `pand` pexists m (pexists k (pexists n $ pceil (n `pleq` m)))
             )
-        `yields`
-            (     exists 0 (exists 1 $ fun 2 [var 0, var 1])
-            `and` exists 3 (exists 4 $ fun 2 [var 4, var 3])
-            )
-    , testCase "(exists n. exists m. ⌈n < m⌉) and\
-              \ (exists m. exists p. exists n. ⌈n < m⌉)"
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
+                        `and` exists 3 (existsb 4 $ exists 5 $ fun 2 [var 5, var 3])
+                     )
+    , testCase
+        "(exists n. exists m. ⌈n < m⌉) and\
+        \ (exists m. exists x. exists n. ⌈n < m⌉)"
         $ translatingPred
-            (      pexists n (pexists m $ pceil (n `pleq` m))
-            `pand` pexists m (pexists k (pexists n $ pceil (n `pleq` m)))
+            ( pexists n (pexists m $ pceil (n `pleq` m))
+                `pand` pexists m (pexists x (pexists n $ pceil (n `pleq` m)))
             )
-        `yields`
-            (     exists 0 (exists 1 $ fun 2 [var 0, var 1])
-            `and` exists 3 (existsb 4 $ exists 5 $ fun 2 [var 5, var 3])
-            )
-    , testCase "(exists n. exists m. ⌈n < m⌉) and\
-              \ (exists m. exists x. exists n. ⌈n < m⌉)"
-        $ translatingPred
-            (      pexists n (pexists m $ pceil (n `pleq` m))
-            `pand` pexists m (pexists x (pexists n $ pceil (n `pleq` m)))
-            )
-        `yields`
-            (     exists 0 (exists 1 $ fun 2 [var 0, var 1])
-            `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 5, var 3])
-            )
+            `yields` ( exists 0 (exists 1 $ fun 2 [var 0, var 1])
+                        `and` exists 3 (existst 4 $ exists 5 $ fun 2 [var 5, var 3])
+                     )
     , testCase "X:Int = X:Int /Int Y:Int" $
         yields
             (translatingPred (peq n (Mock.tdivInt n m)))
@@ -161,40 +156,35 @@ test_translatePredicateWith =
                 actual1 <- translatePredicate input1
                 actual2 <- translatePredicate input2
                 return (actual1, actual2)
-            & evalTranslator
-            & expectJustT
-            & Test.SMT.runNoSMT
+                & evalTranslator
+                & expectJustT
+                & Test.SMT.runNoSMT
         assertEqual "" actual1 actual2
-    -- In the tests below, a and b are not tranlated correctly
-    -- to their constructor names because they need to be
-    -- declared twice in the test data: once as part of their
-    -- sort and once as symbols.
-    , testCase "b = a, both constructors" $
-            translatingPred (peq Mock.b Mock.a)
-        `yields`
-            (var 0 `eq` var 1)
+    , -- In the tests below, a and b are not tranlated correctly
+      -- to their constructor names because they need to be
+      -- declared twice in the test data: once as part of their
+      -- sort and once as symbols.
+      testCase "b = a, both constructors" $
+        translatingPred (peq Mock.b Mock.a)
+            `yields` (var 0 `eq` var 1)
     , testCase "f() = a, f functional, a constructor" $
-            translatingPred (peq Mock.functional00 Mock.a)
-        `yields`
-            (Atom "functional00" `eq` var 0)
+        translatingPred (peq Mock.functional00 Mock.a)
+            `yields` (Atom "functional00" `eq` var 0)
     , testCase "s() = a, s arbitrary symbol, a constructor" $
-            translatingPred (peq Mock.plain00 Mock.a)
-        `yields`
-            var 0
-    -- -- This should fail because we don't know if it is defined.
-    -- , testCase "function(x)" $
-    --     translatingPatt (Mock.functionSMT x) & fails
-    -- -- This should fail because we don't know if it is defined.
-    -- , testCase "functional(function(x))" $
-    --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
-    , testCase "function(x), where function(x) is defined" $
-            translatingPatt (defined (function x))
-        `yields`
-            functionSMT (var 0)
+        translatingPred (peq Mock.plain00 Mock.a)
+            `yields` var 0
+    , -- -- This should fail because we don't know if it is defined.
+      -- , testCase "function(x)" $
+      --     translatingPatt (Mock.functionSMT x) & fails
+      -- -- This should fail because we don't know if it is defined.
+      -- , testCase "functional(function(x))" $
+      --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
+      testCase "function(x), where function(x) is defined" $
+        translatingPatt (defined (function x))
+            `yields` functionSMT (var 0)
     , testCase "functional(function(x)) where function(x) is defined" $
-            translatingPatt (defined (functional (function x)))
-        `yields`
-            functionalSMT (functionSMT (var 0))
+        translatingPatt (defined (functional (function x)))
+            `yields` functionalSMT (functionSMT (var 0))
     ]
   where
     x = TermLike.mkElemVar Mock.x
@@ -223,19 +213,19 @@ test_translatePredicateWith =
     fun i p = SMT.SimpleSMT.List (var i : p)
     sdiv i j = List [Atom "div", i, j]
 
-translatePredicate
-    :: HasCallStack
-    => Predicate VariableName
-    -> Translator VariableName NoSMT SExpr
+translatePredicate ::
+    HasCallStack =>
+    Predicate VariableName ->
+    Translator VariableName NoSMT SExpr
 translatePredicate = Evaluator.translatePredicate Mock.metadataTools
 
-translatePattern
-    :: HasCallStack
-    => TermLike VariableName
-    -> Translator VariableName NoSMT SExpr
+translatePattern ::
+    HasCallStack =>
+    TermLike VariableName ->
+    Translator VariableName NoSMT SExpr
 translatePattern =
-    give Mock.metadataTools
-    $ SMT.translatePattern Evaluator.translateTerm Mock.testSort
+    give Mock.metadataTools $
+        SMT.translatePattern Evaluator.translateTerm Mock.testSort
 
 translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =
@@ -247,6 +237,7 @@ translatingPatt =
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)
+
 --
 -- fails :: HasCallStack => IO (Maybe SExpr) -> IO ()
 -- fails actual = actual >>= assertEqual "" Nothing

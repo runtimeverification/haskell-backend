@@ -1,76 +1,98 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Builtin.Int
-    ( test_gt, test_ge, test_eq, test_le, test_lt, test_ne
-    , test_min, test_max
-    , test_add, test_sub, test_mul, test_abs
-    , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
-    , test_ediv_property, test_emod_property, test_edivZero, test_emodZero
-    , test_ediv, test_emod
-    , test_euclidian_division_theorem
-    , test_and, test_or, test_xor, test_not
-    , test_shl, test_shr
-    , test_pow, test_powmod, test_log2
-    , test_tdiv_evaluated_arguments
-    , test_ediv_evaluated_arguments
-    , test_unifyEqual_NotEqual
-    , test_unifyEqual_Equal
-    , test_unifyAnd_NotEqual
-    , test_unifyAnd_Equal
-    , test_unifyAndEqual_Equal
-    , test_unifyAnd_Fn
-    , test_reflexivity_symbolic
-    , test_symbolic_eq_not_conclusive
-    , test_unifyIntEq
-    , hprop_unparse
-    , test_contradiction
+module Test.Kore.Builtin.Int (
+    test_gt,
+    test_ge,
+    test_eq,
+    test_le,
+    test_lt,
+    test_ne,
+    test_min,
+    test_max,
+    test_add,
+    test_sub,
+    test_mul,
+    test_abs,
+    test_tdiv,
+    test_tmod,
+    test_tdivZero,
+    test_tmodZero,
+    test_ediv_property,
+    test_emod_property,
+    test_edivZero,
+    test_emodZero,
+    test_ediv,
+    test_emod,
+    test_euclidian_division_theorem,
+    test_and,
+    test_or,
+    test_xor,
+    test_not,
+    test_shl,
+    test_shr,
+    test_pow,
+    test_powmod,
+    test_log2,
+    test_tdiv_evaluated_arguments,
+    test_ediv_evaluated_arguments,
+    test_unifyEqual_NotEqual,
+    test_unifyEqual_Equal,
+    test_unifyAnd_NotEqual,
+    test_unifyAnd_Equal,
+    test_unifyAndEqual_Equal,
+    test_unifyAnd_Fn,
+    test_reflexivity_symbolic,
+    test_symbolic_eq_not_conclusive,
+    test_unifyIntEq,
+    hprop_unparse,
+    test_contradiction,
     --
-    , asInternal
-    , asPattern
-    , asConcretePattern
-    , asKey
-    , asPartialPattern
-    , genIntegerPattern
-    , genConcreteIntegerPattern
-    , genIntegerKey
-    , genInteger
-    , intLiteral
-    , testInt
-    ) where
+    asInternal,
+    asPattern,
+    asConcretePattern,
+    asKey,
+    asPartialPattern,
+    genIntegerPattern,
+    genConcreteIntegerPattern,
+    genIntegerKey,
+    genInteger,
+    intLiteral,
+    testInt,
+) where
 
 import Prelude.Kore
 
-import Hedgehog hiding
-    ( Concrete
-    )
+import Hedgehog hiding (
+    Concrete,
+ )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
 
-import Control.Monad.Trans.Maybe
-    ( runMaybeT
-    )
-import Data.Bits
-    ( complement
-    , shift
-    , xor
-    , (.&.)
-    , (.|.)
-    )
-import Data.Semigroup
-    ( Endo (..)
-    )
+import Control.Monad.Trans.Maybe (
+    runMaybeT,
+ )
+import Data.Bits (
+    complement,
+    shift,
+    xor,
+    (.&.),
+    (.|.),
+ )
+import Data.Semigroup (
+    Endo (..),
+ )
 import qualified Data.Text as Text
 
-import Kore.Builtin.Int
-    ( ediv
-    , emod
-    , log2
-    , pow
-    , powmod
-    , tdiv
-    , tmod
-    )
+import Kore.Builtin.Int (
+    ediv,
+    emod,
+    log2,
+    pow,
+    powmod,
+    tdiv,
+    tmod,
+ )
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalInt
@@ -80,28 +102,27 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , configElementVariableFromId
-    )
-import Kore.Step.Simplification.AndTerms
-    ( termUnification
-    )
-import Kore.Step.Simplification.Data
-    ( runSimplifierBranch
-    , simplifyCondition
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    configElementVariableFromId,
+ )
+import Kore.Step.Simplification.AndTerms (
+    termUnification,
+ )
+import Kore.Step.Simplification.Data (
+    runSimplifierBranch,
+    simplifyCondition,
+ )
 import qualified Kore.Step.Simplification.Not as Not
-import Kore.Unification.UnifierT
-    ( evalEnvUnifierT
-    )
+import Kore.Unification.UnifierT (
+    evalEnvUnifierT,
+ )
 
-
-import Test.Kore
-    ( configElementVariableGen
-    , standaloneGen
-    , testId
-    )
+import Test.Kore (
+    configElementVariableGen,
+    standaloneGen,
+    testId,
+ )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -121,12 +142,12 @@ genIntegerKey :: Gen Key
 genIntegerKey = asKey <$> genInteger
 
 -- | Test a unary operator hooked to the given symbol
-testUnary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Integer)
-    -- ^ operator
-    -> TestTree
+testUnary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Integer) ->
+    TestTree
 testUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -137,12 +158,12 @@ testUnary symb impl =
     name = expectHook symb
 
 -- | Test a binary operator hooked to the given symbol.
-testBinary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Integer -> Integer)
-    -- ^ operator
-    -> TestTree
+testBinary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Integer -> Integer) ->
+    TestTree
 testBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -154,12 +175,12 @@ testBinary symb impl =
     name = expectHook symb
 
 -- | Test a comparison operator hooked to the given symbol
-testComparison
-    :: Symbol
-    -- ^ symbol
-    -> (Integer -> Integer -> Bool)
-    -- ^ implementation
-    -> TestTree
+testComparison ::
+    -- | symbol
+    Symbol ->
+    -- | implementation
+    (Integer -> Integer -> Bool) ->
+    TestTree
 testComparison symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -171,12 +192,12 @@ testComparison symb impl =
     name = expectHook symb
 
 -- | Test a partial unary operator hooked to the given symbol.
-testPartialUnary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Maybe Integer)
-    -- ^ operator
-    -> TestTree
+testPartialUnary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Maybe Integer) ->
+    TestTree
 testPartialUnary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -187,12 +208,12 @@ testPartialUnary symb impl =
     name = expectHook symb
 
 -- | Test a partial binary operator hooked to the given symbol.
-testPartialBinary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Integer -> Maybe Integer)
-    -- ^ operator
-    -> TestTree
+testPartialBinary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Integer -> Maybe Integer) ->
+    TestTree
 testPartialBinary symb impl =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -203,14 +224,15 @@ testPartialBinary symb impl =
   where
     name = expectHook symb
 
--- | Test a partial binary operator hooked to the given symbol, passing zero as
--- the second argument.
-testPartialBinaryZero
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Integer -> Maybe Integer)
-    -- ^ operator
-    -> TestTree
+{- | Test a partial binary operator hooked to the given symbol, passing zero as
+ the second argument.
+-}
+testPartialBinaryZero ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Integer -> Maybe Integer) ->
+    TestTree
 testPartialBinaryZero symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
@@ -221,12 +243,12 @@ testPartialBinaryZero symb impl =
     name = expectHook symb
 
 -- | Test a partial ternary operator hooked to the given symbol.
-testPartialTernary
-    :: Symbol
-    -- ^ hooked symbol
-    -> (Integer -> Integer -> Integer -> Maybe Integer)
-    -- ^ operator
-    -> TestTree
+testPartialTernary ::
+    -- | hooked symbol
+    Symbol ->
+    -- | operator
+    (Integer -> Integer -> Integer -> Maybe Integer) ->
+    TestTree
 testPartialTernary symb impl =
     testPropertyWithSolver (Text.unpack name ++ " zero") $ do
         a <- forAll genInteger
@@ -391,19 +413,19 @@ test_euclidian_division_theorem =
         mkApplySymbol
             symbol
             (asInternal <$> [a, b])
-        & evaluateT
-        & fmap extractValue
+            & evaluateT
+            & fmap extractValue
     extractValue :: Pattern RewritingVariableName -> Integer
     extractValue (Pattern.toTermLike -> term) =
         case term of
-            InternalInt_ InternalInt { internalIntValue } ->
+            InternalInt_ InternalInt{internalIntValue} ->
                 internalIntValue
             _ -> error "Expecting builtin int."
 
-testDivEvaluatedArguments
-    :: Symbol
-    -> (Integer -> Integer -> Maybe Integer)
-    -> TestTree
+testDivEvaluatedArguments ::
+    Symbol ->
+    (Integer -> Integer -> Maybe Integer) ->
+    TestTree
 testDivEvaluatedArguments symbol expected =
     testPropertyWithSolver (Text.unpack name) $ do
         a <- forAll genInteger
@@ -411,8 +433,9 @@ testDivEvaluatedArguments symbol expected =
         na <- forAll $ Gen.integral (Range.linear 0 5)
         nb <- forAll $ Gen.integral (Range.linear 0 5)
         let expect = asPartialPattern $ expected a b
-        actual <- evaluateT
-            $ mkApplySymbol symbol [evaluated na a, evaluated nb b]
+        actual <-
+            evaluateT $
+                mkApplySymbol symbol [evaluated na a, evaluated nb b]
         (===) expect actual
   where
     name = expectHook edivIntSymbol <> " with evaluated arguments"
@@ -434,11 +457,13 @@ test_not = testUnary notIntSymbol complement
 
 test_shl :: TestTree
 test_shl = testBinary shlIntSymbol shl
-  where shl a = shift a . fromInteger
+  where
+    shl a = shift a . fromInteger
 
 test_shr :: TestTree
 test_shr = testBinary shrIntSymbol shr
-  where shr a = shift a . fromInteger . negate
+  where
+    shr a = shift a . fromInteger . negate
 
 -- Exponential and logarithmic operations
 test_pow :: TestTree
@@ -459,7 +484,7 @@ asInternal :: InternalVariable variable => Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 asKey :: Integer -> Key
-asKey internalIntValue = from InternalInt { internalIntSort = intSort, internalIntValue }
+asKey internalIntValue = from InternalInt{internalIntSort = intSort, internalIntValue}
 
 -- | Specialize 'asInternal' to the builtin sort 'intSort'.
 asConcretePattern :: Integer -> TermLike Concrete
@@ -470,16 +495,16 @@ asPattern :: InternalVariable variable => Integer -> Pattern variable
 asPattern = Int.asPattern intSort
 
 -- | Specialize 'Int.asPartialPattern' to the builtin sort 'intSort'.
-asPartialPattern
-    :: InternalVariable variable => Maybe Integer -> Pattern variable
+asPartialPattern ::
+    InternalVariable variable => Maybe Integer -> Pattern variable
 asPartialPattern = Int.asPartialPattern intSort
 
-testInt
-    :: String
-    -> Symbol
-    -> [TermLike RewritingVariableName]
-    -> Pattern RewritingVariableName
-    -> TestTree
+testInt ::
+    String ->
+    Symbol ->
+    [TermLike RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    TestTree
 testInt name = testSymbolWithoutSolver evaluate name
 
 -- | "\equal"ed internal Integers that are not equal
@@ -521,7 +546,7 @@ test_unifyAndEqual_Equal :: TestTree
 test_unifyAndEqual_Equal =
     testCaseWithoutSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv = asInternal 0
-        actual <- evaluate $ mkEquals_ dv $  mkAnd dv dv
+        actual <- evaluate $ mkEquals_ dv $ mkAnd dv dv
         assertEqual' "" top actual
 
 -- | Internal Integer "\and"ed with builtin function applied to variable
@@ -531,7 +556,7 @@ test_unifyAnd_Fn =
         var <-
             forAll (standaloneGen $ configElementVariableGen intSort)
         let dv = asInternal 2
-            fnPat = mkApplySymbol absIntSymbol  [mkElemVar var]
+            fnPat = mkApplySymbol absIntSymbol [mkElemVar var]
             expect =
                 Conditional
                     { term = dv
@@ -572,9 +597,9 @@ test_unifyIntEq =
             term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
                 makeEqualsPredicate (mkElemVar x) (mkElemVar y)
-                & makeNotPredicate
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+                    & Pattern.fromCondition_
         -- unit test
         do
             actual <- unifyIntEq term1 term2
@@ -583,29 +608,29 @@ test_unifyIntEq =
         do
             actual <-
                 makeEqualsPredicate term1 term2
-                & Condition.fromPredicate
-                & simplifyCondition'
-            assertEqual "" [expect { term = () }] actual
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     , testCase "\\equals(true, X ==Int Y)" $ do
         let term1 = Test.Bool.asInternal True
             term2 = eqInt (mkElemVar x) (mkElemVar y)
             expect =
                 Condition.assign (inject x) (mkElemVar y)
-                & Pattern.fromCondition_
+                    & Pattern.fromCondition_
         -- unit test
         do
             actual <- unifyIntEq term1 term2
             -- TODO (thomas.tuegel): Remove predicate sorts to eliminate this
             -- inconsistency.
-            let expect' = expect { predicate = makeTruePredicate }
+            let expect' = expect{predicate = makeTruePredicate}
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
                 makeEqualsPredicate term1 term2
-                & Condition.fromPredicate
-                & simplifyCondition'
-            assertEqual "" [expect { term = () }] actual
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     , testCase "\\equals(X +Int 1 ==Int Y +Int 1, false)" $ do
         let term1 =
                 eqInt
@@ -616,9 +641,9 @@ test_unifyIntEq =
                 makeEqualsPredicate
                     (addInt (mkElemVar x) (asInternal 1))
                     (addInt (mkElemVar y) (asInternal 1))
-                & makeNotPredicate
-                & Condition.fromPredicate
-                & Pattern.fromCondition_
+                    & makeNotPredicate
+                    & Condition.fromPredicate
+                    & Pattern.fromCondition_
         -- unit test
         do
             actual <- unifyIntEq term1 term2
@@ -627,37 +652,37 @@ test_unifyIntEq =
         do
             actual <-
                 makeEqualsPredicate term1 term2
-                & Condition.fromPredicate
-                & simplifyCondition'
-            assertEqual "" [expect { term = () }] actual
+                    & Condition.fromPredicate
+                    & simplifyCondition'
+            assertEqual "" [expect{term = ()}] actual
     ]
   where
     x, y :: ElementVariable RewritingVariableName
     x = "x" `ofSort` intSort
     y = "y" `ofSort` intSort
 
-    unifyIntEq
-        :: TermLike RewritingVariableName
-        -> TermLike RewritingVariableName
-        -> IO [Maybe (Pattern RewritingVariableName)]
+    unifyIntEq ::
+        TermLike RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        IO [Maybe (Pattern RewritingVariableName)]
     unifyIntEq term1 term2 =
         Int.unifyIntEq
             (termUnification Not.notSimplifier)
             Not.notSimplifier
             term1
             term2
-        & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runMaybeT
+            & evalEnvUnifierT Not.notSimplifier
+            & runSimplifierBranch testEnv
+            & runNoSMT
 
-    simplifyCondition'
-        :: Condition RewritingVariableName
-        -> IO [Condition RewritingVariableName]
+    simplifyCondition' ::
+        Condition RewritingVariableName ->
+        IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runSimplifierBranch testEnv
+            & runNoSMT
 
 test_contradiction :: TestTree
 test_contradiction =
@@ -672,7 +697,7 @@ test_contradiction =
                     (addInt x y)
             condition =
                 makeAndPredicate clause0 clause1
-                & Condition.fromPredicate
+                    & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
   where
@@ -680,10 +705,10 @@ test_contradiction =
     x = mkElemVar $ ofSort "x" intSort
     y = mkElemVar $ ofSort "y" intSort
 
-    simplifyCondition'
-        :: Condition RewritingVariableName
-        -> IO [Condition RewritingVariableName]
+    simplifyCondition' ::
+        Condition RewritingVariableName ->
+        IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
-        & runSimplifierBranch testEnv
-        & runNoSMT
+            & runSimplifierBranch testEnv
+            & runNoSMT

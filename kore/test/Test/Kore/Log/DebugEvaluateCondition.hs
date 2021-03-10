@@ -1,14 +1,14 @@
-module Test.Kore.Log.DebugEvaluateCondition
-    ( test_instance_Table_DebugEvaluateCondition
-    ) where
+module Test.Kore.Log.DebugEvaluateCondition (
+    test_instance_Table_DebugEvaluateCondition,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Data.List
-    ( inits
-    )
+import Data.List (
+    inits,
+ )
 
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike

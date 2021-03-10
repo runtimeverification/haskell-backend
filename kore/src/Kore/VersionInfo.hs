@@ -1,49 +1,46 @@
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoDuplicateRecordFields #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : NCSA
-
- -}
-
-{-# LANGUAGE DeriveLift              #-}
-{-# LANGUAGE NoDuplicateRecordFields #-}
-{-# LANGUAGE Strict                  #-}
-{-# LANGUAGE TemplateHaskell         #-}
-
-module Kore.VersionInfo
-    ( VersionInfo (..)
-    , versionInfo
-    ) where
+-}
+module Kore.VersionInfo (
+    VersionInfo (..),
+    versionInfo,
+) where
 
 import Prelude.Kore
 
-import Data.Aeson
-    ( FromJSON
-    )
+import Data.Aeson (
+    FromJSON,
+ )
 import qualified Data.Aeson as Aeson
 import qualified Data.List as List
 import qualified Development.GitRev as GitRev
 import qualified GHC.Generics as GHC
-import Language.Haskell.TH
-    ( Exp
-    , Q
-    )
+import Language.Haskell.TH (
+    Exp,
+    Q,
+ )
 import qualified Language.Haskell.TH as TH
-import Language.Haskell.TH.Syntax
-    ( Lift
-    )
+import Language.Haskell.TH.Syntax (
+    Lift,
+ )
 import qualified Language.Haskell.TH.Syntax as TH
 import qualified System.Directory as Directory
-import System.FilePath
-    ( isRelative
-    , joinPath
-    , splitDirectories
-    , takeDirectory
-    , (</>)
-    )
+import System.FilePath (
+    isRelative,
+    joinPath,
+    splitDirectories,
+    takeDirectory,
+    (</>),
+ )
 
 -- | Information about the current version of Kore.
-data VersionInfo =
-    VersionInfo
+data VersionInfo = VersionInfo
     { gitHash :: !String
     , gitCommitDate :: !String
     , gitBranch :: !(Maybe String)
@@ -68,19 +65,19 @@ versionInfo = do
         result <- Aeson.eitherDecodeFileStrict' versionFile & TH.runIO
         either fail (TH.lift @_ @VersionInfo) result
     defaultVersionInfo =
-        [| VersionInfo
-            { gitHash = $(GitRev.gitHash)
-            , gitCommitDate = $(GitRev.gitCommitDate)
-            , gitBranch = Just $(GitRev.gitBranch)
-            , gitDirty = $(GitRev.gitDirty)
-            }
-        |]
+        [|
+            VersionInfo
+                { gitHash = $(GitRev.gitHash)
+                , gitCommitDate = $(GitRev.gitCommitDate)
+                , gitBranch = Just $(GitRev.gitBranch)
+                , gitDirty = $(GitRev.gitDirty)
+                }
+            |]
 
 {- | Find the root of the package.
 
 @getPackageRoot@ looks upward from the current file (i.e. the file into which it
 is spliced) to find the root directory of the package.
-
 -}
 getPackageRoot :: Q FilePath
 getPackageRoot = do
@@ -92,11 +89,11 @@ getPackageRoot = do
 
     getParents bottom =
         bottom
-        & splitDirectories
-        & List.inits
-        & reverse
-        & map joinPath
-        & filter (sameRelativity bottom)
+            & splitDirectories
+            & List.inits
+            & reverse
+            & map joinPath
+            & filter (sameRelativity bottom)
 
     sameRelativity bottom = \here -> isRelative bottom == isRelative here
 
@@ -109,4 +106,3 @@ getPackageRoot = do
         if foundRoot then Directory.makeAbsolute here else goUp
       where
         goUp = findPackageRoot bot heres
-

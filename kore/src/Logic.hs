@@ -1,16 +1,14 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Logic
-    ( module Control.Monad.Logic
-    , gather
-    , scatter
-    , mapLogicT
-    , lowerLogicT
-    ) where
+module Logic (
+    module Control.Monad.Logic,
+    gather,
+    scatter,
+    mapLogicT,
+    lowerLogicT,
+) where
 
 import Prelude
 
@@ -28,11 +26,11 @@ scatter :: (Foldable f, Alternative m) => f a -> m a
 scatter = foldr ((<|>) . pure) empty
 {-# INLINE scatter #-}
 
-mapLogicT
-    :: (Monad m, Monad n)
-    => (forall x. m x -> n x)
-    -> LogicT m a
-    -> LogicT n a
+mapLogicT ::
+    (Monad m, Monad n) =>
+    (forall x. m x -> n x) ->
+    LogicT m a ->
+    LogicT n a
 mapLogicT nat acts = (lift . nat) (observeAllT acts) >>= scatter
 {-# INLINE mapLogicT #-}
 

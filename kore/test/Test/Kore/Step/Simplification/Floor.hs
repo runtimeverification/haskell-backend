@@ -1,8 +1,8 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.Floor
-    ( test_floorSimplification
-    ) where
+module Test.Kore.Step.Simplification.Floor (
+    test_floorSimplification,
+) where
 
 import Prelude.Kore
 
@@ -10,55 +10,57 @@ import Test.Tasty
 
 import qualified Data.Default as Default
 
-import qualified Kore.Internal.Condition as Condition
-    ( top
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import qualified Kore.Internal.Condition as Condition (
+    top,
+ )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( bottom
-    , fromCondition
-    , top
-    )
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeEqualsPredicate
-    , makeFloorPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Pattern (
+    Conditional (..),
+    Pattern,
+ )
+import qualified Kore.Internal.Pattern as Pattern (
+    bottom,
+    fromCondition,
+    top,
+ )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeEqualsPredicate,
+    makeFloorPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Floor
-    ( makeEvaluateFloor
-    , simplify
-    )
+import Kore.Step.Simplification.Floor (
+    makeEvaluateFloor,
+    simplify,
+ )
 
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkConfigVariable
-    )
-import Test.Kore
-    ( testId
-    )
-import Test.Kore.Step.MockSymbols
-    ( testSort
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+ )
+import Test.Kore (
+    testId,
+ )
+import Test.Kore.Step.MockSymbols (
+    testSort,
+ )
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_floorSimplification :: [TestTree]
 test_floorSimplification =
-    [ testCase "Floor - or distribution"
+    [ testCase
+        "Floor - or distribution"
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
-        (assertEqual ""
-            (OrPattern.fromPatterns
+        ( assertEqual
+            ""
+            ( OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
                     , predicate = makeFloorPredicate (mkOr a b)
@@ -66,70 +68,79 @@ test_floorSimplification =
                     }
                 ]
             )
-            (evaluate
-                (makeFloor
+            ( evaluate
+                ( makeFloor
                     [aExpanded, bExpanded]
                 )
             )
         )
-    , testCase "Floor - bool operations"
-        (do
+    , testCase
+        "Floor - bool operations"
+        ( do
             -- floor(top) = top
-            assertEqual "floor(top)"
-                (OrPattern.fromPatterns
-                    [ Pattern.top ]
+            assertEqual
+                "floor(top)"
+                ( OrPattern.fromPatterns
+                    [Pattern.top]
                 )
-                (evaluate
-                    (makeFloor
+                ( evaluate
+                    ( makeFloor
                         [Pattern.top]
                     )
                 )
             -- floor(bottom) = bottom
-            assertEqual "floor(bottom)"
-                (OrPattern.fromPatterns
+            assertEqual
+                "floor(bottom)"
+                ( OrPattern.fromPatterns
                     []
                 )
-                (evaluate
-                    (makeFloor
+                ( evaluate
+                    ( makeFloor
                         []
                     )
                 )
         )
     , testCase "Floor - bool operations" $
         -- floor(top{testSort}) = top
-        assertEqual "floor(top)"
-            (OrPattern.fromPatterns
-                [ Pattern.top ]
+        assertEqual
+            "floor(top)"
+            ( OrPattern.fromPatterns
+                [Pattern.top]
             )
-            (evaluate
-                (makeFloor
-                    [ Pattern.fromCondition testSort Condition.top ]
+            ( evaluate
+                ( makeFloor
+                    [Pattern.fromCondition testSort Condition.top]
                 )
             )
-    , testCase "expanded Floor - bool operations"
-        (do
+    , testCase
+        "expanded Floor - bool operations"
+        ( do
             -- floor(top) = top
-            assertEqual "floor(top)"
-                (OrPattern.fromPatterns
-                    [ Pattern.top ]
+            assertEqual
+                "floor(top)"
+                ( OrPattern.fromPatterns
+                    [Pattern.top]
                 )
-                (makeEvaluate
+                ( makeEvaluate
                     (Pattern.top :: Pattern RewritingVariableName)
                 )
             -- floor(bottom) = bottom
-            assertEqual "floor(bottom)"
-                (OrPattern.fromPatterns
+            assertEqual
+                "floor(bottom)"
+                ( OrPattern.fromPatterns
                     []
                 )
-                (makeEvaluate
+                ( makeEvaluate
                     (Pattern.bottom :: Pattern RewritingVariableName)
                 )
         )
-    , testCase "floor with predicates and substitutions"
+    , testCase
+        "floor with predicates and substitutions"
         -- floor(term and predicate and subst)
         --     = top and (floor(term) and predicate) and subst
-        (assertEqual "floor(top)"
-            (OrPattern.fromPatterns
+        ( assertEqual
+            "floor(top)"
+            ( OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
                     , predicate =
@@ -137,24 +148,24 @@ test_floorSimplification =
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject x, fOfB)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject x, fOfB)]
                     }
                 ]
             )
-            (makeEvaluate
+            ( makeEvaluate
                 Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject x, fOfB)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject x, fOfB)]
                     }
             )
         )
-    -- floor moves predicates and substitutions up
+        -- floor moves predicates and substitutions up
     ]
   where
     symbol name operands result =
@@ -170,7 +181,7 @@ test_floorSimplification =
     gSymbol = symbol "g" [testSort] testSort
     x =
         mkElementVariable (testId "x") testSort
-        & mapElementVariable (pure mkConfigVariable)
+            & mapElementVariable (pure mkConfigVariable)
     a :: TermLike RewritingVariableName
     a = mkApplySymbol aSymbol []
     b :: TermLike RewritingVariableName
@@ -178,30 +189,32 @@ test_floorSimplification =
     fOfA = mkApplySymbol fSymbol [a]
     fOfB = mkApplySymbol fSymbol [b]
     gOfA = mkApplySymbol gSymbol [a]
-    aExpanded = Conditional
-        { term = a
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-    bExpanded = Conditional
-        { term = b
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
+    aExpanded =
+        Conditional
+            { term = a
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
+    bExpanded =
+        Conditional
+            { term = b
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
 
-makeFloor
-    :: [Pattern RewritingVariableName]
-    -> Floor Sort (OrPattern RewritingVariableName)
+makeFloor ::
+    [Pattern RewritingVariableName] ->
+    Floor Sort (OrPattern RewritingVariableName)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
-        , floorResultSort  = testSort
-        , floorChild       = OrPattern.fromPatterns patterns
+        , floorResultSort = testSort
+        , floorChild = OrPattern.fromPatterns patterns
         }
 
-evaluate
-    :: Floor Sort (OrPattern RewritingVariableName)
-    -> OrPattern RewritingVariableName
+evaluate ::
+    Floor Sort (OrPattern RewritingVariableName) ->
+    OrPattern RewritingVariableName
 evaluate = simplify . fmap simplifiedOrPattern
 
 makeEvaluate :: Pattern RewritingVariableName -> OrPattern RewritingVariableName

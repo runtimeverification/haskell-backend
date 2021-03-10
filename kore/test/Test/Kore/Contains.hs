@@ -1,25 +1,25 @@
-module Test.Kore.Contains
-    ( AssertContains (..)
-    ) where
+module Test.Kore.Contains (
+    AssertContains (..),
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
 
-import qualified Kore.Step.SMT.AST as AST
-    ( Declarations (Declarations)
-    , Sort
-    , Symbol
-    )
+import qualified Kore.Step.SMT.AST as AST (
+    Declarations (Declarations),
+    Sort,
+    Symbol,
+ )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
-import qualified Kore.Syntax.Id as Kore
-    ( Id
-    )
+import qualified Kore.Syntax.Id as Kore (
+    Id,
+ )
 
 import Test.Tasty.HUnit.Ext
 
@@ -36,34 +36,36 @@ class AssertContains container contained where
     testContainedIn :: HasCallStack => contained -> container -> TestTree
     testContainedIn = flip testContains
 
-instance (Ord a, Show a, Diff b)
-    => AssertContains (Map a b) (a, b)
-  where
+instance
+    (Ord a, Show a, Diff b) =>
+    AssertContains (Map a b) (a, b)
+    where
     assertContains actualContainer (expectedKey, expectedValue) =
         case Map.lookup expectedKey actualContainer of
             Nothing ->
                 assertFailure
-                    (  "Key (" ++ show expectedKey
-                    ++ ") not found in (" ++ show (Map.keysSet actualContainer)
-                    ++ ")"
+                    ( "Key (" ++ show expectedKey
+                        ++ ") not found in ("
+                        ++ show (Map.keysSet actualContainer)
+                        ++ ")"
                     )
             Just actualValue ->
                 assertEqual "" expectedValue actualValue
 
 instance
-    (Diff (AST.Sort sort symbol name))
-    => AssertContains
+    (Diff (AST.Sort sort symbol name)) =>
+    AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Sort sort symbol name)
-  where
-    assertContains AST.Declarations {sorts} =
+    where
+    assertContains AST.Declarations{sorts} =
         assertContains sorts
 
 instance
-    (Diff (AST.Symbol sort name))
-    => AssertContains
+    (Diff (AST.Symbol sort name)) =>
+    AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Symbol sort name)
-  where
-    assertContains AST.Declarations {symbols} =
+    where
+    assertContains AST.Declarations{symbols} =
         assertContains symbols

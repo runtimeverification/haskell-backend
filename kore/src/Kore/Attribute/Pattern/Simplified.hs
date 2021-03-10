@@ -1,112 +1,106 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Attribute.Pattern.Simplified
-    ( Simplified (..)
-    , Condition (..)
-    , pattern Simplified_
-    , Type (..)
-    , isSimplified
-    , isSimplifiedAnyCondition
-    , isSimplifiedSomeCondition
-    , simplifiedTo
-    , notSimplified
-    , fullySimplified
-    , alwaysSimplified
-    , simplifiedConditionally
-    , simplifiableConditionally
-    , unparseTag
-    ) where
+-}
+module Kore.Attribute.Pattern.Simplified (
+    Simplified (..),
+    Condition (..),
+    pattern Simplified_,
+    Type (..),
+    isSimplified,
+    isSimplifiedAnyCondition,
+    isSimplifiedSomeCondition,
+    simplifiedTo,
+    notSimplified,
+    fullySimplified,
+    alwaysSimplified,
+    simplifiedConditionally,
+    simplifiableConditionally,
+    unparseTag,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Internal.Inj
-    ( Inj
-    )
+import Kore.Internal.Inj (
+    Inj,
+ )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Syntax
-    ( And
-    , Application
-    , Bottom
-    , Ceil
-    , Const
-    , DomainValue
-    , Equals
-    , Exists
-    , Floor
-    , Forall
-    , Iff
-    , Implies
-    , In
-    , Inhabitant
-    , Mu
-    , Next
-    , Not
-    , Nu
-    , Or
-    , Rewrites
-    , StringLiteral
-    , Top
-    )
+import Kore.Internal.InternalBytes (
+    InternalBytes,
+ )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Syntax (
+    And,
+    Application,
+    Bottom,
+    Ceil,
+    Const,
+    DomainValue,
+    Equals,
+    Exists,
+    Floor,
+    Forall,
+    Iff,
+    Implies,
+    In,
+    Inhabitant,
+    Mu,
+    Next,
+    Not,
+    Nu,
+    Or,
+    Rewrites,
+    StringLiteral,
+    Top,
+ )
 import Kore.Syntax.Variable
 
-{- | How well simplified is a pattern.
--}
+-- | How well simplified is a pattern.
 data Type
-    = Fully
-    -- ^ The entire pattern is simplified
-    | Partly
-    -- ^ The pattern's subterms are either fully simplified or partly
-    -- simplified. Normally all the leaves in a partly simplified
-    -- subterm tree are fully simplified.
+    = -- | The entire pattern is simplified
+      Fully
+    | -- | The pattern's subterms are either fully simplified or partly
+      -- simplified. Normally all the leaves in a partly simplified
+      -- subterm tree are fully simplified.
+      Partly
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
-instance Semigroup Type
-  where
+instance Semigroup Type where
     Partly <> _ = Partly
     _ <> Partly = Partly
-
     Fully <> Fully = Fully
 
 instance Monoid Type where
     mempty = Fully
 
-{- | Under which condition is a pattern simplified.
--}
+-- | Under which condition is a pattern simplified.
 data Condition
-    = Any
-    -- ^ The term and all its subterms are simplified the same regardless
-    -- of the side condition.
-    | Condition !SideCondition.Representation
-    -- ^ The term is in its current simplified state only when using the
-    -- given side condition. When the side condition changes, e.g. by
-    -- adding extra conditions, then we may be able to further simplify the
-    -- term.
-    | Unknown
-    -- ^ Parts of the term are simplified under different side conditions.
+    = -- | The term and all its subterms are simplified the same regardless
+      -- of the side condition.
+      Any
+    | -- | The term is in its current simplified state only when using the
+      -- given side condition. When the side condition changes, e.g. by
+      -- adding extra conditions, then we may be able to further simplify the
+      -- term.
+      Condition !SideCondition.Representation
+    | -- | Parts of the term are simplified under different side conditions.
+      Unknown
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -116,14 +110,11 @@ data Condition
 instance Diff Condition where
     diffPrec = diffPrecIgnore
 
-instance Semigroup Condition
-  where
+instance Semigroup Condition where
     Unknown <> _ = Unknown
     _ <> Unknown = Unknown
-
     Any <> c = c
     c <> Any = c
-
     c@(Condition c1) <> Condition c2 =
         if c1 == c2
             then c
@@ -132,11 +123,10 @@ instance Semigroup Condition
 instance Monoid Condition where
     mempty = Any
 
-data SimplifiedData =
-    SimplifiedData
-        { sType :: !Type
-        , condition :: !Condition
-        }
+data SimplifiedData = SimplifiedData
+    { sType :: !Type
+    , condition :: !Condition
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -170,7 +160,6 @@ instance Diff Simplified where
 instance Semigroup Simplified where
     NotSimplified <> _ = NotSimplified
     _ <> NotSimplified = NotSimplified
-
     (Simplified_ t1 c1) <> (Simplified_ t2 c2) =
         Simplified_ (t1 <> t2) (c1 <> c2)
 
@@ -179,7 +168,7 @@ instance Monoid Simplified where
 
 pattern Simplified_ :: Type -> Condition -> Simplified
 pattern Simplified_ sType condition =
-    (Simplified SimplifiedData { sType, condition })
+    (Simplified SimplifiedData{sType, condition})
 
 {-# COMPLETE Simplified_, NotSimplified #-}
 
@@ -197,40 +186,35 @@ the term and its subterms went through the simplifier (the 'Partly' tag), so
 it's valid to mark it as fully simplified. The result will be
 "Simplified (Fully, Condition c)".
 -}
-simplifiedTo
-    :: HasCallStack
-    => Simplified
-    -- ^ Default value
-    -> Simplified
-    -- ^ Desired state
-    -> Simplified
+simplifiedTo ::
+    HasCallStack =>
+    -- | Default value
+    Simplified ->
+    -- | Desired state
+    Simplified ->
+    Simplified
 NotSimplified `simplifiedTo` NotSimplified = NotSimplified
 _ `simplifiedTo` NotSimplified =
     error "Should not make sense to upgrade something else to NotSimplified."
 NotSimplified `simplifiedTo` _ =
     error "Cannot upgrade NotSimplified to something else."
-
-Simplified_ _ _       `simplifiedTo` s@(Simplified_ Fully Unknown) = s
-Simplified_ _ Unknown `simplifiedTo`    Simplified_ Fully _ =
+Simplified_ _ _ `simplifiedTo` s@(Simplified_ Fully Unknown) = s
+Simplified_ _ Unknown `simplifiedTo` Simplified_ Fully _ =
     Simplified_ Fully Unknown
-
-Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2))
-  = if c1 == c2
-    then s
-    else Simplified_ Fully Unknown
+Simplified_ _ (Condition c1) `simplifiedTo` s@(Simplified_ Fully (Condition c2)) =
+    if c1 == c2
+        then s
+        else Simplified_ Fully Unknown
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully (Condition _)) = s
-
 Simplified_ _ c@(Condition _) `simplifiedTo` Simplified_ Fully Any =
     Simplified_ Fully c
 Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
-
 s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
 {- | Is the pattern fully simplified under the given side condition?
 
 See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
-
- -}
+-}
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
 isSimplified _ (Simplified_ Fully Any) = True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
@@ -242,8 +226,7 @@ isSimplified _ NotSimplified = False
 {- | Is the pattern fully simplified under any side condition?
 
 See also: 'isSimplified', 'isSimplifiedSomeCondition'.
-
- -}
+-}
 isSimplifiedAnyCondition :: Simplified -> Bool
 isSimplifiedAnyCondition (Simplified_ Fully Any) = True
 isSimplifiedAnyCondition (Simplified_ Fully (Condition _)) = False
@@ -254,8 +237,7 @@ isSimplifiedAnyCondition NotSimplified = False
 {- | Is the pattern fully simplified under some side condition?
 
 See also: 'isSimplified', 'isSimplifiedAnyCondition'.
-
- -}
+-}
 isSimplifiedSomeCondition :: Simplified -> Bool
 isSimplifiedSomeCondition (Simplified_ Fully _) = True
 isSimplifiedSomeCondition _ = False
@@ -275,8 +257,8 @@ alwaysSimplified = const fullySimplified
 
 notSimplified :: Foldable a => a Simplified -> Simplified
 notSimplified a
-  | null a = NotSimplified
-  | otherwise = fold a <> Simplified_ Partly Any
+    | null a = NotSimplified
+    | otherwise = fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
 
 {- | Provides a short and incomplete textual description of a 'Simplified'

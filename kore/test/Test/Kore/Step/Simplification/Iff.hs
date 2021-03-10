@@ -1,38 +1,38 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.Iff
-    ( test_simplify
-    , test_makeEvaluate
-    ) where
+module Test.Kore.Step.Simplification.Iff (
+    test_simplify,
+    test_makeEvaluate,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeIffPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeIffPredicate,
+    makeTruePredicate,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import qualified Kore.Step.Simplification.Iff as Iff
-    ( makeEvaluate
-    , simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import qualified Kore.Step.Simplification.Iff as Iff (
+    makeEvaluate,
+    simplify,
+ )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -41,13 +41,15 @@ import qualified Test.Terse as Terse
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testGroup "Boolean operations"
-        (testSimplifyBoolean <$> [minBound..] <*> [minBound..])
-    , testGroup "Half-Boolean operations"
-        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
-        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
-        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
-        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+    [ testGroup
+        "Boolean operations"
+        (testSimplifyBoolean <$> [minBound ..] <*> [minBound ..])
+    , testGroup
+        "Half-Boolean operations"
+        [ (top, termA) `becomes` [termA] $ "iff(⊤, a) = a"
+        , (termA, top) `becomes` [termA] $ "iff(a, ⊤) = a"
+        , (bottom, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
+        , (termA, bottom) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
         ]
     ]
   where
@@ -59,33 +61,37 @@ test_simplify =
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
-    [ testGroup "Boolean operations"
-        (testEvaluateBoolean <$> [minBound..] <*> [minBound..])
-    , testGroup "Half-Boolean operations"
-        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
-        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
-        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
-        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+    [ testGroup
+        "Boolean operations"
+        (testEvaluateBoolean <$> [minBound ..] <*> [minBound ..])
+    , testGroup
+        "Half-Boolean operations"
+        [ (top, termA) `becomes` [termA] $ "iff(⊤, a) = a"
+        , (termA, top) `becomes` [termA] $ "iff(a, ⊤) = a"
+        , (bottom, termA) `becomes` [termNotA] $ "iff(⊤, a) = ¬a"
+        , (termA, bottom) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
         ]
-    , testCase "iff with predicates and substitutions"
+    , testCase
+        "iff with predicates and substitutions"
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
-        (assertEqual "iff(top and predicate, top and predicate)"
-            (OrPattern.fromPatterns
+        ( assertEqual
+            "iff(top and predicate, top and predicate)"
+            ( OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
                     , predicate =
                         makeIffPredicate
-                            (makeAndPredicate
+                            ( makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
-                                (makeEqualsPredicate
+                                ( makeEqualsPredicate
                                     (mkElemVar Mock.xConfig)
                                     Mock.a
                                 )
                             )
-                            (makeAndPredicate
+                            ( makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate
+                                ( makeEqualsPredicate
                                     (mkElemVar Mock.yConfig)
                                     Mock.b
                                 )
@@ -99,35 +105,37 @@ test_makeEvaluate =
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, Mock.a)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = mkTop_
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.yConfig, Mock.b)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.yConfig, Mock.b)]
                     }
             )
         )
-    , testCase "iff with generic patterns"
-        (assertEqual "iff(generic, generic)"
-            (OrPattern.fromPatterns
+    , testCase
+        "iff with generic patterns"
+        ( assertEqual
+            "iff(generic, generic)"
+            ( OrPattern.fromPatterns
                 [ Conditional
                     { term =
                         mkIff
-                            (mkAnd
-                                (mkAnd
+                            ( mkAnd
+                                ( mkAnd
                                     (Mock.f Mock.a)
                                     (mkCeil_ Mock.cf)
                                 )
                                 (mkEquals_ (mkElemVar Mock.xConfig) Mock.a)
                             )
-                            (mkAnd
-                                (mkAnd
+                            ( mkAnd
+                                ( mkAnd
                                     (Mock.g Mock.b)
                                     (mkCeil_ Mock.cg)
                                 )
@@ -143,17 +151,17 @@ test_makeEvaluate =
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, Mock.a)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.yConfig, Mock.b)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.yConfig, Mock.b)]
                     }
             )
         )
@@ -203,30 +211,30 @@ termA =
 termNotA :: Pattern RewritingVariableName
 termNotA = mkNot <$> termA
 
-makeIff
-    :: [Pattern RewritingVariableName]
-    -> [Pattern RewritingVariableName]
-    -> Iff Sort (OrPattern RewritingVariableName)
+makeIff ::
+    [Pattern RewritingVariableName] ->
+    [Pattern RewritingVariableName] ->
+    Iff Sort (OrPattern RewritingVariableName)
 makeIff first second =
     Iff
-        { iffSort   = Mock.testSort
-        , iffFirst  = OrPattern.fromPatterns first
+        { iffSort = Mock.testSort
+        , iffFirst = OrPattern.fromPatterns first
         , iffSecond = OrPattern.fromPatterns second
         }
 
-simplify
-    :: Iff Sort (OrPattern RewritingVariableName)
-    -> IO (OrPattern RewritingVariableName)
+simplify ::
+    Iff Sort (OrPattern RewritingVariableName) ->
+    IO (OrPattern RewritingVariableName)
 simplify =
     runSimplifier mockEnv
-    . Iff.simplify SideCondition.top
-    . fmap simplifiedOrPattern
+        . Iff.simplify SideCondition.top
+        . fmap simplifiedOrPattern
   where
     mockEnv = Mock.env
 
-makeEvaluate
-    :: Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> OrPattern RewritingVariableName
+makeEvaluate ::
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    OrPattern RewritingVariableName
 makeEvaluate p1 p2 =
     Iff.makeEvaluate (simplifiedPattern p1) (simplifiedPattern p2)

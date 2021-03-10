@@ -1,57 +1,57 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.Equals
-    ( test_equalsSimplification_TermLike
-    , test_equalsSimplification_Or_Pattern
-    , test_equalsSimplification_Pattern
-    ) where
+module Test.Kore.Step.Simplification.Equals (
+    test_equalsSimplification_TermLike,
+    test_equalsSimplification_Or_Pattern,
+    test_equalsSimplification_Pattern,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Kore.Internal.Condition
-    ( Condition
-    , Conditional (..)
-    )
+import Kore.Internal.Condition (
+    Condition,
+    Conditional (..),
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Conditional
-import Kore.Internal.Predicate
-    ( pattern PredicateFalse
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeIffPredicate
-    , makeImpliesPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
+import Kore.Internal.Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeIffPredicate,
+    makeImpliesPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+    pattern PredicateFalse,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    top,
+ )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , mkConfigVariable
-    )
-import Kore.Step.Simplification.Equals
-    ( makeEvaluate
-    , makeEvaluateTermsToPredicate
-    , simplify
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+ )
+import Kore.Step.Simplification.Equals (
+    makeEvaluate,
+    makeEvaluateTermsToPredicate,
+    simplify,
+ )
 import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -61,7 +61,7 @@ import Test.Tasty.HUnit.Ext
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
     [ testCase "bottom == bottom" $ do
-        let expect = OrPattern.fromPatterns [ Conditional.top ]
+        let expect = OrPattern.fromPatterns [Conditional.top]
         actual <-
             evaluateOr
                 Equals
@@ -71,31 +71,31 @@ test_equalsSimplification_Or_Pattern =
                     , equalsSecond = OrPattern.fromPatterns []
                     }
         assertEqual "" expect actual
-
     , testCase "a == a" $ do
-        let expect = OrPattern.fromPatterns [ Conditional.top ]
+        let expect = OrPattern.fromPatterns [Conditional.top]
         actual <-
             evaluateOr
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                    , equalsSecond = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
+                    , equalsFirst =
+                        OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.a
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                    , equalsSecond =
+                        OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.a
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
                     }
         assertEqual "" expect actual
-
     , testCase "a != bottom" $ do
         let expect = OrPattern.fromPatterns []
         actual <-
@@ -104,16 +104,16 @@ test_equalsSimplification_Or_Pattern =
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
                     , equalsFirst = OrPattern.fromPatterns []
-                    , equalsSecond = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.a
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
+                    , equalsSecond =
+                        OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.a
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
                     }
         assertEqual "" expect actual
-
     , testCase "f(a) vs g(a)" $ do
         let expect =
                 OrPattern.fromPatterns
@@ -128,23 +128,24 @@ test_equalsSimplification_Or_Pattern =
                 Equals
                     { equalsOperandSort = testSort
                     , equalsResultSort = testSort
-                    , equalsFirst = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = fOfA
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
-                    , equalsSecond = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = gOfA
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        ]
+                    , equalsFirst =
+                        OrPattern.fromPatterns
+                            [ Conditional
+                                { term = fOfA
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                    , equalsSecond =
+                        OrPattern.fromPatterns
+                            [ Conditional
+                                { term = gOfA
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
                     }
         assertEqual "" expect actual
-
     , testCase "f vs g or h" $ do
         let expectEvaluateEquals =
                 OrPattern.fromPatterns
@@ -152,40 +153,40 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.cg
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate Mock.cf Mock.cg)
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.ch)
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            ]
+                                [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.cg
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.ch
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate Mock.cf Mock.cg)
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.ch)
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            ]
+                                [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.ch
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
                         , substitution = mempty
                         }
-                    ,  Conditional
+                    , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            , makeNotPredicate $ makeCeilPredicate Mock.ch
-                            ]
+                                [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                                , makeNotPredicate $ makeCeilPredicate Mock.cg
+                                , makeNotPredicate $ makeCeilPredicate Mock.ch
+                                ]
                         , substitution = mempty
                         }
                     ]
@@ -210,7 +211,9 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-        assertBidirectionalEqualityResult "f" "g or h"
+        assertBidirectionalEqualityResult
+            "f"
+            "g or h"
             expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
@@ -218,7 +221,6 @@ test_equalsSimplification_Or_Pattern =
                 , equalsFirst = first
                 , equalsSecond = second
                 }
-
     , testCase "f vs g or h where f /= g" $ do
         let expectEvaluateEquals =
                 OrPattern.fromPatterns
@@ -226,36 +228,36 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.cg
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.ch)
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            , makeNotPredicate (makeCeilPredicate Mock.cg)
-                            ]
+                                [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.cg
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                , makeNotPredicate (makeCeilPredicate Mock.cg)
+                                ]
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.ch
-                            , makeImpliesPredicate
-                                (makeCeilPredicate Mock.ch)
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            ]
+                                [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.ch
+                                , makeImpliesPredicate
+                                    (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                , makeNotPredicate $ makeCeilPredicate Mock.cg
+                                ]
                         , substitution = mempty
                         }
-                    ,  Conditional
+                    , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            , makeNotPredicate $ makeCeilPredicate Mock.ch
-                            ]
+                                [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                                , makeNotPredicate $ makeCeilPredicate Mock.cg
+                                , makeNotPredicate $ makeCeilPredicate Mock.ch
+                                ]
                         , substitution = mempty
                         }
                     ]
@@ -280,7 +282,9 @@ test_equalsSimplification_Or_Pattern =
                         , substitution = mempty
                         }
                     ]
-        assertBidirectionalEqualityResult "f" "g or h"
+        assertBidirectionalEqualityResult
+            "f"
+            "g or h"
             expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
@@ -288,7 +292,6 @@ test_equalsSimplification_Or_Pattern =
                 , equalsFirst = first
                 , equalsSecond = second
                 }
-
     , testCase "f vs g[x = a] or h" $ do
         let definedF = makeCeilPredicate Mock.cf
             definedG = makeCeilPredicate Mock.cg
@@ -313,9 +316,9 @@ test_equalsSimplification_Or_Pattern =
                         { term = Mock.cg
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.a)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.ch
@@ -329,45 +332,48 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedG
-                            , makeImpliesPredicate
-                                definedGWithSubstitution
-                                (makeEqualsPredicate Mock.cf Mock.cg)
-                            , makeImpliesPredicate
-                                definedH
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            ]
-                        , substitution = Substitution.unsafeWrap
-                            [(inject Mock.xConfig, Mock.a)]
+                                [ definedF
+                                , definedG
+                                , makeImpliesPredicate
+                                    definedGWithSubstitution
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    definedH
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ definedF
-                            , definedH
-                            , makeImpliesPredicate
-                                definedGWithSubstitution
-                                (makeEqualsPredicate Mock.cf Mock.cg)
-                            , makeImpliesPredicate
-                                definedH
-                                (makeEqualsPredicate Mock.cf Mock.ch)
-                            ]
+                                [ definedF
+                                , definedH
+                                , makeImpliesPredicate
+                                    definedGWithSubstitution
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
+                                    definedH
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
+                                ]
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeNotPredicate definedGWithSubstitution
-                            , makeNotPredicate definedF
-                            , makeNotPredicate definedH
-                            ]
+                                [ makeNotPredicate definedGWithSubstitution
+                                , makeNotPredicate definedF
+                                , makeNotPredicate definedH
+                                ]
                         , substitution = mempty
                         }
                     ]
-        assertBidirectionalEqualityResult "f" "g[x = a] or h"
+        assertBidirectionalEqualityResult
+            "f"
+            "g[x = a] or h"
             expectEvaluateEquals
             Equals
                 { equalsOperandSort = testSort
@@ -404,7 +410,6 @@ test_equalsSimplification_Pattern =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-
     , testCase "sorted equals predicate" $ do
         let expect =
                 OrPattern.fromPatterns
@@ -430,7 +435,6 @@ test_equalsSimplification_Pattern =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
                 OrPattern.fromPatterns
@@ -438,26 +442,26 @@ test_equalsSimplification_Pattern =
                         { term = mkTop_
                         , predicate =
                             (MultiAnd.toPredicate . MultiAnd.make)
-                            [ makeCeilPredicate hOfA
-                            , makeCeilPredicate hOfB
-                            , makeEqualsPredicate fOfA fOfB
-                            , makeEqualsPredicate gOfA gOfB
-                            , makeEqualsPredicate hOfA hOfB
-                            ]
+                                [ makeCeilPredicate hOfA
+                                , makeCeilPredicate hOfB
+                                , makeEqualsPredicate fOfA fOfB
+                                , makeEqualsPredicate gOfA gOfB
+                                , makeEqualsPredicate hOfA hOfB
+                                ]
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
-                                (makeNotPredicate
-                                    (makeAndPredicate
+                                ( makeNotPredicate
+                                    ( makeAndPredicate
                                         (makeCeilPredicate hOfA)
                                         (makeEqualsPredicate fOfA fOfB)
                                     )
                                 )
-                                (makeNotPredicate
-                                    (makeAndPredicate
+                                ( makeNotPredicate
+                                    ( makeAndPredicate
                                         (makeCeilPredicate hOfB)
                                         (makeEqualsPredicate gOfA gOfB)
                                     )
@@ -482,66 +486,78 @@ test_equalsSimplification_Pattern =
 
 test_equalsSimplification_TermLike :: [TestTree]
 test_equalsSimplification_TermLike =
-    [ testCase "bottom == bottom"
-        (assertTermEquals
+    [ testCase
+        "bottom == bottom"
+        ( assertTermEquals
             Condition.topCondition
             mkBottom_
             mkBottom_
         )
-    , testCase "domain-value == domain-value"
-        (assertTermEquals
+    , testCase
+        "domain-value == domain-value"
+        ( assertTermEquals
             Condition.topCondition
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort
-                , domainValueChild = mkStringLiteral "a"
-                }
+            ( mkDomainValue
+                DomainValue
+                    { domainValueSort = testSort
+                    , domainValueChild = mkStringLiteral "a"
+                    }
             )
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort
-                , domainValueChild = mkStringLiteral "a"
-                }
+            ( mkDomainValue
+                DomainValue
+                    { domainValueSort = testSort
+                    , domainValueChild = mkStringLiteral "a"
+                    }
             )
         )
-    , testCase "domain-value != domain-value"
-        (assertTermEquals
+    , testCase
+        "domain-value != domain-value"
+        ( assertTermEquals
             Condition.bottomCondition
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort
-                , domainValueChild = mkStringLiteral "a"
-                }
+            ( mkDomainValue
+                DomainValue
+                    { domainValueSort = testSort
+                    , domainValueChild = mkStringLiteral "a"
+                    }
             )
-            (mkDomainValue DomainValue
-                { domainValueSort = testSort
-                , domainValueChild = mkStringLiteral "b"
-                }
+            ( mkDomainValue
+                DomainValue
+                    { domainValueSort = testSort
+                    , domainValueChild = mkStringLiteral "b"
+                    }
             )
         )
-    , testCase "\"a\" == \"a\""
-        (assertTermEqualsGeneric
+    , testCase
+        "\"a\" == \"a\""
+        ( assertTermEqualsGeneric
             Condition.topCondition
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
-    , testCase "\"a\" != \"b\""
-        (assertTermEqualsGeneric
+    , testCase
+        "\"a\" != \"b\""
+        ( assertTermEqualsGeneric
             Condition.bottomCondition
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
-    , testCase "a != bottom"
-        (assertTermEquals
+    , testCase
+        "a != bottom"
+        ( assertTermEquals
             Condition.bottomCondition
             mkBottom_
             Mock.a
         )
-    , testCase "a == a"
-        (assertTermEquals
+    , testCase
+        "a == a"
+        ( assertTermEquals
             Condition.topCondition
             Mock.a
             Mock.a
         )
-    , testCase "f(a) vs g(a)"
-        (assertTermEquals
+    , testCase
+        "f(a) vs g(a)"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate fOfA gOfA
@@ -550,33 +566,37 @@ test_equalsSimplification_TermLike =
             fOfA
             gOfA
         )
-    , testCase "constructor1(a) vs constructor1(a)"
-        (assertTermEquals
+    , testCase
+        "constructor1(a) vs constructor1(a)"
+        ( assertTermEquals
             Condition.topCondition
             constructor1OfA
             constructor1OfA
         )
     , testCase
         "functionalconstructor1(a) vs functionalconstructor2(a)"
-        (assertTermEquals
+        ( assertTermEquals
             Condition.bottomCondition
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
-    , testCase "constructor1(a) vs constructor2(a)"
-        (assertTermEquals
+    , testCase
+        "constructor1(a) vs constructor2(a)"
+        ( assertTermEquals
             Condition.bottomCondition
             constructor1OfA
             constructor2OfA
         )
-    , testCase "constructor1(f(a)) vs constructor1(f(a))"
-        (assertTermEquals
+    , testCase
+        "constructor1(f(a)) vs constructor1(f(a))"
+        ( assertTermEquals
             Condition.topCondition
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
-    , testCase "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
-        (assertTermEqualsMulti
+    , testCase
+        "sigma(f(a), f(b)) vs sigma(g(a), g(b))"
+        ( assertTermEqualsMulti
             [ Conditional
                 { term = ()
                 , predicate =
@@ -589,14 +609,14 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate =
                     makeAndPredicate
-                        (makeNotPredicate
-                            (makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
                         )
-                        (makeNotPredicate
-                            (makeAndPredicate
+                        ( makeNotPredicate
+                            ( makeAndPredicate
                                 (makeCeilPredicate gOfA)
                                 (makeCeilPredicate gOfB)
                             )
@@ -607,19 +627,21 @@ test_equalsSimplification_TermLike =
             (Mock.functionalConstr20 fOfA fOfB)
             (Mock.functionalConstr20 gOfA gOfB)
         )
-    , testCase "equals(x, functional) becomes a substitution"
-        (assertTermEquals
+    , testCase
+        "equals(x, functional) becomes a substitution"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
                     Substitution.unsafeWrap [(inject Mock.xConfig, functionalOfA)]
                 }
-                (mkElemVar Mock.xConfig)
-                functionalOfA
+            (mkElemVar Mock.xConfig)
+            functionalOfA
         )
-    , testCase "equals(functional, x) becomes a substitution"
-        (assertTermEquals
+    , testCase
+        "equals(functional, x) becomes a substitution"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeTruePredicate
@@ -627,11 +649,12 @@ test_equalsSimplification_TermLike =
                     Substitution.unsafeWrap
                         [(inject Mock.xConfig, functionalOfA)]
                 }
-                functionalOfA
-                (mkElemVar Mock.xConfig)
+            functionalOfA
+            (mkElemVar Mock.xConfig)
         )
-    , testCase "equals(x, function) becomes a substitution + ceil"
-        (assertTermEquals
+    , testCase
+        "equals(x, function) becomes a substitution + ceil"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
@@ -641,8 +664,9 @@ test_equalsSimplification_TermLike =
             (mkElemVar Mock.xConfig)
             fOfA
         )
-    , testCase "equals(function, x) becomes a substitution + ceil"
-        (assertTermEquals
+    , testCase
+        "equals(function, x) becomes a substitution + ceil"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
@@ -652,8 +676,9 @@ test_equalsSimplification_TermLike =
             fOfA
             (mkElemVar Mock.xConfig)
         )
-    , testCase "equals(x, constructor) becomes a predicate"
-        (assertTermEquals
+    , testCase
+        "equals(x, constructor) becomes a predicate"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate =
@@ -663,8 +688,9 @@ test_equalsSimplification_TermLike =
             (mkElemVar Mock.xConfig)
             constructor1OfA
         )
-    , testCase "equals(constructor, x) becomes a predicate"
-        (assertTermEquals
+    , testCase
+        "equals(constructor, x) becomes a predicate"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate =
@@ -674,8 +700,9 @@ test_equalsSimplification_TermLike =
             constructor1OfA
             (mkElemVar Mock.xConfig)
         )
-    , testCase "equals(x, something) becomes a predicate"
-        (assertTermEquals
+    , testCase
+        "equals(x, something) becomes a predicate"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate (mkElemVar Mock.xConfig) plain1OfA
@@ -684,30 +711,34 @@ test_equalsSimplification_TermLike =
             (mkElemVar Mock.xConfig)
             plain1OfA
         )
-    , testCase "equals(something, x) becomes a predicate"
-        (assertTermEquals
+    , testCase
+        "equals(something, x) becomes a predicate"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate =
-                        makeEqualsPredicate plain1OfA (mkElemVar Mock.xConfig)
+                    makeEqualsPredicate plain1OfA (mkElemVar Mock.xConfig)
                 , substitution = mempty
                 }
             plain1OfA
             (mkElemVar Mock.xConfig)
         )
-    , testCase "equals(function, constructor) is not simplifiable"
-        (assertTermEquals
+    , testCase
+        "equals(function, constructor) is not simplifiable"
+        ( assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
                 , substitution = mempty
                 }
-                (Mock.f Mock.a)
-                Mock.a
+            (Mock.f Mock.a)
+            Mock.a
         )
-    , testGroup "builtin Map domain"
-        [ testCase "concrete Map, same keys"
-            (assertTermEquals
+    , testGroup
+        "builtin Map domain"
+        [ testCase
+            "concrete Map, same keys"
+            ( assertTermEquals
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
@@ -717,28 +748,30 @@ test_equalsSimplification_TermLike =
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
             )
-        , testCase "concrete Map, different keys"
-            (assertTermEquals
+        , testCase
+            "concrete Map, different keys"
+            ( assertTermEquals
                 Condition.bottomCondition
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.b, mkElemVar Mock.xConfig)])
             )
-        , testCase "concrete Map with framed Map"
-            (assertTermEqualsMulti
+        , testCase
+            "concrete Map with framed Map"
+            ( assertTermEqualsMulti
                 [ Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeNotPredicate
-                                (makeAndPredicate
+                            ( makeNotPredicate
+                                ( makeAndPredicate
                                     (makeCeilPredicate fOfA)
                                     (makeCeilPredicate fOfB)
                                 )
                             )
-                            (makeNotPredicate
-                                (makeCeilPredicate
-                                    (Mock.concatMap
-                                        (Mock.builtinMap
+                            ( makeNotPredicate
+                                ( makeCeilPredicate
+                                    ( Mock.concatMap
+                                        ( Mock.builtinMap
                                             [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                         (mkElemVar Mock.mConfig)
@@ -753,36 +786,38 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.xConfig, fOfA)
-                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
-                        ]
+                    , substitution =
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                ]
                     }
                 ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
-                (Mock.concatMap
+                ( Mock.concatMap
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                     (mkElemVar Mock.mConfig)
                 )
             )
-        , testCase "concrete Map with framed Map"
-            (assertTermEqualsMulti
+        , testCase
+            "concrete Map with framed Map"
+            ( assertTermEqualsMulti
                 [ Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeNotPredicate
-                                (makeAndPredicate
+                            ( makeNotPredicate
+                                ( makeAndPredicate
                                     (makeCeilPredicate fOfA)
                                     (makeCeilPredicate fOfB)
                                 )
                             )
-                            (makeNotPredicate
-                                (makeCeilPredicate
-                                    (Mock.concatMap
+                            ( makeNotPredicate
+                                ( makeCeilPredicate
+                                    ( Mock.concatMap
                                         (mkElemVar Mock.mConfig)
-                                        (Mock.builtinMap
+                                        ( Mock.builtinMap
                                             [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                     )
@@ -796,35 +831,37 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.xConfig, fOfA)
-                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
-                        ]
+                    , substitution =
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                ]
                     }
                 ]
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
-                (Mock.concatMap
+                ( Mock.concatMap
                     (mkElemVar Mock.mConfig)
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                 )
             )
-        , testCase "framed Map with concrete Map"
-            (assertTermEqualsMulti
+        , testCase
+            "framed Map with concrete Map"
+            ( assertTermEqualsMulti
                 [ Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeNotPredicate
-                                (makeAndPredicate
+                            ( makeNotPredicate
+                                ( makeAndPredicate
                                     (makeCeilPredicate fOfA)
                                     (makeCeilPredicate fOfB)
                                 )
                             )
-                            (makeNotPredicate
-                                (makeCeilPredicate
-                                    (Mock.concatMap
-                                        (Mock.builtinMap
+                            ( makeNotPredicate
+                                ( makeCeilPredicate
+                                    ( Mock.concatMap
+                                        ( Mock.builtinMap
                                             [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                         (mkElemVar Mock.mConfig)
@@ -839,36 +876,38 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.xConfig, fOfA)
-                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
-                        ]
+                    , substitution =
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                ]
                     }
                 ]
-                (Mock.concatMap
+                ( Mock.concatMap
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                     (mkElemVar Mock.mConfig)
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
-        , testCase "framed Map with concrete Map"
-            (assertTermEqualsMulti
+        , testCase
+            "framed Map with concrete Map"
+            ( assertTermEqualsMulti
                 [ Conditional
                     { term = ()
                     , predicate =
                         makeAndPredicate
-                            (makeNotPredicate
-                                (makeAndPredicate
+                            ( makeNotPredicate
+                                ( makeAndPredicate
                                     (makeCeilPredicate fOfA)
                                     (makeCeilPredicate fOfB)
                                 )
                             )
-                            (makeNotPredicate
-                                (makeCeilPredicate
-                                    (Mock.concatMap
+                            ( makeNotPredicate
+                                ( makeCeilPredicate
+                                    ( Mock.concatMap
                                         (mkElemVar Mock.mConfig)
-                                        (Mock.builtinMap
+                                        ( Mock.builtinMap
                                             [(Mock.a, mkElemVar Mock.xConfig)]
                                         )
                                     )
@@ -882,159 +921,160 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.xConfig, fOfA)
-                        , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
-                        ]
+                    , substitution =
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
+                                ]
                     }
                 ]
-                (Mock.concatMap
+                ( Mock.concatMap
                     (mkElemVar Mock.mConfig)
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
-        -- TODO: Add tests with non-trivial predicates.
+            -- TODO: Add tests with non-trivial predicates.
         ]
-    , testGroup "builtin List domain"
-        [
-            let term1 =
-                    Mock.builtinList
-                        [ Mock.constr10 Mock.cf
-                        , Mock.constr11 Mock.cf
-                        ]
-            in
-                testCase "[same head, same head]"
-                    (assertTermEquals
-                        Conditional
-                            { term = ()
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                        term1
-                        term1
-                    )
-        ,
-            let term3 = Mock.builtinList [Mock.a, Mock.a]
-                term4 = Mock.builtinList [Mock.a, Mock.b]
-                unified34 = Condition.bottomCondition
-            in
-                testCase "[same head, different head]"
-                    (assertTermEquals
-                        unified34
-                        term3
-                        term4
-                    )
-        ,
-            let x = Variable
-                        { variableName =
-                            ElementVariableName
-                                (mkConfigVariable $ mkVariableName "x")
-                        , variableSort = Mock.listSort
+    , testGroup
+        "builtin List domain"
+        [ let term1 =
+                Mock.builtinList
+                    [ Mock.constr10 Mock.cf
+                    , Mock.constr11 Mock.cf
+                    ]
+           in testCase
+                "[same head, same head]"
+                ( assertTermEquals
+                    Conditional
+                        { term = ()
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
                         }
-                term5 =
-                    Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
-                term6 = Mock.builtinList [Mock.a, Mock.b]
-            in
-                testCase "[a] `concat` x /\\ [a, b] "
-                    (assertTermEquals
-                        Conditional
-                            { term = ()
-                            -- TODO(virgil): This sort should be listSort.
-                            , predicate = makeTruePredicate
-                            , substitution = Substitution.wrap
-                                $ Substitution.mkUnwrappedSubstitution
-                                [(inject x, Mock.builtinList [Mock.b])]
-                            }
-                        term5
-                        term6
-                    )
-        ,
-            let term7 = Mock.builtinList [Mock.a, Mock.a]
-                term8 = Mock.builtinList [Mock.a]
-            in
-                testCase "different lengths"
-                    (assertTermEquals
-                        Condition.bottomCondition
-                        term7
-                        term8
-                    )
-        -- TODO: Add tests with non-trivial unifications and predicates.
+                    term1
+                    term1
+                )
+        , let term3 = Mock.builtinList [Mock.a, Mock.a]
+              term4 = Mock.builtinList [Mock.a, Mock.b]
+              unified34 = Condition.bottomCondition
+           in testCase
+                "[same head, different head]"
+                ( assertTermEquals
+                    unified34
+                    term3
+                    term4
+                )
+        , let x =
+                Variable
+                    { variableName =
+                        ElementVariableName
+                            (mkConfigVariable $ mkVariableName "x")
+                    , variableSort = Mock.listSort
+                    }
+              term5 =
+                Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
+              term6 = Mock.builtinList [Mock.a, Mock.b]
+           in testCase
+                "[a] `concat` x /\\ [a, b] "
+                ( assertTermEquals
+                    Conditional
+                        { term = ()
+                        , -- TODO(virgil): This sort should be listSort.
+                          predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject x, Mock.builtinList [Mock.b])]
+                        }
+                    term5
+                    term6
+                )
+        , let term7 = Mock.builtinList [Mock.a, Mock.a]
+              term8 = Mock.builtinList [Mock.a]
+           in testCase
+                "different lengths"
+                ( assertTermEquals
+                    Condition.bottomCondition
+                    term7
+                    term8
+                )
+                -- TODO: Add tests with non-trivial unifications and predicates.
         ]
-    -- TODO: Add tests for set equality.
+        -- TODO: Add tests for set equality.
     ]
 
-assertBidirectionalEqualityResult
-    :: String
-    -> String
-    -> OrPattern RewritingVariableName
-    -> Equals Sort (OrPattern RewritingVariableName)
-    -> IO ()
+assertBidirectionalEqualityResult ::
+    String ->
+    String ->
+    OrPattern RewritingVariableName ->
+    Equals Sort (OrPattern RewritingVariableName) ->
+    IO ()
 assertBidirectionalEqualityResult
     firstName
     secondName
     expectEvaluateEquals
-    equality@Equals{equalsFirst, equalsSecond}
-  = do
-    testOneDirection equality
-    let reverseEquality = equality
-            { equalsFirst = equalsSecond
-            , equalsSecond = equalsFirst
-            }
-    testOneDirection reverseEquality
-  where
-    testOneDirection orderedEquality = do
-        actualEvaluateEquals <- evaluateOr orderedEquality
-        let assertEqual' name expect actual =
-                let message =
-                        unlines
-                        [ firstName ++ " vs " ++ secondName ++ ":"
-                        , "Expected " <> name
-                        , unparseToString
-                            (OrPattern.toPattern <$> orderedEquality)
-                        , "would simplify to:"
-                        , unlines (unparseToString <$> toList expect)
-                        , "but instead found:"
-                        , unlines (unparseToString <$> toList actual)
-                        ]
-                 in assertEqual message expect actual
-        assertEqual' "evaluate equals"
-            expectEvaluateEquals
-            actualEvaluateEquals
+    equality@Equals{equalsFirst, equalsSecond} =
+        do
+            testOneDirection equality
+            let reverseEquality =
+                    equality
+                        { equalsFirst = equalsSecond
+                        , equalsSecond = equalsFirst
+                        }
+            testOneDirection reverseEquality
+      where
+        testOneDirection orderedEquality = do
+            actualEvaluateEquals <- evaluateOr orderedEquality
+            let assertEqual' name expect actual =
+                    let message =
+                            unlines
+                                [ firstName ++ " vs " ++ secondName ++ ":"
+                                , "Expected " <> name
+                                , unparseToString
+                                    (OrPattern.toPattern <$> orderedEquality)
+                                , "would simplify to:"
+                                , unlines (unparseToString <$> toList expect)
+                                , "but instead found:"
+                                , unlines (unparseToString <$> toList actual)
+                                ]
+                     in assertEqual message expect actual
+            assertEqual'
+                "evaluate equals"
+                expectEvaluateEquals
+                actualEvaluateEquals
 
-assertTermEquals
-    :: HasCallStack
-    => Condition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> IO ()
+assertTermEquals ::
+    HasCallStack =>
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    IO ()
 assertTermEquals = assertTermEqualsGeneric
 
-assertTermEqualsGeneric
-    :: HasCallStack
-    => Condition RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Assertion
+assertTermEqualsGeneric ::
+    HasCallStack =>
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Assertion
 assertTermEqualsGeneric expectPure =
     assertTermEqualsMultiGeneric [expectPure]
 
-
-assertTermEqualsMulti
-    :: HasCallStack
-    => [Condition RewritingVariableName]
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> IO ()
+assertTermEqualsMulti ::
+    HasCallStack =>
+    [Condition RewritingVariableName] ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    IO ()
 assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
-assertTermEqualsMultiGeneric
-    :: HasCallStack
-    => [Condition RewritingVariableName]
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> Assertion
+assertTermEqualsMultiGeneric ::
+    HasCallStack =>
+    [Condition RewritingVariableName] ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Assertion
 assertTermEqualsMultiGeneric expectPure first second = do
     let expectExpanded =
             OrPattern.fromPatterns
@@ -1050,8 +1090,8 @@ assertTermEqualsMultiGeneric expectPure first second = do
         (MultiOr.make expectPure)
         actualPure
   where
-    termToPattern
-        :: TermLike RewritingVariableName -> Pattern RewritingVariableName
+    termToPattern ::
+        TermLike RewritingVariableName -> Pattern RewritingVariableName
     termToPattern (Bottom_ _) =
         Conditional.bottom
     termToPattern term =
@@ -1060,20 +1100,18 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
+    predSubstToPattern ::
+        Condition RewritingVariableName -> Pattern RewritingVariableName
     predSubstToPattern
-        :: Condition RewritingVariableName -> Pattern RewritingVariableName
+        Conditional{predicate = PredicateFalse} =
+            Conditional.bottom
     predSubstToPattern
-        Conditional {predicate = PredicateFalse}
-      =
-        Conditional.bottom
-    predSubstToPattern
-        Conditional {predicate, substitution}
-      =
-        Conditional
-            { term = mkTop_
-            , predicate = predicate
-            , substitution = substitution
-            }
+        Conditional{predicate, substitution} =
+            Conditional
+                { term = mkTop_
+                , predicate = predicate
+                , substitution = substitution
+                }
 
 fOfA :: TermLike RewritingVariableName
 fOfA = Mock.f Mock.a
@@ -1114,38 +1152,38 @@ plain1OfA = Mock.plain10 Mock.a
 testSort :: Sort
 testSort = Mock.testSort
 
-evaluateOr
-    :: Equals Sort (OrPattern RewritingVariableName)
-    -> IO (OrPattern RewritingVariableName)
+evaluateOr ::
+    Equals Sort (OrPattern RewritingVariableName) ->
+    IO (OrPattern RewritingVariableName)
 evaluateOr =
     runSimplifier mockEnv
-    . simplify SideCondition.top
-    . fmap simplifiedOrPattern
+        . simplify SideCondition.top
+        . fmap simplifiedOrPattern
   where
     mockEnv = Mock.env
 
-evaluate
-    :: Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> IO (OrPattern RewritingVariableName)
+evaluate ::
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    IO (OrPattern RewritingVariableName)
 evaluate first second =
-    runSimplifier mockEnv
-    $ makeEvaluate
-        (simplifiedPattern first)
-        (simplifiedPattern second)
-        SideCondition.top
+    runSimplifier mockEnv $
+        makeEvaluate
+            (simplifiedPattern first)
+            (simplifiedPattern second)
+            SideCondition.top
   where
     mockEnv = Mock.env
 
-evaluateTermsGeneric
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> IO (OrCondition RewritingVariableName)
+evaluateTermsGeneric ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    IO (OrCondition RewritingVariableName)
 evaluateTermsGeneric first second =
-    runSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate
-        (simplifiedTerm first)
-        (simplifiedTerm second)
-        SideCondition.top
+    runSimplifier mockEnv $
+        makeEvaluateTermsToPredicate
+            (simplifiedTerm first)
+            (simplifiedTerm second)
+            SideCondition.top
   where
     mockEnv = Mock.env

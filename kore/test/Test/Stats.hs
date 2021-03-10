@@ -1,12 +1,12 @@
-module Test.Stats ( test_Stats ) where
+module Test.Stats (test_Stats) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import System.IO
-    ( hClose
-    )
+import System.IO (
+    hClose,
+ )
 import System.IO.Temp
 
 import Stats

@@ -1,6 +1,6 @@
-module Test.Kore.Log.ErrorBottomTotalFunction
-    ( test_instance_Table_ErrorBottomTotalFunction
-    ) where
+module Test.Kore.Log.ErrorBottomTotalFunction (
+    test_instance_Table_ErrorBottomTotalFunction,
+) where
 
 import Prelude.Kore ()
 

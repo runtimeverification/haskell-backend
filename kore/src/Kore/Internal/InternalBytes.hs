@@ -1,21 +1,20 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-
-{-# LANGUAGE Strict #-}
-
-module Kore.Internal.InternalBytes
-    ( InternalBytes (..)
-    ) where
+module Kore.Internal.InternalBytes (
+    InternalBytes (..),
+) where
 
 import Prelude.Kore
 
-import Data.ByteString
-    ( ByteString
-    )
-import qualified Generics.SOP as SOP
+import Data.ByteString (
+    ByteString,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -27,11 +26,10 @@ import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
 
-data InternalBytes =
-    InternalBytes
-        { internalBytesSort          :: !Sort
-        , internalBytesValue         :: !ByteString
-        }
+data InternalBytes = InternalBytes
+    { internalBytesSort :: !Sort
+    , internalBytesValue :: !ByteString
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -41,17 +39,17 @@ data InternalBytes =
 instance Unparse InternalBytes where
     unparse internalBytes@(InternalBytes _ _) =
         "\\dv"
-        <> parameters [internalBytesSort]
-        <> arguments [StringLiteral (Encoding.decode8Bit internalBytesValue)]
+            <> parameters [internalBytesSort]
+            <> arguments [StringLiteral (Encoding.decode8Bit internalBytesValue)]
       where
-        InternalBytes { internalBytesSort, internalBytesValue } = internalBytes
+        InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 
     unparse2 internalBytes@(InternalBytes _ _) =
         "\\dv2"
-        <> parameters2 [internalBytesSort]
-        <> arguments2 [StringLiteral (Encoding.decode8Bit internalBytesValue)]
+            <> parameters2 [internalBytesSort]
+            <> arguments2 [StringLiteral (Encoding.decode8Bit internalBytesValue)]
       where
-        InternalBytes { internalBytesSort, internalBytesValue } = internalBytes
+        InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 
 instance Synthetic Sort (Const InternalBytes) where
     synthetic = internalBytesSort . getConst

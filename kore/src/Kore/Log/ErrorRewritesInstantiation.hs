@@ -1,86 +1,82 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Kore.Log.ErrorRewritesInstantiation
-    ( ErrorRewritesInstantiation (..)
-    , checkSubstitutionCoverage
-    ) where
+module Kore.Log.ErrorRewritesInstantiation (
+    ErrorRewritesInstantiation (..),
+    checkSubstitutionCoverage,
+) where
 
 import Prelude.Kore
 
-import Control.Exception
-    ( Exception (..)
-    , throw
-    )
-import Data.Set
-    ( Set
-    )
+import Control.Exception (
+    Exception (..),
+    throw,
+ )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
-import GHC.Exception
-    ( prettyCallStackLines
-    )
+import GHC.Exception (
+    prettyCallStackLines,
+ )
 import qualified GHC.Generics as GHC
-import GHC.Stack
-    ( CallStack
-    , callStack
-    )
+import GHC.Stack (
+    CallStack,
+    callStack,
+ )
+import qualified Generics.SOP as SOP
 
-import Kore.Attribute.Axiom
-    ( SourceLocation
-    )
-import Kore.Internal.Conditional
-    ( Conditional (..)
-    )
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import Kore.Internal.TermLike
-    ( isConstructorLike
-    )
-import Kore.Internal.Variable
-    ( SomeVariableName
-    )
+import Kore.Attribute.Axiom (
+    SourceLocation,
+ )
+import Kore.Internal.Conditional (
+    Conditional (..),
+ )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
+import Kore.Internal.TermLike (
+    isConstructorLike,
+ )
+import Kore.Internal.Variable (
+    SomeVariableName,
+ )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.AxiomPattern
-    ( AxiomPattern
-    , getAxiomPattern
-    )
-import Kore.Step.Step
-    ( UnifiedRule
-    , UnifyingRule (..)
-    , wouldNarrowWith
-    )
-import Kore.Unparser
-    ( unparse
-    )
+import Kore.Step.AxiomPattern (
+    AxiomPattern,
+    getAxiomPattern,
+ )
+import Kore.Step.Step (
+    UnifiedRule,
+    UnifyingRule (..),
+    wouldNarrowWith,
+ )
+import Kore.Unparser (
+    unparse,
+ )
 import Log
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-data ErrorRewritesInstantiation =
-    ErrorRewritesInstantiation
-        { problem :: !SubstitutionCoverageError
-        , configuration :: !(Pattern RewritingVariableName)
-        , errorCallStack :: !CallStack
-        }
+data ErrorRewritesInstantiation = ErrorRewritesInstantiation
+    { problem :: !SubstitutionCoverageError
+    , configuration :: !(Pattern RewritingVariableName)
+    , errorCallStack :: !CallStack
+    }
     deriving (Show, GHC.Generic)
 
-data SubstitutionCoverageError =
-    SubstitutionCoverageError
-        { solution
-            :: !(Conditional
-                    RewritingVariableName
-                    (AxiomPattern RewritingVariableName)
-                )
-        , location :: !SourceLocation
-        , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
-        }
+data SubstitutionCoverageError = SubstitutionCoverageError
+    { solution ::
+        !( Conditional
+            RewritingVariableName
+            (AxiomPattern RewritingVariableName)
+         )
+    , location :: !SourceLocation
+    , missingVariables :: !(Set (SomeVariableName RewritingVariableName))
+    }
     deriving (Show)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -98,24 +94,23 @@ instance Pretty ErrorRewritesInstantiation where
     pretty
         ErrorRewritesInstantiation
             { problem =
-                SubstitutionCoverageError { solution, location, missingVariables }
+                SubstitutionCoverageError{solution, location, missingVariables}
             , configuration
             , errorCallStack
-            }
-      =
-        Pretty.vsep $
-            [ "While rewriting the configuration:"
-            , Pretty.indent 4 (unparse configuration)
-            , "Unable to instantiate semantic rule at "
-                <> Pretty.pretty location
-            , "Unification did not find a solution for the variables:"
-            , (Pretty.indent 4 . Pretty.sep)
-                (unparse <$> Set.toAscList missingVariables)
-            , "The unification solution was:"
-            , unparse (fmap getAxiomPattern solution)
-            , "Error! Please report this."
-            ]
-            <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
+            } =
+            Pretty.vsep $
+                [ "While rewriting the configuration:"
+                , Pretty.indent 4 (unparse configuration)
+                , "Unable to instantiate semantic rule at "
+                    <> Pretty.pretty location
+                , "Unification did not find a solution for the variables:"
+                , (Pretty.indent 4 . Pretty.sep)
+                    (unparse <$> Set.toAscList missingVariables)
+                , "The unification solution was:"
+                , unparse (fmap getAxiomPattern solution)
+                , "Error! Please report this."
+                ]
+                    <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -133,35 +128,35 @@ we added to the result.
 @checkSubstitutionCoverage@ calls @quantifyVariables@ to remove
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
-checkSubstitutionCoverage
-    :: forall rule monadLog
-    .  MonadLog monadLog
-    => UnifyingRule rule
-    => From rule SourceLocation
-    => From rule (AxiomPattern RewritingVariableName)
-    => UnifyingRuleVariable rule ~ RewritingVariableName
-    => HasCallStack
-    => Pattern RewritingVariableName
-    -- ^ Initial configuration
-    -> UnifiedRule rule
-    -- ^ Unified rule
-    -> monadLog ()
+checkSubstitutionCoverage ::
+    forall rule monadLog.
+    MonadLog monadLog =>
+    UnifyingRule rule =>
+    From rule SourceLocation =>
+    From rule (AxiomPattern RewritingVariableName) =>
+    UnifyingRuleVariable rule ~ RewritingVariableName =>
+    HasCallStack =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
+    -- | Unified rule
+    UnifiedRule rule ->
+    monadLog ()
 checkSubstitutionCoverage configuration unifiedRule
-  | isCoveringSubstitution || isSymbolic = return ()
-  | otherwise =
-    -- The substitution does not cover all the variables on the left-hand side
-    -- of the rule *and* we did not generate a substitution for a symbolic
-    -- initial configuration. This is a fatal error because it indicates
-    -- something has gone horribly wrong.
-    throw
-        ErrorRewritesInstantiation
-        { problem = substitutionCoverageError
-        , configuration
-        , errorCallStack = callStack
-        }
+    | isCoveringSubstitution || isSymbolic = return ()
+    | otherwise =
+        -- The substitution does not cover all the variables on the left-hand side
+        -- of the rule *and* we did not generate a substitution for a symbolic
+        -- initial configuration. This is a fatal error because it indicates
+        -- something has gone horribly wrong.
+        throw
+            ErrorRewritesInstantiation
+                { problem = substitutionCoverageError
+                , configuration
+                , errorCallStack = callStack
+                }
   where
     substitutionCoverageError =
-        SubstitutionCoverageError { solution, location, missingVariables }
+        SubstitutionCoverageError{solution, location, missingVariables}
 
     missingVariables = wouldNarrowWith unifiedRule
     isCoveringSubstitution = Set.null missingVariables

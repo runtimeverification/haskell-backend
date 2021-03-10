@@ -1,81 +1,80 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
+-}
+module Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    RewritingVariable,
+    isEquationVariable,
+    isConfigVariable,
+    isRuleVariable,
+    isSomeEquationVariable,
+    isSomeEquationVariableName,
+    isSomeConfigVariable,
+    isSomeConfigVariableName,
+    isSomeRuleVariable,
+    isSomeRuleVariableName,
+    isElementRuleVariable,
+    isElementRuleVariableName,
+    mkEquationVariable,
+    mkConfigVariable,
+    mkRuleVariable,
+    mkElementConfigVariable,
+    configElementVariableFromId,
+    ruleElementVariableFromId,
+    mkElementRuleVariable,
+    mkUnifiedRuleVariable,
+    mkUnifiedConfigVariable,
+    mkRewritingPattern,
+    mkRewritingTerm,
+    resetResultPattern,
+    getRemainderPredicate,
+    assertRemainderPattern,
+    resetConfigVariable,
+    resetRuleVariable,
+    getRewritingVariable,
+    withoutEquationVariables,
 
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , RewritingVariable
-    , isEquationVariable
-    , isConfigVariable
-    , isRuleVariable
-    , isSomeEquationVariable
-    , isSomeEquationVariableName
-    , isSomeConfigVariable
-    , isSomeConfigVariableName
-    , isSomeRuleVariable
-    , isSomeRuleVariableName
-    , isElementRuleVariable
-    , isElementRuleVariableName
-    , mkEquationVariable
-    , mkConfigVariable
-    , mkRuleVariable
-    , mkElementConfigVariable
-    , configElementVariableFromId
-    , ruleElementVariableFromId
-    , mkElementRuleVariable
-    , mkUnifiedRuleVariable
-    , mkUnifiedConfigVariable
-    , mkRewritingPattern
-    , mkRewritingTerm
-    , resetResultPattern
-    , getRemainderPredicate
-    , assertRemainderPattern
-    , resetConfigVariable
-    , resetRuleVariable
-    , getRewritingVariable
-    , withoutEquationVariables
     -- * Exported for unparsing/testing
-    , getRewritingPattern
-    , getRewritingTerm
-    ) where
+    getRewritingPattern,
+    getRewritingTerm,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Debug
-import Kore.AST.AstWithLocation
-    ( AstWithLocation (..)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , toNames
-    )
+import Kore.AST.AstWithLocation (
+    AstWithLocation (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    toNames,
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike as TermLike hiding
-    ( refreshVariables
-    )
+import Kore.Internal.TermLike as TermLike hiding (
+    refreshVariables,
+ )
 import Kore.Unparser
 import Kore.Variables.Fresh
 
-{- | The name of a 'RewritingVariable'.
- -}
+-- | The name of a 'RewritingVariable'.
 data RewritingVariableName
     = EquationVariableName !VariableName
     | ConfigVariableName !VariableName
-    | RuleVariableName   !VariableName
+    | RuleVariableName !VariableName
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -96,15 +95,15 @@ instance FreshPartialOrd RewritingVariableName where
     minBoundName =
         \case
             EquationVariableName var -> EquationVariableName (minBoundName var)
-            RuleVariableName var     -> RuleVariableName (minBoundName var)
-            ConfigVariableName var   -> ConfigVariableName (minBoundName var)
+            RuleVariableName var -> RuleVariableName (minBoundName var)
+            ConfigVariableName var -> ConfigVariableName (minBoundName var)
     {-# INLINE minBoundName #-}
 
     maxBoundName =
         \case
             EquationVariableName var -> EquationVariableName (maxBoundName var)
-            RuleVariableName var     -> RuleVariableName (maxBoundName var)
-            ConfigVariableName var   -> ConfigVariableName (maxBoundName var)
+            RuleVariableName var -> RuleVariableName (maxBoundName var)
+            ConfigVariableName var -> ConfigVariableName (maxBoundName var)
     {-# INLINE maxBoundName #-}
 
     nextName (EquationVariableName name1) (EquationVariableName name2) =
@@ -140,77 +139,79 @@ instance AstWithLocation RewritingVariableName where
 
 type RewritingVariable = Variable RewritingVariableName
 
-mkElementConfigVariable
-    :: ElementVariable VariableName
-    -> ElementVariable RewritingVariableName
+mkElementConfigVariable ::
+    ElementVariable VariableName ->
+    ElementVariable RewritingVariableName
 mkElementConfigVariable = (fmap . fmap) ConfigVariableName
 
-configElementVariableFromId
-    :: Id -> Sort -> ElementVariable RewritingVariableName
+configElementVariableFromId ::
+    Id -> Sort -> ElementVariable RewritingVariableName
 configElementVariableFromId identifier sort =
     mkElementConfigVariable (mkElementVariable identifier sort)
 
-ruleElementVariableFromId
-    :: Id -> Sort -> ElementVariable RewritingVariableName
+ruleElementVariableFromId ::
+    Id -> Sort -> ElementVariable RewritingVariableName
 ruleElementVariableFromId identifier sort =
     mkElementRuleVariable (mkElementVariable identifier sort)
 
-mkElementRuleVariable
-    :: ElementVariable VariableName
-    -> ElementVariable RewritingVariableName
+mkElementRuleVariable ::
+    ElementVariable VariableName ->
+    ElementVariable RewritingVariableName
 mkElementRuleVariable = (fmap . fmap) RuleVariableName
 
-mkUnifiedRuleVariable
-    :: SomeVariable VariableName
-    -> SomeVariable RewritingVariableName
+mkUnifiedRuleVariable ::
+    SomeVariable VariableName ->
+    SomeVariable RewritingVariableName
 mkUnifiedRuleVariable = (fmap . fmap) RuleVariableName
 
-mkUnifiedConfigVariable
-    :: SomeVariable VariableName
-    -> SomeVariable RewritingVariableName
+mkUnifiedConfigVariable ::
+    SomeVariable VariableName ->
+    SomeVariable RewritingVariableName
 mkUnifiedConfigVariable = (fmap . fmap) ConfigVariableName
 
 getRuleVariable :: RewritingVariableName -> Maybe VariableName
 getRuleVariable (RuleVariableName var) = Just var
 getRuleVariable _ = Nothing
 
-getUnifiedRuleVariable
-    :: SomeVariable RewritingVariableName
-    -> Maybe (SomeVariable VariableName)
+getUnifiedRuleVariable ::
+    SomeVariable RewritingVariableName ->
+    Maybe (SomeVariable VariableName)
 getUnifiedRuleVariable = (traverse . traverse) getRuleVariable
 
--- | Unwrap every variable in the pattern. This is unsafe in
--- contexts related to unification. To be used only where the
--- rewriting information is not necessary anymore, such as
--- unparsing.
-getRewritingPattern
-    :: Pattern RewritingVariableName
-    -> Pattern VariableName
+{- | Unwrap every variable in the pattern. This is unsafe in
+ contexts related to unification. To be used only where the
+ rewriting information is not necessary anymore, such as
+ unparsing.
+-}
+getRewritingPattern ::
+    Pattern RewritingVariableName ->
+    Pattern VariableName
 getRewritingPattern = Pattern.mapVariables getRewritingVariable
 
--- | Unwrap every variable in the term. This is unsafe in
--- contexts related to unification. To be used only where the
--- rewriting information is not necessary anymore, such as
--- unparsing.
-getRewritingTerm
-    :: TermLike RewritingVariableName
-    -> TermLike VariableName
+{- | Unwrap every variable in the term. This is unsafe in
+ contexts related to unification. To be used only where the
+ rewriting information is not necessary anymore, such as
+ unparsing.
+-}
+getRewritingTerm ::
+    TermLike RewritingVariableName ->
+    TermLike VariableName
 getRewritingTerm = TermLike.mapVariables getRewritingVariable
 
-resetConfigVariable
-    :: AdjSomeVariableName
+resetConfigVariable ::
+    AdjSomeVariableName
         (RewritingVariableName -> RewritingVariableName)
 resetConfigVariable =
     pure (.) <*> pure mkConfigVariable <*> getRewritingVariable
 
-resetRuleVariable
-    :: AdjSomeVariableName
+resetRuleVariable ::
+    AdjSomeVariableName
         (RewritingVariableName -> RewritingVariableName)
 resetRuleVariable =
     pure (.) <*> pure mkRuleVariable <*> getRewritingVariable
 
-getRewritingVariable
-    :: AdjSomeVariableName (RewritingVariableName -> VariableName)
+getRewritingVariable ::
+    AdjSomeVariableName (RewritingVariableName -> VariableName)
 getRewritingVariable = pure (from @RewritingVariableName @VariableName)
 
 mkEquationVariable :: VariableName -> RewritingVariableName
@@ -234,32 +235,33 @@ isRuleVariable :: RewritingVariableName -> Bool
 isRuleVariable (RuleVariableName _) = True
 isRuleVariable _ = False
 
--- | Safely reset all the variables in the pattern to configuration
--- variables.
-resetResultPattern
-    :: HasCallStack
-    => FreeVariables RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
-resetResultPattern initial config@Conditional { substitution } =
+{- | Safely reset all the variables in the pattern to configuration
+ variables.
+-}
+resetResultPattern ::
+    HasCallStack =>
+    FreeVariables RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName
+resetResultPattern initial config@Conditional{substitution} =
     Pattern.mapVariables resetConfigVariable renamed
   where
     substitution' = Substitution.filter isSomeConfigVariable substitution
-    filtered = config { Pattern.substitution = substitution' }
+    filtered = config{Pattern.substitution = substitution'}
     avoiding =
         initial
-        & FreeVariables.toNames
-        & (Set.map . fmap) toVariableName
+            & FreeVariables.toNames
+            & (Set.map . fmap) toVariableName
     introduced =
         Set.fromAscList
-        . mapMaybe getUnifiedRuleVariable
-        . Set.toAscList
-        . FreeVariables.toSet
-        $ freeVariables filtered
+            . mapMaybe getUnifiedRuleVariable
+            . Set.toAscList
+            . FreeVariables.toSet
+            $ freeVariables filtered
     renaming =
         Map.mapKeys (fmap RuleVariableName)
-        . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
-        $ refreshVariables avoiding introduced
+            . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
+            $ refreshVariables avoiding introduced
     renamed :: Pattern RewritingVariableName
     renamed = filtered & Pattern.substitute renaming
 
@@ -270,22 +272,22 @@ mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
 mkRewritingTerm :: TermLike VariableName -> TermLike RewritingVariableName
 mkRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
 
-getRemainderPredicate
-    :: Predicate RewritingVariableName
-    -> Predicate VariableName
+getRemainderPredicate ::
+    Predicate RewritingVariableName ->
+    Predicate VariableName
 getRemainderPredicate predicate =
     Predicate.mapVariables getRewritingVariable predicate
-    & assert (all isSomeConfigVariable freeVars)
+        & assert (all isSomeConfigVariable freeVars)
   where
     freeVars = freeVariables predicate & FreeVariables.toList
 
-assertRemainderPattern
-    :: HasCallStack
-    => Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
+assertRemainderPattern ::
+    HasCallStack =>
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName
 assertRemainderPattern pattern' =
     pattern'
-    & assert (all isSomeConfigVariable freeVars)
+        & assert (all isSomeConfigVariable freeVars)
   where
     freeVars = freeVariables pattern' & FreeVariables.toList
 
@@ -313,7 +315,7 @@ isElementRuleVariable = isElementRuleVariableName . variableName
 isElementRuleVariableName :: ElementVariableName RewritingVariableName -> Bool
 isElementRuleVariableName = any isRuleVariable
 
-withoutEquationVariables
-    :: FreeVariables RewritingVariableName -> Bool
+withoutEquationVariables ::
+    FreeVariables RewritingVariableName -> Bool
 withoutEquationVariables fv =
     (not . any isSomeEquationVariableName) (toNames fv)

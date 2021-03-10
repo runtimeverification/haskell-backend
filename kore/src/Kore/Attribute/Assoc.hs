@@ -1,27 +1,27 @@
-{-|
+{- |
 Module      : Kore.Attribute.Assoc
 Description : Associativity axiom attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.Assoc
-    ( Assoc (..)
-    , assocId, assocSymbol, assocAttribute
-    ) where
+module Kore.Attribute.Assoc (
+    Assoc (..),
+    assocId,
+    assocSymbol,
+    assocAttribute,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
-{- | @Assoc@ represents the @assoc@ attribute for axioms.
- -}
-newtype Assoc = Assoc { isAssoc :: Bool }
+-- | @Assoc@ represents the @assoc@ attribute for axioms.
+newtype Assoc = Assoc {isAssoc :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

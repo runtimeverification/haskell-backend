@@ -1,12 +1,10 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Kore.Builtin.Kreflection
-    ( verifiers
-    ) where
+module Kore.Builtin.Kreflection (
+    verifiers,
+) where
 
 import Prelude.Kore
 
@@ -25,8 +23,8 @@ verifiers =
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( "KREFLECTION.isConcrete" , rejectSymbolIsConcrete)
-    ]
+        [ ("KREFLECTION.isConcrete", rejectSymbolIsConcrete)
+        ]
 
 rejectSymbolIsConcrete :: Builtin.SymbolVerifier
 rejectSymbolIsConcrete =

@@ -1,101 +1,101 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Rule.Simplify
-    ( test_simplifyRule_RewriteRule
-    , test_simplifyRule_OnePathClaim
-    , test_simplifyClaimRule
-    ) where
+module Test.Kore.Step.Rule.Simplify (
+    test_simplifyRule_RewriteRule,
+    test_simplifyRule_OnePathClaim,
+    test_simplifyClaimRule,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
 import qualified Control.Lens as Lens
-import Control.Monad.Morph
-    ( MFunctor (..)
-    )
-import Control.Monad.Reader
-    ( MonadReader
-    , ReaderT
-    , runReaderT
-    )
+import Control.Monad.Morph (
+    MFunctor (..),
+ )
+import Control.Monad.Reader (
+    MonadReader,
+    ReaderT,
+    runReaderT,
+ )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
-import Data.Generics.Product
-    ( field
-    )
+import Data.Generics.Product (
+    field,
+ )
 
-import Kore.Internal.Condition
-    ( Condition
-    )
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate (
+    Predicate,
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
-import Kore.Internal.TermLike
-    ( AdjSomeVariableName
-    , InternalVariable
-    , TermLike
-    , mkAnd
-    , mkElemVar
-    , mkEquals
-    , mkOr
-    )
+import Kore.Internal.TermLike (
+    AdjSomeVariableName,
+    InternalVariable,
+    TermLike,
+    mkAnd,
+    mkElemVar,
+    mkEquals,
+    mkOr,
+ )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Reachability
-    ( OnePathClaim (..)
-    , simplify
-    )
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    , getRewritingVariable
-    , mkRuleVariable
-    )
-import Kore.Step.ClaimPattern
-    ( ClaimPattern (..)
-    , mkClaimPattern
-    )
+import Kore.Reachability (
+    OnePathClaim (..),
+    simplify,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingVariable,
+    mkRuleVariable,
+ )
+import Kore.Step.ClaimPattern (
+    ClaimPattern (..),
+    mkClaimPattern,
+ )
 import Kore.Step.Rule.Simplify
-import Kore.Step.RulePattern
-    ( RewriteRule (..)
-    , mapRuleVariables
-    )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    )
-import Kore.Step.Simplification.Simplify
-    ( MonadSMT
-    , MonadSimplify (..)
-    , emptyConditionSimplifier
-    )
-import Kore.Step.Transition
-    ( runTransitionT
-    )
-import Kore.Syntax.Variable
-    ( VariableName
-    , fromVariableName
-    )
+import Kore.Step.RulePattern (
+    RewriteRule (..),
+    mapRuleVariables,
+ )
+import Kore.Step.Simplification.Data (
+    Env (..),
+ )
+import Kore.Step.Simplification.Simplify (
+    MonadSMT,
+    MonadSimplify (..),
+    emptyConditionSimplifier,
+ )
+import Kore.Step.Transition (
+    runTransitionT,
+ )
+import Kore.Syntax.Variable (
+    VariableName,
+    fromVariableName,
+ )
 import Log
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Rule.Common
-    ( Pair (..)
-    , RuleBase
-    )
+import Test.Kore.Step.Rule.Common (
+    Pair (..),
+    RuleBase,
+ )
 import qualified Test.Kore.Step.Rule.Common as Common
-import Test.Kore.Step.Simplification
-    ( runSimplifier
-    , runSimplifierSMT
-    )
+import Test.Kore.Step.Simplification (
+    runSimplifier,
+    runSimplifierSMT,
+ )
 import Test.Tasty.HUnit.Ext
 
 test_simplifyRule_RewriteRule :: [TestTree]
@@ -107,61 +107,55 @@ test_simplifyRule_RewriteRule =
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Simplify lhs term" $ do
         let expected = [Mock.a `rewritesToWithSortRewriteRule` Mock.cf]
 
-        actual <- runSimplifyRule
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
-                `rewritesToWithSortRewriteRule`
-                Mock.cf
-            )
+        actual <-
+            runSimplifyRule
+                ( mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
+                    `rewritesToWithSortRewriteRule` Mock.cf
+                )
 
         assertEqual "" expected actual
-
     , testCase "Does not simplify rhs term" $ do
         let rule =
                 Mock.a
-                `rewritesToWithSortRewriteRule`
-                mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
+                    `rewritesToWithSortRewriteRule` mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
             expected = [rule]
 
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Substitution in lhs term" $ do
         let expected = [Mock.a `rewritesToWithSortRewriteRule` Mock.f Mock.b]
 
-        actual <- runSimplifyRule
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
-                `rewritesToWithSortRewriteRule` Mock.f x
-            )
+        actual <-
+            runSimplifyRule
+                ( mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
+                    `rewritesToWithSortRewriteRule` Mock.f x
+                )
 
         assertEqual "" expected actual
-
     , testCase "Does not simplify ensures predicate" $ do
         let rule =
-                Pair (Mock.a,  makeTruePredicate)
-                `rewritesToWithSortRewriteRule`
-                Pair (Mock.cf, makeEqualsPredicate Mock.b Mock.b)
+                Pair (Mock.a, makeTruePredicate)
+                    `rewritesToWithSortRewriteRule` Pair (Mock.cf, makeEqualsPredicate Mock.b Mock.b)
             expected = [rule]
 
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Splits rule" $ do
         let expected =
                 [ Mock.a `rewritesToWithSortRewriteRule` Mock.cf
                 , Mock.b `rewritesToWithSortRewriteRule` Mock.cf
                 ]
 
-        actual <- runSimplifyRule
-            (   mkOr Mock.a Mock.b
-                `rewritesToWithSortRewriteRule`
-                Mock.cf
-            )
+        actual <-
+            runSimplifyRule
+                ( mkOr Mock.a Mock.b
+                    `rewritesToWithSortRewriteRule` Mock.cf
+                )
 
         assertEqual "" expected actual
     , testCase "f(x) is always defined" $ do
@@ -169,23 +163,23 @@ test_simplifyRule_RewriteRule =
                 [ Mock.functional10 x `rewritesToWithSortRewriteRule` Mock.a
                 ]
 
-        actual <- runSimplifyRule
-            (   Pair (Mock.functional10 x, makeTruePredicate)
-                `rewritesToWithSortRewriteRule`
-                Pair (Mock.a, makeTruePredicate)
-            )
+        actual <-
+            runSimplifyRule
+                ( Pair (Mock.functional10 x, makeTruePredicate)
+                    `rewritesToWithSortRewriteRule` Pair (Mock.a, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
     ]
   where
-    rewritesToWithSortRewriteRule
-        :: RuleBase base (RewriteRule VariableName)
-        => base VariableName
-        -> base VariableName
-        -> RewriteRule RewritingVariableName
+    rewritesToWithSortRewriteRule ::
+        RuleBase base (RewriteRule VariableName) =>
+        base VariableName ->
+        base VariableName ->
+        RewriteRule RewritingVariableName
     rewritesToWithSortRewriteRule base1 base2 =
         Common.rewritesToWithSort base1 base2
-        & mapRuleVariables (pure mkRuleVariable)
+            & mapRuleVariables (pure mkRuleVariable)
 
     x = mkElemVar Mock.x
 
@@ -198,207 +192,201 @@ test_simplifyRule_OnePathClaim =
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Simplify lhs term" $ do
         let expected = [Mock.a `rewritesToWithSort` Mock.cf]
 
-        actual <- runSimplifyRule
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
-                `rewritesToWithSort`
-                Mock.cf
-            )
+        actual <-
+            runSimplifyRule
+                ( mkAnd Mock.a (mkEquals Mock.testSort Mock.a Mock.a)
+                    `rewritesToWithSort` Mock.cf
+                )
 
         assertEqual "" expected actual
-
     , testCase "Does not simplify rhs term" $ do
         let rule =
                 Mock.a
-                `rewritesToWithSort`
-                mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
+                    `rewritesToWithSort` mkAnd Mock.cf (mkEquals Mock.testSort Mock.a Mock.a)
             expected = [rule]
 
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Substitution in lhs term" $ do
         let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
 
-        actual <- runSimplifyRule
-            (   mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
-                `rewritesToWithSort` Mock.f x
-            )
+        actual <-
+            runSimplifyRule
+                ( mkAnd Mock.a (mkEquals Mock.testSort Mock.b x)
+                    `rewritesToWithSort` Mock.f x
+                )
 
         assertEqual "" expected actual
-
     , testCase "Simplifies requires predicate" $ do
         let expected = [Mock.a `rewritesToWithSort` Mock.cf]
 
-        actual <- runSimplifyRule
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.b Mock.b)
-                `rewritesToWithSort`
-                Pair (Mock.cf, makeTruePredicate)
-            )
+        actual <-
+            runSimplifyRule
+                ( Pair (Mock.a, makeEqualsPredicate Mock.b Mock.b)
+                    `rewritesToWithSort` Pair (Mock.cf, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
-
     , testCase "Does not simplify ensures predicate" $ do
         let rule =
-                Pair (Mock.a,  makeTruePredicate)
-                `rewritesToWithSort`
-                Pair (Mock.cf, makeEqualsPredicate Mock.b Mock.b)
+                Pair (Mock.a, makeTruePredicate)
+                    `rewritesToWithSort` Pair (Mock.cf, makeEqualsPredicate Mock.b Mock.b)
             expected = [rule]
 
         actual <- runSimplifyRule rule
 
         assertEqual "" expected actual
-
     , testCase "Substitution in requires predicate" $ do
         let expected = [Mock.a `rewritesToWithSort` Mock.f Mock.b]
 
-        actual <- runSimplifyRuleSMT
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.b x)
-                `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate)
-            )
+        actual <-
+            runSimplifyRuleSMT
+                ( Pair (Mock.a, makeEqualsPredicate Mock.b x)
+                    `rewritesToWithSort` Pair (Mock.f x, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
-
     , testCase "Splits rule" $ do
         let expected =
                 [ Mock.a `rewritesToWithSort` Mock.cf
                 , Mock.b `rewritesToWithSort` Mock.cf
                 ]
 
-        actual <- runSimplifyRule
-            (   mkOr Mock.a Mock.b
-                `rewritesToWithSort`
-                Mock.cf
-            )
+        actual <-
+            runSimplifyRule
+                ( mkOr Mock.a Mock.b
+                    `rewritesToWithSort` Mock.cf
+                )
 
         assertEqual "" expected actual
-    , testCase "Case where f(x) is defined;\
-               \ Case where it is not is simplified" $ do
-        let expected =
-                [   Pair (Mock.f x, makeCeilPredicate (Mock.f x))
-                    `rewritesToWithSort`
-                    Pair (Mock.a, makeTruePredicate)
-                ]
+    , testCase
+        "Case where f(x) is defined;\
+        \ Case where it is not is simplified"
+        $ do
+            let expected =
+                    [ Pair (Mock.f x, makeCeilPredicate (Mock.f x))
+                        `rewritesToWithSort` Pair (Mock.a, makeTruePredicate)
+                    ]
 
-        actual <- runSimplifyRuleSMT
-            (   Pair (Mock.f x, makeTruePredicate)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate)
-            )
+            actual <-
+                runSimplifyRuleSMT
+                    ( Pair (Mock.f x, makeTruePredicate)
+                        `rewritesToWithSort` Pair (Mock.a, makeTruePredicate)
+                    )
 
-        assertEqual "" expected actual
+            assertEqual "" expected actual
     , testCase "lhs: f(x) is always defined" $ do
         let expected =
                 [ Mock.functional10 x `rewritesToWithSort` Mock.a
                 ]
 
-        actual <- runSimplifyRule
-            (   Pair (Mock.functional10 x, makeTruePredicate)
-                `rewritesToWithSort`
-                Pair (Mock.a, makeTruePredicate)
-            )
+        actual <-
+            runSimplifyRule
+                ( Pair (Mock.functional10 x, makeTruePredicate)
+                    `rewritesToWithSort` Pair (Mock.a, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
     , testCase "Predicate simplification removes trivial claim" $ do
         let expected = []
-        actual <- runSimplifyRule
-            ( Pair
-                ( Mock.b
-                , makeAndPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate x Mock.b)
-                    )
-                    (makeNotPredicate
-                        (makeNotPredicate
+        actual <-
+            runSimplifyRule
+                ( Pair
+                    ( Mock.b
+                    , makeAndPredicate
+                        ( makeNotPredicate
                             (makeEqualsPredicate x Mock.b)
                         )
+                        ( makeNotPredicate
+                            ( makeNotPredicate
+                                (makeEqualsPredicate x Mock.b)
+                            )
+                        )
                     )
+                    `rewritesToWithSort` Pair (Mock.a, makeTruePredicate)
                 )
-              `rewritesToWithSort`
-              Pair (Mock.a, makeTruePredicate)
-            )
         assertEqual "" expected actual
-
     , testCase "rhs: f(x) is always defined" $ do
         let expected =
                 [ Mock.a `rewritesToWithSort` Mock.functional10 x
                 ]
 
-        actual <- runSimplSMT
-            (   Pair (Mock.a, makeTruePredicate)
-                `rewritesToWithSort`
-                Pair (Mock.functional10 x, makeTruePredicate)
-            )
+        actual <-
+            runSimplSMT
+                ( Pair (Mock.a, makeTruePredicate)
+                    `rewritesToWithSort` Pair (Mock.functional10 x, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
-
     , testCase "infer rhs is defined" $ do
         let expected =
-                [   Pair (Mock.a, makeTruePredicate)
-                    `rewritesToWithSort`
-                    Pair (Mock.f x, makeCeilPredicate (Mock.f x))
+                [ Pair (Mock.a, makeTruePredicate)
+                    `rewritesToWithSort` Pair (Mock.f x, makeCeilPredicate (Mock.f x))
                 ]
 
-        actual <- runSimplSMT
-            (   Pair (Mock.a, makeTruePredicate)
-                `rewritesToWithSort`
-                Pair (Mock.f x, makeTruePredicate)
-            )
+        actual <-
+            runSimplSMT
+                ( Pair (Mock.a, makeTruePredicate)
+                    `rewritesToWithSort` Pair (Mock.f x, makeTruePredicate)
+                )
 
         assertEqual "" expected actual
     ]
   where
-    simplClaim
-        :: forall simplifier
-        .  MonadSimplify simplifier
-        => OnePathClaim
-        -> simplifier [OnePathClaim]
+    simplClaim ::
+        forall simplifier.
+        MonadSimplify simplifier =>
+        OnePathClaim ->
+        simplifier [OnePathClaim]
     simplClaim claim =
         runTransitionT (simplify claim)
-        & (fmap . fmap) fst
+            & (fmap . fmap) fst
 
     runSimplSMT :: OnePathClaim -> IO [OnePathClaim]
     runSimplSMT claim =
         runSimplifierSMT Mock.env (simplClaim claim)
 
-    rewritesToWithSort
-        :: RuleBase base OnePathClaim
-        => base VariableName
-        -> base VariableName
-        -> OnePathClaim
+    rewritesToWithSort ::
+        RuleBase base OnePathClaim =>
+        base VariableName ->
+        base VariableName ->
+        OnePathClaim
     rewritesToWithSort = Common.rewritesToWithSort
 
     x = mkElemVar Mock.x
 
-runSimplifyRule
-    :: SimplifyRuleLHS rule
-    => rule
-    -> IO [rule]
+runSimplifyRule ::
+    SimplifyRuleLHS rule =>
+    rule ->
+    IO [rule]
 runSimplifyRule rule =
-    fmap toList
-    $ runSimplifier Mock.env
-    $ simplifyRuleLhs rule
+    fmap toList $
+        runSimplifier Mock.env $
+            simplifyRuleLhs rule
 
-runSimplifyRuleSMT
-    :: SimplifyRuleLHS rule
-    => rule
-    -> IO [rule]
+runSimplifyRuleSMT ::
+    SimplifyRuleLHS rule =>
+    rule ->
+    IO [rule]
 runSimplifyRuleSMT rule =
-    fmap toList
-    $ runSimplifierSMT Mock.env
-    $ simplifyRuleLhs rule
+    fmap toList $
+        runSimplifierSMT Mock.env $
+            simplifyRuleLhs rule
 
 test_simplifyClaimRule :: [TestTree]
 test_simplifyClaimRule =
-    [ test "infers definedness" []
+    [ test
+        "infers definedness"
+        []
         rule1
         [rule1']
-    , test "includes side condition" [(Mock.g Mock.a, Mock.f Mock.a)]
+    , test
+        "includes side condition"
+        [(Mock.g Mock.a, Mock.f Mock.a)]
         rule2
         [rule2']
     ]
@@ -415,16 +403,16 @@ test_simplifyClaimRule =
             (Pattern.fromTermLike (Mock.g Mock.a))
             (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
             []
-        & require aEqualsb
+            & require aEqualsb
     rule2' =
         rule2
-        & requireDefined
-        & Lens.over
-            (field @"left")
-            ( Pattern.andCondition
-                (Mock.f Mock.a & Pattern.fromTermLike)
-            . Pattern.withoutTerm
-            )
+            & requireDefined
+            & Lens.over
+                (field @"left")
+                ( Pattern.andCondition
+                    (Mock.f Mock.a & Pattern.fromTermLike)
+                    . Pattern.withoutTerm
+                )
 
     require condition =
         Lens.over
@@ -433,28 +421,28 @@ test_simplifyClaimRule =
 
     aEqualsb =
         makeEqualsPredicate Mock.a Mock.b
-        & Condition.fromPredicate
+            & Condition.fromPredicate
 
     requireDefined =
         Lens.over
             (field @"left")
-            (\left' ->
+            ( \left' ->
                 let leftTerm = Pattern.term left'
                  in Pattern.andCondition
                         left'
                         ( makeCeilPredicate leftTerm
-                        & Condition.fromPredicate
+                            & Condition.fromPredicate
                         )
             )
 
-    test
-        :: HasCallStack
-        => TestName
-        -> [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-        -- ^ replacements
-        -> ClaimPattern
-        -> [ClaimPattern]
-        -> TestTree
+    test ::
+        HasCallStack =>
+        TestName ->
+        -- | replacements
+        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+        ClaimPattern ->
+        [ClaimPattern] ->
+        TestTree
     test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
         -- Test simplifyClaimRule through the OnePathClaim instance.
         testCase name $ do
@@ -463,25 +451,28 @@ test_simplifyClaimRule =
       where
         run =
             runSimplifierSMT env
-            . flip runReaderT TestEnv
-                { replacements, input, requires = aEqualsb }
-            . runTestSimplifierT
+                . flip
+                    runReaderT
+                    TestEnv
+                        { replacements
+                        , input
+                        , requires = aEqualsb
+                        }
+                . runTestSimplifierT
         env =
             Mock.env
                 { simplifierCondition = emptyConditionSimplifier
                 , simplifierAxioms = mempty
                 }
 
-data TestEnv =
-    TestEnv
-    { replacements
-        :: ![(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+data TestEnv = TestEnv
+    { replacements ::
+        ![(TermLike RewritingVariableName, TermLike RewritingVariableName)]
     , input :: !OnePathClaim
     , requires :: !(Condition RewritingVariableName)
     }
 
-newtype TestSimplifierT m a =
-    TestSimplifierT { runTestSimplifierT :: ReaderT TestEnv m a }
+newtype TestSimplifierT m a = TestSimplifierT {runTestSimplifierT :: ReaderT TestEnv m a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadReader TestEnv)
     deriving newtype (MonadLog, MonadSMT)
@@ -494,59 +485,59 @@ instance MFunctor TestSimplifierT where
 
 instance MonadSimplify m => MonadSimplify (TestSimplifierT m) where
     simplifyTermLike sideCondition termLike = do
-        TestEnv { replacements, input, requires } <- Reader.ask
+        TestEnv{replacements, input, requires} <- Reader.ask
         let rule = getOnePathClaim input
             leftTerm =
                 Lens.view (field @"left") rule
-                & Pattern.term
+                    & Pattern.term
             expectSideCondition =
                 makeAndPredicate
                     (Condition.toPredicate requires)
                     (makeCeilPredicate leftTerm)
-                & liftPredicate
-                & Condition.fromPredicate
-                & SideCondition.fromCondition
+                    & liftPredicate
+                    & Condition.fromPredicate
+                    & SideCondition.fromCondition
             satisfied = sideCondition == expectSideCondition
         return
             . OrPattern.fromTermLike
             . (if satisfied then applyReplacements replacements else id)
             $ termLike
       where
-        applyReplacements
-            :: InternalVariable variable
-            => [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-            -> TermLike variable
-            -> TermLike variable
+        applyReplacements ::
+            InternalVariable variable =>
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            TermLike variable ->
+            TermLike variable
         applyReplacements replacements zero =
-            foldl' applyReplacement zero
-            $ fmap liftReplacement replacements
+            foldl' applyReplacement zero $
+                fmap liftReplacement replacements
 
         applyReplacement orig (ini, fin)
-          | orig == ini = fin
-          | otherwise   = orig
+            | orig == ini = fin
+            | otherwise = orig
 
-        liftPredicate
-            :: InternalVariable variable
-            => Predicate RewritingVariableName
-            -> Predicate variable
+        liftPredicate ::
+            InternalVariable variable =>
+            Predicate RewritingVariableName ->
+            Predicate variable
         liftPredicate =
             Predicate.mapVariables liftRewritingVariable
 
-        liftTermLike
-            :: InternalVariable variable
-            => TermLike RewritingVariableName
-            -> TermLike variable
+        liftTermLike ::
+            InternalVariable variable =>
+            TermLike RewritingVariableName ->
+            TermLike variable
         liftTermLike =
             TermLike.mapVariables liftRewritingVariable
 
-        liftReplacement
-            :: InternalVariable variable
-            => (TermLike RewritingVariableName, TermLike RewritingVariableName)
-            -> (TermLike variable, TermLike variable)
+        liftReplacement ::
+            InternalVariable variable =>
+            (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
+            (TermLike variable, TermLike variable)
         liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
 
-        liftRewritingVariable
-            :: InternalVariable variable
-            => AdjSomeVariableName (RewritingVariableName -> variable)
+        liftRewritingVariable ::
+            InternalVariable variable =>
+            AdjSomeVariableName (RewritingVariableName -> variable)
         liftRewritingVariable =
             pure (.) <*> pure fromVariableName <*> getRewritingVariable

@@ -7,58 +7,53 @@ This module should be imported qualified:
 @
 import qualified Kore.Step.Function.Memo as Memo
 @
-
 -}
-
-module Kore.Step.Function.Memo
-    ( Self (..)
-    , CacheKey
-    , Cache
-    , forgetful
-    , simple
-    , liftSelf
-    , new
-    ) where
+module Kore.Step.Function.Memo (
+    Self (..),
+    CacheKey,
+    Cache,
+    forgetful,
+    simple,
+    liftSelf,
+    new,
+) where
 
 import Prelude.Kore
 
-import Control.Monad.State.Class
-    ( MonadState
-    )
+import Control.Monad.State.Class (
+    MonadState,
+ )
 import qualified Control.Monad.State.Class as State
-import Control.Monad.State.Strict
-    ( State
-    , runState
-    )
-import Data.HashMap.Strict
-    ( HashMap
-    )
+import Control.Monad.State.Strict (
+    State,
+    runState,
+ )
+import Data.HashMap.Strict (
+    HashMap,
+ )
 import qualified Data.HashMap.Strict as HashMap
 import Data.IORef
 import qualified Data.Tuple as Tuple
 
 import Kore.Internal.TermLike
 
-{- | A function application memoizer.
- -}
-data Self monad =
-    Self
-        { recall
-            :: Application Symbol (TermLike Concrete)
-            -> monad (Maybe (TermLike Concrete))
-        , record
-            :: Application Symbol (TermLike Concrete)
-            -> TermLike Concrete
-            -> monad ()
-        }
+-- | A function application memoizer.
+data Self monad = Self
+    { recall ::
+        Application Symbol (TermLike Concrete) ->
+        monad (Maybe (TermLike Concrete))
+    , record ::
+        Application Symbol (TermLike Concrete) ->
+        TermLike Concrete ->
+        monad ()
+    }
 
 {- | The forgetful memoizer.
 
 @forgetful@ recalls nothing and records nothing.
-
- -}
+-}
 forgetful :: Applicative monad => Self monad
-forgetful = Self { recall = \_ -> pure Nothing, record = \_ _ -> pure () }
+forgetful = Self{recall = \_ -> pure Nothing, record = \_ _ -> pure ()}
 
 -- | The concrete function pattern used as a @Key@ into the memoization cache.
 type CacheKey = Application Symbol (TermLike Concrete)
@@ -69,21 +64,19 @@ type Cache = HashMap CacheKey (TermLike Concrete)
 {- | The simple memoizer.
 
 @simple@ uses a simple 'State' monad for state tracking.
-
- -}
+-}
 simple :: MonadState Cache state => Self state
 simple =
-    Self { recall, record }
+    Self{recall, record}
   where
     recall application = State.gets $ HashMap.lookup application
     record application result =
         State.modify' $ HashMap.insert application result
 
-{- | Transform a memoizer using the provided morphism.
- -}
-liftSelf
-    :: (forall x. m x -> n x)
-    -> (Self m -> Self n)
+-- | Transform a memoizer using the provided morphism.
+liftSelf ::
+    (forall x. m x -> n x) ->
+    (Self m -> Self n)
 liftSelf lifting delegate =
     Self
         { recall = \application ->
@@ -95,8 +88,7 @@ liftSelf lifting delegate =
 {- | Create a new memoizer.
 
 (The memoizer's state is encapsulated in a mutable reference.)
-
- -}
+-}
 new :: forall io. MonadIO io => io (Self io)
 new = do
     ref <- liftIO $ newIORef HashMap.empty

@@ -1,17 +1,15 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.Floor
-    ( Floor (..)
-    ) where
+module Kore.Syntax.Floor (
+    Floor (..),
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
@@ -20,19 +18,18 @@ import Kore.Sort
 import Kore.Unparser
 import qualified Pretty
 
-{-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
+{- |'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
 'floorOperandSort' is the sort of the operand.
 
 'floorResultSort' is the sort of the result.
-
 -}
 data Floor sort child = Floor
     { floorOperandSort :: !sort
-    , floorResultSort  :: !sort
-    , floorChild       :: child
+    , floorResultSort :: !sort
+    , floorChild :: child
     }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -42,20 +39,20 @@ data Floor sort child = Floor
     deriving anyclass (Debug, Diff)
 
 instance Unparse child => Unparse (Floor Sort child) where
-    unparse Floor { floorOperandSort, floorResultSort, floorChild } =
+    unparse Floor{floorOperandSort, floorResultSort, floorChild} =
         "\\floor"
-        <> parameters [floorOperandSort, floorResultSort]
-        <> arguments [floorChild]
+            <> parameters [floorOperandSort, floorResultSort]
+            <> arguments [floorChild]
 
-    unparse2 Floor { floorChild } =
+    unparse2 Floor{floorChild} =
         Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
 
 instance Unparse child => Unparse (Floor () child) where
-    unparse Floor { floorChild } =
+    unparse Floor{floorChild} =
         "\\floor"
-        <> arguments [floorChild]
+            <> arguments [floorChild]
 
-    unparse2 Floor { floorChild } =
+    unparse2 Floor{floorChild} =
         Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
 
 instance Synthetic (FreeVariables variable) (Floor sort) where
@@ -63,7 +60,7 @@ instance Synthetic (FreeVariables variable) (Floor sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Floor Sort) where
-    synthetic Floor { floorOperandSort, floorResultSort, floorChild } =
+    synthetic Floor{floorOperandSort, floorResultSort, floorChild} =
         floorResultSort
-        & seq (matchSort floorOperandSort floorChild)
+            & seq (matchSort floorOperandSort floorChild)
     {-# INLINE synthetic #-}

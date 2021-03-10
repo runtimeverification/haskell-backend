@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers
@@ -13,118 +15,117 @@ builtin modules.
 @
     import qualified Kore.Builtin.Builtin as Builtin
 @
- -}
+-}
+module Kore.Builtin.Builtin (
+    Function,
 
-{-# LANGUAGE Strict #-}
+    -- * Implementing builtin functions
+    notImplemented,
+    unaryOperator,
+    binaryOperator,
+    ternaryOperator,
+    functionEvaluator,
+    applicationEvaluator,
+    verifierBug,
+    wrongArity,
+    runParser,
+    appliedFunction,
+    lookupSymbol,
+    lookupSymbolUnit,
+    lookupSymbolElement,
+    lookupSymbolConcat,
+    isSymbol,
+    isSort,
+    getAttemptedAxiom,
+    makeDomainValueTerm,
+    makeDomainValuePattern,
 
-module Kore.Builtin.Builtin
-    ( Function
-      -- * Implementing builtin functions
-    , notImplemented
-    , unaryOperator
-    , binaryOperator
-    , ternaryOperator
-    , functionEvaluator
-    , applicationEvaluator
-    , verifierBug
-    , wrongArity
-    , runParser
-    , appliedFunction
-    , lookupSymbol
-    , lookupSymbolUnit
-    , lookupSymbolElement
-    , lookupSymbolConcat
-    , isSymbol
-    , isSort
-    , getAttemptedAxiom
-    , makeDomainValueTerm
-    , makeDomainValuePattern
-      -- * Implementing builtin unification
-    , unifyEqualsUnsolved
-    , module Kore.Builtin.Verifiers
-    ) where
+    -- * Implementing builtin unification
+    unifyEqualsUnsolved,
+    module Kore.Builtin.Verifiers,
+) where
 
 import Prelude.Kore
 
-import Control.Error
-    ( MaybeT (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Control.Error (
+    MaybeT (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Concat as Attribute.Sort
 import qualified Kore.Attribute.Element as Attribute.Sort
-import Kore.Attribute.Hook
-    ( Hook (..)
-    )
+import Kore.Attribute.Hook (
+    Hook (..),
+ )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol (..)
-    )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol (..),
+ )
 import qualified Kore.Attribute.Unit as Attribute.Sort
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
-import Kore.Error
-    ( Error
-    )
+import Kore.Error (
+    Error,
+ )
 import qualified Kore.Error
-import Kore.IndexedModule.IndexedModule
-    ( VerifiedModule
-    )
-import Kore.IndexedModule.MetadataTools
-    ( MetadataTools (MetadataTools)
-    , SmtMetadataTools
-    )
+import Kore.IndexedModule.IndexedModule (
+    VerifiedModule,
+ )
+import Kore.IndexedModule.MetadataTools (
+    MetadataTools (MetadataTools),
+    SmtMetadataTools,
+ )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Pattern
-    )
-import Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    , top
-    , withCondition
-    )
-import Kore.Internal.Predicate
-    ( makeEqualsPredicate
-    )
+import Kore.Internal.Pattern (
+    Conditional (..),
+    Pattern,
+ )
+import Kore.Internal.Pattern as Pattern (
+    fromTermLike,
+    top,
+    withCondition,
+ )
+import Kore.Internal.Predicate (
+    makeEqualsPredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( topTODO
-    )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    topTODO,
+ )
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
-import Kore.Sort
-    ( predicateSort
-    )
-import Kore.Step.Simplification.SimplificationType as SimplificationType
-    ( SimplificationType (..)
-    )
-import Kore.Step.Simplification.Simplify
-    ( AttemptedAxiom (..)
-    , AttemptedAxiomResults (AttemptedAxiomResults)
-    , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
-    , MonadSimplify
-    , applicationAxiomSimplifier
-    , makeEvaluateTermCeil
-    )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-    ( AttemptedAxiomResults (..)
-    )
-import Kore.Unification.Unify
-    ( MonadUnify
-    )
-import qualified Kore.Unification.Unify as Monad.Unify
-    ( scatter
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Sort (
+    predicateSort,
+ )
+import Kore.Step.Simplification.SimplificationType as SimplificationType (
+    SimplificationType (..),
+ )
+import Kore.Step.Simplification.Simplify (
+    AttemptedAxiom (..),
+    AttemptedAxiomResults (AttemptedAxiomResults),
+    BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+    MonadSimplify,
+    applicationAxiomSimplifier,
+    makeEvaluateTermCeil,
+ )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults (
+    AttemptedAxiomResults (..),
+ )
+import Kore.Unification.Unify (
+    MonadUnify,
+ )
+import qualified Kore.Unification.Unify as Monad.Unify (
+    scatter,
+ )
 import Kore.Unparser
 
 -- TODO (thomas.tuegel): Include hook name here.
@@ -140,16 +141,18 @@ notImplemented =
   No substitution or predicate is applied.
 
   See also: 'Pattern'
- -}
-appliedFunction
-    :: (Monad m, InternalVariable variable)
-    => Pattern variable
-    -> m (AttemptedAxiom variable)
+-}
+appliedFunction ::
+    (Monad m, InternalVariable variable) =>
+    Pattern variable ->
+    m (AttemptedAxiom variable)
 appliedFunction epat =
-    return $ Applied AttemptedAxiomResults
-        { results = OrPattern.fromPattern epat
-        , remainders = OrPattern.bottom
-        }
+    return $
+        Applied
+            AttemptedAxiomResults
+                { results = OrPattern.fromPattern epat
+                , remainders = OrPattern.bottom
+                }
 
 {- | Construct a builtin unary operator.
 
@@ -158,21 +161,23 @@ appliedFunction epat =
   The function is skipped if its arguments are not domain values.
   It is an error if the wrong number of arguments is given; this must be checked
   during verification.
-
- -}
-unaryOperator
-    :: forall a b
-    .   (forall variable. Text -> TermLike variable -> Maybe a)
-    -- ^ Parse operand
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
+-}
+unaryOperator ::
+    forall a b.
+    -- | Parse operand
+    (forall variable. Text -> TermLike variable -> Maybe a) ->
+    -- | Render result as pattern with given sort
+    ( forall variable.
+      InternalVariable variable =>
+      Sort ->
+      b ->
+      Pattern variable
+    ) ->
+    -- | Builtin function name (for error messages)
+    Text ->
+    -- | Operation on builtin types
+    (a -> b) ->
+    BuiltinAndAxiomSimplifier
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
@@ -183,11 +188,11 @@ unaryOperator extractVal asPattern ctx op =
     unaryOperator0 resultSort children =
         case children of
             [termLike]
-              | Just a <- get termLike -> do
-                -- Apply the operator to a domain value
-                let r = op a
-                return (asPattern resultSort r)
-              | otherwise -> empty
+                | Just a <- get termLike -> do
+                    -- Apply the operator to a domain value
+                    let r = op a
+                    return (asPattern resultSort r)
+                | otherwise -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
@@ -198,21 +203,23 @@ unaryOperator extractVal asPattern ctx op =
   The function is skipped if its arguments are not domain values.
   It is an error if the wrong number of arguments is given; this must be checked
   during verification.
-
- -}
-binaryOperator
-    :: forall a b
-    .  (forall variable. Text -> TermLike variable -> Maybe a)
-    -- ^ Extract domain value
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
+-}
+binaryOperator ::
+    forall a b.
+    -- | Extract domain value
+    (forall variable. Text -> TermLike variable -> Maybe a) ->
+    -- | Render result as pattern with given sort
+    ( forall variable.
+      InternalVariable variable =>
+      Sort ->
+      b ->
+      Pattern variable
+    ) ->
+    -- | Builtin function name (for error messages)
+    Text ->
+    -- | Operation on builtin types
+    (a -> a -> b) ->
+    BuiltinAndAxiomSimplifier
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
@@ -237,21 +244,23 @@ binaryOperator extractVal asPattern ctx op =
   The function is skipped if its arguments are not domain values.
   It is an error if the wrong number of arguments is given; this must be checked
   during verification.
-
- -}
-ternaryOperator
-    :: forall a b
-    .  (forall variable. Text -> TermLike variable -> Maybe a)
-    -- ^ Extract domain value
-    ->  (forall variable
-        . InternalVariable variable => Sort -> b -> Pattern variable
-        )
-    -- ^ Render result as pattern with given sort
-    -> Text
-    -- ^ Builtin function name (for error messages)
-    -> (a -> a -> a -> b)
-    -- ^ Operation on builtin types
-    -> BuiltinAndAxiomSimplifier
+-}
+ternaryOperator ::
+    forall a b.
+    -- | Extract domain value
+    (forall variable. Text -> TermLike variable -> Maybe a) ->
+    -- | Render result as pattern with given sort
+    ( forall variable.
+      InternalVariable variable =>
+      Sort ->
+      b ->
+      Pattern variable
+    ) ->
+    -- | Builtin function name (for error messages)
+    Text ->
+    -- | Operation on builtin types
+    (a -> a -> a -> b) ->
+    BuiltinAndAxiomSimplifier
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
@@ -268,42 +277,42 @@ ternaryOperator extractVal asPattern ctx op =
             [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
 
-type Function
-    = forall variable simplifier
-        .  InternalVariable variable
-        => HasCallStack
-        => MonadSimplify simplifier
-        => Sort
-        -> [TermLike variable]
-        -> MaybeT simplifier (Pattern variable)
+type Function =
+    forall variable simplifier.
+    InternalVariable variable =>
+    HasCallStack =>
+    MonadSimplify simplifier =>
+    Sort ->
+    [TermLike variable] ->
+    MaybeT simplifier (Pattern variable)
 
 functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
     applicationEvaluator $ \app -> do
-        let Application { applicationSymbolOrAlias = symbol } = app
-            Application { applicationChildren = args } = app
+        let Application{applicationSymbolOrAlias = symbol} = app
+            Application{applicationChildren = args} = app
             resultSort = symbolSorts symbol & applicationSortsResult
         impl resultSort args
 
-applicationEvaluator
-    ::  ( forall variable simplifier
-        .  InternalVariable variable
-        => MonadSimplify simplifier
-        => Application Symbol (TermLike variable)
-        -> MaybeT simplifier (Pattern variable)
-        )
-    -> BuiltinAndAxiomSimplifier
+applicationEvaluator ::
+    ( forall variable simplifier.
+      InternalVariable variable =>
+      MonadSimplify simplifier =>
+      Application Symbol (TermLike variable) ->
+      MaybeT simplifier (Pattern variable)
+    ) ->
+    BuiltinAndAxiomSimplifier
 applicationEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
-    evaluator
-        :: InternalVariable variable
-        => MonadSimplify simplifier
-        => CofreeF
+    evaluator ::
+        InternalVariable variable =>
+        MonadSimplify simplifier =>
+        CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
-            (TermLike variable)
-        -> simplifier (AttemptedAxiom variable)
+            (TermLike variable) ->
+        simplifier (AttemptedAxiom variable)
     evaluator (_ :< app) = do
         let app' = fmap TermLike.removeEvaluated app
         getAttemptedAxiom (impl app' >>= appliedFunction)
@@ -312,8 +321,7 @@ applicationEvaluator impl =
 
     Any parse failure indicates a bug in the well-formedness checker; in this
     case an error is thrown.
-
- -}
+-}
 runParser :: HasCallStack => Text -> Either (Error e) a -> a
 runParser ctx result =
     case result of
@@ -321,27 +329,27 @@ runParser ctx result =
             verifierBug $ Text.unpack ctx ++ ": " ++ Kore.Error.printError e
         Right a -> a
 
-{- | Look up the symbol hooked to the named builtin in the provided module.
- -}
-lookupSymbol
-    :: Text
-    -- ^ builtin name
-    -> Sort
-    -- ^ the hooked sort
-    -> VerifiedModule Attribute.Symbol
-    -> Either (Error e) Symbol
+-- | Look up the symbol hooked to the named builtin in the provided module.
+lookupSymbol ::
+    -- | builtin name
+    Text ->
+    -- | the hooked sort
+    Sort ->
+    VerifiedModule Attribute.Symbol ->
+    Either (Error e) Symbol
 lookupSymbol builtinName builtinSort indexedModule = do
     symbolConstructor <-
         IndexedModule.resolveHook indexedModule builtinName builtinSort
     (symbolAttributes, sentenceSymbol) <-
         IndexedModule.resolveSymbol indexedModule symbolConstructor
     symbolSorts <- symbolOrAliasSorts [] sentenceSymbol
-    return Symbol
-        { symbolConstructor
-        , symbolParams = []
-        , symbolAttributes
-        , symbolSorts
-        }
+    return
+        Symbol
+            { symbolConstructor
+            , symbolParams = []
+            , symbolAttributes
+            , symbolSorts
+            }
 
 {- | Find the symbol hooked to @unit@.
 
@@ -350,13 +358,13 @@ during verification.
 
 **WARNING**: The returned 'Symbol' will have the default attributes, not its
 declared attributes, because it is intended only for unparsing.
+-}
 
- -}
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
-lookupSymbolUnit
-    :: SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> Symbol
+lookupSymbolUnit ::
+    SmtMetadataTools Attribute.Symbol ->
+    Sort ->
+    Symbol
 lookupSymbolUnit tools builtinSort =
     Symbol
         { symbolConstructor
@@ -368,15 +376,16 @@ lookupSymbolUnit tools builtinSort =
     unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getUnit unit
-        & fromMaybe missingUnitAttribute
+            & fromMaybe missingUnitAttribute
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingUnitAttribute =
-        verifierBug
-        $ "missing 'unit' attribute of sort '"
-        ++ unparseToString builtinSort ++ "'"
+        verifierBug $
+            "missing 'unit' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
 {- | Find the symbol hooked to @element@.
 
@@ -385,13 +394,13 @@ checked during verification.
 
 **WARNING**: The returned 'Symbol' will have the default attributes, not its
 declared attributes, because it is intended only for unparsing.
+-}
 
- -}
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
-lookupSymbolElement
-    :: SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> Symbol
+lookupSymbolElement ::
+    SmtMetadataTools Attribute.Symbol ->
+    Sort ->
+    Symbol
 lookupSymbolElement tools builtinSort =
     Symbol
         { symbolConstructor
@@ -403,15 +412,16 @@ lookupSymbolElement tools builtinSort =
     element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getElement element
-        & fromMaybe missingElementAttribute
+            & fromMaybe missingElementAttribute
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingElementAttribute =
-        verifierBug
-        $ "missing 'element' attribute of sort '"
-        ++ unparseToString builtinSort ++ "'"
+        verifierBug $
+            "missing 'element' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
 {- | Find the symbol hooked to @concat@.
 
@@ -420,13 +430,13 @@ checked during verification.
 
 **WARNING**: The returned 'Symbol' will have the default attributes, not its
 declared attributes, because it is intended only for unparsing.
+-}
 
- -}
 -- TODO (thomas.tuegel): Resolve this symbol during syntax verification.
-lookupSymbolConcat
-    :: SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> Symbol
+lookupSymbolConcat ::
+    SmtMetadataTools Attribute.Symbol ->
+    Sort ->
+    Symbol
 lookupSymbolConcat tools builtinSort =
     Symbol
         { symbolConstructor
@@ -438,23 +448,25 @@ lookupSymbolConcat tools builtinSort =
     concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
     symbolOrAlias =
         Attribute.Sort.getConcat concat'
-        & fromMaybe missingConcatAttribute
+            & fromMaybe missingConcatAttribute
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingConcatAttribute =
-        verifierBug
-        $ "missing 'concat' attribute of sort '"
-        ++ unparseToString builtinSort ++ "'"
+        verifierBug $
+            "missing 'concat' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
-{- | Is the given symbol hooked to the named builtin?
- -}
-isSymbol
-    :: Text  -- ^ Builtin symbol
-    -> Symbol  -- ^ Kore symbol
-    -> Bool
-isSymbol builtinName Symbol { symbolAttributes = Attribute.Symbol { hook } } =
+-- | Is the given symbol hooked to the named builtin?
+isSymbol ::
+    -- | Builtin symbol
+    Text ->
+    -- | Kore symbol
+    Symbol ->
+    Bool
+isSymbol builtinName Symbol{symbolAttributes = Attribute.Symbol{hook}} =
     getHook hook == Just builtinName
 
 {- | Is the given sort hooked to the named builtin?
@@ -464,33 +476,30 @@ Returns Just False if the sort is a variable.
 -}
 isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
-  | isPredicateSort            = Nothing
-  | SortVariableSort _ <- sort = Nothing
-  | otherwise                  =
-    let
-        MetadataTools { sortAttributes } = tools
-        Attribute.Sort { hook } = sortAttributes sort
-    in
-        Just (getHook hook == Just builtinName)
+    | isPredicateSort = Nothing
+    | SortVariableSort _ <- sort = Nothing
+    | otherwise =
+        let MetadataTools{sortAttributes} = tools
+            Attribute.Sort{hook} = sortAttributes sort
+         in Just (getHook hook == Just builtinName)
   where
     isPredicateSort = sort == predicateSort
 
-{- | Run a function evaluator that can terminate early.
- -}
-getAttemptedAxiom
-    :: Monad m
-    => MaybeT m (AttemptedAxiom variable)
-    -> m (AttemptedAxiom variable)
+-- | Run a function evaluator that can terminate early.
+getAttemptedAxiom ::
+    Monad m =>
+    MaybeT m (AttemptedAxiom variable) ->
+    m (AttemptedAxiom variable)
 getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 
 -- | Return an unsolved unification problem.
-unifyEqualsUnsolved
-    :: MonadUnify unifier
-    => SimplificationType
-    -> TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> unifier (Pattern RewritingVariableName)
+unifyEqualsUnsolved ::
+    MonadUnify unifier =>
+    SimplificationType ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    unifier (Pattern RewritingVariableName)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
     orCondition <-
@@ -500,25 +509,28 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
-    return Pattern.top
-        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
+    return
+        Pattern.top
+            { predicate = Predicate.markSimplified $ makeEqualsPredicate a b
+            }
 
-makeDomainValueTerm
-    :: InternalVariable variable
-    => Sort
-    -> Text
-    -> TermLike variable
+makeDomainValueTerm ::
+    InternalVariable variable =>
+    Sort ->
+    Text ->
+    TermLike variable
 makeDomainValueTerm sort stringLiteral =
-    mkDomainValue DomainValue
-        { domainValueSort = sort
-        , domainValueChild = mkStringLiteral stringLiteral
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = sort
+            , domainValueChild = mkStringLiteral stringLiteral
+            }
 
-makeDomainValuePattern
-    :: InternalVariable variable
-    => Sort
-    -> Text
-    -> Pattern variable
+makeDomainValuePattern ::
+    InternalVariable variable =>
+    Sort ->
+    Text ->
+    Pattern variable
 makeDomainValuePattern sort stringLiteral =
-    Pattern.fromTermLike
-    $ makeDomainValueTerm sort stringLiteral
+    Pattern.fromTermLike $
+        makeDomainValueTerm sort stringLiteral

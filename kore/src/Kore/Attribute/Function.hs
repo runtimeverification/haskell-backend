@@ -1,26 +1,27 @@
-{-|
+{- |
 Module      : Kore.Attribute.Function
 Description : Function symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.Function
-    ( Function (..)
-    , functionId, functionSymbol, functionAttribute
-    ) where
+module Kore.Attribute.Function (
+    Function (..),
+    functionId,
+    functionSymbol,
+    functionAttribute,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @Function@ represents the @function@ attribute for symbols.
-newtype Function = Function { isDeclaredFunction :: Bool }
+newtype Function = Function {isDeclaredFunction :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

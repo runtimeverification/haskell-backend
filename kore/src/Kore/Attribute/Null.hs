@@ -1,4 +1,4 @@
-{-|
+{- |
 Module      : Kore.Attribute.Null
 Description : Null attribute parser
 Copyright   : (c) Runtime Verification, 2018
@@ -13,17 +13,16 @@ This module is intended to be imported qualified:
 @
 import qualified Kore.Attribute.Null as Attribute
 @
-
 -}
-module Kore.Attribute.Null
-    ( Null (..)
-    ) where
+module Kore.Attribute.Null (
+    Null (..),
+) where
 
 import Prelude.Kore
 
 import Data.Default
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Debug
 

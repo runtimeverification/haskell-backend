@@ -1,48 +1,47 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-
-module Log.Entry
-    (
+module Log.Entry (
     -- * Severity
-      Severity (..), prettySeverity
+    Severity (..),
+    prettySeverity,
+
     -- * Entry
-    , Entry (..)
-    , SomeEntry (..)
-    , ActualEntry (..)
-    , someEntry
-    , entryTypeText
-    ) where
+    Entry (..),
+    SomeEntry (..),
+    ActualEntry (..),
+    someEntry,
+    entryTypeText,
+) where
 
 import Prelude.Kore
 
-import Colog
-    ( Severity (..)
-    )
-import Control.Exception
-    ( Exception (..)
-    )
+import Colog (
+    Severity (..),
+ )
+import Control.Exception (
+    Exception (..),
+ )
 import qualified Control.Lens as Lens
-import Control.Lens.Prism
-    ( Prism
-    )
-import Data.Proxy
-    ( Proxy (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Control.Lens.Prism (
+    Prism,
+ )
+import Data.Proxy (
+    Proxy (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import qualified Data.Typeable
-    ( cast
-    )
+import qualified Data.Typeable (
+    cast,
+ )
 import qualified Type.Reflection as Reflection
 
-import Pretty
-    ( Pretty
-    )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
 class (Show entry, Typeable entry) => Entry entry where
@@ -87,17 +86,16 @@ entryTypeText :: SomeEntry -> Text
 entryTypeText (SomeEntry entry) =
     Text.pack . show . Reflection.typeOf $ entry
 
-data ActualEntry =
-    ActualEntry
-        { actualEntry :: !SomeEntry
-        , entryContext :: ![SomeEntry]
-        }
+data ActualEntry = ActualEntry
+    { actualEntry :: !SomeEntry
+    , entryContext :: ![SomeEntry]
+    }
 
 instance From ActualEntry SomeEntry where
-    from ActualEntry { actualEntry } = actualEntry
+    from ActualEntry{actualEntry} = actualEntry
 
 instance From SomeEntry ActualEntry where
-    from actualEntry = ActualEntry { actualEntry, entryContext = mempty }
+    from actualEntry = ActualEntry{actualEntry, entryContext = mempty}
 
 prettySeverity :: Severity -> Pretty.Doc ann
 prettySeverity = Pretty.pretty . show

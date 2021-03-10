@@ -1,56 +1,54 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Unification.UnifierT (
+    UnifierT (..),
+    runUnifierT,
+    evalEnvUnifierT,
+    substitutionSimplifier,
 
- -}
-
-module Kore.Unification.UnifierT
-    ( UnifierT (..)
-    , runUnifierT
-    , evalEnvUnifierT
-    , substitutionSimplifier
     -- * Re-exports
-    , module Kore.Unification.Unify
-    ) where
+    module Kore.Unification.Unify,
+) where
 
 import Prelude.Kore
 
-import Control.Monad.Reader
-    ( MonadReader (..)
-    )
-import Control.Monad.Trans.Reader
-    ( ReaderT (..)
-    , mapReaderT
-    )
-import Data.Kind
-    ( Type
-    )
+import Control.Monad.Reader (
+    MonadReader (..),
+ )
+import Control.Monad.Trans.Reader (
+    ReaderT (..),
+    mapReaderT,
+ )
+import Data.Kind (
+    Type,
+ )
 
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
-import Kore.Step.Simplification.Simplify
-    ( ConditionSimplifier (..)
-    , MonadSimplify (..)
-    )
-import Kore.Unification.SubstitutionSimplifier
-    ( substitutionSimplifier
-    )
+import Kore.Step.Simplification.Simplify (
+    ConditionSimplifier (..),
+    MonadSimplify (..),
+ )
+import Kore.Unification.SubstitutionSimplifier (
+    substitutionSimplifier,
+ )
 import Kore.Unification.Unify
-import Log
-    ( MonadLog (..)
-    )
-import SMT
-    ( MonadSMT (..)
-    )
+import Log (
+    MonadLog (..),
+ )
+import SMT (
+    MonadSMT (..),
+ )
 
-newtype UnifierT (m :: Type -> Type) a =
-    UnifierT
-        { getUnifierT
-            :: ReaderT
-                (ConditionSimplifier (UnifierT m))
-                (LogicT m)
-                a
-        }
+newtype UnifierT (m :: Type -> Type) a = UnifierT
+    { getUnifierT ::
+        ReaderT
+            (ConditionSimplifier (UnifierT m))
+            (LogicT m)
+            a
+    }
     deriving newtype (Functor, Applicative, Monad, Alternative, MonadPlus)
 
 instance MonadTrans UnifierT where
@@ -61,8 +59,8 @@ deriving newtype instance MonadLog m => MonadLog (UnifierT m)
 
 deriving newtype instance Monad m => MonadLogic (UnifierT m)
 
-deriving newtype
-    instance MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
+deriving newtype instance
+    MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 
 deriving newtype instance MonadSMT m => MonadSMT (UnifierT m)
 
@@ -70,7 +68,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     localSimplifierAxioms locally (UnifierT readerT) =
         UnifierT $
             mapReaderT
-                (mapLogicT
+                ( mapLogicT
                     (localSimplifierAxioms locally)
                 )
                 readerT
@@ -81,25 +79,25 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
         conditionSimplifier sideCondition condition
     {-# INLINE simplifyCondition #-}
 
-instance MonadSimplify m => MonadUnify (UnifierT m) where
+instance MonadSimplify m => MonadUnify (UnifierT m)
 
-runUnifierT
-    :: MonadSimplify m
-    => NotSimplifier (UnifierT m)
-    -> UnifierT m a
-    -> m [a]
+runUnifierT ::
+    MonadSimplify m =>
+    NotSimplifier (UnifierT m) ->
+    UnifierT m a ->
+    m [a]
 runUnifierT notSimplifier =
     observeAllT
-    . evalEnvUnifierT notSimplifier
+        . evalEnvUnifierT notSimplifier
 
-evalEnvUnifierT
-    :: MonadSimplify m
-    => NotSimplifier (UnifierT m)
-    -> UnifierT m a
-    -> LogicT m a
+evalEnvUnifierT ::
+    MonadSimplify m =>
+    NotSimplifier (UnifierT m) ->
+    UnifierT m a ->
+    LogicT m a
 evalEnvUnifierT notSimplifier =
     flip runReaderT conditionSimplifier
-    . getUnifierT
+        . getUnifierT
   where
     conditionSimplifier =
         ConditionSimplifier.create (substitutionSimplifier notSimplifier)

@@ -1,4 +1,4 @@
-{-|
+{- |
 Module      : SMT.AST
 Description : AST for (parts of) the SMT commands
 Copyright   : (c) Iavor S. Diatchki, 2014
@@ -8,57 +8,59 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 
 Use the Smt* versions of data types to work with the SimpleSMT interface.
 -}
-
-module SMT.AST
-    ( Constructor (..)
-    , ConstructorArgument (..)
-    , DataTypeDeclaration (..)
-    , FunctionDeclaration (..)
-    , SortDeclaration (..)
-
-    , SExpr (..)
-    , buildSExpr, parseSExpr, parseSExprFile, readSExpr, readSExprs
-    , sendSExpr, showSExpr
-    , buildText
-    , mapSExpr
-
-    , SmtConstructor
-    , SmtConstructorArgument
-    , SmtDataTypeDeclaration
-    , SmtSortDeclaration
-    , SmtFunctionDeclaration
-    ) where
+module SMT.AST (
+    Constructor (..),
+    ConstructorArgument (..),
+    DataTypeDeclaration (..),
+    FunctionDeclaration (..),
+    SortDeclaration (..),
+    SExpr (..),
+    buildSExpr,
+    parseSExpr,
+    parseSExprFile,
+    readSExpr,
+    readSExprs,
+    sendSExpr,
+    showSExpr,
+    buildText,
+    mapSExpr,
+    SmtConstructor,
+    SmtConstructorArgument,
+    SmtDataTypeDeclaration,
+    SmtSortDeclaration,
+    SmtFunctionDeclaration,
+) where
 
 import Prelude.Kore
 
-import Data.Char
-    ( isSpace
-    )
-import Data.String
-    ( IsString (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Data.Char (
+    isSpace,
+ )
+import Data.String (
+    IsString (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Data.Text.Internal.Builder
-    ( Builder
-    )
-import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
+import Data.Text.Internal.Builder (
+    Builder,
+ )
+import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.Lazy as Text.Lazy
-import Data.Void
-    ( Void
-    )
-import qualified Generics.SOP as SOP
+import Data.Void (
+    Void,
+ )
 import qualified GHC.Generics as GHC
-import System.IO
-    ( Handle
-    , hPutChar
-    )
-import Text.Megaparsec
-    ( Parsec
-    )
+import qualified Generics.SOP as SOP
+import System.IO (
+    Handle,
+    hPutChar,
+ )
+import Text.Megaparsec (
+    Parsec,
+ )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
@@ -78,88 +80,90 @@ instance NFData SExpr
 instance IsString SExpr where
     fromString = Atom . Text.pack
 
-{-| An argument to a data type constructor.
+{- | An argument to a data type constructor.
 
 The name can be used as a getter in smt solvers. (Note: this is currently not
 working due to a bug in z3 data type declaration,
 see https://github.com/Z3Prover/z3/issues/2217 , also see the similar comment
 in declareDatatypes in SimpleSMT.hs)
---}
-data ConstructorArgument sort name =
-    ConstructorArgument
-        { name :: !name
-        , argType :: !sort
-        }
+-
+-}
+data ConstructorArgument sort name = ConstructorArgument
+    { name :: !name
+    , argType :: !sort
+    }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-{-| A data type constructor.
---}
-data Constructor sort symbol name =
-    Constructor
-        { name :: !symbol
-        , arguments :: ![ConstructorArgument sort name]
-        }
+{- | A data type constructor.
+-
+-}
+data Constructor sort symbol name = Constructor
+    { name :: !symbol
+    , arguments :: ![ConstructorArgument sort name]
+    }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-{-| A constructor-based data type declaration.
+{- | A constructor-based data type declaration.
 
 If the list of constructors is empty, the data type is empty.
---}
-data DataTypeDeclaration sort symbol name =
-    DataTypeDeclaration
-        { name :: !name
-        , typeArguments :: ![name]
-        , constructors :: ![Constructor sort symbol name]
-        }
+-
+-}
+data DataTypeDeclaration sort symbol name = DataTypeDeclaration
+    { name :: !name
+    , typeArguments :: ![name]
+    , constructors :: ![Constructor sort symbol name]
+    }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance
-    (Debug sort, Debug symbol, Debug name)
-    => Debug (DataTypeDeclaration sort symbol name)
+    (Debug sort, Debug symbol, Debug name) =>
+    Debug (DataTypeDeclaration sort symbol name)
 
 instance
-    (Debug sort, Debug symbol, Debug name, Diff sort, Diff symbol, Diff name)
-    => Diff (DataTypeDeclaration sort symbol name)
+    (Debug sort, Debug symbol, Debug name, Diff sort, Diff symbol, Diff name) =>
+    Diff (DataTypeDeclaration sort symbol name)
 
 -- | A non-constructor-based data type declaration.
-data SortDeclaration name =
-    SortDeclaration
-        { name :: !name
-        , arity :: Int
-        }
+data SortDeclaration name = SortDeclaration
+    { name :: !name
+    , arity :: Int
+    }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
 -- | A function declaration.
-data FunctionDeclaration sort name =
-    FunctionDeclaration
-        { name :: !name
-        , inputSorts :: ![sort]
-        , resultSort :: !sort
-        }
+data FunctionDeclaration sort name = FunctionDeclaration
+    { name :: !name
+    , inputSorts :: ![sort]
+    , resultSort :: !sort
+    }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance (Debug sort, Debug name) => Debug (FunctionDeclaration sort name)
 
 instance
-    (Debug sort, Debug name, Diff sort, Diff name)
-    => Diff (FunctionDeclaration sort name)
+    (Debug sort, Debug name, Diff sort, Diff name) =>
+    Diff (FunctionDeclaration sort name)
 
 -- | Instantiate Constructor with the types needed by SimpleSMT.
 type SmtConstructor = Constructor SExpr Text SExpr
+
 -- | Instantiate ConstructorArgument with the types needed by SimpleSMT.
 type SmtConstructorArgument = ConstructorArgument SExpr SExpr
+
 -- | Instantiate DataTypeDeclaration with the types needed by SimpleSMT.
 type SmtDataTypeDeclaration = DataTypeDeclaration SExpr Text SExpr
+
 -- | Instantiate SortDeclaration with the types needed by SimpleSMT.
 type SmtSortDeclaration = SortDeclaration SExpr
+
 -- | Instantiate FunctionDeclaration with the types needed by SimpleSMT.
 type SmtFunctionDeclaration = FunctionDeclaration SExpr SExpr
 
@@ -167,11 +171,11 @@ type SmtFunctionDeclaration = FunctionDeclaration SExpr SExpr
 buildSExpr :: SExpr -> Builder
 buildSExpr =
     \case
-        Atom x  -> Text.Builder.fromText x
+        Atom x -> Text.Builder.fromText x
         List es ->
             Text.Builder.singleton '('
-            <> foldMap (\e -> buildSExpr e <> Text.Builder.singleton ' ') es
-            <> Text.Builder.singleton ')'
+                <> foldMap (\e -> buildSExpr e <> Text.Builder.singleton ' ') es
+                <> Text.Builder.singleton ')'
 
 -- | Show an S-expression.
 showSExpr :: SExpr -> String
@@ -184,8 +188,7 @@ intermediate allocation.
 
 @sendSExpr@ sends only the S-expression; it does not send the trailing newline
 which signals the end of a command.
-
- -}
+-}
 sendSExpr :: Handle -> SExpr -> IO ()
 sendSExpr h = sendSExprWorker
   where

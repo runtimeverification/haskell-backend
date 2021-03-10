@@ -4,39 +4,38 @@ Description : SMT-LIB translation attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.Smtlib.Smtlib
-    ( Smtlib (..)
-    , smtlibId
-    , smtlibSymbol
-    , smtlibAttribute
-    ) where
+module Kore.Attribute.Smtlib.Smtlib (
+    Smtlib (..),
+    smtlibId,
+    smtlibSymbol,
+    smtlibAttribute,
+) where
 
 import Prelude.Kore
 
-import Data.Default
-    ( Default (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Data.Default (
+    Default (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Attributes
 import Kore.Debug
-import Kore.Syntax.Application
-    ( SymbolOrAlias (..)
-    )
-import Kore.Syntax.Id
-    ( Id
-    )
-import SMT.SimpleSMT
-    ( SExpr
-    , showSExpr
-    )
+import Kore.Syntax.Application (
+    SymbolOrAlias (..),
+ )
+import Kore.Syntax.Id (
+    Id,
+ )
+import SMT.SimpleSMT (
+    SExpr,
+    showSExpr,
+ )
 
 {- | The @smtlib@ attribute for symbols.
 
@@ -52,9 +51,8 @@ meta-variable symbols @#≪n≫@ (where @≪n≫@ is a positive integer) are rep
 the positional parameters of the hooked Kore symbol. Note that the
 meta-variable symbols are only valid in the @smtlib@ attribute; they are /not/
 valid SMT-LIB S-expressions.
-
- -}
-newtype Smtlib = Smtlib { getSmtlib :: Maybe SExpr }
+-}
+newtype Smtlib = Smtlib {getSmtlib :: Maybe SExpr}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (NFData)
@@ -67,8 +65,8 @@ instance Default Smtlib where
 instance From Smtlib Attributes where
     from =
         Attributes
-        . maybe [] ((: []) . smtlibAttribute . Text.pack . showSExpr)
-        . getSmtlib
+            . maybe [] ((: []) . smtlibAttribute . Text.pack . showSExpr)
+            . getSmtlib
 
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id

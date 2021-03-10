@@ -1,80 +1,77 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.RewriteStep
-    ( test_applyInitialConditions
-    , test_renameRuleVariables
-    , test_unifyRule
-    , test_applyRewriteRule_
-    , test_applyRewriteRulesParallel
-    , test_applyRewriteRulesSequence
-    , test_narrowing
-    ) where
+module Test.Kore.Step.RewriteStep (
+    test_applyInitialConditions,
+    test_renameRuleVariables,
+    test_unifyRule,
+    test_applyRewriteRule_,
+    test_applyRewriteRulesParallel,
+    test_applyRewriteRulesSequence,
+    test_narrowing,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
 import qualified Control.Exception as Exception
-import Data.Default as Default
-    ( def
-    )
-import Data.Maybe
-    ( fromJust
-    )
+import Data.Default as Default (
+    def,
+ )
+import Data.Maybe (
+    fromJust,
+ )
 import qualified Data.Set as Set
 
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+ )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.Predicate as Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeEqualsPredicate
-    , makeFalsePredicate
-    , makeNotPredicate
-    , makeTruePredicate
-    , makeTruePredicate
-    )
+import Kore.Internal.Predicate as Predicate (
+    makeAndPredicate,
+    makeCeilPredicate,
+    makeEqualsPredicate,
+    makeFalsePredicate,
+    makeNotPredicate,
+    makeTruePredicate,
+ )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import Kore.Reachability
-    ( AllPathClaim (..)
-    )
+import Kore.Reachability (
+    AllPathClaim (..),
+ )
 import Kore.Rewriting.RewritingVariable
-import Kore.Step.ClaimPattern
-    ( ClaimPattern
-    , mkClaimPattern
-    , refreshExistentials
-    )
+import Kore.Step.ClaimPattern (
+    ClaimPattern,
+    mkClaimPattern,
+    refreshExistentials,
+ )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.RulePattern
-    ( RHS (..)
-    , RewriteRule (..)
-    , RulePattern (..)
-    , injectTermIntoRHS
-    , mkRewritingRule
-    , rulePattern
-    )
+import Kore.Step.RulePattern (
+    RHS (..),
+    RewriteRule (..),
+    RulePattern (..),
+    injectTermIntoRHS,
+    mkRewritingRule,
+    rulePattern,
+ )
 import qualified Kore.Step.RulePattern as RulePattern
 import qualified Kore.Step.Step as Step
-import Kore.Variables.Fresh
-    ( nextName
-    )
+import Kore.Variables.Fresh (
+    nextName,
+ )
 import qualified Logic
 
 import Test.Kore.Internal.Condition as Condition
-import Test.Kore.Internal.OrCondition
-    ( OrTestCondition
-    )
-import Test.Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Test.Kore.Internal.OrCondition (
+    OrTestCondition,
+ )
+import Test.Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -84,13 +81,13 @@ import Test.Tasty.HUnit.Ext
 type RewriteRule' = RewriteRule RewritingVariableName
 type Results' = Step.Results (RulePattern RewritingVariableName)
 
-applyInitialConditions
-    :: TestCondition
-    -> TestCondition
-    -> IO [OrTestCondition]
+applyInitialConditions ::
+    TestCondition ->
+    TestCondition ->
+    IO [OrTestCondition]
 applyInitialConditions initial unification =
     Step.applyInitialConditions initial unification
-    & runSimplifierSMT Mock.env . Logic.observeAllT
+        & runSimplifierSMT Mock.env . Logic.observeAllT
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -105,14 +102,12 @@ test_applyInitialConditions =
             expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
-
     , testCase "returns axiom right-hand side" $ do
         let unification = Condition.top
             initial = Condition.top
             expect = [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
-
     , testCase "combine initial and rule conditions" $ do
         let unification = Condition.fromPredicate expect2
             initial = Condition.fromPredicate expect1
@@ -129,54 +124,52 @@ test_applyInitialConditions =
         [applied] <- applyInitialConditions initial unification
         let actual = MultiOr.map Conditional.predicate applied
         assertEqual "" expect actual
-
     , testCase "conflicting initial and rule conditions" $ do
         let predicate =
                 Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a
             unification = Condition.fromPredicate predicate
             initial =
-                Condition.fromPredicate
-                $ Predicate.makeNotPredicate predicate
+                Condition.fromPredicate $
+                    Predicate.makeNotPredicate predicate
             expect = mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
-
     ]
 
-unifyRule
-    :: Step.UnifyingRule rule
-    => Step.UnifyingRuleVariable rule ~ RewritingVariableName
-    => Pattern RewritingVariableName
-    -> rule
-    -> IO [Step.UnifiedRule rule]
+unifyRule ::
+    Step.UnifyingRule rule =>
+    Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
+    Pattern RewritingVariableName ->
+    rule ->
+    IO [Step.UnifiedRule rule]
 unifyRule initial rule =
     Step.unifyRule initial rule
-    & Logic.observeAllT
-    & runSimplifier Mock.env
+        & Logic.observeAllT
+        & runSimplifier Mock.env
 
-claimPatternFromPatterns
-    :: Pattern RewritingVariableName
-    -> Pattern RewritingVariableName
-    -> ClaimPattern
+claimPatternFromPatterns ::
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    ClaimPattern
 claimPatternFromPatterns patt1 patt2 =
     mkClaimPattern
         patt1
-        ( patt2 & OrPattern.fromPattern )
+        (patt2 & OrPattern.fromPattern)
         []
 
-claimPatternFromTerms
-    :: TermLike RewritingVariableName
-    -> TermLike RewritingVariableName
-    -> [ElementVariable RewritingVariableName]
-    -> ClaimPattern
+claimPatternFromTerms ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    [ElementVariable RewritingVariableName] ->
+    ClaimPattern
 claimPatternFromTerms term1 term2 existentials' =
     mkClaimPattern
         ( term1
-        & Pattern.fromTermLike
+            & Pattern.fromTermLike
         )
         ( term2
-        & Pattern.fromTermLike
-        & OrPattern.fromPattern
+            & Pattern.fromTermLike
+            & OrPattern.fromPattern
         )
         existentials'
 
@@ -184,9 +177,9 @@ test_renameRuleVariables :: [TestTree]
 test_renameRuleVariables =
     [ testCase "renames axiom left variables" $ do
         let initial =
-                Step.mkRewritingPattern
-                $ Pattern.fromTermLike
-                $ Mock.f (mkElemVar Mock.x)
+                Step.mkRewritingPattern $
+                    Pattern.fromTermLike $
+                        Mock.f (mkElemVar Mock.x)
             axiom =
                 RulePattern
                     { left = Mock.f (mkElemVar Mock.x)
@@ -200,13 +193,13 @@ test_renameRuleVariables =
                 claimPatternFromPatterns
                     ( Pattern.fromTermAndPredicate
                         (Mock.f (mkElemVar Mock.xRule))
-                        (Predicate.makeEqualsPredicate
+                        ( Predicate.makeEqualsPredicate
                             (mkElemVar Mock.xRule)
                             Mock.a
                         )
                     )
                     ( Mock.g (mkElemVar Mock.xRule)
-                    & Pattern.fromTermLike
+                        & Pattern.fromTermLike
                     )
             actualAxiom = mkRewritingRule axiom
             actualClaim = claim
@@ -214,17 +207,22 @@ test_renameRuleVariables =
             initialFreeVariables = freeVariables initial
             actualAxiomFreeVariables = freeVariables actualAxiom
             actualClaimFreeVariables = freeVariables actualClaim
-        assertEqual "Axiom: Expected no common free variables"
+        assertEqual
+            "Axiom: Expected no common free variables"
             Set.empty
-            $ on Set.intersection FreeVariables.toSet
+            $ on
+                Set.intersection
+                FreeVariables.toSet
                 initialFreeVariables
                 actualAxiomFreeVariables
-        assertEqual "Claim: Expected no common free variables"
+        assertEqual
+            "Claim: Expected no common free variables"
             Set.empty
-            $ on Set.intersection FreeVariables.toSet
+            $ on
+                Set.intersection
+                FreeVariables.toSet
                 initialFreeVariables
                 actualClaimFreeVariables
-
     ]
 
 test_unifyRule :: [TestTree]
@@ -244,8 +242,8 @@ test_unifyRule =
                     (Mock.functionalConstr10 (mkElemVar Mock.xRule))
                     (Mock.g Mock.b)
                     []
-            expectAxiom = [(pure axiom) { substitution = substitutionAxiom }]
-            expectClaim = [(pure claim) { substitution = substitutionClaim }]
+            expectAxiom = [(pure axiom){substitution = substitutionAxiom}]
+            expectClaim = [(pure claim){substitution = substitutionClaim}]
             substitutionAxiom =
                 Substitution.unsafeWrap [(inject Mock.xRule, Mock.a)]
             substitutionClaim =
@@ -256,7 +254,6 @@ test_unifyRule =
         actualClaim <- unifyRule initial claim
         assertEqual "" expectAxiom actualAxiom
         assertEqual "" expectClaim actualClaim
-
     , testCase "returns unification failures" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
             axiom =
@@ -280,58 +277,58 @@ test_unifyRule =
     ]
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
-applyRewriteRule_
-    ::  ( Pattern RewritingVariableName -> [RewriteRule'] -> IO Results' )
-    -- ^ 'RewriteRule'
-    -> Pattern RewritingVariableName
-    -- ^ Configuration
-    -> RewriteRule'
-    -- ^ Rewrite rule
-    -> IO [OrPattern RewritingVariableName]
+applyRewriteRule_ ::
+    -- | 'RewriteRule'
+    (Pattern RewritingVariableName -> [RewriteRule'] -> IO Results') ->
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    RewriteRule' ->
+    IO [OrPattern RewritingVariableName]
 applyRewriteRule_ applyRewriteRules initial rule =
     applyRewriteRules_ applyRewriteRules initial [rule]
 
 -- | Apply the 'RewriteRule's to the configuration, but discard remainders.
-applyRewriteRules_
-    :: (Pattern RewritingVariableName -> [RewriteRule'] -> IO Results')
-    -- ^ 'RewriteRule's
-    -> Pattern RewritingVariableName
-    -- ^ Configuration
-    -> [RewriteRule']
-    -- ^ Rewrite rule
-    -> IO [OrPattern RewritingVariableName]
+applyRewriteRules_ ::
+    -- | 'RewriteRule's
+    (Pattern RewritingVariableName -> [RewriteRule'] -> IO Results') ->
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    [RewriteRule'] ->
+    IO [OrPattern RewritingVariableName]
 applyRewriteRules_ applyRewriteRules initial rules = do
     result <- applyRewriteRules initial rules
     return (toList . discardRemainders $ result)
   where
     discardRemainders = fmap Step.result . Step.results
 
-applyClaim_
-    ::  (  Pattern RewritingVariableName
-        -> [ClaimPattern]
-        -> IO (Step.Results ClaimPattern)
-        )
-    -- ^ 'RewriteRule's
-    -> Pattern RewritingVariableName
-    -- ^ Configuration
-    -> ClaimPattern
-    -- ^ Rewrite rule
-    -> IO [OrPattern RewritingVariableName]
+applyClaim_ ::
+    -- | 'RewriteRule's
+    ( Pattern RewritingVariableName ->
+      [ClaimPattern] ->
+      IO (Step.Results ClaimPattern)
+    ) ->
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    ClaimPattern ->
+    IO [OrPattern RewritingVariableName]
 applyClaim_ applyClaims initial claim =
     applyClaims_ applyClaims initial [claim]
 
 -- | Apply the 'RewriteRule's to the configuration, but discard remainders.
-applyClaims_
-    ::  (  Pattern RewritingVariableName
-        -> [ClaimPattern]
-        -> IO (Step.Results ClaimPattern)
-        )
-    -- ^ 'RewriteRule's
-    -> Pattern RewritingVariableName
-    -- ^ Configuration
-    -> [ClaimPattern]
-    -- ^ Rewrite rule
-    -> IO [OrPattern RewritingVariableName]
+applyClaims_ ::
+    -- | 'RewriteRule's
+    ( Pattern RewritingVariableName ->
+      [ClaimPattern] ->
+      IO (Step.Results ClaimPattern)
+    ) ->
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    [ClaimPattern] ->
+    IO [OrPattern RewritingVariableName]
 applyClaims_ applyClaims initial claims = do
     result <- applyClaims initial claims
     return (toList . discardRemainders $ result)
@@ -342,58 +339,55 @@ test_applyRewriteRule_ :: [TestTree]
 test_applyRewriteRule_ =
     [ testCase "apply identity axiom" $ do
         let expect =
-                [ OrPattern.fromPatterns [initial] ]
+                [OrPattern.fromPatterns [initial]]
             initial = Pattern.fromTermLike (mkElemVar Mock.xConfig)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomId
         actualClaim <- applyClaim initial claimId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "apply identity without renaming" $ do
         let expect =
-                [ OrPattern.fromPatterns [initial] ]
+                [OrPattern.fromPatterns [initial]]
             initial = Pattern.fromTermLike (mkElemVar Mock.yConfig)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomId
         actualClaim <- applyClaim initial claimId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "substitute variable with itself" $ do
         let expect =
                 [ OrPattern.fromPatterns
-                    [initial { term = mkElemVar Mock.xConfig }]
+                    [initial{term = mkElemVar Mock.xConfig}]
                 ]
-            initial = Pattern.fromTermLike
-                (Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig))
+            initial =
+                Pattern.fromTermLike
+                    (Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig))
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "merge configuration patterns" $ do
         let term = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
             expect =
-                [ OrPattern.fromPatterns [initial { term, substitution }] ]
+                [OrPattern.fromPatterns [initial{term, substitution}]]
               where
                 substitution =
-                    Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                    [ (inject Mock.xConfig, term) ]
+                    Substitution.wrap $
+                        Substitution.mkUnwrappedSubstitution
+                            [(inject Mock.xConfig, term)]
             initial =
                 Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.xConfig) term)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "substitution with symbol matching" $ do
         let expect =
-                [ OrPattern.fromPatterns [initial { term = fz, substitution }] ]
+                [OrPattern.fromPatterns [initial{term = fz, substitution}]]
               where
                 substitution =
-                    Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                    [ (inject Mock.yConfig, mkElemVar Mock.zConfig) ]
+                    Substitution.wrap $
+                        Substitution.mkUnwrappedSubstitution
+                            [(inject Mock.yConfig, mkElemVar Mock.zConfig)]
             fy = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
             fz = Mock.functionalConstr10 (mkElemVar Mock.zConfig)
             initial = Pattern.fromTermLike (Mock.sigma fy fz)
@@ -401,15 +395,14 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "merge multiple variables" $ do
         let expect =
-                [ OrPattern.fromPatterns [initial { term = yy, substitution }] ]
+                [OrPattern.fromPatterns [initial{term = yy, substitution}]]
               where
                 substitution =
-                    Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                    [ (inject Mock.xConfig, mkElemVar Mock.yConfig) ]
+                    Substitution.wrap $
+                        Substitution.mkUnwrappedSubstitution
+                            [(inject Mock.xConfig, mkElemVar Mock.yConfig)]
             xy = Mock.sigma (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
             yx = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
             yy = Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.yConfig)
@@ -418,16 +411,16 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaXXYY
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "rename quantified right variables" $ do
         let expect =
-                 [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
             final = mkElemVar Mock.yConfig
             initial = pure (mkElemVar Mock.yConfig)
             axiom =
-                RewriteRule $ rulePattern
-                    (mkElemVar Mock.xRule)
-                    (mkExists Mock.yRule (mkElemVar Mock.xRule))
+                RewriteRule $
+                    rulePattern
+                        (mkElemVar Mock.xRule)
+                        (mkExists Mock.yRule (mkElemVar Mock.xRule))
             claim =
                 claimPatternFromTerms
                     (mkElemVar Mock.xRule)
@@ -437,131 +430,127 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claim
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "quantified rhs: non-clashing" $ do
         let expect =
-                [ OrPattern.fromPatterns [Pattern.fromTermLike final] ]
+                [OrPattern.fromPatterns [Pattern.fromTermLike final]]
             x' =
                 traverse (nextName (variableName Mock.xConfig)) Mock.xConfig
-                & fromJust
+                    & fromJust
             final = mkElemVar x'
             initial = pure (mkElemVar Mock.yConfig)
             axiom =
-                RewriteRule $ rulePattern
-                    (mkElemVar Mock.xRule)
-                    (mkExists Mock.xRule (mkElemVar Mock.xRule))
+                RewriteRule $
+                    rulePattern
+                        (mkElemVar Mock.xRule)
+                        (mkExists Mock.xRule (mkElemVar Mock.xRule))
             claim =
-                refreshExistentials $ claimPatternFromTerms
-                    (mkElemVar Mock.xRule)
-                    (mkElemVar Mock.xRule)
-                    [Mock.xRule]
+                refreshExistentials $
+                    claimPatternFromTerms
+                        (mkElemVar Mock.xRule)
+                        (mkElemVar Mock.xRule)
+                        [Mock.xRule]
         actualAxiom <- applyRewriteRuleParallel_ initial axiom
         actualClaim <- applyClaim initial claim
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "Apply non-function-like rule in parallel" $ do
         let initial =
                 pure
-                    (Mock.sigma
+                    ( Mock.sigma
                         (mkElemVar Mock.xConfig)
                         (mkElemVar Mock.xConfig)
                     )
         resultAxiom <-
-            Exception.try
-            $ applyRewriteRuleParallel_ initial axiomSigmaTopId
+            Exception.try $
+                applyRewriteRuleParallel_ initial axiomSigmaTopId
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
 
         resultClaim <-
-            Exception.try
-            $ applyClaim initial claimSigmaTopId
+            Exception.try $
+                applyClaim initial claimSigmaTopId
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-
     , testCase "Apply list containing non-function-like rule in parallel" $ do
         let initial =
                 pure
-                    (Mock.sigma
+                    ( Mock.sigma
                         (mkElemVar Mock.xConfig)
                         (mkElemVar Mock.xConfig)
                     )
         resultAxiom <-
-            Exception.try
-            $ applyRewriteRules_
-                applyRewriteRulesParallel
-                initial
-                [axiomCaseA, axiomSigmaTopId]
+            Exception.try $
+                applyRewriteRules_
+                    applyRewriteRulesParallel
+                    initial
+                    [axiomCaseA, axiomSigmaTopId]
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
 
         resultClaim <-
-            Exception.try
-            $ applyClaims_
-                applyClaimsSequence
-                initial
-                [claimCaseA, claimSigmaTopId]
+            Exception.try $
+                applyClaims_
+                    applyClaimsSequence
+                    initial
+                    [claimCaseA, claimSigmaTopId]
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-
     , testCase "Apply non-function-like rule in sequence" $ do
         let initial =
                 pure
-                    (Mock.sigma
+                    ( Mock.sigma
                         (mkElemVar Mock.xConfig)
                         (mkElemVar Mock.xConfig)
                     )
         resultAxiom <-
-            Exception.try
-            $ applyRewriteRule_
-                applyRewriteRulesSequence
-                initial
-                axiomSigmaTopId
+            Exception.try $
+                applyRewriteRule_
+                    applyRewriteRulesSequence
+                    initial
+                    axiomSigmaTopId
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
 
         resultClaim <-
-            Exception.try
-            $ applyClaim_
-                applyClaimsSequence
-                initial
-                claimSigmaTopId
+            Exception.try $
+                applyClaim_
+                    applyClaimsSequence
+                    initial
+                    claimSigmaTopId
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-
     , testCase "Apply list containing non-function-like rule in sequence" $ do
         let initial =
                 pure
-                    (Mock.sigma
+                    ( Mock.sigma
                         (mkElemVar Mock.xConfig)
                         (mkElemVar Mock.xConfig)
                     )
         resultAxiom <-
-            Exception.try
-            $ applyRewriteRules_
-                applyRewriteRulesParallel
-                initial
-                [axiomCaseA, axiomSigmaTopId]
+            Exception.try $
+                applyRewriteRules_
+                    applyRewriteRulesParallel
+                    initial
+                    [axiomCaseA, axiomSigmaTopId]
         case resultAxiom of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
 
         resultClaim <-
-            Exception.try
-            $ applyClaims_
-                applyClaimsSequence
-                initial
-                [claimCaseA, claimSigmaTopId]
+            Exception.try $
+                applyClaims_
+                    applyClaimsSequence
+                    initial
+                    [claimCaseA, claimSigmaTopId]
         case resultClaim of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-
     , testCase "symbol clash" $ do
         let expect = mempty
             fx = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
@@ -571,7 +560,6 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "impossible substitution" $ do
         let expect = mempty
             xfy =
@@ -584,11 +572,10 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaXXYY
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- sigma(x, x) -> x
-    -- vs
-    -- sigma(a, f(b)) with substitution b=a
-    , testCase "impossible substitution (ctor)" $ do
+    , -- sigma(x, x) -> x
+      -- vs
+      -- sigma(a, f(b)) with substitution b=a
+      testCase "impossible substitution (ctor)" $ do
         let expect = mempty
             initial =
                 Conditional
@@ -598,61 +585,60 @@ test_applyRewriteRule_ =
                             (Mock.functionalConstr10 (mkElemVar Mock.yConfig))
                     , predicate = Predicate.makeTruePredicate
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.yConfig, mkElemVar Mock.xConfig)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.yConfig, mkElemVar Mock.xConfig)]
                     }
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- sigma(x, x) -> x
-    -- vs
-    -- sigma(a, h(b)) with substitution b=a
-    {- TODO: (MirceaS) Enable this test when it no longer loops
-    , testCase "circular dependency error" $ do
-        let expect =
-                Conditional
-                    { term = fy
-                    , predicate =
-                        makeEqualsPredicate (mkElemVar Mock.y) fy
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.x, fy)]
-                    }
-                & pure . OrPattern.fromPattern
-            fy = Mock.functional10 (mkElemVar Mock.y)
-            initial =
-                Conditional
-                    { term = Mock.sigma (mkElemVar Mock.x) fy
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, mkElemVar Mock.x)]
-                    }
-        actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
-        actualClaim <- applyClaim initial claimSigmaId
-        assertEqual "" expect actualAxiom
-        assertEqual "" expect actualClaim
-    -}
-    -- sigma(x, x) -> x
-    -- vs
-    -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
-    , testCase "unify all children" $ do
+    , -- sigma(x, x) -> x
+      -- vs
+      -- sigma(a, h(b)) with substitution b=a
+      {- TODO: (MirceaS) Enable this test when it no longer loops
+      , testCase "circular dependency error" $ do
+          let expect =
+                  Conditional
+                      { term = fy
+                      , predicate =
+                          makeEqualsPredicate (mkElemVar Mock.y) fy
+                      , substitution =
+                          Substitution.wrap
+                          $ Substitution.mkUnwrappedSubstitution
+                          [(inject Mock.x, fy)]
+                      }
+                  & pure . OrPattern.fromPattern
+              fy = Mock.functional10 (mkElemVar Mock.y)
+              initial =
+                  Conditional
+                      { term = Mock.sigma (mkElemVar Mock.x) fy
+                      , predicate = makeTruePredicate
+                      , substitution =
+                          Substitution.wrap
+                          $ Substitution.mkUnwrappedSubstitution
+                          [(inject Mock.y, mkElemVar Mock.x)]
+                      }
+          actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaId
+          actualClaim <- applyClaim initial claimSigmaId
+          assertEqual "" expect actualAxiom
+          assertEqual "" expect actualClaim
+      -}
+      -- sigma(x, x) -> x
+      -- vs
+      -- sigma(sigma(a, a), sigma(sigma(b, c), sigma(b, b)))
+      testCase "unify all children" $ do
         let expect =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma zz zz
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [ (inject Mock.xConfig, zz)
-                            , (inject Mock.yConfig, mkElemVar Mock.zConfig)
-                            ]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [ (inject Mock.xConfig, zz)
+                                    , (inject Mock.yConfig, mkElemVar Mock.zConfig)
+                                    ]
                         }
                     ]
                 ]
@@ -665,43 +651,39 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- sigma(sigma(x, x), y) => sigma(x, y)
-    -- vs
-    -- sigma(sigma(a, f(b)), a)
-    -- Expected: sigma(f(b), f(b)) and a=f(b)
-    , testCase "normalize substitution" $ do
-        let
-            fb = Mock.functional10 (mkElemVar Mock.yConfig)
+    , -- sigma(sigma(x, x), y) => sigma(x, y)
+      -- vs
+      -- sigma(sigma(a, f(b)), a)
+      -- Expected: sigma(f(b), f(b)) and a=f(b)
+      testCase "normalize substitution" $ do
+        let fb = Mock.functional10 (mkElemVar Mock.yConfig)
             expect =
-
-                    [ OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma fb fb
-                            , predicate = makeTruePredicate
-                            , substitution =
-                                Substitution.wrap
-                                $ Substitution.mkUnwrappedSubstitution
-                                [(inject Mock.xConfig, fb)]
-                            }
-                        ]
+                [ OrPattern.fromPatterns
+                    [ Conditional
+                        { term = Mock.sigma fb fb
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, fb)]
+                        }
                     ]
-            initial = pure $
-                Mock.sigma
-                    (Mock.sigma (mkElemVar Mock.xConfig) fb)
-                    (mkElemVar Mock.xConfig)
+                ]
+            initial =
+                pure $
+                    Mock.sigma
+                        (Mock.sigma (mkElemVar Mock.xConfig) fb)
+                        (mkElemVar Mock.xConfig)
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaXXY
         actualClaim <- applyClaim initial claimSigmaXXY
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- sigma(sigma(x, x), y) => sigma(x, y)
-    -- vs
-    -- sigma(sigma(a, f(b)), a) and a=f(c)
-    -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
-    , testCase "merge substitution with initial" $ do
-        let
-            fy = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
+    , -- sigma(sigma(x, x), y) => sigma(x, y)
+      -- vs
+      -- sigma(sigma(a, f(b)), a) and a=f(c)
+      -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
+      testCase "merge substitution with initial" $ do
+        let fy = Mock.functionalConstr10 (mkElemVar Mock.yConfig)
             fz = Mock.functionalConstr10 (mkElemVar Mock.zConfig)
             expect =
                 [ OrPattern.fromPatterns
@@ -709,13 +691,14 @@ test_applyRewriteRule_ =
                         { term = Mock.sigma fz fz
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                                [ (inject Mock.xConfig, fz)
-                                ,   ( inject Mock.yConfig
-                                    , mkElemVar Mock.zConfig
-                                    )
-                                ]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [ (inject Mock.xConfig, fz)
+                                    ,
+                                        ( inject Mock.yConfig
+                                        , mkElemVar Mock.zConfig
+                                        )
+                                    ]
                         }
                     ]
                 ]
@@ -727,26 +710,26 @@ test_applyRewriteRule_ =
                             (mkElemVar Mock.xConfig)
                     , predicate = makeTruePredicate
                     , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, fz)]
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [(inject Mock.xConfig, fz)]
                     }
         actualAxiom <- applyRewriteRuleParallel_ initial axiomSigmaXXY
         actualClaim <- applyClaim initial claimSigmaXXY
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- "sl1" => x
-    -- vs
-    -- "sl2"
-    -- Expected: bottom
-    , testCase "unmatched string literals" $ do
-        let expect =  mempty
+    , -- "sl1" => x
+      -- vs
+      -- "sl2"
+      -- Expected: bottom
+      testCase "unmatched string literals" $ do
+        let expect = mempty
             initial = pure (mkStringLiteral "sl2")
             axiom =
-                RewriteRule $ rulePattern
-                    (mkStringLiteral "sl1")
-                    (mkElemVar Mock.xRule)
+                RewriteRule $
+                    rulePattern
+                        (mkStringLiteral "sl1")
+                        (mkElemVar Mock.xRule)
             claim =
                 claimPatternFromTerms
                     (mkStringLiteral "sl1")
@@ -756,14 +739,13 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claim
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- x => x
-    -- vs
-    -- a and g(a)=f(a)
-    -- Expected: a and g(a)=f(a)
-    , testCase "preserve initial condition" $ do
+    , -- x => x
+      -- vs
+      -- a and g(a)=f(a)
+      -- Expected: a and g(a)=f(a)
+      testCase "preserve initial condition" $ do
         let expect =
-                [ OrPattern.fromPatterns [initial] ]
+                [OrPattern.fromPatterns [initial]]
             predicate =
                 makeEqualsPredicate
                     (Mock.functional11 Mock.a)
@@ -778,14 +760,12 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimId
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- sigma(sigma(x, x), y) => sigma(x, y)
-    -- vs
-    -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
-    -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
-    , testCase "normalize substitution with initial condition" $ do
-        let
-            fb = Mock.functional10 (mkElemVar Mock.yConfig)
+    , -- sigma(sigma(x, x), y) => sigma(x, y)
+      -- vs
+      -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
+      -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
+      testCase "normalize substitution with initial condition" $ do
+        let fb = Mock.functional10 (mkElemVar Mock.yConfig)
             expect =
                 [ OrPattern.fromPatterns
                     [ Conditional
@@ -795,9 +775,9 @@ test_applyRewriteRule_ =
                                 (Mock.functional10 fb)
                                 (Mock.functional11 fb)
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, fb)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, fb)]
                         }
                     ]
                 ]
@@ -817,35 +797,34 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claimSigmaXXY
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- x => x ensures g(x)=f(x)
-    -- vs
-    -- y
-    -- Expected: y and g(y)=f(y)
-    , testCase "conjoin rule ensures" $ do
-        let
-            ensures =
+    , -- x => x ensures g(x)=f(x)
+      -- vs
+      -- y
+      -- Expected: y and g(y)=f(y)
+      testCase "conjoin rule ensures" $ do
+        let ensures =
                 makeEqualsPredicate
                     (Mock.functional11 (mkElemVar Mock.xRule))
                     (Mock.functional10 (mkElemVar Mock.xRule))
-            rhs = (RulePattern.rhs ruleId) { ensures }
+            rhs = (RulePattern.rhs ruleId){ensures}
             expect =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = mkElemVar Mock.yConfig
-                        , predicate = makeEqualsPredicate
-                            (Mock.functional10 (mkElemVar Mock.yConfig))
-                            (Mock.functional11 (mkElemVar Mock.yConfig))
+                        , predicate =
+                            makeEqualsPredicate
+                                (Mock.functional10 (mkElemVar Mock.yConfig))
+                                (Mock.functional11 (mkElemVar Mock.yConfig))
                         , substitution = mempty
                         }
                     ]
                 ]
             initial = Pattern.fromTermLike (mkElemVar Mock.yConfig)
-            axiom = RewriteRule ruleId { rhs }
+            axiom = RewriteRule ruleId{rhs}
             claim =
                 claimPatternFromPatterns
                     (mkElemVar Mock.xRule & Pattern.fromTermLike)
-                    (Pattern.fromTermAndPredicate
+                    ( Pattern.fromTermAndPredicate
                         (mkElemVar Mock.xRule)
                         ensures
                     )
@@ -853,20 +832,18 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claim
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
-    -- x => x requires g(x)=f(x)
-    -- vs
-    -- a
-    -- Expected: y1 and g(a)=f(a)
-    , testCase "conjoin rule requirement" $ do
-        let
-            requires =
+    , -- x => x requires g(x)=f(x)
+      -- vs
+      -- a
+      -- Expected: y1 and g(a)=f(a)
+      testCase "conjoin rule requirement" $ do
+        let requires =
                 makeEqualsPredicate
                     (Mock.functional10 (mkElemVar Mock.xRule))
                     (Mock.functional11 (mkElemVar Mock.xRule))
             requiresForExpect =
                 requires
-                & Predicate.mapVariables (pure $ mkConfigVariable . from)
+                    & Predicate.mapVariables (pure $ mkConfigVariable . from)
             expect =
                 [ OrPattern.fromPatterns
                     [ Pattern.withCondition
@@ -876,10 +853,10 @@ test_applyRewriteRule_ =
                 ]
             initialTerm = mkElemVar Mock.xConfig
             initial = pure initialTerm
-            axiom = RewriteRule ruleId { requires }
+            axiom = RewriteRule ruleId{requires}
             claim =
                 claimPatternFromPatterns
-                    (Pattern.fromTermAndPredicate
+                    ( Pattern.fromTermAndPredicate
                         (mkElemVar Mock.xRule)
                         requires
                     )
@@ -888,33 +865,29 @@ test_applyRewriteRule_ =
         actualClaim <- applyClaim initial claim
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "rule a => \\bottom" $ do
-        let expect =  [ OrPattern.fromPatterns [] ]
+        let expect = [OrPattern.fromPatterns []]
             initial = pure Mock.a
         actualAxiom <- applyRewriteRuleParallel_ initial axiomBottom
         actualClaim <- applyClaim initial claimBottom
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "rule a => b ensures \\bottom" $ do
-        let expect =  [ OrPattern.fromPatterns [] ]
+        let expect = [OrPattern.fromPatterns []]
             initial = pure Mock.a
         actualAxiom <- applyRewriteRuleParallel_ initial axiomEnsuresBottom
         actualClaim <- applyClaim initial claimEnsuresBottom
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "rule a => b requires \\bottom" $ do
-        let expect =  [ ]
+        let expect = []
             initial = pure Mock.a
         actualAxiom <- applyRewriteRuleParallel_ initial axiomRequiresBottom
         actualClaim <- applyClaim initial claimRequiresBottom
         assertEqual "" expect actualAxiom
         assertEqual "" expect actualClaim
-
     , testCase "rule a => \\bottom does not apply to c" $ do
-        let expect =  [ ]
+        let expect = []
             initial = pure Mock.c
         actualAxiom <- applyRewriteRuleParallel_ initial axiomRequiresBottom
         actualClaim <- applyClaim initial claimRequiresBottom
@@ -922,17 +895,17 @@ test_applyRewriteRule_ =
         assertEqual "" expect actualClaim
     ]
   where
-    applyRewriteRuleParallel_
-        :: Pattern RewritingVariableName
-        -> RewriteRule'
-        -> IO [OrPattern RewritingVariableName]
+    applyRewriteRuleParallel_ ::
+        Pattern RewritingVariableName ->
+        RewriteRule' ->
+        IO [OrPattern RewritingVariableName]
     applyRewriteRuleParallel_ patt rule =
         applyRewriteRule_ applyRewriteRulesParallel patt rule
 
-    applyClaim
-        :: Pattern RewritingVariableName
-        -> ClaimPattern
-        -> IO [OrPattern RewritingVariableName]
+    applyClaim ::
+        Pattern RewritingVariableName ->
+        ClaimPattern ->
+        IO [OrPattern RewritingVariableName]
     applyClaim patt rule =
         applyClaim_ applyClaimsSequence patt rule
 
@@ -948,13 +921,14 @@ test_applyRewriteRule_ =
             []
 
     axiomBottom =
-        RewriteRule RulePattern
-            { left = Mock.a
-            , antiLeft = Nothing
-            , requires = makeTruePredicate
-            , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
-            , attributes = def
-            }
+        RewriteRule
+            RulePattern
+                { left = Mock.a
+                , antiLeft = Nothing
+                , requires = makeTruePredicate
+                , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
+                , attributes = def
+                }
 
     claimBottom =
         claimPatternFromTerms
@@ -963,47 +937,51 @@ test_applyRewriteRule_ =
             []
 
     axiomEnsuresBottom =
-        RewriteRule RulePattern
-            { left = Mock.a
-            , antiLeft = Nothing
-            , requires = makeTruePredicate
-            , rhs = RHS
-                { existentials = []
-                , right = Mock.b
-                , ensures = makeFalsePredicate
+        RewriteRule
+            RulePattern
+                { left = Mock.a
+                , antiLeft = Nothing
+                , requires = makeTruePredicate
+                , rhs =
+                    RHS
+                        { existentials = []
+                        , right = Mock.b
+                        , ensures = makeFalsePredicate
+                        }
+                , attributes = def
                 }
-            , attributes = def
-            }
 
     claimEnsuresBottom =
         claimPatternFromPatterns
-            (Mock.a & Pattern.fromTermLike )
-            (Pattern.fromTermAndPredicate
+            (Mock.a & Pattern.fromTermLike)
+            ( Pattern.fromTermAndPredicate
                 Mock.b
                 makeFalsePredicate
             )
 
     axiomRequiresBottom =
-        RewriteRule RulePattern
-            { left = Mock.a
-            , antiLeft = Nothing
-            , requires = makeFalsePredicate
-            , rhs = injectTermIntoRHS Mock.b
-            , attributes = def
-            }
+        RewriteRule
+            RulePattern
+                { left = Mock.a
+                , antiLeft = Nothing
+                , requires = makeFalsePredicate
+                , rhs = injectTermIntoRHS Mock.b
+                , attributes = def
+                }
 
     claimRequiresBottom =
         claimPatternFromPatterns
-            (Pattern.fromTermAndPredicate
+            ( Pattern.fromTermAndPredicate
                 Mock.a
                 makeFalsePredicate
             )
             (Mock.b & Pattern.fromTermLike)
 
     axiomSigmaId =
-        RewriteRule $ rulePattern
-            (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
-            (mkElemVar Mock.xRule)
+        RewriteRule $
+            rulePattern
+                (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                (mkElemVar Mock.xRule)
 
     claimSigmaId =
         claimPatternFromTerms
@@ -1012,9 +990,10 @@ test_applyRewriteRule_ =
             []
 
     axiomSigmaTopId =
-        RewriteRule $ rulePattern
-            (Mock.sigma (mkElemVar Mock.xRule) mkTop_)
-            (mkElemVar Mock.xRule)
+        RewriteRule $
+            rulePattern
+                (Mock.sigma (mkElemVar Mock.xRule) mkTop_)
+                (mkElemVar Mock.xRule)
 
     claimSigmaTopId =
         claimPatternFromTerms
@@ -1023,33 +1002,35 @@ test_applyRewriteRule_ =
             []
 
     axiomSigmaXXYY =
-        RewriteRule $ rulePattern
-            (Mock.sigma
+        RewriteRule $
+            rulePattern
+                ( Mock.sigma
                     (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
                     (Mock.sigma (mkElemVar Mock.yRule) (mkElemVar Mock.yRule))
-            )
-            (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.yRule))
+                )
+                (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.yRule))
 
     claimSigmaXXYY =
         claimPatternFromTerms
-            (Mock.sigma
-                    (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
-                    (Mock.sigma (mkElemVar Mock.yRule) (mkElemVar Mock.yRule))
+            ( Mock.sigma
+                (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
+                (Mock.sigma (mkElemVar Mock.yRule) (mkElemVar Mock.yRule))
             )
             (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.yRule))
             []
 
     axiomSigmaXXY =
-        RewriteRule $ rulePattern
-            (Mock.sigma
+        RewriteRule $
+            rulePattern
+                ( Mock.sigma
                     (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
                     (mkElemVar Mock.yRule)
-            )
-            (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.yRule))
+                )
+                (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.yRule))
 
     claimSigmaXXY =
         claimPatternFromTerms
-            (Mock.sigma
+            ( Mock.sigma
                 (Mock.sigma (mkElemVar Mock.xRule) (mkElemVar Mock.xRule))
                 (mkElemVar Mock.yRule)
             )
@@ -1060,8 +1041,7 @@ test_applyRewriteRule_ =
 
 Narrowing happens when a variable in a symbolic configuration is instantiated
 with a particular value.
-
- -}
+-}
 test_narrowing :: [TestTree]
 test_narrowing =
     [ testCase "applyRewriteRulesParallel" $ do
@@ -1072,11 +1052,11 @@ test_narrowing =
         checkRemainders remainders actual
     , testCase "resetResultPattern" $ do
         let resultRewriting =
-                Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xRule))
-                $ Condition.fromSingleSubstitution
-                $ Substitution.assign
-                    (inject xConfig)
-                    (Mock.sigma Mock.a (mkElemVar xRule))
+                Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xRule)) $
+                    Condition.fromSingleSubstitution $
+                        Substitution.assign
+                            (inject xConfig)
+                            (Mock.sigma Mock.a (mkElemVar xRule))
             initialVariables = FreeVariables.freeVariable (inject xConfig)
             actual = resetResultPattern initialVariables resultRewriting
         assertEqual "" result actual
@@ -1090,68 +1070,72 @@ test_narrowing =
     -- The significance of this axiom is that it narrows the initial term and
     -- introduces a new variable.
     axiom =
-        RewriteRule $ rulePattern
-            (Mock.sigma Mock.a (mkElemVar xRule))
-            (Mock.sigma Mock.b (mkElemVar xRule))
+        RewriteRule $
+            rulePattern
+                (Mock.sigma Mock.a (mkElemVar xRule))
+                (Mock.sigma Mock.b (mkElemVar xRule))
     result =
-        Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xConfig'))
-        $ Condition.fromSingleSubstitution
-        $ Substitution.assign
-            (inject xConfig) (Mock.sigma Mock.a (mkElemVar xConfig'))
+        Pattern.withCondition (Mock.sigma Mock.b (mkElemVar xConfig')) $
+            Condition.fromSingleSubstitution $
+                Substitution.assign
+                    (inject xConfig)
+                    (Mock.sigma Mock.a (mkElemVar xConfig'))
     remainder =
-        Pattern.withCondition initial
-        $ Condition.fromPredicate
-        $ Predicate.makeNotPredicate
-        $ Predicate.makeExistsPredicate xConfig'
-        $ Predicate.makeEqualsPredicate
-            (mkElemVar xConfig)
-            (Mock.sigma Mock.a (mkElemVar xConfig'))
+        Pattern.withCondition initial $
+            Condition.fromPredicate $
+                Predicate.makeNotPredicate $
+                    Predicate.makeExistsPredicate xConfig' $
+                        Predicate.makeEqualsPredicate
+                            (mkElemVar xConfig)
+                            (Mock.sigma Mock.a (mkElemVar xConfig'))
 
 -- | Apply the 'RewriteRule's to the configuration.
-applyRewriteRulesParallel
-    :: Pattern RewritingVariableName
-    -- ^ Configuration
-    -> [RewriteRule']
-    -- ^ Rewrite rule
-    -> IO Results'
+applyRewriteRulesParallel ::
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    [RewriteRule'] ->
+    IO Results'
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
         rules
         (simplifiedPattern initial)
-    & runSimplifierSMT Mock.env
+        & runSimplifierSMT Mock.env
 
-applyClaimsSequence
-    :: Pattern RewritingVariableName
-    -- ^ Configuration
-    -> [ClaimPattern]
-    -- ^ Rewrite rule
-    -> IO (Step.Results ClaimPattern)
+applyClaimsSequence ::
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    [ClaimPattern] ->
+    IO (Step.Results ClaimPattern)
 applyClaimsSequence initial claims =
     Step.applyClaimsSequence
         AllPathClaim
         (simplifiedPattern initial)
         claims
-    & runSimplifierSMT Mock.env
+        & runSimplifierSMT Mock.env
 
-checkResults
-    :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
-    => HasCallStack
-    => OrPattern RewritingVariableName
-    -> Step.Results rule
-    -> Assertion
+checkResults ::
+    Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
+    HasCallStack =>
+    OrPattern RewritingVariableName ->
+    Step.Results rule ->
+    Assertion
 checkResults expect actual =
-    assertEqual "compare results"
+    assertEqual
+        "compare results"
         expect
         (Step.gatherResults actual)
 
-checkRemainders
-    :: Step.UnifyingRuleVariable rule ~ RewritingVariableName
-    => HasCallStack
-    => OrPattern RewritingVariableName
-    -> Step.Results rule
-    -> Assertion
+checkRemainders ::
+    Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
+    HasCallStack =>
+    OrPattern RewritingVariableName ->
+    Step.Results rule ->
+    Assertion
 checkRemainders expect actual =
-    assertEqual "compare remainders"
+    assertEqual
+        "compare remainders"
         expect
         (Step.remainders actual)
 
@@ -1170,28 +1154,28 @@ test_applyRewriteRulesParallel =
         -- Expected:
         --   rewritten: cg, with ⌈cg⌉ and [x=a]
         --   remainder: constr20(x, cg), with ¬(⌈cg⌉ and x=a)
-        let
-            results =
-                MultiOr.singleton Conditional
-                    { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.cg
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, Mock.a)]
-                    }
+        let results =
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.cg
+                        , predicate = makeCeilPredicate Mock.cg
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
+                        }
             remainders =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = initialTerm
                         , predicate =
-                            makeNotPredicate
-                            $ makeAndPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate
-                                    (mkElemVar Mock.xConfig)
-                                    Mock.a
-                                )
+                            makeNotPredicate $
+                                makeAndPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    ( makeEqualsPredicate
+                                        (mkElemVar Mock.xConfig)
+                                        Mock.a
+                                    )
                         , substitution = mempty
                         }
                     ]
@@ -1201,7 +1185,6 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "if _ then _ with initial condition" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -1215,19 +1198,19 @@ test_applyRewriteRulesParallel =
         -- Expected:
         --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
         --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
-        let
-            results =
-                MultiOr.singleton Conditional
-                    { term = Mock.cg
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeCeilPredicate Mock.cg)
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.a)]
-                    }
+        let results =
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.cg
+                        , predicate =
+                            makeAndPredicate
+                                (makeCeilPredicate Mock.cf)
+                                (makeCeilPredicate Mock.cg)
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
+                        }
             remainders =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -1238,12 +1221,13 @@ test_applyRewriteRulesParallel =
                         , predicate =
                             makeAndPredicate
                                 (makeCeilPredicate Mock.cf)
-                                (makeNotPredicate $ makeAndPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeEqualsPredicate
-                                        (mkElemVar Mock.xConfig)
-                                        Mock.a
-                                    )
+                                ( makeNotPredicate $
+                                    makeAndPredicate
+                                        (makeCeilPredicate Mock.cg)
+                                        ( makeEqualsPredicate
+                                            (mkElemVar Mock.xConfig)
+                                            Mock.a
+                                        )
                                 )
                         , substitution = mempty
                         }
@@ -1259,7 +1243,6 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "signum - side condition" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -1273,19 +1256,20 @@ test_applyRewriteRulesParallel =
         -- Expected:
         --   rewritten: a, with f(x) == b
         --   remainder: functionalConstr10(x), with ¬(f(x) == b)
-        let
-            results =
-                MultiOr.singleton Conditional
-                    { term = Mock.a
-                    , predicate = requirement
-                    , substitution = mempty
-                    }
+        let results =
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.a
+                        , predicate = requirement
+                        , substitution = mempty
+                        }
             remainders =
-                MultiOr.singleton Conditional
-                    { term = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
-                    , predicate = makeNotPredicate requirement
-                    , substitution = mempty
-                    }
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
+                        , predicate = makeNotPredicate requirement
+                        , substitution = mempty
+                        }
             initial = pure (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
             requirement =
                 makeEqualsPredicate
@@ -1294,7 +1278,6 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial [axiomSignum]
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "if _ then _ -- partial" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -1308,27 +1291,27 @@ test_applyRewriteRulesParallel =
         -- Expected:
         --   rewritten: cg, with ⌈cg⌉ and [x=a]
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
-        let
-            results =
-                MultiOr.singleton Conditional
-                    { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.cg
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, Mock.a)]
-                    }
+        let results =
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.cg
+                        , predicate = makeCeilPredicate Mock.cg
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
+                        }
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            makeNotPredicate
-                            $ makeAndPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate
-                                    (mkElemVar Mock.xConfig)
-                                    Mock.a
-                                )
+                            makeNotPredicate $
+                                makeAndPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    ( makeEqualsPredicate
+                                        (mkElemVar Mock.xConfig)
+                                        Mock.a
+                                    )
                         }
                     ]
             initialTerm =
@@ -1337,7 +1320,6 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "case _ of a -> _; b -> _ -- partial" $ do
         -- This uses `functionalConstr30(x, y, z)` to represent a case
         -- statement,
@@ -1359,8 +1341,7 @@ test_applyRewriteRulesParallel =
         --     constr20(x, cf, cg)
         --        with ¬(⌈cf⌉ and ⌈cg⌉ and [x=a])
         --         and ¬(⌈cf⌉ and ⌈cg⌉ and [x=b])
-        let
-            definedBranches =
+        let definedBranches =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
@@ -1370,17 +1351,17 @@ test_applyRewriteRulesParallel =
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.a)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.b)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.b)]
                         }
                     ]
             remainders =
@@ -1388,19 +1369,21 @@ test_applyRewriteRulesParallel =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (makeNotPredicate $ makeAndPredicate
-                                    definedBranches
-                                    (Predicate.makeEqualsPredicate
-                                        (mkElemVar Mock.xConfig)
-                                        Mock.a
-                                    )
+                                ( makeNotPredicate $
+                                    makeAndPredicate
+                                        definedBranches
+                                        ( Predicate.makeEqualsPredicate
+                                            (mkElemVar Mock.xConfig)
+                                            Mock.a
+                                        )
                                 )
-                                (makeNotPredicate $ makeAndPredicate
-                                    definedBranches
-                                    (Predicate.makeEqualsPredicate
-                                        (mkElemVar Mock.xConfig)
-                                        Mock.b
-                                    )
+                                ( makeNotPredicate $
+                                    makeAndPredicate
+                                        definedBranches
+                                        ( Predicate.makeEqualsPredicate
+                                            (mkElemVar Mock.xConfig)
+                                            Mock.b
+                                        )
                                 )
                         }
                     ]
@@ -1410,7 +1393,6 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial axiomsCase
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "if _ then _ -- partial" $ do
         -- This uses `functionalConstr20(x, y)` instead of `if x then y`
         -- and `a` instead of `true`.
@@ -1424,26 +1406,27 @@ test_applyRewriteRulesParallel =
         -- Expected:
         --   rewritten: cg, with ⌈cg⌉ and [x=a]
         --   remainder: functionalConstr20(x, cg), with ¬(⌈cg⌉ and x=a)
-        let
-            results =
-                MultiOr.singleton Conditional
-                    { term = Mock.cg
-                    , predicate = makeCeilPredicate Mock.cg
-                    , substitution =
-                        Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.xConfig, Mock.a)]
-                    }
+        let results =
+                MultiOr.singleton
+                    Conditional
+                        { term = Mock.cg
+                        , predicate = makeCeilPredicate Mock.cg
+                        , substitution =
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
+                        }
             remainders =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            makeNotPredicate $ makeAndPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate
-                                    (mkElemVar Mock.xConfig)
-                                    Mock.a
-                                )
+                            makeNotPredicate $
+                                makeAndPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    ( makeEqualsPredicate
+                                        (mkElemVar Mock.xConfig)
+                                        Mock.a
+                                    )
                         }
                     ]
             initialTerm =
@@ -1452,65 +1435,70 @@ test_applyRewriteRulesParallel =
         actual <- applyRewriteRulesParallel initial [axiomIfThen]
         checkResults results actual
         checkRemainders remainders actual
-
     , testCase "adding variables" $ do
         -- Term: a
         -- Rule: a => x
         -- Expected: exists x . x
-        let
-            results =
+        let results =
                 OrPattern.fromTermLike (mkElemVar Mock.xConfig)
             remainders = OrPattern.bottom
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm
-        actual <- applyRewriteRulesParallel initial
-            [ RewriteRule RulePattern
-                { left = Mock.a
-                , antiLeft = Nothing
-                , requires = makeTruePredicate
-                , rhs = injectTermIntoRHS (mkElemVar Mock.xRule)
-                , attributes = def
-                }
-            ]
+        actual <-
+            applyRewriteRulesParallel
+                initial
+                [ RewriteRule
+                    RulePattern
+                        { left = Mock.a
+                        , antiLeft = Nothing
+                        , requires = makeTruePredicate
+                        , rhs = injectTermIntoRHS (mkElemVar Mock.xRule)
+                        , attributes = def
+                        }
+                ]
         checkResults results actual
         checkRemainders remainders actual
     ]
 
 axiomIfThen :: RewriteRule'
 axiomIfThen =
-    RewriteRule $ rulePattern
-        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.yRule))
-        (mkElemVar Mock.yRule)
+    RewriteRule $
+        rulePattern
+            (Mock.functionalConstr20 Mock.a (mkElemVar Mock.yRule))
+            (mkElemVar Mock.yRule)
 
 axiomSignum :: RewriteRule'
 axiomSignum =
-    RewriteRule RulePattern
-        { left = Mock.functionalConstr10 (mkElemVar Mock.yRule)
-        , antiLeft = Nothing
-        , requires = makeEqualsPredicate (Mock.f (mkElemVar Mock.yRule)) Mock.b
-        , rhs = injectTermIntoRHS Mock.a
-        , attributes = def
-        }
+    RewriteRule
+        RulePattern
+            { left = Mock.functionalConstr10 (mkElemVar Mock.yRule)
+            , antiLeft = Nothing
+            , requires = makeEqualsPredicate (Mock.f (mkElemVar Mock.yRule)) Mock.b
+            , rhs = injectTermIntoRHS Mock.a
+            , attributes = def
+            }
 
 axiomCaseA :: RewriteRule'
 axiomCaseA =
-    RewriteRule $ rulePattern
-        (Mock.functionalConstr30
+    RewriteRule $
+        rulePattern
+            ( Mock.functionalConstr30
                 Mock.a
                 (mkElemVar Mock.yRule)
                 (mkElemVar Mock.zRule)
-        )
-        (mkElemVar Mock.yRule)
+            )
+            (mkElemVar Mock.yRule)
 
 axiomCaseB :: RewriteRule'
 axiomCaseB =
-    RewriteRule $ rulePattern
-        (Mock.functionalConstr30
+    RewriteRule $
+        rulePattern
+            ( Mock.functionalConstr30
                 Mock.b
                 (mkElemVar Mock.yRule)
                 (mkElemVar Mock.zRule)
-        )
-        (mkElemVar Mock.zRule)
+            )
+            (mkElemVar Mock.zRule)
 
 axiomsCase :: [RewriteRule']
 axiomsCase = [axiomCaseA, axiomCaseB]
@@ -1518,7 +1506,7 @@ axiomsCase = [axiomCaseA, axiomCaseB]
 claimCaseA :: ClaimPattern
 claimCaseA =
     claimPatternFromTerms
-        (Mock.functionalConstr30
+        ( Mock.functionalConstr30
             Mock.a
             (mkElemVar Mock.yRule)
             (mkElemVar Mock.zRule)
@@ -1529,7 +1517,7 @@ claimCaseA =
 claimCaseB :: ClaimPattern
 claimCaseB =
     claimPatternFromTerms
-        (Mock.functionalConstr30
+        ( Mock.functionalConstr30
             Mock.b
             (mkElemVar Mock.yRule)
             (mkElemVar Mock.zRule)
@@ -1541,17 +1529,17 @@ claimsCase :: [ClaimPattern]
 claimsCase = [claimCaseA, claimCaseB]
 
 -- | Apply the 'RewriteRule's to the configuration in sequence.
-applyRewriteRulesSequence
-    :: Pattern RewritingVariableName
-    -- ^ Configuration
-    -> [RewriteRule']
-    -- ^ Rewrite rule
-    -> IO Results'
+applyRewriteRulesSequence ::
+    -- | Configuration
+    Pattern RewritingVariableName ->
+    -- | Rewrite rule
+    [RewriteRule'] ->
+    IO Results'
 applyRewriteRulesSequence initial rules =
     Step.applyRewriteRulesSequence
         (simplifiedPattern initial)
         rules
-    & runSimplifierSMT Mock.env
+        & runSimplifierSMT Mock.env
 
 test_applyRewriteRulesSequence :: [TestTree]
 test_applyRewriteRulesSequence =
@@ -1576,8 +1564,7 @@ test_applyRewriteRulesSequence =
         --     constr20(x, cf, cg)
         --        with ¬(⌈cf⌉ and [x=a])
         --         and ¬(⌈cg⌉ and [x=b])
-        let
-            definedBranches =
+        let definedBranches =
                 makeAndPredicate
                     (makeCeilPredicate Mock.cf)
                     (makeCeilPredicate Mock.cg)
@@ -1587,17 +1574,17 @@ test_applyRewriteRulesSequence =
                         { term = Mock.cf
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.a)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.cg
                         , predicate = definedBranches
                         , substitution =
-                            Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.xConfig, Mock.b)]
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
+                                    [(inject Mock.xConfig, Mock.b)]
                         }
                     ]
             remainders =
@@ -1605,18 +1592,18 @@ test_applyRewriteRulesSequence =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
+                                ( Predicate.makeNotPredicate $
+                                    Predicate.makeAndPredicate
                                         definedBranches
-                                        (Predicate.makeEqualsPredicate
+                                        ( Predicate.makeEqualsPredicate
                                             (mkElemVar Mock.xConfig)
                                             Mock.a
                                         )
                                 )
-                                (Predicate.makeNotPredicate
-                                    $ Predicate.makeAndPredicate
+                                ( Predicate.makeNotPredicate $
+                                    Predicate.makeAndPredicate
                                         definedBranches
-                                        (Predicate.makeEqualsPredicate
+                                        ( Predicate.makeEqualsPredicate
                                             (mkElemVar Mock.xConfig)
                                             Mock.b
                                         )
@@ -1632,30 +1619,33 @@ test_applyRewriteRulesSequence =
         actualClaim <- applyClaimsSequence initial claimsCase
         checkResults results actualClaim
         checkRemainders remainders actualClaim
-
     , testCase "adding variables" $ do
         -- Term: a
         -- Rule: a => x
         -- Expected: exists x . x
-        let
-            results =
+        let results =
                 OrPattern.fromTermLike (mkElemVar Mock.xConfig)
             remainders = OrPattern.bottom
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm
-        actualAxiom <- applyRewriteRulesSequence initial
-            [ RewriteRule $ rulePattern
-                Mock.a
-                (mkElemVar Mock.xRule)
-            ]
+        actualAxiom <-
+            applyRewriteRulesSequence
+                initial
+                [ RewriteRule $
+                    rulePattern
+                        Mock.a
+                        (mkElemVar Mock.xRule)
+                ]
         checkResults results actualAxiom
         checkRemainders remainders actualAxiom
-        actualClaim <- applyClaimsSequence initial
-            [ claimPatternFromTerms
-                Mock.a
-                (mkElemVar Mock.xRule)
-                []
-            ]
+        actualClaim <-
+            applyClaimsSequence
+                initial
+                [ claimPatternFromTerms
+                    Mock.a
+                    (mkElemVar Mock.xRule)
+                    []
+                ]
         checkResults results actualClaim
         checkRemainders remainders actualClaim
     ]

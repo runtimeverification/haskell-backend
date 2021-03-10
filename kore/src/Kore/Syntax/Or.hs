@@ -1,38 +1,35 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-
-module Kore.Syntax.Or
-    ( Or (..)
-    ) where
+module Kore.Syntax.Or (
+    Or (..),
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified Pretty
 
-{-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
+{- |'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
 'orSort' is both the sort of the operands and the sort of the result.
-
 -}
 data Or sort child = Or
-    { orSort   :: !sort
-    , orFirst  :: child
+    { orSort :: !sort
+    , orFirst :: child
     , orSecond :: child
     }
     deriving (Eq, Ord, Show)
@@ -43,47 +40,51 @@ data Or sort child = Or
     deriving anyclass (Debug, Diff)
 
 instance Pretty child => Pretty (Or Sort child) where
-    pretty Or { orSort, orFirst, orSecond } =
+    pretty Or{orSort, orFirst, orSecond} =
         "\\or"
-        <> parameters [orSort]
-        <> arguments' (pretty <$> [orFirst, orSecond])
+            <> parameters [orSort]
+            <> arguments' (pretty <$> [orFirst, orSecond])
 
 instance Unparse child => Unparse (Or Sort child) where
-    unparse Or { orSort, orFirst, orSecond } =
+    unparse Or{orSort, orFirst, orSecond} =
         "\\or"
-        <> parameters [orSort]
-        <> arguments [orFirst, orSecond]
+            <> parameters [orSort]
+            <> arguments [orFirst, orSecond]
 
-    unparse2 Or { orFirst, orSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\or"
-            , unparse2 orFirst
-            , unparse2 orSecond
-            ])
+    unparse2 Or{orFirst, orSecond} =
+        Pretty.parens
+            ( Pretty.fillSep
+                [ "\\or"
+                , unparse2 orFirst
+                , unparse2 orSecond
+                ]
+            )
 
 instance Pretty child => Pretty (Or () child) where
-    pretty Or { orFirst, orSecond } =
+    pretty Or{orFirst, orSecond} =
         "\\or"
-        <> arguments' (pretty <$> [orFirst, orSecond])
+            <> arguments' (pretty <$> [orFirst, orSecond])
 instance Unparse child => Unparse (Or () child) where
-    unparse Or { orFirst, orSecond } =
+    unparse Or{orFirst, orSecond} =
         "\\or"
-        <> arguments [orFirst, orSecond]
+            <> arguments [orFirst, orSecond]
 
-    unparse2 Or { orFirst, orSecond } =
-        Pretty.parens (Pretty.fillSep
-            [ "\\or"
-            , unparse2 orFirst
-            , unparse2 orSecond
-            ])
+    unparse2 Or{orFirst, orSecond} =
+        Pretty.parens
+            ( Pretty.fillSep
+                [ "\\or"
+                , unparse2 orFirst
+                , unparse2 orSecond
+                ]
+            )
 
 instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Or Sort) where
-    synthetic Or { orSort, orFirst, orSecond } =
+    synthetic Or{orSort, orFirst, orSecond} =
         orSort
-        & seq (matchSort orSort orFirst)
-        . seq (matchSort orSort orSecond)
+            & seq (matchSort orSort orFirst)
+                . seq (matchSort orSort orSecond)
     {-# INLINE synthetic #-}

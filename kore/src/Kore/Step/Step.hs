@@ -1,99 +1,99 @@
+{-# LANGUAGE Strict #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 Unification of rules (used for stepping with rules or equations)
+-}
+module Kore.Step.Step (
+    UnifiedRule,
+    Result,
+    Results,
+    Renaming,
+    UnifyingRule (..),
+    InstantiationFailure (..),
+    unifyRules,
+    unifyRule,
+    applyInitialConditions,
+    applyRemainder,
+    toConfigurationVariablesCondition,
+    assertFunctionLikeResults,
+    checkFunctionLike,
+    wouldNarrowWith,
 
- -}
-{-# LANGUAGE Strict #-}
-
-module Kore.Step.Step
-    ( UnifiedRule
-    , Result
-    , Results
-    , Renaming
-    , UnifyingRule (..)
-    , InstantiationFailure (..)
-    , unifyRules
-    , unifyRule
-    , applyInitialConditions
-    , applyRemainder
-    , toConfigurationVariablesCondition
-    , assertFunctionLikeResults
-    , checkFunctionLike
-    , wouldNarrowWith
     -- * Re-exports
-    , mkRewritingPattern
+    mkRewritingPattern,
     -- Below exports are just for tests
-    , Step.gatherResults
-    , Step.remainders
-    , Step.result
-    , Step.results
-    ) where
+    Step.gatherResults,
+    Step.remainders,
+    Step.result,
+    Step.results,
+) where
 
 import Prelude.Kore
 
-import Data.Functor
-    ( (<&>)
-    )
+import Data.Functor (
+    (<&>),
+ )
 import qualified Data.Map.Strict as Map
-import Data.Set
-    ( Set
-    )
+import Data.Set (
+    Set,
+ )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Condition
-    ( Condition
-    )
+import Kore.Internal.Condition (
+    Condition,
+ )
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.Conditional
-    ( Conditional (Conditional)
-    )
+import Kore.Internal.Conditional (
+    Conditional (Conditional),
+ )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.OrCondition (
+    OrCondition,
+ )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
-import Kore.Internal.TermLike
-    ( InternalVariable
-    , SomeVariableName
-    , TermLike
-    )
+import Kore.Internal.TermLike (
+    InternalVariable,
+    SomeVariableName,
+    TermLike,
+ )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import qualified Kore.Step.Simplification.Not as Not
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import qualified Kore.Step.Simplification.Not as Not
+import Kore.Step.Simplification.Simplify (
+    MonadSimplify,
+ )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Procedure
-import Kore.Unification.UnifierT
-    ( evalEnvUnifierT
-    )
+import Kore.Unification.UnifierT (
+    evalEnvUnifierT,
+ )
 import Kore.Unparser
-import Kore.Variables.Target
-    ( Target
-    )
+import Kore.Variables.Target (
+    Target,
+ )
 import qualified Kore.Variables.Target as Target
-import Logic
-    ( LogicT
-    )
+import Logic (
+    LogicT,
+ )
 import qualified Logic
 import qualified Pretty
 
@@ -110,15 +110,15 @@ type Results rule =
         (Pattern (UnifyingRuleVariable rule))
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
-unifyRules
-    :: MonadSimplify simplifier
-    => UnifyingRule rule
-    => UnifyingRuleVariable rule ~ RewritingVariableName
-    => Pattern RewritingVariableName
-    -- ^ Initial configuration
-    -> [rule]
-    -- ^ Rule
-    -> simplifier [UnifiedRule rule]
+unifyRules ::
+    MonadSimplify simplifier =>
+    UnifyingRule rule =>
+    UnifyingRuleVariable rule ~ RewritingVariableName =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
+    -- | Rule
+    [rule] ->
+    simplifier [UnifiedRule rule]
 unifyRules initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
@@ -135,17 +135,16 @@ If any of these steps produces an error, then @unifyRule@ returns that error.
 
 @unifyRule@ returns the renamed rule wrapped with the combined conditions on
 unification. The substitution is not applied to the renamed rule.
-
- -}
-unifyRule
-    :: RewritingVariableName ~ UnifyingRuleVariable rule
-    => MonadSimplify simplifier
-    => UnifyingRule rule
-    => Pattern RewritingVariableName
-    -- ^ Initial configuration
-    -> rule
-    -- ^ Rule
-    -> LogicT simplifier (UnifiedRule rule)
+-}
+unifyRule ::
+    RewritingVariableName ~ UnifyingRuleVariable rule =>
+    MonadSimplify simplifier =>
+    UnifyingRule rule =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
+    -- | Rule
+    rule ->
+    LogicT simplifier (UnifiedRule rule)
 unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
@@ -154,7 +153,7 @@ unifyRule initial rule = do
     let ruleLeft = matchingPattern rule
     unification <-
         unificationProcedure sideCondition initialTerm ruleLeft
-        & evalEnvUnifierT Not.notSimplifier
+            & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
@@ -164,70 +163,72 @@ unifyRule initial rule = do
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
 
-{- | The 'Set' of variables that would be introduced by narrowing.
- -}
+-- | The 'Set' of variables that would be introduced by narrowing.
+
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith
-    :: forall rule variable
-    .  variable ~ UnifyingRuleVariable rule
-    => Ord variable
-    => UnifyingRule rule
-    => UnifiedRule rule
-    -> Set (SomeVariableName variable)
+wouldNarrowWith ::
+    forall rule variable.
+    variable ~ UnifyingRuleVariable rule =>
+    Ord variable =>
+    UnifyingRule rule =>
+    UnifiedRule rule ->
+    Set (SomeVariableName variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where
     leftAxiomVariables =
         TermLike.freeVariables leftAxiom
-        & FreeVariables.toNames
+            & FreeVariables.toNames
       where
-        Conditional { term = axiom } = unified
+        Conditional{term = axiom} = unified
         leftAxiom = matchingPattern axiom
-    Conditional { substitution } = unified
+    Conditional{substitution} = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
 -- |Errors if configuration or matching pattern are not function-like
-assertFunctionLikeResults
-    :: variable ~ UnifyingRuleVariable rule
-    => InternalVariable variable
-    => Monad m
-    => UnifyingRule rule
-    => Eq rule
-    => TermLike variable
-    -> Results rule
-    -> m ()
+assertFunctionLikeResults ::
+    variable ~ UnifyingRuleVariable rule =>
+    InternalVariable variable =>
+    Monad m =>
+    UnifyingRule rule =>
+    Eq rule =>
+    TermLike variable ->
+    Results rule ->
+    m ()
 assertFunctionLikeResults termLike results =
     let appliedRules = Result.appliedRule <$> Results.results results
-    in case checkFunctionLike appliedRules termLike of
-        Left err -> error err
-        _        -> return ()
+     in case checkFunctionLike appliedRules termLike of
+            Left err -> error err
+            _ -> return ()
 
 -- |Checks whether configuration and matching pattern are function-like
-checkFunctionLike
-    :: InternalVariable variable
-    => InternalVariable (UnifyingRuleVariable rule)
-    => Foldable f
-    => UnifyingRule rule
-    => Eq (f (UnifiedRule rule))
-    => Monoid (f (UnifiedRule rule))
-    => f (UnifiedRule rule)
-    -> TermLike variable
-    -> Either String ()
+checkFunctionLike ::
+    InternalVariable variable =>
+    InternalVariable (UnifyingRuleVariable rule) =>
+    Foldable f =>
+    UnifyingRule rule =>
+    Eq (f (UnifiedRule rule)) =>
+    Monoid (f (UnifiedRule rule)) =>
+    f (UnifiedRule rule) ->
+    TermLike variable ->
+    Either String ()
 checkFunctionLike unifiedRules pat
-  | unifiedRules == mempty = pure ()
-  | TermLike.isFunctionPattern pat =
-    traverse_ checkFunctionLikeRule unifiedRules
-  | otherwise = Left . show . Pretty.vsep $
-    [ "Expected function-like term, but found:"
-    , Pretty.indent 4 (unparse pat)
-    ]
+    | unifiedRules == mempty = pure ()
+    | TermLike.isFunctionPattern pat =
+        traverse_ checkFunctionLikeRule unifiedRules
+    | otherwise =
+        Left . show . Pretty.vsep $
+            [ "Expected function-like term, but found:"
+            , Pretty.indent 4 (unparse pat)
+            ]
   where
-    checkFunctionLikeRule Conditional { term }
-      | TermLike.isFunctionPattern left = return ()
-      | otherwise = Left . show . Pretty.vsep $
-        [ "Expected function-like left-hand side of rule, but found:"
-        , Pretty.indent 4 (unparse left)
-        ]
+    checkFunctionLikeRule Conditional{term}
+        | TermLike.isFunctionPattern left = return ()
+        | otherwise =
+            Left . show . Pretty.vsep $
+                [ "Expected function-like left-hand side of rule, but found:"
+                , Pretty.indent 4 (unparse left)
+                ]
       where
         left = matchingPattern term
 
@@ -238,18 +239,17 @@ The rule is considered to apply if the result is not @\\bottom@.
 @applyInitialConditions@ assumes that the unification solution includes the
 @requires@ clause, and that their conjunction has already been simplified with
 respect to the initial condition.
-
- -}
-applyInitialConditions
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => Condition RewritingVariableName
-    -- ^ Initial conditions
-    -> Condition RewritingVariableName
-    -- ^ Unification conditions
-    -> LogicT simplifier (OrCondition RewritingVariableName)
-    -- TODO(virgil): This should take advantage of the LogicT and not return
-    -- an OrCondition.
+-}
+applyInitialConditions ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    -- | Initial conditions
+    Condition RewritingVariableName ->
+    -- | Unification conditions
+    Condition RewritingVariableName ->
+    LogicT simplifier (OrCondition RewritingVariableName)
+-- TODO(virgil): This should take advantage of the LogicT and not return
+-- an OrCondition.
 applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
     -- requires clause is already included in the unification conditions, and
@@ -260,7 +260,7 @@ applyInitialConditions initial unification = do
         -- must preserve the initial conditions here, so it cannot be used as
         -- the side condition!
         Simplifier.simplifyCondition SideCondition.top (initial <> unification)
-        & MultiOr.gather
+            & MultiOr.gather
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -269,24 +269,22 @@ applyInitialConditions initial unification = do
     return evaluated
 
 -- |Renames configuration variables to distinguish them from those in the rule.
-toConfigurationVariablesCondition
-    :: InternalVariable variable
-    => SideCondition variable
-    -> SideCondition (Target variable)
+toConfigurationVariablesCondition ::
+    InternalVariable variable =>
+    SideCondition variable ->
+    SideCondition (Target variable)
 toConfigurationVariablesCondition =
     SideCondition.mapVariables Target.mkUnifiedNonTarget
 
-{- | Apply the remainder predicate to the given initial configuration.
-
- -}
-applyRemainder
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => Pattern RewritingVariableName
-    -- ^ Initial configuration
-    -> Condition RewritingVariableName
-    -- ^ Remainder
-    -> LogicT simplifier (Pattern RewritingVariableName)
+-- | Apply the remainder predicate to the given initial configuration.
+applyRemainder ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    -- | Initial configuration
+    Pattern RewritingVariableName ->
+    -- | Remainder
+    Condition RewritingVariableName ->
+    LogicT simplifier (Pattern RewritingVariableName)
 applyRemainder initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level

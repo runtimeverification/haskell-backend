@@ -1,69 +1,69 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Module      : Kore.Repl.Parser
 Description : REPL parser.
 Copyright   : (c) Runtime Verification, 219
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
-{-# LANGUAGE Strict #-}
+module Kore.Repl.Parser (
+    commandParser,
+    scriptParser,
+    ReplParseError (..),
+) where
 
-module Kore.Repl.Parser
-    ( commandParser
-    , scriptParser
-    , ReplParseError (..)
-    ) where
+import Prelude.Kore hiding (
+    many,
+ )
 
-import Prelude.Kore hiding
-    ( many
-    )
-
-import Data.Functor
-    ( void
-    )
-import Data.GraphViz
-    ( GraphvizOutput
-    )
+import Data.Functor (
+    void,
+ )
+import Data.GraphViz (
+    GraphvizOutput,
+ )
 import qualified Data.GraphViz as Graph
 import qualified Data.HashSet as HashSet
-import Data.List
-    ( nub
-    )
+import Data.List (
+    nub,
+ )
 import qualified Data.Set as Set
-import Data.String
-    ( IsString (..)
-    )
-import Data.Text
-    ( Text
-    )
+import Data.String (
+    IsString (..),
+ )
+import Data.Text (
+    Text,
+ )
 import qualified Data.Text as Text
-import Text.Megaparsec
-    ( Parsec
-    , ShowErrorComponent (..)
-    , customFailure
-    , eof
-    , many
-    , manyTill
-    , noneOf
-    , oneOf
-    , option
-    , try
-    )
+import Text.Megaparsec (
+    Parsec,
+    ShowErrorComponent (..),
+    customFailure,
+    eof,
+    many,
+    manyTill,
+    noneOf,
+    oneOf,
+    option,
+    try,
+ )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import Type.Reflection
-    ( SomeTypeRep
-    )
+import Type.Reflection (
+    SomeTypeRep,
+ )
 
-import Kore.Log
-    ( EntryTypes
-    )
+import Kore.Log (
+    EntryTypes,
+ )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
 type Parser = Parsec ReplParseError Text
 
-newtype ReplParseError = ReplParseError { unReplParseError :: String }
+newtype ReplParseError = ReplParseError {unReplParseError :: String}
     deriving (Eq, Ord)
 
 instance IsString ReplParseError where
@@ -72,19 +72,20 @@ instance IsString ReplParseError where
 instance ShowErrorComponent ReplParseError where
     showErrorComponent (ReplParseError string) = string
 
--- | This parser fails no match is found. It is expected to be used as
--- @
--- maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
--- @
-
+{- | This parser fails no match is found. It is expected to be used as
+ @
+ maybe ShowUsage id . Text.Megaparsec.parseMaybe commandParser
+ @
+-}
 scriptParser :: Parser [ReplCommand]
 scriptParser =
-    some ( skipSpacesAndComments
-         *> commandParser0 (void Char.newline)
-         <* many Char.newline
-         <* skipSpacesAndComments
-         )
-    <* eof
+    some
+        ( skipSpacesAndComments
+            *> commandParser0 (void Char.newline)
+            <* many Char.newline
+            <* skipSpacesAndComments
+        )
+        <* eof
   where
     skipSpacesAndComments :: Parser (Maybe ())
     skipSpacesAndComments =
@@ -139,10 +140,10 @@ nonRecursiveCommand =
         , tryAlias
         ]
 
-pipeWith
-    :: (ReplCommand -> Parser ReplCommand)
-    -> ReplCommand
-    -> Parser ReplCommand
+pipeWith ::
+    (ReplCommand -> Parser ReplCommand) ->
+    ReplCommand ->
+    Parser ReplCommand
 pipeWith parserCmd cmd = try (pipe cmd >>= parserCmd)
 
 endOfInput :: ReplCommand -> Parser () -> Parser ReplCommand
@@ -160,25 +161,25 @@ loadScript = LoadScript <$$> literal "load" *> quotedOrWordWithout ""
 showClaim :: Parser ReplCommand
 showClaim =
     ShowClaim
-    <$$> literal "claim"
-    *> optional
-        (Left <$> parseClaimDecimal <|> Right <$> ruleNameParser)
+        <$$> literal "claim"
+        *> optional
+            (Left <$> parseClaimDecimal <|> Right <$> ruleNameParser)
 
 showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
-    <$$> literal "axiom"
-    *> ( Left <$> parseAxiomDecimal
-        <|> Right <$> ruleNameParser
-       )
+        <$$> literal "axiom"
+        *> ( Left <$> parseAxiomDecimal
+                <|> Right <$> ruleNameParser
+           )
 
 prove :: Parser ReplCommand
 prove =
     Prove
-    <$$> literal "prove"
-    *> ( Left <$> parseClaimDecimal
-       <|> Right <$> ruleNameParser
-       )
+        <$$> literal "prove"
+        *> ( Left <$> parseClaimDecimal
+                <|> Right <$> ruleNameParser
+           )
 
 showGraph :: Parser ReplCommand
 showGraph = do
@@ -260,18 +261,18 @@ exit = const Exit <$$> literal "exit"
 tryAxiomClaim :: Parser ReplCommand
 tryAxiomClaim =
     Try
-    <$$> literal "try"
-    *> ( try (ByIndex <$> ruleIndexParser)
-        <|> ByName <$> ruleNameParser
-       )
+        <$$> literal "try"
+        *> ( try (ByIndex <$> ruleIndexParser)
+                <|> ByName <$> ruleNameParser
+           )
 
 tryForceAxiomClaim :: Parser ReplCommand
 tryForceAxiomClaim =
     TryF
-    <$$> literal "tryf"
-    *> ( try (ByIndex <$> ruleIndexParser)
-        <|> ByName <$> ruleNameParser
-       )
+        <$$> literal "tryf"
+        *> ( try (ByIndex <$> ruleIndexParser)
+                <|> ByName <$> ruleNameParser
+           )
 
 ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
 ruleIndexParser =
@@ -298,16 +299,16 @@ saveSession =
 savePartialProof :: Parser ReplCommand
 savePartialProof =
     SavePartialProof
-    <$$> literal "save-partial-proof"
-    *> maybeDecimal
-    <**> quotedOrWordWithout ""
+        <$$> literal "save-partial-proof"
+        *> maybeDecimal
+        <**> quotedOrWordWithout ""
 
 logCommand :: Parser ReplCommand
 logCommand =
     log
-    <|> try debugAttemptEquation
-    <|> try debugApplyEquation
-    <|> debugEquation
+        <|> try debugAttemptEquation
+        <|> try debugApplyEquation
+        <|> debugEquation
 
 log :: Parser ReplCommand
 log = do
@@ -317,12 +318,14 @@ log = do
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $ Log GeneralLogOptions
-        { logType
-        , logLevel
-        , timestampsSwitch
-        , logEntries
-        }
+    pure $
+        Log
+            GeneralLogOptions
+                { logType
+                , logLevel
+                , timestampsSwitch
+                , logEntries
+                }
   where
     parseSeverityWithDefault =
         severity <|> pure Log.defaultSeverity
@@ -332,37 +335,37 @@ log = do
 debugAttemptEquation :: Parser ReplCommand
 debugAttemptEquation =
     DebugAttemptEquation
-    . Log.DebugAttemptEquationOptions
-    . HashSet.fromList
-    . fmap Text.pack
-    <$$> literal "debug-attempt-equation"
-    *> many (quotedOrWordWithout "")
+        . Log.DebugAttemptEquationOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-attempt-equation"
+        *> many (quotedOrWordWithout "")
 
 debugApplyEquation :: Parser ReplCommand
 debugApplyEquation =
     DebugApplyEquation
-    . Log.DebugApplyEquationOptions
-    . HashSet.fromList
-    . fmap Text.pack
-    <$$> literal "debug-apply-equation"
-    *> many (quotedOrWordWithout "")
+        . Log.DebugApplyEquationOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-apply-equation"
+        *> many (quotedOrWordWithout "")
 
 debugEquation :: Parser ReplCommand
 debugEquation =
     DebugEquation
-    . Log.DebugEquationOptions
-    . HashSet.fromList
-    . fmap Text.pack
-    <$$> literal "debug-equation"
-    *> many (quotedOrWordWithout "")
+        . Log.DebugEquationOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-equation"
+        *> many (quotedOrWordWithout "")
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError
   where
-    sDebug    = Log.Debug    <$ literal "debug"
-    sInfo     = Log.Info     <$ literal "info"
-    sWarning  = Log.Warning  <$ literal "warning"
-    sError    = Log.Error    <$ literal "error"
+    sDebug = Log.Debug <$ literal "debug"
+    sInfo = Log.Info <$ literal "info"
+    sWarning = Log.Warning <$ literal "warning"
+    sError = Log.Error <$ literal "error"
 
 parseLogEntries :: Parser EntryTypes
 parseLogEntries = do
@@ -371,24 +374,24 @@ parseLogEntries = do
     literal "]"
     return . Set.fromList $ entries
   where
-      entry :: Parser SomeTypeRep
-      entry = do
-          item <- wordWithout ['[', ']', ',']
-          _ <- optional (literal ",")
-          Log.parseEntryType . Text.pack $ item
+    entry :: Parser SomeTypeRep
+    entry = do
+        item <- wordWithout ['[', ']', ',']
+        _ <- optional (literal ",")
+        Log.parseEntryType . Text.pack $ item
 
 parseLogType :: Parser Log.KoreLogType
 parseLogType = logStdOut <|> logFile
   where
-    logStdOut = Log.LogStdErr <$  literal "stderr"
-    logFile   =
-        Log.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
+    logStdOut = Log.LogStdErr <$ literal "stderr"
+    logFile =
+        Log.LogFileText <$$> literal "file" *> quotedOrWordWithout ""
 
 parseTimestampSwitch :: Parser Log.TimestampsSwitch
 parseTimestampSwitch = disable <|> enable
   where
     disable = Log.TimestampsDisable <$ literal "disable-log-timestamps"
-    enable  = Log.TimestampsEnable  <$ literal "enable-log-timestamps"
+    enable = Log.TimestampsEnable <$ literal "enable-log-timestamps"
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
@@ -397,15 +400,15 @@ redirect cmd =
 pipe :: ReplCommand -> Parser ReplCommand
 pipe cmd =
     Pipe cmd
-    <$$> literal "|"
-    *> quotedOrWordWithout ">"
-    <**> many (quotedOrWordWithout ">")
+        <$$> literal "|"
+        *> quotedOrWordWithout ">"
+        <**> many (quotedOrWordWithout ">")
 
 appendTo :: ReplCommand -> Parser ReplCommand
 appendTo cmd =
     AppendTo cmd
-    <$$> literal ">>"
-    *> quotedOrWordWithout ""
+        <$$> literal ">>"
+        *> quotedOrWordWithout ""
 
 alias :: Parser ReplCommand
 alias = do
@@ -417,26 +420,27 @@ alias = do
         else pure ()
     literal "="
     command <- some (noneOf ['\n'])
-    return . Alias $ AliasDefinition { name, arguments, command }
+    return . Alias $ AliasDefinition{name, arguments, command}
 
 tryAlias :: Parser ReplCommand
 tryAlias = do
     name <- some (noneOf [' ']) <* Char.space
-    arguments <- many
-        (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "|>")
-    return . TryAlias $ ReplAlias { name, arguments }
+    arguments <-
+        many
+            (QuotedArgument <$> quotedWord <|> SimpleArgument <$> wordWithout "|>")
+    return . TryAlias $ ReplAlias{name, arguments}
 
 infixr 2 <$$>
 infixr 1 <**>
 
--- | These are just low-precedence versions of the original operators used for
--- convenience in this module.
+{- | These are just low-precedence versions of the original operators used for
+ convenience in this module.
+-}
 (<$$>) :: Functor f => (a -> b) -> f a -> f b
 (<$$>) = (<$>)
 
 (<**>) :: Applicative f => f (a -> b) -> f a -> f b
 (<**>) = (<*>)
-
 
 spaceConsumer :: Parser ()
 spaceConsumer =
@@ -471,13 +475,13 @@ quotedOrWordWithout s = quotedWord <|> wordWithout s
 quotedWord :: Parser String
 quotedWord =
     Char.char '"'
-    *> manyTill L.charLiteral (Char.char '"')
-    <* spaceNoNewline
+        *> manyTill L.charLiteral (Char.char '"')
+        <* spaceNoNewline
 
 wordWithout :: [Char] -> Parser String
 wordWithout xs =
     some (noneOf $ [' ', '\t', '\r', '\f', '\v', '\n'] <> xs)
-    <* spaceNoNewline
+        <* spaceNoNewline
 
 maybeWord :: Parser (Maybe String)
 maybeWord = optional word
@@ -491,12 +495,12 @@ parseAxiomDecimal = AxiomIndex <$> decimal
 parseGraphOpt :: Parser GraphvizOutput
 parseGraphOpt =
     (Graph.Jpeg <$ literal "jpeg")
-    <|> (Graph.Jpeg <$ literal "jpg")
-    <|> (Graph.Png <$ literal "png")
-    <|> (Graph.Svg <$ literal "svg")
-    <|> (Graph.Pdf <$ literal "pdf")
+        <|> (Graph.Jpeg <$ literal "jpg")
+        <|> (Graph.Png <$ literal "png")
+        <|> (Graph.Svg <$ literal "svg")
+        <|> (Graph.Pdf <$ literal "pdf")
 
 parseGraphView :: Parser GraphView
 parseGraphView =
     (Collapsed <$ literal "collapsed")
-    <|> (Expanded <$ literal "expanded")
+        <|> (Expanded <$ literal "expanded")

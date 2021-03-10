@@ -1,30 +1,30 @@
-{-|
+{- |
 Module      : Kore.Attribute.ProductionID
 Description : Production ID attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.ProductionID
-    ( ProductionID (..)
-    , productionIDId, productionIDSymbol, productionIDAttribute
-    ) where
+module Kore.Attribute.ProductionID (
+    ProductionID (..),
+    productionIDId,
+    productionIDSymbol,
+    productionIDAttribute,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
-{- | @ProductionID@ represents the @productionID@ attribute.
- -}
-newtype ProductionID = ProductionID { getProductionID :: Maybe Text }
+-- | @ProductionID@ represents the @productionID@ attribute.
+newtype ProductionID = ProductionID {getProductionID :: Maybe Text}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -58,7 +58,7 @@ instance ParseAttributes ProductionID where
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
             unless (isNothing productionID) failDuplicate'
-            return ProductionID { getProductionID = Just name }
+            return ProductionID{getProductionID = Just name}
       where
         withApplication' = Parser.withApplication productionIDId
         failDuplicate' = Parser.failDuplicate productionIDId

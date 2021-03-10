@@ -1,24 +1,23 @@
 {- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
-
 -}
-module Kore.Log.DebugSubstitutionSimplifier
-    ( DebugSubstitutionSimplifier (..)
-    , whileDebugSubstitutionSimplifier
-    , debugSubstitutionSimplifierResult
-    ) where
+module Kore.Log.DebugSubstitutionSimplifier (
+    DebugSubstitutionSimplifier (..),
+    whileDebugSubstitutionSimplifier,
+    debugSubstitutionSimplifierResult,
+) where
 
 import Prelude.Kore
 
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Log
 
-import Pretty
-    ( Pretty (..)
-    )
+import Pretty (
+    Pretty (..),
+ )
 import qualified SQL
 
 data DebugSubstitutionSimplifier
@@ -42,14 +41,14 @@ instance Entry DebugSubstitutionSimplifier where
 
 instance SQL.Table DebugSubstitutionSimplifier
 
-whileDebugSubstitutionSimplifier
-    :: MonadLog log
-    => log a
-    -> log a
+whileDebugSubstitutionSimplifier ::
+    MonadLog log =>
+    log a ->
+    log a
 whileDebugSubstitutionSimplifier =
     logWhile WhileSimplifySubstitution
 
-debugSubstitutionSimplifierResult
-    :: MonadLog log
-    => log ()
+debugSubstitutionSimplifierResult ::
+    MonadLog log =>
+    log ()
 debugSubstitutionSimplifierResult = logEntry SubstitutionSimplifierResult

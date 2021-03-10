@@ -1,6 +1,6 @@
-module Test.Pretty
-    ( test_layoutOneLine
-    ) where
+module Test.Pretty (
+    test_layoutOneLine,
+) where
 
 import Prelude.Kore
 

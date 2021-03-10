@@ -1,50 +1,48 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
+-}
+module Kore.Builtin.String.String (
+    sort,
+    asBuiltin,
+    asInternal,
+    asPattern,
+    asTermLike,
+    asPartialPattern,
 
- -}
-
-module Kore.Builtin.String.String
-    ( sort
-    , asBuiltin
-    , asInternal
-    , asPattern
-    , asTermLike
-    , asPartialPattern
-      -- * keys
-    , eqKey
-    , ltKey
-    , plusKey
-    , string2IntKey
-    , int2StringKey
-    , substrKey
-    , lengthKey
-    , findKey
-    , string2BaseKey
-    , chrKey
-    , ordKey
-    , token2StringKey
-    , string2TokenKey
-    ) where
+    -- * keys
+    eqKey,
+    ltKey,
+    plusKey,
+    string2IntKey,
+    int2StringKey,
+    substrKey,
+    lengthKey,
+    findKey,
+    string2BaseKey,
+    chrKey,
+    ordKey,
+    token2StringKey,
+    string2TokenKey,
+) where
 
 import Prelude.Kore
 
-import Data.String
-    ( IsString
-    )
-import Data.Text
-    ( Text
-    )
+import Data.String (
+    IsString,
+ )
+import Data.Text (
+    Text,
+ )
 
 import Kore.Internal.InternalString
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 
-{- | Builtin name of the @String@ sort.
- -}
+-- | Builtin name of the @String@ sort.
 sort :: Text
 sort = "STRING.String"
 
@@ -54,21 +52,24 @@ The result sort should be hooked to the builtin @String@ sort, but this is not
 checked.
 
 See also: 'sort'
-
- -}
-asInternal
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Text  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asInternal ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Text ->
+    TermLike variable
 asInternal internalStringSort internalStringValue =
-    TermLike.fromConcrete . mkInternalString
-    $ asBuiltin internalStringSort internalStringValue
+    TermLike.fromConcrete . mkInternalString $
+        asBuiltin internalStringSort internalStringValue
 
-asBuiltin
-    :: Sort  -- ^ resulting sort
-    -> Text  -- ^ builtin value to render
-    -> InternalString
+asBuiltin ::
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Text ->
+    InternalString
 asBuiltin = InternalString
 
 {- | Render an 'String' as a domain value pattern of the given sort.
@@ -77,34 +78,39 @@ asBuiltin = InternalString
   checked.
 
   See also: 'sort'
-
- -}
-asTermLike
-    :: InternalVariable variable
-    => InternalString  -- ^ builtin value to render
-    -> TermLike variable
+-}
+asTermLike ::
+    InternalVariable variable =>
+    -- | builtin value to render
+    InternalString ->
+    TermLike variable
 asTermLike internal =
-    mkDomainValue DomainValue
-        { domainValueSort = internalStringSort
-        , domainValueChild = mkStringLiteral internalStringValue
-        }
+    mkDomainValue
+        DomainValue
+            { domainValueSort = internalStringSort
+            , domainValueChild = mkStringLiteral internalStringValue
+            }
   where
-    InternalString { internalStringSort } = internal
-    InternalString { internalStringValue } = internal
+    InternalString{internalStringSort} = internal
+    InternalString{internalStringValue} = internal
 
-asPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Text  -- ^ builtin value to render
-    -> Pattern variable
+asPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Text ->
+    Pattern variable
 asPattern resultSort =
     Pattern.fromTermLike . asInternal resultSort
 
-asPartialPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Maybe Text  -- ^ builtin value to render
-    -> Pattern variable
+asPartialPattern ::
+    InternalVariable variable =>
+    -- | resulting sort
+    Sort ->
+    -- | builtin value to render
+    Maybe Text ->
+    Pattern variable
 asPartialPattern resultSort =
     maybe Pattern.bottom (asPattern resultSort)
 

@@ -1,4 +1,4 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
@@ -20,33 +20,32 @@ main = do
     -- or --
     print (parseOnly koreParser fileName contents)
 @
-
 -}
-module Kore.Parser
-    ( parseKoreDefinition
-    , parseKorePattern
-    , koreParser
-    , Parser.parsePattern
-    , ParsedPattern
-    , Parser.embedParsedPattern
-    , ParsedDefinition
-    ) where
+module Kore.Parser (
+    parseKoreDefinition,
+    parseKorePattern,
+    koreParser,
+    Parser.parsePattern,
+    ParsedPattern,
+    Parser.embedParsedPattern,
+    ParsedDefinition,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
-import Text.Megaparsec
-    ( eof
-    )
+import Data.Text (
+    Text,
+ )
+import Text.Megaparsec (
+    eof,
+ )
 
 import qualified Kore.Parser.Lexer as Lexer
 import qualified Kore.Parser.Parser as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
 
-{-|'koreParser' is a parser for Kore.
+{- |'koreParser' is a parser for Kore.
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
@@ -57,22 +56,24 @@ koreParser = Lexer.space *> Parser.parseDefinition <* eof
 @parseKoreDefinition@ returns a 'KoreDefinition' upon success, or an parse error
 message otherwise. The input must contain a valid Kore definition and nothing
 else.
-
- -}
-parseKoreDefinition
-    :: FilePath  -- ^ Filename used for error messages
-    -> Text  -- ^ The concrete syntax of a valid Kore definition
-    -> Either String ParsedDefinition
+-}
+parseKoreDefinition ::
+    -- | Filename used for error messages
+    FilePath ->
+    -- | The concrete syntax of a valid Kore definition
+    Text ->
+    Either String ParsedDefinition
 parseKoreDefinition = parseOnly (Lexer.space *> koreParser)
 
 {- | Parse a string representing a Kore pattern.
 
 @parseKorePattern@ returns a 'ParsedPattern' upon success, or an parse error
 message otherwise. The input must contain a valid Kore pattern and nothing else.
-
- -}
-parseKorePattern
-    :: FilePath  -- ^ Filename used for error messages
-    -> Text  -- ^ The concrete syntax of a valid Kore pattern
-    -> Either String ParsedPattern
+-}
+parseKorePattern ::
+    -- | Filename used for error messages
+    FilePath ->
+    -- | The concrete syntax of a valid Kore pattern
+    Text ->
+    Either String ParsedPattern
 parseKorePattern = parseOnly (Lexer.space *> Parser.parsePattern)

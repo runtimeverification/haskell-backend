@@ -1,26 +1,28 @@
-{-|
+{-# LANGUAGE Strict #-}
+
+{- |
 Copyright : (c) Runtime Verification, 2021
 License   : NCSA
 -}
+module Kore.Internal.InternalMap (
+    InternalMap,
+    InternalAc (..),
+    Element (..),
+    MapElement,
+    Value (..),
+    MapValue,
+    NormalizedMap (..),
 
-{-# LANGUAGE Strict #-}
-
-module Kore.Internal.InternalMap
-    ( InternalMap
-    , InternalAc (..)
-    , Element (..), MapElement
-    , Value (..), MapValue
-    , NormalizedMap (..)
     -- * Re-exports
-    , module Kore.Internal.NormalizedAc
-    ) where
+    module Kore.Internal.NormalizedAc,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
@@ -37,18 +39,14 @@ import qualified Pretty
 
 -- * Builtin Map
 
-{- | Wrapper for map values.
--}
+-- | Wrapper for map values.
 type MapValue = Value NormalizedMap
 
-{- | Wrapper for map elements.
- -}
+-- | Wrapper for map elements.
 type MapElement = Element NormalizedMap
 
-{- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
--}
-newtype NormalizedMap key child =
-    NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
+-- | Wrapper for normalized maps, to be used in the `builtinAcChild` field.
+newtype NormalizedMap key child = NormalizedMap {getNormalizedMap :: NormalizedAc NormalizedMap key child}
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -57,7 +55,7 @@ newtype NormalizedMap key child =
     deriving anyclass (Debug, Diff)
 
 instance AcWrapper NormalizedMap where
-    newtype Value NormalizedMap child = MapValue { getMapValue :: child }
+    newtype Value NormalizedMap child = MapValue {getMapValue :: child}
         deriving (Eq, Ord, Show)
         deriving (Foldable, Functor, Traversable)
         deriving (GHC.Generic)
@@ -65,8 +63,7 @@ instance AcWrapper NormalizedMap where
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
-    newtype Element NormalizedMap child =
-        MapElement { getMapElement :: (child, child) }
+    newtype Element NormalizedMap child = MapElement {getMapElement :: (child, child)}
         deriving (Eq, Ord, Show)
         deriving (Foldable, Functor, Traversable)
         deriving (GHC.Generic)
@@ -88,32 +85,31 @@ instance AcWrapper NormalizedMap where
     unparseConcreteElement keyUnparser childUnparser (key, MapValue value) =
         arguments' [keyUnparser key, childUnparser value]
 
-{- | Internal representation of the builtin @MAP.Map@ domain.
--}
+-- | Internal representation of the builtin @MAP.Map@ domain.
 type InternalMap = InternalAc NormalizedMap
 
 instance (Unparse key, Unparse child) => Unparse (InternalMap key child) where
     unparse internalMap =
         Pretty.hsep
-        [ "/* InternalMap: */"
-        , unparseInternalAc unparse unparse internalMap
-        ]
+            [ "/* InternalMap: */"
+            , unparseInternalAc unparse unparse internalMap
+            ]
     unparse2 internalMap =
         Pretty.hsep
-        [ "/* InternalMap: */"
-        , unparseInternalAc unparse2 unparse2 internalMap
-        ]
+            [ "/* InternalMap: */"
+            , unparseInternalAc unparse2 unparse2 internalMap
+            ]
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
 instance Synthetic Defined (InternalMap key) where
-    synthetic InternalAc { builtinAcChild = NormalizedMap builtinMapChild }
-      = normalizedAcDefined builtinMapChild
+    synthetic InternalAc{builtinAcChild = NormalizedMap builtinMapChild} =
+        normalizedAcDefined builtinMapChild
     {-# INLINE synthetic #-}
 
 instance
-    Ord variable
-    => Synthetic (FreeVariables variable) (InternalMap key)
-  where
+    Ord variable =>
+    Synthetic (FreeVariables variable) (InternalMap key)
+    where
     synthetic = fold
     {-# INLINE synthetic #-}
 
@@ -123,8 +119,8 @@ instance Synthetic Function (InternalMap key) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Functional (InternalMap key) where
-    synthetic InternalAc { builtinAcChild = NormalizedMap builtinMapChild }
-      = normalizedAcFunctional builtinMapChild
+    synthetic InternalAc{builtinAcChild = NormalizedMap builtinMapChild} =
+        normalizedAcFunctional builtinMapChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (InternalMap key) where
@@ -139,8 +135,8 @@ instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
     extractConstructorLike (MapValue result) = result
 
 instance
-    HasConstructorLike key
-    => Synthetic ConstructorLike (InternalMap key)
-  where
-    synthetic InternalAc { builtinAcChild = NormalizedMap builtinMapChild }
-      = normalizedAcConstructorLike builtinMapChild
+    HasConstructorLike key =>
+    Synthetic ConstructorLike (InternalMap key)
+    where
+    synthetic InternalAc{builtinAcChild = NormalizedMap builtinMapChild} =
+        normalizedAcConstructorLike builtinMapChild

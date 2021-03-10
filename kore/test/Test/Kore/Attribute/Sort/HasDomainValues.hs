@@ -1,11 +1,11 @@
-module Test.Kore.Attribute.Sort.HasDomainValues
-    ( test_HasDomainValues
-    , test_Attributes
-    , test_duplicate
-    , test_arity
-    , test_arguments
-    , test_parameters
-    ) where
+module Test.Kore.Attribute.Sort.HasDomainValues (
+    test_HasDomainValues,
+    test_Attributes,
+    test_duplicate,
+    test_arity,
+    test_arguments,
+    test_parameters,
+) where
 
 import Prelude.Kore
 
@@ -23,29 +23,29 @@ parseHasDomainValues = parseAttributes
 
 test_HasDomainValues :: TestTree
 test_HasDomainValues =
-    testCase "[hasDomainValues{}()] :: HasDomainValues"
-    $ expectSuccess HasDomainValues { getHasDomainValues = True }
-    $ parseHasDomainValues $ Attributes [ hasDomainValuesAttribute ]
+    testCase "[hasDomainValues{}()] :: HasDomainValues" $
+        expectSuccess HasDomainValues{getHasDomainValues = True} $
+            parseHasDomainValues $ Attributes [hasDomainValuesAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[hasDomainValues{}()] :: Attributes"
-    $ expectSuccess attrs $ parseAttributes attrs
+    testCase "[hasDomainValues{}()] :: Attributes" $
+        expectSuccess attrs $ parseAttributes attrs
   where
-    attrs = Attributes [ hasDomainValuesAttribute ]
+    attrs = Attributes [hasDomainValuesAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[hasDomainValues{}(_), hasDomainValues{}(_)]"
-    $ expectFailure
-    $ parseHasDomainValues
-    $ Attributes [ hasDomainValuesAttribute, hasDomainValuesAttribute ]
+    testCase "[hasDomainValues{}(_), hasDomainValues{}(_)]" $
+        expectFailure $
+            parseHasDomainValues $
+                Attributes [hasDomainValuesAttribute, hasDomainValuesAttribute]
 
 test_arity :: TestTree
 test_arity =
-    testCase "[hasDomainValues{}(hasDomainValues{}(), hasDomainValues{}())]"
-    $ expectFailure
-    $ parseHasDomainValues $ Attributes [ illegalAttribute ]
+    testCase "[hasDomainValues{}(hasDomainValues{}(), hasDomainValues{}())]" $
+        expectFailure $
+            parseHasDomainValues $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -67,9 +67,9 @@ test_arity =
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[hasDomainValues{}(\"illegal\")]"
-    $ expectFailure
-    $ parseHasDomainValues $ Attributes [ illegalAttribute ]
+    testCase "[hasDomainValues{}(\"illegal\")]" $
+        expectFailure $
+            parseHasDomainValues $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -83,9 +83,9 @@ test_arguments =
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[hasDomainValues{illegal}()]"
-    $ expectFailure
-    $ parseHasDomainValues $ Attributes [ illegalAttribute ]
+    testCase "[hasDomainValues{illegal}()]" $
+        expectFailure $
+            parseHasDomainValues $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -94,7 +94,7 @@ test_parameters =
                     SymbolOrAlias
                         { symbolOrAliasConstructor = hasDomainValuesId
                         , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
+                            [SortVariableSort (SortVariable "illegal")]
                         }
                 , applicationChildren = []
                 }

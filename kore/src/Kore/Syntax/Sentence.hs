@@ -1,88 +1,89 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Syntax.Sentence (
+    Symbol (..),
+    groundSymbol,
+    Alias (..),
+    SentenceAlias (..),
+    SentenceSymbol (..),
+    SentenceImport (..),
+    SentenceSort (..),
+    SentenceAxiom (..),
+    SentenceClaim (..),
+    sentenceClaimAttributes,
+    SentenceHook (..),
+    Sentence (..),
+    projectSentenceImport,
+    projectSentenceSort,
+    projectSentenceSymbol,
+    projectSentenceHookedSort,
+    projectSentenceHookedSymbol,
+    projectSentenceAlias,
+    projectSentenceAxiom,
+    projectSentenceClaim,
+    sentenceAttributes,
+    eraseSentenceAnnotations,
 
-module Kore.Syntax.Sentence
-    ( Symbol (..)
-    , groundSymbol
-    , Alias (..)
-    , SentenceAlias (..)
-    , SentenceSymbol (..)
-    , SentenceImport (..)
-    , SentenceSort (..)
-    , SentenceAxiom (..)
-    , SentenceClaim (..)
-    , sentenceClaimAttributes
-    , SentenceHook (..)
-    , Sentence (..)
-    , projectSentenceImport
-    , projectSentenceSort
-    , projectSentenceSymbol
-    , projectSentenceHookedSort
-    , projectSentenceHookedSymbol
-    , projectSentenceAlias
-    , projectSentenceAxiom
-    , projectSentenceClaim
-    , sentenceAttributes
-    , eraseSentenceAnnotations
     -- * Injections and projections
-    , asSentence
-    , SentenceSymbolOrAlias (..)
+    asSentence,
+    SentenceSymbolOrAlias (..),
+
     -- * Type synonyms
-    , PureSentenceSymbol
-    , PureSentenceAlias
-    , PureSentenceImport
-    , PureSentenceAxiom
-    , PureSentenceHook
-    , PureSentence
-    , PureModule
-    , ParsedSentenceAlias
-    , ParsedSentenceSymbol
-    , ParsedSentenceImport
-    , ParsedSentenceAxiom
-    , ParsedSentenceSort
-    , ParsedSentenceHook
-    , ParsedSentence
-    , ParsedModule
+    PureSentenceSymbol,
+    PureSentenceAlias,
+    PureSentenceImport,
+    PureSentenceAxiom,
+    PureSentenceHook,
+    PureSentence,
+    PureModule,
+    ParsedSentenceAlias,
+    ParsedSentenceSymbol,
+    ParsedSentenceImport,
+    ParsedSentenceAxiom,
+    ParsedSentenceSort,
+    ParsedSentenceHook,
+    ParsedSentence,
+    ParsedModule,
+
     -- * Re-exports
-    , module Kore.Attribute.Attributes
-    , module Kore.Syntax.Module
-    ) where
+    module Kore.Attribute.Attributes,
+    module Kore.Syntax.Module,
+) where
 
 import Prelude.Kore
 
 import qualified Control.Monad as Monad
-import Data.Generics.Sum.Typed
-    ( projectTyped
-    )
-import Data.Kind
-    ( Type
-    )
-import qualified Generics.SOP as SOP
+import Data.Generics.Sum.Typed (
+    projectTyped,
+ )
+import Data.Kind (
+    Type,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Attributes
-import qualified Kore.Attribute.Null as Attribute
-    ( Null (..)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( HasFreeVariables (..)
-    , freeVariable
-    )
+import qualified Kore.Attribute.Null as Attribute (
+    Null (..),
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables (..),
+    freeVariable,
+ )
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Module
-import Kore.Syntax.Pattern
-    ( Pattern
-    )
+import Kore.Syntax.Pattern (
+    Pattern,
+ )
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.Free
-    ( freePureVariables
-    )
+import Kore.Variables.Free (
+    freePureVariables,
+ )
 import qualified Pretty
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
@@ -90,11 +91,10 @@ import qualified Pretty
 (Declaration and Definitions).
 
 See also: 'SymbolOrAlias'
-
- -}
+-}
 data Symbol = Symbol
     { symbolConstructor :: !Id
-    , symbolParams      :: ![SortVariable]
+    , symbolParams :: ![SortVariable]
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -103,32 +103,32 @@ data Symbol = Symbol
     deriving anyclass (Debug, Diff)
 
 instance Unparse Symbol where
-    unparse Symbol { symbolConstructor, symbolParams } =
+    unparse Symbol{symbolConstructor, symbolParams} =
         unparse symbolConstructor
-        <> parameters symbolParams
+            <> parameters symbolParams
 
-    unparse2 Symbol { symbolConstructor } =
+    unparse2 Symbol{symbolConstructor} =
         unparse2 symbolConstructor
 
-
--- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
--- corresponding to that argument.
+{- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
+ corresponding to that argument.
+-}
 groundSymbol :: Id -> Symbol
-groundSymbol ctor = Symbol
-    { symbolConstructor = ctor
-    , symbolParams = []
-    }
+groundSymbol ctor =
+    Symbol
+        { symbolConstructor = ctor
+        , symbolParams = []
+        }
 
 {- | 'Alias' corresponds to the @head-constructor{sort-variable-list}@ part of
 the @alias-declaration@ and @alias-declaration@ syntactic categories from the
 Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 See also: 'SymbolOrAlias'.
-
- -}
+-}
 data Alias = Alias
     { aliasConstructor :: !Id
-    , aliasParams      :: ![SortVariable]
+    , aliasParams :: ![SortVariable]
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -137,25 +137,23 @@ data Alias = Alias
     deriving anyclass (Debug, Diff)
 
 instance Unparse Alias where
-    unparse Alias { aliasConstructor, aliasParams } =
+    unparse Alias{aliasConstructor, aliasParams} =
         unparse aliasConstructor <> parameters aliasParams
-    unparse2 Alias { aliasConstructor } =
+    unparse2 Alias{aliasConstructor} =
         unparse2 aliasConstructor
 
 {- | 'SentenceAlias' corresponds to the @alias-declaration@ and syntactic
 category from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
 -}
-data SentenceAlias (patternType :: Type) =
-    SentenceAlias
-        { sentenceAliasAlias        :: !Alias
-        , sentenceAliasSorts        :: ![Sort]
-        , sentenceAliasResultSort   :: !Sort
-        , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (SomeVariable VariableName))
-        , sentenceAliasRightPattern :: !patternType
-        , sentenceAliasAttributes   :: !Attributes
-        }
+data SentenceAlias (patternType :: Type) = SentenceAlias
+    { sentenceAliasAlias :: !Alias
+    , sentenceAliasSorts :: ![Sort]
+    , sentenceAliasResultSort :: !Sort
+    , sentenceAliasLeftPattern ::
+        !(Application SymbolOrAlias (SomeVariable VariableName))
+    , sentenceAliasRightPattern :: !patternType
+    , sentenceAliasAttributes :: !Attributes
+    }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -172,19 +170,18 @@ instance Unparse patternType => Unparse (SentenceAlias patternType) where
             , sentenceAliasLeftPattern
             , sentenceAliasRightPattern
             , sentenceAliasAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "alias"
-            , unparse sentenceAliasAlias <> arguments sentenceAliasSorts
-            , ":"
-            , unparse sentenceAliasResultSort
-            , "where"
-            , unparse sentenceAliasLeftPattern
-            , ":="
-            , unparse sentenceAliasRightPattern
-            , unparse sentenceAliasAttributes
-            ]
+            } =
+            Pretty.fillSep
+                [ "alias"
+                , unparse sentenceAliasAlias <> arguments sentenceAliasSorts
+                , ":"
+                , unparse sentenceAliasResultSort
+                , "where"
+                , unparse sentenceAliasLeftPattern
+                , ":="
+                , unparse sentenceAliasRightPattern
+                , unparse sentenceAliasAttributes
+                ]
 
     unparse2
         SentenceAlias
@@ -194,31 +191,28 @@ instance Unparse patternType => Unparse (SentenceAlias patternType) where
             , sentenceAliasLeftPattern
             , sentenceAliasRightPattern
             , sentenceAliasAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "alias"
-            , unparse2 sentenceAliasAlias <> arguments2 sentenceAliasSorts
-            , ":"
-            , unparse2 sentenceAliasResultSort
-            , "where"
-            , unparse2 sentenceAliasLeftPattern
-            , ":="
-            , unparse2 sentenceAliasRightPattern
-            , unparse2 sentenceAliasAttributes
-            ]
+            } =
+            Pretty.fillSep
+                [ "alias"
+                , unparse2 sentenceAliasAlias <> arguments2 sentenceAliasSorts
+                , ":"
+                , unparse2 sentenceAliasResultSort
+                , "where"
+                , unparse2 sentenceAliasLeftPattern
+                , ":="
+                , unparse2 sentenceAliasRightPattern
+                , unparse2 sentenceAliasAttributes
+                ]
 
 {- | 'SentenceSymbol' is the @symbol-declaration@ and syntactic category from
 the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
 -}
-data SentenceSymbol =
-    SentenceSymbol
-        { sentenceSymbolSymbol     :: !Symbol
-        , sentenceSymbolSorts      :: ![Sort]
-        , sentenceSymbolResultSort :: !Sort
-        , sentenceSymbolAttributes :: !Attributes
-        }
+data SentenceSymbol = SentenceSymbol
+    { sentenceSymbolSymbol :: !Symbol
+    , sentenceSymbolSorts :: ![Sort]
+    , sentenceSymbolResultSort :: !Sort
+    , sentenceSymbolAttributes :: !Attributes
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -232,50 +226,54 @@ instance Unparse SentenceSymbol where
             , sentenceSymbolSorts
             , sentenceSymbolResultSort
             , sentenceSymbolAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "symbol"
-            , unparse sentenceSymbolSymbol <> arguments sentenceSymbolSorts
-            , ":"
-            , unparse sentenceSymbolResultSort
-            , unparse sentenceSymbolAttributes
-            ]
+            } =
+            Pretty.fillSep
+                [ "symbol"
+                , unparse sentenceSymbolSymbol <> arguments sentenceSymbolSorts
+                , ":"
+                , unparse sentenceSymbolResultSort
+                , unparse sentenceSymbolAttributes
+                ]
 
     unparse2
         SentenceSymbol
             { sentenceSymbolSymbol
             , sentenceSymbolSorts
             , sentenceSymbolResultSort
-            }
-      = Pretty.vsep
-            [ Pretty.fillSep [ "symbol", unparse2 sentenceSymbolSymbol ]
-            , Pretty.fillSep [ "axiom \\forall s Sorts"
-                             , Pretty.parens (Pretty.fillSep
-                                   [ "\\subset"
-                                   , Pretty.parens (Pretty.fillSep
-                                       [ unparse2 sentenceSymbolSymbol
-                                       , unparse2Inhabitant sentenceSymbolSorts
-                                       ])
-                                   , unparse2 sentenceSymbolResultSort
-                                   ])
-                             ]
-            ]
-          where unparse2Inhabitant ss =
-                  case ss of
-                      [] -> ""
-                      (s : rest) ->
+            } =
+            Pretty.vsep
+                [ Pretty.fillSep ["symbol", unparse2 sentenceSymbolSymbol]
+                , Pretty.fillSep
+                    [ "axiom \\forall s Sorts"
+                    , Pretty.parens
+                        ( Pretty.fillSep
+                            [ "\\subset"
+                            , Pretty.parens
+                                ( Pretty.fillSep
+                                    [ unparse2 sentenceSymbolSymbol
+                                    , unparse2Inhabitant sentenceSymbolSorts
+                                    ]
+                                )
+                            , unparse2 sentenceSymbolResultSort
+                            ]
+                        )
+                    ]
+                ]
+          where
+            unparse2Inhabitant ss =
+                case ss of
+                    [] -> ""
+                    (s : rest) ->
                         Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
-                        <> unparse2Inhabitant rest
+                            <> unparse2Inhabitant rest
 
 {- | 'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport =
-    SentenceImport
-        { sentenceImportModuleName :: !ModuleName
-        , sentenceImportAttributes :: !Attributes
-        }
+data SentenceImport = SentenceImport
+    { sentenceImportModuleName :: !ModuleName
+    , sentenceImportAttributes :: !Attributes
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -284,31 +282,29 @@ data SentenceImport =
 
 instance Unparse SentenceImport where
     unparse
-        SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
-      =
-        Pretty.fillSep
-            [ "import", unparse sentenceImportModuleName
-            , unparse sentenceImportAttributes
-            ]
+        SentenceImport{sentenceImportModuleName, sentenceImportAttributes} =
+            Pretty.fillSep
+                [ "import"
+                , unparse sentenceImportModuleName
+                , unparse sentenceImportAttributes
+                ]
 
     unparse2
-        SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
-      =
-        Pretty.fillSep
-            [ "import", unparse2 sentenceImportModuleName
-            , unparse2 sentenceImportAttributes
-            ]
+        SentenceImport{sentenceImportModuleName, sentenceImportAttributes} =
+            Pretty.fillSep
+                [ "import"
+                , unparse2 sentenceImportModuleName
+                , unparse2 sentenceImportAttributes
+                ]
 
 {- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
- -}
-data SentenceSort =
-    SentenceSort
-        { sentenceSortName       :: !Id
-        , sentenceSortParameters :: ![SortVariable]
-        , sentenceSortAttributes :: !Attributes
-        }
+-}
+data SentenceSort = SentenceSort
+    { sentenceSortName :: !Id
+    , sentenceSortParameters :: ![SortVariable]
+    , sentenceSortAttributes :: !Attributes
+    }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -321,45 +317,46 @@ instance Unparse SentenceSort where
             { sentenceSortName
             , sentenceSortParameters
             , sentenceSortAttributes
-            }
-      =
-        Pretty.fillSep
-            [ "sort"
-            , unparse sentenceSortName <> parameters sentenceSortParameters
-            , unparse sentenceSortAttributes
-            ]
+            } =
+            Pretty.fillSep
+                [ "sort"
+                , unparse sentenceSortName <> parameters sentenceSortParameters
+                , unparse sentenceSortAttributes
+                ]
 
     unparse2
         SentenceSort
             { sentenceSortName
             , sentenceSortParameters
-            }
-      = Pretty.vsep
-            [ Pretty.fillSep ["symbol", unparse2 sentenceSortName, "[sort]"]
-            , Pretty.fillSep ["axiom"
-                             , "\\subset"
-                             , Pretty.parens (Pretty.fillSep
-                                [ unparse2 sentenceSortName
-                                , printLbSortsRb (length sentenceSortParameters)
-                                ])
-                             , "Sorts"
-                             ]
-            ]
-      where printLbSortsRb n =
-              case n of
-                  0 -> ""
-                  m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
+            } =
+            Pretty.vsep
+                [ Pretty.fillSep ["symbol", unparse2 sentenceSortName, "[sort]"]
+                , Pretty.fillSep
+                    [ "axiom"
+                    , "\\subset"
+                    , Pretty.parens
+                        ( Pretty.fillSep
+                            [ unparse2 sentenceSortName
+                            , printLbSortsRb (length sentenceSortParameters)
+                            ]
+                        )
+                    , "Sorts"
+                    ]
+                ]
+          where
+            printLbSortsRb n =
+                case n of
+                    0 -> ""
+                    m -> Pretty.fillSep ["(\\inh Sorts)", printLbSortsRb (m - 1)]
 
 {- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
- -}
-data SentenceAxiom (patternType :: Type) =
-    SentenceAxiom
-        { sentenceAxiomParameters :: ![SortVariable]
-        , sentenceAxiomPattern    :: !patternType
-        , sentenceAxiomAttributes :: !Attributes
-        }
+-}
+data SentenceAxiom (patternType :: Type) = SentenceAxiom
+    { sentenceAxiomParameters :: ![SortVariable]
+    , sentenceAxiomPattern :: !patternType
+    , sentenceAxiomAttributes :: !Attributes
+    }
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -372,58 +369,54 @@ instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse2 = unparseAxiom2 "axiom"
 
 instance
-    Ord variable
-    => HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
-  where
+    Ord variable =>
+    HasFreeVariables (SentenceAxiom (Pattern variable annotation)) variable
+    where
     freeVariables =
         foldMap freeVariable
-        . freePureVariables
-        . sentenceAxiomPattern
+            . freePureVariables
+            . sentenceAxiomPattern
 
-unparseAxiom
-    :: Unparse patternType
-    => Pretty.Doc ann
-    -> SentenceAxiom patternType
-    -> Pretty.Doc ann
+unparseAxiom ::
+    Unparse patternType =>
+    Pretty.Doc ann ->
+    SentenceAxiom patternType ->
+    Pretty.Doc ann
 unparseAxiom
     label
     SentenceAxiom
         { sentenceAxiomParameters
         , sentenceAxiomPattern
         , sentenceAxiomAttributes
-        }
-  =
-    Pretty.fillSep
-        [ label
-        , parameters sentenceAxiomParameters
-        , unparse sentenceAxiomPattern
-        , unparse sentenceAxiomAttributes
-        ]
+        } =
+        Pretty.fillSep
+            [ label
+            , parameters sentenceAxiomParameters
+            , unparse sentenceAxiomPattern
+            , unparse sentenceAxiomAttributes
+            ]
 
-unparseAxiom2
-    :: Unparse patternType
-    => Pretty.Doc ann
-    -> SentenceAxiom patternType
-    -> Pretty.Doc ann
+unparseAxiom2 ::
+    Unparse patternType =>
+    Pretty.Doc ann ->
+    SentenceAxiom patternType ->
+    Pretty.Doc ann
 unparseAxiom2
     label
     SentenceAxiom
         { sentenceAxiomPattern
         , sentenceAxiomAttributes
-        }
-  =
-    Pretty.fillSep
-        [ label
-        , unparse2 sentenceAxiomPattern
-        , unparse2 sentenceAxiomAttributes
-        ]
+        } =
+        Pretty.fillSep
+            [ label
+            , unparse2 sentenceAxiomPattern
+            , unparse2 sentenceAxiomAttributes
+            ]
 
 {- | 'SentenceClaim' corresponds to the @claim-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
- -}
-newtype SentenceClaim (patternType :: Type) =
-    SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
+-}
+newtype SentenceClaim (patternType :: Type) = SentenceClaim {getSentenceClaim :: SentenceAxiom patternType}
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -439,18 +432,16 @@ instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
 
 instance
-    Ord variable
-    => HasFreeVariables (SentenceClaim (Pattern variable annotation)) variable
-  where
+    Ord variable =>
+    HasFreeVariables (SentenceClaim (Pattern variable annotation)) variable
+    where
     freeVariables = freeVariables . getSentenceClaim
-
 
 {- | @SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 See also: 'SentenceSort', 'SentenceSymbol'
-
- -}
+-}
 data SentenceHook
     = SentenceHookedSort !SentenceSort
     | SentenceHookedSymbol !SentenceSymbol
@@ -473,16 +464,15 @@ instance Unparse SentenceHook where
 
 {- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
-
 -}
 data Sentence (patternType :: Type)
-    = SentenceAliasSentence  !(SentenceAlias patternType)
+    = SentenceAliasSentence !(SentenceAlias patternType)
     | SentenceSymbolSentence !SentenceSymbol
     | SentenceImportSentence !SentenceImport
-    | SentenceAxiomSentence  !(SentenceAxiom patternType)
-    | SentenceClaimSentence  !(SentenceClaim patternType)
-    | SentenceSortSentence   !SentenceSort
-    | SentenceHookSentence   !SentenceHook
+    | SentenceAxiomSentence !(SentenceAxiom patternType)
+    | SentenceClaimSentence !(SentenceClaim patternType)
+    | SentenceSortSentence !SentenceSort
+    | SentenceHookSentence !SentenceHook
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -491,8 +481,8 @@ data Sentence (patternType :: Type)
     deriving anyclass (Debug, Diff)
 
 instance Unparse patternType => Unparse (Sentence patternType) where
-     unparse = unparseGeneric
-     unparse2 = unparse2Generic
+    unparse = unparseGeneric
+    unparse2 = unparse2Generic
 
 instance Injection (Sentence patternType) (SentenceAlias patternType) where
     inject = SentenceAliasSentence
@@ -554,91 +544,91 @@ projectSentenceHookedSort = projectSentenceHook Monad.>=> projectTyped
 projectSentenceHookedSymbol :: Sentence ParsedPattern -> Maybe SentenceSymbol
 projectSentenceHookedSymbol = projectSentenceHook Monad.>=> projectTyped
 
-projectSentenceAlias
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceAlias ParsedPattern)
+projectSentenceAlias ::
+    Sentence ParsedPattern ->
+    Maybe (SentenceAlias ParsedPattern)
 projectSentenceAlias = retract
 
-projectSentenceAxiom
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceAxiom ParsedPattern)
+projectSentenceAxiom ::
+    Sentence ParsedPattern ->
+    Maybe (SentenceAxiom ParsedPattern)
 projectSentenceAxiom = retract
 
-projectSentenceClaim
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceClaim ParsedPattern)
+projectSentenceClaim ::
+    Sentence ParsedPattern ->
+    Maybe (SentenceClaim ParsedPattern)
 projectSentenceClaim = retract
 
 {- | The attributes associated with a sentence.
 
 Every sentence type has attributes, so this operation is total.
-
- -}
+-}
 sentenceAttributes :: Sentence patternType -> Attributes
 sentenceAttributes =
     \case
         SentenceAliasSentence
-            SentenceAlias { sentenceAliasAttributes } ->
+            SentenceAlias{sentenceAliasAttributes} ->
                 sentenceAliasAttributes
         SentenceSymbolSentence
-            SentenceSymbol { sentenceSymbolAttributes } ->
+            SentenceSymbol{sentenceSymbolAttributes} ->
                 sentenceSymbolAttributes
         SentenceImportSentence
-            SentenceImport { sentenceImportAttributes } ->
+            SentenceImport{sentenceImportAttributes} ->
                 sentenceImportAttributes
         SentenceAxiomSentence
-            SentenceAxiom { sentenceAxiomAttributes } ->
+            SentenceAxiom{sentenceAxiomAttributes} ->
                 sentenceAxiomAttributes
         SentenceClaimSentence
-            (SentenceClaim SentenceAxiom { sentenceAxiomAttributes }) ->
+            (SentenceClaim SentenceAxiom{sentenceAxiomAttributes}) ->
                 sentenceAxiomAttributes
         SentenceSortSentence
-            SentenceSort { sentenceSortAttributes } ->
+            SentenceSort{sentenceSortAttributes} ->
                 sentenceSortAttributes
         SentenceHookSentence sentence ->
             case sentence of
                 SentenceHookedSort
-                    SentenceSort { sentenceSortAttributes } ->
+                    SentenceSort{sentenceSortAttributes} ->
                         sentenceSortAttributes
                 SentenceHookedSymbol
-                    SentenceSymbol { sentenceSymbolAttributes } ->
+                    SentenceSymbol{sentenceSymbolAttributes} ->
                         sentenceSymbolAttributes
 
 -- | Erase the pattern annotations within a 'Sentence'.
-eraseSentenceAnnotations
-    :: Sentence (Pattern variable erased)
-    -> Sentence (Pattern variable Attribute.Null)
+eraseSentenceAnnotations ::
+    Sentence (Pattern variable erased) ->
+    Sentence (Pattern variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
-asSentence
-    :: forall input patternType
-    .  Injection (Sentence patternType) input
-    => input
-    -> Sentence patternType
+asSentence ::
+    forall input patternType.
+    Injection (Sentence patternType) input =>
+    input ->
+    Sentence patternType
 asSentence = inject
 
 class SentenceSymbolOrAlias (sentence :: Type) where
-    getSentenceSymbolOrAliasConstructor
-        :: sentence -> Id
-    getSentenceSymbolOrAliasSortParams
-        :: sentence -> [SortVariable]
-    getSentenceSymbolOrAliasArgumentSorts
-        :: sentence -> [Sort]
-    getSentenceSymbolOrAliasResultSort
-        :: sentence -> Sort
-    getSentenceSymbolOrAliasAttributes
-        :: sentence -> Attributes
-    getSentenceSymbolOrAliasSentenceName
-        :: sentence -> String
-    getSentenceSymbolOrAliasHead
-        :: sentence
-        -> [Sort]
-        -> SymbolOrAlias
-    getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
-        { symbolOrAliasConstructor =
-            getSentenceSymbolOrAliasConstructor sentence
-        , symbolOrAliasParams = sortParameters
-        }
+    getSentenceSymbolOrAliasConstructor ::
+        sentence -> Id
+    getSentenceSymbolOrAliasSortParams ::
+        sentence -> [SortVariable]
+    getSentenceSymbolOrAliasArgumentSorts ::
+        sentence -> [Sort]
+    getSentenceSymbolOrAliasResultSort ::
+        sentence -> Sort
+    getSentenceSymbolOrAliasAttributes ::
+        sentence -> Attributes
+    getSentenceSymbolOrAliasSentenceName ::
+        sentence -> String
+    getSentenceSymbolOrAliasHead ::
+        sentence ->
+        [Sort] ->
+        SymbolOrAlias
+    getSentenceSymbolOrAliasHead sentence sortParameters =
+        SymbolOrAlias
+            { symbolOrAliasConstructor =
+                getSentenceSymbolOrAliasConstructor sentence
+            , symbolOrAliasParams = sortParameters
+            }
 
 instance SentenceSymbolOrAlias (SentenceAlias patternType) where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias

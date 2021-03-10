@@ -1,24 +1,25 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
-module Kore.Syntax.Definition
-    ( Definition (..)
+module Kore.Syntax.Definition (
+    Definition (..),
+
     -- * Type synonyms
-    , PureDefinition
-    , ParsedDefinition
+    PureDefinition,
+    ParsedDefinition,
+
     -- * Re-exports
-    , module Kore.Syntax.Sentence
-    ) where
+    module Kore.Syntax.Sentence,
+) where
 
 import Prelude.Kore
 
-import Data.Kind
-    ( Type
-    )
-import qualified Generics.SOP as SOP
+import Data.Kind (
+    Type,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Attributes
 import Kore.Debug
@@ -26,7 +27,6 @@ import Kore.Syntax.Module
 import Kore.Syntax.Sentence
 import Kore.Unparser
 import qualified Pretty
-
 
 {- | Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -37,11 +37,10 @@ syntactic category from the Semantics of K, Section 9.1.6
 'definitionAttributes' corresponds to the first non-terminal of @definition@,
 while the remaining three are grouped into 'definitionModules'.
 -}
-data Definition (sentence :: Type) =
-    Definition
-        { definitionAttributes :: !Attributes
-        , definitionModules    :: ![Module sentence]
-        }
+data Definition (sentence :: Type) = Definition
+    { definitionAttributes :: !Attributes
+    , definitionModules :: ![Module sentence]
+    }
     deriving (Eq, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -50,11 +49,11 @@ data Definition (sentence :: Type) =
     deriving anyclass (Debug, Diff)
 
 instance Unparse sentence => Unparse (Definition sentence) where
-    unparse Definition { definitionAttributes, definitionModules } =
+    unparse Definition{definitionAttributes, definitionModules} =
         Pretty.vsep
             (unparse definitionAttributes : map unparse definitionModules)
 
-    unparse2 Definition { definitionAttributes, definitionModules } =
+    unparse2 Definition{definitionAttributes, definitionModules} =
         Pretty.vsep
             (unparse2 definitionAttributes : map unparse2 definitionModules)
 

@@ -1,54 +1,53 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 -}
+module Kore.Internal.Inj (
+    Inj (..),
+    toSymbol,
+    toApplication,
 
-module Kore.Internal.Inj
-    ( Inj (..)
-    , toSymbol, toApplication
     -- * Exceptions
-    , UnorderedInj (..)
-    , unorderedInj
-    ) where
+    UnorderedInj (..),
+    unorderedInj,
+) where
 
 import Prelude.Kore
 
-import Control.Exception
-    ( Exception (..)
-    , throw
-    )
-import qualified Generics.SOP as SOP
+import Control.Exception (
+    Exception (..),
+    throw,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Debug
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+ )
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Attribute.Synthetic
-    ( Synthetic (..)
-    )
+import Kore.Attribute.Synthetic (
+    Synthetic (..),
+ )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
 import Kore.Sort
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import Kore.Syntax.Application (
+    Application (..),
+ )
+import Kore.TopBottom (
+    TopBottom (..),
+ )
 import Kore.Unparser
 import qualified Pretty
 
-data Inj a =
-    Inj
-        { injConstructor :: !Id
-        , injFrom        :: !Sort
-        , injTo          :: !Sort
-        , injAttributes  :: !Attribute.Symbol
-        , injChild       :: !a
-        }
+data Inj a = Inj
+    { injConstructor :: !Id
+    , injFrom :: !Sort
+    , injTo :: !Sort
+    , injAttributes :: !Attribute.Symbol
+    , injChild :: !a
+    }
     deriving (Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -58,36 +57,36 @@ data Inj a =
 
 instance Eq a => Eq (Inj a) where
     (==) a@(Inj _ _ _ _ _) b =
-            on (==) injConstructor a b
-        &&  on (==) injFrom a b
-        &&  on (==) injTo a b
-        &&  on (==) injChild a b
+        on (==) injConstructor a b
+            && on (==) injFrom a b
+            && on (==) injTo a b
+            && on (==) injChild a b
     {-# INLINE (==) #-}
 
 instance Ord a => Ord (Inj a) where
     compare a@(Inj _ _ _ _ _) b =
-            on compare injConstructor a b
-        <>  on compare injFrom a b
-        <>  on compare injTo a b
-        <>  on compare injChild a b
+        on compare injConstructor a b
+            <> on compare injFrom a b
+            <> on compare injTo a b
+            <> on compare injChild a b
     {-# INLINE compare #-}
 
 instance Hashable a => Hashable (Inj a) where
     hashWithSalt salt inj@(Inj _ _ _ _ _) =
         salt
-        `hashWithSalt` injConstructor
-        `hashWithSalt` injFrom
-        `hashWithSalt` injTo
-        `hashWithSalt` injChild
+            `hashWithSalt` injConstructor
+            `hashWithSalt` injFrom
+            `hashWithSalt` injTo
+            `hashWithSalt` injChild
       where
-        Inj { injConstructor, injFrom, injTo, injChild } = inj
+        Inj{injConstructor, injFrom, injTo, injChild} = inj
 
 instance Unparse a => Unparse (Inj a) where
     unparse inj = Pretty.hsep ["/* Inj: */", unparse (toApplication inj)]
     unparse2 inj = Pretty.hsep ["/* Inj: */", unparse2 (toApplication inj)]
 
 instance Synthetic Sort Inj where
-    synthetic Inj { injFrom, injTo, injChild } =
+    synthetic Inj{injFrom, injTo, injChild} =
         injTo & seq (matchSort injFrom injChild)
     {-# INLINE synthetic #-}
 
@@ -97,7 +96,7 @@ instance Synthetic (FreeVariables variable) Inj where
 
 instance TopBottom a => TopBottom (Inj a) where
     isTop _ = False
-    isBottom Inj { injChild } = isBottom injChild
+    isBottom Inj{injChild} = isBottom injChild
 
 toSymbol :: Inj a -> Symbol
 toSymbol inj@(Inj _ _ _ _ _) =
@@ -108,7 +107,7 @@ toSymbol inj@(Inj _ _ _ _ _) =
         , symbolAttributes = injAttributes
         }
   where
-    Inj { injConstructor, injFrom, injTo, injAttributes } = inj
+    Inj{injConstructor, injFrom, injTo, injAttributes} = inj
 
 toApplication :: Inj a -> Application Symbol a
 toApplication inj =
@@ -120,8 +119,7 @@ toApplication inj =
 {- | 'UnorderedInj' is thrown when the inner and outer sort are not ordered
 
 The inner sort must be a subsort of the outer sort.
-
- -}
+-}
 newtype UnorderedInj = UnorderedInj (Inj ())
     deriving (Show, Typeable)
 
@@ -129,7 +127,6 @@ instance Exception UnorderedInj where
     displayException (UnorderedInj inj) =
         show $ "Unordered sort injection:" Pretty.<+> unparse (toSymbol inj)
 
-{- | Throw an 'UnorderedInj' exception.
- -}
+-- | Throw an 'UnorderedInj' exception.
 unorderedInj :: Inj a -> error
-unorderedInj inj = throw (UnorderedInj inj { injChild = () })
+unorderedInj inj = throw (UnorderedInj inj{injChild = ()})

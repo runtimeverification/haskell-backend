@@ -2,31 +2,29 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
-
-module Kore.Log.InfoExecBreadth
-    ( InfoExecBreadth
-    , ExecBreadth (..)
-    , infoExecBreadth
-    ) where
+module Kore.Log.InfoExecBreadth (
+    InfoExecBreadth,
+    ExecBreadth (..),
+    infoExecBreadth,
+) where
 
 import Prelude.Kore
 
 import Log
 import Numeric.Natural
-import Pretty
-    ( Pretty
-    )
+import Pretty (
+    Pretty,
+ )
 import qualified Pretty
 
-newtype ExecBreadth = ExecBreadth { getExecBreadth :: Natural }
-    deriving Show
+newtype ExecBreadth = ExecBreadth {getExecBreadth :: Natural}
+    deriving (Show)
 
 instance Pretty ExecBreadth where
     pretty = Pretty.pretty . getExecBreadth
 
-newtype InfoExecBreadth =
-    InfoExecBreadth { breadth :: ExecBreadth }
-    deriving Show
+newtype InfoExecBreadth = InfoExecBreadth {breadth :: ExecBreadth}
+    deriving (Show)
 
 instance Pretty InfoExecBreadth where
     pretty (InfoExecBreadth breadth) =

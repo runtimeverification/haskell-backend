@@ -1,11 +1,11 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Builtin.AssociativeCommutative
-    ( test_toNormalized_Map
-    , test_matchBuiltin_Map
-    , test_toNormalized_Set
-    , test_matchBuiltin_Set
-    ) where
+module Test.Kore.Builtin.AssociativeCommutative (
+    test_toNormalized_Map,
+    test_matchBuiltin_Map,
+    test_toNormalized_Set,
+    test_matchBuiltin_Set,
+) where
 
 import Prelude.Kore
 
@@ -59,22 +59,22 @@ test_matchBuiltin_Set =
         assertBool "expected to match Defined builtin Set" (isJust actual)
     ]
 
-mkNormalizedMap
-    :: [(TermLike VariableName, TermLike VariableName)]
-    -> NormalizedOrBottom NormalizedMap VariableName
+mkNormalizedMap ::
+    [(TermLike VariableName, TermLike VariableName)] ->
+    NormalizedOrBottom NormalizedMap VariableName
 mkNormalizedMap =
     Normalized . NormalizedMap . mkNormalizedAC . (fmap . fmap) MapValue
 
-mkNormalizedSet
-    :: [TermLike VariableName]
-    -> NormalizedOrBottom NormalizedSet VariableName
+mkNormalizedSet ::
+    [TermLike VariableName] ->
+    NormalizedOrBottom NormalizedSet VariableName
 mkNormalizedSet =
     Normalized . NormalizedSet . mkNormalizedAC . fmap (\x -> (x, SetValue))
 
-mkNormalizedAC
-    :: AcWrapper collection
-    => [(child, Value collection child)]
-    -> NormalizedAc collection key child
+mkNormalizedAC ::
+    AcWrapper collection =>
+    [(child, Value collection child)] ->
+    NormalizedAc collection key child
 mkNormalizedAC elements =
     emptyNormalizedAc
         { elementsWithVariables =

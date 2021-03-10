@@ -1,8 +1,8 @@
 {-# LANGUAGE Strict #-}
 
-module Test.Kore.Step.Simplification.InternalList
-    ( test_simplify
-    ) where
+module Test.Kore.Step.Simplification.InternalList (
+    test_simplify,
+) where
 
 import Prelude.Kore
 
@@ -12,49 +12,54 @@ import qualified Data.Sequence as Seq
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalList
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
+import Kore.Internal.Pattern (
+    Pattern,
+ )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
+import Kore.Internal.Predicate (
+    makeCeilPredicate,
+ )
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.InternalList
-    ( simplify
-    )
+import Kore.Step.Simplification.InternalList (
+    simplify,
+ )
 
-import Kore.Rewriting.RewritingVariable
-    ( RewritingVariableName
-    )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
     [ becomes "\\bottom element" (mkList [bottom]) []
-    , becomes "distributes \\or - 1" (mkList [a <> b])
+    , becomes
+        "distributes \\or - 1"
+        (mkList [a <> b])
         [ mkList [Mock.a] & mkInternalList & Pattern.fromTermLike
         , mkList [Mock.b] & mkInternalList & Pattern.fromTermLike
         ]
-    , becomes "distributes \\or - 2" (mkList [a <> b, a <> b])
+    , becomes
+        "distributes \\or - 2"
+        (mkList [a <> b, a <> b])
         [ mkList [Mock.a, Mock.a] & mkInternalList & Pattern.fromTermLike
         , mkList [Mock.a, Mock.b] & mkInternalList & Pattern.fromTermLike
         , mkList [Mock.b, Mock.b] & mkInternalList & Pattern.fromTermLike
         , mkList [Mock.b, Mock.a] & mkInternalList & Pattern.fromTermLike
         ]
-    , becomes "collects \\and"
-        (mkList
+    , becomes
+        "collects \\and"
+        ( mkList
             [ Pattern.withCondition Mock.a ceila
             , Pattern.withCondition Mock.b ceilb
             ]
             & fmap OrPattern.fromPattern
         )
-        [Pattern.withCondition
+        [ Pattern.withCondition
             (mkList [Mock.a, Mock.b] & mkInternalList)
             (ceila <> ceilb)
         ]
@@ -64,22 +69,23 @@ test_simplify =
     b = OrPattern.fromTermLike Mock.b
     ceila =
         makeCeilPredicate (Mock.f Mock.a)
-        & Condition.fromPredicate
+            & Condition.fromPredicate
     ceilb =
         makeCeilPredicate (Mock.f Mock.b)
-        & Condition.fromPredicate
+            & Condition.fromPredicate
     bottom = OrPattern.fromPatterns [Pattern.bottom]
-    becomes
-        :: HasCallStack
-        => TestName
-        -> InternalList (OrPattern RewritingVariableName)
-        -> [Pattern RewritingVariableName]
-        -> TestTree
+    becomes ::
+        HasCallStack =>
+        TestName ->
+        InternalList (OrPattern RewritingVariableName) ->
+        [Pattern RewritingVariableName] ->
+        TestTree
     becomes name origin expect =
-        testCase name
-        $ assertEqual ""
-            (OrPattern.fromPatterns expect)
-            (evaluate origin)
+        testCase name $
+            assertEqual
+                ""
+                (OrPattern.fromPatterns expect)
+                (evaluate origin)
 
 mkList :: [child] -> InternalList child
 mkList children =

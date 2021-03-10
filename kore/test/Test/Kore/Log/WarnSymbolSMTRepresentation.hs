@@ -1,6 +1,6 @@
-module Test.Kore.Log.WarnSymbolSMTRepresentation
-    ( test_instance_Table_WarnSymbolSMTRepresentation
-    ) where
+module Test.Kore.Log.WarnSymbolSMTRepresentation (
+    test_instance_Table_WarnSymbolSMTRepresentation,
+) where
 
 import Prelude.Kore ()
 

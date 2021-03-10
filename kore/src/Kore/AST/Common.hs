@@ -1,4 +1,4 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
@@ -13,26 +13,24 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-
-module Kore.AST.Common
-    ( MLPatternType (..)
-    , allPatternTypes
-    , patternString
-    ) where
+module Kore.AST.Common (
+    MLPatternType (..),
+    allPatternTypes,
+    patternString,
+) where
 
 import Prelude.Kore
 
-import Data.String
-    ( fromString
-    )
-import GHC.Generics
-    ( Generic
-    )
+import Data.String (
+    fromString,
+ )
+import GHC.Generics (
+    Generic,
+ )
 
 import Kore.Unparser
 
-{-|Enumeration of patterns starting with @\@
--}
+-- |Enumeration of patterns starting with @\@
 data MLPatternType
     = AndPatternType
     | BottomPatternType
@@ -84,21 +82,21 @@ allPatternTypes =
 
 patternString :: MLPatternType -> String
 patternString pt = case pt of
-    AndPatternType         -> "and"
-    BottomPatternType      -> "bottom"
-    CeilPatternType        -> "ceil"
+    AndPatternType -> "and"
+    BottomPatternType -> "bottom"
+    CeilPatternType -> "ceil"
     DomainValuePatternType -> "dv"
-    EqualsPatternType      -> "equals"
-    ExistsPatternType      -> "exists"
-    FloorPatternType       -> "floor"
-    ForallPatternType      -> "forall"
-    IffPatternType         -> "iff"
-    ImpliesPatternType     -> "implies"
-    InPatternType          -> "in"
-    MuPatternType          -> "mu"
-    NextPatternType        -> "next"
-    NotPatternType         -> "not"
-    NuPatternType          -> "nu"
-    OrPatternType          -> "or"
-    RewritesPatternType    -> "rewrites"
-    TopPatternType         -> "top"
+    EqualsPatternType -> "equals"
+    ExistsPatternType -> "exists"
+    FloorPatternType -> "floor"
+    ForallPatternType -> "forall"
+    IffPatternType -> "iff"
+    ImpliesPatternType -> "implies"
+    InPatternType -> "in"
+    MuPatternType -> "mu"
+    NextPatternType -> "next"
+    NotPatternType -> "not"
+    NuPatternType -> "nu"
+    OrPatternType -> "or"
+    RewritesPatternType -> "rewrites"
+    TopPatternType -> "top"

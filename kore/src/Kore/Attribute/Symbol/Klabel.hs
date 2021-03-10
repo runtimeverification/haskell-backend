@@ -1,28 +1,28 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
- -}
-
-module Kore.Attribute.Symbol.Klabel
-    ( Klabel (..)
-    , klabelId, klabelSymbol, klabelAttribute
-    ) where
+-}
+module Kore.Attribute.Symbol.Klabel (
+    Klabel (..),
+    klabelId,
+    klabelSymbol,
+    klabelAttribute,
+) where
 
 import Prelude.Kore
 
-import Data.Text
-    ( Text
-    )
-import qualified Generics.SOP as SOP
+import Data.Text (
+    Text,
+ )
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Pretty
 
 -- | @Klabel@ represents the @klabel@ attribute for symbols.
-newtype Klabel = Klabel { getKlabel :: Maybe Text }
+newtype Klabel = Klabel {getKlabel :: Maybe Text}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -56,12 +56,12 @@ klabelAttribute name =
 instance ParseAttributes Klabel where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication params args Klabel { getKlabel } = do
+        parseApplication params args Klabel{getKlabel} = do
             Parser.getZeroParams params
             arg <- Parser.getOneArgument args
             StringLiteral name <- Parser.getStringLiteral arg
             unless (isNothing getKlabel) failDuplicate'
-            return Klabel { getKlabel = Just name }
+            return Klabel{getKlabel = Just name}
         withApplication' = Parser.withApplication klabelId
         failDuplicate' = Parser.failDuplicate klabelId
 

@@ -1,31 +1,31 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 
 Helpers for building queries.
-
 -}
-
-module SQL.Query
-    ( Query
-    , AccumT
-    , build
-    , add
-    , addString
-    , addSpace, addComma
-    , withDoubleQuotes, withParens
-    ) where
+module SQL.Query (
+    Query,
+    AccumT,
+    build,
+    add,
+    addString,
+    addSpace,
+    addComma,
+    withDoubleQuotes,
+    withParens,
+) where
 
 import Prelude.Kore
 
-import Control.Monad.Trans.Accum
-    ( AccumT
-    , execAccumT
-    )
+import Control.Monad.Trans.Accum (
+    AccumT,
+    execAccumT,
+ )
 import qualified Control.Monad.Trans.Accum as Accum
-import Data.String
-    ( fromString
-    )
+import Data.String (
+    fromString,
+ )
 
 import SQL.SQL as SQL
 

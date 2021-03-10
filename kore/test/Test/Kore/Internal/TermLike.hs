@@ -1,19 +1,21 @@
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# LANGUAGE Strict #-}
-module Test.Kore.Internal.TermLike
-    ( test_substitute
-    , test_refreshVariables
-    , test_hasConstructorLikeTop
-    , test_renaming
-    , test_mkDefined
-    , test_orientSubstitution
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.Internal.TermLike (
+    test_substitute,
+    test_refreshVariables,
+    test_hasConstructorLikeTop,
+    test_renaming,
+    test_mkDefined,
+    test_orientSubstitution,
     --
-    , termLikeGen
-    , termLikeChildGen
+    termLikeGen,
+    termLikeChildGen,
+
     -- * Re-exports
-    , TestTerm
-    , module Kore.Internal.TermLike
-    ) where
+    TestTerm,
+    module Kore.Internal.TermLike,
+) where
 
 import Prelude.Kore
 
@@ -24,49 +26,49 @@ import Test.Tasty
 import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
-import Data.Functor.Identity
-    ( runIdentity
-    )
-import Data.Generics.Product
-    ( field
-    )
-import Data.Map.Strict
-    ( Map
-    )
+import Data.Functor.Identity (
+    runIdentity,
+ )
+import Data.Generics.Product (
+    field,
+ )
+import Data.Map.Strict (
+    Map,
+ )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Data.Sup
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , freeVariable
-    )
-import Kore.Attribute.Synthetic
-    ( resynthesize
-    )
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+    freeVariable,
+ )
+import Kore.Attribute.Synthetic (
+    resynthesize,
+ )
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalInt
-import Kore.Internal.SideCondition
-    ( SideCondition
-    )
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( toRepresentation
-    , top
-    )
-import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
-    ( Representation
-    )
-import Kore.Internal.Substitution
-    ( orientSubstitution
-    )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition (
+    toRepresentation,
+    top,
+ )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
+    Representation,
+ )
+import Kore.Internal.Substitution (
+    orientSubstitution,
+ )
 import Kore.Internal.TermLike
-import Kore.Variables.Fresh
-    ( refreshElementVariable
-    )
+import Kore.Variables.Fresh (
+    refreshElementVariable,
+ )
 
-import Test.Kore hiding
-    ( symbolGen
-    )
+import Test.Kore hiding (
+    symbolGen,
+ )
 import Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
@@ -83,36 +85,36 @@ termLikeChildGen patternSort =
     Gen.sized termLikeChildGenWorker
   where
     termLikeChildGenWorker n
-      | n <= 1 =
-        case () of
-            ()
-              | patternSort == stringMetaSort ->
-                mkStringLiteral . getStringLiteral <$> stringLiteralGen
-              | otherwise ->
-                Gen.choice
-                    [ mkElemVar <$> elementVariableGen patternSort
-                    , mkInternalBool <$> genInternalBool patternSort
-                    , mkInternalInt <$> genInternalInt patternSort
-                    , mkInternalString <$> genInternalString patternSort
-                    ]
-      | otherwise =
-        (Gen.small . Gen.frequency)
-            [ (1, termLikeAndGen)
-            , (1, termLikeAppGen)
-            , (1, termLikeBottomGen)
-            , (1, termLikeCeilGen)
-            , (1, termLikeEqualsGen)
-            , (1, termLikeExistsGen)
-            , (1, termLikeFloorGen)
-            , (1, termLikeForallGen)
-            , (1, termLikeIffGen)
-            , (1, termLikeImpliesGen)
-            , (1, termLikeInGen)
-            , (1, termLikeNotGen)
-            , (1, termLikeOrGen)
-            , (1, termLikeTopGen)
-            , (5, termLikeVariableGen)
-            ]
+        | n <= 1 =
+            case () of
+                ()
+                    | patternSort == stringMetaSort ->
+                        mkStringLiteral . getStringLiteral <$> stringLiteralGen
+                    | otherwise ->
+                        Gen.choice
+                            [ mkElemVar <$> elementVariableGen patternSort
+                            , mkInternalBool <$> genInternalBool patternSort
+                            , mkInternalInt <$> genInternalInt patternSort
+                            , mkInternalString <$> genInternalString patternSort
+                            ]
+        | otherwise =
+            (Gen.small . Gen.frequency)
+                [ (1, termLikeAndGen)
+                , (1, termLikeAppGen)
+                , (1, termLikeBottomGen)
+                , (1, termLikeCeilGen)
+                , (1, termLikeEqualsGen)
+                , (1, termLikeExistsGen)
+                , (1, termLikeFloorGen)
+                , (1, termLikeForallGen)
+                , (1, termLikeIffGen)
+                , (1, termLikeImpliesGen)
+                , (1, termLikeInGen)
+                , (1, termLikeNotGen)
+                , (1, termLikeOrGen)
+                , (1, termLikeTopGen)
+                , (5, termLikeVariableGen)
+                ]
     termLikeAndGen =
         mkAnd
             <$> termLikeChildGen patternSort
@@ -171,71 +173,75 @@ termLikeChildGen patternSort =
     termLikeTopGen = pure (mkTop patternSort)
     termLikeVariableGen = mkElemVar <$> elementVariableGen patternSort
 
-mkSubst
-    :: Injection (SomeVariableName variable) variable'
-    => InternalVariable variable
-    => Variable variable'
-    -> ElementVariable variable
-    -> Map (SomeVariableName variable) (TermLike variable)
+mkSubst ::
+    Injection (SomeVariableName variable) variable' =>
+    InternalVariable variable =>
+    Variable variable' ->
+    ElementVariable variable ->
+    Map (SomeVariableName variable) (TermLike variable)
 mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
 
 test_orientSubstitution :: [TestTree]
 test_orientSubstitution =
     [ testCase "Applies reversed substitution" $ do
-        let subst, expect
-                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+        let subst
+                , expect ::
+                    Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
                 mkSubsts
-                [ (Mock.t, mkElemVar Mock.y)
-                , (Mock.u, Mock.f $ mkElemVar Mock.y)
-                ]
+                    [ (Mock.t, mkElemVar Mock.y)
+                    , (Mock.u, Mock.f $ mkElemVar Mock.y)
+                    ]
             expect =
                 mkSubsts
-                [ (Mock.y, mkElemVar Mock.t)
-                , (Mock.u, Mock.f $ mkElemVar Mock.t)
-                ]
+                    [ (Mock.y, mkElemVar Mock.t)
+                    , (Mock.u, Mock.f $ mkElemVar Mock.t)
+                    ]
         assertEqual "" expect (orientSubstitution toLeft subst)
     , testCase "Duplicate keys" $ do
-        let subst, expect
-                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+        let subst
+                , expect ::
+                    Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
                 mkSubsts
-                [ (Mock.t, mkElemVar Mock.y)
-                , (Mock.u, mkElemVar Mock.y)
-                ]
+                    [ (Mock.t, mkElemVar Mock.y)
+                    , (Mock.u, mkElemVar Mock.y)
+                    ]
             expect =
                 mkSubsts
-                [ (Mock.y, mkElemVar Mock.t)
-                , (Mock.u, mkElemVar Mock.t)
-                ]
+                    [ (Mock.y, mkElemVar Mock.t)
+                    , (Mock.u, mkElemVar Mock.t)
+                    ]
         assertEqual "" expect (orientSubstitution toLeft subst)
     , testCase "Orient duplicated keys" $ do
-        let subst, expect
-                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+        let subst
+                , expect ::
+                    Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
                 mkSubsts
-                [ (Mock.x, mkElemVar Mock.y)
-                , (Mock.t, mkElemVar Mock.y)
-                ]
+                    [ (Mock.x, mkElemVar Mock.y)
+                    , (Mock.t, mkElemVar Mock.y)
+                    ]
             expect =
                 mkSubsts
-                [ (Mock.y, mkElemVar Mock.t)
-                , (Mock.x, mkElemVar Mock.t)
-                ]
+                    [ (Mock.y, mkElemVar Mock.t)
+                    , (Mock.x, mkElemVar Mock.t)
+                    ]
         assertEqual "" expect (orientSubstitution toLeft subst)
     , testCase "Orient duplicated keys - negated" $ do
-        let subst, expect
-                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+        let subst
+                , expect ::
+                    Map (SomeVariableName VariableName) (TermLike VariableName)
             subst =
                 mkSubsts
-                [ (Mock.t, mkElemVar Mock.u)
-                , (Mock.x, mkElemVar Mock.u)
-                ]
+                    [ (Mock.t, mkElemVar Mock.u)
+                    , (Mock.x, mkElemVar Mock.u)
+                    ]
             expect =
                 mkSubsts
-                [ (Mock.u, mkElemVar Mock.x)
-                , (Mock.t, mkElemVar Mock.x)
-                ]
+                    [ (Mock.u, mkElemVar Mock.x)
+                    , (Mock.t, mkElemVar Mock.x)
+                    ]
         assertEqual "" expect (orientSubstitution (not . toLeft) subst)
     ]
   where
@@ -244,7 +250,7 @@ test_orientSubstitution =
     toLeft :: SomeVariableName VariableName -> Bool
     toLeft someVariableName =
         someVariableName == inject (variableName Mock.x)
-        || someVariableName == inject (variableName Mock.y)
+            || someVariableName == inject (variableName Mock.y)
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -257,33 +263,32 @@ test_substitute =
             "Expected substituted variable"
             (mkElemVar Mock.z)
             (substitute subst (mkElemVar Mock.x))
-
-    , testCase "Replaces target variable (SetVariable)"
-        (assertEqual
+    , testCase
+        "Replaces target variable (SetVariable)"
+        ( assertEqual
             "Expected substituted variable"
             (mkElemVar Mock.z)
-            (substitute
-                (Map.singleton
+            ( substitute
+                ( Map.singleton
                     (variableName $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.mkTestSomeVariable "@x")
             )
         )
-
-    , testCase "Replaces target variable in subterm (SetVariable)"
-        (assertEqual
+    , testCase
+        "Replaces target variable in subterm (SetVariable)"
+        ( assertEqual
             "Expected substituted variable"
             (Mock.functionalConstr10 (mkElemVar Mock.z))
-            (substitute
-                (Map.singleton
+            ( substitute
+                ( Map.singleton
                     (variableName $ Mock.makeTestSomeVariable "@x")
                     (mkElemVar Mock.z)
                 )
                 (Mock.functionalConstr10 (Mock.mkTestSomeVariable "@x"))
             )
         )
-
     , testCase "Ignores non-target variable" $ do
         let subst =
                 Map.singleton
@@ -293,90 +298,89 @@ test_substitute =
             "Expected original non-target variable"
             (mkElemVar Mock.y)
             (substitute subst (mkElemVar Mock.y))
-
     , testGroup "Ignores patterns without children" $
         let ignoring mkPredicate =
                 assertEqual
                     "Expected no substitution"
-                    expect actual
+                    expect
+                    actual
               where
                 expect = mkPredicate Mock.testSort
                 actual =
                     substitute
                         (mkSubst Mock.x Mock.z)
                         (mkPredicate Mock.testSort)
-        in
-            [ testCase "Bottom" (ignoring mkBottom)
+         in [ testCase "Bottom" (ignoring mkBottom)
             , testCase "Top" (ignoring mkTop)
             ]
-
     , testGroup "Ignores shadowed variables" $
         let ignoring mkQuantifier =
                 assertEqual
                     "Expected shadowed variable to be ignored"
-                    expect actual
+                    expect
+                    actual
               where
                 expect = mkQuantifier Mock.x (mkElemVar Mock.x)
                 actual =
                     substitute
                         (mkSubst Mock.x Mock.z)
                         (mkQuantifier Mock.x (mkElemVar Mock.x))
-        in
-            [ testCase "Exists" (ignoring mkExists)
+         in [ testCase "Exists" (ignoring mkExists)
             , testCase "Forall" (ignoring mkForall)
             ]
-
     , testGroup "Renames quantified variables to avoid capture" $
         let renaming mkQuantifier =
                 assertEqual
                     "Expected quantified variable to be renamed"
-                    expect actual
+                    expect
+                    actual
               where
                 expect =
-                    mkQuantifier z'
-                        $ mkAnd (mkElemVar z') (mkElemVar Mock.z)
+                    mkQuantifier z' $
+                        mkAnd (mkElemVar z') (mkElemVar Mock.z)
                   where
                     Just z' =
                         refreshElementVariable
                             (Set.singleton (inject $ variableName Mock.z))
                             Mock.z
                 actual =
-                    substitute (mkSubst Mock.x Mock.z)
-                    $ mkQuantifier Mock.z
-                    $ mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
-        in
-            [ testCase "Exists" (renaming mkExists)
+                    substitute (mkSubst Mock.x Mock.z) $
+                        mkQuantifier Mock.z $
+                            mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
+         in [ testCase "Exists" (renaming mkExists)
             , testCase "Forall" (renaming mkForall)
             ]
-
     , testCase "Preserves the identity of free variables" $ do
-        let actual = substitute (mkSubst Mock.x Mock.y)
-                $ mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
+        let actual =
+                substitute (mkSubst Mock.x Mock.y) $
+                    mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
         let expect = mkAnd (mkElemVar Mock.y) (mkElemVar Mock.y)
-        assertEqual "Expected y to remain as it is"
-            expect actual
+        assertEqual
+            "Expected y to remain as it is"
+            expect
+            actual
     ]
 
 test_refreshVariables :: [TestTree]
 test_refreshVariables =
-    [ (Mock.a, [Mock.x]) `becomes` Mock.a
-        $ "Does not rename symbols"
-    , (xTerm, []) `becomes` xTerm
-        $ "No used variable"
-    , (xTerm, [Mock.y]) `becomes` xTerm
-        $ "No renaming if variable not used"
-    , (xTerm, [Mock.x]) `becomes` mkElemVar x_0
-        $ "Renames used variable"
-    , (Mock.f xTerm, [Mock.x]) `becomes` Mock.f (mkElemVar x_0)
-        $ "Renames under symbol"
+    [ (Mock.a, [Mock.x]) `becomes` Mock.a $
+        "Does not rename symbols"
+    , (xTerm, []) `becomes` xTerm $
+        "No used variable"
+    , (xTerm, [Mock.y]) `becomes` xTerm $
+        "No renaming if variable not used"
+    , (xTerm, [Mock.x]) `becomes` mkElemVar x_0 $
+        "Renames used variable"
+    , (Mock.f xTerm, [Mock.x]) `becomes` Mock.f (mkElemVar x_0) $
+        "Renames under symbol"
     ]
   where
     xTerm = mkElemVar Mock.x
-    becomes
-        :: (TestTerm, [ElementVariable'])
-        -> TestTerm
-        -> TestName
-        -> TestTree
+    becomes ::
+        (TestTerm, [ElementVariable']) ->
+        TestTerm ->
+        TestName ->
+        TestTree
     becomes (term, vars) expected =
         equals
             (refreshVariables (foldMap (freeVariable . inject) vars) term)
@@ -384,33 +388,39 @@ test_refreshVariables =
 
 test_hasConstructorLikeTop :: [TestTree]
 test_hasConstructorLikeTop =
-    [ testCase "hasConstructorLikeTop"
-        (do
-            assertEqual "ApplySymbolF is constructor-like-top"
+    [ testCase
+        "hasConstructorLikeTop"
+        ( do
+            assertEqual
+                "ApplySymbolF is constructor-like-top"
                 True
                 $ isConstructorLikeTop (mkApplySymbol Mock.aSymbol [])
-            let
-                dv :: DomainValue Sort TestTerm
-                dv = DomainValue
+            let dv :: DomainValue Sort TestTerm
+                dv =
+                    DomainValue
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }
 
-            assertEqual "DomainValueF is constructor-like-top"
+            assertEqual
+                "DomainValueF is constructor-like-top"
                 True
                 $ isConstructorLikeTop (mkDomainValue dv)
-            let
-                b = InternalInt
-                    { internalIntSort = Mock.intSort
-                    , internalIntValue = 1
-                    }
-            assertEqual "BuiltinF is constructor-like-top"
+            let b =
+                    InternalInt
+                        { internalIntSort = Mock.intSort
+                        , internalIntValue = 1
+                        }
+            assertEqual
+                "BuiltinF is constructor-like-top"
                 True
                 (isConstructorLikeTop $ mkInternalInt b)
-            assertEqual "StringLiteralF is constructor-like-top"
+            assertEqual
+                "StringLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop $ mkStringLiteral "")
-            assertEqual "AndF is not is constructor-like-top"
+            assertEqual
+                "AndF is not is constructor-like-top"
                 False
                 (isConstructorLikeTop $ mkAnd Mock.a Mock.b)
         )
@@ -436,49 +446,60 @@ test_renaming =
     , testSet "\\nu" mkNu
     ]
   where
-    mapElementVariables' Variable { variableName } =
-        mapVariables (pure id)
-            { adjSomeVariableNameElement = const <$> variableName }
-    mapSetVariables' Variable { variableName } =
-        mapVariables (pure id)
-            { adjSomeVariableNameSet = const <$> variableName }
+    mapElementVariables' Variable{variableName} =
+        mapVariables
+            (pure id)
+                { adjSomeVariableNameElement = const <$> variableName
+                }
+    mapSetVariables' Variable{variableName} =
+        mapVariables
+            (pure id)
+                { adjSomeVariableNameSet = const <$> variableName
+                }
 
-    traverseElementVariables' Variable { variableName } =
-        runIdentity . traverseVariables (pure return)
-            { adjSomeVariableNameElement = const . return <$> variableName }
-    traverseSetVariables' Variable { variableName } =
-        runIdentity . traverseVariables (pure return)
-            { adjSomeVariableNameSet = const . return <$> variableName }
+    traverseElementVariables' Variable{variableName} =
+        runIdentity
+            . traverseVariables
+                (pure return)
+                    { adjSomeVariableNameElement = const . return <$> variableName
+                    }
+    traverseSetVariables' Variable{variableName} =
+        runIdentity
+            . traverseVariables
+                (pure return)
+                    { adjSomeVariableNameSet = const . return <$> variableName
+                    }
 
-    doesNotCapture
-        :: HasCallStack
-        => SomeVariable VariableName
-        -> TestTerm
-        -> Assertion
-    doesNotCapture Variable { variableName } renamed =
+    doesNotCapture ::
+        HasCallStack =>
+        SomeVariable VariableName ->
+        TestTerm ->
+        Assertion
+    doesNotCapture Variable{variableName} renamed =
         assertBool
             "does not capture free variables"
             (hasFreeVariable variableName renamed)
 
-    updatesFreeVariables
-        :: HasCallStack
-        => TestTerm
-        -> Assertion
+    updatesFreeVariables ::
+        HasCallStack =>
+        TestTerm ->
+        Assertion
     updatesFreeVariables renamed =
         assertEqual
             "updates the FreeVariables attribute"
             (freeVariables resynthesized :: FreeVariables VariableName)
-            (freeVariables       renamed)
+            (freeVariables renamed)
       where
         resynthesized :: TestTerm
         resynthesized = resynthesize renamed
 
-    testElement
-        :: TestName
-        -> (ElementVariable' -> TestTerm -> TestTerm)
-        -> TestTree
+    testElement ::
+        TestName ->
+        (ElementVariable' -> TestTerm -> TestTerm) ->
+        TestTree
     testElement testName mkBinder =
-        testGroup testName
+        testGroup
+            testName
             [ testCase "mapVariables" $ do
                 let original = mkBinder Mock.y (mkElemVar Mock.x)
                     renamed = mapElementVariables' Mock.y original
@@ -491,12 +512,13 @@ test_renaming =
                 doesNotCapture (inject Mock.y) renamed
             ]
 
-    testSet
-        :: TestName
-        -> (SetVariable VariableName -> TestTerm -> TestTerm)
-        -> TestTree
+    testSet ::
+        TestName ->
+        (SetVariable VariableName -> TestTerm -> TestTerm) ->
+        TestTree
     testSet testName mkBinder =
-        testGroup testName
+        testGroup
+            testName
             [ testCase "mapVariables" $ do
                 let original = mkBinder Mock.setY (mkSetVar Mock.setX)
                     renamed = mapSetVariables' Mock.setY original
@@ -531,18 +553,18 @@ test_mkDefined =
     , testCase "Nested and, functional symbol, non-functional symbol" $ do
         let term =
                 mkAnd
-                    (mkAnd
+                    ( mkAnd
                         mkTop_
                         (Mock.functional11 (Mock.f mkTop_))
                     )
                     mkTop_
             expected =
                 defined
-                    (mkAnd
-                        (defined
-                            (mkAnd
+                    ( mkAnd
+                        ( defined
+                            ( mkAnd
                                 mkTop_
-                                (Mock.functional11
+                                ( Mock.functional11
                                     (defined (Mock.f mkTop_))
                                 )
                             )
@@ -564,19 +586,19 @@ test_mkDefined =
     , testCase "Nested or" $ do
         let term =
                 mkOr
-                    (mkOr
+                    ( mkOr
                         mkBottom_
                         (mkCeil_ (Mock.f mkTop_))
                     )
                     (Mock.f mkBottom_)
             expected =
                 defined
-                    (mkOr
-                        (mkOr
+                    ( mkOr
+                        ( mkOr
                             mkBottom_
                             (mkCeil_ (Mock.f mkTop_))
                         )
-                    (Mock.f mkBottom_)
+                        (Mock.f mkBottom_)
                     )
             actual = mkDefined term
         assertEqual "" expected actual
@@ -585,7 +607,7 @@ test_mkDefined =
                 mkExists Mock.x (Mock.f (mkElemVar Mock.x))
             expected =
                 defined
-                (mkExists Mock.x (Mock.f (mkElemVar Mock.x)))
+                    (mkExists Mock.x (Mock.f (mkElemVar Mock.x)))
             actual = mkDefined term
         assertEqual "" expected actual
     , testCase "Implies" $ do
@@ -593,7 +615,7 @@ test_mkDefined =
                 mkImplies mkBottom_ Mock.plain00
             expected =
                 defined
-                (mkImplies mkBottom_ Mock.plain00)
+                    (mkImplies mkBottom_ Mock.plain00)
             actual = mkDefined term
         assertEqual "" expected actual
     , testCase "Predicate" $ do
@@ -609,12 +631,12 @@ test_mkDefined =
                     )
             expected =
                 defined
-                ( Mock.g
-                    ( mkIn_
-                        (mkElemVar Mock.x)
-                        (Mock.f (mkElemVar Mock.y))
+                    ( Mock.g
+                        ( mkIn_
+                            (mkElemVar Mock.x)
+                            (Mock.f (mkElemVar Mock.y))
+                        )
                     )
-                )
             actual = mkDefined term
         assertEqual "" expected actual
     , testCase "List" $ do
@@ -630,15 +652,14 @@ test_mkDefined =
             defx = defined fx
             defa = defined fa
             defOpaque = defined opaque
-        in
-            [ testCase "SetItem(a) SetItem(x)" $ do
+         in [ testCase "SetItem(a) SetItem(x)" $ do
                 let actual =
                         Mock.builtinSet [Mock.a, mkElemVar Mock.x]
-                        & mkDefined
+                            & mkDefined
                     expect :: TermLike VariableName
                     expect =
                         Mock.builtinSet [Mock.a, mkElemVar Mock.x]
-                        & defined
+                            & defined
                 assertEqual "" expect actual
             , testCase "SetItem( f(a) )" $ do
                 let actual = mkDefined (Mock.builtinSet [fa])
@@ -666,21 +687,20 @@ test_mkDefined =
             defy = defined fy
             defa = defined fa
             defOpaque = defined opaque
-        in
-            [ testCase "a |-> a  x |-> b" $ do
+         in [ testCase "a |-> a  x |-> b" $ do
                 let actual =
                         Mock.builtinMap
                             [ (Mock.a, Mock.a)
                             , (mkElemVar Mock.x, Mock.b)
                             ]
-                        & mkDefined
+                            & mkDefined
                     expect :: TermLike VariableName
                     expect =
                         Mock.builtinMap
                             [ (Mock.a, Mock.a)
                             , (mkElemVar Mock.x, Mock.b)
                             ]
-                        & defined
+                            & defined
                 assertEqual "" expect actual
             , testCase "f(a) |-> a" $ do
                 let actual = mkDefined (Mock.builtinMap [(fa, Mock.a)])
@@ -709,12 +729,13 @@ test_mkDefined =
                     defOutside = mkDefined $ Mock.builtinMap [(fx, fa)]
                 assertEqual "" defInside defOutside
             ]
-        , testCase "Preserve \"simplified\" attribute" $ do
-            let initial = markSimplified Mock.cf :: TermLike VariableName
-                result = mkDefined initial
-            assertEqual ""
-                (isSimplified sideRepresentation initial)
-                (isSimplified sideRepresentation result)
+    , testCase "Preserve \"simplified\" attribute" $ do
+        let initial = markSimplified Mock.cf :: TermLike VariableName
+            result = mkDefined initial
+        assertEqual
+            ""
+            (isSimplified sideRepresentation initial)
+            (isSimplified sideRepresentation result)
     ]
   where
     defined :: TermLike VariableName -> TermLike VariableName
@@ -723,4 +744,4 @@ test_mkDefined =
     sideRepresentation :: SideCondition.Representation
     sideRepresentation =
         SideCondition.toRepresentation
-        (SideCondition.top :: SideCondition VariableName)
+            (SideCondition.top :: SideCondition VariableName)

@@ -1,6 +1,6 @@
-module Test.Kore.Step.Transition
-    ( test_ifte
-    ) where
+module Test.Kore.Step.Transition (
+    test_ifte,
+) where
 
 import Prelude.Kore
 
@@ -12,7 +12,8 @@ import Test.Tasty.HUnit.Ext
 
 test_ifte :: [TestTree]
 test_ifte =
-    [ testGroup "\"else\" branch"
+    [ testGroup
+        "\"else\" branch"
         [ testCase "returns value" $ do
             let thenBranch () = return True
                 elseBranch = return False
@@ -36,7 +37,8 @@ test_ifte =
                 elseBranch = addRule 2 >> return False
             checkElse empty thenBranch elseBranch
         ]
-    , testGroup "\"then\" branch"
+    , testGroup
+        "\"then\" branch"
         [ testCase "returns value" $ do
             let thenBranch () = return True
                 elseBranch = return False
@@ -70,32 +72,32 @@ test_ifte =
         ]
     ]
   where
-    check
-        :: HasCallStack
-        => (Debug a, Diff a)
-        => Transition Integer a
-        -> Transition Integer a
-        -> Assertion
+    check ::
+        HasCallStack =>
+        (Debug a, Diff a) =>
+        Transition Integer a ->
+        Transition Integer a ->
+        Assertion
     check = on (assertEqual "") runTransition
 
-    checkThen
-        :: HasCallStack
-        => Transition Integer a
-        -> (a -> Transition Integer Bool)
-        -> Transition Integer Bool
-        -> Assertion
+    checkThen ::
+        HasCallStack =>
+        Transition Integer a ->
+        (a -> Transition Integer Bool) ->
+        Transition Integer Bool ->
+        Assertion
     checkThen condition thenBranch elseBranch =
         let expect = condition >>= thenBranch
             actual = ifte condition thenBranch elseBranch
-        in check expect actual
+         in check expect actual
 
-    checkElse
-        :: HasCallStack
-        => Transition Integer a
-        -> (a -> Transition Integer Bool)
-        -> Transition Integer Bool
-        -> Assertion
+    checkElse ::
+        HasCallStack =>
+        Transition Integer a ->
+        (a -> Transition Integer Bool) ->
+        Transition Integer Bool ->
+        Assertion
     checkElse condition thenBranch elseBranch =
         let expect = elseBranch
             actual = ifte condition thenBranch elseBranch
-        in check expect actual
+         in check expect actual

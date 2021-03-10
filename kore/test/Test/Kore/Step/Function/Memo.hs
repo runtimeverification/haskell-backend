@@ -1,14 +1,14 @@
-module Test.Kore.Step.Function.Memo
-    ( test_Self
-    ) where
+module Test.Kore.Step.Function.Memo (
+    test_Self,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Control.Monad.State.Strict
-    ( evalState
-    )
+import Control.Monad.State.Strict (
+    evalState,
+ )
 
 import Kore.Internal.TermLike
 import Kore.Step.Function.Memo
@@ -19,14 +19,14 @@ import Test.Tasty.HUnit.Ext
 test_Self :: [TestTree]
 test_Self =
     [ testCase "simple - recall recorded result" $ do
-        let Self { recall, record } = simple
+        let Self{recall, record} = simple
             eval state = evalState state mempty
             recalled = eval $ do
                 record key result
                 recall key
         assertEqual "expected recorded result" (Just result) recalled
     , testCase "new - recall recorded result" $ do
-        Self { recall, record } <- new
+        Self{recall, record} <- new
         record key result
         recalled <- recall key
         assertEqual "expected recorded result" (Just result) recalled

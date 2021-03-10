@@ -1,21 +1,22 @@
-{-|
+{- |
 Module      : Kore.Attribute.Functional
 Description : Functional symbol attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 -}
-module Kore.Attribute.Functional
-    ( Functional (..)
-    , functionalId, functionalSymbol, functionalAttribute
-    ) where
+module Kore.Attribute.Functional (
+    Functional (..),
+    functionalId,
+    functionalSymbol,
+    functionalAttribute,
+) where
 
 import Prelude.Kore
 
 import qualified Data.Monoid as Monoid
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
@@ -24,8 +25,8 @@ import Kore.Debug
 
 Note: This attribute is also used to annotate axioms stating functionality
 constraints.
- -}
-newtype Functional = Functional { isDeclaredFunctional :: Bool }
+-}
+newtype Functional = Functional {isDeclaredFunctional :: Bool}
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)

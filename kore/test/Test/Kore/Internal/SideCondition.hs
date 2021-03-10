@@ -1,35 +1,35 @@
-module Test.Kore.Internal.SideCondition
-    ( TestSideCondition
-    , module Kore.Internal.SideCondition
-    , test_assumeDefined
-    , test_isDefined
-    , test_generateNormalizedAcs
-    ) where
+module Test.Kore.Internal.SideCondition (
+    TestSideCondition,
+    module Kore.Internal.SideCondition,
+    test_assumeDefined,
+    test_isDefined,
+    test_generateNormalizedAcs,
+) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
 import qualified Data.HashSet as HashSet
-import GHC.Natural
-    ( Natural
-    )
+import GHC.Natural (
+    Natural,
+ )
 
-import Data.Sup
-    ( Sup (..)
-    )
-import Kore.Internal.InternalMap
-    ( InternalMap
-    )
-import Kore.Internal.InternalSet
-    ( InternalSet
-    )
+import Data.Sup (
+    Sup (..),
+ )
+import Kore.Internal.InternalMap (
+    InternalMap,
+ )
+import Kore.Internal.InternalSet (
+    InternalSet,
+ )
 import Kore.Internal.SideCondition
 import Kore.Internal.TermLike
 
-import Test.Kore
-    ( testId
-    )
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -45,8 +45,8 @@ test_assumeDefined =
                     (Mock.f Mock.a)
             expected =
                 [term, Mock.plain00, Mock.f Mock.a]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "App: implies subterms are defined" $ do
@@ -55,8 +55,8 @@ test_assumeDefined =
                 Mock.f (Mock.functional10 (Mock.g Mock.plain00))
             expected =
                 [term, Mock.g Mock.plain00, Mock.plain00]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Ceil: implies subterms are defined" $ do
@@ -64,8 +64,8 @@ test_assumeDefined =
             term = mkCeil_ Mock.plain00
             expected =
                 [term, Mock.plain00]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "List: empty list is always defined" $ do
@@ -89,8 +89,8 @@ test_assumeDefined =
                 , Mock.f (Mock.g Mock.a)
                 , Mock.g Mock.a
                 ]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Forall: implies subterms are defined" $ do
@@ -98,9 +98,9 @@ test_assumeDefined =
             term =
                 mkForall
                     Mock.x
-                    (mkForall
+                    ( mkForall
                         Mock.y
-                        (mkAnd
+                        ( mkAnd
                             (Mock.f (mkElemVar Mock.x))
                             (Mock.g (mkElemVar Mock.y))
                         )
@@ -109,7 +109,7 @@ test_assumeDefined =
                 [ term
                 , mkForall
                     Mock.y
-                    (mkAnd
+                    ( mkAnd
                         (Mock.f (mkElemVar Mock.x))
                         (Mock.g (mkElemVar Mock.y))
                     )
@@ -119,8 +119,8 @@ test_assumeDefined =
                 , Mock.f (mkElemVar Mock.x)
                 , Mock.g (mkElemVar Mock.y)
                 ]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "In: implies subterms are defined" $ do
@@ -134,8 +134,8 @@ test_assumeDefined =
                 , Mock.f (mkElemVar Mock.x)
                 , Mock.g Mock.a
                 ]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Or: does not imply subterms are defined" $ do
@@ -146,8 +146,8 @@ test_assumeDefined =
                     (Mock.f Mock.a)
             expected =
                 [term]
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             actual = assumeDefined term
         assertEqual "" expected actual
     , testCase "Empty collection is always defined" $ do
@@ -159,15 +159,17 @@ test_assumeDefined =
                     [(Mock.a, Mock.a)]
                     []
         testCollection collection [] []
-    , testCase "Singleton without always defined key is defined if\
-                \ key is defined" $ do
-        let collection =
-                Collection
-                    [(Mock.plain00, Mock.a)]
-                    []
-            expectedTerms = [ Mock.plain00 ]
-            expectedCollections = []
-        testCollection collection expectedTerms expectedCollections
+    , testCase
+        "Singleton without always defined key is defined if\
+        \ key is defined"
+        $ do
+            let collection =
+                    Collection
+                        [(Mock.plain00, Mock.a)]
+                        []
+                expectedTerms = [Mock.plain00]
+                expectedCollections = []
+            testCollection collection expectedTerms expectedCollections
     , testCase "Opaque is always defined" $ do
         let collection = Collection [] [0]
         testCollection collection [] []
@@ -182,7 +184,7 @@ test_assumeDefined =
                 [ Mock.plain00
                 , Mock.f Mock.plain00
                 ]
-            expectedCollections = [ collection ]
+            expectedCollections = [collection]
         testCollection collection expectedTerms expectedCollections
     , testCase "Assumes 3-element, 1-opaque collection" $ do
         let collection =
@@ -235,12 +237,12 @@ test_assumeDefined =
             expectedSets = collectionToSetTerm <$> expectedCollections
             mapExpected =
                 expectedTerms <> expectedMaps
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             setExpected =
                 expectedTerms <> expectedSets
-                & HashSet.fromList
-                & fromDefinedTerms
+                    & HashSet.fromList
+                    & fromDefinedTerms
             mapActual = assumeDefined testMap
             setActual = assumeDefined testSet
         assertEqual "Map" mapExpected mapActual
@@ -248,46 +250,55 @@ test_assumeDefined =
 
 test_isDefined :: [TestTree]
 test_isDefined =
-    [ testCase "A functional symbol with always defined children\
-                \ is always defined" $ do
-        let term :: TermLike VariableName
-            term = Mock.functional20 Mock.a (mkElemVar Mock.x)
-            sideCondition = top
-            actual = isDefined sideCondition term
-        assertEqual "" True actual
-    , testCase "A functional symbol application is assumed defined if\
-                \ its subterms are assumed defined" $ do
-        let term :: TermLike VariableName
-            term = Mock.functional20 Mock.plain00 (Mock.f Mock.a)
-            sideCondition =
-                [ Mock.plain00
-                , Mock.f Mock.a
-                ]
-                & HashSet.fromList & fromDefinedTerms
-            actual = isDefined sideCondition term
-        assertEqual "" True actual
+    [ testCase
+        "A functional symbol with always defined children\
+        \ is always defined"
+        $ do
+            let term :: TermLike VariableName
+                term = Mock.functional20 Mock.a (mkElemVar Mock.x)
+                sideCondition = top
+                actual = isDefined sideCondition term
+            assertEqual "" True actual
+    , testCase
+        "A functional symbol application is assumed defined if\
+        \ its subterms are assumed defined"
+        $ do
+            let term :: TermLike VariableName
+                term = Mock.functional20 Mock.plain00 (Mock.f Mock.a)
+                sideCondition =
+                    [ Mock.plain00
+                    , Mock.f Mock.a
+                    ]
+                        & HashSet.fromList
+                        & fromDefinedTerms
+                actual = isDefined sideCondition term
+            assertEqual "" True actual
     , testCase "Singleton: collection is assumed to be defined" $ do
         let collection =
                 Collection
-                    [ (Mock.plain00, Mock.a) ]
+                    [(Mock.plain00, Mock.a)]
                     []
         testCollection collection (Just collection) True
-    , testCase "Singleton: always defined key implies\
-                \ always defined collection" $ do
-        let collection =
-                Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    ]
-                    []
-        testCollection collection Nothing True
-    , testCase "Singleton: not always defined key and map isn't assumed\
-                \ to be defined" $ do
-        let collection =
-                Collection
-                    [ (Mock.f (mkElemVar Mock.x), Mock.a)
-                    ]
-                    []
-        testCollection collection Nothing False
+    , testCase
+        "Singleton: always defined key implies\
+        \ always defined collection"
+        $ do
+            let collection =
+                    Collection
+                        [ (mkElemVar Mock.x, Mock.a)
+                        ]
+                        []
+            testCollection collection Nothing True
+    , testCase
+        "Singleton: not always defined key and map isn't assumed\
+        \ to be defined"
+        $ do
+            let collection =
+                    Collection
+                        [ (Mock.f (mkElemVar Mock.x), Mock.a)
+                        ]
+                        []
+            testCollection collection Nothing False
     , testCase "Opaque: opaque collection is always defined" $ do
         let collection = Collection [] [0]
         testCollection collection Nothing True
@@ -308,42 +319,46 @@ test_isDefined =
                     ]
                     [0]
         testCollection collection (Just collection) True
-    , testCase "3-element: is subcollection of assumed\
-                \ to be defined collection" $ do
-        let definedCollection =
-                Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
-                    , (Mock.c, Mock.d)
-                    , (mkElemVar Mock.y, Mock.b)
-                    ]
-                    [0]
-            collection =
-                Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
-                    , (Mock.c, Mock.d)
-                    ]
-                    []
-        testCollection collection (Just definedCollection) True
-    , testCase "3-element: is not subcollection of assumed\
-                \ to be defined collection" $ do
-        let definedCollection =
-                Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
-                    , (Mock.c, Mock.d)
-                    , (mkElemVar Mock.y, Mock.b)
-                    ]
-                    [0]
-            collection =
-                Collection
-                    [ (mkElemVar Mock.x, Mock.a)
-                    , (Mock.f Mock.plain00, Mock.b)
-                    , (Mock.d, Mock.d)
-                    ]
-                    []
-        testCollection collection (Just definedCollection) False
+    , testCase
+        "3-element: is subcollection of assumed\
+        \ to be defined collection"
+        $ do
+            let definedCollection =
+                    Collection
+                        [ (mkElemVar Mock.x, Mock.a)
+                        , (Mock.f Mock.plain00, Mock.b)
+                        , (Mock.c, Mock.d)
+                        , (mkElemVar Mock.y, Mock.b)
+                        ]
+                        [0]
+                collection =
+                    Collection
+                        [ (mkElemVar Mock.x, Mock.a)
+                        , (Mock.f Mock.plain00, Mock.b)
+                        , (Mock.c, Mock.d)
+                        ]
+                        []
+            testCollection collection (Just definedCollection) True
+    , testCase
+        "3-element: is not subcollection of assumed\
+        \ to be defined collection"
+        $ do
+            let definedCollection =
+                    Collection
+                        [ (mkElemVar Mock.x, Mock.a)
+                        , (Mock.f Mock.plain00, Mock.b)
+                        , (Mock.c, Mock.d)
+                        , (mkElemVar Mock.y, Mock.b)
+                        ]
+                        [0]
+                collection =
+                    Collection
+                        [ (mkElemVar Mock.x, Mock.a)
+                        , (Mock.f Mock.plain00, Mock.b)
+                        , (Mock.d, Mock.d)
+                        ]
+                        []
+            testCollection collection (Just definedCollection) False
     ]
   where
     testCollection input maybeAssumeDefined expectedIsDefined = do
@@ -391,7 +406,7 @@ test_generateNormalizedAcs =
                     , (mkElemVar Mock.y, Mock.b)
                     ]
                     []
-            expected = [ collection ]
+            expected = [collection]
         testCollection collection expected
     , testCase "3-element symbolic: all unique pair-wise subcollections" $ do
         let collection =
@@ -447,166 +462,174 @@ test_generateNormalizedAcs =
                     [0, 2]
                 ]
         testCollection collection expected
-    , testCase "2-concrete, 2-symbolic: generates all, including mixed,\
-                \ unique pair-wise subcollections" $ do
-        let collection =
-                Collection
-                    [ (Mock.a, Mock.a)
-                    , (mkElemVar Mock.x, Mock.b)
-                    , (Mock.b, Mock.c)
-                    , (mkElemVar Mock.y, Mock.d)
+    , testCase
+        "2-concrete, 2-symbolic: generates all, including mixed,\
+        \ unique pair-wise subcollections"
+        $ do
+            let collection =
+                    Collection
+                        [ (Mock.a, Mock.a)
+                        , (mkElemVar Mock.x, Mock.b)
+                        , (Mock.b, Mock.c)
+                        , (mkElemVar Mock.y, Mock.d)
+                        ]
+                        []
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.d)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.d)]
+                        []
+                    , Collection
+                        [(Mock.b, Mock.c), (mkElemVar Mock.y, Mock.d)]
+                        []
                     ]
-                    []
-            expected =
-                [ Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.d)]
-                    []
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.d)]
-                    []
-                , Collection
-                    [(Mock.b, Mock.c), (mkElemVar Mock.y, Mock.d)]
-                    []
-                ]
-        testCollection collection expected
-    , testCase "2-concrete 1-symbolic 1-opaque: all unique pairs\
-                \ and every element-opaque pair" $ do
-        let collection =
-                Collection
-                    [ (Mock.a, Mock.a)
-                    , (mkElemVar Mock.x, Mock.b)
-                    , (Mock.b, Mock.c)
+            testCollection collection expected
+    , testCase
+        "2-concrete 1-symbolic 1-opaque: all unique pairs\
+        \ and every element-opaque pair"
+        $ do
+            let collection =
+                    Collection
+                        [ (Mock.a, Mock.a)
+                        , (mkElemVar Mock.x, Mock.b)
+                        , (Mock.b, Mock.c)
+                        ]
+                        [0]
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [0]
                     ]
-                    [0]
-            expected =
-                [ Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a)]
-                    [0]
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b)]
-                    [0]
-                , Collection
-                    [(Mock.b, Mock.c)]
-                    [0]
-                ]
-        testCollection collection expected
-    , testCase "2-symbolic 1-concrete 1-opaque map: all unique pairs\
-                \ and every element-opaque pair" $ do
-        let collection =
-                Collection
-                    [ (Mock.a, Mock.a)
-                    , (mkElemVar Mock.x, Mock.b)
-                    , (mkElemVar Mock.y, Mock.c)
+            testCollection collection expected
+    , testCase
+        "2-symbolic 1-concrete 1-opaque map: all unique pairs\
+        \ and every element-opaque pair"
+        $ do
+            let collection =
+                    Collection
+                        [ (Mock.a, Mock.a)
+                        , (mkElemVar Mock.x, Mock.b)
+                        , (mkElemVar Mock.y, Mock.c)
+                        ]
+                        [0]
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.y, Mock.c)]
+                        [0]
                     ]
-                    [0]
-            expected =
-                [ Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.y, Mock.c)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a)]
-                    [0]
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b), (mkElemVar Mock.y, Mock.c)]
-                    []
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b)]
-                    [0]
-                , Collection
-                    [(mkElemVar Mock.y, Mock.c)]
-                    [0]
-                ]
-        testCollection collection expected
-    , testCase "3-element 2-opaque: all unique pairs\
-                \ and all element-opaque pairs" $ do
-        let collection =
-                Collection
-                    [ (Mock.a, Mock.a)
-                    , (mkElemVar Mock.x, Mock.b)
-                    , (Mock.b, Mock.c)
+            testCollection collection expected
+    , testCase
+        "3-element 2-opaque: all unique pairs\
+        \ and all element-opaque pairs"
+        $ do
+            let collection =
+                    Collection
+                        [ (Mock.a, Mock.a)
+                        , (mkElemVar Mock.x, Mock.b)
+                        , (Mock.b, Mock.c)
+                        ]
+                        [0, 1]
+                expected =
+                    [ Collection
+                        [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [0]
+                    , Collection
+                        [(Mock.a, Mock.a)]
+                        [1]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
+                        []
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [0]
+                    , Collection
+                        [(mkElemVar Mock.x, Mock.b)]
+                        [1]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [0]
+                    , Collection
+                        [(Mock.b, Mock.c)]
+                        [1]
+                    , Collection
+                        []
+                        [0, 1]
                     ]
-                    [0, 1]
-            expected =
-                [ Collection
-                    [(Mock.a, Mock.a), (mkElemVar Mock.x, Mock.b)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(Mock.a, Mock.a)]
-                    [0]
-                , Collection
-                    [(Mock.a, Mock.a)]
-                    [1]
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b), (Mock.b, Mock.c)]
-                    []
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b)]
-                    [0]
-                , Collection
-                    [(mkElemVar Mock.x, Mock.b)]
-                    [1]
-                , Collection
-                    [(Mock.b, Mock.c)]
-                    [0]
-                , Collection
-                    [(Mock.b, Mock.c)]
-                    [1]
-                , Collection
-                    []
-                    [0, 1]
-                ]
-        testCollection collection expected
+            testCollection collection expected
     ]
   where
     testCollection input expected = do
         let testMap = collectionToMap input
             testSet = collectionToSet input
             expectedMaps =
-                HashSet.fromList
-                $ collectionToMap
-                <$> expected
+                HashSet.fromList $
+                    collectionToMap
+                        <$> expected
             expectedSets =
-                HashSet.fromList
-                $ collectionToSet
-                <$> expected
+                HashSet.fromList $
+                    collectionToSet
+                        <$> expected
             actualMaps = generateNormalizedAcs testMap
             actualSets = generateNormalizedAcs testSet
         assertEqual "Maps" expectedMaps actualMaps
         assertEqual "Sets" expectedSets actualSets
 
-collectionToMapTerm
-    :: Collection VariableName
-    -> TermLike VariableName
+collectionToMapTerm ::
+    Collection VariableName ->
+    TermLike VariableName
 collectionToMapTerm = mkInternalMap . collectionToMap
 
-collectionToMap
-    :: Collection VariableName
-    -> InternalMap Key (TermLike VariableName)
-collectionToMap Collection { elements, opaqueVars } =
+collectionToMap ::
+    Collection VariableName ->
+    InternalMap Key (TermLike VariableName)
+collectionToMap Collection{elements, opaqueVars} =
     Mock.framedInternalMap elements mapOpaqueVars
   where
     mapOpaqueVars = mkElemVar . mkTestMapVar <$> opaqueVars
@@ -614,15 +637,15 @@ collectionToMap Collection { elements, opaqueVars } =
         let counter = Just (Element int)
          in Mock.MockElementVariable (testId "xMap") counter Mock.mapSort
 
-collectionToSetTerm
-    :: Collection VariableName
-    -> TermLike VariableName
+collectionToSetTerm ::
+    Collection VariableName ->
+    TermLike VariableName
 collectionToSetTerm = mkInternalSet . collectionToSet
 
-collectionToSet
-    :: Collection VariableName
-    -> InternalSet Key (TermLike VariableName)
-collectionToSet Collection { elements, opaqueVars } =
+collectionToSet ::
+    Collection VariableName ->
+    InternalSet Key (TermLike VariableName)
+collectionToSet Collection{elements, opaqueVars} =
     Mock.framedInternalSet setElements setOpaqueVars
   where
     setElements = fst <$> elements
@@ -631,8 +654,7 @@ collectionToSet Collection { elements, opaqueVars } =
         let counter = Just (Element int)
          in Mock.MockElementVariable (testId "xSet") counter Mock.setSort
 
-data Collection variable =
-    Collection
-        { elements :: [(TermLike variable, TermLike variable)]
-        , opaqueVars :: [Natural]
-        }
+data Collection variable = Collection
+    { elements :: [(TermLike variable, TermLike variable)]
+    , opaqueVars :: [Natural]
+    }
