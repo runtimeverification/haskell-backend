@@ -80,9 +80,6 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             Simplifier.simplifyCondition
                 SideCondition.top
                 (fromPredicate argument')
-        lift $ Monad.unless
-            ((isTop . predicate) simplifiedCond)
-            (throwE equation)
         let Conditional { substitution, predicate } = simplifiedCond
         lift $ Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
