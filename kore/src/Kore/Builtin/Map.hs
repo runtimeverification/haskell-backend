@@ -52,7 +52,6 @@ import Data.Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes
     ( isConstructorModulo_
@@ -485,17 +484,14 @@ internalize subterms.
 
 internalize
     :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
+    => TermLike variable
     -> TermLike variable
-    -> TermLike variable
-internalize tools termLike
+internalize termLike
   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
   -- apply it if we know the term head is a constructor-like symbol.
   | App_ symbol _ <- termLike
   , isConstructorModulo_ symbol = Ac.toNormalizedInternalMap termLike
   | otherwise = termLike
-  where
-    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
