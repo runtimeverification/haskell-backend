@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.BugReport
     ( BugReport (..)
     , BugReportOption (..)
@@ -31,6 +33,10 @@ import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Debug
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import GHC.IO.Exception
+    ( IOErrorType (..)
+    , IOException (ioe_type)
+    )
 import Options.Applicative
 import System.Directory
     ( listDirectory
@@ -137,6 +143,10 @@ withBugReport exeName bugReportOption act =
                     {- User exits the repl after the proof was finished -} ->
                     optionalWriteBugReport tmpDir
               | Just UserInterrupt == fromException someException ->
+                    optionalWriteBugReport tmpDir
+              | Just (ioe :: IOException) <- fromException someException
+              , NoSuchThing <- ioe_type ioe -> do
+                    putStrLn $ displayException someException
                     optionalWriteBugReport tmpDir
               | otherwise -> do
                     let message = displayException someException
