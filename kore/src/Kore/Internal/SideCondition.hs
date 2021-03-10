@@ -702,7 +702,6 @@ assumeDefined term =
             <> opaqueElems
             <> values
 
--- TODO: check values as well
 {- | Checks if a 'TermLike' is defined. It may always be defined,
 or be defined in the context of the `SideCondition`.
 -}
