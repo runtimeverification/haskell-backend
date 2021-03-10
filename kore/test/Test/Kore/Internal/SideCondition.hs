@@ -226,6 +226,49 @@ test_assumeDefined =
                     [0]
                 ]
         testCollection collection expectedTerms expectedCollections
+    , testCase "Singleton map: assumes value is defined" $ do
+        let testMap :: TermLike VariableName
+            testMap =
+                Mock.framedMap
+                    [(Mock.a, Mock.f Mock.plain00)]
+                    []
+            expected =
+                [ Mock.plain00
+                , Mock.f Mock.plain00
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined testMap
+        assertEqual "" expected actual
+    , testCase "2-element 1-opaque map: assumes values are also defined" $ do
+        let testMap :: TermLike VariableName
+            testMap =
+                Mock.framedMap
+                    [ (Mock.a, Mock.f Mock.plain00)
+                    , (Mock.g Mock.a, Mock.f (mkElemVar Mock.x))
+                    ]
+                    [mkElemVar Mock.xMap]
+            expected =
+                [ Mock.plain00
+                , Mock.f Mock.plain00
+                , Mock.g Mock.a
+                , Mock.f (mkElemVar Mock.x)
+                , Mock.framedMap
+                    [ (Mock.a, Mock.f Mock.plain00)
+                    , (Mock.g Mock.a, Mock.f (mkElemVar Mock.x))
+                    ]
+                    []
+                , Mock.framedMap
+                    [ (Mock.a, Mock.f Mock.plain00) ]
+                    [mkElemVar Mock.xMap]
+                , Mock.framedMap
+                    [ (Mock.g Mock.a, Mock.f (mkElemVar Mock.x)) ]
+                    [mkElemVar Mock.xMap]
+                ]
+                & HashSet.fromList
+                & fromDefinedTerms
+            actual = assumeDefined testMap
+        assertEqual "" expected actual
     ]
   where
     testCollection input expectedTerms expectedCollections = do
@@ -356,6 +399,26 @@ test_isDefined =
                     [ (mkElemVar Mock.x, Mock.constr10 Mock.a) ]
                     [0]
         testCollection collection Nothing False
+    , testCase "Singleton map: value is not always defined" $ do
+        let testMap :: TermLike VariableName
+            testMap =
+                Mock.framedMap
+                    [(Mock.a, Mock.f Mock.plain00)]
+                    []
+            actual = isDefined top testMap
+        assertBool "" (not actual)
+    , testCase "2-element 1-opaque map: value is assumed defined" $ do
+        let definedMap :: TermLike VariableName
+            definedMap =
+                Mock.framedMap
+                    [ (Mock.a, Mock.f Mock.plain00)
+                    , (Mock.g Mock.a, Mock.f (mkElemVar Mock.x))
+                    ]
+                    [mkElemVar Mock.xMap]
+            testTerm :: TermLike VariableName
+            testTerm = Mock.plain00
+            actual = isDefined (assumeDefined definedMap) testTerm
+        assertBool "" actual
     ]
   where
     testCollection input maybeAssumeDefined expectedIsDefined = do
