@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2702a5d875e9f185a4aedc5fdcafa951249ccd4ef5edab6f1e96689991c8f13f
+-- hash: 80d27d36f0343e3b6779aa37ed5fccc747fd7c1b66c7b9bd2fb27c1f6a2d6403
 
 name:           kore
 version:        0.41.0.0
@@ -70,7 +70,9 @@ library
       Kore.Attribute.Axiom.Symbolic
       Kore.Attribute.Axiom.Unit
       Kore.Attribute.Comm
+      Kore.Attribute.Concat
       Kore.Attribute.Constructor
+      Kore.Attribute.Element
       Kore.Attribute.Function
       Kore.Attribute.Functional
       Kore.Attribute.Hook
@@ -101,12 +103,9 @@ library
       Kore.Attribute.Smtlib.Smthook
       Kore.Attribute.Smtlib.Smtlib
       Kore.Attribute.Sort
-      Kore.Attribute.Sort.Concat
       Kore.Attribute.Sort.Constructors
       Kore.Attribute.Sort.ConstructorsBuilder
-      Kore.Attribute.Sort.Element
       Kore.Attribute.Sort.HasDomainValues
-      Kore.Attribute.Sort.Unit
       Kore.Attribute.SortInjection
       Kore.Attribute.Source
       Kore.Attribute.SourceLocation
@@ -120,6 +119,7 @@ library
       Kore.Attribute.Synthetic
       Kore.Attribute.Trusted
       Kore.Attribute.UniqueId
+      Kore.Attribute.Unit
       Kore.BugReport
       Kore.Builtin
       Kore.Builtin.AssocComm.AssocComm
@@ -916,7 +916,6 @@ test-suite kore-test
       Test.Kore.Attribute.Smtlib
       Test.Kore.Attribute.Sort.ConstructorsBuilder
       Test.Kore.Attribute.Sort.HasDomainValues
-      Test.Kore.Attribute.Sort.Unit
       Test.Kore.Attribute.SortInjection
       Test.Kore.Attribute.Subsort
       Test.Kore.Attribute.Symbol
@@ -927,6 +926,7 @@ test-suite kore-test
       Test.Kore.Attribute.Symbol.SymbolKywd
       Test.Kore.Attribute.Trusted
       Test.Kore.Attribute.UniqueId
+      Test.Kore.Attribute.Unit
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier

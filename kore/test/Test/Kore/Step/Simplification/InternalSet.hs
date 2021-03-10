@@ -13,6 +13,9 @@ import Data.Maybe
     ( fromJust
     )
 
+import Kore.Attribute.Concat
+import Kore.Attribute.Element
+import Kore.Attribute.Unit
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalSet
 import Kore.Internal.OrPattern
@@ -91,9 +94,9 @@ mkSetAux
 mkSetAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.setSort
-        , builtinAcUnit = Mock.unitSetSymbol
-        , builtinAcElement = Mock.elementSetSymbol
-        , builtinAcConcat = Mock.concatSetSymbol
+        , builtinAcUnit = toUnit Mock.unitSetSymbol
+        , builtinAcElement = toElement Mock.elementSetSymbol
+        , builtinAcConcat = toConcat Mock.concatSetSymbol
         , builtinAcChild = NormalizedSet NormalizedAc
             { elementsWithVariables = SetElement <$> elements
             , concreteElements =

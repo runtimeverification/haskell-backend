@@ -1575,8 +1575,8 @@ mkDefined = worker
         .  AcWrapper normalized
         => Functor (Value normalized)
         => Functor (Element normalized)
-        => InternalAc Key normalized (TermLike variable)
-        -> InternalAc Key normalized (TermLike variable)
+        => InternalAc normalized Key (TermLike variable)
+        -> InternalAc normalized Key (TermLike variable)
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
       where

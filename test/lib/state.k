@@ -24,9 +24,9 @@ module STATE-BASIC
        => (K |-> V) S
 
   rule inState(.State, _) => false
-  rule inState((K:StateKey |-> _:StateValue) S:State, K:StateKey) => true
+  rule inState((K:StateKey |-> _:StateValue) _:State, K:StateKey) => true
 
-  rule get((K:StateKey |-> V:StateValue) S:State, K:StateKey) => V
+  rule get((K:StateKey |-> V:StateValue) _:State, K:StateKey) => V
 endmodule
 
 module STATE
