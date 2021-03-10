@@ -16,6 +16,7 @@ import Prelude.Kore
 import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
+    , fromException
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -87,6 +88,9 @@ import Prof
     ( MonadProf
     )
 
+import Kore.Log.ErrorException
+    ( errorException
+    )
 import Kore.Unification.Procedure
     ( unificationProcedure
     )
@@ -276,9 +280,10 @@ runRepl
 
     catchEverything :: a -> m a -> m a
     catchEverything a =
-        Exception.handleAll $ \e -> liftIO $ do
-            putStrLn "Stepper evaluation errored."
-            print e
+        Exception.handleAll $ \e -> do
+            case fromException e of
+                Just (Log.SomeEntry entry) -> Log.logEntry entry
+                Nothing -> errorException e
             pure a
 
     replGreeting :: m ()

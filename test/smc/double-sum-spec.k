@@ -25,7 +25,7 @@ claim
       .K
     ...</k>
   <mem>
-      n   |-> N:Int
+      n   |-> _:Int
       p   |-> (P:Int => 0)
       sum |-> (S:Int => S +Int (3 *Int ((P +Int 1) *Int P)))
   </mem>

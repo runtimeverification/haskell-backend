@@ -12,6 +12,7 @@ module Kore.Internal.NormalizedAc
     , NormalizedAc (..)
     , nullAc
     , emptyNormalizedAc
+    , emptyInternalAc
     , asSingleOpaqueElem
     , isSymbolicKeyOfAc
     , lookupSymbolicKeyOfAc
@@ -38,6 +39,7 @@ import qualified Control.Lens as Lens
 import Control.Lens.Iso
     ( Iso'
     )
+import Data.Default
 import Data.Kind
     ( Type
     )
@@ -51,9 +53,13 @@ import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Concat as Att
+import qualified Kore.Attribute.Element as Att
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.Functional
+import qualified Kore.Attribute.Symbol as SymAtt
+import qualified Kore.Attribute.Unit as Att
 import Kore.Debug
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
@@ -119,17 +125,24 @@ wrapConcreteElement
 wrapConcreteElement = from
 
 unparsedChildren
-    :: forall ann child key normalized
+    :: forall ann child normalized key
     .  AcWrapper normalized
-    => Symbol
+    => Att.Element (Pretty.Doc ann)
     -> (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
     -> normalized key child
     -> [Pretty.Doc ann]
-unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
-    (elementUnparser <$> elementsWithVariables)
-    ++ (concreteElementUnparser <$> Map.toAscList concreteElements)
+unparsedChildren elementSymbol keyUnparser childUnparser wrapped
+  | Just elementSymbolDoc <- Att.getElement elementSymbol =
+    (elementUnparser elementSymbolDoc <$> elementsWithVariables)
+    ++ (concreteElementUnparser elementSymbolDoc
+        <$> Map.toAscList concreteElements)
     ++ (child . childUnparser <$> opaque)
+  | isNothing (Att.getElement elementSymbol)
+  , null elementsWithVariables
+  , null concreteElements =
+    child . childUnparser <$> opaque
+  | otherwise = error "Cannot unparse nonempty element lists without an Element symbol"
   where
     unwrapped :: NormalizedAc normalized key child
     -- Matching needed only for getting compiler notifications when
@@ -139,16 +152,19 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     NormalizedAc {elementsWithVariables} = unwrapped
     NormalizedAc {concreteElements} = unwrapped
     NormalizedAc {opaque} = unwrapped
-    element = (<>) ("/* element: */" <+> unparse elementSymbol)
-    concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
+    element = (<>) . (<+>) "/* element: */"
+    concreteElement = (<>) . (<+>) "/* concrete element: */"
     child = (<+>) "/* opaque child: */"
 
-    elementUnparser :: Element normalized child -> Pretty.Doc ann
-    elementUnparser = element . unparseElement childUnparser
+    elementUnparser :: Pretty.Doc ann -> Element normalized child -> Pretty.Doc ann
+    elementUnparser elementSymbolDoc =
+        element elementSymbolDoc
+        . unparseElement childUnparser
 
-    concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
-    concreteElementUnparser =
-        concreteElement . unparseConcreteElement keyUnparser childUnparser
+    concreteElementUnparser :: Pretty.Doc ann -> (key, Value normalized child) -> Pretty.Doc ann
+    concreteElementUnparser elementSymbolDoc =
+        concreteElement elementSymbolDoc
+        . unparseConcreteElement keyUnparser childUnparser
 
 {- | Internal representation for associative-commutative domain values.
 
@@ -353,7 +369,7 @@ instance
     )
     => Diff (NormalizedAc collection key child)
 
-emptyNormalizedAc :: NormalizedAc key valueWrapper child
+emptyNormalizedAc :: NormalizedAc valueWrapper key child
 emptyNormalizedAc = NormalizedAc
     { elementsWithVariables = []
     , concreteElements = Map.empty
@@ -361,7 +377,7 @@ emptyNormalizedAc = NormalizedAc
     }
 
 asSingleOpaqueElem
-    :: NormalizedAc key valueWrapper child
+    :: NormalizedAc valueWrapper key child
     -> Maybe child
 asSingleOpaqueElem
     NormalizedAc
@@ -376,54 +392,98 @@ asSingleOpaqueElem
       Just singleOpaqueElem
     | otherwise =  Nothing
 
--- TODO (thomas.tuegel): Change order of parameters.
 {- | Internal representation of associative-commutative builtin terms.
 -}
-data InternalAc key (normalized :: Type -> Type -> Type) child =
+data InternalAc (normalized :: Type -> Type -> Type) key child =
     InternalAc
         { builtinAcSort :: !Sort
-        , builtinAcUnit :: !Symbol
-        , builtinAcElement :: !Symbol
-        , builtinAcConcat :: !Symbol
+        , builtinAcUnit :: !(Att.Unit Symbol)
+        , builtinAcElement :: !(Att.Element Symbol)
+        , builtinAcConcat :: !(Att.Concat Symbol)
         , builtinAcChild :: normalized key child
         }
-    deriving (Eq, Ord, Show)
+    deriving (Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
+instance Eq (normalized key child)
+    => Eq (InternalAc normalized key child) where
+    internal1 == internal2 =
+        builtinAcSort internal1 == builtinAcSort internal2
+        && builtinAcChild internal1 == builtinAcChild internal2
+
+instance Ord (normalized key child)
+    => Ord (InternalAc normalized key child) where
+    internal1 <= internal2 =
+        if builtinAcSort internal1 == builtinAcSort internal2
+            then builtinAcChild internal1 <= builtinAcChild internal2
+            else builtinAcSort internal1 <= builtinAcSort internal2
+
 instance Hashable (normalized key child)
-    => Hashable (InternalAc key normalized child)
+    => Hashable (InternalAc normalized key child)
   where
     hashWithSalt salt builtin =
-        hashWithSalt salt builtinAcChild
+        hashWithSalt (hashWithSalt salt builtinAcSort) builtinAcChild
       where
+        InternalAc { builtinAcSort } = builtin
         InternalAc { builtinAcChild } = builtin
 
 instance (NFData (normalized key child))
-    => NFData (InternalAc key normalized child)
+    => NFData (InternalAc normalized key child)
 
 instance (Debug (normalized key child))
-    => Debug (InternalAc key normalized child)
+    => Debug (InternalAc normalized key child)
 
 instance
     (Debug (normalized key child), Diff (normalized key child))
-    => Diff (InternalAc key normalized child)
+    => Diff (InternalAc normalized key child)
+
+emptyInternalAc
+    :: (AcWrapper normalized)
+    => Sort
+    -> InternalAc normalized key child
+emptyInternalAc sort = InternalAc
+    { builtinAcSort = sort
+    , builtinAcUnit = def
+    , builtinAcElement = def
+    , builtinAcConcat = def
+    , builtinAcChild = wrapAc emptyNormalizedAc
+    }
 
 unparseInternalAc
     :: (AcWrapper normalized)
+    => HasCallStack
     => (key -> Pretty.Doc ann)
     -> (child -> Pretty.Doc ann)
-    -> InternalAc key normalized child
+    -> InternalAc normalized key child
     -> Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
-    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat)
-    $ unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
+    unparseConcat'
+        (Att.fromUnit $ unparse <$> unitSymbolOrAlias)
+        (Att.fromConcat $ unparse <$> builtinAcConcat)
+        children
   where
     InternalAc { builtinAcChild } = builtinAc
     InternalAc { builtinAcUnit } = builtinAc
     InternalAc { builtinAcElement } = builtinAc
     InternalAc { builtinAcConcat } = builtinAc
+    (concatUnit, concatElement) = case Att.getConcat builtinAcConcat of
+        Nothing -> (def, def)
+        Just concatSymbol -> let concatAtts = symbolAttributes concatSymbol
+            in (SymAtt.unitHook concatAtts, SymAtt.elementHook concatAtts)
+    unitSymbolOrAlias = Att.mergeUnit
+        (toSymbolOrAlias <$> builtinAcUnit)
+        concatUnit
+    elementSymbolOrAlias = Att.mergeElement
+        (toSymbolOrAlias <$> builtinAcElement)
+        concatElement
+    children = unparsedChildren
+        (unparse <$> elementSymbolOrAlias)
+        keyUnparser
+        childUnparser
+        builtinAcChild
+
 
 normalizedAcDefined
     :: (Foldable (Element collection), Foldable (Value collection))

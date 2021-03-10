@@ -17,14 +17,14 @@ import Data.Text
     ( Text
     )
 
+import qualified Kore.Attribute.Concat as Attribute.Sort
+import qualified Kore.Attribute.Element as Attribute.Sort
 import Kore.Attribute.Hook
     ( Hook (..)
     )
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
-import qualified Kore.Attribute.Sort.Element as Attribute.Sort
-import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Attribute.Unit as Attribute.Sort
 import Kore.Builtin.Error
 import Kore.Error
     ( Error
