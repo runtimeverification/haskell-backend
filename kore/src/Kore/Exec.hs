@@ -24,10 +24,12 @@ module Kore.Exec
 
 import Prelude.Kore
 
-import Control.Error (hoistMaybe)
 import Control.Concurrent.MVar
 import Control.DeepSeq
     ( deepseq
+    )
+import Control.Error
+    ( hoistMaybe
     )
 import qualified Control.Lens as Lens
 import Control.Monad
