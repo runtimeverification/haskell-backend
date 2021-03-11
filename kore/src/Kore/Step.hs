@@ -6,8 +6,6 @@ Strategy-based interface to rule application (step-wise execution).
 
  -}
 
-{-# LANGUAGE Strict #-}
-
 module Kore.Step
     ( ExecutionMode (..)
     , ProgramState (..)
