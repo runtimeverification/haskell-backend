@@ -54,7 +54,7 @@ import Kore.Attribute.RuleIndex
 import qualified Kore.Attribute.RuleIndex as Attribute
 import System.IO
     ( hFlush
-    , stdout
+    , stdout, hPutStrLn, stderr
     )
 import Text.Megaparsec
     ( parseMaybe
@@ -274,7 +274,7 @@ runRepl
     catchInterruptWithDefault a =
         Exception.handle $ \case
             UserInterrupt -> do
-                liftIO $ putStrLn "Step evaluation interrupted."
+                liftIO $ hPutStrLn stderr "Step evaluation interrupted."
                 pure a
             e -> Exception.throwM e
 

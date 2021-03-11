@@ -34,7 +34,7 @@ import qualified Data.Text as Text
     , split
     )
 import qualified Data.Text.IO as Text
-    ( putStrLn
+    ( hPutStrLn
     , readFile
     )
 import qualified GHC.Generics as GHC
@@ -81,6 +81,7 @@ import System.FilePath
 import System.IO
     ( IOMode (WriteMode)
     , withFile
+    , stderr
     )
 
 import Data.Functor
@@ -804,7 +805,7 @@ koreMerge execOptions mergeOptions = do
             Nothing -> mergeAllRules mainModule ruleIds
     case eitherMergedRule of
         (Left err) -> do
-            lift $ Text.putStrLn err
+            lift $ Text.hPutStrLn stderr err
             return (ExitFailure 1)
         (Right mergedRule) -> do
             let mergedRule' =
