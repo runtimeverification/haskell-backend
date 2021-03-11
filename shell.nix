@@ -54,7 +54,7 @@ in
 shellFor {
   buildInputs =
     [
-      gnumake z3
+      gnumake fd z3
       hls-renamed
       ghcid hlint hpack stylish-haskell fourmolu
       cabal-install stack
