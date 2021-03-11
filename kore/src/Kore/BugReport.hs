@@ -35,6 +35,7 @@ import GHC.IO.Exception (
     IOErrorType (..),
     IOException (ioe_type),
  )
+import qualified Generics.SOP as SOP
 import Options.Applicative
 import System.Directory (
     listDirectory,
@@ -55,7 +56,6 @@ import System.IO.Temp (
     createTempDirectory,
     getCanonicalTemporaryDirectory,
  )
-import qualified Generics.SOP as SOP
 
 import Kore.Log.KoreLogOptions (
     ExeName (..),
