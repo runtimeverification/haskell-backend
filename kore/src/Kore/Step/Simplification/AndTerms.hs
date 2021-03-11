@@ -297,7 +297,7 @@ equalAndEquals
     -> MaybeT unifier (Pattern RewritingVariableName)
 equalAndEquals first second =
     if first == second then
-        -- TODO (thomas.tuegel): Preserve defined and simplified flags.
+        -- TODO (thomas.tuegel): Preserve simplified flags.
         return (Pattern.fromTermLike first)
     else empty
 
