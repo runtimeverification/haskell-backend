@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80d27d36f0343e3b6779aa37ed5fccc747fd7c1b66c7b9bd2fb27c1f6a2d6403
+-- hash: 34d9341e7958131e549196190c57209e04ec8bd3716ff5aa25999e7527afba62
 
 name:           kore
 version:        0.41.0.0
@@ -468,7 +468,7 @@ library
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -544,7 +544,7 @@ executable kore-exec
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -624,7 +624,7 @@ executable kore-format
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -704,7 +704,7 @@ executable kore-parser
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -782,7 +782,7 @@ executable kore-prof
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -858,7 +858,7 @@ executable kore-repl
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -1145,7 +1145,7 @@ test-suite kore-test
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
