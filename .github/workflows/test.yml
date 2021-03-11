@@ -54,6 +54,9 @@ jobs:
 
   cabal:
     name: 'Cabal'
+    strategy:
+      matrix:
+        ghc: ["8.10.4"]
     runs-on: ubuntu-latest
     steps:
       - name: Install prerequisites
@@ -66,17 +69,17 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
-      - uses: actions/setup-haskell@v1.1.4
+      - uses: haskell/actions/setup@v1
         id: setup-haskell-cabal
         with:
-          ghc-version: "8.10.4"
+          ghc-version: ${{ matrix.ghc }}
           cabal-version: "3.2"
 
       - name: Cache Cabal store
         uses: actions/cache@v2
         with:
           path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-8.10.4-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}
 
       - name: Build
         run: cabal v2-build --enable-tests --enable-benchmarks all
@@ -101,7 +104,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
-      - uses: actions/setup-haskell@v1.1.4
+      - uses: haskell/actions/setup@v1
         id: setup-haskell-stack
         with:
           enable-stack: true
@@ -117,7 +120,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.locate-stack-root.outputs.stack-root }}
-          key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('stack.yaml.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
 
       - name: Build dependencies
         run: |
