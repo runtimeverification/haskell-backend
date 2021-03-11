@@ -74,9 +74,13 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Concat
+import Kore.Attribute.Concat hiding
+    ( concatSymbol
+    )
 import Kore.Attribute.Constructor
-import Kore.Attribute.Element
+import Kore.Attribute.Element hiding
+    ( elementSymbol
+    )
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -95,7 +99,9 @@ import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
-import Kore.Attribute.Unit
+import Kore.Attribute.Unit hiding
+    ( unitSymbol
+    )
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -127,10 +133,12 @@ data Symbol =
     , klabel         :: !Klabel
     , symbolKywd     :: !SymbolKywd
     , noEvaluators   :: !NoEvaluators
-    , builtinUnit    :: !(Unit SymbolOrAlias)
-    , builtinElement :: !(Element SymbolOrAlias)
-    , builtinConcat  :: !(Concat SymbolOrAlias)
-    -- ^ The above three are only populated if the symbol is a builtinAc symbol
+    , unitSymbol     :: !(Unit SymbolOrAlias)
+    , elementSymbol  :: !(Element SymbolOrAlias)
+    , concatSymbol   :: !(Concat SymbolOrAlias)
+    -- ^ The above three fields are only populated if the symbol is
+    -- hooked to a built-in symbol of an associative-commutative type,
+    -- such as _|->_. They are only used for unparsing.
     , sourceLocation :: !SourceLocation
     -- ^ Location in the original (source) file.
     }
@@ -180,9 +188,9 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
-            , from . builtinUnit
-            , from . builtinElement
-            , from . builtinConcat
+            , from . unitSymbol
+            , from . elementSymbol
+            , from . concatSymbol
             , from . sourceLocation
             ]
 
@@ -204,9 +212,9 @@ defaultSymbolAttributes =
         , klabel         = def
         , symbolKywd     = def
         , noEvaluators   = def
-        , builtinUnit    = def
-        , builtinElement = def
-        , builtinConcat  = def
+        , unitSymbol     = def
+        , elementSymbol  = def
+        , concatSymbol   = def
         , sourceLocation = def
         }
 
