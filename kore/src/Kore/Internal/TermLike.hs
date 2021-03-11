@@ -429,7 +429,7 @@ See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
 
  -}
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
-isSimplified ~sideCondition =
+isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
 
 {- | Is the 'TermLike' fully simplified under any side condition?
@@ -527,7 +527,7 @@ markSimplifiedMaybeConditional
     -> TermLike variable
     -> TermLike variable
 markSimplifiedMaybeConditional Nothing = markSimplified
-markSimplifiedMaybeConditional (Just ~condition) =
+markSimplifiedMaybeConditional (Just condition) =
     markSimplifiedConditional condition
 
 cannotSimplifyNotSimplifiedError
@@ -568,7 +568,7 @@ markSimplifiedConditional
     :: (HasCallStack, InternalVariable variable)
     => SideCondition.Representation -> TermLike variable -> TermLike variable
 markSimplifiedConditional
-    ~condition
+    condition
     (Recursive.project -> attrs :< termLikeF)
   =
     Recursive.embed

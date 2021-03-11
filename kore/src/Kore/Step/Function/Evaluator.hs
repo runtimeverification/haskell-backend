@@ -132,7 +132,7 @@ evaluateApplication
         -> TermLike RewritingVariableName
     markSimplifiedIfChildren Nothing = TermLike.setSimplified
         (foldMap TermLike.simplifiedAttribute application)
-    markSimplifiedIfChildren (Just ~condition) = TermLike.setSimplified
+    markSimplifiedIfChildren (Just condition) = TermLike.setSimplified
         (  foldMap TermLike.simplifiedAttribute application
         <> Attribute.Simplified.simplifiedConditionally condition
         )
@@ -251,7 +251,7 @@ maybeEvaluatePattern
         case merged of
             AttemptedAxiom.NotApplicable ->
                 defaultValue Nothing
-            AttemptedAxiom.NotApplicableUntilConditionChanges ~c ->
+            AttemptedAxiom.NotApplicableUntilConditionChanges c ->
                 defaultValue (Just c)
             AttemptedAxiom.Applied attemptResults ->
                 return $ MultiOr.merge results remainders
