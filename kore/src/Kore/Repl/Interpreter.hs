@@ -132,7 +132,9 @@ import System.FilePath
     )
 import System.IO
     ( IOMode (..)
-    , withFile, hPutStrLn, stderr
+    , hPutStrLn
+    , stderr
+    , withFile
     )
 import System.Process
     ( StdStream (CreatePipe)

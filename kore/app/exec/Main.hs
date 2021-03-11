@@ -80,8 +80,8 @@ import System.FilePath
     )
 import System.IO
     ( IOMode (WriteMode)
-    , withFile
     , stderr
+    , withFile
     )
 
 import Data.Functor

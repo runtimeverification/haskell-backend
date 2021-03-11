@@ -63,7 +63,10 @@ import System.Clock
     )
 
 import GlobalMain
-import System.IO (hPutStrLn, stderr)
+import System.IO
+    ( hPutStrLn
+    , stderr
+    )
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule

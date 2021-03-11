@@ -54,7 +54,9 @@ import Kore.Attribute.RuleIndex
 import qualified Kore.Attribute.RuleIndex as Attribute
 import System.IO
     ( hFlush
-    , stdout, hPutStrLn, stderr
+    , hPutStrLn
+    , stderr
+    , stdout
     )
 import Text.Megaparsec
     ( parseMaybe
