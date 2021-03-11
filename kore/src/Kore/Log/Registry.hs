@@ -125,6 +125,9 @@ import Kore.Log.WarnRetrySolverQuery
 import Kore.Log.WarnStuckClaimState
     ( WarnStuckClaimState
     )
+import Kore.Log.WarnDepthLimitExceeded
+    ( WarnDepthLimitExceeded
+    )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation
     )
@@ -181,6 +184,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
         , mk $ Proxy @WarnFunctionWithoutEvaluators
         , mk $ Proxy @WarnSymbolSMTRepresentation
         , mk $ Proxy @WarnStuckClaimState
+        , mk $ Proxy @WarnDepthLimitExceeded
         , mk $ Proxy @WarnBoundedModelChecker
         , mk $ Proxy @WarnIfLowProductivity
         , mk $ Proxy @WarnTrivialClaim
