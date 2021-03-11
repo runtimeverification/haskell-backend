@@ -470,8 +470,10 @@ unparseInternalAc keyUnparser childUnparser builtinAc =
     InternalAc { builtinAcConcat } = builtinAc
     (concatUnit, concatElement) = case Att.getConcat builtinAcConcat of
         Nothing -> (def, def)
-        Just concatSymbol -> let concatAtts = symbolAttributes concatSymbol
-            in (SymAtt.unitHook concatAtts, SymAtt.elementHook concatAtts)
+        Just concatSymbol -> let concatAtts = symbolAttributes concatSymbol in
+            ( SymAtt.builtinUnit concatAtts
+            , SymAtt.builtinElement concatAtts
+            )
     unitSymbolOrAlias = Att.mergeUnit
         (toSymbolOrAlias <$> builtinAcUnit)
         concatUnit
