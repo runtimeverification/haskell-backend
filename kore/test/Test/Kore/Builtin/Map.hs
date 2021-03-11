@@ -1438,18 +1438,17 @@ test_inKeys =
                       | otherwise = makeMultipleAndPredicate predicates
                     predicates =
                         catMaybes
-                        [ do
-                            (guard . not)
-                                (SideCondition.isDefined SideCondition.top termKey)
-                            pure (makeCeilPredicate termKey)
-                        , do
-                            (guard . not)
-                                (SideCondition.isDefined SideCondition.top termMap)
-                            pure (makeCeilPredicate termMap)
+                        [ mkDefinedTerm termKey
+                        , mkDefinedTerm termMap
                         ]
                 assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term
                 return (Just bool)
+
+    mkDefinedTerm term = do
+        (guard . not)
+            (SideCondition.isDefined SideCondition.top term)
+        pure (makeCeilPredicate term)
 
 -- * Helpers
 
