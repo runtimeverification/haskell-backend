@@ -21,8 +21,6 @@ module Kore.Internal.OrCondition
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
-
 import Kore.Internal.Condition
     ( Condition
     )
@@ -63,7 +61,7 @@ fromConditions
     :: (Foldable f, InternalVariable variable)
     => f (Condition variable)
     -> OrCondition variable
-fromConditions = from . Foldable.toList
+fromConditions = from . toList
 
 fromPredicate
     :: InternalVariable variable
@@ -102,11 +100,10 @@ isTrue :: OrCondition variable -> Bool
 isTrue = isTop
 
 toConditions :: OrCondition variable -> [Condition variable]
-toConditions = Foldable.toList
+toConditions = toList
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
     :: InternalVariable variable
     => MultiOr (Predicate variable) -> Predicate variable
-toPredicate multiOr =
-    Predicate.makeMultipleOrPredicate (Foldable.toList multiOr)
+toPredicate = Predicate.makeMultipleOrPredicate . toList

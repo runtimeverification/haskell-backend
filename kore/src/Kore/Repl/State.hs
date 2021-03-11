@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl.State
     ( emptyExecutionGraph
@@ -18,7 +19,7 @@ module Kore.Repl.State
     , smoothOutGraph
     , getInterestingBranchingNode
     , getClaimStateAt, getRuleFor, getLabels, setLabels
-    , runStepper, runStepper'
+    , runStepper, runStepper', tryApplyAxiomOrClaim
     , runUnifier
     , updateInnerGraph, updateExecutionGraph
     , addOrUpdateAlias, findAlias, substituteAlias
@@ -32,7 +33,9 @@ module Kore.Repl.State
     , getNodeState
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( toList
+    )
 
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
@@ -54,9 +57,6 @@ import Data.Coerce
     ( coerce
     )
 import qualified Data.Default as Default
-import Data.Foldable
-    ( find
-    )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
@@ -515,21 +515,66 @@ runStepper'
     -> [Axiom]
     -> ReplNode
     -> t m (ExecutionGraph, StepResult)
-runStepper' claims axioms node = do
+runStepper' claims axioms node =
+    runStepperWorker claims axioms node
+    & (fmap . fmap) processResult
+  where
+    processResult [] = NoResult
+    processResult [(claimState', nextNode)] =
+       case claimState' of
+           Proven -> NoResult
+           Stuck _ -> NoResult
+           _ -> SingleResult . ReplNode $ nextNode
+    processResult (fmap snd -> nextNodes) =
+        BranchResult $ fmap ReplNode nextNodes
+
+tryApplyAxiomOrClaim
+    :: MonadState ReplState (t m)
+    => MonadReader (Config m) (t m)
+    => Monad.Trans.MonadTrans t
+    => MonadSimplify m
+    => MonadIO m
+    => Either Axiom SomeClaim
+    -> ReplNode
+    -> t m (ExecutionGraph, TryApplyRuleResult)
+tryApplyAxiomOrClaim axiomOrClaim node =
+    runStepperWorker
+        (either mempty pure axiomOrClaim)
+        (either pure mempty axiomOrClaim)
+        node
+    & (fmap . fmap) processResult
+  where
+      processResult [] = DoesNotApply
+      processResult [(claimState', nextNode)] =
+          case claimState' of
+              Proven -> GetsProven
+              Stuck _ -> DoesNotApply
+              Remaining _ -> DoesNotApply
+              _ -> OneResult . ReplNode $ nextNode
+      processResult _ = MultipleResults
+
+type SuccessorNodes = [(CommonClaimState, Graph.Node)]
+
+runStepperWorker
+    :: MonadState ReplState (t m)
+    => MonadReader (Config m) (t m)
+    => Monad.Trans.MonadTrans t
+    => MonadSimplify m
+    => MonadIO m
+    => [SomeClaim]
+    -> [Axiom]
+    -> ReplNode
+    -> t m (ExecutionGraph, SuccessorNodes)
+runStepperWorker claims axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         liftSimplifierWithLogger mvar $ stepper claims axioms gph node
-    pure . (,) gr
-        $ case Graph.suc innerGraph (unReplNode node) of
-            []       -> NoResult
-            [single] ->
-                case getNodeState innerGraph single of
-                    Nothing -> NoResult
-                    Just (StuckNode, _) -> NoResult
-                    _ -> SingleResult . ReplNode $ single
-            nodes -> BranchResult $ fmap ReplNode nodes
+    let succesorNodes =
+            getClaimState innerGraph
+            <$> Graph.suc innerGraph (unReplNode node)
+    return (gr, succesorNodes)
 
 runUnifier
     :: MonadState ReplState (t m)
@@ -550,17 +595,22 @@ runUnifier sideCondition first second = do
 
 getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
-        fmap (\nodeState -> (nodeState, node))
-        . claimState ClaimStateTransformer
-            { claimedTransformer = const . Just $ UnevaluatedNode
-            , remainingTransformer = const . Just $ StuckNode
-            , rewrittenTransformer = const . Just $ UnevaluatedNode
-            , stuckTransformer = const . Just $ StuckNode
-            , provenValue = Nothing
-            }
-        . Graph.lab'
-        . Graph.context graph
-        $ node
+    let (claimState', _) = getClaimState graph node
+        nodeState =
+            claimState ClaimStateTransformer
+                { claimedTransformer = const . Just $ UnevaluatedNode
+                , remainingTransformer = const . Just $ UnevaluatedNode
+                , rewrittenTransformer = const . Just $ UnevaluatedNode
+                , stuckTransformer = const . Just $ StuckNode
+                , provenValue = Nothing
+                }
+                claimState'
+    in  fmap (\state -> (state, node)) nodeState
+
+getClaimState :: InnerGraph -> Graph.Node -> (CommonClaimState, Graph.Node)
+getClaimState graph node =
+    let claimState' = node & Graph.context graph & Graph.lab'
+    in  (claimState', node)
 
 nodeToGoal
     :: InnerGraph

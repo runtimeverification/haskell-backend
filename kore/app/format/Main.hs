@@ -2,6 +2,7 @@ module Main (main) where
 
 import Prelude.Kore
 
+import qualified Data.Text.IO as Text
 import Options.Applicative
 import System.IO
     ( stdout
@@ -52,7 +53,12 @@ infoMod =
 main :: IO ()
 main =
     do
-        options <- mainGlobal (ExeName "kore-format") commandLine infoMod
+        options <-
+            mainGlobal
+                (ExeName "kore-format")
+                Nothing  -- environment variable name for extra arguments
+                commandLine
+                infoMod
         case localOptions options of
             Nothing ->
                 {-  Global options were parsed, but local options were not.
@@ -73,4 +79,5 @@ main =
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO ParsedDefinition
 readKoreOrDie fileName =
-    readFile fileName >>= either error return . parseKoreDefinition fileName
+    Text.readFile fileName
+    >>= either error return . parseKoreDefinition fileName

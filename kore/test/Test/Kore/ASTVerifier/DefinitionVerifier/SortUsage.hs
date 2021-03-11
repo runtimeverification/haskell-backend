@@ -24,14 +24,14 @@ import Kore.Internal.TermLike hiding
     ( VariableName (..)
     )
 import Kore.Syntax.Definition
-    ( AsSentence (..)
-    , Attributes (..)
+    ( Attributes (..)
     , ModuleName (..)
     , ParsedSentence
     , ParsedSentenceAlias
     , ParsedSentenceSymbol
     , Sentence (SentenceSymbolSentence)
     , SentenceSort (..)
+    , asSentence
     )
 
 import Test.Kore
@@ -163,7 +163,7 @@ test_sortUsage =
             , testConfigurationCaseBasedConfiguration = []
             }
         )
-        (ExpectedErrorMessage "Sort variable 's' not declared.")
+        (ExpectedErrorMessage "Sort variable s not declared.")
         (ErrorStack ["(<test data>)"])
         (TestedSort (objectVariableSort "s"))
         (NamePrefix "internal")

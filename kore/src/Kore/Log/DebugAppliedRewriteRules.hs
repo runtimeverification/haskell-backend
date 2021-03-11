@@ -24,8 +24,6 @@ import Kore.Internal.Variable
     )
 import Kore.Rewriting.RewritingVariable
 import Kore.Unparser
-    ( unparse
-    )
 import Log
 import Pretty
     ( Pretty (..)

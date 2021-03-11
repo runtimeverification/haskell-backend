@@ -676,10 +676,8 @@ of the list and negative indices count from the end. The first element is
 
 ### LIST.update
 
-Update an element from the list by index. Positive indices count from the
-beginning of the list and negative indices count from the end. The first element
-is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
-`\bottom{}()` if the index is out-of-bounds.
+Update an element from the list by index. The first element is `\dv{Int{}}("0")`.
+The result is `\bottom{}()` if the index is out-of-bounds.
 
 ~~~
     hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
@@ -702,6 +700,31 @@ The number of elements in the given list.
 ~~~
     hooked-symbol size{}(List{}) : Int{}
         [hook{}("LIST.size")]
+~~~
+
+### LIST.make
+
+`LIST.make(n, x)` is a list of length `n` with `x` the value of every element.
+The result is `bottom` if n is negative.
+
+~~~
+    hooked-symbol make{}(Int{}, Elem{}) : List{}
+        [hook{}("LIST.make")]
+~~~
+
+## LIST.updateAll
+
+`LIST.updateAll(L1, index, L2)` creates a new list using a list `L2` of size `N`
+where the `N` elements of `L1` starting at `index` are replaced with the
+contents of `L2`.
+The result is `\bottom` in these cases:
+
+- `index` is negative
+- `L2` is non-empty and `index + N` exeeds the length of `L1`
+
+~~~
+    hooked-symbol updateAll{}(List{}, Int{}, List{}) : List{}
+        [hook{}("LIST.updateAll")]
 ~~~
 
 ## SET

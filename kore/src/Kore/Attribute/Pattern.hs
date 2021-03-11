@@ -12,8 +12,9 @@ module Kore.Attribute.Pattern
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
-    , isFullySimplified
     , isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     , setSimplified
     , simplifiedAttribute
     , constructorLikeAttribute
@@ -28,9 +29,6 @@ module Kore.Attribute.Pattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import qualified Generics.SOP as SOP
@@ -38,9 +36,27 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
+    ( Created (..)
+    , hasKnownCreator
+    )
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables hiding
-    ( freeVariables
+    ( Defined (..)
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , HasFreeVariables
+    , bindVariable
+    , bindVariables
+    , emptyFreeVariables
+    , freeVariable
+    , getFreeElementVariables
+    , isFreeVariable
+    , mapFreeVariables
+    , nullFreeVariables
+    , toList
+    , toNames
+    , toSet
+    , traverseFreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
     ( freeVariables
@@ -48,12 +64,14 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified hiding
-    ( isFullySimplified
-    , isSimplified
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     )
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
-    ( isFullySimplified
-    , isSimplified
+    ( isSimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     )
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -141,17 +159,26 @@ isSimplified sideCondition patt@Pattern {simplified} =
     assertSimplifiedConsistency patt
     $ Simplified.isSimplified sideCondition simplified
 
+{- Checks whether the pattern is simplified relative to some side condition.
+-}
+isSimplifiedSomeCondition
+    :: HasCallStack
+    => Pattern variable -> Bool
+isSimplifiedSomeCondition patt@Pattern {simplified} =
+    assertSimplifiedConsistency patt
+    $ Simplified.isSimplifiedSomeCondition simplified
+
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
-isFullySimplified :: HasCallStack => Pattern variable -> Bool
-isFullySimplified patt@Pattern {simplified} =
+isSimplifiedAnyCondition :: HasCallStack => Pattern variable -> Bool
+isSimplifiedAnyCondition patt@Pattern {simplified} =
     assertSimplifiedConsistency patt
-    $ Simplified.isFullySimplified simplified
+    $ Simplified.isSimplifiedAnyCondition simplified
 
 assertSimplifiedConsistency :: HasCallStack => Pattern variable -> a -> a
 assertSimplifiedConsistency Pattern {constructorLike, simplified}
   | isConstructorLike constructorLike
-  , not (Simplified.isFullySimplified simplified) =
+  , not (Simplified.isSimplifiedAnyCondition simplified) =
     error "Inconsistent attributes, constructorLike implies fully simplified."
   | otherwise = id
 

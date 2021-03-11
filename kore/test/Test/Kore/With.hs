@@ -1,16 +1,14 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.With
     ( With (..)
     , Attribute (..)
-    , ConcreteElement (..)
     , OpaqueSet (..)
     , VariableElement (..)
     ) where
 
 import Prelude.Kore
 
-import Data.List
-    ( foldl'
-    )
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
     ( cons
@@ -28,10 +26,10 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
 import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor
     ( Constructor (..)
     )
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
-    ( Concrete
-    , TermLike
+    ( Key
     )
 import qualified Kore.Sort as Kore
     ( Sort
@@ -178,34 +176,34 @@ instance With (SentenceClaim patt) Attribute where
 instance With (SentenceClaim patt) [Attribute] where
     with a b = SentenceClaim (with (getSentenceClaim a) b)
 
-instance With (SentenceImport patt) Attribute where
+instance With SentenceImport Attribute where
     s@SentenceImport {sentenceImportAttributes} `with` attribute =
         s
             { SentenceImport.sentenceImportAttributes =
                 sentenceImportAttributes `with` attribute
             }
 
-instance With (SentenceImport patt) [Attribute] where
+instance With SentenceImport [Attribute] where
     with = foldl' with
 
-instance With (SentenceSymbol patt) Attribute where
+instance With SentenceSymbol Attribute where
     s@SentenceSymbol {sentenceSymbolAttributes} `with` attribute =
         s
             { SentenceSymbol.sentenceSymbolAttributes =
                 sentenceSymbolAttributes `with` attribute
             }
 
-instance With (SentenceSymbol patt) [Attribute] where
+instance With SentenceSymbol [Attribute] where
     with = foldl' with
 
-instance With (SentenceSort patt) Attribute where
+instance With SentenceSort Attribute where
     s@SentenceSort {sentenceSortAttributes} `with` attribute =
         s
             { SentenceSort.sentenceSortAttributes =
                 sentenceSortAttributes `with` attribute
             }
 
-instance With (SentenceSort patt) [Attribute] where
+instance With SentenceSort [Attribute] where
     with = foldl' with
 
 instance With Attributes Attribute where
@@ -305,40 +303,37 @@ instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
             sortDependencies `with` AST.SortReference sort
         }
 
-newtype ConcreteElement =
-    ConcreteElement {getConcreteElement :: TermLike Concrete}
-
 instance With
-    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
-    ConcreteElement
+    (NormalizedAc NormalizedSet Key child)
+    Key
   where
     with
-        s@Domain.NormalizedAc {concreteElements}
-        (ConcreteElement c)
-      | Map.member c concreteElements = error "Duplicated key in set."
+        s@NormalizedAc {concreteElements}
+        key
+      | Map.member key concreteElements = error "Duplicated key in set."
       | otherwise = s
-        { Domain.concreteElements =
-            Map.insert c Domain.SetValue concreteElements
+        { concreteElements =
+            Map.insert key SetValue concreteElements
         }
 
 instance With
-    (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
-    [ConcreteElement]
+    (NormalizedAc NormalizedSet Key child)
+    [Key]
   where
     with = foldl' with
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) child)
-    ConcreteElement
+    (NormalizedSet Key child)
+    Key
   where
     with
-        (Domain.NormalizedSet ac)
+        (NormalizedSet ac)
         value
-      = Domain.NormalizedSet (ac `with` value)
+      = NormalizedSet (ac `with` value)
 
 instance With
-    (Domain.NormalizedSet (TermLike Concrete) child)
-    [ConcreteElement]
+    (NormalizedSet Key child)
+    [Key]
   where
     with = foldl' with
 
@@ -348,37 +343,37 @@ newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         (VariableElement child)
   where
     with
-        s@Domain.NormalizedAc {elementsWithVariables}
+        s@NormalizedAc {elementsWithVariables}
         (VariableElement v)
       = s
-        { Domain.elementsWithVariables =
-            List.sort (Domain.SetElement v : elementsWithVariables)
+        { elementsWithVariables =
+            List.sort (SetElement v : elementsWithVariables)
         }
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         [VariableElement child]
   where
     with = foldl' with
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         (VariableElement child)
   where
     with
-        (Domain.NormalizedSet ac)
+        (NormalizedSet ac)
         value
-      = Domain.NormalizedSet (ac `with` value)
+      = NormalizedSet (ac `with` value)
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         [VariableElement child]
   where
     with = foldl' with
@@ -389,18 +384,18 @@ newtype OpaqueSet child = OpaqueSet {getOpaqueSet :: child}
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         (OpaqueSet child)
   where
     with
-        s@Domain.NormalizedAc {opaque}
+        s@NormalizedAc {opaque}
         (OpaqueSet v)
       = s
-        { Domain.opaque = List.sort (v : opaque) }
+        { opaque = List.sort (v : opaque) }
 
 instance Ord child
     => With
-        (Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedAc NormalizedSet Key child)
         [OpaqueSet child]
   where
     with = foldl' with
@@ -408,17 +403,17 @@ instance Ord child
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         (OpaqueSet child)
   where
     with
-        (Domain.NormalizedSet ac)
+        (NormalizedSet ac)
         value
-      = Domain.NormalizedSet (ac `with` value)
+      = NormalizedSet (ac `with` value)
 
 instance Ord child
     => With
-        (Domain.NormalizedSet (TermLike Concrete) child)
+        (NormalizedSet Key child)
         [OpaqueSet child]
   where
     with = foldl' with

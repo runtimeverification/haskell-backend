@@ -4,31 +4,27 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.Functional
     ( Functional (..)
+    , alwaysFunctional
     ) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
-import qualified Data.Map.Strict as Map
 import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -37,18 +33,13 @@ import Kore.Syntax
 newtype Functional = Functional { isFunctional :: Bool }
     deriving (Eq, GHC.Generic, Ord, Show)
     deriving (Semigroup, Monoid) via All
+    deriving anyclass (Hashable, NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-instance SOP.Generic Functional
-
-instance SOP.HasDatatypeInfo Functional
-
-instance Debug Functional
-
-instance Diff Functional
-
-instance NFData Functional
-
-instance Hashable Functional
+alwaysFunctional :: a -> Functional
+alwaysFunctional = const (Functional True)
+{-# INLINE alwaysFunctional #-}
 
 instance Synthetic Functional (And sort) where
     synthetic = const (Functional False)
@@ -62,7 +53,7 @@ instance Synthetic Functional (Bottom sort) where
 -- its arguments are 'Functional'.
 instance Synthetic Functional (Application Internal.Symbol) where
     synthetic application =
-        functionalSymbol <> Foldable.fold children
+        functionalSymbol <> fold children
       where
         functionalSymbol = Functional (Internal.isFunctional symbol)
         children = applicationChildren application
@@ -132,46 +123,6 @@ instance Synthetic Functional (Rewrites sort) where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
--- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (Builtin key) where
-    synthetic
-        (BuiltinSet InternalAc
-            {builtinAcChild = NormalizedSet builtinSetChild}
-        )
-      = normalizedAcFunctional builtinSetChild
-    synthetic
-        (BuiltinMap InternalAc
-            {builtinAcChild = NormalizedMap builtinMapChild}
-        )
-      = normalizedAcFunctional builtinMapChild
-    synthetic builtin = Foldable.fold builtin
-    {-# INLINE synthetic #-}
-
-normalizedAcFunctional
-    :: (Foldable (Element collection), Foldable (Value collection))
-    => NormalizedAc collection key Functional -> Functional
-normalizedAcFunctional ac@(NormalizedAc _ _ _) =
-    case ac of
-        NormalizedAc
-            { elementsWithVariables = []
-            , opaque = []
-            } -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = [_]
-            , concreteElements
-            , opaque = []
-            }
-          | Map.null concreteElements -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements
-            , opaque = [_]
-            }
-          | Map.null concreteElements -> sameAsChildren
-        _ -> Functional False
-  where
-    sameAsChildren = Foldable.fold ac
-
 instance Synthetic Functional (Top sort) where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
@@ -183,11 +134,6 @@ instance Synthetic Functional (Const (SomeVariable variable)) where
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
 instance Synthetic Functional (Const StringLiteral) where
-    synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
--- | A 'Bytes' pattern is always 'Functional'.
-instance Synthetic Functional (Const InternalBytes) where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 

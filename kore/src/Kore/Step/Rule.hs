@@ -25,9 +25,6 @@ module Kore.Step.Rule
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.Extra
@@ -337,7 +334,7 @@ termToAxiomPattern attributes pat =
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate
                     , rhs = injectTermIntoRHS rhs
                     , attributes
                     }

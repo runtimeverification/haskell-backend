@@ -4,14 +4,15 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.Function
     ( Function (..)
+    , alwaysFunction
     ) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Monoid
 import qualified Generics.SOP as SOP
@@ -19,15 +20,11 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -40,6 +37,10 @@ newtype Function = Function { isFunction :: Bool }
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
+
+alwaysFunction :: a -> Function
+alwaysFunction = const (Function True)
+{-# INLINE alwaysFunction #-}
 
 instance Synthetic Function (And sort) where
     -- TODO (thomas.tuegel):
@@ -56,7 +57,7 @@ instance Synthetic Function (Bottom sort) where
 -- arguments are 'Function'.
 instance Synthetic Function (Application Internal.Symbol) where
     synthetic application =
-        functionSymbol <> Foldable.fold children
+        functionSymbol <> fold children
       where
         functionSymbol = Function (Internal.isFunction symbol)
         children = applicationChildren application
@@ -126,22 +127,12 @@ instance Synthetic Function (Rewrites sort) where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
--- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
-instance Synthetic Function (Builtin key) where
-    synthetic = Foldable.fold
-    {-# INLINE synthetic #-}
-
 instance Synthetic Function (Top sort) where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Function'.
 instance Synthetic Function (Const StringLiteral) where
-    synthetic = const (Function True)
-    {-# INLINE synthetic #-}
-
--- | A 'Bytes' pattern is always 'Function'.
-instance Synthetic Function (Const InternalBytes) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 

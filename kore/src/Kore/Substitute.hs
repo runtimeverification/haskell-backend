@@ -10,13 +10,14 @@ module Kore.Substitute
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
     ( Corecursive
     , Recursive
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
+    ( Identity (runIdentity)
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -167,7 +168,7 @@ substitute =
           where
             -- | Free variables of the target substitutions.
             targetFreeVariables =
-                Foldable.foldl' Set.union Set.empty
+                foldl' Set.union Set.empty
                     (getTargetFreeVariables <$> subst')
 
         -- | Rename a bound variable, if needed.

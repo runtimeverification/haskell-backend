@@ -1,6 +1,6 @@
 module Test.Kore.Step.Simplification
     ( runSimplifier
-    , runSimplifierNoSMT
+    , runSimplifierSMT
     , runSimplifierBranch
     , simplifiedCondition
     , simplifiedOrCondition
@@ -14,6 +14,7 @@ module Test.Kore.Step.Simplification
     , SimplifierT
     , NoSMT
     , Env (..)
+    , Kore.MonadSimplify
     ) where
 
 import Prelude.Kore
@@ -23,6 +24,9 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( fullySimplified
     , setSimplified
+    )
+import qualified Kore.Attribute.PredicatePattern as Attribute.PPattern
+    ( setSimplified
     )
 import Kore.Internal.Condition
     ( Condition
@@ -47,6 +51,7 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( Predicate
+    , PredicateF (..)
     )
 import Kore.Internal.Substitution
     ( Substitution
@@ -65,6 +70,8 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Step.SMT.Declaration.All as SMT.AST
+    ( declare
+    )
 import Logic
     ( LogicT
     )
@@ -74,13 +81,13 @@ import SMT
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT as Test
 
-runSimplifier :: Env Simplifier -> Simplifier a -> IO a
-runSimplifier env = Test.runSMT userInit . Kore.runSimplifier env
+runSimplifierSMT :: Env Simplifier -> Simplifier a -> IO a
+runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env
   where
     userInit = SMT.AST.declare Mock.smtDeclarations
 
-runSimplifierNoSMT :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
-runSimplifierNoSMT env = Test.runNoSMT . Kore.runSimplifier env
+runSimplifier :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
+runSimplifier env = Test.runNoSMT . Kore.runSimplifier env
 
 runSimplifierBranch
     :: Env (SimplifierT NoSMT)
@@ -97,7 +104,18 @@ simplifiedTerm =
         :< patt
 
 simplifiedPredicate :: Predicate variable -> Predicate variable
-simplifiedPredicate = fmap simplifiedTerm
+simplifiedPredicate =
+    Recursive.unfold (simplifiedWorker . Recursive.project)
+  where
+    simplifiedWorker (attrs :< patt) =
+        Attribute.PPattern.setSimplified Attribute.Pattern.fullySimplified attrs
+        :< (case patt of
+            CeilF ceil' -> CeilF (simplifiedTerm <$> ceil')
+            FloorF floor' -> FloorF (simplifiedTerm <$> floor')
+            EqualsF equals' -> EqualsF (simplifiedTerm <$> equals')
+            InF in' -> InF (simplifiedTerm <$> in')
+            _ -> patt
+        )
 
 simplifiedSubstitution
     :: InternalVariable variable

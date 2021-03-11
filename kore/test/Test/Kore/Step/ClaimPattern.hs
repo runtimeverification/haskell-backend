@@ -9,7 +9,6 @@ import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import Data.Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -17,7 +16,9 @@ import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding
+    ( substitute
+    )
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import Kore.Step.ClaimPattern
@@ -40,7 +41,7 @@ test_refreshRule =
             avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
                 refreshRule avoiding testRulePattern
-            renamed = Set.fromList (Foldable.toList renaming)
+            renamed = Set.fromList (Prelude.Kore.toList renaming)
             free' :: FreeVariables RewritingVariableName
             free' = freeVariables rulePattern'
             notAvoided (variableName -> var) =
@@ -76,7 +77,7 @@ test_refreshRule =
                         { left =
                             Pattern.fromTermAndPredicate
                                 (mkElemVar y)
-                                ( Predicate.makeCeilPredicate_
+                                ( Predicate.makeCeilPredicate
                                     (mkElemVar z)
                                 )
                         }
@@ -91,12 +92,12 @@ testRulePattern =
             -- Include an implicitly-quantified variable.
             Pattern.fromTermAndPredicate
                 (mkElemVar x)
-                (Predicate.makeCeilPredicate_ (mkElemVar z))
+                (Predicate.makeCeilPredicate (mkElemVar z))
         , existentials = [y]
         , right =
             Pattern.fromTermAndPredicate
                 (mkElemVar y)
-                (Predicate.makeCeilPredicate_ (mkElemVar t))
+                (Predicate.makeCeilPredicate (mkElemVar t))
             & OrPattern.fromPattern
         , attributes = def
         }

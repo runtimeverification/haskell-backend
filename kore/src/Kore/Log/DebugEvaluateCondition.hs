@@ -20,7 +20,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Unparser
 import Log
 import Pretty
     ( Pretty (..)
@@ -41,10 +40,12 @@ data DebugEvaluateCondition
 instance Pretty DebugEvaluateCondition where
     pretty (DebugEvaluateCondition predicates) =
         Pretty.vsep
-        ( [ "evaluating predicate:" , Pretty.indent 4 (unparse predicate) ]
+        ( [ "evaluating predicate:",
+            Pretty.indent 4 (pretty predicate) ]
         ++ do
             sideCondition <- sideConditions
-            [ "with side condition:", Pretty.indent 4 (unparse sideCondition) ]
+            [ "with side condition:",
+                Pretty.indent 4 (pretty sideCondition) ]
         )
       where
        predicate :| sideConditions = predicates

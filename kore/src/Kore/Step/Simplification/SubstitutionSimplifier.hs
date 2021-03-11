@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -76,7 +77,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( And (..)
-    , InternalVariable
     , SomeVariable
     , SomeVariableName (..)
     , TermLike
@@ -86,6 +86,9 @@ import Kore.Internal.TermLike
     , mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
@@ -103,11 +106,9 @@ import qualified Pretty
 newtype SubstitutionSimplifier simplifier =
     SubstitutionSimplifier
         { simplifySubstitution
-            :: forall variable
-            .  InternalVariable variable
-            => SideCondition variable
-            -> Substitution variable
-            -> simplifier (OrCondition variable)
+            :: SideCondition RewritingVariableName
+            -> Substitution RewritingVariableName
+            -> simplifier (OrCondition RewritingVariableName)
         }
 
 {- | A 'SubstitutionSimplifier' to use during simplification.
@@ -125,11 +126,9 @@ substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper
-        :: forall variable
-        .  InternalVariable variable
-        => SideCondition variable
-        -> Substitution variable
-        -> simplifier (OrCondition variable)
+        :: SideCondition RewritingVariableName
+        -> Substitution RewritingVariableName
+        -> simplifier (OrCondition RewritingVariableName)
     wrapper sideCondition substitution =
         OrCondition.observeAllT $ do
             (predicate, result) <- worker substitution & maybeT empty return
@@ -146,12 +145,10 @@ substitutionSimplifier =
 newtype MakeAnd monad =
     MakeAnd
         { makeAnd
-            :: forall variable
-            .  InternalVariable variable
-            => TermLike variable
-            -> TermLike variable
-            -> SideCondition variable
-            -> monad (Pattern variable)
+            :: TermLike RewritingVariableName
+            -> TermLike RewritingVariableName
+            -> SideCondition RewritingVariableName
+            -> monad (Pattern RewritingVariableName)
             -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
             -- the given 'Predicate.Predicate'.
         }
@@ -169,21 +166,19 @@ simplificationMakeAnd =
         return simplified
 
 simplifyAnds
-    ::  forall variable monad
-    .   ( InternalVariable variable
-        , Monad monad
-        )
+    ::  forall monad
+    .  Monad monad
     => MakeAnd monad
-    -> SideCondition variable
-    -> NonEmpty (TermLike variable)
-    -> monad (Pattern variable)
+    -> SideCondition RewritingVariableName
+    -> NonEmpty (TermLike RewritingVariableName)
+    -> monad (Pattern RewritingVariableName)
 simplifyAnds MakeAnd { makeAnd } sideCondition (NonEmpty.sort -> patterns) =
     foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'
-        :: Pattern variable
-        -> TermLike variable
-        -> monad (Pattern variable)
+        :: Pattern RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> monad (Pattern RewritingVariableName)
     simplifyAnds' intermediate termLike =
         case Cofree.tailF (Recursive.project termLike) of
             AndF And { andFirst, andSecond } ->
@@ -200,19 +195,19 @@ simplifyAnds MakeAnd { makeAnd } sideCondition (NonEmpty.sort -> patterns) =
             Pattern.splitTerm intermediate
 
 deduplicateSubstitution
-    :: forall variable monad
-    .   ( InternalVariable variable
-        , Monad monad
-        )
+    :: forall monad
+    .   Monad monad
     =>  MakeAnd monad
-    ->  SideCondition variable
-    ->  Substitution variable
+    ->  SideCondition RewritingVariableName
+    ->  Substitution RewritingVariableName
     ->  monad
-            ( Predicate variable
-            , Map (SomeVariable variable) (TermLike variable)
+            ( Predicate RewritingVariableName
+            , Map
+                (SomeVariable RewritingVariableName)
+                (TermLike RewritingVariableName)
             )
 deduplicateSubstitution sideCondition makeAnd' =
-    worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
       | problems <- getProblems m, (not . null) problems =
@@ -228,12 +223,14 @@ deduplicateSubstitution sideCondition makeAnd' =
     simplifyAnds' = simplifyAnds sideCondition makeAnd'
 
     worker
-        ::  Predicate variable
-        ->  Map (SomeVariable variable) (NonEmpty (TermLike variable))
-        ->  monad
-                ( Predicate variable
-                , Map (SomeVariable variable) (TermLike variable)
-                )
+        :: Predicate RewritingVariableName
+        -> Map
+            (SomeVariable RewritingVariableName)
+            (NonEmpty (TermLike RewritingVariableName))
+        -> monad
+            ( Predicate RewritingVariableName
+            , Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
+            )
     worker predicate substitutions
       | Just deduplicated <- traverse getSingleton substitutions
       = return (predicate, deduplicated)
@@ -259,18 +256,19 @@ deduplicateSubstitution sideCondition makeAnd' =
     toMultiMap = Map.map (:| [])
 
     collectConditions
-        :: Map key (Conditional variable term)
-        -> Conditional variable (Map key term)
+        :: Map key (Conditional RewritingVariableName term)
+        -> Conditional RewritingVariableName (Map key term)
     collectConditions = sequenceA
 
 simplifySubstitutionWorker
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
     -> MakeAnd simplifier
-    -> Substitution variable
-    -> MaybeT simplifier (Predicate variable, Normalization variable)
+    -> Substitution RewritingVariableName
+    -> MaybeT
+        simplifier
+        (Predicate RewritingVariableName, Normalization RewritingVariableName)
 simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     (result, Private { accum = condition }) <-
         runStateT loop Private
@@ -283,7 +281,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     assertNullSubstitution =
         assert . Substitution.null . Condition.substitution
 
-    loop :: Impl variable simplifier (Normalization variable)
+    loop ::
+        Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     loop = do
         simplified <-
             takeSubstitution
@@ -309,8 +309,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                 thisCount = length denormalized
 
     simplifyNormalizationOnce
-        ::  Normalization variable
-        ->  Impl variable simplifier (Normalization variable)
+        :: Normalization RewritingVariableName
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyNormalizationOnce =
         return
         >=> simplifyNormalized
@@ -318,24 +319,27 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         >=> simplifyDenormalized
 
     simplifyNormalized
-        :: Normalization variable
-        -> Impl variable simplifier (Normalization variable)
+        :: Normalization RewritingVariableName
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyNormalized =
         Lens.traverseOf
             (field @"normalized" . Lens.traversed)
             simplifySingleSubstitution
 
     simplifyDenormalized
-        :: Normalization variable
-        -> Impl variable simplifier (Normalization variable)
+        :: Normalization RewritingVariableName
+        -> Impl RewritingVariableName simplifier
+            (Normalization RewritingVariableName)
     simplifyDenormalized =
         Lens.traverseOf
             (field @"denormalized" . Lens.traversed)
             simplifySingleSubstitution
 
     simplifySingleSubstitution
-        :: Assignment variable
-        -> Impl variable simplifier (Assignment variable)
+        :: Assignment RewritingVariableName
+        -> Impl RewritingVariableName simplifier
+            (Assignment RewritingVariableName)
     simplifySingleSubstitution subst@(Assignment uVar termLike) =
         case variableName uVar of
             SomeVariableNameSet _ -> return subst
@@ -350,8 +354,9 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                     termLike
 
     simplifyTermLike'
-        :: TermLike variable
-        -> Impl variable simplifier (TermLike variable)
+        :: TermLike RewritingVariableName
+        -> Impl RewritingVariableName simplifier
+            (TermLike RewritingVariableName)
     simplifyTermLike' termLike = do
         orPattern <- simplifyTermLike sideCondition termLike
         case OrPattern.toPatterns orPattern of
@@ -365,9 +370,12 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             _          -> return termLike
 
     deduplicate
-        ::  Substitution variable
-        ->  Impl variable simplifier
-                (Map (SomeVariable variable) (TermLike variable))
+        ::  Substitution RewritingVariableName
+        ->  Impl RewritingVariableName simplifier
+                (Map
+                    (SomeVariable RewritingVariableName)
+                    (TermLike RewritingVariableName)
+                )
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' sideCondition substitution
@@ -376,7 +384,6 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
-
 data Private variable =
     Private
         { accum :: !(Condition variable)
@@ -395,33 +402,30 @@ substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
 type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
 
 addCondition
-    :: InternalVariable variable
-    => Monad simplifier
-    => Condition variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Condition RewritingVariableName
+    -> Impl RewritingVariableName simplifier ()
 addCondition condition
   | TopBottom.isBottom condition = empty
   | otherwise =
     Lens.modifying (field @"accum") (mappend condition)
 
 addPredicate
-    :: InternalVariable variable
-    => Monad simplifier
-    => Predicate variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Predicate RewritingVariableName
+    -> Impl RewritingVariableName simplifier ()
 addPredicate = addCondition . Condition.fromPredicate
 
 addSubstitution
-    :: InternalVariable variable
-    => Monad simplifier
-    => Substitution variable
-    -> Impl variable simplifier ()
+    :: Monad simplifier
+    => Substitution RewritingVariableName
+    -> Impl RewritingVariableName simplifier ()
 addSubstitution = addCondition . Condition.fromSubstitution
 
 takeSubstitution
-    :: InternalVariable variable
-    => Monad simplifier
-    => Impl variable simplifier (Substitution variable)
+    :: Monad simplifier
+    => Impl RewritingVariableName
+        simplifier (Substitution RewritingVariableName)
 takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty

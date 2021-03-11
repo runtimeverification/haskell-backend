@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Remainder
     ( remainder, remainder'
@@ -11,8 +12,6 @@ module Kore.Step.Remainder
     ) where
 
 import Prelude.Kore
-
-import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Condition
     ( Condition
@@ -103,14 +102,13 @@ mkNotMultiOr
 mkNotMultiOr =
     MultiAnd.make
     . map Predicate.makeNotPredicate
-    . Foldable.toList
+    . toList
 
 mkMultiAndPredicate
     :: InternalVariable variable
     => MultiAnd (Predicate variable)
     ->           Predicate variable
-mkMultiAndPredicate =
-    Predicate.makeMultipleAndPredicate . Foldable.toList
+mkMultiAndPredicate = Predicate.makeMultipleAndPredicate . toList
 
 {- | Represent the unification solution as a conjunction of predicates.
  -}
@@ -131,14 +129,14 @@ substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (Assignment x t) =
-        Predicate.makeEqualsPredicate_ (mkVar x) t
+        Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop
-    :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
-    => SideCondition variable
-    -> TermLike variable
-    -> m (Condition variable)
+    :: forall m
+    .  MonadSimplify m
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> m (Condition RewritingVariableName)
 ceilChildOfApplicationOrTop sideCondition patt =
     case patt of
         App_ _ children -> do

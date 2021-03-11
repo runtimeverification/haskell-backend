@@ -1,5 +1,6 @@
 module Test.Kore.Internal.Predicate
     ( test_predicate
+    , test_mapVariables
     -- * Re-exports
     , TestPredicate
     , module Predicate
@@ -9,9 +10,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import Data.Foldable
-    ( traverse_
-    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -35,208 +33,41 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+
 type TestPredicate = Predicate VariableName
 
 test_predicate :: [TestTree]
 test_predicate =
-    [ testCase "And truth table"
-        (do
-            assertEqual "false and false = false"
-                makeFalsePredicate_
-                (makeAnd makeFalsePredicate_ makeFalsePredicate_)
-            assertEqual "false and true = false"
-                makeFalsePredicate_
-                (makeAnd makeFalsePredicate_ makeTruePredicate_)
-            assertEqual "true and false = false"
-                makeFalsePredicate_
-                (makeAnd makeTruePredicate_ makeFalsePredicate_)
-            assertEqual "true and true = true"
-                makeTruePredicate_
-                (makeAnd makeTruePredicate_ makeTruePredicate_)
-        )
-    , let
-        makeOr
-            :: Predicate VariableName
-            -> Predicate VariableName
-            -> Predicate VariableName
-        makeOr c1 c2 = makeOrPredicate c1 c2
-      in
-        testCase "Or truth table"
-            (do
-                assertEqual "false or false = false"
-                    makeFalsePredicate_
-                    (makeOr makeFalsePredicate_ makeFalsePredicate_)
-                assertEqual "false or true = true"
-                    makeTruePredicate_
-                    (makeOr makeFalsePredicate_ makeTruePredicate_)
-                assertEqual "true or false = true"
-                    makeTruePredicate_
-                    (makeOr makeTruePredicate_ makeFalsePredicate_)
-                assertEqual "true or true = true"
-                    makeTruePredicate_
-                    (makeOr makeTruePredicate_ makeTruePredicate_)
-            )
-    , let
-        makeImplies
-            :: Predicate VariableName
-            -> Predicate VariableName
-            -> Predicate VariableName
-        makeImplies c1 c2 = makeImpliesPredicate c1 c2
-      in
-        testCase "Implies truth table"
-            (do
-                assertEqual "false implies false = true"
-                    makeTruePredicate_
-                    (makeImplies makeFalsePredicate_ makeFalsePredicate_)
-                assertEqual "false implies true = true"
-                    makeTruePredicate_
-                    (makeImplies makeFalsePredicate_ makeTruePredicate_)
-                assertEqual "true implies false = false"
-                    makeFalsePredicate_
-                    (makeImplies makeTruePredicate_ makeFalsePredicate_)
-                assertEqual "true implies true = true"
-                    makeTruePredicate_
-                    (makeImplies makeTruePredicate_ makeTruePredicate_)
-            )
-    , let
-        makeIff
-            :: Predicate VariableName
-            -> Predicate VariableName
-            -> Predicate VariableName
-        makeIff c1 c2 = makeIffPredicate c1 c2
-      in
-        testCase "Iff truth table"
-            (do
-                assertEqual "false iff false = true"
-                    makeTruePredicate_
-                    (makeIff makeFalsePredicate_ makeFalsePredicate_)
-                assertEqual "false iff true = false"
-                    makeFalsePredicate_
-                    (makeIff makeFalsePredicate_ makeTruePredicate_)
-                assertEqual "true iff false = false"
-                    makeFalsePredicate_
-                    (makeIff makeTruePredicate_ makeFalsePredicate_)
-                assertEqual "true iff true = true"
-                    makeTruePredicate_
-                    (makeIff makeTruePredicate_ makeTruePredicate_)
-            )
-    , let
-        makeNot :: Predicate VariableName -> Predicate VariableName
-        makeNot p = makeNotPredicate p
-      in
-        testCase "Not truth table"
-            (do
-                assertEqual "not false = true"
-                    makeTruePredicate_
-                    (makeNot makeFalsePredicate_)
-                assertEqual "not true = false"
-                    makeFalsePredicate_
-                    (makeNot makeTruePredicate_)
-            )
-    , testCase "String unwrapping which occurs in test comparisons"
+    [ testCase "Wrapping and predicates without full simplification"
         (assertEqual ""
-            "a"
-            (stringFromPredicate $ compactPredicatePredicate $
-                fmap
-                    (\_ ->
-                        fmap
-                            (const "a")
-                            (makeTruePredicate_ :: Predicate VariableName)
-                    )
-                    (makeFalsePredicate_ :: Predicate VariableName)
+            (wrapPredicate $
+                mkAnd pa1 pa2
             )
-        )
-    ,  testCase "Wrapping and predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkAnd pa1 pa2
-                )
-                (makeAndPredicate pr1 pr2)
-            assertEqual ""
-                (wrapPredicate pa1)
-                (makeAndPredicate pr1 makeTruePredicate_)
-            assertEqual ""
-                (wrapPredicate pa2)
-                (makeAndPredicate makeTruePredicate_ pr2)
-            assertEqual ""
-                makeFalsePredicate_
-                (makeAndPredicate pr1 makeFalsePredicate_)
-            assertEqual ""
-                makeFalsePredicate_
-                (makeAndPredicate makeFalsePredicate_ pr2)
-            assertEqual ""
-                pr1
-                (makeAndPredicate pr1 pr1)
+            (makeAndPredicate pr1 pr2)
         )
     ,  testCase "Wrapping or predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkOr pa1 pa2
-                )
-                (makeOrPredicate pr1 pr2)
-            assertEqual ""
-                makeTruePredicate_
-                (makeOrPredicate pr1 makeTruePredicate_)
-            assertEqual ""
-                makeTruePredicate_
-                (makeOrPredicate makeTruePredicate_ pr2)
-            assertEqual ""
-                (wrapPredicate pa1)
-                (makeOrPredicate pr1 makeFalsePredicate_)
-            assertEqual ""
-                (wrapPredicate pa2)
-                (makeOrPredicate makeFalsePredicate_ pr2)
-            assertEqual ""
-                pr1
-                (makeOrPredicate pr1 pr1)
+        (assertEqual ""
+            (wrapPredicate $
+                mkOr pa1 pa2
+            )
+            (makeOrPredicate pr1 pr2)
  )
-    ,  testCase "Wrapping and predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkImplies pa1 pa2
-                )
-                (makeImpliesPredicate pr1 pr2)
-            assertEqual ""
-                makeTruePredicate_
-                (makeImpliesPredicate pr1 makeTruePredicate_)
-            assertEqual ""
-                (wrapPredicate pa2)
-                (makeImpliesPredicate makeTruePredicate_ pr2)
-            assertEqual ""
-                (wrapPredicate $
-                    mkNot pa1
-                )
-                (makeImpliesPredicate pr1 makeFalsePredicate_)
-            assertEqual ""
-                makeTruePredicate_
-                (makeImpliesPredicate makeFalsePredicate_ pr2)
+    ,  testCase "Wrapping implies predicates without full simplification"
+        (assertEqual ""
+            (wrapPredicate $
+                mkImplies pa1 pa2
+            )
+            (makeImpliesPredicate pr1 pr2)
         )
     , testCase "Wrapping iff predicates without full simplification"
-        (do
-            assertEqual ""
-                (wrapPredicate $
-                    mkIff pa1 pa2
-                )
-                (makeIffPredicate pr1 pr2)
-            assertEqual ""
-                (wrapPredicate pa1)
-                (makeIffPredicate pr1 makeTruePredicate_)
-            assertEqual ""
-                (wrapPredicate pa2)
-                (makeIffPredicate makeTruePredicate_ pr2)
-            assertEqual ""
-                (wrapPredicate $
-                    mkNot pa1
-                )
-                (makeIffPredicate pr1 makeFalsePredicate_)
-            assertEqual ""
-                (wrapPredicate $
-                    mkNot pa2
-                )
-                (makeIffPredicate makeFalsePredicate_ pr2)
+        (assertEqual ""
+            (wrapPredicate $
+                mkIff pa1 pa2
+            )
+            (makeIffPredicate pr1 pr2)
         )
     , testCase "Wrapping not predicates without full simplification"
         (assertEqual ""
@@ -245,52 +76,50 @@ test_predicate =
             )
             (makeNotPredicate pr1)
         )
-    , testCase "isFalsePredicate True"
+    , testCase "isBottom True"
         (assertEqual ""
             True
-            (Predicate.isFalse (makeFalsePredicate_::Predicate VariableName))
+            (isBottom (makeFalsePredicate::Predicate VariableName))
         )
-    , testCase "isFalsePredicate False"
+    , testCase "isBottom False"
         (assertEqual ""
             False
-            (Predicate.isFalse (makeTruePredicate_::Predicate VariableName))
+            (isBottom (makeTruePredicate::Predicate VariableName))
         )
-    , testCase "isFalsePredicate False for generic predicate"
+    , testCase "isBottom False for generic predicate"
         (assertEqual ""
             False
-            (Predicate.isFalse pr1)
+            (isBottom pr1)
         )
-    , testCase "Multiple and"
+    , testCase "Multiple And"
         ( do
-            assertEqual "Top is ignored"
-                (wrapPredicate $
-                    mkAnd pa1 pa2
-                )
-                (makeMultipleAndPredicate [pr1, makeTruePredicate_, pr2])
-            assertEqual "Removes duplicates"
-                (wrapPredicate $
-                    mkAnd pa1 pa2
-                )
-                (makeMultipleAndPredicate [pr1, makeTruePredicate_, pr2, pr1])
+            assertEqual "Empty list gives Top"
+                makeTruePredicate
+                (makeMultipleAndPredicate ([]::[Predicate VariableName]))
+            assertEqual "Multiple And singleton"
+                pr1
+                (makeMultipleAndPredicate [pr1])
+            assertEqual "Multiple Or sanity check"
+                (makeAndPredicate pr1 pr2)
+                (makeMultipleAndPredicate [pr1, pr2])
         )
     , testCase "Multiple Or"
         ( do
-            assertEqual "Bottom is ignored"
-                (wrapPredicate $
-                    mkOr pa1 pa2
-                )
-                (makeMultipleOrPredicate [pr1, makeFalsePredicate_, pr2])
-            assertEqual "Removes duplicates"
-                (wrapPredicate $
-                    mkOr pa1 pa2
-                )
-                (makeMultipleOrPredicate [pr1, makeFalsePredicate_, pr2, pr1])
+            assertEqual "Empty list gives Bottom"
+                makeFalsePredicate
+                (makeMultipleOrPredicate ([]::[Predicate VariableName]))
+            assertEqual "Multiple Or singleton"
+                pr1
+                (makeMultipleOrPredicate [pr1])
+            assertEqual "Multiple Or sanity check"
+                (makeOrPredicate pr1 pr2)
+                (makeMultipleOrPredicate [pr1, pr2])
         )
     , testCase "freeVariables"
         ( do
             assertBool "top has no free variables"
                 $ FreeVariables.nullFreeVariables @VariableName
-                $ freeVariables (makeTruePredicate_ :: Predicate VariableName)
+                $ freeVariables (makeTruePredicate :: Predicate VariableName)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
                     [ inject @(SomeVariable VariableName) $ a Mock.testSort
@@ -304,36 +133,10 @@ test_predicate =
                     (inject . variableName $ a Mock.testSort)
                 $ freeVariables @_ @VariableName
                 $ makeExistsPredicate (a Mock.testSort)
-                $ makeEqualsPredicate_
+                $ makeEqualsPredicate
                     (mkElemVar $ a Mock.testSort)
                     (mkElemVar $ b Mock.testSort)
         )
-    , let
-        makeExists :: Predicate VariableName -> Predicate VariableName
-        makeExists p = makeExistsPredicate (a Mock.testSort) p
-      in
-        testCase "Exists truth table"
-            (do
-                assertEqual "(exists a . true) = true"
-                    makeTruePredicate_
-                    (makeExists makeTruePredicate_)
-                assertEqual "(exists a . false) = false"
-                    makeFalsePredicate_
-                    (makeExists makeFalsePredicate_)
-            )
-    , let
-        makeForall :: Predicate VariableName -> Predicate VariableName
-        makeForall p = makeForallPredicate (a Mock.testSort) p
-      in
-        testCase "Forall truth table"
-            (do
-                assertEqual "(forall a . true) = true"
-                    makeTruePredicate_
-                    (makeForall makeTruePredicate_)
-                assertEqual "(forall a . false) = false"
-                    makeFalsePredicate_
-                    (makeForall makeFalsePredicate_)
-            )
     , testGroup "makePredicate"
         [ testCase "makePredicate yields wrapPredicate"
             (traverse_ (uncurry makePredicateYieldsWrapPredicate)
@@ -356,20 +159,20 @@ test_predicate =
             [ testCase "unsimplified stays unsimplified" $
                 (mkEquals_ Mock.cf Mock.cg, NotSimplified)
                 `makesPredicate`
-                (makeEqualsPredicate_ Mock.cf Mock.cg, NotSimplified)
+                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
                 ( simplifiedTerm $ mkEquals_ Mock.cf Mock.cg
                 , IsSimplified
                 )
                 `makesPredicate`
-                (makeEqualsPredicate_ Mock.cf Mock.cg, IsSimplified)
+                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "Partial predicate stays simplified" $
                 ( simplifiedTerm
                     $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
                 , IsSimplified
                 )
                 `makesPredicate`
-                (makeEqualsPredicate_ Mock.cf Mock.cg, IsSimplified)
+                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
                 ( simplifiedTerm
                     $ mkAnd
@@ -379,11 +182,22 @@ test_predicate =
                 )
                 `makesPredicate`
                 ( makeAndPredicate
-                    (makeEqualsPredicate_ Mock.cf Mock.cg)
-                    (makeEqualsPredicate_ Mock.cg Mock.ch)
+                    (makeEqualsPredicate Mock.cf Mock.cg)
+                    (makeEqualsPredicate Mock.cg Mock.ch)
                 , NotSimplified)
             ]
         ]
+    ]
+
+test_mapVariables :: [TestTree]
+test_mapVariables =
+    [ testCase "calls mapVariables on TermLike children" $ do
+        let input = makeCeilPredicate (mkExists Mock.x (mkElemVar Mock.x))
+            -- Does not actually rename anything, but will trigger the error if
+            -- the wrong function is passed to TermLike.mapVariables.
+            actual = Predicate.mapVariables (pure id) input
+            expect = input
+        assertEqual "" expect actual
     ]
 
 data Simplified = IsSimplified | NotSimplified
@@ -416,13 +230,13 @@ makePredicateYieldsWrapPredicate msg p = do
 
 pr1 :: Predicate VariableName
 pr1 =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
 pr2 :: Predicate VariableName
 pr2 =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 
@@ -451,12 +265,6 @@ inA =
 
 floorA :: TermLike VariableName
 floorA = mkFloor_ (mkElemVar $ a Mock.testSort)
-
-makeAnd
-    :: Predicate VariableName
-    -> Predicate VariableName
-    -> Predicate VariableName
-makeAnd p1 p2 = makeAndPredicate p1 p2
 
 a, b, c, d :: Sort -> ElementVariable VariableName
 a = mkElementVariable (testId "a")

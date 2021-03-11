@@ -53,6 +53,9 @@ module Kore.Attribute.Symbol
     , NoEvaluators (..)
     , noEvaluatorsAttribute
     -- * Derived attributes
+    , Unit (..)
+    , Element (..)
+    , Concat (..)
     , isConstructorLike
     , isFunctional
     , isFunction
@@ -62,9 +65,6 @@ module Kore.Attribute.Symbol
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -74,7 +74,9 @@ import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
+import Kore.Attribute.Element
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -82,15 +84,18 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Parser
     ( Attributes
     , ParseAttributes (..)
+    , SymbolOrAlias (..)
     )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
+import Kore.Attribute.SourceLocation
 import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
+import Kore.Attribute.Unit
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -122,6 +127,12 @@ data Symbol =
     , klabel        :: !Klabel
     , symbolKywd    :: !SymbolKywd
     , noEvaluators  :: !NoEvaluators
+    , unitHook      :: !(Unit SymbolOrAlias)
+    , elementHook   :: !(Element SymbolOrAlias)
+    , concatHook    :: !(Concat SymbolOrAlias)
+    -- ^ The above three are only populated if the symbol is a concat
+    , sourceLocation :: !SourceLocation
+    -- ^ Location in the original (source) file.
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -148,6 +159,10 @@ instance ParseAttributes Symbol where
         >=> typed @Klabel (parseAttribute attr)
         >=> typed @SymbolKywd (parseAttribute attr)
         >=> typed @NoEvaluators (parseAttribute attr)
+        >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
+        >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
+        >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -165,6 +180,10 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
+            , from . unitHook
+            , from . elementHook
+            , from . concatHook
+            , from . sourceLocation
             ]
 
 type StepperAttributes = Symbol
@@ -172,19 +191,23 @@ type StepperAttributes = Symbol
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
-        { function      = def
-        , functional    = def
-        , constructor   = def
-        , injective     = def
-        , sortInjection = def
-        , anywhere      = def
-        , hook          = def
-        , smtlib        = def
-        , smthook       = def
-        , memo          = def
-        , klabel        = def
-        , symbolKywd    = def
-        , noEvaluators  = def
+        { function       = def
+        , functional     = def
+        , constructor    = def
+        , injective      = def
+        , sortInjection  = def
+        , anywhere       = def
+        , hook           = def
+        , smtlib         = def
+        , smthook        = def
+        , memo           = def
+        , klabel         = def
+        , symbolKywd     = def
+        , noEvaluators   = def
+        , unitHook       = def
+        , elementHook    = def
+        , concatHook     = def
+        , sourceLocation = def
         }
 
 -- | See also: 'defaultSymbolAttributes'

@@ -2,6 +2,9 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Overloading
     ( matchOverloading
     -- for testing purposes
@@ -23,24 +26,35 @@ import Control.Monad.Trans.Except
     , catchE
     , throwE
     )
+import Data.Text
+    ( Text
+    )
+import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import Kore.Step.Simplification.Simplify as Simplifier
     ( MonadSimplify (..)
     , isConstructorOrOverloaded
     )
-import Kore.Unification.Unify as Unify
 
+import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
 import Kore.Debug
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.OverloadSimplifier
 import Pair
 
@@ -96,7 +110,10 @@ type UnifyOverloadingResult unifier variable =
     ExceptT UnifyOverloadingError unifier (OverloadingResolution variable)
 
 type MatchOverloadingResult unifier variable =
-    ExceptT UnifyOverloadingError unifier (Pair (TermLike variable))
+    ExceptT
+        UnifyOverloadingError
+        unifier
+        (Pair (TermLike variable))
 
 type OverloadingResult unifier a = ExceptT UnifyOverloadingError unifier a
 
@@ -108,9 +125,8 @@ throwBottom = throwE . Clash
 
 matchOverloading
     :: MonadSimplify unifier
-    => InternalVariable variable
-    => Pair (TermLike variable)
-    -> MatchOverloadingResult unifier variable
+    => Pair (TermLike RewritingVariableName)
+    -> MatchOverloadingResult unifier RewritingVariableName
 matchOverloading termPair
   = do
     unifyResult <- unifyOverloading termPair
@@ -132,11 +148,10 @@ matchOverloading termPair
  the first and second terms in a pair are not interchangeable.
 -}
 unifyOverloading
-    :: forall unifier variable
+    :: forall unifier
      . MonadSimplify unifier
-    => InternalVariable variable
-    => Pair (TermLike variable)
-    -> UnifyOverloadingResult unifier variable
+    => Pair (TermLike RewritingVariableName)
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloading termPair = case termPair of
     Pair
         (Inj_ inj@Inj { injChild = App_ firstHead firstChildren })
@@ -170,9 +185,9 @@ unifyOverloading termPair = case termPair of
             )
   where
     worker
-      :: TermLike variable
-      -> TermLike variable
-      -> UnifyOverloadingResult unifier variable
+      :: TermLike RewritingVariableName
+      -> TermLike RewritingVariableName
+      -> UnifyOverloadingResult unifier RewritingVariableName
     worker
         firstTerm@(App_ firstHead _)
         (Inj_ inj@Inj { injChild = ElemVar_ secondVar})
@@ -219,11 +234,10 @@ unifyOverloading termPair = case termPair of
 -}
 unifyOverloadingCommonOverload
     :: MonadSimplify unifier
-    => InternalVariable variable
-    => Application Symbol (TermLike variable)
-    -> Application Symbol (TermLike variable)
+    => Application Symbol (TermLike RewritingVariableName)
+    -> Application Symbol (TermLike RewritingVariableName)
     -> Inj ()
-    -> MatchOverloadingResult unifier variable
+    -> MatchOverloadingResult unifier RewritingVariableName
 unifyOverloadingCommonOverload
     (Application firstHead firstChildren)
     (Application secondHead secondChildren)
@@ -256,12 +270,11 @@ unifyOverloadingCommonOverload
 -}
 unifyOverloadingVsOverloaded
     :: MonadSimplify unifier
-    => InternalVariable variable
     => Symbol
-    -> TermLike variable
-    -> Application Symbol (TermLike variable)
+    -> TermLike RewritingVariableName
+    -> Application Symbol (TermLike RewritingVariableName)
     -> Inj ()
-    -> MatchOverloadingResult unifier variable
+    -> MatchOverloadingResult unifier RewritingVariableName
 unifyOverloadingVsOverloaded
     overloadingHead
     overloadingTerm
@@ -273,7 +286,7 @@ unifyOverloadingVsOverloaded
     Monad.guard (isOverloaded overloadingHead)
     isSecondHeadConstructor <- isConstructorOrOverloaded overloadedHead
     Monad.guard isSecondHeadConstructor
-    let overloadedTerm' =
+    let ~overloadedTerm' =
             resolveOverloading injProto overloadingHead overloadedChildren
     if isOverloading overloadingHead overloadedHead
         then return $ Pair overloadingTerm overloadedTerm'
@@ -296,12 +309,11 @@ unifyOverloadingVsOverloaded
 -}
 unifyOverloadingVsOverloadedVariable
     :: MonadSimplify unifier
-    => InternalVariable variable
     => Symbol
-    -> TermLike variable
-    -> ElementVariable variable
+    -> TermLike RewritingVariableName
+    -> ElementVariable RewritingVariableName
     -> Inj ()
-    -> UnifyOverloadingResult unifier variable
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloadingVsOverloadedVariable
     overloadingHead
     overloadingTerm
@@ -346,12 +358,11 @@ unifyOverloadingVsOverloadedVariable
 -}
 unifyOverloadingInjVsVariable
     :: MonadSimplify unifier
-    => InternalVariable variable
-    => Application Symbol (TermLike variable)
-    -> ElementVariable variable
-    -> Attribute.FreeVariables variable
+    => Application Symbol (TermLike RewritingVariableName)
+    -> ElementVariable RewritingVariableName
+    -> Attribute.FreeVariables RewritingVariableName
     -> Inj ()
-    -> UnifyOverloadingResult unifier variable
+    -> UnifyOverloadingResult unifier RewritingVariableName
 unifyOverloadingInjVsVariable
     (Application firstHead firstChildren)
     overloadedVar
@@ -382,15 +393,14 @@ unifyOverloadingInjVsVariable
 computeNarrowing
     :: HasCallStack
     => MonadSimplify unifier
-    => InternalVariable variable
-    => TermLike variable -- ^overloading pair LHS
+    => TermLike RewritingVariableName -- ^overloading pair LHS
     -> Maybe (Inj ()) -- ^optional injection
     -> Symbol -- ^overloading symbol
     -> Inj () -- ^injection to overloading symbol
-    -> Attribute.FreeVariables variable -- ^free vars in the unification pair
-    -> ElementVariable variable -- ^injected variable (to be narrowed)
+    -> Attribute.FreeVariables RewritingVariableName -- ^free vars in the unification pair
+    -> ElementVariable RewritingVariableName -- ^injected variable (to be narrowed)
     -> InjectedOverload -- ^overloaded symbol injected into the variable's sort
-    -> ExceptT UnifyOverloadingError unifier (Narrowing variable)
+    -> ExceptT UnifyOverloadingError unifier (Narrowing RewritingVariableName)
 computeNarrowing
     first' injection' headUnion injUnion freeVars overloadedVar overloaded
   | App_ _ freshTerms <- overloadedTerm
@@ -414,29 +424,47 @@ computeNarrowing
     mkInj' = maybeMkInj injection'
     narrowingTerm = maybeMkInj injectionHead overloadedTerm
 
+-- | Generates fresh variables as arguments for a symbol to create a pattern.
+freshSymbolInstance
+    :: FreeVariables RewritingVariableName
+    -> Symbol
+    -> Text
+    -> TermLike RewritingVariableName
+freshSymbolInstance freeVars sym base =
+    mkApplySymbol sym varTerms
+    & refreshVariables freeVars
+  where
+    sorts = applicationSortsOperands $ symbolSorts sym
+    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
+
+    mkVariable :: Integer -> Sort -> ElementVariable RewritingVariableName
+    mkVariable vIdx vSort =
+        mkElementVariable
+            (generatedId $ base <> (Text.pack . show) vIdx)
+            vSort
+        & (fmap . fmap) mkConfigVariable
+
 mkInj
-    :: InternalVariable variable
-    => Inj ()
-    -> TermLike variable
-    -> TermLike variable
+    :: Inj ()
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 mkInj inj injChild = (synthesize . InjF) inj { injChild }
 
 maybeMkInj
-    :: InternalVariable variable
-    => Maybe (Inj ())
-    -> TermLike variable
-    -> TermLike variable
+    :: Maybe (Inj ())
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 maybeMkInj maybeInj injChild = maybe injChild (flip mkInj injChild) maybeInj
 
 notUnifiableError
-    :: Monad unifier => TermLike variable -> OverloadingResult unifier a
+    :: Monad unifier => TermLike RewritingVariableName -> OverloadingResult unifier a
 notUnifiableError (DV_ _ _) = throwBottom "injected domain value"
-notUnifiableError (BuiltinBool_ _) = throwBottom "injected builtin bool"
-notUnifiableError (BuiltinInt_ _) = throwBottom "injected builtin int"
-notUnifiableError (BuiltinList_ _) = throwBottom "injected builtin list"
-notUnifiableError (BuiltinMap_ _) = throwBottom "injected builtin map"
-notUnifiableError (BuiltinSet_ _) = throwBottom "injected builtin set"
-notUnifiableError (BuiltinString_ _) = throwBottom "injected builtin string"
+notUnifiableError (InternalBool_ _) = throwBottom "injected builtin bool"
+notUnifiableError (InternalInt_ _) = throwBottom "injected builtin int"
+notUnifiableError (InternalList_ _) = throwBottom "injected builtin list"
+notUnifiableError (InternalMap_ _) = throwBottom "injected builtin map"
+notUnifiableError (InternalSet_ _) = throwBottom "injected builtin set"
+notUnifiableError (InternalString_ _) = throwBottom "injected builtin string"
 notUnifiableError _ = notApplicable
 
 notUnifiableOverloads :: Monad unifier => OverloadingResult unifier a

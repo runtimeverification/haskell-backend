@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Application
     ( test_applicationSimplification
     ) where
@@ -23,15 +25,19 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
     )
@@ -43,7 +49,9 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
+import qualified Kore.Syntax.Variable as Variable
 
+import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -57,22 +65,22 @@ test_applicationSimplification =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.a Mock.d
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.b Mock.c
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]
@@ -150,14 +158,14 @@ test_applicationSimplification =
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
-                                    (makeEqualsPredicate Mock.testSort
+                                    (makeEqualsPredicate
                                         fOfA
                                         fOfB
                                     )
-                                    (makeEqualsPredicate_ gOfA gOfB)
+                                    (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (inject Mock.x, fOfA)
-                                , (inject Mock.y, gOfA)
+                                [ (inject Mock.xConfig, fOfA)
+                                , (inject Mock.yConfig, gOfA)
                                 ]
                             }
                         ]
@@ -168,20 +176,20 @@ test_applicationSimplification =
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
-                                , predicate = makeEqualsPredicate_ fOfA fOfB
+                                , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
-                                , predicate = makeEqualsPredicate_ gOfA gOfB
+                                , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
@@ -203,46 +211,41 @@ test_applicationSimplification =
                         )
                         (Just (Element 1))
                         Mock.z
-                expect =
+                        & Variable.mapElementVariable (pure mkConfigVariable)
+                expects =
                     OrPattern.fromPatterns
                         [ Conditional
                             { term = fOfA
                             , predicate =
                                 (MultiAnd.toPredicate . MultiAnd.make)
-                                [ makeEqualsPredicate Mock.testSort fOfA fOfB
-                                , makeEqualsPredicate Mock.testSort fOfA gOfA
-                                , makeEqualsPredicate Mock.testSort gOfA gOfB
+                                [ makeEqualsPredicate fOfA fOfB
+                                , makeEqualsPredicate fOfA gOfA
+                                , makeEqualsPredicate gOfA gOfB
                                 ]
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (inject z', gOfB)
-                                    , (inject Mock.x, fOfA)
-                                    , (inject Mock.y, gOfA)
+                                    , (inject Mock.xConfig, fOfA)
+                                    , (inject Mock.yConfig, gOfA)
                                     ]
                             }
                         ]
-            actual <-
+            actuals <-
                 let
-                    result
-                        :: forall variable
-                        .  InternalVariable variable
-                        => AttemptedAxiom variable
+                    result :: AttemptedAxiom RewritingVariableName
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = fOfA
-                                , predicate = makeEqualsPredicate_ fOfA gOfA
+                                , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject zvar, gOfB) ]
+                                    [ (inject z', gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
                         }
-                      where
-                        zvar :: ElementVariable variable
-                        zvar = fmap from <$> z'
                 in
                     evaluate
                         (Map.singleton
@@ -257,29 +260,29 @@ test_applicationSimplification =
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
-                                , predicate = makeEqualsPredicate_ fOfA fOfB
+                                , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.x, fOfA) ]
+                                    [ (inject Mock.xConfig, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
-                                , predicate = makeEqualsPredicate_ gOfA gOfB
+                                , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
                                     Substitution.wrap
                                     $ Substitution.mkUnwrappedSubstitution
-                                    [ (inject Mock.y, gOfA) ]
+                                    [ (inject Mock.yConfig, gOfA) ]
                                 }
                             ]
                         ]
                     )
-            assertEqual "" expect actual
+            Pattern.assertEquivalentPatterns expects actuals
         ]
     ]
   where
-    fOfA, fOfB, gOfA, gOfB :: InternalVariable variable => TermLike variable
+    fOfA, fOfB, gOfA, gOfB :: TermLike RewritingVariableName
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
@@ -287,29 +290,29 @@ test_applicationSimplification =
 
     aExpanded = Conditional
         { term = Mock.a
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     bExpanded = Conditional
         { term = Mock.b
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     cExpanded = Conditional
         { term = Mock.c
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     dExpanded = Conditional
         { term = Mock.d
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
-    gOfAExpanded :: InternalVariable variable => Pattern variable
+    gOfAExpanded :: Pattern RewritingVariableName
     gOfAExpanded = Conditional
         { term = gOfA
-        , predicate = makeTruePredicate Mock.testSort
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
@@ -319,10 +322,9 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: InternalVariable variable
-    => Symbol
-    -> [[Pattern variable]]
-    -> Application Symbol (OrPattern variable)
+    :: Symbol
+    -> [[Pattern RewritingVariableName]]
+    -> Application Symbol (OrPattern RewritingVariableName)
 makeApplication symbol patterns =
     Application
         { applicationSymbolOrAlias = symbol
@@ -332,8 +334,8 @@ makeApplication symbol patterns =
 evaluate
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
-    -> Application Symbol (OrPattern VariableName)
-    -> IO (OrPattern VariableName)
+    -> Application Symbol (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env { simplifierAxioms }

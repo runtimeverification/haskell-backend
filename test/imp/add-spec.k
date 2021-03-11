@@ -12,7 +12,7 @@ module ADD-SPEC
   imports VERIFICATION
   imports IMP
 
-  rule
+  claim
     <k>
 sum = 1 + 1;
 => .K

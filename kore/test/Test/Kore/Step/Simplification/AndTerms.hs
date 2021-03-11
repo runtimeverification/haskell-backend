@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Test.Kore.Step.Simplification.AndTerms
@@ -14,25 +16,27 @@ import Test.Tasty
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalSet
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
@@ -48,6 +52,11 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    , mkRewritingTerm
+    )
 import Kore.Step.Simplification.And
     ( termAnd
     )
@@ -110,22 +119,24 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = fOfA
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.unsafeWrap [(inject Mock.x, fOfA)]
+                            Substitution.unsafeWrap
+                                [(inject Mock.xConfig, fOfA)]
                         }
-            actual <- simplifyUnify (mkElemVar Mock.x) fOfA
+            actual <- simplifyUnify (mkElemVar Mock.xConfig) fOfA
             assertEqual "" ([expect], [expect]) actual
 
         , testCase "\\and{s}(f{}(a), x:s)" $ do
             let expect =
                     Conditional
                         { term = fOfA
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.unsafeWrap [(inject Mock.x, fOfA)]
+                            Substitution.unsafeWrap
+                                [(inject Mock.xConfig, fOfA)]
                         }
-            actual <- simplifyUnify fOfA (mkElemVar Mock.x)
+            actual <- simplifyUnify fOfA (mkElemVar Mock.xConfig)
             assertEqual "" ([expect], [expect]) actual
         ]
 
@@ -134,7 +145,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = Mock.injective10 fOfA
-                        , predicate = makeEqualsPredicate Mock.testSort
+                        , predicate = makeEqualsPredicate
                             fOfA
                             gOfA
                         , substitution = mempty
@@ -175,7 +186,7 @@ test_andTermsSimplification =
             let expect =
                     Conditional
                         { term = Mock.sortInjection10 Mock.cfSort0
-                        , predicate = makeEqualsPredicate Mock.testSort
+                        , predicate = makeEqualsPredicate
                             Mock.cfSort0
                             Mock.cgSort0
                         , substitution = mempty
@@ -303,7 +314,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionOtherToTop
                                Mock.aOtherSort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -322,7 +333,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionOtherToTop
                                Mock.aOtherSort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -341,7 +352,7 @@ test_andTermsSimplification =
                             (Mock.sortInjectionSubSubToTop
                                 Mock.aSubSubsort
                             )
-                        , predicate = makeTruePredicate Mock.topSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <-
@@ -435,7 +446,6 @@ test_andTermsSimplification =
                         expected = Conditional
                             { term = Mock.constr10 Mock.cf
                             , predicate = makeEqualsPredicate
-                                Mock.testSort
                                 Mock.cf
                                 Mock.cg
                             , substitution = mempty
@@ -521,7 +531,7 @@ test_andTermsSimplification =
 
         , testCase "not equal values" $ do
             let expect =
-                    makeEqualsPredicate_ fOfA gOfA
+                    makeEqualsPredicate fOfA gOfA
                     & Condition.fromPredicate
                     & Pattern.withCondition fOfA
             (actualAnd, actualUnify) <- simplifyUnify fOfA gOfA
@@ -598,12 +608,15 @@ test_andTermsSimplification =
             let expect =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, Mock.b)])
-                        (Condition.assign (inject Mock.x) Mock.b)
+                        (Condition.assign
+                            (inject Mock.xConfig)
+                            Mock.b
+                        )
                     ]
             actual <-
                 unify
                     (Mock.builtinMap [(Mock.a, Mock.b)])
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
             assertEqual "" expect actual
 
         , testCase "concrete Map, different keys" $ do
@@ -611,7 +624,7 @@ test_andTermsSimplification =
             actual <-
                 unify
                     (Mock.builtinMap [(Mock.a, Mock.b)])
-                    (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
+                    (Mock.builtinMap [(Mock.b, mkElemVar Mock.xConfig)])
             assertEqual "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
@@ -619,8 +632,10 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                         (mconcat
-                            [ Condition.assign (inject Mock.x) fOfA
-                            , Condition.assign (inject Mock.m)
+                            [ Condition.assign
+                                (inject Mock.xConfig)
+                                fOfA
+                            , Condition.assign (inject Mock.mConfig)
                                 (Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         )
@@ -629,8 +644,8 @@ test_andTermsSimplification =
                 unify
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                     (Mock.concatMap
-                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                        (mkElemVar Mock.m)
+                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
+                        (mkElemVar Mock.mConfig)
                     )
             assertEqual "" expect actual
 
@@ -639,8 +654,8 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                         (mconcat
-                            [ Condition.assign (inject Mock.x) fOfA
-                            , Condition.assign (inject Mock.m)
+                            [ Condition.assign (inject Mock.xConfig) fOfA
+                            , Condition.assign (inject Mock.mConfig)
                                 (Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         )
@@ -649,8 +664,8 @@ test_andTermsSimplification =
                 unify
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                     (Mock.concatMap
-                        (mkElemVar Mock.m)
-                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                        (mkElemVar Mock.mConfig)
+                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                     )
             assertEqual "" expect actual
 
@@ -659,8 +674,8 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, fOfA) , (Mock.b, fOfB)])
                         (mconcat
-                            [ Condition.assign (inject Mock.x) fOfA
-                            , Condition.assign (inject Mock.m)
+                            [ Condition.assign (inject Mock.xConfig) fOfA
+                            , Condition.assign (inject Mock.mConfig)
                                 (Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         )
@@ -668,8 +683,8 @@ test_andTermsSimplification =
             actual <-
                 unify
                     (Mock.concatMap
-                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                        (mkElemVar Mock.m)
+                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
+                        (mkElemVar Mock.mConfig)
                     )
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             assertEqual "" expect actual
@@ -679,8 +694,8 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                         (mconcat
-                            [ Condition.assign (inject Mock.x) fOfA
-                            , Condition.assign (inject Mock.m)
+                            [ Condition.assign (inject Mock.xConfig) fOfA
+                            , Condition.assign (inject Mock.mConfig)
                                 (Mock.builtinMap [(Mock.b, fOfB)])
                             ]
                         )
@@ -688,8 +703,8 @@ test_andTermsSimplification =
             actual <-
                 unify
                     (Mock.concatMap
-                        (mkElemVar Mock.m)
-                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                        (mkElemVar Mock.mConfig)
+                        (Mock.builtinMap [(Mock.a, mkElemVar Mock.xConfig)])
                     )
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             assertEqual "" expect actual
@@ -699,8 +714,8 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         (Mock.builtinMap [(Mock.a, fOfA)])
                         (mconcat
-                            [ Condition.assign (inject Mock.x) Mock.a
-                            , Condition.assign (inject Mock.y) fOfA
+                            [ Condition.assign (inject Mock.xConfig) Mock.a
+                            , Condition.assign (inject Mock.yConfig) fOfA
                             ]
                         )
                     ]
@@ -708,7 +723,10 @@ test_andTermsSimplification =
                 unify
                     (Mock.builtinMap [ (Mock.a, fOfA) ])
                     (Mock.concatMap
-                        (Mock.elementMap (mkElemVar Mock.x) (mkElemVar Mock.y))
+                        (Mock.elementMap
+                            (mkElemVar Mock.xConfig)
+                            (mkElemVar Mock.yConfig)
+                        )
                         Mock.unitMap
                     )
             assertEqual "" expect actual
@@ -724,9 +742,9 @@ test_andTermsSimplification =
                             ]
                         )
                         (mconcat
-                            [ Condition.assign (inject Mock.xSubSort)
+                            [ Condition.assign (inject Mock.xConfigSubSort)
                                 (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                            , Condition.assign (inject Mock.y) fOfA
+                            , Condition.assign (inject Mock.yConfig) fOfA
                             ]
                         )
                     ]
@@ -738,8 +756,11 @@ test_andTermsSimplification =
                     ]
                 )
                 (Mock.elementMap
-                    (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
-                    (mkElemVar Mock.y)
+                    (Mock.sortInjection
+                        Mock.testSort
+                        (mkElemVar Mock.xConfigSubSort)
+                    )
+                    (mkElemVar Mock.yConfig)
                 )
             assertEqual "" expected actual
         , testCase "map elem value inj splitting" $ do
@@ -753,20 +774,23 @@ test_andTermsSimplification =
                     [ Pattern.withCondition
                         testMapInj
                         (mconcat
-                            [ Condition.assign (inject Mock.xSubSort)
+                            [ Condition.assign (inject Mock.xConfigSubSort)
                                 ( Mock.sortInjection
                                     Mock.subSort
                                     Mock.aSubSubsort
                                 )
-                            , Condition.assign (inject Mock.y) Mock.a
+                            , Condition.assign (inject Mock.yConfig) Mock.a
                             ]
                         )
                     ]
             actual <- unify
                 testMap
                 (Mock.elementMap
-                    (mkElemVar Mock.y)
-                    (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
+                    (mkElemVar Mock.yConfig)
+                    (Mock.sortInjection
+                        Mock.testSort
+                        (mkElemVar Mock.xConfigSubSort)
+                    )
                 )
             assertEqual "" expected actual
         , testCase "map concat key inj splitting" $ do
@@ -781,10 +805,10 @@ test_andTermsSimplification =
                             ]
                         )
                         (mconcat
-                            [ Condition.assign (inject Mock.xSubSort)
+                            [ Condition.assign (inject Mock.xConfigSubSort)
                                 (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                            , Condition.assign (inject Mock.y) fOfA
-                            , Condition.assign (inject Mock.m)
+                            , Condition.assign (inject Mock.yConfig) fOfA
+                            , Condition.assign (inject Mock.mConfig)
                                 (Mock.builtinMap [])
                             ]
                         )
@@ -798,10 +822,13 @@ test_andTermsSimplification =
                 )
                 (Mock.concatMap
                     (Mock.elementMap
-                        (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
-                        (mkElemVar Mock.y)
+                        (Mock.sortInjection
+                            Mock.testSort
+                            (mkElemVar Mock.xConfigSubSort)
+                        )
+                        (mkElemVar Mock.yConfig)
                     )
-                    (mkElemVar Mock.m)
+                    (mkElemVar Mock.mConfig)
                 )
             assertEqual "" expected actual
         , testCase "map elem value inj splitting" $ do
@@ -816,10 +843,12 @@ test_andTermsSimplification =
                             ]
                         )
                         (mconcat
-                            [ Condition.assign (inject Mock.xSubSort)
+                            [ Condition.assign (inject Mock.xConfigSubSort)
                                 (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
-                            , Condition.assign (inject Mock.y) Mock.a
-                            , Condition.assign (inject Mock.m) (Mock.builtinMap [])
+                            , Condition.assign (inject Mock.yConfig) Mock.a
+                            , Condition.assign
+                                (inject Mock.mConfig)
+                                (Mock.builtinMap [])
                             ]
                         )
                     ]
@@ -832,17 +861,20 @@ test_andTermsSimplification =
                 )
                 (Mock.concatMap
                     (Mock.elementMap
-                        (mkElemVar Mock.y)
-                        (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
+                        (mkElemVar Mock.yConfig)
+                        (Mock.sortInjection
+                            Mock.testSort
+                            (mkElemVar Mock.xConfigSubSort)
+                        )
                     )
-                    (mkElemVar Mock.m)
+                    (mkElemVar Mock.mConfig)
                 )
             assertEqual "" expected actual
         , testCase "unifies functions in keys" $ do
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
                 expect =
-                    makeEqualsPredicate_ Mock.a (Mock.f Mock.b)
+                    makeEqualsPredicate Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
                     & Pattern.withCondition concrete
             actual <- simplifyUnify concrete symbolic
@@ -868,7 +900,7 @@ test_andTermsSimplification =
             assertEqual "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
-            let x = mkElementVariable "x" Mock.listSort
+            let x = configElementVariableFromId "x" Mock.listSort
                 term5 =
                     Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
@@ -876,7 +908,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinList [Mock.a, Mock.b]
                         -- TODO: This predicate should have `listSort`;
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(inject x, Mock.builtinList [Mock.b])]
                         }
@@ -896,9 +928,9 @@ test_andTermsSimplification =
                 expect =
                     Pattern.fromTermLike expectTerm
                     `Conditional.andPredicate`
-                        makeCeilPredicate Mock.listSort expectTerm
-                x = mkElemVar $ mkElementVariable "x" Mock.testSort
-                l = mkElemVar $ mkElementVariable "y" Mock.listSort
+                        makeCeilPredicate expectTerm
+                x = mkElemVar $ configElementVariableFromId "x" Mock.testSort
+                l = mkElemVar $ configElementVariableFromId "y" Mock.listSort
                 -- List unification does not fully succeed because the
                 -- elementList symbol is not simplified to a builtin structure.
                 lhs = Mock.concatList (Mock.elementList x) l
@@ -907,14 +939,14 @@ test_andTermsSimplification =
             assertEqual "" [expect] actual
 
         , testCase "[a] `concat` unit /\\ x " $ do
-            let x = mkElementVariable "x" Mock.listSort
+            let x = configElementVariableFromId "x" Mock.listSort
                 term9 = Mock.builtinList [Mock.a]
                 term10 = Mock.concatList Mock.unitList (mkElemVar x)
                 term11 = Mock.concatList (mkElemVar x) Mock.unitList
                 expect =
                     [ Conditional
                         { term = Mock.builtinList [Mock.a]
-                        , predicate = makeTruePredicate Mock.listSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [(inject x, Mock.builtinList [Mock.a])]
                         }
@@ -941,11 +973,11 @@ test_andTermsSimplification =
                 expected =
                     [ Pattern.withCondition
                         (Mock.builtinSet [Mock.a])
-                        (Condition.assign (inject Mock.x) Mock.a)
+                        (Condition.assign (inject Mock.xConfig) Mock.a)
                     ]
             actual <- unify
                 (Mock.concatSet
-                    (Mock.elementSet (mkElemVar Mock.x))
+                    (Mock.elementSet (mkElemVar Mock.xConfig))
                     Mock.unitSet
                 )
                 (Mock.builtinSet [Mock.a])
@@ -956,22 +988,24 @@ test_andTermsSimplification =
                     Pattern.withCondition
                         (Mock.builtinSet [Mock.a, Mock.b])
                         (foldMap (uncurry Condition.assign)
-                            [ (inject Mock.x, Mock.a)
-                            , (inject Mock.xSet, Mock.builtinSet [Mock.b])
+                            [ (inject Mock.xConfig, Mock.a)
+                            ,   ( inject Mock.xConfigSet
+                                , Mock.builtinSet [Mock.b]
+                                )
                             ]
                         )
                 expected2 =
                     Pattern.withCondition
                         (Mock.builtinSet [Mock.a, Mock.b])
                         (foldMap (uncurry Condition.assign)
-                            [ (inject Mock.x, Mock.b)
-                            , (inject Mock.xSet, Mock.builtinSet [Mock.a])
+                            [ (inject Mock.xConfig, Mock.b)
+                            , (inject Mock.xConfigSet, Mock.builtinSet [Mock.a])
                             ]
                         )
             actual <- unify
                 (Mock.concatSet
-                    (Mock.elementSet (mkElemVar Mock.x))
-                    (mkElemVar Mock.xSet)
+                    (Mock.elementSet (mkElemVar Mock.xConfig))
+                    (mkElemVar Mock.xConfigSet)
                 )
                 (Mock.builtinSet [Mock.a, Mock.b])
             assertEqual "" [expected1, expected2] actual
@@ -982,13 +1016,16 @@ test_andTermsSimplification =
                         (Mock.builtinSet
                             [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                         )
-                        (Condition.assign (inject Mock.xSubSort)
+                        (Condition.assign (inject Mock.xConfigSubSort)
                             (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
                         )
                     ]
             actual <- unify
                 (Mock.elementSet
-                    (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
+                    (Mock.sortInjection
+                        Mock.testSort
+                        (mkElemVar Mock.xConfigSubSort)
+                    )
                 )
                 (Mock.builtinSet
                     [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
@@ -1002,10 +1039,10 @@ test_andTermsSimplification =
                             [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                         )
                         (foldMap (uncurry Condition.assign)
-                            [   ( inject Mock.xSubSort
+                            [   ( inject Mock.xConfigSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   ( inject Mock.xSet
+                            ,   ( inject Mock.xConfigSet
                                 , Mock.builtinSet []
                                 )
                             ]
@@ -1014,9 +1051,12 @@ test_andTermsSimplification =
             actual <- unify
                 (Mock.concatSet
                     (Mock.elementSet
-                        (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
+                        (Mock.sortInjection
+                            Mock.testSort
+                            (mkElemVar Mock.xConfigSubSort)
+                        )
                     )
-                    (mkElemVar Mock.xSet)
+                    (mkElemVar Mock.xConfigSet)
                 )
                 (Mock.builtinSet
                     [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
@@ -1032,25 +1072,25 @@ test_andTermsSimplification =
                 expected =
                     [ Pattern.withCondition testSet
                         (foldMap (uncurry Condition.assign)
-                            [   (inject Mock.x, Mock.a)
-                            ,   ( inject Mock.xSubSort
+                            [   (inject Mock.xConfig, Mock.a)
+                            ,   ( inject Mock.xConfigSubSort
                                 , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                                 )
-                            ,   (inject Mock.xSet, Mock.builtinSet [])
+                            ,   (inject Mock.xConfigSet, Mock.builtinSet [])
                             ]
                         )
                     ]
             actual <- unify
                 (Mock.concatSet
-                    (Mock.elementSet (mkElemVar Mock.x))
+                    (Mock.elementSet (mkElemVar Mock.xConfig))
                     (Mock.concatSet
                         (Mock.elementSet
                             (Mock.sortInjection
                                 Mock.testSort
-                                (mkElemVar Mock.xSubSort)
+                                (mkElemVar Mock.xConfigSubSort)
                             )
                         )
-                        (mkElemVar Mock.xSet)
+                        (mkElemVar Mock.xConfigSet)
                     )
                 )
                 testSet
@@ -1061,7 +1101,7 @@ test_andTermsSimplification =
             let
                 x = mkVariable "x"
                 alias = mkAlias' "alias1" x mkTop_
-                left = applyAlias' alias $ mkTop Mock.testSort
+                left = applyAlias' alias $ mkTop Mock.testSort & mkRewritingTerm
             actual <- simplifyUnify left mkTop_
             assertExpectTop actual
         , testCase "alias1() vs alias2()" $ do
@@ -1091,7 +1131,7 @@ test_andTermsSimplification =
                     Conditional
                         { term = Mock.injective10 fOfA
                         , predicate =
-                            makeEqualsPredicate Mock.testSort fOfA gOfA
+                            makeEqualsPredicate fOfA gOfA
                         , substitution = mempty
                         }
                 x = mkVariable "x"
@@ -1129,7 +1169,88 @@ test_andTermsSimplification =
                 assertEqual "" expect actual
             ]
         ]
+
+    , testGroup "internal Int values"
+        [ testCase "distinct values" $ do
+            let expect = []
+                input1 = Mock.builtinInt 1
+                input2 = Mock.builtinInt 2
+            actual <- unify input1 input2
+            assertEqual "Expected \\bottom" expect actual
+        , testCase "identical values" $ do
+            let expect = [Pattern.fromTermLike input1]
+                input1 = Mock.builtinInt 1
+                input2 = Mock.builtinInt 1
+            actual <- unify input1 input2
+            assertEqual "" expect actual
+        ]
+
+    , testGroup "internal Bool values"
+        [ testCase "distinct values" $ do
+            let expect = []
+                input1 = Mock.builtinBool True
+                input2 = Mock.builtinBool False
+            actual <- unify input1 input2
+            assertEqual "Expected \\bottom" expect actual
+        , testCase "identical values" $ do
+            let expect = [Pattern.fromTermLike input1]
+                input1 = Mock.builtinBool True
+                input2 = Mock.builtinBool True
+            actual <- unify input1 input2
+            assertEqual "" expect actual
+        ]
+
+    , testGroup "internal String values"
+        [ testCase "distinct values" $ do
+            let expect = []
+                input1 = Mock.builtinString "a"
+                input2 = Mock.builtinString "b"
+            actual <- unify input1 input2
+            assertEqual "Expected \\bottom" expect actual
+        , testCase "identical values" $ do
+            let expect = [Pattern.fromTermLike input1]
+                input1 = Mock.builtinString "a"
+                input2 = Mock.builtinString "a"
+            actual <- unify input1 input2
+            assertEqual "" expect actual
+        ]
+
+    , testGroup "KEquals"
+        [ testCase "Equal unification" $ do
+            let input1 = Mock.keqBool (cf xVar) a
+                input2 = Mock.builtinBool False
+                expected = [Condition.top]
+            Just actual <- simplifyEquals mempty input1 input2
+            assertEqual "" expected actual
+        , testCase "And unification" $ do
+            let input1 = Mock.keqBool (cf xVar) a
+                input2 = Mock.builtinBool False
+                expected = [Pattern.top]
+            actual <- simplify input1 input2
+            assertEqual "" expected actual
+        , testCase "And unification fails if pattern\
+                    \ is not function-like" $ do
+            let input1 = Mock.keqBool (TermLike.mkOr a (cf xVar)) b
+                input2 = Mock.builtinBool False
+                expected =
+                    TermLike.mkAnd input1 input2
+                    & Pattern.fromTermLike
+                    & pure
+            actual <- simplify input1 input2
+            assertEqual "" expected actual
+        , testCase "Equal unification fails if pattern\
+                    \ is not function-like" $ do
+            let input1 = Mock.keqBool (TermLike.mkOr a (cf xVar)) b
+                input2 = Mock.builtinBool False
+            actual <- simplifyEquals mempty input1 input2
+            assertEqual "" Nothing actual
+        ]
     ]
+  where
+    xVar = mkElemVar Mock.xConfig
+    cf = Mock.functionalConstr10
+    a = Mock.a
+    b = Mock.b
 
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
@@ -1157,7 +1278,9 @@ applyAlias'
     -> TermLike variable
 applyAlias' alias arg = applyAlias alias [] [arg]
 
-assertExpectTop :: ([Pattern VariableName], [Pattern VariableName]) -> IO ()
+assertExpectTop
+    :: ([Pattern RewritingVariableName], [Pattern RewritingVariableName])
+    -> IO ()
 assertExpectTop =
     assertEqual "" ([Pattern.top], [Pattern.top])
 
@@ -1167,38 +1290,38 @@ test_equalsTermsSimplification =
         let expected = Just
                 [ Conditional
                     { term = ()
-                    , predicate = makeCeilPredicate Mock.testSort Mock.cf
+                    , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.unsafeWrap [(inject Mock.x, Mock.cf)]
+                        Substitution.unsafeWrap [(inject Mock.xConfig, Mock.cf)]
                     }
                 ]
-        actual <- simplifyEquals Map.empty (mkElemVar Mock.x) Mock.cf
+        actual <- simplifyEquals Map.empty (mkElemVar Mock.xConfig) Mock.cf
         assertEqual "" expected actual
 
     , testCase "handles set ambiguity" $ do
         let
-            asInternal set =
-                Ac.asInternalConcrete
-                    Mock.metadataTools
-                    Mock.setSort
-                    (Map.fromSet (const Domain.SetValue) set)
+            asInternal
+                :: Set.Set (TermLike Concrete) -> TermLike RewritingVariableName
+            asInternal =
+                Set.map (retractKey >>> fromJust)
+                >>> Map.fromSet (const SetValue)
+                >>> Ac.asInternalConcrete Mock.metadataTools Mock.setSort
             expected = Just $ do -- list monad
                 (xValue, xSetValue) <-
                     [ (Mock.a, [Mock.b])
                     , (Mock.b, [Mock.a])
                     ]
                 mconcat
-                    [ Condition.assign (inject Mock.x) xValue
-                    , Condition.assign (inject Mock.xSet)
-                        (asInternal $ Set.fromList xSetValue)
+                    [ Condition.assign (inject Mock.xConfig) xValue
+                    , Condition.assign (inject Mock.xConfigSet)
+                        $ asInternal $ Set.fromList xSetValue
                     ]
-                    & Condition.coerceSort Mock.setSort
                     & pure
         actual <- simplifyEquals
             Map.empty
             (Mock.concatSet
-                (Mock.elementSet (mkElemVar Mock.x))
-                (mkElemVar Mock.xSet)
+                (Mock.elementSet (mkElemVar Mock.xConfig))
+                (mkElemVar Mock.xConfigSet)
             )
             (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqual "" expected actual
@@ -1206,8 +1329,9 @@ test_equalsTermsSimplification =
         [ testCase "unifies functions in keys" $ do
             let concrete = Mock.builtinMap [(Mock.a       , Mock.a)]
                 symbolic = Mock.builtinMap [(Mock.f Mock.b, Mock.a)]
+                expect :: Conditional RewritingVariableName ()
                 expect =
-                    makeEqualsPredicate Mock.mapSort Mock.a (Mock.f Mock.b)
+                    makeEqualsPredicate Mock.a (Mock.f Mock.b)
                     & Condition.fromPredicate
             actual <- simplifyEquals mempty concrete symbolic
             assertEqual "" (Just [expect]) actual
@@ -1217,13 +1341,16 @@ test_equalsTermsSimplification =
                 simplifyEquals
                     mempty
                     (Mock.builtinBool False)
-                    (Mock.inKeysMap (mkElemVar Mock.x) (Mock.builtinMap []))
+                    (Mock.inKeysMap
+                        (mkElemVar Mock.xConfig)
+                        (Mock.builtinMap [])
+                    )
             assertEqual "" (Just [expect]) actual
         , testCase "key not in singleton Map" $ do
             let expect =
-                    makeEqualsPredicate_
-                        (mkElemVar Mock.x)
-                        (mkElemVar Mock.y)
+                    makeEqualsPredicate
+                        (mkElemVar Mock.xConfig)
+                        (mkElemVar Mock.yConfig)
                     & makeNotPredicate
                     & Condition.fromPredicate
             actual <-
@@ -1231,9 +1358,9 @@ test_equalsTermsSimplification =
                     mempty
                     ( Mock.builtinBool False )
                     ( Mock.inKeysMap
-                        ( mkElemVar Mock.x)
+                        ( mkElemVar Mock.xConfig)
                         ( Mock.builtinMap
-                            [ ( mkElemVar Mock.y, Mock.a ) ]
+                            [ ( mkElemVar Mock.yConfig, Mock.a ) ]
                         )
                     )
             assertEqual "" (Just [expect]) actual
@@ -1242,18 +1369,18 @@ test_equalsTermsSimplification =
                         foldr1
                             makeAndPredicate
                             [ makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.y)
+                                $ makeEqualsPredicate
+                                    (mkElemVar Mock.xConfig)
+                                    (mkElemVar Mock.yConfig)
                             , makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.x)
-                                    (mkElemVar Mock.z)
+                                $ makeEqualsPredicate
+                                    (mkElemVar Mock.xConfig)
+                                    (mkElemVar Mock.zConfig)
                             -- Definedness condition
                             , makeNotPredicate
-                                $ makeEqualsPredicate_
-                                    (mkElemVar Mock.y)
-                                    (mkElemVar Mock.z)
+                                $ makeEqualsPredicate
+                                    (mkElemVar Mock.yConfig)
+                                    (mkElemVar Mock.zConfig)
                             ]
                         & Condition.fromPredicate
                 actual <-
@@ -1261,10 +1388,10 @@ test_equalsTermsSimplification =
                         mempty
                         (Mock.builtinBool False)
                         ( Mock.inKeysMap
-                            ( mkElemVar Mock.x )
+                            ( mkElemVar Mock.xConfig )
                             ( Mock.builtinMap
-                                [ ( mkElemVar Mock.y, Mock.a )
-                                , ( mkElemVar Mock.z, Mock.a )
+                                [ ( mkElemVar Mock.yConfig, Mock.a )
+                                , ( mkElemVar Mock.zConfig, Mock.a )
                                 ]
                             )
                         )
@@ -1274,17 +1401,17 @@ test_equalsTermsSimplification =
                     makeAndPredicate
                         ( makeNotPredicate
                             ( makeAndPredicate
-                                ( makeCeilPredicate_
-                                    (Mock.f (mkElemVar Mock.x))
+                                ( makeCeilPredicate
+                                    (Mock.f (mkElemVar Mock.xConfig))
                                 )
-                                ( makeEqualsPredicate_
-                                    (mkElemVar Mock.y)
-                                    ( Mock.f (mkElemVar Mock.x) )
+                                ( makeEqualsPredicate
+                                    (mkElemVar Mock.yConfig)
+                                    ( Mock.f (mkElemVar Mock.xConfig) )
                                 )
                             )
                         )
-                        ( makeCeilPredicate_
-                            (Mock.f (mkElemVar Mock.x))
+                        ( makeCeilPredicate
+                            (Mock.f (mkElemVar Mock.xConfig))
                         )
                     & Condition.fromPredicate
             actual <-
@@ -1292,9 +1419,9 @@ test_equalsTermsSimplification =
                     mempty
                     (Mock.builtinBool False)
                     ( Mock.inKeysMap
-                        ( Mock.f (mkElemVar Mock.x) )
+                        ( Mock.f (mkElemVar Mock.xConfig) )
                         ( Mock.builtinMap
-                            [ (mkElemVar Mock.y, Mock.a ) ]
+                            [ (mkElemVar Mock.yConfig, Mock.a ) ]
                         )
                     )
             assertEqual "" (Just [expect]) actual
@@ -1305,12 +1432,12 @@ test_functionAnd :: [TestTree]
 test_functionAnd =
     [ testCase "simplifies result" $ do
         let f = TermLike.markSimplified . Mock.f
-            x = mkElemVar Mock.x
-            y = mkElemVar Mock.y
+            x = mkElemVar Mock.xConfig
+            y = mkElemVar Mock.yConfig
             expect =
                 Pattern.withCondition (f x)
                 $ Condition.fromPredicate
-                $ makeEqualsPredicate_ (f x) (f y)
+                $ makeEqualsPredicate (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect (Pattern.syncSort actual)
         assertBool "" (Pattern.isSimplified sideRepresentation actual)
@@ -1335,20 +1462,19 @@ test_Defined =
                 assertEqual "" expect actualAnd
                 assertEqual "" expect actualUnify
             , testCase "\\equals(partial, defined)" $ do
-                let expect = Just [Condition.topOf Mock.testSort]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty partial defined
                 assertEqual "" expect actual
             , testCase "\\equals(defined, partial)" $ do
-                let expect = Just [Condition.topOf Mock.testSort]
+                let expect = Just [Condition.top]
                 actual <- simplifyEquals mempty defined partial
                 assertEqual "" expect actual
             ]
     , testGroup "variable with function" $
         let defined = mkDefined (Mock.f Mock.a)
-            variable = mkElemVar Mock.x
+            variable = mkElemVar Mock.xConfig
             condition =
-                Condition.assign (inject Mock.x) defined
-                & Condition.coerceSort Mock.testSort
+                Condition.assign (inject Mock.xConfig) defined
         in
             [ testCase "\\and" $ do
                 let expect = [Pattern.withCondition defined condition]
@@ -1367,7 +1493,7 @@ test_Defined =
             -- TODO (thomas.tuegel): condition should use defined1 instead of
             -- function1.
             condition =
-                makeEqualsPredicate Mock.testSort function1 function2
+                makeEqualsPredicate function1 function2
                 & Condition.fromPredicate
         in
             [ testCase "\\and" $ do
@@ -1381,20 +1507,23 @@ test_Defined =
                 assertEqual "" expect actual
             ]
     , testGroup "Sets" $
-        let fx = Mock.f (mkElemVar Mock.x)
-            fy = Mock.f (mkElemVar Mock.y)
+        let fx = Mock.f (mkElemVar Mock.xConfig)
+            fy = Mock.f (mkElemVar Mock.yConfig)
             set1 = Mock.builtinSet [fx, fy]
-            set2 = Mock.builtinSet [mkElemVar Mock.t, mkElemVar Mock.u]
+            set2 =
+                Mock.builtinSet
+                    [ mkElemVar Mock.tConfig
+                    , mkElemVar Mock.uConfig
+                    ]
             defined1 = mkDefined set1
             conditions =
-                map (Condition.coerceSort Mock.setSort)
                 [ mconcat
-                    [ Condition.assign (inject Mock.t) (mkDefined fx)
-                    , Condition.assign (inject Mock.u) (mkDefined fy)
+                    [ Condition.assign (inject Mock.tConfig) (mkDefined fx)
+                    , Condition.assign (inject Mock.uConfig) (mkDefined fy)
                     ]
                 , mconcat
-                    [ Condition.assign (inject Mock.t) (mkDefined fy)
-                    , Condition.assign (inject Mock.u) (mkDefined fx)
+                    [ Condition.assign (inject Mock.tConfig) (mkDefined fy)
+                    , Condition.assign (inject Mock.uConfig) (mkDefined fx)
                     ]
                 ]
         in
@@ -1420,27 +1549,46 @@ test_Defined =
     , testGroup "Maps" $
         let map1 =
                 Mock.builtinMap
-                    [ (mkElemVar Mock.x, fOfA)
-                    , (mkElemVar Mock.y, fOfB)
+                    [ (mkElemVar Mock.xConfig, fOfA)
+                    , (mkElemVar Mock.yConfig, fOfB)
                     ]
             map2 =
                 Mock.framedMap
-                    [(mkElemVar Mock.t, mkElemVar Mock.u)]
-                    [mkElemVar Mock.m]
+                    [(mkElemVar Mock.tConfig, mkElemVar Mock.uConfig)]
+                    [mkElemVar Mock.mConfig]
             defined1 = mkDefined map1
             conditions =
-                map (Condition.coerceSort Mock.mapSort)
                 [ mconcat
-                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.x)
-                    , Condition.assign (inject Mock.u) (mkDefined fOfA)
-                    , Condition.assign (inject Mock.m)
-                        (Mock.builtinMap [(mkElemVar Mock.y, mkDefined fOfB)])
+                    [ Condition.assign
+                        (inject Mock.tConfig)
+                        (mkElemVar Mock.xConfig)
+                    , Condition.assign
+                        (inject Mock.uConfig)
+                        (mkDefined fOfA)
+                    , Condition.assign
+                        (inject Mock.mConfig)
+                        (Mock.builtinMap
+                            [   (mkElemVar Mock.yConfig
+                                , mkDefined fOfB
+                                )
+                            ]
+                        )
                     ]
                 , mconcat
-                    [ Condition.assign (inject Mock.t) (mkElemVar Mock.y)
-                    , Condition.assign (inject Mock.u) (mkDefined fOfB)
-                    , Condition.assign (inject Mock.m)
-                        (Mock.builtinMap [(mkElemVar Mock.x, mkDefined fOfA)])
+                    [ Condition.assign
+                        (inject Mock.tConfig)
+                        (mkElemVar Mock.yConfig)
+                    , Condition.assign
+                        (inject Mock.uConfig)
+                        (mkDefined fOfB)
+                    , Condition.assign
+                        (inject Mock.mConfig)
+                        (Mock.builtinMap
+                            [   ( mkElemVar Mock.xConfig
+                                , mkDefined fOfA
+                                )
+                            ]
+                        )
                     ]
                 ]
         in
@@ -1465,49 +1613,49 @@ test_Defined =
             ]
     ]
 
-fOfA :: TermLike VariableName
+fOfA :: InternalVariable variable => TermLike variable
 fOfA = Mock.f Mock.a
 
-fOfB :: TermLike VariableName
+fOfB :: InternalVariable variable => TermLike variable
 fOfB = Mock.f Mock.b
 
-gOfA :: TermLike VariableName
+gOfA :: InternalVariable variable => TermLike variable
 gOfA = Mock.g Mock.a
 
-plain0OfA :: TermLike VariableName
+plain0OfA :: InternalVariable variable => TermLike variable
 plain0OfA = Mock.plain10 Mock.a
 
-plain1OfA :: TermLike VariableName
+plain1OfA :: InternalVariable variable => TermLike variable
 plain1OfA = Mock.plain11 Mock.a
 
-plain0OfB :: TermLike VariableName
+plain0OfB :: InternalVariable variable => TermLike variable
 plain0OfB = Mock.plain10 Mock.b
 
-plain1OfB :: TermLike VariableName
+plain1OfB :: InternalVariable variable => TermLike variable
 plain1OfB = Mock.plain11 Mock.b
 
-aDomainValue :: TermLike VariableName
+aDomainValue :: TermLike RewritingVariableName
 aDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
         , domainValueChild = mkStringLiteral "a"
         }
 
-subDomainValue :: TermLike VariableName
+subDomainValue :: TermLike RewritingVariableName
 subDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.subSort
         , domainValueChild = mkStringLiteral "a"
         }
 
-subOtherDomainValue :: TermLike VariableName
+subOtherDomainValue :: TermLike RewritingVariableName
 subOtherDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.subOthersort
         , domainValueChild = mkStringLiteral "a"
         }
 
-bDomainValue :: TermLike VariableName
+bDomainValue :: TermLike RewritingVariableName
 bDomainValue =
     mkDomainValue DomainValue
         { domainValueSort = Mock.testSort
@@ -1515,27 +1663,27 @@ bDomainValue =
         }
 
 simplifyUnifySorts
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> IO ([Pattern VariableName], [Pattern VariableName])
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO ([Pattern RewritingVariableName], [Pattern RewritingVariableName])
 simplifyUnifySorts first second = do
     (simplified, unified) <-
         simplifyUnify (simplifiedTerm first) (simplifiedTerm second)
     return (map Pattern.syncSort simplified, Pattern.syncSort <$> unified)
 
 simplifyUnify
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> IO ([Pattern VariableName], [Pattern VariableName])
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO ([Pattern RewritingVariableName], [Pattern RewritingVariableName])
 simplifyUnify first second =
     (,)
         <$> simplify (simplifiedTerm first) (simplifiedTerm second)
         <*> unify (simplifiedTerm first) (simplifiedTerm second)
 
 unify
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> IO [Pattern VariableName]
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO [Pattern RewritingVariableName]
 unify first second =
     runSimplifier mockEnv unification
   where
@@ -1548,9 +1696,9 @@ unify first second =
             (simplifiedTerm second)
 
 simplify
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> IO [Pattern VariableName]
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO [Pattern RewritingVariableName]
 simplify first second =
     runSimplifierBranch mockEnv
     $ termAnd Not.notSimplifier (simplifiedTerm first) (simplifiedTerm second)
@@ -1559,11 +1707,11 @@ simplify first second =
 
 simplifyEquals
     :: BuiltinAndAxiomSimplifierMap
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> IO (Maybe [Condition VariableName])
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> IO (Maybe [Condition RewritingVariableName])
 simplifyEquals simplifierAxioms first second =
-    (fmap . fmap) Foldable.toList
+    (fmap . fmap) toList
     $ runSimplifier mockEnv
     $ runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where

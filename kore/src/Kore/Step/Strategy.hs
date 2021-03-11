@@ -85,7 +85,6 @@ import Control.Monad.State.Strict
     ( MonadState
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -351,7 +350,7 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
                 nodes  = mkChildNode <$> configs
                 graph' =
                     State.execState
-                        (Foldable.traverse_ insChildNode nodes)
+                        (traverse_ insChildNode nodes)
                         graph
             pure $ exe { graph = graph' }
   where

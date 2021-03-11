@@ -5,6 +5,8 @@ License     : NCSA
 Unification of rules (used for stepping with rules or equations)
 
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Step
     ( UnifiedRule
     , Result
@@ -21,7 +23,6 @@ module Kore.Step.Step
     , checkFunctionLike
     , wouldNarrowWith
     -- * Re-exports
-    , UnificationProcedure (..)
     , mkRewritingPattern
     -- Below exports are just for tests
     , Step.gatherResults
@@ -32,7 +33,9 @@ module Kore.Step.Step
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
+import Data.Functor
+    ( (<&>)
+    )
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -72,13 +75,17 @@ import Kore.Rewriting.UnifyingRule
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
+import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.UnificationProcedure
+import Kore.Unification.Procedure
+import Kore.Unification.UnifierT
+    ( evalEnvUnifierT
+    )
 import Kore.Unparser
 import Kore.Variables.Target
     ( Target
@@ -107,16 +114,15 @@ unifyRules
     :: MonadSimplify simplifier
     => UnifyingRule rule
     => UnifyingRuleVariable rule ~ RewritingVariableName
-    => UnificationProcedure simplifier
-    -> Pattern RewritingVariableName
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
     -> [rule]
     -- ^ Rule
     -> simplifier [UnifiedRule rule]
-unifyRules unificationProcedure initial rules =
+unifyRules initial rules =
     Logic.observeAllT $ do
         rule <- Logic.scatter rules
-        unifyRule unificationProcedure initial rule
+        unifyRule initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -132,23 +138,23 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: variable ~ UnifyingRuleVariable rule
-    => InternalVariable variable
+    :: RewritingVariableName ~ UnifyingRuleVariable rule
     => MonadSimplify simplifier
     => UnifyingRule rule
-    => UnificationProcedure simplifier
-    -> Pattern variable
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
     -> rule
     -- ^ Rule
     -> LogicT simplifier (UnifiedRule rule)
-unifyRule unificationProcedure initial rule = do
+unifyRule initial rule = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition = SideCondition.fromCondition initialCondition
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    unification <- unifyTermLikes sideCondition initialTerm ruleLeft
+    unification <-
+        unificationProcedure sideCondition initialTerm ruleLeft
+        & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
@@ -157,8 +163,6 @@ unifyRule unificationProcedure initial rule = do
             sideCondition
             (unification <> requires')
     return (rule `Conditional.withCondition` unification')
-  where
-    unifyTermLikes = runUnificationProcedure unificationProcedure
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
@@ -212,7 +216,7 @@ checkFunctionLike
 checkFunctionLike unifiedRules pat
   | unifiedRules == mempty = pure ()
   | TermLike.isFunctionPattern pat =
-    Foldable.traverse_ checkFunctionLikeRule unifiedRules
+    traverse_ checkFunctionLikeRule unifiedRules
   | otherwise = Left . show . Pretty.vsep $
     [ "Expected function-like term, but found:"
     , Pretty.indent 4 (unparse pat)
@@ -237,14 +241,13 @@ respect to the initial condition.
 
  -}
 applyInitialConditions
-    :: forall simplifier variable
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Condition variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Condition RewritingVariableName
     -- ^ Initial conditions
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Unification conditions
-    -> LogicT simplifier (OrCondition variable)
+    -> LogicT simplifier (OrCondition RewritingVariableName)
     -- TODO(virgil): This should take advantage of the LogicT and not return
     -- an OrCondition.
 applyInitialConditions initial unification = do
@@ -277,14 +280,13 @@ toConfigurationVariablesCondition =
 
  -}
 applyRemainder
-    :: forall simplifier variable
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Pattern variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Pattern RewritingVariableName
     -- ^ Initial configuration
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Remainder
-    -> LogicT simplifier (Pattern variable)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 applyRemainder initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level
@@ -299,3 +301,4 @@ applyRemainder initial remainder = do
     Simplifier.simplifyCondition
         SideCondition.topTODO
         (Pattern.andCondition initial partial)
+        <&> Pattern.mapVariables resetConfigVariable

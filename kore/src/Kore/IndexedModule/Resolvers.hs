@@ -78,7 +78,7 @@ import qualified Kore.Syntax.Definition as Syntax
 
 symbolSentencesMap
     :: IndexedModule patternType declAtts axiomAtts
-    -> Map.Map Id (declAtts, SentenceSymbol patternType)
+    -> Map.Map Id (declAtts, SentenceSymbol)
 symbolSentencesMap = indexedModuleSymbolSentences
 
 aliasSentencesMap
@@ -88,7 +88,7 @@ aliasSentencesMap = indexedModuleAliasSentences
 
 sortSentencesMap
     :: IndexedModule patternType declAtts axiomAtts
-    -> Map.Map Id (Attribute.Sort, SentenceSort patternType)
+    -> Map.Map Id (Attribute.Sort, SentenceSort)
 sortSentencesMap = indexedModuleSortDescriptions
 
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
@@ -104,7 +104,7 @@ getHeadApplicationSorts m patternHead =
   where
     sentenceSorts
         :: SentenceSymbolOrAlias sentence
-        => [Sort] -> sentence pat -> ApplicationSorts
+        => [Sort] -> sentence -> ApplicationSorts
     sentenceSorts sortParameters sentence =
         assertRight $ symbolOrAliasSorts sortParameters sentence
 
@@ -191,7 +191,7 @@ resolveSymbol
     :: MonadError (Error e) m
     => IndexedModule patternType declAtts axiomAtts
     -> Id
-    -> m (declAtts, SentenceSymbol patternType)
+    -> m (declAtts, SentenceSymbol)
 resolveSymbol m headId =
     case resolveThing symbolSentencesMap m headId of
         Nothing ->
@@ -245,7 +245,7 @@ resolveSort
     :: MonadError (Error e) m
     => IndexedModule patternType declAtts axiomAtts
     -> Id
-    -> m (Attribute.Sort, SentenceSort patternType)
+    -> m (Attribute.Sort, SentenceSort)
 resolveSort m sortId =
     case resolveThing sortSentencesMap m sortId of
         Nothing ->
@@ -285,16 +285,14 @@ resolveHookHandler builtinName results =
         [hookId] -> return hookId
         [] ->
             koreFail
-                ("Builtin '" ++ Text.unpack builtinName ++ "' is not hooked.")
+                ("Builtin " ++ Text.unpack builtinName ++ " is not hooked.")
         hookIds ->
             koreFail
-                ("Builtin '" ++ Text.unpack builtinName
-                    ++ "' is hooked to multiple identifiers: "
+                ("Builtin " ++ Text.unpack builtinName
+                    ++ " is hooked to multiple identifiers: "
                     ++ List.intercalate ", "
-                        (squotes . getIdForError <$> hookIds)
+                        (getIdForError <$> hookIds)
                 )
-      where
-        squotes str = "'" ++ str ++ "'"
 
 resolveHooks
     :: IndexedModule patternType declAtts axiomAtts
@@ -318,7 +316,7 @@ findIndexedSort
     -- ^ indexed module
     -> Id
     -- ^ sort identifier
-    -> error (SentenceSort patternType)
+    -> error SentenceSort
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 
@@ -331,7 +329,7 @@ findIndexedSort indexedModule sort =
 applyToHeadSentence
     :: (forall sentence.  SentenceSymbolOrAlias sentence
        => [Sort]
-       -> sentence pat
+       -> sentence
        -> result)
     -> IndexedModule pat declAtts axiomAtts
     -> SymbolOrAlias
@@ -343,7 +341,7 @@ applyToResolution
     :: HasCallStack
     => (forall sentence.  SentenceSymbolOrAlias sentence
         => [Sort]
-        -> (declAtts, sentence pat)
+        -> (declAtts, sentence)
         -> result)
     -> IndexedModule pat declAtts axiomAtts
     -> SymbolOrAlias

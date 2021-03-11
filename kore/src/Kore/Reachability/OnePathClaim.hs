@@ -7,14 +7,12 @@ License     : NCSA
 module Kore.Reachability.OnePathClaim
     ( OnePathClaim (..)
     , onePathRuleToTerm
+    , mkOnePathClaim
     , Rule (..)
     ) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Generics.Wrapped
     ( _Unwrapped
     )
@@ -26,19 +24,23 @@ import Kore.Debug
 import Kore.Internal.Alias
     ( Alias (aliasConstructor)
     )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( Id (getId)
+    ( ElementVariable
+    , Id (getId)
     , TermLike
     , VariableName
     , weakExistsFinally
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
@@ -78,6 +80,14 @@ newtype OnePathClaim =
 onePathRuleToTerm :: OnePathClaim -> TermLike VariableName
 onePathRuleToTerm (OnePathClaim claimPattern') =
     claimPatternToTerm TermLike.WEF claimPattern'
+
+mkOnePathClaim
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> OnePathClaim
+mkOnePathClaim left right existentials =
+    OnePathClaim (mkClaimPattern left right existentials)
 
 instance Unparse OnePathClaim where
     unparse claimPattern' =
@@ -214,7 +224,7 @@ deriveSeqAxiomOnePath
     =>  [Rule OnePathClaim]
     ->  OnePathClaim
     ->  TransitionT (AppliedRule OnePathClaim) simplifier
-            (ClaimState OnePathClaim)
+            (ApplyResult OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where

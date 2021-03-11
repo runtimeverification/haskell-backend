@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
@@ -584,13 +586,13 @@ debugAttemptEquationTests =
                 { Log.selected = fromList
                     []
                 }
-    , ("debug-attempt-equation " <> totalBalanceSymbolId)
+    , Text.pack ("debug-attempt-equation " <> totalBalanceSymbolId)
         `parsesTo_`
             DebugAttemptEquation Log.DebugAttemptEquationOptions
                 { Log.selected = fromList
                     [totalBalanceSymbolId]
                 }
-    , ("debug-attempt-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+    , Text.pack ("debug-attempt-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_`
             DebugAttemptEquation Log.DebugAttemptEquationOptions
                 { Log.selected = fromList
@@ -618,13 +620,13 @@ debugApplyEquationTests =
                 { Log.selected = fromList
                     []
                 }
-    , ("debug-apply-equation " <> totalBalanceSymbolId)
+    , Text.pack ("debug-apply-equation " <> totalBalanceSymbolId)
         `parsesTo_`
             DebugApplyEquation Log.DebugApplyEquationOptions
                 { Log.selected = fromList
                     [totalBalanceSymbolId]
                 }
-    , ("debug-apply-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+    , Text.pack ("debug-apply-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_`
             DebugApplyEquation Log.DebugApplyEquationOptions
                 { Log.selected = fromList
@@ -652,13 +654,13 @@ debugEquationTests =
                 { Log.selected = fromList
                     []
                 }
-    , ("debug-equation " <> totalBalanceSymbolId)
+    , Text.pack ("debug-equation " <> totalBalanceSymbolId)
         `parsesTo_`
             DebugEquation Log.DebugEquationOptions
                 { Log.selected = fromList
                     [totalBalanceSymbolId]
                 }
-    , ("debug-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+    , Text.pack ("debug-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_`
             DebugEquation Log.DebugEquationOptions
                 { Log.selected = fromList

@@ -19,7 +19,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -345,7 +344,7 @@ verifyApplyAlias application =
     let verified = application { applicationSymbolOrAlias = alias }
         sorts = Internal.aliasSorts alias
     leftVariables <- getLeftVariables (Internal.aliasConstructor alias)
-    Foldable.traverse_ ensureChildIsDeclaredVarType $ zip leftVariables children
+    traverse_ ensureChildIsDeclaredVarType $ zip leftVariables children
     verifyApplicationChildren Internal.termLikeSort verified sorts
   where
     Application

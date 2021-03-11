@@ -1,8 +1,9 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.TermLike
     ( simplify
     ) where
@@ -44,7 +45,8 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( mapVariables
+    ( cannotReplaceTerm
+    , replaceTerm
     , toRepresentation
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -59,6 +61,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -66,9 +71,6 @@ import qualified Kore.Step.Simplification.Application as Application
     ( simplify
     )
 import qualified Kore.Step.Simplification.Bottom as Bottom
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.Builtin as Builtin
     ( simplify
     )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -107,7 +109,25 @@ import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
 import qualified Kore.Step.Simplification.Inj as Inj
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalBool as InternalBool
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalInt as InternalInt
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalList as InternalList
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalMap as InternalMap
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalSet as InternalSet
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalString as InternalString
     ( simplify
     )
 import qualified Kore.Step.Simplification.Mu as Mu
@@ -139,12 +159,6 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-import Kore.Syntax.Variable
-    ( AdjSomeVariableName (..)
-    , ElementVariableName (..)
-    , SetVariableName (..)
-    , Variable (..)
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -152,30 +166,27 @@ import Kore.Unparser
     ( unparse
     )
 import qualified Kore.Variables.Binding as Binding
-import Kore.Variables.Target
-    ( Target (..)
-    , targetIfEqual
-    , unTarget
-    )
 import qualified Logic
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
 {- | Simplify 'TermLike' pattern to a disjunction of function-like 'Pattern's.
-    All the terms will be simplified, but the predicates may only be conjunctions
-    of simplified clauses.
+    All the resulting terms and conditions will be fully simplified, because after
+    the term simplification procedure, the condition simplifier will be called as well.
  -}
 simplify
-    :: forall variable simplifier
+    :: forall simplifier
     .  HasCallStack
-    => InternalVariable variable
     => MonadSimplify simplifier
     => MonadThrow simplifier
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition = \termLike ->
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
@@ -184,14 +195,39 @@ simplify sideCondition = \termLike ->
 
     simplifyChildren
         :: Traversable t
-        => t (TermLike variable)
-        -> simplifier (t (OrPattern variable))
+        => t (TermLike RewritingVariableName)
+        -> simplifier (t (OrPattern RewritingVariableName))
     simplifyChildren = traverse (simplifyTermLike sideCondition)
 
     simplifyInternalWorker
-        :: TermLike variable -> simplifier (OrPattern variable)
+        :: TermLike RewritingVariableName
+        -> simplifier (OrPattern RewritingVariableName)
     simplifyInternalWorker termLike
-      | TermLike.isSimplified sideConditionRepresentation termLike =
+      | Just termLike' <- continueSimplificationWith termLike =
+        assertTermNotPredicate $ do
+            unfixedTermOr <- descendAndSimplify termLike'
+            let termOr = OrPattern.coerceSort
+                    (termLikeSort termLike')
+                    unfixedTermOr
+            returnIfSimplifiedOrContinue
+                termLike'
+                (OrPattern.toPatterns termOr)
+                (do
+                    termPredicateList <- Logic.observeAllT $ do
+                        termOrElement <- Logic.scatter termOr
+                        simplified <-
+                            simplifyCondition sideCondition termOrElement
+                        return (applyTermSubstitution simplified)
+
+                    returnIfSimplifiedOrContinue
+                        termLike'
+                        termPredicateList
+                        (do
+                            resultsList <- mapM resimplify termPredicateList
+                            return (MultiOr.mergeAll resultsList)
+                        )
+                )
+      | otherwise =
         case Predicate.makePredicate termLike of
             Left _ -> return . OrPattern.fromTermLike $ termLike
             Right termPredicate -> do
@@ -204,39 +240,35 @@ simplify sideCondition = \termLike ->
                     & Pattern.fromCondition (termLikeSort termLike)
                     & OrPattern.fromPattern
                     & pure
-      | otherwise =
-        assertTermNotPredicate $ do
-            unfixedTermOr <- descendAndSimplify termLike
-            let termOr = OrPattern.coerceSort
-                    (termLikeSort termLike)
-                    unfixedTermOr
-            returnIfSimplifiedOrContinue
-                termLike
-                (OrPattern.toPatterns termOr)
-                (do
-                    termPredicateList <- Logic.observeAllT $ do
-                        termOrElement <- Logic.scatter termOr
-                        simplified <-
-                            simplifyCondition sideCondition termOrElement
-                        return (applyTermSubstitution simplified)
-
-                    returnIfSimplifiedOrContinue
-                        termLike
-                        termPredicateList
-                        (do
-                            resultsList <- mapM resimplify termPredicateList
-                            return (MultiOr.mergeAll resultsList)
-                        )
-                )
       where
+        continueSimplificationWith
+            :: TermLike RewritingVariableName
+            -> Maybe (TermLike RewritingVariableName)
+        continueSimplificationWith original =
+            let isOriginalNotSimplified
+                  | TermLike.isSimplified sideConditionRepresentation original =
+                      Nothing
+                  | otherwise = Just original
+            in
+                SideCondition.replaceTerm sideCondition original
+                <|> isOriginalNotSimplified
 
-        resimplify :: Pattern variable -> simplifier (OrPattern variable)
+        resimplify
+            :: Pattern RewritingVariableName
+            -> simplifier (OrPattern RewritingVariableName)
         resimplify result = do
             let (resultTerm, resultPredicate) = Pattern.splitTerm result
             simplified <- simplifyInternalWorker resultTerm
-            return (MultiOr.map (`Conditional.andCondition` resultPredicate) simplified)
+            return
+                (MultiOr.map
+                    (`Conditional.andCondition` resultPredicate)
+                    simplified
+                )
 
-        applyTermSubstitution :: Pattern variable -> Pattern variable
+        applyTermSubstitution
+            :: InternalVariable variable
+            => Pattern variable
+            -> Pattern variable
         applyTermSubstitution
             Conditional {term = term', predicate = predicate', substitution}
           =
@@ -270,10 +302,10 @@ simplify sideCondition = \termLike ->
                     ]
 
         returnIfSimplifiedOrContinue
-            :: TermLike variable
-            -> [Pattern variable]
-            -> simplifier (OrPattern variable)
-            -> simplifier (OrPattern variable)
+            :: TermLike RewritingVariableName
+            -> [Pattern RewritingVariableName]
+            -> simplifier (OrPattern RewritingVariableName)
+            -> simplifier (OrPattern RewritingVariableName)
         returnIfSimplifiedOrContinue originalTerm resultList continuation =
             case resultList of
                 [] -> return OrPattern.bottom
@@ -283,19 +315,22 @@ simplify sideCondition = \termLike ->
                 _ -> continuation
 
         returnIfResultSimplifiedOrContinue
-            :: TermLike variable
-            -> Pattern variable
-            -> simplifier (OrPattern variable)
-            -> simplifier (OrPattern variable)
+            :: TermLike RewritingVariableName
+            -> Pattern RewritingVariableName
+            -> simplifier (OrPattern RewritingVariableName)
+            -> simplifier (OrPattern RewritingVariableName)
         returnIfResultSimplifiedOrContinue originalTerm result continuation
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultTerm
-            && resultSubstitutionIsEmpty
+          , isTop resultTerm
+          , resultSubstitutionIsEmpty
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | Pattern.isSimplified sideConditionRepresentation result
-            && isTop resultPredicate
+          , isTop resultPredicate
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return (OrPattern.fromPattern result)
           | isTop resultPredicate && resultTerm == originalTerm
+          , SideCondition.cannotReplaceTerm sideCondition (Pattern.term result)
           = return
                 (OrPattern.fromTermLike
                     (TermLike.markSimplifiedConditional
@@ -321,9 +356,11 @@ simplify sideCondition = \termLike ->
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate originalTerm
 
-    descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
+    descendAndSimplify
+        :: TermLike RewritingVariableName
+        -> simplifier (OrPattern RewritingVariableName)
     descendAndSimplify termLike =
-        let doNotSimplify =
+        let ~doNotSimplify =
                 assert
                     (TermLike.isSimplified sideConditionRepresentation termLike)
                 return (OrPattern.fromTermLike termLike)
@@ -331,7 +368,7 @@ simplify sideCondition = \termLike ->
             refreshElementBinder = TermLike.refreshElementBinder avoiding
             refreshSetBinder = TermLike.refreshSetBinder avoiding
             (_ :< termLikeF) = Recursive.project termLike
-        in case termLikeF of
+         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
             -- Do not simplify non-simplifiable patterns.
@@ -357,40 +394,9 @@ simplify sideCondition = \termLike ->
             ExistsF exists -> do
                 simplifiedChildren <-
                     simplifyChildren (refresh exists)
-                targetedResults <-
-                    Exists.simplify
-                        (targetSideCondition sideCondition)
-                        (targetSimplifiedChildren simplifiedChildren)
-                let unTargetedResults =
-                        MultiOr.map (Pattern.mapVariables (pure unTarget)) targetedResults
-                return unTargetedResults
+                Exists.simplify sideCondition simplifiedChildren
               where
                 refresh = Lens.over Binding.existsBinder refreshElementBinder
-                targetSideCondition
-                    :: SideCondition variable
-                    -> SideCondition (Target variable)
-                targetSideCondition =
-                    SideCondition.mapVariables
-                        AdjSomeVariableName
-                        { adjSomeVariableNameElement =
-                            ElementVariableName
-                            (targetIfEqual existsVariableName)
-                        , adjSomeVariableNameSet = SetVariableName NonTarget
-                        }
-                targetSimplifiedChildren
-                    :: TermLike.Exists
-                        TermLike.Sort
-                        variable
-                        (OrPattern variable)
-                    -> TermLike.Exists
-                        TermLike.Sort
-                        (Target variable)
-                        (OrPattern (Target variable))
-                targetSimplifiedChildren =
-                    Lens.over Binding.existsBinder OrPattern.targetBinder
-                existsVariableName =
-                    (unElementVariableName . variableName)
-                        (TermLike.existsVariable exists)
             IffF iffF ->
                 Iff.simplify sideCondition =<< simplifyChildren iffF
             ImpliesF impliesF ->
@@ -402,8 +408,12 @@ simplify sideCondition = \termLike ->
             --
             BottomF bottomF ->
                 Bottom.simplify <$> simplifyChildren bottomF
-            BuiltinF builtinF ->
-                Builtin.simplify <$> simplifyChildren builtinF
+            InternalListF internalF ->
+                InternalList.simplify <$> simplifyChildren internalF
+            InternalMapF internalMapF ->
+                InternalMap.simplify <$> simplifyChildren internalMapF
+            InternalSetF internalSetF ->
+                InternalSet.simplify <$> simplifyChildren internalSetF
             DomainValueF domainValueF ->
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
@@ -430,22 +440,31 @@ simplify sideCondition = \termLike ->
             --
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
+            InternalBoolF internalBoolF ->
+                return $ InternalBool.simplify (getConst internalBoolF)
             InternalBytesF internalBytesF ->
                 return $ InternalBytes.simplify (getConst internalBytesF)
+            InternalIntF internalIntF ->
+                return $ InternalInt.simplify (getConst internalIntF)
+            InternalStringF internalStringF ->
+                return $ InternalString.simplify (getConst internalStringF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
             DefinedF definedF ->
                 Defined.simplify <$> simplifyChildren definedF
 
+-- | We expect each predicate in the result to have been fully
+-- simplified with a different side condition.
+-- See 'Kore.Step.Simplification.Condition.simplifyPredicates'.
 ensureSimplifiedResult
-    :: InternalVariable variable
-    => Monad simplifier
+    :: Monad simplifier
     => SideCondition.Representation
-    -> TermLike variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> TermLike RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 ensureSimplifiedResult repr termLike results
-  | hasSimplifiedChildren results = pure results
+  | OrPattern.hasSimplifiedChildrenIgnoreConditions results =
+      pure results
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified results, but found:"
@@ -453,23 +472,22 @@ ensureSimplifiedResult repr termLike results
             (unparse <$> OrPattern.toPatterns results)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
+        , Pretty.indent 2 "with side condition:"
+        , Pretty.indent 4 (Pretty.pretty repr)
         ]
-  where
-    hasSimplifiedChildren = OrPattern.hasSimplifiedChildren repr
 
 ensureSimplifiedCondition
-    :: InternalVariable variable
-    => Monad simplifier
+    :: Monad simplifier
     => SideCondition.Representation
-    -> TermLike variable
-    -> Condition variable
-    -> simplifier (Condition variable)
+    -> TermLike RewritingVariableName
+    -> Condition RewritingVariableName
+    -> simplifier (Condition RewritingVariableName)
 ensureSimplifiedCondition repr termLike condition
   | Condition.isSimplified repr condition = pure condition
   | otherwise =
     (error . show . Pretty.vsep)
         [ "Internal error: expected simplified condition, but found:"
-        , Pretty.indent 4 (unparse condition)
+        , Pretty.indent 4 (pretty condition)
         , Pretty.indent 2 "while simplifying:"
         , Pretty.indent 4 (unparse termLike)
         ]

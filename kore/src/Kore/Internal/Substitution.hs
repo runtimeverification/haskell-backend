@@ -31,6 +31,7 @@ module Kore.Internal.Substitution
     , mapAssignmentVariables
     , isNormalized
     , isSimplified
+    , isSimplifiedSomeCondition
     , forgetSimplified
     , markSimplified
     , simplifiedAttribute
@@ -47,16 +48,13 @@ module Kore.Internal.Substitution
     , mkNormalization
     , applyNormalized
     , substitute
+    , orientSubstitution
     ) where
 
 import Prelude.Kore hiding
     ( null
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Map.Strict
     ( Map
@@ -271,7 +269,7 @@ instance
         -- Never mark this as simplified since we want to be able to rebuild the
         -- substitution sometimes (e.g. not(not(subst)) and when simplifying
         -- claims).
-        Predicate.makeEqualsPredicate_ (TermLike.mkVar var) patt
+        Predicate.makeEqualsPredicate (TermLike.mkVar var) patt
 
 instance
     InternalVariable variable
@@ -330,7 +328,7 @@ toMultiMap
     => Substitution variable
     -> Map (SomeVariable variable) (NonEmpty (TermLike variable))
 toMultiMap =
-    Foldable.foldl' insertSubstitution Map.empty
+    foldl' insertSubstitution Map.empty
     . fmap assignmentToPair
     . unwrap
   where
@@ -341,7 +339,7 @@ toMultiMap =
         -> (variable1, term)
         -> Map variable1 (NonEmpty term)
     insertSubstitution multiMap (variable, termLike) =
-        let push = (termLike :|) . maybe [] Foldable.toList
+        let push = (termLike :|) . maybe [] Prelude.Kore.toList
         in Map.alter (Just . push) variable multiMap
 
 {- | Apply a normal order to a single substitution.
@@ -491,11 +489,33 @@ mapTerms mapper (Substitution s) =
 mapTerms mapper (NormalizedSubstitution s) =
     NormalizedSubstitution (fmap mapper s)
 
+{- | Is the 'Substitution' fully simplified under the given side condition?
+
+See also: 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> Substitution variable -> Bool
 isSimplified _ (Substitution _) = False
 isSimplified sideCondition (NormalizedSubstitution normalized) =
     all (TermLike.isSimplified sideCondition) normalized
 
+{- | Is the 'Substitution' fully simplified under some side condition?
+
+See also: 'isSimplified'.
+
+ -}
+isSimplifiedSomeCondition :: Substitution variable -> Bool
+isSimplifiedSomeCondition (Substitution _) = False
+isSimplifiedSomeCondition (NormalizedSubstitution normalized) =
+    all TermLike.isSimplifiedSomeCondition normalized
+
+{- | Forget the 'simplifiedAttribute' associated with the 'Substitution'.
+
+@
+isSimplified (forgetSimplified _) == False
+@
+
+ -}
 forgetSimplified
     :: InternalVariable variable
     => Substitution variable -> Substitution variable
@@ -504,6 +524,11 @@ forgetSimplified =
     . fmap (mapAssignedTerm TermLike.forgetSimplified)
     . unwrap
 
+{- | Mark a 'Substitution' as fully simplified at the current level.
+
+See 'Kore.Internal.TermLike.markSimplified'.
+
+-}
 markSimplified
     :: InternalVariable variable
     => Substitution variable -> Substitution variable
@@ -516,7 +541,7 @@ simplifiedAttribute
     :: Substitution variable -> Attribute.Simplified
 simplifiedAttribute (Substitution _) = Attribute.NotSimplified
 simplifiedAttribute (NormalizedSubstitution normalized) =
-    Foldable.foldMap TermLike.simplifiedAttribute normalized
+    foldMap TermLike.simplifiedAttribute normalized
 
 -- | Returns true iff the substitution is normalized.
 isNormalized :: Substitution variable -> Bool
@@ -635,7 +660,7 @@ assertNoneAreFreeVarsInRhs lhsVariables =
 instance InternalVariable variable
   => HasFreeVariables (Substitution variable) variable
   where
-    freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
+    freeVariables = foldMap freeVariablesWorker . unwrap
       where
         freeVariablesWorker (Assignment x t) =
             freeVariable x <> freeVariables t
@@ -647,7 +672,107 @@ variables
     -> Set (SomeVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) =
-    Foldable.foldMap (Set.singleton . assignedVariable) subst
+    foldMap (Set.singleton . assignedVariable) subst
+
+{- | Apply an orientation to all variable-renaming substitutions.
+
+A variable-renaming substitution is a pair of the form
+
+@
+X:S = Y:S
+@
+
+In a normalized substitution, the variable on the left-hand side of each
+substitution pair may not appear in any other substitution pair. The order of a
+variable-renaming pair is logically irrelevant, but often we have a preference
+for which of @X@ and @Y@ should appear on the left-hand side (that is, we have a
+preferred /orientation/).
+
+@orientSubstitution@ applies an orientation to a normalized substitution and
+yields a normalized substitution. The orientation is expressed as a function
+
+@
+SomeVariableName variable -> Bool
+@
+
+returning `True` when the named variable is preferred on the left-hand side of a
+variable-renaming substitution pair. Each variable-renaming pair is oriented so
+that the variable on the left-hand side is a preferred variable, if possible.
+@orientSubstitution@ does not alter substitution pairs where both or neither
+variable is preferred for the left-hand side.
+-}
+orientSubstitution
+    :: forall variable
+    .  InternalVariable variable
+    => (SomeVariableName variable -> Bool)
+    -- ^ Orientation: Is the named variable preferred on the left-hand side of
+    -- variable-renaming substitution pairs?
+    -> Map (SomeVariableName variable) (TermLike variable)
+    -- ^ Normalized substitution
+    -> Map (SomeVariableName variable) (TermLike variable)
+orientSubstitution toLeft substitution =
+    foldl' go substitution $ Map.toList substitution
+  where
+    go substitutionInProgress initialPair@(initialKey, _)
+      | Just (newKey, newValue) <- retractReorderedPair initialPair =
+        -- Re-orienting X = Y as Y = X.
+        let newPair = Map.singleton newKey newValue
+        in case Map.lookup newKey substitutionInProgress of
+            Nothing ->
+                -- There is no other Y = X substitution in the map.
+                substitutionInProgress
+                -- Remove X = Y pair.
+                & Map.delete initialKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map (TermLike.substitute newPair)
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+            Just already ->
+                -- There is a substitution Y = T in the map.
+                substitutionInProgress
+                -- Remove Y = T.
+                & Map.delete newKey
+                -- Apply Y = X to the right-hand side of all pairs.
+                & Map.map (TermLike.substitute newPair)
+                -- Insert Y = X pair.
+                & Map.insert newKey newValue
+                -- Apply X = T to the right-hand side of all pairs. This
+                -- substitution never needs to be reoriented, but the reason why
+                -- is subtle:
+                -- 1. The Y = T substitution came from another swapped pair. It
+                --    was not present in the original substitution: the original
+                --    substitution was normalized, and the substitution we are
+                --    reorienting now had Y on the right-hand side, so Y was not
+                --    on the left-hand side of any pair in the original
+                --    subsitution.
+                -- 2. If Y = T came from another swapped pair, then T is not a
+                --    preferred variable.
+                -- 3. We just checked that X is not a preferred variable.
+                -- 4. Therefore, X = T is a valid orientation.
+                & Map.map
+                    (TermLike.substitute (Map.singleton initialKey already))
+                -- Insert X = T pair.
+                & Map.insert initialKey already
+      | otherwise = substitutionInProgress
+
+    retractReorderedPair
+        :: (SomeVariableName variable, TermLike variable)
+        -> Maybe (SomeVariableName variable, TermLike variable)
+    retractReorderedPair (xName, TermLike.Var_ (Variable yName ySort))
+      | isSameMultiplicity xName yName
+      , toLeft yName
+      , not (toLeft xName)
+      = Just (yName, TermLike.mkVar (Variable xName ySort))
+    retractReorderedPair _ = Nothing
+
+    isSameMultiplicity
+        :: SomeVariableName variable
+        -> SomeVariableName variable
+        -> Bool
+    isSameMultiplicity x y
+      | SomeVariableNameElement _ <- x, SomeVariableNameElement _ <- y = True
+      | SomeVariableNameSet     _ <- x, SomeVariableNameSet     _ <- y = True
+      | otherwise = False
 
 {- | The result of /normalizing/ a substitution.
 

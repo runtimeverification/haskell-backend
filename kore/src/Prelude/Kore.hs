@@ -20,6 +20,7 @@ module Prelude.Kore
     , headMay
     -- * Either
     , either
+    , fromLeft, fromRight
     , isLeft, isRight
     , partitionEithers
     -- * Filterable
@@ -41,6 +42,8 @@ module Prelude.Kore
     , CofreeF (..)
     -- * Hashable
     , Hashable (..)
+    -- * NFData
+    , NFData (..)
     -- * Monad
     , Monad (..)
     , MonadPlus (..)
@@ -62,6 +65,10 @@ module Prelude.Kore
     , NonEmpty (..)
     -- * Tuple
     , module Data.Tuple
+    -- * Foldable
+    , module Data.Foldable
+    -- * Traversable
+    , module Data.Traversable
     ) where
 
 -- TODO (thomas.tuegel): Give an explicit export list so that the generated
@@ -81,6 +88,9 @@ import Control.Comonad
 import Control.Comonad.Trans.Cofree
     ( Cofree
     , CofreeF (..)
+    )
+import Control.DeepSeq
+    ( NFData (..)
     )
 import Control.Error
     ( either
@@ -104,8 +114,11 @@ import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
 import Data.Either
-    ( partitionEithers
+    ( fromLeft
+    , fromRight
+    , partitionEithers
     )
+import Data.Foldable
 import Data.Function
     ( on
     , (&)
@@ -124,6 +137,7 @@ import Data.Maybe
 import Data.Semigroup
     ( Semigroup (..)
     )
+import Data.Traversable
 import Data.Tuple
 import Data.Typeable
     ( Typeable

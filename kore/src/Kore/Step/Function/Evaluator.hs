@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Function.Evaluator
     ( evaluateApplication
     , evaluatePattern
@@ -24,7 +26,6 @@ import Control.Error
 import Control.Monad.Catch
     ( MonadThrow
     )
-import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
@@ -45,6 +46,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -52,6 +54,9 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.ErrorBottomTotalFunction
     ( errorBottomTotalFunction
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -71,24 +76,23 @@ import qualified Pretty
 --   memoize :: Evaluator.Self state -> Memo.Self state -> Evaluator.Self state
 -- to add memoization to a function evaluator.
 evaluateApplication
-    :: forall variable simplifier
-    .  ( InternalVariable variable
-       , MonadSimplify simplifier
+    :: forall simplifier
+    .  ( MonadSimplify simplifier
        , MonadThrow simplifier
        )
-    => SideCondition variable
+    => SideCondition RewritingVariableName
     -- ^ The predicate from the configuration
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Aggregated children predicate and substitution.
-    -> Application Symbol (TermLike variable)
+    -> Application Symbol (TermLike RewritingVariableName)
     -- ^ The pattern to be evaluated
-    -> simplifier (OrPattern variable)
+    -> simplifier (OrPattern RewritingVariableName)
 evaluateApplication
     sideCondition
     childrenCondition
     (evaluateSortInjection -> application)
   = finishT $ do
-    Foldable.for_ canMemoize recallOrPattern
+    for_ canMemoize recallOrPattern
     results <-
         maybeEvaluatePattern
             childrenCondition
@@ -97,8 +101,10 @@ evaluateApplication
             sideCondition
         & maybeT (unevaluated Nothing) return
         & lift
-    Foldable.for_ canMemoize (recordOrPattern results)
-    when (Symbol.isFunctional symbol && isBottom results) $
+    for_ canMemoize (recordOrPattern results)
+    let unexpectedBottomResult = Symbol.isFunctional symbol && isBottom results
+            && not (any isBottom application)
+    when unexpectedBottomResult $
         lift $ errorBottomTotalFunction termLike
     return results
   where
@@ -111,7 +117,8 @@ evaluateApplication
 
     unevaluated
         :: Monad m
-        => Maybe SideCondition.Representation -> m (OrPattern variable)
+        => Maybe SideCondition.Representation
+        -> m (OrPattern RewritingVariableName)
     unevaluated maybeSideCondition =
         return
         $ OrPattern.fromPattern
@@ -121,18 +128,20 @@ evaluateApplication
 
     markSimplifiedIfChildren
         :: Maybe SideCondition.Representation
-        -> TermLike variable
-        -> TermLike variable
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
     markSimplifiedIfChildren Nothing = TermLike.setSimplified
-        (Foldable.foldMap TermLike.simplifiedAttribute application)
+        (foldMap TermLike.simplifiedAttribute application)
     markSimplifiedIfChildren (Just condition) = TermLike.setSimplified
-        (  Foldable.foldMap TermLike.simplifiedAttribute application
+        (  foldMap TermLike.simplifiedAttribute application
         <> Attribute.Simplified.simplifiedConditionally condition
         )
 
     canMemoize
       | Symbol.isMemo symbol
-      , (isTop childrenCondition && isTop sideCondition)
+      , ( isTop childrenCondition
+        && isTop (SideCondition.toPredicate sideCondition)
+        )
         || all TermLike.isConstructorLike application
       = traverse asConcrete application
       | otherwise
@@ -143,7 +152,7 @@ evaluateApplication
         maybeTermLike <- recall key
         let maybeOrPattern =
                 OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
-        Foldable.for_ maybeOrPattern throwE
+        for_ maybeOrPattern throwE
 
     recordOrPattern orPattern key
       | [result] <- OrPattern.toPatterns orPattern
@@ -168,18 +177,19 @@ evaluateApplication
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
     -- ^ The predicate from the configuration
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Aggregated children predicate and substitution.
-    -> TermLike variable
+    -> TermLike RewritingVariableName
     -- ^ The pattern to be evaluated
-    -> (Maybe SideCondition.Representation -> simplifier (OrPattern variable))
+    ->  (  Maybe SideCondition.Representation
+        -> simplifier (OrPattern RewritingVariableName)
+        )
     -- ^ The default value
-    -> simplifier (OrPattern variable)
+    -> simplifier (OrPattern RewritingVariableName)
 evaluatePattern
     sideCondition
     childrenCondition
@@ -198,17 +208,18 @@ evaluatePattern
 Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => Condition variable
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => Condition RewritingVariableName
     -- ^ Aggregated children predicate and substitution.
-    -> TermLike variable
+    -> TermLike RewritingVariableName
     -- ^ The pattern to be evaluated
-    -> (Maybe SideCondition.Representation -> simplifier (OrPattern variable))
+    ->  (  Maybe SideCondition.Representation
+        -> simplifier (OrPattern RewritingVariableName)
+        )
     -- ^ The default value
-    -> SideCondition variable
-    -> MaybeT simplifier (OrPattern variable)
+    -> SideCondition RewritingVariableName
+    -> MaybeT simplifier (OrPattern RewritingVariableName)
 maybeEvaluatePattern
     childrenCondition
     termLike
@@ -257,7 +268,9 @@ maybeEvaluatePattern
       where
         Conditional { term = (), predicate, substitution } = childrenCondition
 
-    simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
+    simplifyIfNeeded
+        :: Pattern RewritingVariableName
+        -> simplifier (OrPattern RewritingVariableName)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
@@ -274,7 +287,7 @@ evaluateSortInjection ap
     App_ apHeadChild grandChildren
       | Symbol.isSortInjection apHeadChild ->
         let
-            (fromSort', toSort') = sortInjectionSorts apHeadChild
+            ~(fromSort', toSort') = sortInjectionSorts apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
             resultApp = apHeadNew grandChildren
         in
@@ -283,8 +296,8 @@ evaluateSortInjection ap
   | otherwise = ap
   where
     apHead = applicationSymbolOrAlias ap
-    (fromSort, _) = sortInjectionSorts apHead
-    apChild = sortInjectionChild ap
+    ~(fromSort, _) = sortInjectionSorts apHead
+    ~apChild = sortInjectionChild ap
     updateSortInjectionSource head1 fromSort1 children =
         Application
             { applicationSymbolOrAlias =
@@ -292,7 +305,7 @@ evaluateSortInjection ap
             , applicationChildren = children
             }
       where
-        (_, toSort1) = sortInjectionSorts head1
+        ~(_, toSort1) = sortInjectionSorts head1
 
 sortInjectionChild :: Unparse a => Application Symbol a -> a
 sortInjectionChild application =
@@ -320,12 +333,11 @@ sortInjectionSorts symbol =
 was evaluated.
 -}
 reevaluateFunctions
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
     -- ^ Function evaluation result.
-    -> simplifier (OrPattern variable)
+    -> simplifier (OrPattern RewritingVariableName)
 reevaluateFunctions sideCondition rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
     OrPattern.observeAllT $ do
@@ -336,15 +348,14 @@ reevaluateFunctions sideCondition rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
     -- ^ Top level condition.
-    -> Condition variable
+    -> Condition RewritingVariableName
     -- ^ Condition and substitution to add.
-    -> AttemptedAxiom variable
+    -> AttemptedAxiom RewritingVariableName
     -- ^ AttemptedAxiom to which the condition should be added.
-    -> simplifier (AttemptedAxiom variable)
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 mergeWithConditionAndSubstitution _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution

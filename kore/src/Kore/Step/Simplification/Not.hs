@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Not
     ( makeEvaluate
     , makeEvaluatePredicate
@@ -17,8 +19,6 @@ module Kore.Step.Simplification.Not
     ) where
 
 import Prelude.Kore
-
-import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Condition
     ( Condition
@@ -60,6 +60,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
@@ -78,10 +81,10 @@ Right now this uses the following:
 
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Not Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Not Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Not { notChild } =
     simplifyEvaluated sideCondition notChild
 
@@ -104,10 +107,10 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition simplified =
     OrPattern.observeAllT $ do
         let not' = Not { notChild = simplified, notSort = () }
@@ -116,9 +119,9 @@ simplifyEvaluated sideCondition simplified =
         mkMultiAndPattern sideCondition andPattern
 
 simplifyEvaluatedPredicate
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => OrCondition variable
-    -> simplifier (OrCondition variable)
+    :: MonadSimplify simplifier
+    => OrCondition RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedPredicate notChild =
     OrCondition.observeAllT $ do
         let not' = Not { notChild = notChild, notSort = () }
@@ -136,15 +139,13 @@ child.
 See 'simplify' for details.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
-    :: InternalVariable variable
-    => Not sort (Pattern variable)
-    -> OrPattern variable
+    :: Not sort (Pattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 makeEvaluateNot Not { notChild } =
     MultiOr.merge
         (MultiOr.map Pattern.fromTermLike $ makeTermNot term)
@@ -166,9 +167,8 @@ I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 a @not@ on top of that.
 -}
 makeEvaluatePredicate
-    :: InternalVariable variable
-    => Condition variable
-    -> Condition variable
+    :: Condition RewritingVariableName
+    -> Condition RewritingVariableName
 makeEvaluatePredicate
     Conditional
         { term = ()
@@ -186,16 +186,14 @@ makeEvaluatePredicate
         }
 
 makeEvaluateNotPredicate
-    :: InternalVariable variable
-    => Not sort (Condition variable)
-    -> OrCondition variable
+    :: Not sort (Condition RewritingVariableName)
+    -> OrCondition RewritingVariableName
 makeEvaluateNotPredicate Not { notChild = predicate } =
     OrCondition.fromConditions [ makeEvaluatePredicate predicate ]
 
 makeTermNot
-    :: InternalVariable variable
-    => TermLike variable
-    -> MultiOr (TermLike variable)
+    :: TermLike RewritingVariableName
+    -> MultiOr (TermLike RewritingVariableName)
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
@@ -214,7 +212,7 @@ distributeNot
     => Not sort (MultiOr child)
     -> MultiAnd (Not sort child)
 distributeNot notOr@Not { notChild } =
-    MultiAnd.make $ worker <$> Foldable.toList notChild
+    MultiAnd.make $ worker <$> toList notChild
   where
     worker child = notOr { notChild = child }
 
@@ -230,22 +228,21 @@ scatterAnd = scatter . MultiOr.distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> MultiAnd (Pattern variable)
-    -> LogicT simplifier (Pattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> MultiAnd (Pattern RewritingVariableName)
+    -> LogicT simplifier (Pattern RewritingVariableName)
 mkMultiAndPattern = And.makeEvaluate notSimplifier
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
 mkMultiAndPredicate
-    :: InternalVariable variable
-    => MultiAnd (Condition variable)
-    -> LogicT simplifier (Condition variable)
+    :: MultiAnd (Condition RewritingVariableName)
+    -> LogicT simplifier (Condition RewritingVariableName)
 mkMultiAndPredicate predicates =
-    -- Using Foldable.fold because the Monoid instance of Condition
+    -- Using fold because the Monoid instance of Condition
     -- implements And semantics.
-    return $ Foldable.fold predicates
+    return $ fold predicates
 
 notSimplifier
     :: MonadSimplify simplifier

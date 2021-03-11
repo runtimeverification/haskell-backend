@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Axiom.Registry
     ( test_functionRegistry
     ) where
@@ -14,7 +16,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -47,11 +48,12 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.SideCondition as SideCondition
-    ( top
-    )
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
@@ -378,16 +380,21 @@ testIndexedModule =
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators =
-    mkEvaluatorRegistry $ extractEquations testIndexedModule
+    mkEvaluatorRegistry
+    $ Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable)
+    $ extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
-    partitionEquations <$> extractEquations testIndexedModule
+    partitionEquations
+    <$> Map.map
+            (fmap . Equation.mapVariables $ pure mkConfigVariable)
+            (extractEquations testIndexedModule)
 
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
 
-testEnv :: Env Simplifier
+testEnv :: Env (SimplifierT NoSMT)
 testEnv =
     Mock.env
         { metadataTools = testMetadataTools
@@ -436,21 +443,17 @@ test_functionRegistry =
         let expect = mkApplySymbol sHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify SideCondition.top
+            $ Pattern.simplify
             $ makePattern $ mkApplySymbol gHead []
-        let actual =
-                Pattern.term $ head
-                $ Foldable.toList simplified
+        let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApplySymbol tHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify SideCondition.top
+            $ Pattern.simplify
             $ makePattern $ mkApplySymbol pHead []
-        let actual =
-                Pattern.term $ head
-                $ Foldable.toList simplified
+        let actual = Pattern.term $ head $ toList simplified
         assertEqual "" expect actual
     , testCase "Function rules sorted in order of priorities"
         (let axiomId = AxiomIdentifier.Application (testId "f")
@@ -476,5 +479,5 @@ test_functionRegistry =
         )
     ]
   where
-    makePattern :: TermLike VariableName -> Pattern VariableName
+    makePattern :: TermLike RewritingVariableName -> Pattern RewritingVariableName
     makePattern = Pattern.fromTermLike

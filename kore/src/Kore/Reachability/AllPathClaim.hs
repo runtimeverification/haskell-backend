@@ -6,15 +6,13 @@ License     : NCSA
 
 module Kore.Reachability.AllPathClaim
     ( AllPathClaim (..)
+    , mkAllPathClaim
     , allPathRuleToTerm
     , Rule (..)
     ) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Monad
     ( foldM
     )
@@ -29,20 +27,23 @@ import Kore.Debug
 import Kore.Internal.Alias
     ( Alias (aliasConstructor)
     )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( Id (getId)
+    ( ElementVariable
+    , Id (getId)
     , TermLike
     , VariableName
     , weakAlwaysFinally
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability.Claim
-import Kore.Reachability.ClaimState
-    ( ClaimState (..)
-    , retractRewritable
-    )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     , mkRuleVariable
@@ -74,6 +75,14 @@ newtype AllPathClaim =
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+mkAllPathClaim
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> AllPathClaim
+mkAllPathClaim left right existentials =
+    AllPathClaim (mkClaimPattern left right existentials)
 
 instance Unparse AllPathClaim where
     unparse claimPattern' =
@@ -141,19 +150,19 @@ instance Claim AllPathClaim where
     applyClaims claims = deriveSeqClaim _Unwrapped AllPathClaim claims
 
     applyAxioms axiomss = \claim ->
-        foldM applyAxioms1 (Remaining claim) axiomss
+        foldM applyAxioms1 (ApplyRemainder claim) axiomss
       where
-        applyAxioms1 claimState axioms
-          | Just claim <- retractRewritable claimState =
+        applyAxioms1 applied axioms
+          | Just claim <- retractApplyRemainder applied =
             deriveParAxiomAllPath axioms claim
             >>= simplifyRemainder
           | otherwise =
-            pure claimState
+            pure applied
 
-        simplifyRemainder claimState =
-            case claimState of
-                Remaining claim -> Remaining <$> simplify claim
-                _ -> return claimState
+        simplifyRemainder applied =
+            case applied of
+                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                _ -> return applied
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -195,7 +204,7 @@ deriveParAxiomAllPath
     =>  [Rule AllPathClaim]
     ->  AllPathClaim
     ->  TransitionT (AppliedRule AllPathClaim) simplifier
-            (ClaimState AllPathClaim)
+            (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where

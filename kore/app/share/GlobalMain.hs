@@ -10,8 +10,6 @@ module GlobalMain
     , parseKoreProveOptions
     , parseKoreMergeOptions
     , mainGlobal
-    , defaultMainGlobal
-    , enableDisableFlag
     , clockSomething
     , clockSomethingIO
     , mainPatternVerify
@@ -31,7 +29,14 @@ import Prelude.Kore
 import Control.Exception
     ( evaluate
     )
+import Control.Lens
+    ( (%~)
+    )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
+import Data.Functor
+    ( (<&>)
+    )
 import Data.List
     ( intercalate
     )
@@ -43,42 +48,24 @@ import Data.Text
     ( Text
     , pack
     )
-import Data.Time.Format
-    ( defaultTimeLocale
-    , formatTime
-    )
-import Data.Time.LocalTime
-    ( ZonedTime
-    , getZonedTime
-    )
+import qualified Data.Text.IO as Text
 import Data.Version
     ( showVersion
-    )
-import Development.GitRev
-    ( gitBranch
-    , gitCommitDate
-    , gitHash
     )
 import GHC.Stack
     ( emptyCallStack
     )
-
 import Options.Applicative
     ( InfoMod
     , Parser
     , ParserHelp (..)
-    , argument
     , defaultPrefs
-    , disabled
     , execParserPure
     , flag
-    , flag'
     , handleParseResult
     , help
     , helper
-    , hidden
     , info
-    , internal
     , long
     , maybeReader
     , metavar
@@ -91,12 +78,11 @@ import Options.Applicative
     , value
     , (<**>)
     )
+import qualified Options.Applicative as Options
 import Options.Applicative.Help.Chunk
     ( Chunk (..)
     , vsepChunks
     )
-
-import qualified Options.Applicative as Options
 import qualified Options.Applicative.Help.Pretty as Pretty
 import System.Clock
     ( Clock (Monotonic)
@@ -104,16 +90,20 @@ import System.Clock
     , getTime
     )
 import qualified System.Environment as Env
+import qualified Text.Megaparsec as Parser
+import Text.Read
+    ( readMaybe
+    )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( verifyAndIndexDefinitionWithBase
+    ( sortModuleClaims
+    , verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin as Builtin
-import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
@@ -121,16 +111,16 @@ import Kore.Log as Log
 import Kore.Log.ErrorParse
     ( errorParse
     )
+import Kore.Log.ErrorVerify
+    ( errorVerify
+    )
 import Kore.Parser
     ( ParsedPattern
     , parseKoreDefinition
     )
-import Kore.Parser.Lexeme
-    ( moduleNameIdParser
-    )
+import qualified Kore.Parser.Lexer as Lexer
 import Kore.Parser.ParserUtils
-    ( endOfInput
-    , parseOnly
+    ( parseOnly
     )
 import Kore.Step.Strategy
     ( GraphSearchOrder (..)
@@ -142,11 +132,10 @@ import Kore.Syntax.Definition
     , getModuleNameForError
     )
 import qualified Kore.Verified as Verified
+import Kore.VersionInfo
+
 import qualified Paths_kore as MetaData
     ( version
-    )
-import Text.Read
-    ( readMaybe
     )
 
 type Main = LoggerT IO
@@ -177,7 +166,7 @@ parseModuleName metaName longName helpMsg =
 readModuleName :: Options.ReadM ModuleName
 readModuleName = do
     opt <- str
-    case parseOnly (moduleNameIdParser <* endOfInput) "<command-line>" opt of
+    case parseOnly (Lexer.parseModuleName <* Parser.eof) "<command-line>" opt of
         Left err        -> readerError err
         Right something -> pure something
 
@@ -280,37 +269,29 @@ and returns the parsed options
 -}
 mainGlobal
     :: ExeName
+    -> Maybe String
+    -- ^ environment variable name for extra arguments
     -> Parser options                -- ^ local options parser
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
-mainGlobal exeName localOptionsParser modifiers = do
-    options <- commandLineParse exeName localOptionsParser modifiers
-    when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
+mainGlobal exeName maybeEnv localOptionsParser modifiers = do
+    options <- commandLineParse exeName maybeEnv localOptionsParser modifiers
+    when (willVersion $ globalOptions options) mainVersion
     return options
 
-defaultMainGlobal :: IO (MainOptions options)
-defaultMainGlobal =
-    mainGlobal (ExeName "kore-exec") (argument disabled mempty) mempty
-
-
 -- | main function to print version information
-mainVersion :: ZonedTime -> IO ()
-mainVersion time =
-      mapM_ putStrLn
-      [ "Kore version "    ++ packageVersion
-      , "Git:"
-      , "  revision:\t"    ++ $gitHash
-      , "  branch:\t"      ++ $gitBranch
-      , "  last commit:\t" ++  gitTime
-      , "Build date:\t"    ++  exeTime
-      ]
+mainVersion :: IO ()
+mainVersion =
+    mapM_ putStrLn
+        [ "Kore version "    ++ packageVersion
+        , "Git:"
+        , "  revision:\t"    ++ gitHash ++ if gitDirty then " (dirty)" else ""
+        , "  branch:\t"      ++ fromMaybe "<unknown>" gitBranch
+        , "  last commit:\t" ++ gitCommitDate
+        ]
     where
       packageVersion = showVersion MetaData.version
-      formatGit (_:mm:dd:tt:yy:tz:_) = [yy,mm,dd,tt,tz]
-      formatGit t                    = t
-      gitTime = (unwords . formatGit . words) $gitCommitDate
-      exeTime = formatTime defaultTimeLocale  "%Y %b %d %X %z" time
-
+      VersionInfo { gitHash, gitDirty, gitBranch, gitCommitDate } = $versionInfo
 
 --------------------
 -- Option Parsers --
@@ -323,37 +304,48 @@ globalCommandLineParser =
         (  long "version"
         <> help "Print version information" )
 
+getArgs
+    :: Maybe String  -- ^ environment variable name for extra arguments
+    -> IO ([String], [String])
+getArgs maybeEnv = do
+    args0 <- Env.getArgs
+    args1 <-
+        case maybeEnv of
+            Nothing -> pure []
+            Just env -> words . fromMaybe "" <$> Env.lookupEnv env
+    pure (args0, args1)
+
 -- | Run argument parser for local executable
 commandLineParse
     :: ExeName
-    -> Parser a                -- ^ local options parser
-    -> InfoMod (MainOptions a) -- ^ local parser info modifiers
+    -> Maybe String
+    -- ^ environment variable name for extra arguments
+    -> Parser a
+    -- ^ local options parser
+    -> InfoMod (MainOptions a)
+    -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
-    args' <- Env.getArgs
-    env <- Env.lookupEnv "KORE_EXEC_OPTS"
-    let opts' = fromMaybe "" env
-        args = case env of
-            Nothing -> args'
-            Just opts -> args' <> words opts
-        parseResult = execParserPure
-            defaultPrefs
-            ( info
-                ( MainOptions
-                    <$> globalCommandLineParser
-                    <*> optional localCommandLineParser
-                <**> helper
-                )
-                modifiers
-            )
-            args
+commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
+    (args, argsEnv) <- getArgs maybeEnv
+    let allArgs = args <> argsEnv
+        parseResult =
+            execParserPure
+                defaultPrefs
+                (info parseMainOptions infoMod)
+                allArgs
         changeHelpOverFailure
-          | exeName == "kore-exec" = overFailure (changeHelp args opts')
+          | Just env <- maybeEnv = overFailure (changeHelp args env argsEnv)
           | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
   where
-    changeHelp :: [String] -> String -> ParserHelp -> ParserHelp
-    changeHelp commandLine koreExecOpts parserHelp@ParserHelp { helpError } =
+    parseMainOptions =
+        MainOptions
+            <$> globalCommandLineParser
+            <*> optional parser
+        <**> helper
+
+    changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp
+    changeHelp args env argsEnv parserHelp@ParserHelp { helpError } =
         parserHelp
             { helpError =
                 vsepChunks [Chunk . Just $ commandWithOpts, helpError]
@@ -362,8 +354,8 @@ commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
         commandWithOpts =
             Pretty.vsep
                 [ Pretty.linebreak
-                , Pretty.pretty ("kore-exec " <> unwords commandLine)
-                , Pretty.pretty ("KORE_EXEC_OPTS = " <> koreExecOpts)
+                , Pretty.pretty (unwords (exeName : args))
+                , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
                 ]
 
 
@@ -371,36 +363,6 @@ commandLineParse (ExeName exeName) localCommandLineParser modifiers = do
 
 ----------------------
 -- Helper Functions --
-
-{-|
-Parser builder to create an optional boolean flag,
-with an enabled, disabled and default value.
-Based on `enableDisableFlagNoDefault`
-from commercialhaskell/stack:
-https://github.com/commercialhaskell/stack/blob/master/src/Options/Applicative/Builder/Extra.hs
--}
-enableDisableFlag
-    :: String -- ^ flag name
-    -> option -- ^ enabled value
-    -> option -- ^ disabled value
-    -> option -- ^ default value
-    -> String -- ^ Help text suffix; appended to "Enable/disable "
-    -> Parser option
-enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
-    flag' enabledVal
-        (  hidden
-        <> internal
-        <> long name
-        <> help helpSuffix)
-    <|> flag' disabledVal
-        (  hidden
-        <> internal
-        <> long ("no-" ++ name)
-        <> help helpSuffix )
-    <|> flag' disabledVal
-        (  long ( "[no-]" ++ name )
-        <> help ( "Enable/disable " ++ helpSuffix ) )
-    <|> pure defaultVal
 
 
 -- | Time a pure computation and print results.
@@ -438,7 +400,7 @@ mainPatternVerify verifiedModule patt = do
     verifyResult <-
         clockSomething "Verifying the pattern"
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
-    either (error . printError) return verifyResult
+    either errorVerify return verifyResult
   where
     context =
         PatternVerifier.verifiedModuleContext verifiedModule
@@ -447,9 +409,7 @@ mainPatternVerify verifiedModule patt = do
 lookupMainModule
     :: Monad monad
     => ModuleName
-    -> Map.Map
-        ModuleName
-        (VerifiedModule Attribute.Symbol)
+    -> Map.Map ModuleName (VerifiedModule Attribute.Symbol)
     -> monad (VerifiedModule Attribute.Symbol)
 lookupMainModule name modules =
     case Map.lookup name modules of
@@ -487,9 +447,7 @@ verifyDefinitionWithBase
             Builtin.koreVerifiers
             definition
         )
-    case verifyResult of
-        Left err1               -> error (printError err1)
-        Right indexedDefinition -> return indexedDefinition
+    either errorVerify return verifyResult
 
 {- | Parse a Kore definition from a filename.
 
@@ -500,12 +458,14 @@ parseDefinition :: FilePath -> Main ParsedDefinition
 parseDefinition = mainParse parseKoreDefinition
 
 mainParse
-    :: (FilePath -> String -> Either String a)
+    :: (FilePath -> Text -> Either String a)
     -> String
     -> Main a
 mainParse parser fileName = do
     contents <-
-        clockSomethingIO "Reading the input file" $ liftIO $ readFile fileName
+        Text.readFile fileName
+        & liftIO
+        & clockSomethingIO "Reading the input file"
     parseResult <-
         clockSomething "Parsing the file" (parser fileName contents)
     case parseResult of
@@ -518,8 +478,14 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM verifyDefinitionWithBase mempty
-    =<< traverse parseDefinition filePaths
+    loadedDefinitions <&> sortClaims
+  where
+    loadedDefinitions =
+        Monad.foldM verifyDefinitionWithBase mempty
+        =<< traverse parseDefinition filePaths
+
+    sortClaims :: LoadedDefinition -> LoadedDefinition
+    sortClaims = Lens._1 . Lens.traversed %~ sortModuleClaims
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . fst

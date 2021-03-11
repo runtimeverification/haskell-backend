@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.And
     ( test_andSimplification
     ) where
@@ -17,18 +19,18 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
-    , makeCeilPredicate_
     , makeEqualsPredicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
+    , makeFalsePredicate
     , makeTruePredicate
-    , makeTruePredicate_
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.And
 import qualified Kore.Step.Simplification.Not as Not
 
@@ -88,7 +90,7 @@ test_andSimplification =
             let expect =
                     Conditional
                         { term = mkAnd plain0OfX plain1OfX
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
@@ -96,7 +98,7 @@ test_andSimplification =
 
         , testCase "And function terms" $ do
             let expect =
-                    makeEqualsPredicate_ fOfX gOfX
+                    makeEqualsPredicate fOfX gOfX
                     & Condition.fromPredicate
                     & Pattern.withCondition fOfX
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
@@ -108,20 +110,20 @@ test_andSimplification =
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate_ fOfX)
-                                (makeCeilPredicate_ gOfX)
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
                         , substitution = mempty
                         }
             actual <-
                 evaluatePatterns
                     Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -130,27 +132,29 @@ test_andSimplification =
             let expect =
                     Conditional
                         { term = mkTop_
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(inject Mock.y, fOfX), (inject Mock.z, gOfX)]
+                            [ (inject Mock.yConfig, fOfX)
+                            , (inject Mock.zConfig, gOfX)
+                            ]
                         }
             actual <-
                 evaluatePatterns
                     Conditional
                         { term = mkTop_
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.y, fOfX)]
+                            [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
                         { term = mkTop_
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [(inject Mock.z, gOfX)]
+                            [(inject Mock.zConfig, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -159,18 +163,18 @@ test_andSimplification =
                 expect =
                     Conditional
                         { term = mkAnd (mkAnd Mock.a Mock.b) Mock.c
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             actual <- evaluatePatterns
                 Conditional
                     { term = mkAnd Mock.a Mock.b
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 Conditional
                     { term = mkAnd Mock.b Mock.c
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -180,26 +184,26 @@ test_andSimplification =
                 expect =
                     Conditional
                         { term = mkTop_
-                        , predicate = makeEqualsPredicate_ fOfX gOfX
+                        , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution =
-                            Substitution.unsafeWrap [(inject Mock.y, fOfX)]
+                            Substitution.unsafeWrap [(inject Mock.yConfig, fOfX)]
                         }
             actual <- evaluatePatterns
                 Conditional
                     { term = mkTop_
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, fOfX)]
+                        [(inject Mock.yConfig, fOfX)]
                     }
                 Conditional
                     { term = mkTop_
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
-                        [(inject Mock.y, gOfX)]
+                        [(inject Mock.yConfig, gOfX)]
                     }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
@@ -208,21 +212,23 @@ test_andSimplification =
                 evaluatePatterns
                     Conditional
                         { term = mkTop_
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [   ( inject Mock.y
-                                , Mock.functionalConstr10 (mkElemVar Mock.x)
+                            [   ( inject Mock.yConfig
+                                , Mock.functionalConstr10
+                                    (mkElemVar Mock.xConfig)
                                 )
                             ]
                         }
                     Conditional
                         { term = mkTop_
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
-                            [   ( inject Mock.y
-                                , Mock.functionalConstr11 (mkElemVar Mock.x)
+                            [   ( inject Mock.yConfig
+                                , Mock.functionalConstr11
+                                    (mkElemVar Mock.xConfig)
                                 )
                             ]
                         }
@@ -238,10 +244,10 @@ test_andSimplification =
                     , predicate =
                         fst $ makeAndPredicate
                             (fst $ makeAndPredicate
-                                (makeCeilPredicate_ fOfX)
-                                (makeCeilPredicate_ gOfX)
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
                             )
-                            (givemakeEqualsPredicate_ fOfX gOfX)
+                            (givemakeEqualsPredicate fOfX gOfX)
                     , substitution = [(y, fOfX)]
                     }
                 (evaluatePatternsWithAttributes
@@ -250,12 +256,12 @@ test_andSimplification =
                     ]
                     Pattern
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = [(y, fOfX)]
                         }
                     Pattern
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = [(y, gOfX)]
                         }
                 )
@@ -266,9 +272,9 @@ test_andSimplification =
             let expect =
                     Conditional
                         { term = fOfX
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(inject Mock.y, fOfX)]
+                            [(inject Mock.yConfig, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
             assertEqual "" (MultiOr.make [expect]) actual
@@ -277,9 +283,9 @@ test_andSimplification =
             let expect =
                     Conditional
                         { term = fOfX
-                        , predicate = makeTruePredicate Mock.testSort
+                        , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
-                            [(inject Mock.y, fOfX)]
+                            [(inject Mock.yConfig, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
             assertEqual "" (MultiOr.make [expect]) actual
@@ -291,18 +297,18 @@ test_andSimplification =
                     Conditional
                         { term = Mock.constr10 fOfX
                         , predicate =
-                            makeEqualsPredicate Mock.testSort fOfX gOfX
+                            makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
                         }
             actual <-
                 evaluatePatterns Conditional
                         { term = Mock.constr10 fOfX
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     Conditional
                         { term = Mock.constr10 gOfX
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             assertEqual "" (MultiOr.make [expect]) actual
@@ -312,12 +318,12 @@ test_andSimplification =
                 evaluatePatterns
                     Conditional
                         { term = Mock.constr10 fOfX
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     Conditional
                         { term = Mock.constr11 gOfX
-                        , predicate = makeTruePredicate_
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
             assertEqual "" (MultiOr.make []) actual
@@ -327,25 +333,25 @@ test_andSimplification =
     , testCase "And-Or distribution" $ do
         let expect =
                 OrPattern.fromPatterns
-                    [ makeEqualsPredicate_ fOfX gOfX
+                    [ makeEqualsPredicate fOfX gOfX
                         & Condition.fromPredicate
                         & Pattern.withCondition fOfX
                     , Conditional
                         { term = fOfX
-                        , predicate = makeCeilPredicate Mock.testSort gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
                     , Conditional
                         { term = gOfX
-                        , predicate = makeCeilPredicate Mock.testSort fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     , Conditional
                         { term = mkTop_
                         , predicate =
                             makeAndPredicate
-                                (makeCeilPredicate_ fOfX)
-                                (makeCeilPredicate_ gOfX)
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
                         , substitution = mempty
                         }
                     ]
@@ -355,14 +361,14 @@ test_andSimplification =
                     [ fOfXExpanded
                     , Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ fOfX
+                        , predicate = makeCeilPredicate fOfX
                         , substitution = mempty
                         }
                     ]
                     [ gOfXExpanded
                     , Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate_ gOfX
+                        , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
                     ]
@@ -374,65 +380,65 @@ test_andSimplification =
                     { term = Mock.constr10 fOfX
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.testSort fOfX)
-                            (makeEqualsPredicate_ fOfX gOfX)
+                            (makeCeilPredicate fOfX)
+                            (makeEqualsPredicate fOfX gOfX)
                     , substitution = mempty
                     }
         actual <-
             evaluatePatterns
                 Conditional
                     { term = Mock.constr10 fOfX
-                    , predicate = makeCeilPredicate_ fOfX
+                    , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
                     }
                 Conditional
                     { term = Mock.constr10 gOfX
-                    , predicate = makeCeilPredicate_ fOfX
+                    , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr.make [expect]) actual
     ]
   where
     yExpanded = Conditional
-        { term = mkElemVar Mock.y
-        , predicate = makeTruePredicate_
+        { term = mkElemVar Mock.yConfig
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
-    fOfX = Mock.f (mkElemVar Mock.x)
+    fOfX = Mock.f (mkElemVar Mock.xConfig)
     fOfXExpanded = Pattern.fromTermLike fOfX
-    gOfX = Mock.g (mkElemVar Mock.x)
+    gOfX = Mock.g (mkElemVar Mock.xConfig)
     gOfXExpanded = Conditional
         { term = gOfX
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
-    plain0OfX = Mock.plain10 (mkElemVar Mock.x)
+    plain0OfX = Mock.plain10 (mkElemVar Mock.xConfig)
     plain0OfXExpanded = Conditional
         { term = plain0OfX
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
-    plain1OfX = Mock.plain11 (mkElemVar Mock.x)
+    plain1OfX = Mock.plain11 (mkElemVar Mock.xConfig)
     plain1OfXExpanded = Conditional
         { term = plain1OfX
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     bottomTerm = Conditional
         { term = mkBottom_
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     falsePredicate = Conditional
         { term = mkTop_
-        , predicate = makeFalsePredicate_
+        , predicate = makeFalsePredicate
         , substitution = mempty
         }
 
 makeAnd
-    :: [Pattern VariableName]
-    -> [Pattern VariableName]
-    -> And Sort (OrPattern VariableName)
+    :: [Pattern RewritingVariableName]
+    -> [Pattern RewritingVariableName]
+    -> And Sort (OrPattern RewritingVariableName)
 makeAnd first second =
     And
         { andSort = findSort (first ++ second)
@@ -440,20 +446,22 @@ makeAnd first second =
         , andSecond = OrPattern.fromPatterns second
         }
 
-findSort :: [Pattern VariableName] -> Sort
+findSort :: [Pattern RewritingVariableName] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
-evaluate :: And Sort (OrPattern VariableName) -> IO (OrPattern VariableName)
+evaluate
+    :: And Sort (OrPattern RewritingVariableName)
+    -> IO (OrPattern RewritingVariableName)
 evaluate And { andFirst, andSecond } =
     MultiAnd.make [andFirst, andSecond]
     & simplify Not.notSimplifier SideCondition.top
     & runSimplifier Mock.env
 
 evaluatePatterns
-    :: Pattern VariableName
-    -> Pattern VariableName
-    -> IO (OrPattern VariableName)
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 evaluatePatterns first second =
     MultiAnd.make [first, second]
     & makeEvaluate Not.notSimplifier SideCondition.top

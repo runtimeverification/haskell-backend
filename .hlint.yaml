@@ -86,29 +86,12 @@
 - ignore: {name: "Replace case with maybe"}
 - ignore: {name: "Hoist not"}
 
-# Permit existing duplication in tests.
-# Please reflect before adding new modules to this list.
-- ignore:
-    name: Reduce duplication
-    within:
-      - Test.Kore
-      - Test.Kore.AllPath
-      - Test.Kore.ASTVerifier.DefinitionVerifier.Imports
-      - Test.Kore.Builtin.Definition
-      - Test.Kore.Builtin.InternalBytes
-      - Test.Kore.Builtin.List
-      - Test.Kore.Builtin.Map
-      - Test.Kore.Builtin.Set
-      - Test.Kore.Exec
-      - Test.Kore.Internal.TermLike
-      - Test.Kore.Parser.Parser
-      - Test.Kore.Repl.Interpreter
-      - Test.Kore.Step.EquationalStep
-      - Test.Kore.Step.RewriteStep
-      - Test.Kore.Step.Rule.Combine
-      - Test.Kore.Step.Step
-      - Test.Kore.Step.Substitution
-      - Test.Kore.Strategies.AllPath.AllPath
+# Ignore suggestions to reduce duplication, because:
+#  - High rate of false positives
+#  - Suggestions are often not applicable
+#  - Difficult to ignore suggestion locally
+#  - Only detects exact duplication of text, not anything interesting
+- ignore: {name: "Reduce duplication"}
 
 # The placement of lambdas affects inlining.
 - ignore: {name: Redundant lambda}
@@ -121,6 +104,9 @@
 - ignore: {name: "Monad law, right identity", within: [Test.ListT]}
 - ignore: {name: "Use >=>", within: [Test.ListT]}
 - ignore: {name: "Redundant id", within: [Test.ListT]}
+
+# LANGUAGE Strict
+- ignore: {name: "Redundant irrefutable pattern"}
 
 - ignore:
     name: Use camelCase

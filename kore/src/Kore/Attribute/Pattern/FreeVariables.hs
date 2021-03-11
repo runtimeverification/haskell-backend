@@ -21,10 +21,10 @@ module Kore.Attribute.Pattern.FreeVariables
     , HasFreeVariables (..)
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( toList
+    )
 
-import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Map.Strict
     ( Map
@@ -119,8 +119,7 @@ bindVariables
     => f (SomeVariable variable)
     -> FreeVariables variable
     -> FreeVariables variable
-bindVariables bound free =
-    Foldable.foldl' (flip bindVariable) free bound
+bindVariables bound free = foldl' (flip bindVariable) free bound
 {-# INLINE bindVariables #-}
 
 isFreeVariable

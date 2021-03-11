@@ -1,13 +1,10 @@
 {-|
-Module      : Kore.Step.Axiom.Matcher
-Description : Matches free-form patterns which can be used when applying
-              Equals rules.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Axiom.Matcher
     ( MatchingVariable
     , MatchResult
@@ -36,12 +33,8 @@ import qualified Data.Align as Align
     ( align
     )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import Data.List
-    ( foldl'
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -64,14 +57,29 @@ import qualified Kore.Attribute.Pattern as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as List
-import qualified Kore.Domain.Builtin as Builtin
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
+import Kore.Internal.InternalSet hiding
+    ( Element
+    , NormalizedAc
+    , Value
+    )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import qualified Kore.Internal.NormalizedAc as Builtin
+    ( Element
+    , NormalizedAc
+    , Value
+    )
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
@@ -79,6 +87,9 @@ import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Overloading
     ( matchOverloading
@@ -122,20 +133,22 @@ instance Ord TermLikeClass where
 findClass :: Constraint variable -> TermLikeClass
 findClass (Constraint (Pair left _)) = findClassWorker left
   where
+    -- TODO (thomas.tuegel): Don't use pattern synonyms here!
     findClassWorker (Var_ _)           = Variables
     findClassWorker (ElemVar_ _)       = Variables
     findClassWorker (SetVar_ _)        = Variables
     findClassWorker (StringLiteral_ _) = ConcreteBuiltins
-    findClassWorker (BuiltinInt_ _)    = ConcreteBuiltins
-    findClassWorker (BuiltinBool_ _)   = ConcreteBuiltins
-    findClassWorker (BuiltinString_ _) = ConcreteBuiltins
+    findClassWorker (InternalBytes_ _ _) = ConcreteBuiltins
+    findClassWorker (InternalInt_ _)   = ConcreteBuiltins
+    findClassWorker (InternalBool_ _)   = ConcreteBuiltins
+    findClassWorker (InternalString_ _) = ConcreteBuiltins
     findClassWorker (App_ symbol _) =
         if Symbol.isConstructor symbol
             then ConstructorAtTop
             else OtherTermLike
-    findClassWorker (BuiltinList_ _)   = ListBuiltin
-    findClassWorker (BuiltinSet_ _)    = AssocCommBuiltin
-    findClassWorker (BuiltinMap_ _)    = AssocCommBuiltin
+    findClassWorker (InternalList_ _)   = ListBuiltin
+    findClassWorker (InternalSet_ _)    = AssocCommBuiltin
+    findClassWorker (InternalMap_ _)    = AssocCommBuiltin
     findClassWorker _                  = OtherTermLike
 
 instance Ord variable => Ord (Constraint variable) where
@@ -157,12 +170,13 @@ pair, it is deferred until we have more information.
 
  -}
 matchOne
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MatcherT variable simplifier ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MatcherT RewritingVariableName simplifier ()
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
+    <|> matchAnd         pair
     <|> matchExists      pair
     <|> matchForall      pair
     <|> matchApplication pair
@@ -182,15 +196,19 @@ deferred constraints, then matching fails.
 
  -}
 matchIncremental
-    :: forall variable simplifier
-    .  (MatchingVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> simplifier (Maybe (MatchResult variable))
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (Maybe (MatchResult RewritingVariableName))
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
-    matcher :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    matcher
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -207,7 +225,11 @@ matchIncremental termLike1 termLike2 =
     free2 = (FreeVariables.toNames . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable simplifier (Maybe (MatchResult variable))
+    done
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (Maybe (MatchResult RewritingVariableName))
     done = do
         MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
@@ -215,7 +237,11 @@ matchIncremental termLike1 termLike2 =
             then Just <$> assembleResult
             else return Nothing
 
-    assembleResult :: MatcherT variable simplifier (MatchResult variable)
+    assembleResult
+        :: MatcherT
+            RewritingVariableName
+            simplifier
+            (MatchResult RewritingVariableName)
     assembleResult = do
         final <- Monad.State.get
         let MatcherState { predicate, substitution } = final
@@ -230,11 +256,11 @@ matchEqualHeads
 -- Terminal patterns
 matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
     Monad.guard (string1 == string2)
-matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
+matchEqualHeads (Pair (InternalInt_ int1) (InternalInt_ int2)) =
     Monad.guard (int1 == int2)
-matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =
+matchEqualHeads (Pair (InternalBool_ bool1) (InternalBool_ bool2)) =
     Monad.guard (bool1 == bool2)
-matchEqualHeads (Pair (BuiltinString_ string1) (BuiltinString_ string2)) =
+matchEqualHeads (Pair (InternalString_ string1) (InternalString_ string2)) =
     Monad.guard (string1 == string2)
 matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
     return ()
@@ -302,9 +328,9 @@ matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     someVariableName2 = variableName someVariable2
 
 matchVariable
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchVariable (Pair (Var_ variable1) (Var_ variable2))
   | variable1 == variable2 = return ()
 matchVariable (Pair (ElemVar_ variable1) term2) = do
@@ -323,36 +349,36 @@ matchApplication
     -> MaybeT (MatcherT variable simplifier) ()
 matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
     Monad.guard (symbol1 == symbol2)
-    Foldable.traverse_ push (zipWith Pair children1 children2)
+    traverse_ push (zipWith Pair children1 children2)
 matchApplication _ = empty
 
 matchBuiltinList
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinList (Pair (BuiltinList_ list1) (BuiltinList_ list2)) = do
+matchBuiltinList (Pair (InternalList_ list1) (InternalList_ list2)) = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Monad.guard (null tail2)
-    Foldable.traverse_ push aligned
-matchBuiltinList (Pair (App_ symbol1 children1) (BuiltinList_ list2))
+    traverse_ push aligned
+matchBuiltinList (Pair (App_ symbol1 children1) (InternalList_ list2))
   | List.isSymbolConcat symbol1 = matchBuiltinListConcat children1 list2
 matchBuiltinList _ = empty
 
 matchBuiltinListConcat
     :: (MatchingVariable variable, Monad simplifier)
     => [TermLike variable]
-    -> Builtin.InternalList (TermLike variable)
+    -> InternalList (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
 
-matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
+matchBuiltinListConcat [InternalList_ list1, frame1] list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
-    Foldable.traverse_ push aligned
-    push (Pair frame1 (mkBuiltinList tail2))
+    traverse_ push aligned
+    push (Pair frame1 (mkInternalList tail2))
 
-matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
+matchBuiltinListConcat [frame1, InternalList_ list1] list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
-    push (Pair frame1 (mkBuiltinList head2))
-    Foldable.traverse_ push aligned
+    push (Pair frame1 (mkInternalList head2))
+    traverse_ push aligned
 
 matchBuiltinListConcat _ _ = empty
 
@@ -360,38 +386,38 @@ matchBuiltinSet
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
+matchBuiltinSet (Pair (InternalSet_ set1) (InternalSet_ set2)) =
     matchNormalizedAc pushSetElement pushSetValue wrapTermLike normalized1 normalized2
   where
-    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
-    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
+    normalized1 = unwrapAc $ builtinAcChild set1
+    normalized2 = unwrapAc $ builtinAcChild set2
     pushSetValue _ = return ()
-    pushSetElement = push . fmap Builtin.getSetElement
+    pushSetElement = push . fmap getSetElement
     wrapTermLike unwrapped =
         set2
-        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
-        & mkBuiltinSet
+        & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
+        & mkInternalSet
 matchBuiltinSet _ = empty
 
 matchBuiltinMap
     :: (MatchingVariable variable, Monad simplifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable simplifier) ()
-matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
+matchBuiltinMap (Pair (InternalMap_ map1) (InternalMap_ map2)) =
     matchNormalizedAc pushMapElement pushMapValue wrapTermLike normalized1 normalized2
   where
-    normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
-    normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
-    pushMapValue = push . fmap Builtin.getMapValue
+    normalized1 = unwrapAc $ builtinAcChild map1
+    normalized2 = unwrapAc $ builtinAcChild map2
+    pushMapValue = push . fmap getMapValue
     pushMapElement (Pair element1 element2) = do
-        let (key1, value1) = Builtin.getMapElement element1
-            (key2, value2) = Builtin.getMapElement element2
+        let (key1, value1) = getMapElement element1
+            (key2, value2) = getMapElement element2
         push (Pair key1 key2)
         push (Pair value1 value2)
     wrapTermLike unwrapped =
         map2
-        & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
-        & mkBuiltinMap
+        & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
+        & mkInternalMap
 matchBuiltinMap _ = empty
 
 matchInj
@@ -404,9 +430,9 @@ matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
 matchInj _ = empty
 
 matchOverload
-    :: (MatchingVariable variable, MonadSimplify simplifier)
-    => Pair (TermLike variable)
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: MonadSimplify simplifier
+    => Pair (TermLike RewritingVariableName)
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 matchOverload termPair = Error.hushT (matchOverloading termPair) >>= push
 
 matchDefined
@@ -417,6 +443,15 @@ matchDefined (Pair term1 term2)
   | Defined_ def1 <- term1 = push (Pair def1 term2)
   | Defined_ def2 <- term2 = push (Pair term1 def2)
   | otherwise = empty
+
+matchAnd
+    :: (MatchingVariable variable, MonadSimplify simplifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable simplifier) ()
+matchAnd (Pair term1 term2)
+    | And_ _ conj1 conj2 <- term1 =
+        push (Pair conj1 term2) >> push (Pair conj2 term2)
+    | otherwise = empty
 
 -- * Implementation
 
@@ -491,11 +526,11 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
 
  -}
 substitute
-    :: forall simplifier variable
-    .  (MatchingVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
-    -> TermLike variable
-    -> MaybeT (MatcherT variable simplifier) ()
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => ElementVariable RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT (MatcherT RewritingVariableName simplifier) ()
 substitute eVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
@@ -513,7 +548,7 @@ substitute eVariable termLike = do
     field @"deferred" .= indep
 
     -- Push the dependent deferred pairs to the front of the queue.
-    Foldable.traverse_ push dep
+    traverse_ push dep
 
     Monad.State.get
         -- Apply the substitution to the queued pairs.
@@ -531,20 +566,24 @@ substitute eVariable termLike = do
     subst = Map.singleton variableName termLike
 
     substitute2
-        :: Constraint variable
-        -> MaybeT (MatcherT variable simplifier) (Constraint variable)
+        :: Constraint RewritingVariableName
+        -> MaybeT
+            (MatcherT RewritingVariableName simplifier)
+            (Constraint RewritingVariableName)
     substitute2 (Constraint pair) =
         Constraint <$> traverse substitute1 pair
 
     substitute1
-        :: TermLike variable
-        -> MaybeT (MatcherT variable simplifier) (TermLike variable)
+        :: TermLike RewritingVariableName
+        -> MaybeT
+            (MatcherT RewritingVariableName simplifier)
+            (TermLike RewritingVariableName)
     substitute1 termLike' = do
         injSimplifier <- Simplifier.askInjSimplifier
         termLike'
             & TermLike.substitute subst
             -- Injected Map and Set keys must be properly normalized before
-            -- calling Builtin.renormalize.
+            -- calling renormalize.
             & InjSimplifier.normalize injSimplifier
             & renormalizeBuiltins
             & return
@@ -575,7 +614,7 @@ setSubstitute sVariable termLike = do
     field @"deferred" .= indep
 
     -- Push the dependent deferred pairs to the front of the queue.
-    Foldable.traverse_ push dep
+    traverse_ push dep
     -- Apply the substitution to the queued pairs.
     field @"queued" . transformQueue Lens.mapped %= substitute2
 
@@ -625,7 +664,7 @@ definedTerm termLike
   | isDefinedPattern termLike = return ()
   | otherwise = field @"predicate" <>= definedTermLike
   where
-    definedTermLike = MultiAnd.make [makeCeilPredicate_ termLike]
+    definedTermLike = MultiAnd.make [makeCeilPredicate termLike]
 
 {- | Ensure that the given variable is a target variable.
 
@@ -687,42 +726,42 @@ liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (Pair (TermLike variable))
-            , Builtin.InternalList (TermLike variable)
+            ( InternalList (Pair (TermLike variable))
+            , InternalList (TermLike variable)
             )
 leftAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = list12 }
-        , internal1 { Builtin.builtinListChild = tail2 }
+        ( internal1 { internalListChild = list12 }
+        , internal1 { internalListChild = tail2 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 head2
     (head2, tail2) = Seq.splitAt (length list1) list2
 
 rightAlignLists
-    ::  Builtin.InternalList (TermLike variable)
-    ->  Builtin.InternalList (TermLike variable)
+    ::  InternalList (TermLike variable)
+    ->  InternalList (TermLike variable)
     ->  Maybe
-            ( Builtin.InternalList (TermLike variable)
-            , Builtin.InternalList (Pair (TermLike variable))
+            ( InternalList (TermLike variable)
+            , InternalList (Pair (TermLike variable))
             )
 rightAlignLists internal1 internal2
   | length list2 < length list1 = empty
   | otherwise =
     return
-        ( internal1 { Builtin.builtinListChild = head2 }
-        , internal1 { Builtin.builtinListChild = list12 }
+        ( internal1 { internalListChild = head2 }
+        , internal1 { internalListChild = list12 }
         )
   where
-    list1 = Builtin.builtinListChild internal1
-    list2 = Builtin.builtinListChild internal2
+    list1 = internalListChild internal1
+    list2 = internalListChild internal2
     list12 = Seq.zipWith Pair list1 tail2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
@@ -735,11 +774,11 @@ type Value normalized variable =
     Builtin.Value normalized (TermLike variable)
 
 type NormalizedAc normalized variable =
-    Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
+    Builtin.NormalizedAc normalized Key (TermLike variable)
 
 matchNormalizedAc
     :: forall normalized simplifier variable
-    .   ( Builtin.AcWrapper normalized
+    .   ( AcWrapper normalized
         , MatchingVariable variable
         , Monad simplifier
         )
@@ -766,52 +805,52 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
             | otherwise ->
                 let normalized2' =
                         wrapTermLike normalized2
-                            { Builtin.concreteElements = excessConcrete2
-                            , Builtin.elementsWithVariables = excessAbstract2
+                            { concreteElements = excessConcrete2
+                            , elementsWithVariables = excessAbstract2
                             }
                  in push (Pair frame1 normalized2')
           _ -> empty
-      lift $ Foldable.traverse_ pushValue concrete12
-      lift $ Foldable.traverse_ pushValue abstractMerge
+      lift $ traverse_ pushValue concrete12
+      lift $ traverse_ pushValue abstractMerge
     | [element1] <- abstract1
     , [frame1] <- opaque1
     , null concrete1 = do
-        let (key1, value1) = Builtin.unwrapElement element1
-        case Builtin.lookupSymbolicKeyOfAc key1 normalized2 of
+        let (key1, value1) = unwrapElement element1
+        case lookupSymbolicKeyOfAc key1 normalized2 of
             Just value2 -> lift $ do
                 pushValue (Pair value1 value2)
                 let normalized2' =
                         wrapTermLike
-                        $ Builtin.removeSymbolicKeyOfAc key1 normalized2
+                        $ removeSymbolicKeyOfAc key1 normalized2
                 push (Pair frame1 normalized2')
             Nothing ->
                 case (headMay . Map.toList $ concrete2, headMay abstract2) of
                     (Just concreteElement2, _) -> lift $ do
                         let liftedConcreteElement2 =
-                                Builtin.wrapElement
-                                $ Bifunctor.first TermLike.fromConcrete concreteElement2
+                                Bifunctor.first (from @Key) concreteElement2
+                                & wrapElement
                         pushElement (Pair element1 liftedConcreteElement2)
                         let (key2, _) = concreteElement2
                             normalized2' =
                                 wrapTermLike
-                                $ Builtin.removeConcreteKeyOfAc key2 normalized2
+                                $ removeConcreteKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     (_, Just abstractElement2) -> lift $ do
                         pushElement (Pair element1 abstractElement2)
-                        let (key2, _) = Builtin.unwrapElement abstractElement2
+                        let (key2, _) = unwrapElement abstractElement2
                             normalized2' =
                                 wrapTermLike
-                                $ Builtin.removeSymbolicKeyOfAc key2 normalized2
+                                $ removeSymbolicKeyOfAc key2 normalized2
                         push (Pair frame1 normalized2')
                     _ -> empty
     | otherwise = empty
   where
-    abstract1 = Builtin.elementsWithVariables normalized1
-    concrete1 = Builtin.concreteElements normalized1
-    opaque1 = Builtin.opaque normalized1
-    abstract2 = Builtin.elementsWithVariables normalized2
-    concrete2 = Builtin.concreteElements normalized2
-    opaque2 = Builtin.opaque normalized2
+    abstract1 = elementsWithVariables normalized1
+    concrete1 = concreteElements normalized1
+    opaque1 = opaque normalized1
+    abstract2 = elementsWithVariables normalized2
+    concrete2 = concreteElements normalized2
+    opaque2 = opaque normalized2
 
     excessConcrete1 = Map.difference concrete1 concrete2
     excessConcrete2 = Map.difference concrete2 concrete1
@@ -824,11 +863,11 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
         } = abstractIntersectionMerge abstract1 abstract2
 
     abstractIntersectionMerge
-        :: [Builtin.Element normalized (TermLike variable)]
-        -> [Builtin.Element normalized (TermLike variable)]
+        :: [Element normalized variable]
+        -> [Element normalized variable]
         -> IntersectionDifference
-            (Builtin.Element normalized (TermLike variable))
-            (Pair (Builtin.Value normalized (TermLike variable)))
+            (Element normalized variable)
+            (Pair (Value normalized variable))
     abstractIntersectionMerge first second =
         keyBasedIntersectionDifference
             elementMerger
@@ -836,10 +875,8 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
             (toMap second)
       where
         toMap
-            :: [Builtin.Element normalized (TermLike variable)]
-            -> Map
-                (TermLike variable)
-                (Builtin.Element normalized (TermLike variable))
+            :: [Element normalized variable]
+            -> Map (TermLike variable) (Element normalized variable)
         toMap elements =
             let elementMap =
                     Map.fromList
@@ -851,14 +888,14 @@ matchNormalizedAc pushElement pushValue wrapTermLike normalized1 normalized2
                 then elementMap
                 else error "Invalid map: duplicated keys."
         elementKey
-            :: Builtin.Element normalized (TermLike variable)
+            :: Element normalized variable
             -> TermLike variable
-        elementKey = fst . Builtin.unwrapElement
+        elementKey = fst . unwrapElement
         elementMerger
-            :: Builtin.Element normalized (TermLike variable)
-            -> Builtin.Element normalized (TermLike variable)
-            -> Pair (Builtin.Value normalized (TermLike variable))
-        elementMerger = Pair `on` (snd . Builtin.unwrapElement)
+            :: Element normalized variable
+            -> Element normalized variable
+            -> Pair (Value normalized variable)
+        elementMerger = Pair `on` (snd . unwrapElement)
 
 data IntersectionDifference a b
     = IntersectionDifference
@@ -910,10 +947,10 @@ renormalizeBuiltins =
     Recursive.fold $ \base@(attrs :< termLikeF) ->
     let bottom' = mkBottom (Attribute.Pattern.patternSort attrs) in
     case termLikeF of
-        BuiltinF (Builtin.BuiltinMap internalMap) ->
+        InternalMapF internalMap ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
-            & maybe bottom' mkBuiltinMap
-        BuiltinF (Builtin.BuiltinSet internalSet) ->
+            & maybe bottom' mkInternalMap
+        InternalSetF internalSet ->
             Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
-            & maybe bottom' mkBuiltinSet
+            & maybe bottom' mkInternalSet
         _ -> Recursive.embed base

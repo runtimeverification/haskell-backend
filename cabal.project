@@ -6,8 +6,25 @@ allow-newer:
 
 package *
   ghc-options: -fhide-source-paths
-  ghc-options: -fno-prof-auto
+  profiling-detail: none
 
 package kore
   ghc-options: -Wall -Werror
-  ghc-options: -fprof-auto-top
+  profiling-detail: toplevel-functions
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-sqlite-simple.git
+  tag: a3920f053f92e76f2a7ff7c68e34f9e926817702
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-ghc-events.git
+  tag: 780b479300bd165f58b3bdd5f941ea81844fc937
+  subdir: eventlog2speedscope
+
+source-repository-package
+  type: git
+  location: https://github.com/ttuegel/pipes-ghc-events.git
+  tag: 780b479300bd165f58b3bdd5f941ea81844fc937
+  subdir: pipes-ghc-events

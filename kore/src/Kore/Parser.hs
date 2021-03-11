@@ -26,17 +26,22 @@ module Kore.Parser
     ( parseKoreDefinition
     , parseKorePattern
     , koreParser
-    , korePatternParser
+    , Parser.parsePattern
     , ParsedPattern
-    , Parser.asParsedPattern
+    , Parser.embedParsedPattern
     , ParsedDefinition
     ) where
 
 import Prelude.Kore
 
-import Kore.Parser.Lexeme
-    ( skipWhitespace
+import Data.Text
+    ( Text
     )
+import Text.Megaparsec
+    ( eof
+    )
+
+import qualified Kore.Parser.Lexer as Lexer
 import qualified Kore.Parser.Parser as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
@@ -45,14 +50,7 @@ import Kore.Syntax.Definition
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser ParsedDefinition
-koreParser = skipWhitespace *> Parser.koreDefinitionParser <* endOfInput
-
-{-|'korePatternParser' is a parser for Kore patterns.
-
-The input must contain a full valid Kore pattern and nothing else.
--}
-korePatternParser :: Parser ParsedPattern
-korePatternParser = Parser.korePatternParser
+koreParser = Lexer.space *> Parser.parseDefinition <* eof
 
 {- | Parse a string representing a Kore definition.
 
@@ -63,9 +61,9 @@ else.
  -}
 parseKoreDefinition
     :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore definition
+    -> Text  -- ^ The concrete syntax of a valid Kore definition
     -> Either String ParsedDefinition
-parseKoreDefinition = parseOnly (skipWhitespace *> koreParser)
+parseKoreDefinition = parseOnly (Lexer.space *> koreParser)
 
 {- | Parse a string representing a Kore pattern.
 
@@ -75,6 +73,6 @@ message otherwise. The input must contain a valid Kore pattern and nothing else.
  -}
 parseKorePattern
     :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore pattern
+    -> Text  -- ^ The concrete syntax of a valid Kore pattern
     -> Either String ParsedPattern
-parseKorePattern = parseOnly (skipWhitespace *> korePatternParser)
+parseKorePattern = parseOnly (Lexer.space *> Parser.parsePattern)

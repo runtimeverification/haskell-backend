@@ -18,12 +18,11 @@ module Kore.Step.SMT.Evaluator
 import Prelude.Kore
 
 import Control.Error
-    ( hoistMaybe
+    ( MaybeT
     , runMaybeT
     )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
@@ -64,6 +63,9 @@ import Kore.Log.DebugEvaluateCondition
     )
 import Kore.Log.ErrorDecidePredicateUnknown
     ( errorDecidePredicateUnknown
+    )
+import Kore.Log.WarnRetrySolverQuery
+    ( warnRetrySolverQuery
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.SMT.Translate
@@ -148,7 +150,7 @@ filterMultiOr
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
-    elements <- mapM refute (Foldable.toList multiOr)
+    elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
     refute
@@ -172,19 +174,37 @@ decidePredicate
     => NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
 decidePredicate predicates =
-    whileDebugEvaluateCondition predicates
-    $ SMT.withSolver $ runMaybeT $ evalTranslator $ do
-        tools <- Simplifier.askMetadataTools
-        predicates' <- traverse (translatePredicate tools) predicates
-        Foldable.traverse_ SMT.assert predicates'
-        result <- SMT.check
-        debugEvaluateConditionResult result
-        case result of
-            Unsat -> return False
-            Sat -> empty
-            Unknown -> do
-                errorDecidePredicateUnknown predicates
-                empty
+    whileDebugEvaluateCondition predicates go
+  where
+    go =
+        do
+            result <- query >>= whenUnknown retry
+            debugEvaluateConditionResult result
+            case result of
+                Unsat -> return False
+                Sat -> empty
+                Unknown ->
+                    errorDecidePredicateUnknown predicates
+        & runMaybeT
+
+    whenUnknown f Unknown = f
+    whenUnknown _ result  = return result
+
+    -- | Run the SMT query once.
+    query :: MaybeT simplifier Result
+    query =
+        SMT.withSolver . evalTranslator $ do
+            tools <- Simplifier.askMetadataTools
+            predicates' <- traverse (translatePredicate tools) predicates
+            traverse_ SMT.assert predicates'
+            SMT.check
+
+    -- | Re-run the SMT query.
+    retry = do
+        SMT.reinit
+        result <- query
+        warnRetrySolverQuery predicates
+        return result
 
 translatePredicate
     :: forall variable m.
@@ -194,7 +214,7 @@ translatePredicate
         )
     => SmtMetadataTools Attribute.Symbol
     -> Predicate variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translatePredicate tools predicate =
     give tools $ translatePredicateWith translateTerm predicate
 
@@ -205,7 +225,7 @@ translateTerm
     => MonadLog m
     => SExpr  -- ^ type name
     -> TranslateItem variable  -- ^ uninterpreted pattern
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 translateTerm smtType (QuantifiedVariable var) = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
@@ -256,16 +276,17 @@ lookupVariable
     :: InternalVariable variable
     => Monad m
     => TermLike.ElementVariable variable
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 lookupVariable var =
     lookupQuantifiedVariable <|> lookupFreeVariable
   where
     lookupQuantifiedVariable = do
         TranslatorState { quantifiedVars } <- State.get
-        hoistMaybe $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
+        maybeToTranslator
+            $ SMT.Atom . smtName <$> Map.lookup var quantifiedVars
     lookupFreeVariable = do
         TranslatorState { freeVars} <- State.get
-        hoistMaybe $ Map.lookup var freeVars
+        maybeToTranslator $ Map.lookup var freeVars
 
 declareVariable
     :: InternalVariable variable
@@ -273,7 +294,7 @@ declareVariable
     => MonadLog m
     => SExpr  -- ^ type name
     -> TermLike.ElementVariable variable  -- ^ variable to be declared
-    -> Translator m variable SExpr
+    -> Translator variable m SExpr
 declareVariable t variable = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
@@ -287,7 +308,7 @@ logVariableAssignment
     => MonadLog m
     => Counter.Natural
     -> TermLike variable  -- ^ variable to be declared
-    -> Translator m variable ()
+    -> Translator variable m ()
 logVariableAssignment n pat =
     logDebug
     . Text.pack . show

@@ -7,6 +7,7 @@ module Kore.Reachability.ClaimState
     , extractUnproven
     , extractStuck
     , retractRewritable, isRewritable
+    , isRemaining
     , ClaimState (..)
     , claimState
     , ClaimStateTransformer (..)
@@ -14,9 +15,6 @@ module Kore.Reachability.ClaimState
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -100,6 +98,9 @@ retractRewritable _             = Nothing
 
 isRewritable :: ClaimState a -> Bool
 isRewritable = isJust . retractRewritable
+
+isRemaining :: ClaimState a -> Bool
+isRemaining = isJust . extractRemaining
 
 data ClaimStateTransformer a val =
     ClaimStateTransformer

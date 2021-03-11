@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE Strict          #-}
 
 module Test.Kore.Step.Simplification.SubstitutionSimplifier
     ( test_SubstitutionSimplifier
@@ -18,6 +19,9 @@ import Kore.Internal.Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -178,9 +182,12 @@ test_SubstitutionSimplifier =
     test
         :: HasCallStack
         => TestName
-        -> [(SomeVariable VariableName, TermLike VariableName)]
+        ->  [   ( SomeVariable RewritingVariableName
+                , TermLike RewritingVariableName
+                )
+            ]
         -- ^ Test input
-        -> [Normalization VariableName]
+        -> [Normalization RewritingVariableName]
         -- ^ Expected normalized, denormalized outputs
         -> TestTree
     test
@@ -198,8 +205,7 @@ test_SubstitutionSimplifier =
                     actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
-                assertEqual ""
-                    (fixExpectedSorts expect actualConditions)
+                assertEqual "" expect
                     actualConditions
                 assertBool "Expected normalized substitutions"
                     (all Substitution.isNormalized actualSubstitutions)
@@ -215,7 +221,7 @@ test_SubstitutionSimplifier =
                         (fmap . fmap) Condition.substitution actualConditions
                     allNormalized = (all . all) Substitution.isNormalized
                     expectSorted =
-                        fixExpectedSorts expect <$> actualConditions
+                        expect <$ actualConditions
                 assertEqual ""
                     expectSorted
                     actualConditions
@@ -223,32 +229,30 @@ test_SubstitutionSimplifier =
                     (allNormalized actualSubstitutions)
             ]
 
-    fixExpectedSorts expect actual =
-        case actual of
-            [] -> expect
-            first:_ ->
-                let sort = Condition.conditionSort first
-                in Condition.coerceSort sort <$> expect
+x, y, z, xs, ys :: SomeVariable RewritingVariableName
+x = inject Mock.xConfig
+y = inject Mock.yConfig
+z = inject Mock.zConfig
+xs = inject Mock.setXConfig
+ys = inject Mock.setYConfig
 
-x, y, z, xs, ys :: SomeVariable VariableName
-x = inject Mock.x
-y = inject Mock.y
-z = inject Mock.z
-xs = inject Mock.setX
-ys = inject Mock.setY
-
-a, b, c :: TermLike VariableName
+a, b, c :: TermLike RewritingVariableName
 a = Mock.a
 b = Mock.b
 c = Mock.c
 
-f, g, h, constr1 :: TermLike VariableName -> TermLike VariableName
+f, g, h, constr1
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 f = Mock.f
 g = Mock.g
 h = Mock.h
 constr1 = Mock.constr10
 
-sigma :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+sigma
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sigma = Mock.sigma
 
 testSort :: Sort

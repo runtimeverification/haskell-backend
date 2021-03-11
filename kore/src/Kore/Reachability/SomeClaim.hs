@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Reachability.SomeClaim
     ( SomeClaim (..)
+    , mkSomeClaimOnePath
+    , mkSomeClaimAllPath
     , makeTrusted
     , getConfiguration
     , getDestination
@@ -20,9 +22,6 @@ module Kore.Reachability.SomeClaim
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
 import Data.Coerce
     ( coerce
@@ -42,7 +41,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.TermLike
-    ( VariableName
+    ( ElementVariable
+    , VariableName
     )
 import Kore.Reachability.AllPathClaim
 import Kore.Reachability.Claim
@@ -84,6 +84,22 @@ data SomeClaim
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+mkSomeClaimAllPath
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> SomeClaim
+mkSomeClaimAllPath left right existentials =
+    AllPath (mkAllPathClaim left right existentials)
+
+mkSomeClaimOnePath
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> SomeClaim
+mkSomeClaimOnePath left right existentials =
+    OnePath (mkOnePathClaim left right existentials)
 
 instance Unparse SomeClaim where
     unparse (OnePath rule) = unparse rule

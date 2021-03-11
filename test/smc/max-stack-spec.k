@@ -14,7 +14,7 @@ module MAX-STACK-SPEC
   imports VERIFICATION
   imports SMC
 
-  rule
+  claim
     <k>
       if (a <= b)
       { max = b; }

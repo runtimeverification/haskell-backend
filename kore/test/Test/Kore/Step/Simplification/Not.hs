@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Not
     ( test_simplifyEvaluated
     ) where
@@ -8,8 +10,6 @@ import Test.Tasty
     ( TestTree
     )
 
-import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -19,21 +19,15 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( top
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
 import qualified Pretty
 
-import Test.Kore.Internal.OrPattern
-    ( OrTestPattern
-    )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
-import Test.Kore.Internal.Pattern
-    ( TestPattern
-    )
 import qualified Test.Kore.Internal.Pattern as Pattern
-import Test.Kore.Internal.Predicate
-    ( TestPredicate
-    )
 import qualified Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -57,8 +51,8 @@ test_simplifyEvaluated =
   where
     becomes_
         :: HasCallStack
-        => [TestPattern]
-        -> [TestPattern]
+        => [Pattern.Pattern RewritingVariableName]
+        -> [Pattern.Pattern RewritingVariableName]
         -> TestTree
     becomes_ originals expecteds =
         testCase "becomes" $ do
@@ -82,15 +76,15 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
           where
-            actuals = Foldable.toList actual
+            actuals = toList actual
     patternBecomes
         :: HasCallStack
-        => TestPattern
-        -> [TestPattern]
+        => Pattern.Pattern RewritingVariableName
+        -> [Pattern.Pattern RewritingVariableName]
         -> TestTree
     patternBecomes original expecteds =
         testCase "patternBecomes" $ do
-            let actuals = Foldable.toList $ Not.makeEvaluate original
+            let actuals = toList $ Not.makeEvaluate original
             assertEqual (message actuals) expecteds actuals
       where
         message actuals =
@@ -103,54 +97,54 @@ test_simplifyEvaluated =
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
                 ]
 
-termX :: TestPattern
-termX = Pattern.fromTermLike (mkElemVar Mock.x)
+termX :: Pattern.Pattern RewritingVariableName
+termX = Pattern.fromTermLike (mkElemVar Mock.xConfig)
 
-termY :: TestPattern
-termY = Pattern.fromTermLike (mkElemVar Mock.y)
+termY :: Pattern.Pattern RewritingVariableName
+termY = Pattern.fromTermLike (mkElemVar Mock.yConfig)
 
-termXAndY :: TestPattern
+termXAndY :: Pattern.Pattern RewritingVariableName
 termXAndY = mkAnd <$> termX <*> termY
 
-termNotXAndY :: TestPattern
+termNotXAndY :: Pattern.Pattern RewritingVariableName
 termNotXAndY = mkAnd <$> termNotX <*> termY
 
-termNotX :: TestPattern
+termNotX :: Pattern.Pattern RewritingVariableName
 termNotX = mkNot <$> termX
 
-termNotY :: TestPattern
+termNotY :: Pattern.Pattern RewritingVariableName
 termNotY = mkNot <$> termY
 
-xAndEqualsXA :: TestPattern
+xAndEqualsXA :: Pattern.Pattern RewritingVariableName
 xAndEqualsXA = const <$> termX <*> equalsXA
 
-equalsXAWithSortedBottom :: TestPattern
+equalsXAWithSortedBottom :: Pattern.Pattern RewritingVariableName
 equalsXAWithSortedBottom = Conditional
     { term = mkBottom Mock.testSort
     , predicate = equalsXA_
     , substitution = mempty
     }
 
-equalsXA :: TestPattern
+equalsXA :: Pattern.Pattern RewritingVariableName
 equalsXA = fromPredicate equalsXA_
 
-equalsXB :: TestPattern
+equalsXB :: Pattern.Pattern RewritingVariableName
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: TestPredicate
-equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
+equalsXA_ :: Predicate.Predicate RewritingVariableName
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a
 
-equalsXB_ :: TestPredicate
-equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
+equalsXB_ :: Predicate.Predicate RewritingVariableName
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b
 
-notEqualsXA :: TestPattern
+notEqualsXA :: Pattern.Pattern RewritingVariableName
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
-notEqualsXASorted :: TestPattern
+notEqualsXASorted :: Pattern.Pattern RewritingVariableName
 notEqualsXASorted =
     Pattern.coerceSort Mock.testSort notEqualsXA
 
-neitherXAB :: TestPattern
+neitherXAB :: Pattern.Pattern RewritingVariableName
 neitherXAB =
     Pattern.coerceSort Mock.testSort
     $ fromPredicate
@@ -158,29 +152,33 @@ neitherXAB =
         (Predicate.makeNotPredicate equalsXA_)
         (Predicate.makeNotPredicate equalsXB_)
 
-substXA :: TestPattern
-substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.x, Mock.a)]
+substXA :: Pattern.Pattern RewritingVariableName
+substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.xConfig, Mock.a)]
 
-forceTermSort :: TestPattern -> TestPattern
+forceTermSort
+    :: Pattern.Pattern RewritingVariableName
+    -> Pattern.Pattern RewritingVariableName
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: TestPredicate -> TestPattern
+fromPredicate
+    :: Predicate.Predicate RewritingVariableName
+    -> Pattern.Pattern RewritingVariableName
 fromPredicate =
     forceTermSort
     . Pattern.fromCondition_
     . Condition.fromPredicate
 
 fromSubstitution
-    :: TestSubstitution
-    -> TestPattern
+    :: Substitution RewritingVariableName
+    -> Pattern.Pattern RewritingVariableName
 fromSubstitution =
     forceTermSort
     . Pattern.fromCondition_
     . Condition.fromSubstitution
 
 simplifyEvaluated
-    :: OrTestPattern
-    -> IO OrTestPattern
+    :: OrPattern.OrPattern RewritingVariableName
+    -> IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated =
     runSimplifier mockEnv . Not.simplifyEvaluated SideCondition.top
   where

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
@@ -6,25 +8,39 @@ module Test.Kore.Builtin.Definition where
 import Prelude.Kore
 
 import qualified Data.Bifunctor as Bifunctor
+import Data.ByteString
+    ( ByteString
+    )
+import qualified Data.ByteString as ByteString
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromJust
+    )
 import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
+import Data.Word
+    ( Word8
+    )
 
+import Kore.Attribute.Concat hiding
+    ( concatAttribute
+    )
+import qualified Kore.Attribute.Concat as Sort
 import Kore.Attribute.Constructor
+import Kore.Attribute.Element hiding
+    ( elementAttribute
+    )
+import qualified Kore.Attribute.Element as Sort
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-import qualified Kore.Attribute.Sort.Concat as Sort
-import qualified Kore.Attribute.Sort.Element as Sort
 import Kore.Attribute.Sort.HasDomainValues
     ( hasDomainValuesAttribute
     )
-import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Subsort
     ( subsortAttribute
@@ -32,13 +48,21 @@ import Kore.Attribute.Subsort
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import Kore.Attribute.Unit hiding
+    ( unitAttribute
+    )
+import qualified Kore.Attribute.Unit as Sort
 import qualified Kore.Builtin as Builtin
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
-import Kore.Domain.Builtin
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalBool
+import Kore.Internal.InternalBytes
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+import Kore.Internal.InternalString
 import Kore.Internal.Symbol
     ( constructor
     , function
@@ -53,9 +77,15 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
-    , bytesSort
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
+import Kore.Syntax
+    ( Const (..)
     )
 import Kore.Syntax.Definition as Syntax
+import qualified Kore.Syntax.PatternF as PatternF
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -117,17 +147,18 @@ impliesBoolSymbol =
     binaryBoolSymbol "impliesBool"
     & hook "BOOL.implies" & smthook "=>"
 
-notBool :: TermLike VariableName -> TermLike VariableName
+notBool :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 notBool x = mkApplySymbol notBoolSymbol [x]
 
-andBool, impliesBool, eqBool, orBool
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+andBool, impliesBool, eqBool, orBool, andThenBool
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 andBool x y = mkApplySymbol andBoolSymbol [x, y]
 impliesBool x y = mkApplySymbol impliesBoolSymbol [x, y]
 eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
 orBool x y = mkApplySymbol orBoolSymbol [x, y]
+andThenBool x y = mkApplySymbol andThenBoolSymbol [x, y]
 
 -- ** Int
 
@@ -256,13 +287,22 @@ emodIntSymbol =
 dummyIntSymbol :: Internal.Symbol
 dummyIntSymbol = unaryIntSymbol "f" & function
 
-dummyInt :: TermLike VariableName -> TermLike VariableName
+dummyInt
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
 
+dummyFunctionalIntSymbol :: Internal.Symbol
+dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
+
+dummyFunctionalInt
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
+dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
+
 addInt, subInt, mulInt, divInt, tdivInt, tmodInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 addInt i j = mkApplySymbol addIntSymbol  [i, j]
 subInt i j = mkApplySymbol subIntSymbol  [i, j]
 mulInt i j = mkApplySymbol mulIntSymbol  [i, j]
@@ -271,9 +311,9 @@ tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
 
 eqInt, ltInt
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 
@@ -312,7 +352,11 @@ injSymbol lSort rSort =
     & sortInjection
     & injective
 
-inj :: Sort -> TermLike VariableName -> TermLike VariableName
+inj
+    :: InternalVariable variable
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
 inj injTo injChild =
     (synthesize . InjF)
         Inj { injConstructor, injFrom, injTo, injAttributes, injChild }
@@ -323,23 +367,26 @@ inj injTo injChild =
     Internal.Symbol { symbolAttributes = injAttributes } = symbol
 
 keqBool, kneqBool
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
 kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
 
-kseq :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+kseq
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 kseq x y = mkApplySymbol kseqSymbol [x, y]
 
-dotk :: TermLike VariableName
+dotk :: TermLike RewritingVariableName
 dotk = mkApplySymbol dotkSymbol []
 
 kiteK
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 
 -- ** List
@@ -375,6 +422,10 @@ getListSymbol =
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 
+makeListSymbol :: Internal.Symbol
+makeListSymbol =
+    builtinSymbol "makeList" listSort [intSort, intSort] & hook "LIST.make"
+
 updateListSymbol :: Internal.Symbol
 updateListSymbol = builtinSymbol "updateList" listSort
     [listSort, intSort, intSort] & hook "LIST.update"
@@ -382,33 +433,60 @@ updateListSymbol = builtinSymbol "updateList" listSort
 inListSymbol :: Internal.Symbol
 inListSymbol = builtinSymbol "inList" boolSort [intSort, listSort] & hook "LIST.in"
 
-unitList :: TermLike VariableName
+updateAllListSymbol :: Internal.Symbol
+updateAllListSymbol =
+    builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
+    & hook "LIST.updateAll"
+
+unitList :: TermLike RewritingVariableName
 unitList = mkApplySymbol unitListSymbol []
 
-elementList :: TermLike VariableName -> TermLike VariableName
+elementList
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 elementList x = mkApplySymbol elementListSymbol [x]
 
-concatList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+concatList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatList x y = mkApplySymbol concatListSymbol [x, y]
 
-getList :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+getList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 getList list poz = mkApplySymbol getListSymbol [list, poz]
 
-sizeList :: TermLike VariableName -> TermLike VariableName
+sizeList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sizeList l = mkApplySymbol sizeListSymbol [l]
 
+makeList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+makeList len x = mkApplySymbol makeListSymbol [len, x]
+
 updateList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
 inList
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inList x list = mkApplySymbol inListSymbol [x, list]
+
+updateAllList
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
 
 -- ** Map
 
@@ -473,84 +551,84 @@ inclusionMapSymbol :: Internal.Symbol
 inclusionMapSymbol =
     builtinSymbol "inclusionMap" boolSort [mapSort, mapSort] & hook "MAP.inclusion"
 
-unitMap :: TermLike VariableName
+unitMap :: TermLike RewritingVariableName
 unitMap = mkApplySymbol unitMapSymbol []
 
 updateMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
 
 lookupMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
 
 lookupOrDefaultMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 lookupOrDefaultMap map' key def' =
     mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
 
 elementMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 elementMap key value = mkApplySymbol elementMapSymbol [key, value]
 
 concatMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
 
 inKeysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
 
 keysMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keysMap map' = mkApplySymbol keysMapSymbol [map']
 
 keysListMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 keysListMap map' = mkApplySymbol keysListMapSymbol [map']
 
 removeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
 
 removeAllMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
 
 sizeMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
 valuesMap
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 valuesMap map' = mkApplySymbol valuesMapSymbol [map']
 
 inclusionMap
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inclusionMap mapLeft mapRight = mkApplySymbol inclusionMapSymbol [mapLeft, mapRight]
 
 -- ** Pair
@@ -566,7 +644,10 @@ pairSymbol lSort rSort =
     & constructor
     & functional
 
-pair :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+pair
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 pair l r =
     mkApplySymbol (pairSymbol lSort rSort) [l, r]
   where
@@ -578,7 +659,7 @@ pair l r =
 unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
 
-unitSet :: TermLike VariableName
+unitSet :: TermLike RewritingVariableName
 unitSet = mkApplySymbol unitSetSymbol []
 
 elementSetSymbol :: Internal.Symbol
@@ -591,7 +672,9 @@ elementSetSymbolTestSort =
     builtinSymbol "elementSet" setSort [Mock.testSort]
     & hook "SET.element" & functional
 
-elementSet :: TermLike VariableName -> TermLike VariableName
+elementSet
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 elementSet x = mkApplySymbol elementSetSymbol [x]
 
 concatSetSymbol :: Internal.Symbol
@@ -599,9 +682,9 @@ concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & function
 
 concatSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
 
 inSetSymbol :: Internal.Symbol
@@ -617,9 +700,9 @@ differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
 
 differenceSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
 
 toListSetSymbol :: Internal.Symbol
@@ -643,22 +726,22 @@ inclusionSetSymbol =
         & hook "SET.inclusion"
 
 intersectionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 intersectionSet set1 set2 =
     mkApplySymbol intersectionSetSymbol [set1, set2]
 
 list2setSet
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
 
 inclusionSet
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 inclusionSet setLeft setRight =
     mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 
@@ -723,11 +806,12 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
-eqString
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+eqString, concatString
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
+concatString x y = mkApplySymbol concatStringSymbol [x, y]
 
 -- * Bytes
 
@@ -737,7 +821,7 @@ littleEndianBytesSymbol =
     & klabel "littleEndianBytes"
     & symbolKywd
 
-littleEndianBytes :: TermLike VariableName
+littleEndianBytes :: InternalVariable variable => TermLike variable
 littleEndianBytes =
     mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
 
@@ -747,7 +831,7 @@ bigEndianBytesSymbol =
     & klabel "bigEndianBytes"
     & symbolKywd
 
-bigEndianBytes :: TermLike VariableName
+bigEndianBytes :: InternalVariable variable => TermLike variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 
@@ -757,7 +841,7 @@ signedBytesSymbol =
     & klabel "signedBytes"
     & symbolKywd
 
-signedBytes :: TermLike VariableName
+signedBytes :: InternalVariable variable => TermLike variable
 signedBytes =
     mkSignedness (Signedness.Signed signedBytesSymbol)
 
@@ -767,7 +851,7 @@ unsignedBytesSymbol =
     & klabel "unsignedBytes"
     & symbolKywd
 
-unsignedBytes :: TermLike VariableName
+unsignedBytes :: InternalVariable variable => TermLike variable
 unsignedBytes =
     mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
 
@@ -832,10 +916,10 @@ int2bytesSymbol =
     & hook "BYTES.int2bytes"
 
 int2bytes
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
 
 bytes2intSymbol :: Internal.Symbol
@@ -845,10 +929,10 @@ bytes2intSymbol =
     & hook "BYTES.bytes2int"
 
 bytes2int
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 bytes2int bytes end sign = mkApplySymbol bytes2intSymbol [bytes, end, sign]
 
 -- * Krypto
@@ -882,23 +966,28 @@ ripemd160Symbol =
     & hook "KRYPTO.ripemd160"
 
 ecdsaRecoverKrypto
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
 
-keccak256Krypto :: TermLike VariableName -> TermLike VariableName
+keccak256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
 
-sha256Krypto :: TermLike VariableName -> TermLike VariableName
+sha256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha256Krypto message = mkApplySymbol sha256Symbol [message]
 
-sha3256Krypto :: TermLike VariableName -> TermLike VariableName
+sha3256Krypto
+    :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
 
-ripemd160Krypto :: TermLike VariableName -> TermLike VariableName
+ripemd160Krypto
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------
@@ -975,11 +1064,14 @@ boolSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "BOOL.Bool" ]
 
 builtinBool :: Bool -> InternalBool
-builtinBool builtinBoolValue =
+builtinBool internalBoolValue =
     InternalBool
-        { builtinBoolSort = boolSort
-        , builtinBoolValue
+        { internalBoolSort = boolSort
+        , internalBoolValue
         }
+
+mkBool :: InternalVariable variable => Bool -> TermLike variable
+mkBool = mkInternalBool . builtinBool
 
 -- ** Int
 
@@ -998,11 +1090,14 @@ intSortDecl =
         [ hasDomainValuesAttribute, hookAttribute "INT.Int" ]
 
 builtinInt :: Integer -> InternalInt
-builtinInt builtinIntValue =
+builtinInt internalIntValue =
     InternalInt
-        { builtinIntSort = intSort
-        , builtinIntValue
+        { internalIntSort = intSort
+        , internalIntValue
         }
+
+mkInt :: InternalVariable variable => Integer -> TermLike variable
+mkInt = mkInternalInt . builtinInt
 
 -- ** KEQUAL
 
@@ -1049,17 +1144,18 @@ listSortDecl =
         , concatAttribute concatListSymbol
         ]
 
-builtinList
-    :: [TermLike VariableName]
-    -> InternalList (TermLike VariableName)
+builtinList :: [TermLike variable] -> InternalList (TermLike variable)
 builtinList children =
     InternalList
-        { builtinListSort = listSort
-        , builtinListUnit = unitListSymbol
-        , builtinListElement = elementListSymbol
-        , builtinListConcat = concatListSymbol
-        , builtinListChild = Seq.fromList children
+        { internalListSort = listSort
+        , internalListUnit = unitListSymbol
+        , internalListElement = elementListSymbol
+        , internalListConcat = concatListSymbol
+        , internalListChild = Seq.fromList children
         }
+
+mkList :: InternalVariable variable => [TermLike variable] -> TermLike variable
+mkList = mkInternalList . builtinList
 
 -- | Another sort with the same hook
 listSort2 :: Sort
@@ -1102,21 +1198,31 @@ mapSortDecl =
         ]
 
 builtinMap
-    :: [(TermLike Concrete, TermLike VariableName)]
-    -> InternalMap (TermLike Concrete) (TermLike VariableName)
+    :: Ord key
+    => [(key, TermLike variable)]
+    -> InternalMap key (TermLike variable)
 builtinMap children =
     InternalAc
         { builtinAcSort = mapSort
-        , builtinAcUnit = unitMapSymbol
-        , builtinAcElement = elementMapSymbol
-        , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
+        , builtinAcUnit = toUnit unitMapSymbol
+        , builtinAcElement = toElement elementMapSymbol
+        , builtinAcConcat = toConcat concatMapSymbol
+        , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = []
             , concreteElements =
-                Map.fromList (Bifunctor.second Domain.MapValue <$> children)
+                Map.fromList (Bifunctor.second MapValue <$> children)
             , opaque = []
             }
         }
+
+mkMap
+    :: InternalVariable variable
+    => [(TermLike Concrete, TermLike variable)]
+    -> TermLike variable
+mkMap =
+    mkInternalMap
+    . builtinMap
+    . (map . Bifunctor.first) (retractKey >>> fromJust)
 
 -- ** Pair
 
@@ -1178,38 +1284,38 @@ testSort =
 testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
 
-builtinSet
+mkSet
     :: InternalVariable variable
     => Foldable f
     => f (TermLike variable)
     -> [TermLike variable]
     -> TermLike variable
-builtinSet elements opaque =
-    mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
+mkSet elements opaque =
+    mkInternalSet InternalAc
         { builtinAcSort = setSort
-        , builtinAcUnit = unitSetSymbol
-        , builtinAcElement = elementSetSymbol
-        , builtinAcConcat = concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcUnit = toUnit unitSetSymbol
+        , builtinAcElement = toElement elementSetSymbol
+        , builtinAcConcat = toConcat concatSetSymbol
+        , builtinAcChild = NormalizedSet NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
         }
   where
     asKey key =
-        (,) <$> Builtin.toKey key <*> pure Domain.SetValue
-        & maybe (Left (key, Domain.SetValue)) Right
+        (,) <$> retractKey key <*> pure SetValue
+        & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asKey <$> Foldable.toList elements
+        asKey <$> toList elements
         & partitionEithers
 
-builtinSet_
+mkSet_
     :: InternalVariable variable
     => Foldable f
     => f (TermLike variable)
     -> TermLike variable
-builtinSet_ items = builtinSet items []
+mkSet_ items = mkSet items []
 
 -- ** String
 
@@ -1241,6 +1347,16 @@ userTokenSortDecl =
     sortDeclWithAttributes
         userTokenSort
         [ hasDomainValuesAttribute ]
+
+mkString :: InternalVariable variable => Text -> TermLike variable
+mkString = mkInternalString . internalString
+
+internalString :: Text -> InternalString
+internalString internalStringValue =
+    InternalString
+        { internalStringSort = stringSort
+        , internalStringValue
+        }
 
 -- ** Bytes
 
@@ -1277,6 +1393,16 @@ signednessSort =
 
 signednessSortDecl :: ParsedSentence
 signednessSortDecl = sortDecl signednessSort
+
+builtinBytes :: ByteString -> InternalBytes
+builtinBytes internalBytesValue =
+    InternalBytes
+    { internalBytesSort = bytesSort
+    , internalBytesValue
+    }
+
+mkBytes :: InternalVariable variable => [Word8] -> TermLike variable
+mkBytes = mkInternalBytes' . builtinBytes . ByteString.pack
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -1509,6 +1635,8 @@ listModule =
             , hookedSymbolDecl updateListSymbol
             , hookedSymbolDecl inListSymbol
             , hookedSymbolDecl sizeListSymbol
+            , hookedSymbolDecl makeListSymbol
+            , hookedSymbolDecl updateAllListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol
@@ -1746,6 +1874,42 @@ testModule =
             , subsortDecl kItemSort kSort
             ]
         }
+
+testModuleWithTwoClaims :: ParsedModule
+testModuleWithTwoClaims =
+    Module
+        { moduleName = testModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ embedParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            , SentenceClaimSentence . SentenceClaim $
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [SortVariable (testId "sv2")]
+                    , sentenceAxiomPattern =
+                        Builtin.externalize (mkStringLiteral "c")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ embedParsedPattern
+                                $ PatternF.StringLiteralF
+                                $ Const (StringLiteral "b")
+                            ]
+                    }
+                :: ParsedSentenceAxiom)
+            ]
+        }
+
 
 -- -------------------------------------------------------------
 -- * Definition

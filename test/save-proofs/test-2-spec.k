@@ -10,6 +10,8 @@ endmodule
 module TEST-2-SPEC
   imports VERIFICATION
 
-  rule BB(X:Int) => CC(X:Int)
-  rule AA(X:Int) => DD(X:Int)
+  // This claim would fail, but it is loaded from the saved claims.
+  claim BB(X:Int) => CC(X:Int)
+  // This claim requires the first claim.
+  claim AA(X:Int) => DD(X:Int)
 endmodule

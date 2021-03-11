@@ -1,3 +1,4 @@
+{-# LANGUAGE Strict #-}
 module Test.Kore.Builtin.Bool
     ( test_or
     , test_orElse
@@ -12,6 +13,7 @@ module Test.Kore.Builtin.Bool
     , test_unifyBoolValues
     , test_unifyBoolAnd
     , test_unifyBoolOr
+    , test_contradiction
     --
     , asPattern
     , asInternal
@@ -31,10 +33,21 @@ import qualified Data.Text as Text
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.Data
     ( SimplifierT
     , runSimplifier
+    , runSimplifierBranch
+    , simplifyCondition
     )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT
@@ -80,11 +93,13 @@ test_implies = testBinary impliesBoolSymbol implies
     implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
-asInternal :: Bool -> TermLike VariableName
+asInternal
+    :: InternalVariable variable => Bool -> TermLike variable
 asInternal = Bool.asInternal boolSort
 
 -- | Specialize 'Bool.asPattern' to the builtin sort 'boolSort'.
-asPattern :: Bool -> Pattern VariableName
+asPattern
+    :: InternalVariable variable => Bool -> Pattern variable
 asPattern = Bool.asPattern boolSort
 
 -- | Test a binary operator hooked to the given symbol.
@@ -139,9 +154,9 @@ test_unifyBoolValues =
     test
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> [Maybe (Pattern VariableName)]
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> [Maybe (Pattern RewritingVariableName)]
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
@@ -149,7 +164,7 @@ test_unifyBoolValues =
             assertEqual "" expected actual
 
     unify term1 term2 =
-        run (Bool.unifyBoolValues term1 term2)
+        run (Bool.unifyBool term1 term2)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -173,9 +188,9 @@ test_unifyBoolAnd =
     test
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> [Maybe (Pattern VariableName)]
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> [Maybe (Pattern RewritingVariableName)]
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
@@ -206,9 +221,9 @@ test_unifyBoolOr =
     test
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
-        -> [Maybe (Pattern VariableName)]
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> [Maybe (Pattern RewritingVariableName)]
         -> TestTree
     test testName term1 term2 expected =
         testCase testName $ do
@@ -226,9 +241,9 @@ run =
     . runMaybeT
 
 termSimplifier
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> UnifierT (SimplifierT SMT.NoSMT) (Pattern VariableName)
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> UnifierT (SimplifierT SMT.NoSMT) (Pattern RewritingVariableName)
 termSimplifier = \term1 term2 ->
     runMaybeT (worker term1 term2 <|> worker term2 term1)
     >>= maybe (fallback term1 term2) return
@@ -243,10 +258,35 @@ termSimplifier = \term1 term2 ->
         & Pattern.fromTermLike
         & return
 
-_True, _False :: TermLike VariableName
+_True, _False :: TermLike RewritingVariableName
 _True  = asInternal True
 _False = asInternal False
 
-x, y :: SomeVariable VariableName
-x = inject (mkElementVariable "x" boolSort)
-y = inject (mkElementVariable "y" boolSort)
+x, y :: SomeVariable RewritingVariableName
+x = inject (configElementVariableFromId "x" boolSort)
+y = inject (configElementVariableFromId "y" boolSort)
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "x andBool y = true ∧ x andBool y = false" $ do
+        let clause0 =
+                makeEqualsPredicate
+                    _True
+                    (andThenBool (mkVar x) (mkVar y))
+            clause1 =
+                makeEqualsPredicate
+                    _False
+                    (andThenBool (mkVar x) (mkVar y))
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
+    simplifyCondition'
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT

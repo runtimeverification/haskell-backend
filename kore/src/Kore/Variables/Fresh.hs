@@ -10,6 +10,7 @@ module Kore.Variables.Fresh
     , refreshElementVariable
     , refreshSetVariable
     , refreshVariables
+    , refreshVariables'
     -- * Re-exports
     , module Kore.Syntax.Variable
     ) where
@@ -18,7 +19,6 @@ import Prelude.Kore
 
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
     )
@@ -261,8 +261,17 @@ refreshVariables
     => Set variable  -- ^ variables to avoid
     -> Set (Variable variable)  -- ^ variables to rename
     -> Map variable (Variable variable)
-refreshVariables avoid0 =
-    snd <$> Foldable.foldl' refreshVariablesWorker (avoid0, Map.empty)
+refreshVariables avoid rename = Map.mapKeys variableName
+    $ refreshVariables' avoid rename
+
+
+refreshVariables'
+    :: FreshName variable
+    => Set variable  -- ^ variables to avoid
+    -> Set (Variable variable)  -- ^ variables to rename
+    -> Map (Variable variable) (Variable variable)
+refreshVariables' avoid0 =
+    snd <$> foldl' refreshVariablesWorker (avoid0, Map.empty)
   where
     refreshVariablesWorker (avoid, rename) var
       | Just var' <- refreshVariable avoid var =
@@ -272,7 +281,7 @@ refreshVariables avoid0 =
             rename' =
                 -- Record a mapping from the original variable to the
                 -- freshly-generated variable.
-                Map.insert (variableName var) var' rename
+                Map.insert var var' rename
         in (avoid', rename')
       | otherwise =
         -- The variable does not collide with any others, so renaming is not

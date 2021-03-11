@@ -8,7 +8,7 @@ module Kore.Step.ClaimPattern
     ( ClaimPattern (..)
     , freeVariablesLeft
     , freeVariablesRight
-    , claimPattern
+    , mkClaimPattern
     , substitute
     , assertRefreshed
     , refreshExistentials
@@ -22,9 +22,6 @@ module Kore.Step.ClaimPattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Error.Util
     ( hush
     )
@@ -146,9 +143,6 @@ instance TopBottom ClaimPattern where
 instance From ClaimPattern Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance From ClaimPattern Attribute.HeatCool where
-    from = from @(Attribute.Axiom _ _) . attributes
-
 freeVariablesRight
     :: ClaimPattern
     -> FreeVariables RewritingVariableName
@@ -177,12 +171,12 @@ instance HasFreeVariables ClaimPattern RewritingVariableName where
 -- and an 'OrPattern', representing the right hand side pattern.
 -- The list of element variables are existentially quantified
 -- in the right hand side.
-claimPattern
+mkClaimPattern
     :: Pattern RewritingVariableName
     -> OrPattern RewritingVariableName
     -> [ElementVariable RewritingVariableName]
     -> ClaimPattern
-claimPattern left right existentials =
+mkClaimPattern left right existentials =
     ClaimPattern
         { left
         , right

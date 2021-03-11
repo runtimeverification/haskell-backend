@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Repl.Interpreter
     ( test_replInterpreter
     ) where
@@ -50,10 +52,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
-    , mkAnd
     , mkBottom_
     , mkElemVar
-    , mkTop_
     )
 import qualified Kore.Log as Log
 import qualified Kore.Log.Registry as Log
@@ -66,22 +66,17 @@ import Kore.Repl.State
 import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern
     ( ClaimPattern
-    , claimPattern
+    , mkClaimPattern
     )
 import Kore.Step.RulePattern
-    ( mkRewritingRule
-    , rulePattern
-    )
-import Kore.Step.Simplification.AndTerms
-    ( cannotUnifyDistinctDomainValues
+    ( rulePattern
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
-import Kore.Syntax.Variable
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import Kore.Unification.Unify
     ( explainBottom
@@ -120,6 +115,7 @@ test_replInterpreter =
     , unificationSuccess               `tests` "Try axiom that does unify"
     , forceFailure                     `tests` "TryF axiom that doesn't unify"
     , forceSuccess                     `tests` "TryF axiom that does unify"
+    , tryResultsInProven               `tests` "TryF axiom results in proven config"
     , proofStatus                      `tests` "Multi claim proof status"
     , logUpdatesState                  `tests` "Log command updates the state"
     , debugAttemptEquationUpdatesState `tests` "DebugAttemptEquation command updates the state"
@@ -341,8 +337,7 @@ unificationFailure =
         command = Try . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -358,8 +353,7 @@ unificationFailureWithName =
         command = Try . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -407,8 +401,7 @@ forceFailure =
         command = TryF . ByIndex . Left $ AxiomIndex 0
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -424,8 +417,7 @@ forceFailureWithName =
         command = TryF . ByName . RuleName $ "impossible"
     in do
         Result { output, continue, state } <- run command axioms [claim] claim
-        expectedOutput <-
-            formatUnificationError cannotUnifyDistinctDomainValues one zero
+        expectedOutput <- formatUnificationError "distinct integers" one zero
         output `equalsOutput` expectedOutput
         continue `equals` Continue
         state `hasCurrentNode` ReplNode 0
@@ -445,6 +437,24 @@ forceSuccess = do
     output `equalsOutput` expectedOutput
     continue `equals` Continue
     state `hasCurrentNode` ReplNode 1
+
+tryResultsInProven :: IO ()
+tryResultsInProven = do
+    let
+        zero = Int.asInternal intSort 0
+        one = Int.asInternal intSort 1
+        axiom = mkAxiom zero one
+        axioms = [ axiom ]
+        claim = zeroToZero
+        command = TryF . ByIndex . Left $ AxiomIndex 0
+        expectedOutput =
+            makeAuxReplOutput
+                "The proof was proven without applying any rewrite rules."
+
+    Result { output, continue, state } <- run command axioms [claim] claim
+    output `equalsOutput` expectedOutput
+    continue `equals` Continue
+    state `hasCurrentNode` ReplNode 0
 
 forceSuccessWithName :: IO ()
 forceSuccessWithName = do
@@ -646,14 +656,14 @@ add1 :: Axiom
 add1 =
     mkNamedAxiom n plusOne "add1Axiom"
   where
-    one     = Int.asInternal intSort 1
-    n       = mkElemVar $ mkElementVariable "x" intSort
+    one = Int.asInternal intSort 1
+    n = mkElemVar $ ruleElementVariableFromId "x" intSort
     plusOne = n `addInt` one
 
 zeroToTen :: SomeClaim
 zeroToTen =
     OnePath . OnePathClaim
-    $ claimWithName zero (mkAnd mkTop_ ten) "0to10Claim"
+    $ claimWithName zero ten "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
@@ -661,18 +671,24 @@ zeroToTen =
 emptyClaim :: SomeClaim
 emptyClaim =
     OnePath . OnePathClaim
-    $ claimWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
+    $ claimWithName mkBottom_ mkBottom_ "emptyClaim"
+
+zeroToZero :: SomeClaim
+zeroToZero =
+    AllPath . AllPathClaim
+    $ claimWithName zero zero "0to0Claim"
+  where
+    zero = Int.asInternal intSort 0
 
 mkNamedAxiom
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> String
     -> Axiom
 mkNamedAxiom left right name =
     rulePattern left right
     & Lens.set (field @"attributes" . typed @Attribute.Label) label
     & RewriteRule
-    & mkRewritingRule
     & coerce
   where
     label = Attribute.Label . pure $ pack name
@@ -688,19 +704,18 @@ claimWithName leftTerm rightTerm name =
         right =
             Pattern.fromTermLike rightTerm
             & OrPattern.fromPattern
-     in claimPattern left right []
+     in mkClaimPattern left right []
         & Lens.set (field @"attributes" . typed @Attribute.Label) label
   where
     label = Attribute.Label . pure $ pack name
 
 mkAxiom
-    :: TermLike VariableName
-    -> TermLike VariableName
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> Axiom
 mkAxiom left right =
     rulePattern left right
     & RewriteRule
-    & mkRewritingRule
     & coerce
 
 run
@@ -821,7 +836,7 @@ mkConfig
 mkConfig logger =
     Config
         { stepper     = stepper0
-        , unifier     = unificationProcedureWorker
+        , unifier     = unificationProcedure
         , logger
         , outputFile  = OutputFile Nothing
         , mainModuleName = ModuleName "TEST"
@@ -838,8 +853,8 @@ mkConfig logger =
 
 formatUnificationError
     :: Pretty.Doc ()
-    -> TermLike VariableName
-    -> TermLike VariableName
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> IO ReplOutput
 formatUnificationError info first second = do
     res <- runSimplifier testEnv . runUnifierWithExplanation $ do

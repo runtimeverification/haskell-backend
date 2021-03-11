@@ -14,6 +14,9 @@ builtin modules.
     import qualified Kore.Builtin.Builtin as Builtin
 @
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Builtin
     ( Function
       -- * Implementing builtin functions
@@ -33,7 +36,6 @@ module Kore.Builtin.Builtin
     , lookupSymbolConcat
     , isSymbol
     , isSort
-    , toKey
     , getAttemptedAxiom
     , makeDomainValueTerm
     , makeDomainValuePattern
@@ -44,27 +46,25 @@ module Kore.Builtin.Builtin
 
 import Prelude.Kore
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( MaybeT (..)
     )
-import qualified Data.Functor.Foldable as Recursive
 import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
 
+import qualified Kore.Attribute.Concat as Attribute.Sort
+import qualified Kore.Attribute.Element as Attribute.Sort
 import Kore.Attribute.Hook
     ( Hook (..)
     )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
-import qualified Kore.Attribute.Sort.Element as Attribute.Sort
-import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol (..)
     )
+import qualified Kore.Attribute.Unit as Attribute.Sort
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
 import Kore.Error
@@ -92,13 +92,16 @@ import Kore.Internal.Pattern as Pattern
     , withCondition
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate_
+    ( makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( predicateSort
     )
@@ -159,7 +162,7 @@ appliedFunction epat =
  -}
 unaryOperator
     :: forall a b
-    .   (forall variable. Text -> Builtin (TermLike variable) -> a)
+    .   (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Parse operand
     ->  (forall variable
         . InternalVariable variable => Sort -> b -> Pattern variable
@@ -173,16 +176,18 @@ unaryOperator
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
-    get :: Builtin (TermLike variable) -> a
+    get :: TermLike variable -> Maybe a
     get = extractVal ctx
+
     unaryOperator0 :: Function
     unaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [BuiltinF a] -> do
+        case children of
+            [termLike]
+              | Just a <- get termLike -> do
                 -- Apply the operator to a domain value
-                let r = op (get a)
+                let r = op a
                 return (asPattern resultSort r)
-            [_] -> empty
+              | otherwise -> empty
             _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
@@ -197,7 +202,7 @@ unaryOperator extractVal asPattern ctx op =
  -}
 binaryOperator
     :: forall a b
-    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
+    .  (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Extract domain value
     ->  (forall variable
         . InternalVariable variable => Sort -> b -> Pattern variable
@@ -211,14 +216,15 @@ binaryOperator
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
-    get :: Builtin (TermLike variable) -> a
+    get :: TermLike variable -> Maybe a
     get = extractVal ctx
+
     binaryOperator0 :: Function
     binaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [BuiltinF a, BuiltinF b] -> do
+        case children of
+            [get -> Just a, get -> Just b] -> do
                 -- Apply the operator to two domain values
-                let r = op (get a) (get b)
+                let r = op a b
                 return (asPattern resultSort r)
             [_, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
@@ -235,7 +241,7 @@ binaryOperator extractVal asPattern ctx op =
  -}
 ternaryOperator
     :: forall a b
-    .  (forall variable. Text -> Builtin (TermLike variable) -> a)
+    .  (forall variable. Text -> TermLike variable -> Maybe a)
     -- ^ Extract domain value
     ->  (forall variable
         . InternalVariable variable => Sort -> b -> Pattern variable
@@ -249,14 +255,15 @@ ternaryOperator
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
-    get :: Builtin (TermLike variable) -> a
+    get :: TermLike variable -> Maybe a
     get = extractVal ctx
+
     ternaryOperator0 :: Function
     ternaryOperator0 resultSort children =
-        case Cofree.tailF . Recursive.project <$> children of
-            [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
+        case children of
+            [get -> Just a, get -> Just b, get -> Just c] -> do
                 -- Apply the operator to three domain values
-                let r = op (get a) (get b) (get c)
+                let r = op a b c
                 return (asPattern resultSort r)
             [_, _, _] -> empty
             _ -> wrongArity (Text.unpack ctx)
@@ -366,7 +373,7 @@ lookupSymbolUnit tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingUnitAttribute =
+    ~missingUnitAttribute =
         verifierBug
         $ "missing 'unit' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -401,7 +408,7 @@ lookupSymbolElement tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingElementAttribute =
+    ~missingElementAttribute =
         verifierBug
         $ "missing 'element' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -436,7 +443,7 @@ lookupSymbolConcat tools builtinSort =
     symbolParams = symbolOrAliasParams symbolOrAlias
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    missingConcatAttribute =
+    ~missingConcatAttribute =
         verifierBug
         $ "missing 'concat' attribute of sort '"
         ++ unparseToString builtinSort ++ "'"
@@ -459,28 +466,14 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
   | isPredicateSort            = Nothing
   | SortVariableSort _ <- sort = Nothing
-  | otherwise                  = Just (getHook hook == Just builtinName)
+  | otherwise                  =
+    let
+        MetadataTools { sortAttributes } = tools
+        Attribute.Sort { hook } = sortAttributes sort
+    in
+        Just (getHook hook == Just builtinName)
   where
-    MetadataTools {sortAttributes} = tools
-    Attribute.Sort {hook} = sortAttributes sort
     isPredicateSort = sort == predicateSort
-
-
-{- | Ensure that a 'TermLike' is a concrete, normalized term.
-
-If the pattern is not concrete and normalized, the function is
-See also: 'Kore.Proof.Value.Value'
-
- -}
-toKey
-    :: Ord variable
-    => TermLike variable -> Maybe (TermLike Concrete)
-toKey purePattern = do
-    p <- TermLike.asConcrete purePattern
-    -- TODO (thomas.tuegel): Use the return value as the term.
-    if TermLike.isConstructorLike p
-        then return p
-        else Nothing
 
 {- | Run a function evaluator that can terminate early.
  -}
@@ -493,23 +486,22 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    :: (MonadUnify unifier, InternalVariable variable)
+    :: MonadUnify unifier
     => SimplificationType
-    -> TermLike variable
-    -> TermLike variable
-    -> unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> unifier (Pattern RewritingVariableName)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
     orCondition <-
         makeEvaluateTermCeil
             SideCondition.topTODO
-            predicateSort
             unified
     predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Predicate.markSimplified $ makeEqualsPredicate_ a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

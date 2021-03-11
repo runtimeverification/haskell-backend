@@ -17,9 +17,6 @@ module Kore.Syntax.PatternF
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Lens as Lens
 import Data.Functor.Const
 import Data.Functor.Identity
@@ -98,6 +95,94 @@ instance
   where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
+
+instance From (And Sort child) (PatternF variable child) where
+    from = AndF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Application SymbolOrAlias child) (PatternF variable child) where
+    from = ApplicationF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Bottom Sort child) (PatternF variable child) where
+    from = BottomF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Ceil Sort child) (PatternF variable child) where
+    from = CeilF
+    {-# INLINE CONLIKE from #-}
+
+instance From (DomainValue Sort child) (PatternF variable child) where
+    from = DomainValueF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Equals Sort child) (PatternF variable child) where
+    from = EqualsF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Exists Sort variable child) (PatternF variable child) where
+    from = ExistsF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Floor Sort child) (PatternF variable child) where
+    from = FloorF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Forall Sort variable child) (PatternF variable child) where
+    from = ForallF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Iff Sort child) (PatternF variable child) where
+    from = IffF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Implies Sort child) (PatternF variable child) where
+    from = ImpliesF
+    {-# INLINE CONLIKE from #-}
+
+instance From (In Sort child) (PatternF variable child) where
+    from = InF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Mu variable child) (PatternF variable child) where
+    from = MuF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Next Sort child) (PatternF variable child) where
+    from = NextF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Not Sort child) (PatternF variable child) where
+    from = NotF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Nu variable child) (PatternF variable child) where
+    from = NuF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Or Sort child) (PatternF variable child) where
+    from = OrF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Rewrites Sort child) (PatternF variable child) where
+    from = RewritesF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Top Sort child) (PatternF variable child) where
+    from = TopF
+    {-# INLINE CONLIKE from #-}
+
+instance From (Inhabitant child) (PatternF variable child) where
+    from = InhabitantF
+    {-# INLINE CONLIKE from #-}
+
+instance From StringLiteral (PatternF variable child) where
+    from = StringLiteralF . Const
+    {-# INLINE CONLIKE from #-}
+
+instance From (SomeVariable variable) (PatternF variable child) where
+    from = VariableF . Const
+    {-# INLINE CONLIKE from #-}
 
 {- | Use the provided mapping to replace all variables in a 'PatternF' head.
 

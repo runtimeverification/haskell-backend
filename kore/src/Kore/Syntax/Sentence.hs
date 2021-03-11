@@ -10,16 +10,12 @@ module Kore.Syntax.Sentence
     , Alias (..)
     , SentenceAlias (..)
     , SentenceSymbol (..)
-    , coerceSentenceSymbol
     , SentenceImport (..)
-    , coerceSentenceImport
     , SentenceSort (..)
-    , coerceSentenceSort
     , SentenceAxiom (..)
     , SentenceClaim (..)
     , sentenceClaimAttributes
     , SentenceHook (..)
-    , coerceSentenceHook
     , Sentence (..)
     , projectSentenceImport
     , projectSentenceSort
@@ -32,7 +28,7 @@ module Kore.Syntax.Sentence
     , sentenceAttributes
     , eraseSentenceAnnotations
     -- * Injections and projections
-    , AsSentence (..)
+    , asSentence
     , SentenceSymbolOrAlias (..)
     -- * Type synonyms
     , PureSentenceSymbol
@@ -57,11 +53,7 @@ module Kore.Syntax.Sentence
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Control.Monad as Monad
-import Data.Coerce
 import Data.Generics.Sum.Typed
     ( projectTyped
     )
@@ -220,7 +212,7 @@ instance Unparse patternType => Unparse (SentenceAlias patternType) where
 the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 -}
-data SentenceSymbol (patternType :: Type) =
+data SentenceSymbol =
     SentenceSymbol
         { sentenceSymbolSymbol     :: !Symbol
         , sentenceSymbolSorts      :: ![Sort]
@@ -228,13 +220,12 @@ data SentenceSymbol (patternType :: Type) =
         , sentenceSymbolAttributes :: !Attributes
         }
     deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Unparse (SentenceSymbol patternType) where
+instance Unparse SentenceSymbol where
     unparse
         SentenceSymbol
             { sentenceSymbolSymbol
@@ -277,38 +268,21 @@ instance Unparse (SentenceSymbol patternType) where
                         Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
                         <> unparse2Inhabitant rest
 
-{- | Coerce the pattern type of a 'SentenceSymbol' to any other type.
-
-This is trivial because the pattern type is a phantom parameter, that is,
-'SentenceSymbol' does not contain any patterns.
-
-See also: 'coerce'
-
- -}
-coerceSentenceSymbol :: SentenceSymbol pattern1 -> SentenceSymbol pattern2
-coerceSentenceSymbol = coerce
-
 {- | 'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
--- TODO (thomas.tuegel): Even though the parameters are unused, they must stay
--- to satisfy the functional dependencies on 'AsSentence' below. Because they
--- are phantom, every use of 'asSentence' for a 'SentenceImport' will require a
--- type ascription. We should refactor the class so this is not necessary and
--- remove the parameters.
-data SentenceImport (patternType :: Type) =
+data SentenceImport =
     SentenceImport
         { sentenceImportModuleName :: !ModuleName
         , sentenceImportAttributes :: !Attributes
         }
     deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Unparse (SentenceImport patternType) where
+instance Unparse SentenceImport where
     unparse
         SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
       =
@@ -325,35 +299,23 @@ instance Unparse (SentenceImport patternType) where
             , unparse2 sentenceImportAttributes
             ]
 
-{- | Coerce the pattern type of a 'SentenceImport' to any other type.
-
-This is trivial because the pattern type is a phantom parameter, that is,
-'SentenceImport' does not contain any patterns.
-
-See also: 'coerce'
-
- -}
-coerceSentenceImport :: SentenceImport pattern1 -> SentenceImport pattern2
-coerceSentenceImport = coerce
-
 {- | 'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
  -}
-data SentenceSort (patternType :: Type) =
+data SentenceSort =
     SentenceSort
         { sentenceSortName       :: !Id
         , sentenceSortParameters :: ![SortVariable]
         , sentenceSortAttributes :: !Attributes
         }
     deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Unparse (SentenceSort patternType) where
+instance Unparse SentenceSort where
     unparse
         SentenceSort
             { sentenceSortName
@@ -387,17 +349,6 @@ instance Unparse (SentenceSort patternType) where
               case n of
                   0 -> ""
                   m -> Pretty.fillSep["(\\inh Sorts)", printLbSortsRb (m - 1)]
-
-{- | Coerce the pattern type of a 'SentenceSort' to any other type.
-
-This is trivial because the pattern type is a phantom parameter, that is,
-'SentenceSort' does not contain any patterns.
-
-See also: 'coerce'
-
- -}
-coerceSentenceSort :: SentenceSort pattern1 -> SentenceSort pattern2
-coerceSentenceSort = coerce
 
 {- | 'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -500,17 +451,16 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 See also: 'SentenceSort', 'SentenceSymbol'
 
  -}
-data SentenceHook (patternType :: Type)
-    = SentenceHookedSort !(SentenceSort patternType)
-    | SentenceHookedSymbol !(SentenceSymbol patternType)
+data SentenceHook
+    = SentenceHookedSort !SentenceSort
+    | SentenceHookedSymbol !SentenceSymbol
     deriving (Eq, Ord, Show)
-    deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Unparse (SentenceHook patternType) where
+instance Unparse SentenceHook where
     unparse =
         \case
             SentenceHookedSort a -> "hooked-" <> unparse a
@@ -521,29 +471,18 @@ instance Unparse (SentenceHook patternType) where
             SentenceHookedSort a -> "hooked-" <> unparse2 a
             SentenceHookedSymbol a -> "hooked-" <> unparse2 a
 
-{- | Coerce the pattern type of a 'SentenceHook' to any other type.
-
-This is trivial because the pattern type is a phantom parameter, that is,
-'SentenceHook' does not contain any patterns.
-
-See also: 'coerce'
-
- -}
-coerceSentenceHook :: SentenceHook pattern1 -> SentenceHook pattern2
-coerceSentenceHook = coerce
-
 {- | @Sentence@ is the @declaration@ syntactic category from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
 
 -}
 data Sentence (patternType :: Type)
     = SentenceAliasSentence  !(SentenceAlias patternType)
-    | SentenceSymbolSentence !(SentenceSymbol patternType)
-    | SentenceImportSentence !(SentenceImport patternType)
+    | SentenceSymbolSentence !SentenceSymbol
+    | SentenceImportSentence !SentenceImport
     | SentenceAxiomSentence  !(SentenceAxiom patternType)
     | SentenceClaimSentence  !(SentenceClaim patternType)
-    | SentenceSortSentence   !(SentenceSort patternType)
-    | SentenceHookSentence   !(SentenceHook patternType)
+    | SentenceSortSentence   !SentenceSort
+    | SentenceHookSentence   !SentenceHook
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic)
@@ -555,50 +494,80 @@ instance Unparse patternType => Unparse (Sentence patternType) where
      unparse = unparseGeneric
      unparse2 = unparse2Generic
 
-projectSentenceImport
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceImport ParsedPattern)
-projectSentenceImport = projectTyped
+instance Injection (Sentence patternType) (SentenceAlias patternType) where
+    inject = SentenceAliasSentence
 
-projectSentenceSort
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceSort ParsedPattern)
-projectSentenceSort = projectTyped
+    retract (SentenceAliasSentence sentenceAlias) = Just sentenceAlias
+    retract _ = Nothing
 
-projectSentenceSymbol
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceSymbol ParsedPattern)
-projectSentenceSymbol = projectTyped
+instance Injection (Sentence patternType) SentenceSymbol where
+    inject = SentenceSymbolSentence
 
-projectSentenceHook
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceHook ParsedPattern)
-projectSentenceHook = projectTyped
+    retract (SentenceSymbolSentence sentenceSymbol) = Just sentenceSymbol
+    retract _ = Nothing
 
-projectSentenceHookedSort
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceSort ParsedPattern)
+instance Injection (Sentence patternType) SentenceImport where
+    inject = SentenceImportSentence
+
+    retract (SentenceImportSentence sentenceImport) = Just sentenceImport
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceAxiom patternType) where
+    inject = SentenceAxiomSentence
+
+    retract (SentenceAxiomSentence sentenceAxiom) = Just sentenceAxiom
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) (SentenceClaim patternType) where
+    inject = SentenceClaimSentence
+
+    retract (SentenceClaimSentence sentenceClaim) = Just sentenceClaim
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) SentenceSort where
+    inject = SentenceSortSentence
+
+    retract (SentenceSortSentence sentenceSort) = Just sentenceSort
+    retract _ = Nothing
+
+instance Injection (Sentence patternType) SentenceHook where
+    inject = SentenceHookSentence
+
+    retract (SentenceHookSentence sentenceHook) = Just sentenceHook
+    retract _ = Nothing
+
+projectSentenceImport :: Sentence ParsedPattern -> Maybe SentenceImport
+projectSentenceImport = retract
+
+projectSentenceSort :: Sentence ParsedPattern -> Maybe SentenceSort
+projectSentenceSort = retract
+
+projectSentenceSymbol :: Sentence ParsedPattern -> Maybe SentenceSymbol
+projectSentenceSymbol = retract
+
+projectSentenceHook :: Sentence ParsedPattern -> Maybe SentenceHook
+projectSentenceHook = retract
+
+projectSentenceHookedSort :: Sentence ParsedPattern -> Maybe SentenceSort
 projectSentenceHookedSort = projectSentenceHook Monad.>=> projectTyped
 
-projectSentenceHookedSymbol
-    :: Sentence ParsedPattern
-    -> Maybe (SentenceSymbol ParsedPattern)
+projectSentenceHookedSymbol :: Sentence ParsedPattern -> Maybe SentenceSymbol
 projectSentenceHookedSymbol = projectSentenceHook Monad.>=> projectTyped
 
 projectSentenceAlias
     :: Sentence ParsedPattern
     -> Maybe (SentenceAlias ParsedPattern)
-projectSentenceAlias = projectTyped
+projectSentenceAlias = retract
 
 projectSentenceAxiom
     :: Sentence ParsedPattern
     -> Maybe (SentenceAxiom ParsedPattern)
-projectSentenceAxiom = projectTyped
+projectSentenceAxiom = retract
 
 projectSentenceClaim
     :: Sentence ParsedPattern
     -> Maybe (SentenceClaim ParsedPattern)
-projectSentenceClaim = projectTyped
+projectSentenceClaim = retract
 
 {- | The attributes associated with a sentence.
 
@@ -641,42 +610,28 @@ eraseSentenceAnnotations
     -> Sentence (Pattern variable Attribute.Null)
 eraseSentenceAnnotations sentence = (<$) Attribute.Null <$> sentence
 
-class AsSentence sentenceType where
-    asSentence :: sentenceType patternType -> Sentence patternType
+asSentence
+    :: forall input patternType
+    .  Injection (Sentence patternType) input
+    => input
+    -> Sentence patternType
+asSentence = inject
 
-instance AsSentence SentenceAlias where
-    asSentence = SentenceAliasSentence
-
-instance AsSentence SentenceSymbol where
-    asSentence = SentenceSymbolSentence
-
-instance AsSentence SentenceImport where
-    asSentence = SentenceImportSentence
-
-instance AsSentence SentenceAxiom where
-    asSentence = SentenceAxiomSentence
-
-instance AsSentence SentenceSort where
-    asSentence = SentenceSortSentence
-
-instance AsSentence SentenceHook where
-    asSentence = SentenceHookSentence
-
-class SentenceSymbolOrAlias (sentence :: Type -> Type) where
+class SentenceSymbolOrAlias (sentence :: Type) where
     getSentenceSymbolOrAliasConstructor
-        :: sentence patternType -> Id
+        :: sentence -> Id
     getSentenceSymbolOrAliasSortParams
-        :: sentence patternType -> [SortVariable]
+        :: sentence -> [SortVariable]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence patternType -> [Sort]
+        :: sentence -> [Sort]
     getSentenceSymbolOrAliasResultSort
-        :: sentence patternType -> Sort
+        :: sentence -> Sort
     getSentenceSymbolOrAliasAttributes
-        :: sentence patternType -> Attributes
+        :: sentence -> Attributes
     getSentenceSymbolOrAliasSentenceName
-        :: sentence patternType -> String
+        :: sentence -> String
     getSentenceSymbolOrAliasHead
-        :: sentence patternType
+        :: sentence
         -> [Sort]
         -> SymbolOrAlias
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
@@ -685,7 +640,7 @@ class SentenceSymbolOrAlias (sentence :: Type -> Type) where
         , symbolOrAliasParams = sortParameters
         }
 
-instance SentenceSymbolOrAlias SentenceAlias where
+instance SentenceSymbolOrAlias (SentenceAlias patternType) where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
     getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
     getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
@@ -709,13 +664,13 @@ type PureSentenceAxiom = SentenceAxiom ParsedPattern
 type PureSentenceAlias = SentenceAlias ParsedPattern
 
 -- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
-type PureSentenceSymbol = SentenceSymbol ParsedPattern
+type PureSentenceSymbol = SentenceSymbol
 
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
-type PureSentenceImport = SentenceImport ParsedPattern
+type PureSentenceImport = SentenceImport
 
 -- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
-type PureSentenceHook = SentenceHook ParsedPattern
+type PureSentenceHook = SentenceHook
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence = Sentence ParsedPattern
@@ -723,17 +678,17 @@ type PureSentence = Sentence ParsedPattern
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule = Module PureSentence
 
-type ParsedSentenceSort = SentenceSort ParsedPattern
+type ParsedSentenceSort = SentenceSort
 
-type ParsedSentenceSymbol = SentenceSymbol ParsedPattern
+type ParsedSentenceSymbol = SentenceSymbol
 
 type ParsedSentenceAlias = SentenceAlias ParsedPattern
 
-type ParsedSentenceImport = SentenceImport ParsedPattern
+type ParsedSentenceImport = SentenceImport
 
 type ParsedSentenceAxiom = SentenceAxiom ParsedPattern
 
-type ParsedSentenceHook = SentenceHook ParsedPattern
+type ParsedSentenceHook = SentenceHook
 
 type ParsedSentence = Sentence ParsedPattern
 

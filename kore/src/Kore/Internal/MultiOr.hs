@@ -36,16 +36,9 @@ import Prelude.Kore hiding
     , traverse
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
 import qualified Control.Lens as Lens
-import qualified Data.Foldable as Foldable
 import Data.Generics.Product
     ( field
-    )
-import Data.List
-    ( foldl'
     )
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
@@ -270,8 +263,8 @@ The result is simplified with the 'filterOr' function.
 
 -}
 mergeAll
-    :: (Ord term, TopBottom term)
-    => [MultiOr term]
+    :: (Ord term, TopBottom term, Foldable f)
+    => f (MultiOr term)
     -> MultiOr term
 mergeAll ors =
     filterOr (foldl' mergeGeneric (make []) ors)
@@ -349,7 +342,7 @@ map
     => (child1 -> child2)
     -> MultiOr child1
     -> MultiOr child2
-map f = make . fmap f . Foldable.toList
+map f = make . fmap f . toList
 {-# INLINE map #-}
 
 -- | Warning: 'traverse' should not be used with 'LogicT'.
@@ -360,5 +353,5 @@ traverse
     => (child1 -> f child2)
     -> MultiOr child1
     -> f (MultiOr child2)
-traverse f = fmap make . Traversable.traverse f . Foldable.toList
+traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}

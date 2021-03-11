@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.InjSimplifier
     ( test_unifyInj
     , test_normalize
@@ -11,6 +13,10 @@ import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding
     ( Top (..)
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.InjSimplifier
 import Pair
 
@@ -18,10 +24,13 @@ import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Kore.Step.MockSymbols
 import Test.Tasty.HUnit.Ext
 
-mkInj :: Sort -> TermLike VariableName -> TermLike VariableName
+mkInj :: Sort -> TermLike RewritingVariableName -> TermLike RewritingVariableName
 mkInj = sortInjection
 
-inj :: Sort -> TermLike VariableName -> Inj (TermLike VariableName)
+inj
+    :: Sort
+    -> TermLike RewritingVariableName
+    -> Inj (TermLike RewritingVariableName)
 inj injTo injChild = inj' (termLikeSort injChild) injTo injChild
 
 inj' :: Sort -> Sort -> child -> Inj child
@@ -50,20 +59,21 @@ inj' injFrom injTo injChild =
 
  -}
 
-ctorSub, ctorSubSub, ctorOther, ctorTest1, ctorTest2 :: TermLike VariableName
+ctorSub, ctorSubSub, ctorOther, ctorTest1, ctorTest2
+    :: TermLike RewritingVariableName
 ctorSub = aSubsort
 ctorSubSub = aSubSubsort
 ctorOther = aOtherSort
 ctorTest1 = cf
 ctorTest2 = cg
 
-simplSub, simplOther, simpl0 :: TermLike VariableName
+simplSub, simplOther, simpl0 :: TermLike RewritingVariableName
 simplSub = plain00Subsort
 simplOther = plain00OtherSort
 simpl0 = plain00Sort0
 
-xSub :: TermLike VariableName
-xSub = mkElemVar (mkElementVariable "xSub" subSort)
+xSub :: TermLike RewritingVariableName
+xSub = mkElemVar (configElementVariableFromId "xSub" subSort)
 
 test_unifyInj :: [TestTree]
 test_unifyInj =
@@ -141,9 +151,9 @@ test_unifyInj =
     test
         :: HasCallStack
         => TestName
-        -> Inj (TermLike VariableName)
-        -> Inj (TermLike VariableName)
-        -> Either Distinct (Inj (Pair (TermLike VariableName)))
+        -> Inj (TermLike RewritingVariableName)
+        -> Inj (TermLike RewritingVariableName)
+        -> Either Distinct (Inj (Pair (TermLike RewritingVariableName)))
         -> TestTree
     test testName inj1 inj2 expect =
         testCase testName (assertEqual "" expect (unifyInj inj1 inj2))
@@ -159,8 +169,8 @@ test_normalize =
     test
         :: HasCallStack
         => TestName
-        -> TermLike VariableName
-        -> TermLike VariableName
+        -> TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
         -> TestTree
     test testName original expect =
         let actual = normalize injSimplifier original

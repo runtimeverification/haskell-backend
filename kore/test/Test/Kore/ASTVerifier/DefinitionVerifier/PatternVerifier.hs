@@ -54,7 +54,7 @@ testPatternErrorStackStrings
 
 testPatternUnverifiedPattern :: TestPattern -> ParsedPattern
 testPatternUnverifiedPattern TestPattern { testPatternPattern } =
-    asParsedPattern testPatternPattern
+    embedParsedPattern testPatternPattern
 
 test_patternVerifier :: [TestTree]
 test_patternVerifier =
@@ -81,7 +81,7 @@ test_patternVerifier =
             { existsSort = anotherSort
             , existsVariable = anotherVariable
             , existsChild =
-                asParsedPattern $ simpleExistsPattern objectVariable' objectSort
+                embedParsedPattern $ simpleExistsPattern objectVariable' objectSort
             }
         )
         (NamePrefix "dummy")
@@ -185,7 +185,7 @@ test_patternVerifier =
     , failureTestsForObjectPattern
         "Object pattern - sort variable not defined"
         (ExpectedErrorMessage
-            "Sort variable 'ObjectSortVariable' not declared.")
+            "Sort variable ObjectSortVariable not declared.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
             , "\\exists 'ObjectVariable' (<test data>)"
@@ -196,7 +196,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                asParsedPattern
+                embedParsedPattern
                 $ simpleExistsPattern
                     objectVariableSortVariable
                     objectSortVariableSort
@@ -210,7 +210,7 @@ test_patternVerifier =
         NeedsInternalDefinitions
     , failureTestsForObjectPattern "Object pattern - sort not matched"
         (ExpectedErrorMessage
-            "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
+            "Expecting sort anotherSort2{} but got ObjectSort{}.")
         (ErrorStack
             [ "\\exists 'ObjectVariable' (<test data>)"
             , "(<test data>, <test data>)"
@@ -993,7 +993,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asParsedPattern testedPattern]
+                , applicationChildren = [embedParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1006,7 +1006,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asParsedPattern testedPattern]
+                , applicationChildren = [embedParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1067,7 +1067,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         }
     ]
   where
-    testedKorePattern = asParsedPattern testedPattern
+    testedKorePattern = embedParsedPattern testedPattern
 
 patternInUnquantifiedGenericPatterns
     :: PatternF VariableName ParsedPattern
@@ -1221,8 +1221,8 @@ patternInUnquantifiedGenericPatterns
         }
     ]
   where
-    anotherUnifiedPattern = asParsedPattern anotherPattern
-    testedUnifiedPattern = asParsedPattern testedPattern
+    anotherUnifiedPattern = embedParsedPattern anotherPattern
+    testedUnifiedPattern = embedParsedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
     :: PatternF VariableName ParsedPattern
@@ -1263,8 +1263,8 @@ patternInUnquantifiedObjectPatterns
 
     ]
   where
-    anotherUnifiedPattern = asParsedPattern anotherPattern
-    testedUnifiedPattern = asParsedPattern testedPattern
+    anotherUnifiedPattern = embedParsedPattern anotherPattern
+    testedUnifiedPattern = embedParsedPattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
     :: NamePrefix

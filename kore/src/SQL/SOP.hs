@@ -45,7 +45,6 @@ module SQL.SOP
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.Functor.Product
 import Data.Proxy
     ( Proxy (..)
@@ -185,7 +184,7 @@ addColumnDefs names defs = do
             let ColumnDef { columnType } = defined
             addColumnType columnType
             let ColumnDef { columnConstraints } = defined
-            Foldable.for_ columnConstraints $ \constraint -> do
+            for_ columnConstraints $ \constraint -> do
                 Query.addSpace
                 addColumnConstraint constraint
             Query.addComma

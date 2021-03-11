@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.OrPattern
     ( test_orPatternSimplification
     ) where
@@ -22,9 +24,9 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeEqualsPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeTruePredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( assumeTruePredicate
@@ -33,10 +35,10 @@ import Kore.Internal.TermLike
     ( TermLike
     , mkElemVar
     )
-import Kore.Step.Simplification.OrPattern
-import Kore.Syntax.Variable
-    ( VariableName
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
+import Kore.Step.Simplification.OrPattern
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
@@ -45,10 +47,10 @@ import Test.Tasty.HUnit.Ext
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
     [ testCase "Identity for top" $ do
-        actual <- runSimplifyPredicates makeTruePredicate_ OrPattern.top
+        actual <- runSimplifyPredicates makeTruePredicate OrPattern.top
         assertEqual "" OrPattern.top actual
     , testCase "Identity for bottom" $ do
-        actual <- runSimplifyPredicates makeTruePredicate_ OrPattern.bottom
+        actual <- runSimplifyPredicates makeTruePredicate OrPattern.bottom
         assertEqual "" OrPattern.bottom actual
     , testCase "Filters with SMT" $ do
         let expected = OrPattern.fromPatterns
@@ -59,7 +61,7 @@ test_orPatternSimplification =
                     }
                 ]
         actual <- runSimplifyPredicates
-            makeTruePredicate_
+            makeTruePredicate
             ( OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
@@ -78,7 +80,7 @@ test_orPatternSimplification =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate Mock.testSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -87,7 +89,7 @@ test_orPatternSimplification =
             ( OrPattern.fromPatterns
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 , Conditional
@@ -100,33 +102,33 @@ test_orPatternSimplification =
         assertEqual "" expected actual
     ]
   where
-    x :: TermLike VariableName
-    x = mkElemVar Mock.x
+    x :: TermLike RewritingVariableName
+    x = mkElemVar Mock.xConfig
 
-positive :: TermLike VariableName -> Predicate VariableName
+positive :: TermLike RewritingVariableName -> Predicate RewritingVariableName
 positive u =
-    makeEqualsPredicate Mock.testSort
+    makeEqualsPredicate
         (Mock.builtinBool False)
         (Mock.lessInt
-            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
 
-negative :: TermLike VariableName -> Predicate VariableName
+negative :: TermLike RewritingVariableName -> Predicate RewritingVariableName
 negative u =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (Mock.greaterEqInt
-            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.fTestFunctionalInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
         )
         (Mock.builtinBool False)
 
 runSimplifyPredicates
-    :: Predicate VariableName
-    -> OrPattern VariableName
-    -> IO (OrPattern VariableName)
+    :: Predicate RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
 runSimplifyPredicates predicate orPattern =
-    Test.runSimplifier Mock.env
+    Test.runSimplifierSMT Mock.env
     $ simplifyConditionsWithSmt
         (SideCondition.assumeTruePredicate predicate)
         orPattern

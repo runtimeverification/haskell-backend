@@ -8,7 +8,7 @@ endmodule
 module ONE-SPEC
     imports VERIFICATION
 
-    rule <k> totalBalance(AID) => 50 ... </k>
+    claim <k> totalBalance(AID) => 50 ... </k>
         <accounts>
             <account>
                 <accountID> AID </accountID>

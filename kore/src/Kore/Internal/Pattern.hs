@@ -26,6 +26,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     , hasSimplifiedChildren
+    , hasSimplifiedChildrenIgnoreConditions
     , forgetSimplified
     , markSimplified
     , simplifiedAttribute
@@ -88,9 +89,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Sort as Sort
-    ( predicateSort
-    )
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
@@ -161,6 +159,20 @@ hasSimplifiedChildren sideCondition patt =
     TermLike.isSimplified sideCondition term
     && all (Predicate.isSimplified sideCondition) clauses
     && Substitution.isSimplified sideCondition substitution
+  where
+    Conditional { term, predicate, substitution } = patt
+    clauses = MultiAnd.fromPredicate predicate
+
+{- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
+used to simplify the children.
+ -}
+hasSimplifiedChildrenIgnoreConditions
+    :: Ord variable
+    => Pattern variable -> Bool
+hasSimplifiedChildrenIgnoreConditions patt =
+    TermLike.isSimplifiedSomeCondition term
+    && all Predicate.isSimplifiedSomeCondition clauses
+    && Substitution.isSimplifiedSomeCondition substitution
   where
     Conditional { term, predicate, substitution } = patt
     clauses = MultiAnd.fromPredicate predicate
@@ -245,20 +257,20 @@ bottom :: InternalVariable variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
-        , predicate = Predicate.makeFalsePredicate_
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
-The 'predicate' is set to 'makeFalsePredicate_'.
+The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
 bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Predicate.makeFalsePredicate resultSort
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -269,7 +281,7 @@ top :: InternalVariable variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
-        , predicate = Predicate.makeTruePredicate_
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -279,7 +291,7 @@ topOf :: InternalVariable variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
-        , predicate = Predicate.makeTruePredicate resultSort
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -288,7 +300,7 @@ topOf resultSort =
 The resulting @Pattern@ has a true predicate and an empty
 substitution, unless it is trivially 'Bottom'.
 
-See also: 'makeTruePredicate_', 'pure'
+See also: 'makeTruePredicate', 'pure'
 
  -}
 fromTermLike
@@ -300,7 +312,7 @@ fromTermLike term
   | otherwise =
     Conditional
         { term
-        , predicate = Predicate.makeTruePredicate (termLikeSort term)
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -347,16 +359,12 @@ coerceSort
             else TermLike.forceSort sort term
         -- Need to override this since a 'ceil' (say) over a predicate is that
         -- predicate with a different sort.
-        , predicate = Predicate.coerceSort sort predicate
+        , predicate = predicate
         , substitution
         }
 
 patternSort :: Pattern variable -> Sort
-patternSort Conditional {term, predicate} =
-    if termSort == Sort.predicateSort then predicateSort else termSort
-  where
-    termSort = termLikeSort term
-    predicateSort = Predicate.predicateSort predicate
+patternSort Conditional {term} = termLikeSort term
 
 syncSort
     :: (HasCallStack, InternalVariable variable)
@@ -394,10 +402,8 @@ requireDefined Conditional { term, predicate, substitution } =
         , substitution
         , predicate =
             Predicate.makeAndPredicate predicate
-            $ Predicate.makeCeilPredicate sort term
+            $ Predicate.makeCeilPredicate term
         }
-  where
-    sort = termLikeSort term
 
 {- | Apply a normalized 'Substitution' to a 'Pattern'.
 

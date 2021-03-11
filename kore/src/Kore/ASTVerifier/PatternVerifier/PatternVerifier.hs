@@ -41,7 +41,6 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
@@ -208,7 +207,7 @@ lookupDeclaredVariable varId = do
         $ Pretty.renderText . Pretty.layoutOneLine
         $ Pretty.hsep
         [ "Unquantified variable:"
-        , Pretty.squotes (unparse varId)
+        , unparse varId
         ]
 
 addDeclaredVariable
@@ -244,7 +243,7 @@ newDeclaredVariable declared variable = do
         $ Pretty.renderText . Pretty.layoutOneLine
         $ Pretty.hsep
         [ "Variable"
-        , Pretty.squotes (unparse name)
+        , unparse name
         , "was already declared."
         ]
 
@@ -259,8 +258,7 @@ uniqueDeclaredVariables
     :: Foldable f
     => f (SomeVariable VariableName)
     -> PatternVerifier DeclaredVariables
-uniqueDeclaredVariables =
-    Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
+uniqueDeclaredVariables = foldlM newDeclaredVariable emptyDeclaredVariables
 
 {- | Run a 'PatternVerifier' in a particular variable context.
 
@@ -277,7 +275,7 @@ withDeclaredVariables declaredVariables' =
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence
     => SymbolOrAlias
-    -> sentence pat
+    -> sentence
     -> PatternVerifier ApplicationSorts
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask
@@ -296,9 +294,9 @@ assertSameSort expectedSort actualSort =
         [expectedSort, actualSort]
     $ Pretty.renderText . Pretty.layoutCompact
     $ "Expecting sort"
-        <+> Pretty.squotes (unparse expectedSort)
+        <+> unparse expectedSort
         <+> "but got"
-        <+> Pretty.squotes (unparse actualSort)
+        <+> unparse actualSort
         <>  Pretty.dot
 
 assertExpectedSort

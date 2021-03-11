@@ -16,7 +16,6 @@ import Control.Exception
     ( evaluate
     )
 import Data.Default
-import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
@@ -24,7 +23,6 @@ import Data.Text
 import qualified Data.Text as Text
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -63,11 +61,11 @@ axiomPatternsUnitTests =
                 (RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate sortAInt
+                    , requires = Predicate.makeTruePredicate
                     , rhs = RHS
                         { existentials = []
                         , right = varI2
-                        , ensures = Predicate.makeTruePredicate sortAInt
+                        , ensures = Predicate.makeTruePredicate
                         }
                     , attributes = def
                     }
@@ -81,11 +79,11 @@ axiomPatternsUnitTests =
                 ( RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , requires = Predicate.makeTruePredicate sortAInt
+                    , requires = Predicate.makeTruePredicate
                     , rhs = RHS
                         { existentials = []
                         , right = varI2
-                        , ensures = Predicate.makeTruePredicate sortAInt
+                        , ensures = Predicate.makeTruePredicate
                         }
                     , attributes = def
                     }
@@ -197,11 +195,11 @@ axiomPatternsIntegrationTests =
         RulePattern
             { left
             , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate sortTCell
+            , requires = Predicate.makeTruePredicate
             , rhs = RHS
                 { existentials = []
                 , right
-                , ensures = Predicate.makeTruePredicate sortTCell
+                , ensures = Predicate.makeTruePredicate
                 }
             , attributes = def
             }
@@ -211,23 +209,11 @@ test_rewritePatternToRewriteRuleAndBack =
     testGroup
         "rewrite pattern to rewrite rule to pattern"
         [
-            let initialLhs =
+            let leftPSort = termLikeSort leftP
+                initialLhs =
                     mkAnd
-                        (mkNot antiLeftP)
-                        (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
-                initialPattern =
-                    Rewrites Mock.testSort initialLhs initialRhs
-                finalTerm = mkRewrites initialLhs initialRhs
-            in
-                testCase "RewriteRule with antileft" $
-                    assertEqual ""
-                        finalTerm
-                        (perhapsFinalPattern
-                            attributesWithPriority
-                            initialPattern
-                        )
-        ,
-            let initialLhs = mkAnd (Predicate.unwrapPredicate requiresP) leftP
+                        (Predicate.fromPredicate leftPSort requiresP)
+                        leftP
                 initialPattern =
                     Rewrites Mock.testSort initialLhs initialRhs
                 finalTerm = mkRewrites initialLhs initialRhs
@@ -260,19 +246,16 @@ test_patternToAxiomPatternAndBack =
     perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
         <$> termToAxiomPattern attribute initialPattern
 
-leftP, antiLeftP, rightP, initialRhs :: TermLike VariableName
+leftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
-antiLeftP = mkElemVar Mock.u
 rightP = mkExists Mock.y (mkElemVar Mock.y)
-initialRhs = mkAnd (Predicate.unwrapPredicate ensuresP) rightP
+initialRhs = mkAnd (Predicate.fromPredicate sort ensuresP) rightP
+  where
+    sort = termLikeSort rightP
 
 requiresP, ensuresP :: Predicate.Predicate VariableName
-requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
-ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
-
-attributesWithPriority :: Attribute.Axiom symbol variable
-attributesWithPriority =
-    def & setField @"priority" (Attribute.Priority (Just 0))
+requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
+ensuresP = Predicate.makeCeilPredicate (mkElemVar Mock.t)
 
 varI1, varI2, varKRemainder, varStateCell :: TermLike VariableName
 varI1 = mkElemVar $ mkElementVariable (testId "VarI1") sortAInt
@@ -327,7 +310,7 @@ sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike VariableName)
+    sentence :: SentenceSort
     sentence =
         SentenceSort
             { sentenceSortName = testId "AInt"
@@ -339,7 +322,7 @@ sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     asSentence sentence
   where
-    sentence :: SentenceSort (TermLike VariableName)
+    sentence :: SentenceSort
     sentence =
         SentenceSort
             { sentenceSortName = testId "KItem"
@@ -363,7 +346,7 @@ extractIndexedModule name eModules =
             (error ("Module " ++ Text.unpack name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
 
-symbolLeqAInt :: SentenceSymbol (TermLike VariableName)
+symbolLeqAInt :: SentenceSymbol
 symbolLeqAInt = mkSymbol_ (testId "leqAInt") [sortAInt, sortAInt] sortABool
 
 applyLeqAInt
@@ -372,7 +355,7 @@ applyLeqAInt
     -> TermLike VariableName
 applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 
-symbolLeqAExp :: SentenceSymbol (TermLike VariableName)
+symbolLeqAExp :: SentenceSymbol
 symbolLeqAExp = mkSymbol_ (testId "leqAExp") [sortAExp, sortAExp] sortBExp
 
 applyLeqAExp
@@ -382,7 +365,7 @@ applyLeqAExp
 applyLeqAExp child1 child2 =
     applySymbol_ symbolLeqAExp [child1, child2]
 
-symbolKSeq, symbolInj :: SentenceSymbol (TermLike VariableName)
+symbolKSeq, symbolInj :: SentenceSymbol
 symbolKSeq = mkSymbol_ (testId "kseq") [sortKItem, sortK] sortK
 
 symbolInj =
@@ -392,7 +375,7 @@ symbolInj =
         [sortParamSort "From"]
         (sortParamSort "To")
 
-symbolTCell, symbolKCell :: SentenceSymbol (TermLike VariableName)
+symbolTCell, symbolKCell :: SentenceSymbol
 symbolTCell = mkSymbol_ (testId "T") [sortKCell, sortStateCell] sortTCell
 -- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 applyTCell

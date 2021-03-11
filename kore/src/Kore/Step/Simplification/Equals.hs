@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
@@ -18,10 +20,6 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT (..)
-    )
-import qualified Data.Foldable as Foldable
-import Data.List
-    ( foldl'
     )
 
 import qualified Kore.Internal.Condition as Condition
@@ -38,7 +36,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -46,7 +44,9 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
-import qualified Kore.Sort as Sort
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -160,10 +160,10 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Equals Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Equals Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Equals { equalsFirst = first, equalsSecond = second } =
     simplifyEvaluated sideCondition first' second'
   where
@@ -184,11 +184,11 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
@@ -212,16 +212,16 @@ simplifyEvaluated sideCondition first second
                     (OrPattern.toPattern second)
                     sideCondition
   where
-    firstPatterns = Foldable.toList first
-    secondPatterns = Foldable.toList second
+    firstPatterns = toList first
+    secondPatterns = toList second
 
 makeEvaluateFunctionalOr
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Pattern variable
-    -> [Pattern variable]
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> [Pattern RewritingVariableName]
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
     firstCeil <- makeEvaluateCeil sideCondition first
     secondCeilsWithProofs <- mapM (makeEvaluateCeil sideCondition) seconds
@@ -253,11 +253,11 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => Pattern variable
-    -> Pattern variable
-    -> SideCondition variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluate
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
@@ -309,10 +309,10 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
         runMaybeT
@@ -325,18 +325,18 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate_ firstTerm secondTerm
+                    $ makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
     return (MultiOr.map Pattern.fromCondition_ result)
@@ -352,11 +352,11 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (OrCondition variable)
+    :: MonadSimplify simplifier
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 makeEvaluateTermsToPredicate first second sideCondition
   | first == second = return OrCondition.top
   | otherwise = do
@@ -366,10 +366,10 @@ makeEvaluateTermsToPredicate first second sideCondition
             return
                 $ OrCondition.fromCondition . Condition.fromPredicate
                 $ Predicate.markSimplified
-                $ makeEqualsPredicate_ first second
+                $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort first
-            secondCeilOr <- makeEvaluateTermCeil sideCondition Sort.predicateSort second
+            firstCeilOr <- makeEvaluateTermCeil sideCondition first
+            secondCeilOr <- makeEvaluateTermCeil sideCondition second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
@@ -388,11 +388,11 @@ the special cases handled by this.
 
  -}
 termEquals
-    :: (InternalVariable variable, MonadSimplify simplifier)
+    :: MonadSimplify simplifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT simplifier (OrCondition variable)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT simplifier (OrCondition RewritingVariableName)
 termEquals first second = MaybeT $ do
     maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
@@ -401,12 +401,12 @@ termEquals first second = MaybeT $ do
             MultiOr.make (map Condition.eraseConditionalTerm results)
 
 termEqualsAnd
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT (LogicT simplifier) (Pattern variable)
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
@@ -417,18 +417,18 @@ termEqualsAnd p1 p2 =
     maybeTermEqualsWorker
         :: forall unifier
         .  MonadUnify unifier
-        => TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
+        => TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> MaybeT unifier (Pattern RewritingVariableName)
     maybeTermEqualsWorker =
         maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker
         :: forall unifier
         .  MonadUnify unifier
-        => TermLike variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
+        => TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     termEqualsAndWorker first second =
         scatterResults
         =<< runUnification (maybeTermEqualsWorker first second)
@@ -440,7 +440,7 @@ termEqualsAnd p1 p2 =
                 Logic.scatter
             . sequence
         equalsPattern =
-            makeEqualsPredicate_ first second
+            makeEqualsPredicate first second
             & Predicate.markSimplified
             & Condition.fromPredicate
             -- Although the term will eventually be discarded, the sub-term

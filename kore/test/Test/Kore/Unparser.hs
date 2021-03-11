@@ -18,14 +18,7 @@ import Test.Tasty.Hedgehog
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( makeCeilPredicate_
-    , makeMultipleAndPredicate
-    )
-import qualified Kore.Internal.Substitution as Substitution
-import Kore.Parser.Lexeme
+import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax
@@ -35,7 +28,9 @@ import Kore.Unparser
 import Test.Kore hiding
     ( Gen
     )
-import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Parser
+    ( parse'
+    )
 import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 
@@ -50,18 +45,18 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                    :: ParsedSentenceSort
                 )
+                :: ParsedSentence
             )
             "sort x{} []"
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ asParsedPattern (TopF Top
+                    [ embedParsedPattern (TopF Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = testId "#Fm" }
                         })
-                    , asParsedPattern (InF In
+                    , embedParsedPattern (InF In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = testId "B"
                             , sortActualSorts = []
@@ -71,14 +66,14 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF $ Const $ inject
+                            embedParsedPattern $ VariableF $ Const $ inject
                             $ mkElementVariable
                                 (testId "T")
                                 (SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 )
                         , inContainingChild =
-                            asParsedPattern
+                            embedParsedPattern
                             $ StringLiteralF $ Const
                                 StringLiteral { getStringLiteral = "" }
                         })
@@ -97,7 +92,7 @@ test_unparse =
             \endmodule\n\
             \[]"
         , unparseParseTest
-            koreDefinitionParser
+            parseDefinition
             Definition
                 { definitionAttributes = Attributes {getAttributes = []}
                 , definitionModules =
@@ -150,7 +145,7 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asParsedPattern
+                    [ embedParsedPattern
                         ( TopF Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = testId "#CharList"
@@ -162,160 +157,49 @@ test_unparse =
                 }::Attributes
             )
             "[\\top{#CharList{}}()]"
-        , unparseTest
-            (makeMultipleAndPredicate @VariableName
-                [ makeCeilPredicate_ Mock.a
-                , makeCeilPredicate_ Mock.b
-                , makeCeilPredicate_ Mock.c
-                ]
-            )
-            "\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ a{}()),\n\
-            \\\and{_PREDICATE{}}(\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ b{}()),\n\
-            \    /* Spa */ \\ceil{testSort{}, _PREDICATE{}}(\
-                    \/* Fl Fn D Sfa Cl */ c{}())\n\
-            \))"
-        , unparseTest @(Pattern.Pattern VariableName)
-            (Pattern.andCondition
-                (Pattern.topOf Mock.topSort)
-                (Condition.fromSubstitution $ Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                    [ (inject Mock.x, Mock.a)
-                    , (inject Mock.y, Mock.b)
-                    , (inject Mock.z, Mock.c)
-                    ]
-                )
-            )
-            "\\and{topSort{}}(\n\
-            \    /* term: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \\\and{topSort{}}(\n\
-            \    /* predicate: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \    /* substitution: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ x:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ a{}()\n\
-            \        ),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ y:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ b{}()\n\
-            \        ),\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ z:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ c{}()\n\
-            \        )\n\
-            \    ))\n\
-            \))"
-        , unparseTest @(Pattern.Pattern VariableName)
-            (Pattern.andCondition
-                (Pattern.topOf Mock.topSort)
-                (Condition.andCondition
-                    (Condition.fromPredicate $ makeMultipleAndPredicate
-                        [ makeCeilPredicate_ Mock.a
-                        , makeCeilPredicate_ Mock.b
-                        , makeCeilPredicate_ Mock.c
-                        ]
-                    )
-                    (Condition.fromSubstitution $ Substitution.wrap
-                        $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.x, Mock.a)
-                        , (inject Mock.y, Mock.b)
-                        , (inject Mock.z, Mock.c)
-                        ]
-                    )
-                )
-            )
-            "\\and{topSort{}}(\n\
-            \    /* term: */\n\
-            \    /* D Sfa */ \\top{topSort{}}(),\n\
-            \\\and{topSort{}}(\n\
-            \    /* predicate: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ a{}()),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ b{}()),\n\
-            \        /* Spa */ \\ceil{testSort{}, topSort{}}(\
-                        \/* Fl Fn D Sfa Cl */ c{}())\n\
-            \    )),\n\
-            \    /* substitution: */\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ x:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ a{}()\n\
-            \        ),\n\
-            \    \\and{topSort{}}(\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ y:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ b{}()\n\
-            \        ),\n\
-            \        /* Spa */\n\
-            \        \\equals{testSort{}, topSort{}}(\n\
-            \            /* Fl Fn D Sfa */ z:testSort{},\n\
-            \            /* Fl Fn D Sfa Cl */ c{}()\n\
-            \        )\n\
-            \    ))\n\
-            \))"
         ]
 
 test_parse :: TestTree
 test_parse =
     testGroup "Parse"
-        [ testProperty "Generic testId" $ roundtrip idGen idParser
+        [ testProperty "Generic testId" $ roundtrip idGen parseId
         , testProperty "StringLiteral" $
-            roundtrip stringLiteralGen stringLiteralParser
+            roundtrip stringLiteralGen parseStringLiteral
         , testProperty "ElementVariable" $ do
             let gen = standaloneGen (elementVariableGen =<< sortGen)
-            roundtrip gen elementVariableParser
+            roundtrip gen parseElementVariable
         , testProperty "SetVariable" $ do
             let gen = standaloneGen (setVariableGen =<< sortGen)
-            roundtrip gen setVariableParser
+            roundtrip gen parseSetVariable
         , testProperty "Symbol" $
-            roundtrip symbolGen symbolParser
+            roundtrip symbolGen parseSymbolHead
         , testProperty "Alias" $
-            roundtrip aliasGen aliasParser
+            roundtrip aliasGen parseAliasHead
         , testProperty "SortVariable" $
-            roundtrip sortVariableGen sortVariableParser
+            roundtrip sortVariableGen parseSortVariable
         , testProperty "Sort" $
-            roundtrip (standaloneGen sortGen) sortParser
-        , testProperty "ParsedPattern" $
-            roundtrip korePatternGen korePatternParser
+            roundtrip (standaloneGen sortGen) parseSort
+        , testProperty "ParsedPattern" $ roundtrip korePatternGen parsePattern
         , testProperty "Attributes" $
-            roundtrip (standaloneGen attributesGen) attributesParser
+            roundtrip (standaloneGen attributesGen) parseAttributes
         , testProperty "Sentence" $
-            roundtrip (standaloneGen koreSentenceGen) koreSentenceParser
+            roundtrip (standaloneGen koreSentenceGen) parseSentence
         , testProperty "Module" $
             roundtrip
                 (standaloneGen $ moduleGen koreSentenceGen)
-                (moduleParser koreSentenceParser)
+                parseModule
         , testProperty "Definition" $
             roundtrip
                 (standaloneGen $ definitionGen koreSentenceGen)
-                (definitionParser koreSentenceParser)
+                parseDefinition
         ]
-
-parse :: Parser a -> String -> Either String a
-parse parser =
-    parseOnly (parser <* endOfInput) "<test-string>"
 
 roundtrip
     :: (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
-        parse parser (unparseToString generated) === Right generated
+        parse' parser (unparseToText generated) === Right generated
 
 unparseParseTest
     :: (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
@@ -324,7 +208,7 @@ unparseParseTest parser astInput =
         "Parsing + unparsing."
         (assertEqual ""
             (Right astInput)
-            (parse parser (unparseToString astInput)))
+            (parse' parser (unparseToText astInput)))
 
 unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree
 unparseTest astInput expected =

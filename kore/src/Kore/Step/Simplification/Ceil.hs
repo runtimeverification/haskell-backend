@@ -1,12 +1,10 @@
 {-|
-Module      : Kore.Step.Simplification.Ceil
-Description : Tools for Ceil pattern simplification.
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Ceil
     ( simplify
     , makeEvaluate
@@ -25,7 +23,6 @@ import Control.Monad.Reader
     ( MonadReader
     )
 import qualified Control.Monad.Reader as Reader
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
@@ -35,11 +32,13 @@ import Kore.Attribute.Synthetic
     ( synthesize
     )
 import qualified Kore.Builtin.AssocComm.CeilSimplifier as AssocComm
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
@@ -55,7 +54,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
@@ -65,6 +64,9 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Sort as Sort
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
@@ -87,10 +89,10 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Ceil Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Ceil Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
     Ceil { ceilChild = child }
@@ -114,11 +116,10 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition child =
     OrPattern.flatten
     <$> OrPattern.traverse (makeEvaluate sideCondition) child
@@ -127,22 +128,20 @@ simplifyEvaluated sideCondition child =
 for details.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition child
   | Pattern.isTop    child = return OrPattern.top
   | Pattern.isBottom child = return OrPattern.bottom
   | otherwise              = makeEvaluateNonBoolCeil sideCondition child
 
 makeEvaluateNonBoolCeil
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
   | isTop term =
     return $ OrPattern.fromPattern
@@ -164,12 +163,11 @@ makeEvaluateNonBoolCeil sideCondition patt@Conditional {term}
 {-| Evaluates the ceil of a TermLike, see 'simplify' for details.
 -}
 makeEvaluateTerm
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (OrCondition variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 makeEvaluateTerm sideCondition ceilChild =
     runCeilSimplifierWith
         ceilSimplifier
@@ -185,17 +183,21 @@ makeEvaluateTerm sideCondition ceilChild =
         mconcat
         [ newPredicateCeilSimplifier
         , newDefinedCeilSimplifier
+        -- We must apply user-defined \ceil rule before built-in rules
+        -- because they may be more specific. In particular, Map and Set
+        -- \ceil conditions are reduced to Bool expressions using in_keys.
+        , newAxiomCeilSimplifier
         , newApplicationCeilSimplifier
         , newBuiltinCeilSimplifier
         , newInjCeilSimplifier
-        , newAxiomCeilSimplifier
-        , newConcatMapCeilSimplifier
         ]
 
 newPredicateCeilSimplifier
     :: Monad simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newPredicateCeilSimplifier = CeilSimplifier $ \input ->
     case Predicate.makePredicate (ceilChild input) of
         Left _ -> empty
@@ -203,18 +205,23 @@ newPredicateCeilSimplifier = CeilSimplifier $ \input ->
 
 newDefinedCeilSimplifier
     :: Monad simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newDefinedCeilSimplifier = CeilSimplifier $ \input ->
     if isDefinedPattern (ceilChild input)
         then return OrCondition.top
         else empty
 
 newApplicationCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
+    :: MonadReader (SideCondition RewritingVariableName) simplifier
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => InternalVariable RewritingVariableName
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newApplicationCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
         App_ patternHead children
@@ -224,7 +231,6 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
             let mkChildCeil =
                     makeEvaluateTermCeil
                         sideCondition
-                        Sort.predicateSort
             simplifiedChildren <- mapM mkChildCeil children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate
@@ -233,10 +239,12 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
         _ -> empty
 
 newInjCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
+    :: MonadReader (SideCondition RewritingVariableName) simplifier
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newInjCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
         Inj_ inj -> do
@@ -245,38 +253,36 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
             input { ceilChild = inj }
                 & evaluateCeilInj
                 & ceilChild
-                & makeEvaluateTermCeil sideCondition Sort.predicateSort
+                & makeEvaluateTermCeil sideCondition
         _ -> empty
 
 newBuiltinCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
+    :: MonadReader (SideCondition RewritingVariableName) simplifier
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newBuiltinCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
-        Builtin_ builtin -> do
+        InternalList_ internal -> do
             sideCondition <- Reader.ask
-            makeEvaluateBuiltin sideCondition builtin
-        _ -> empty
-
-newConcatMapCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
-    => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
-newConcatMapCeilSimplifier = CeilSimplifier $ \input ->
-    case ceilChild input of
-        Builtin_ builtin -> do
+            makeEvaluateInternalList sideCondition internal
+        InternalMap_ internalMap -> do
             sideCondition <- Reader.ask
-            makeEvaluateConcatMap sideCondition builtin
+            makeEvaluateInternalMap sideCondition internalMap
+        InternalSet_ internalSet -> do
+            sideCondition <- Reader.ask
+            makeEvaluateInternalSet sideCondition internalSet
         _ -> empty
 
 newAxiomCeilSimplifier
-    :: MonadReader (SideCondition variable) simplifier
+    :: MonadReader (SideCondition RewritingVariableName) simplifier
     => MonadSimplify simplifier
-    => InternalVariable variable
-    => CeilSimplifier simplifier (TermLike variable) (OrCondition variable)
+    => CeilSimplifier
+        simplifier
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
 newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
     sideCondition <- Reader.ask
     evaluation <- Axiom.evaluatePattern
@@ -297,56 +303,56 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             ++ "and programming errors."
             )
 
-makeEvaluateConcatMap
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Builtin (TermLike variable)
-    -> MaybeT simplifier (OrCondition variable)
-makeEvaluateConcatMap sideCondition (Domain.BuiltinMap internalAc) =
+makeEvaluateInternalMap
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> InternalMap Key (TermLike RewritingVariableName)
+    -> MaybeT simplifier (OrCondition RewritingVariableName)
+makeEvaluateInternalMap sideCondition internalMap =
     runCeilSimplifierWith
         AssocComm.newMapCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
             , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
+            , ceilChild = internalMap
             }
   where
-    Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateConcatMap _ _ = empty
+    InternalAc { builtinAcSort } = internalMap
 
 {-| Evaluates the ceil of a domain value.
 -}
-makeEvaluateBuiltin
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Builtin (TermLike variable)
-    -> MaybeT simplifier (OrCondition variable)
-makeEvaluateBuiltin sideCondition (Domain.BuiltinSet internalAc) =
+makeEvaluateInternalSet
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> InternalSet Key (TermLike RewritingVariableName)
+    -> MaybeT simplifier (OrCondition RewritingVariableName)
+makeEvaluateInternalSet sideCondition internalSet =
     runCeilSimplifierWith
         AssocComm.newSetCeilSimplifier
         sideCondition
         Ceil
             { ceilResultSort = Sort.predicateSort
             , ceilOperandSort = builtinAcSort
-            , ceilChild = internalAc
+            , ceilChild = internalSet
             }
   where
-    Domain.InternalAc { builtinAcSort } = internalAc
-makeEvaluateBuiltin sideCondition (Domain.BuiltinList l) = do
-    children <- mapM (makeEvaluateTerm sideCondition) (Foldable.toList l)
+    InternalAc { builtinAcSort } = internalSet
+
+makeEvaluateInternalList
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> InternalList (TermLike RewritingVariableName)
+    -> simplifier (OrCondition RewritingVariableName)
+makeEvaluateInternalList sideCondition internal = do
+    children <- mapM (makeEvaluateTerm sideCondition) (toList internal)
     let
-        ceils :: [OrCondition variable]
+        ceils :: [OrCondition RewritingVariableName]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
-makeEvaluateBuiltin _ (Domain.BuiltinMap _) = empty
-makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrCondition.top
-makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrCondition.top
 
 {-| This handles the case when we can't simplify a term's ceil.
 
@@ -363,18 +369,18 @@ know how to simplify @ceil(g(x))@, the return value will be
 
 -}
 makeSimplifiedCeil
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
     -> Maybe SideCondition.Representation
-    -> TermLike variable
-    -> simplifier (OrCondition variable)
+    -> TermLike RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
 makeSimplifiedCeil
     sideCondition
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF)
   = do
     childCeils <- if needsChildCeils
-        then mapM (makeEvaluateTerm sideCondition) (Foldable.toList termLikeF)
+        then mapM (makeEvaluateTerm sideCondition) (toList termLikeF)
         else return []
     And.simplifyEvaluatedMultiPredicate
         sideCondition
@@ -397,12 +403,6 @@ makeSimplifiedCeil
         InF _ -> False
         NotF _ -> False
         BottomF _ -> unexpectedError
-        BuiltinF (Domain.BuiltinMap _) -> True
-        BuiltinF (Domain.BuiltinList _) -> True
-        BuiltinF (Domain.BuiltinSet _) -> True
-        BuiltinF (Domain.BuiltinInt _) -> unexpectedError
-        BuiltinF (Domain.BuiltinBool _) -> unexpectedError
-        BuiltinF (Domain.BuiltinString _) -> unexpectedError
         DomainValueF _ -> True
         FloorF _ -> False
         ForallF _ -> False
@@ -414,14 +414,20 @@ makeSimplifiedCeil
         RewritesF _ -> False
         TopF _ -> unexpectedError
         StringLiteralF _ -> unexpectedError
+        InternalBoolF _ -> unexpectedError
         InternalBytesF _ -> unexpectedError
+        InternalIntF _ -> unexpectedError
+        InternalListF _ -> True
+        InternalMapF _ -> True
+        InternalSetF _ -> True
+        InternalStringF _ -> unexpectedError
         VariableF _ -> False
 
     unsimplified =
         OrCondition.fromPredicate
         . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
-        . makeCeilPredicate_
+        . makeCeilPredicate
         $ termLike
 
-    unexpectedError =
+    ~unexpectedError =
         error ("Unexpected term type: " ++ unparseToString termLike)

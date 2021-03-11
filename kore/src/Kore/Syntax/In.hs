@@ -10,10 +10,6 @@ module Kore.Syntax.In
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -70,8 +66,29 @@ instance Unparse child => Unparse (In Sort child) where
             , unparse2 inContainingChild
             ])
 
+instance Unparse child => Unparse (In () child) where
+    unparse
+        In
+            { inContainedChild
+            , inContainingChild
+            }
+      =
+        "\\in"
+        <> arguments [inContainedChild, inContainingChild]
+
+    unparse2
+        In
+            { inContainedChild
+            , inContainingChild
+            }
+      = Pretty.parens (Pretty.fillSep
+            [ "\\in"
+            , unparse2 inContainedChild
+            , unparse2 inContainingChild
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (In Sort) where

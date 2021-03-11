@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.External
     ( externalize
     ) where
@@ -28,7 +31,6 @@ import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import qualified Kore.Builtin.String.String as String
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Symbol
@@ -56,30 +58,27 @@ externalize =
                 (Syntax.Pattern variable Attribute.Null)
                 (TermLike variable)
     worker termLike =
+        -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
-            BuiltinF domain ->
-                case domain of
-                    Domain.BuiltinMap  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Map.asTermLike builtin)
-                    Domain.BuiltinList builtin ->
-                        (toPatternF . Recursive.project)
-                            (List.asTermLike builtin)
-                    Domain.BuiltinSet  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Set.asTermLike builtin)
-                    Domain.BuiltinInt  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Int.asTermLike builtin)
-                    Domain.BuiltinBool builtin ->
-                        (toPatternF . Recursive.project)
-                            (Bool.asTermLike builtin)
-                    Domain.BuiltinString builtin ->
-                        (toPatternF . Recursive.project)
-                            (String.asTermLike builtin)
+            InternalBoolF (Const internalBool) ->
+                (toPatternF . Recursive.project) (Bool.asTermLike internalBool)
+            InternalIntF (Const internalInt) ->
+                (toPatternF . Recursive.project) (Int.asTermLike internalInt)
             InternalBytesF (Const internalBytes) ->
                 (toPatternF . Recursive.project)
                     (InternalBytes.asTermLike internalBytes)
+            InternalStringF (Const internalString) ->
+                (toPatternF . Recursive.project)
+                    (String.asTermLike internalString)
+            InternalListF internalList ->
+                (toPatternF . Recursive.project)
+                    (List.asTermLike internalList)
+            InternalMapF internalMap ->
+                (toPatternF . Recursive.project)
+                    (Map.asTermLike internalMap)
+            InternalSetF internalSet ->
+                (toPatternF . Recursive.project)
+                    (Set.asTermLike internalSet)
             InjF inj ->
                 (toPatternF . Recursive.project . synthesize . ApplySymbolF)
                     (Inj.toApplication inj)
@@ -143,5 +142,10 @@ externalize =
                 $ worker
                 $ getDefined definedF
             InjF _ -> error "Unexpected sort injection"
-            BuiltinF _ -> error "Unexpected internal builtin"
+            InternalBoolF _ -> error "Unexpected internal builtin"
             InternalBytesF _ -> error "Unexpected internal builtin"
+            InternalIntF _ -> error "Unexpected internal builtin"
+            InternalStringF _ -> error "Unexpected internal builtin"
+            InternalListF _ -> error "Unexpected internal builtin"
+            InternalMapF _ -> error "Unexpected internal builtin"
+            InternalSetF _ -> error "Unexpected internal builtin"

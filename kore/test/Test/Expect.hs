@@ -1,7 +1,10 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Expect
     ( expectRight
     , expectLeft
     , expectJust
+    , expectThese
     , expectOne
     , assertNull
     , assertTop
@@ -15,13 +18,16 @@ import Control.Error
     ( MaybeT
     , maybeT
     )
-import qualified Data.Foldable as Foldable
+import Data.These
 
 import Debug
-import Kore.Domain.Builtin
+import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
 import Kore.TopBottom
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Tasty.HUnit.Ext
 
 expectRight :: HasCallStack => Debug left => Either left right -> IO right
@@ -33,15 +39,22 @@ expectLeft = either return (assertFailure . show . debug)
 expectJust :: HasCallStack => Maybe a -> IO a
 expectJust = maybe (assertFailure "expected Just _, found Nothing") return
 
+expectThese :: HasCallStack => These a b -> IO (a, b)
+expectThese =
+    these
+        (\_ -> assertFailure "expected (These _ _), but found (This _)")
+        (\_ -> assertFailure "expected (These _ _), but found (That _)")
+        (curry pure)
+
 expectOne :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO a
 expectOne as =
-    case Foldable.toList as of
+    case toList as of
         [a] -> return a
         as' -> (assertFailure . show) (debug as')
 
 assertNull :: Foldable fold => HasCallStack => Debug [a] => fold a -> IO ()
 assertNull as =
-    case Foldable.toList as of
+    case toList as of
         [] -> return ()
         as' -> (assertFailure . show) (debug as')
 
@@ -50,8 +63,8 @@ assertTop a
   | isTop a = return ()
   | otherwise = (assertFailure . show) (debug a)
 
-expectBool :: HasCallStack => TermLike VariableName -> IO Bool
-expectBool (BuiltinBool_ internalBool) = return (builtinBoolValue internalBool)
+expectBool :: HasCallStack => TermLike RewritingVariableName -> IO Bool
+expectBool (InternalBool_ internalBool) = return (internalBoolValue internalBool)
 expectBool term = (assertFailure . show) (debug term)
 
 expectJustT :: MonadIO io => HasCallStack => MaybeT io a -> io a

@@ -35,7 +35,6 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Trans.Accum
 import qualified Control.Monad.Trans.Accum as Accum
-import qualified Data.Foldable as Foldable
 import Data.Functor.Identity
     ( Identity
     , runIdentity
@@ -152,7 +151,7 @@ addRules
     => f rule
     -- ^ Sequence of applied rules
     -> TransitionT rule m ()
-addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
+addRules = TransitionT . Accum.add . Seq.fromList . toList
 
 {- | Record the application of a single rule.
  -}

@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Simplification.Simplify
     ( InternalVariable
@@ -38,7 +39,6 @@ module Kore.Step.Simplification.Simplify
 
 import Prelude.Kore
 
-import Control.DeepSeq
 import qualified Control.Monad as Monad
 import Control.Monad.Morph
     ( MFunctor
@@ -92,13 +92,17 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
     ( pattern App_
-    , Sort
     , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
+    ( InternalVariable
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( warnFunctionWithoutEvaluators
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
@@ -138,33 +142,29 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     {- | Simplify a 'TermLike' to a disjunction of function-like 'Pattern's.
      -}
     simplifyTermLike
-        :: InternalVariable variable
-        => SideCondition variable
-        -> TermLike variable
-        -> m (OrPattern variable)
+        :: SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> m (OrPattern RewritingVariableName)
     default simplifyTermLike
-        :: InternalVariable variable
-        => (MonadTrans t, MonadSimplify n, m ~ t n)
-        => SideCondition variable
-        -> TermLike variable
-        -> m (OrPattern variable)
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => SideCondition RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> m (OrPattern RewritingVariableName)
     simplifyTermLike sideCondition termLike =
         lift (simplifyTermLike sideCondition termLike)
 
     simplifyCondition
-        :: InternalVariable variable
-        => SideCondition variable
-        -> Conditional variable term
-        -> LogicT m (Conditional variable term)
+        :: SideCondition RewritingVariableName
+        -> Conditional RewritingVariableName term
+        -> LogicT m (Conditional RewritingVariableName term)
     default simplifyCondition
-        ::  ( InternalVariable variable
-            , MonadTrans trans
+        ::  ( MonadTrans trans
             , MonadSimplify n
             , m ~ trans n
             )
-        =>  SideCondition variable
-        ->  Conditional variable term
-        ->  LogicT m (Conditional variable term)
+        =>  SideCondition RewritingVariableName
+        ->  Conditional RewritingVariableName term
+        ->  LogicT m (Conditional RewritingVariableName term)
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift
@@ -244,12 +244,11 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 {- | Simplify a pattern subject to conditions.
  -}
 simplifyConditionalTerm
-    :: forall variable simplifier
-    .  InternalVariable variable
-    => (MonadLogic simplifier, MonadSimplify simplifier)
-    => SideCondition variable
-    -> TermLike variable
-    -> simplifier (Pattern variable)
+    :: forall simplifier
+    .  (MonadLogic simplifier, MonadSimplify simplifier)
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (Pattern RewritingVariableName)
 simplifyConditionalTerm sideCondition termLike =
     simplifyTermLike sideCondition termLike >>= Logic.scatter
 
@@ -262,11 +261,10 @@ that it applies the substitution on the predicate.
 newtype ConditionSimplifier monad =
     ConditionSimplifier
         { getConditionSimplifier
-            :: forall variable term
-            .  InternalVariable variable
-            => SideCondition variable
-            -> Conditional variable term
-            -> LogicT monad (Conditional variable term)
+            :: forall term
+            .  SideCondition RewritingVariableName
+            -> Conditional RewritingVariableName term
+            -> LogicT monad (Conditional RewritingVariableName term)
         }
 
 emptyConditionSimplifier :: ConditionSimplifier monad
@@ -312,11 +310,11 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
         { runBuiltinAndAxiomSimplifier
-            :: forall variable simplifier
-            .  (InternalVariable variable, MonadSimplify simplifier)
-            => TermLike variable
-            -> SideCondition variable
-            -> simplifier (AttemptedAxiom variable)
+            :: forall simplifier
+            .  MonadSimplify simplifier
+            => TermLike RewritingVariableName
+            -> SideCondition RewritingVariableName
+            -> simplifier (AttemptedAxiom RewritingVariableName)
         }
 
 {-|A type to abstract away the mapping from symbol identifiers to
@@ -327,8 +325,7 @@ type BuiltinAndAxiomSimplifierMap =
 
 lookupAxiomSimplifier
     :: MonadSimplify simplifier
-    => InternalVariable variable
-    => TermLike variable
+    => TermLike RewritingVariableName
     -> MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
     simplifierMap <- lift askSimplifierAxioms
@@ -387,7 +384,7 @@ data AttemptedAxiomResults variable =
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable) where
+instance Semigroup (AttemptedAxiomResults RewritingVariableName) where
     (<>)
         AttemptedAxiomResults
             { results = firstResults
@@ -403,7 +400,7 @@ instance InternalVariable variable => Semigroup (AttemptedAxiomResults variable)
             , remainders = MultiOr.merge firstRemainders secondRemainders
             }
 
-instance InternalVariable variable => Monoid (AttemptedAxiomResults variable) where
+instance Monoid (AttemptedAxiomResults RewritingVariableName) where
     mempty =
         AttemptedAxiomResults
             { results = OrPattern.bottom
@@ -437,7 +434,7 @@ data AttemptedAxiom variable
 isApplicable
     , isNotApplicable
     , isNotApplicableUntilConditionChanges
-        :: AttemptedAxiom variable -> Bool
+        :: AttemptedAxiom RewritingVariableName -> Bool
 isApplicable =
     \case
         Applied _ -> True
@@ -454,9 +451,9 @@ isNotApplicableUntilConditionChanges =
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.
 -}
-type CommonAttemptedAxiom = AttemptedAxiom VariableName
+type CommonAttemptedAxiom = AttemptedAxiom RewritingVariableName
 
-emptyAttemptedAxiom :: InternalVariable variable => AttemptedAxiom variable
+emptyAttemptedAxiom :: AttemptedAxiom RewritingVariableName
 emptyAttemptedAxiom = Applied mempty
 
 {- | Does the 'AttemptedAxiom' have remainders?
@@ -464,7 +461,7 @@ emptyAttemptedAxiom = Applied mempty
 A 'NotApplicable' result is not considered to have remainders.
 
  -}
-hasRemainders :: AttemptedAxiom variable -> Bool
+hasRemainders :: AttemptedAxiom RewritingVariableName -> Bool
 hasRemainders (Applied axiomResults) = (not . null) (remainders axiomResults)
 hasRemainders NotApplicable = False
 hasRemainders (NotApplicableUntilConditionChanges _) = False
@@ -473,8 +470,8 @@ hasRemainders (NotApplicableUntilConditionChanges _) = False
  -}
 maybeNotApplicable
     :: Functor m
-    => MaybeT m (AttemptedAxiomResults variable)
-    ->        m (AttemptedAxiom variable)
+    => MaybeT m (AttemptedAxiomResults RewritingVariableName)
+    ->        m (AttemptedAxiom RewritingVariableName)
 maybeNotApplicable =
     fmap (maybe NotApplicable Applied) . runMaybeT
 
@@ -482,20 +479,21 @@ maybeNotApplicable =
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiomResults variable)
-    ->           m (AttemptedAxiom variable)
+    => ExceptT e m (AttemptedAxiomResults RewritingVariableName)
+    ->           m (AttemptedAxiom RewritingVariableName)
 exceptNotApplicable =
     fmap (either (const NotApplicable) Applied) . runExceptT
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
-notApplicableAxiomEvaluator :: Applicative m => m (AttemptedAxiom variable)
+notApplicableAxiomEvaluator
+    :: Applicative m => m (AttemptedAxiom RewritingVariableName)
 notApplicableAxiomEvaluator = pure NotApplicable
 
 -- |Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator
-    :: (Applicative m, InternalVariable variable)
-    => TermLike variable
-    -> m (AttemptedAxiom variable)
+    :: Applicative m
+    => TermLike RewritingVariableName
+    -> m (AttemptedAxiom RewritingVariableName)
 purePatternAxiomEvaluator p =
     pure
         ( Applied AttemptedAxiomResults
@@ -509,24 +507,24 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier
-    ::  (  forall variable simplifier
-        .  (InternalVariable variable, MonadSimplify simplifier)
+    ::  (  forall simplifier
+        .  MonadSimplify simplifier
         => CofreeF
             (Application Symbol)
-            (Attribute.Pattern variable)
-            (TermLike variable)
-        -> simplifier (AttemptedAxiom variable)
+            (Attribute.Pattern RewritingVariableName)
+            (TermLike RewritingVariableName)
+        -> simplifier (AttemptedAxiom RewritingVariableName)
         )
     -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
-        :: forall variable simplifier
-        .  (InternalVariable variable, MonadSimplify simplifier)
-        => TermLike variable
-        -> SideCondition variable
-        -> simplifier (AttemptedAxiom variable)
+        :: forall simplifier
+        .  MonadSimplify simplifier
+        => TermLike RewritingVariableName
+        -> SideCondition RewritingVariableName
+        -> simplifier (AttemptedAxiom RewritingVariableName)
     helper termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
@@ -544,29 +542,26 @@ isConstructorOrOverloaded s
     return (isConstructor s || isOverloaded s)
 
 makeEvaluateTermCeil
-    :: InternalVariable variable
-    => MonadSimplify simplifier
-    => SideCondition variable
-    -> Sort
-    -> TermLike variable
-    -> simplifier (OrCondition variable)
-makeEvaluateTermCeil sideCondition sort child =
-    Predicate.makeCeilPredicate sort child
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> simplifier (OrCondition RewritingVariableName)
+makeEvaluateTermCeil sideCondition child =
+    Predicate.makeCeilPredicate child
     & Condition.fromPredicate
     & simplifyCondition sideCondition
     & OrCondition.observeAllT
 
 makeEvaluateCeil
     :: MonadSimplify simplifier
-    => InternalVariable variable
-    => SideCondition variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluateCeil sideCondition child =
     do
         let (childTerm, childCondition) = Pattern.splitTerm child
         ceilCondition <-
-            Predicate.makeCeilPredicate_ childTerm
+            Predicate.makeCeilPredicate childTerm
             & Condition.fromPredicate
             & simplifyCondition sideCondition
         Pattern.andCondition Pattern.top (ceilCondition <> childCondition)

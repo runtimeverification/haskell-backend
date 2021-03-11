@@ -27,9 +27,6 @@ import Control.Comonad.Trans.Cofree
     ( ComonadCofree (..)
     )
 import qualified Control.Comonad.Trans.Env as Env
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Compose
     ( Compose (..)
@@ -54,11 +51,33 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
+import Kore.Sort
+import Kore.Syntax.And
+import Kore.Syntax.Application
+import Kore.Syntax.Bottom
+import Kore.Syntax.Ceil
+import Kore.Syntax.DomainValue
+import Kore.Syntax.Equals
+import Kore.Syntax.Exists
+import Kore.Syntax.Floor
+import Kore.Syntax.Forall
+import Kore.Syntax.Iff
+import Kore.Syntax.Implies
+import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
+import Kore.Syntax.Mu
+import Kore.Syntax.Next
+import Kore.Syntax.Not
+import Kore.Syntax.Nu
+import Kore.Syntax.Or
 import Kore.Syntax.PatternF
     ( Const (..)
     , PatternF (..)
     )
 import qualified Kore.Syntax.PatternF as PatternF
+import Kore.Syntax.Rewrites
+import Kore.Syntax.StringLiteral
+import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.TopBottom
     ( TopBottom (..)
@@ -238,12 +257,177 @@ instance TopBottom (Pattern variable annotation) where
     isBottom (Recursive.project -> _ :< BottomF _) = True
     isBottom _ = False
 
-instance
-    (Unparse variable)
-    => SQL.Column (Pattern variable annotation)
-  where
+instance Unparse variable => SQL.Column (Pattern variable annotation) where
     defineColumn tableName _ = SQL.defineColumn tableName (SQL.Proxy @Text)
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
+
+instance
+    From
+        (And Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Application SymbolOrAlias (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Bottom Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Ceil Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (DomainValue Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Equals Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Exists Sort variable (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Floor Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Forall Sort variable (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Iff Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Implies Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (In Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Mu variable (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Next Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Not Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Nu variable (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Or Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Rewrites Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Top Sort (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance
+    From
+        (Inhabitant (Pattern variable Attribute.Null))
+        (Pattern variable Attribute.Null)
+  where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance From StringLiteral (Pattern variable Attribute.Null) where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
+
+instance From (SomeVariable variable) (Pattern variable Attribute.Null) where
+    from = Recursive.embed . (:<) Attribute.Null . from
+    {-# INLINE CONLIKE from #-}
 
 fromPattern
     :: Pattern variable annotation

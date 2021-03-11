@@ -149,12 +149,12 @@ patternVerifierHook =
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ literal -> do
-                bytesValue <- Builtin.parseString Encoding.parseBase16 literal
+                internalBytesValue <- Builtin.parseString Encoding.parse8Bit literal
                 (return . InternalBytesF . Const)
-                    InternalBytes { bytesSort, bytesValue }
+                    InternalBytes { internalBytesSort, internalBytesValue }
             _ -> Kore.Error.koreFail "Expected literal string"
       where
-        DomainValue { domainValueSort = bytesSort } = external
+        DomainValue { domainValueSort = internalBytesSort } = external
         DomainValue { domainValueChild = externalChild } = external
 
 dotBytes :: IsString str => str
@@ -168,11 +168,11 @@ dotBytesVerifier =
     worker application = do
         unless (null arguments) (Kore.Error.koreFail "expected zero arguments")
         (return . InternalBytesF . Const)
-            InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
+            InternalBytes { internalBytesSort, internalBytesValue = Encoding.encode8Bit "" }
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
-        bytesSort = applicationSortsResult . symbolSorts $ symbol
+        internalBytesSort = applicationSortsResult . symbolSorts $ symbol
 
 matchBuiltinBytes :: Monad m => TermLike variable -> MaybeT m ByteString
 matchBuiltinBytes (InternalBytes_ _ byteString) = return byteString

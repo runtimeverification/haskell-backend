@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.NoConfusion
     ( equalInjectiveHeadsAndEquals
     , constructorAndEqualsAssumesDifferentHeads
@@ -16,7 +18,6 @@ import Control.Error
     )
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 
 import Kore.Internal.Pattern
     ( Pattern
@@ -24,6 +25,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
 
@@ -36,15 +40,13 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 
  -}
 equalInjectiveHeadsAndEquals
-    ::  ( InternalVariable variable
-        , MonadUnify unifier
-        )
+    :: MonadUnify unifier
     => HasCallStack
-    => TermSimplifier variable unifier
+    => TermSimplifier RewritingVariableName unifier
     -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 equalInjectiveHeadsAndEquals
     termMerger
     (App_ firstHead firstChildren)
@@ -52,7 +54,7 @@ equalInjectiveHeadsAndEquals
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let merged = Foldable.foldMap Pattern.withoutTerm children
+        let merged = foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
             -- Unifying the symbol's children may have produced new patterns
             -- which allow evaluating the symbol. It is possible this pattern
@@ -73,11 +75,10 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    :: InternalVariable variable
-    => MonadUnify unifier
+    :: MonadUnify unifier
     => HasCallStack
-    => TermLike variable
-    -> TermLike variable
+    => TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
     -> MaybeT unifier a
 constructorAndEqualsAssumesDifferentHeads
     first@(App_ firstHead _)

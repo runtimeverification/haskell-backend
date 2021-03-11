@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.KEqual
     ( test_keq
     , test_kneq
@@ -23,6 +25,10 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -37,6 +43,9 @@ import SMT
     ( NoSMT
     )
 
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -78,24 +87,28 @@ test_KEqual =
 
     , testCaseWithoutSMT "kseq(x, dotk) equals kseq(x, dotk)" $ do
         let expect = Pattern.top
+            xConfigElemVarKItemSort =
+                configElementVariableFromId "x" kItemSort
             original =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
-                        (kseq (mkElemVar (mkElementVariable "x" kItemSort)) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
+                        (kseq (mkElemVar xConfigElemVarKItemSort) dotk)
                     )
         actual <- evaluate original
         assertEqual' "" expect actual
 
     , testCaseWithoutSMT "kseq(inj(x), dotk) equals kseq(inj(x), dotk)" $ do
         let expect = Pattern.top
+            xConfigElemVarIdSort =
+                configElementVariableFromId "x" idSort
             original =
                 mkEquals_
                     (Test.Bool.asInternal True)
                     (keqBool
-                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
-                        (kseq (inj kItemSort (mkElemVar (mkElementVariable "x" idSort))) dotk)
+                        (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
+                        (kseq (inj kItemSort (mkElemVar xConfigElemVarIdSort)) dotk)
                     )
         actual <- evaluate original
         assertEqual' "" expect actual
@@ -138,7 +151,7 @@ test_KEqual =
 
 test_KIte :: [TestTree]
 test_KIte =
-    [ testCaseWithoutSMT "ite true" $ do
+    [ testCaseWithoutSMT "true" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal False
@@ -150,7 +163,7 @@ test_KIte =
         actual <- evaluate original
         assertEqual' "" expect actual
 
-    , testCaseWithoutSMT "ite false" $ do
+    , testCaseWithoutSMT "false" $ do
         let expect =
                 Pattern.fromTermLike
                 $ inj kSort $ Test.Bool.asInternal True
@@ -159,6 +172,14 @@ test_KIte =
                     (Test.Bool.asInternal False)
                     (inj kSort $ Test.Bool.asInternal False)
                     (inj kSort $ Test.Bool.asInternal True)
+        actual <- evaluate original
+        assertEqual' "" expect actual
+    , testCaseWithoutSMT "abstract" $ do
+        let original = kiteK x y z
+            expect = Pattern.fromTermLike original
+            x = mkElemVar $ configElementVariableFromId (testId "x") boolSort
+            y = mkElemVar $ configElementVariableFromId (testId "y") kSort
+            z = mkElemVar $ configElementVariableFromId (testId "z") kSort
         actual <- evaluate original
         assertEqual' "" expect actual
     ]
@@ -177,7 +198,7 @@ test_KEqualSimplification =
 
     ]
 
-dvT, dvX :: TermLike VariableName
+dvT, dvX :: TermLike RewritingVariableName
 dvT =
     mkDomainValue DomainValue
         { domainValueSort = idSort
@@ -190,9 +211,9 @@ dvX =
         }
 
 runKEqualSimplification
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> NoSMT [Maybe (Pattern VariableName)]
+    :: TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> NoSMT [Maybe (Pattern RewritingVariableName)]
 runKEqualSimplification term1 term2 =
     runSimplifierBranch testEnv
     . evalEnvUnifierT Not.notSimplifier

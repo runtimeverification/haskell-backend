@@ -4,15 +4,20 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
     , Condition (..)
     , pattern Simplified_
     , Type (..)
     , isSimplified
-    , isFullySimplified
+    , isSimplifiedAnyCondition
+    , isSimplifiedSomeCondition
     , simplifiedTo
+    , notSimplified
     , fullySimplified
+    , alwaysSimplified
     , simplifiedConditionally
     , simplifiableConditionally
     , unparseTag
@@ -20,8 +25,6 @@ module Kore.Attribute.Pattern.Simplified
 
 import Prelude.Kore
 
-import Control.DeepSeq
-import Data.Foldable as Foldable
 import Data.Text
     ( Text
     )
@@ -30,7 +33,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import Kore.Internal.Inj
     ( Inj
     )
@@ -224,6 +226,11 @@ Simplified_ _ Any `simplifiedTo` s@(Simplified_ Fully Any) = s
 
 s1@(Simplified_ _ _) `simplifiedTo` s2@(Simplified_ Partly _) = s1 <> s2
 
+{- | Is the pattern fully simplified under the given side condition?
+
+See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> Simplified -> Bool
 isSimplified _ (Simplified_ Fully Any) = True
 isSimplified currentCondition (Simplified_ Fully (Condition condition)) =
@@ -232,12 +239,26 @@ isSimplified _ (Simplified_ Fully Unknown) = False
 isSimplified _ (Simplified_ Partly _) = False
 isSimplified _ NotSimplified = False
 
-isFullySimplified :: Simplified -> Bool
-isFullySimplified (Simplified_ Fully Any) = True
-isFullySimplified (Simplified_ Fully (Condition _)) = False
-isFullySimplified (Simplified_ Fully Unknown) = False
-isFullySimplified (Simplified_ Partly _) = False
-isFullySimplified NotSimplified = False
+{- | Is the pattern fully simplified under any side condition?
+
+See also: 'isSimplified', 'isSimplifiedSomeCondition'.
+
+ -}
+isSimplifiedAnyCondition :: Simplified -> Bool
+isSimplifiedAnyCondition (Simplified_ Fully Any) = True
+isSimplifiedAnyCondition (Simplified_ Fully (Condition _)) = False
+isSimplifiedAnyCondition (Simplified_ Fully Unknown) = False
+isSimplifiedAnyCondition (Simplified_ Partly _) = False
+isSimplifiedAnyCondition NotSimplified = False
+
+{- | Is the pattern fully simplified under some side condition?
+
+See also: 'isSimplified', 'isSimplifiedAnyCondition'.
+
+ -}
+isSimplifiedSomeCondition :: Simplified -> Bool
+isSimplifiedSomeCondition (Simplified_ Fully _) = True
+isSimplifiedSomeCondition _ = False
 
 fullySimplified :: Simplified
 fullySimplified = Simplified_ Fully Any
@@ -254,8 +275,8 @@ alwaysSimplified = const fullySimplified
 
 notSimplified :: Foldable a => a Simplified -> Simplified
 notSimplified a
-  | Foldable.null a = NotSimplified
-  | otherwise = Foldable.fold a <> Simplified_ Partly Any
+  | null a = NotSimplified
+  | otherwise = fold a <> Simplified_ Partly Any
 {-# INLINE notSimplified #-}
 
 {- | Provides a short and incomplete textual description of a 'Simplified'
@@ -365,15 +386,6 @@ instance Synthetic Simplified (Next sort) where
 
 instance Synthetic Simplified (Rewrites sort) where
     synthetic = notSimplified
-    {-# INLINE synthetic #-}
-
-instance Synthetic Simplified (Builtin key) where
-    synthetic (BuiltinInt    _) = fullySimplified
-    synthetic (BuiltinBool   _) = fullySimplified
-    synthetic (BuiltinString _) = fullySimplified
-    synthetic b@(BuiltinMap    _) = notSimplified b
-    synthetic b@(BuiltinList   _) = notSimplified b
-    synthetic b@(BuiltinSet    _) = notSimplified b
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified Inhabitant where

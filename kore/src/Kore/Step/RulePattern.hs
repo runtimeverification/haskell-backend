@@ -14,9 +14,6 @@ module Kore.Step.RulePattern
     , UnifyingRule (..)
     , rulePattern
     , leftPattern
-    , isHeatingRule
-    , isCoolingRule
-    , isNormalRule
     , applySubstitution
     , topExistsToImplicitForall
     , isFreeOf
@@ -40,9 +37,6 @@ module Kore.Step.RulePattern
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Lens
     ( Lens'
     )
@@ -136,9 +130,11 @@ import Kore.Unparser
     , unparse
     , unparse2
     )
-import Kore.Variables.Fresh
+import Kore.Variables.Fresh hiding
+    ( refreshVariables'
+    )
 import Pretty
-    ( Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -216,13 +212,13 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
             [ "left:"
             , Pretty.indent 4 (unparse left)
             , "requires:"
-            , Pretty.indent 4 (unparse requires)
+            , Pretty.indent 4 (pretty requires)
             , "existentials:"
             , Pretty.indent 4 (Pretty.list $ unparse <$> existentials)
             , "right:"
             , Pretty.indent 4 (unparse right)
             , "ensures:"
-            , Pretty.indent 4 (unparse ensures)
+            , Pretty.indent 4 (pretty ensures)
             ]
       where
         RulePattern
@@ -238,9 +234,6 @@ instance TopBottom (RulePattern variable) where
 instance From (RulePattern variable) Attribute.PriorityAttributes where
     from = from @(Attribute.Axiom _ _) . attributes
 
-instance From (RulePattern variable) Attribute.HeatCool where
-    from = from @(Attribute.Axiom _ _) . attributes
-
 -- | Creates a basic, unconstrained, Equality pattern
 rulePattern
     :: InternalVariable variable
@@ -251,7 +244,7 @@ rulePattern left right =
     RulePattern
         { left
         , antiLeft = Nothing
-        , requires = Predicate.makeTruePredicate (TermLike.termLikeSort left)
+        , requires = Predicate.makeTruePredicate
         , rhs = termToRHS right
         , attributes = Default.def
         }
@@ -270,30 +263,6 @@ leftPattern =
         rule { left, requires = Condition.toPredicate condition }
       where
         (left, condition) = Pattern.splitTerm pattern'
-
-{- | Does the axiom pattern represent a heating rule?
- -}
-isHeatingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isHeatingRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Heat -> True
-        _ -> False
-
-{- | Does the axiom pattern represent a cooling rule?
- -}
-isCoolingRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isCoolingRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Cool -> True
-        _ -> False
-
-{- | Does the axiom pattern represent a normal rule?
- -}
-isNormalRule :: forall rule. From rule Attribute.HeatCool => rule -> Bool
-isNormalRule rule =
-    case from @rule @Attribute.HeatCool rule of
-        Attribute.Normal -> True
-        _ -> False
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm
@@ -333,12 +302,11 @@ lhsToTerm
     -> Predicate variable
     -> TermLike variable
 lhsToTerm left Nothing requires =
-    TermLike.mkAnd (Predicate.unwrapPredicate requires) left
+    TermLike.mkAnd (Predicate.fromPredicate_ requires) left
 lhsToTerm left (Just antiLeft) requires =
     TermLike.mkAnd
         (TermLike.mkNot (AntiLeft.toTermLike antiLeft))
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-
+        (TermLike.mkAnd (Predicate.fromPredicate_ requires) left)
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS
@@ -349,7 +317,7 @@ injectTermIntoRHS right =
     RHS
     { existentials = []
     , right
-    , ensures = Predicate.makeTruePredicate (TermLike.termLikeSort right)
+    , ensures = Predicate.makeTruePredicate
     }
 
 -- | Parses a term representing a RHS into a RHS
@@ -522,9 +490,6 @@ instance
 instance From (RewriteRule variable) Attribute.PriorityAttributes where
     from = from @(RulePattern _) . getRewriteRule
 
-instance From (RewriteRule variable) Attribute.HeatCool where
-    from = from @(RulePattern _) . getRewriteRule
-
 instance TopBottom (RewriteRule variable) where
     isTop _ = False
     isBottom _ = False
@@ -538,6 +503,9 @@ newtype ImplicationRule variable =
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance From (ImplicationRule variable) Attribute.SourceLocation where
+    from (ImplicationRule rule) = from rule
 
 instance
     InternalVariable variable

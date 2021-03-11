@@ -31,9 +31,6 @@ module SMT.AST
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Char
     ( isSpace
     )

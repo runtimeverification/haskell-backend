@@ -7,7 +7,6 @@ import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -66,10 +65,7 @@ test_multiAndMake =
 hasPatterns :: MultiAnd TestTopBottom -> [TestTopBottom] -> TestTree
 hasPatterns actual expected =
     testCase "hasPattern"
-        (assertEqual ""
-            expected
-            (Foldable.toList actual)
-        )
+        (assertEqual "" expected (toList actual))
 
 assertIsTop :: Bool -> MultiAnd TestTopBottom -> TestTree
 assertIsTop expected input =

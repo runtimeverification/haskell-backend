@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl
     ( runRepl
@@ -15,6 +16,7 @@ import Prelude.Kore
 import Control.Concurrent.MVar
 import Control.Exception
     ( AsyncException (UserInterrupt)
+    , fromException
     )
 import qualified Control.Lens as Lens
 import Control.Monad
@@ -45,6 +47,7 @@ import Data.List
     )
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
 import Kore.Attribute.RuleIndex
     ( RuleIndex (..)
     )
@@ -85,8 +88,11 @@ import Prof
     ( MonadProf
     )
 
+import Kore.Log.ErrorException
+    ( errorException
+    )
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import Kore.Unparser
     ( unparseToString
@@ -176,7 +182,7 @@ runRepl
     repl0 = do
         str <- prompt
         let command =
-                fromMaybe ShowUsage $ parseMaybe commandParser str
+                fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
@@ -206,7 +212,7 @@ runRepl
     config =
         Config
             { stepper    = stepper0
-            , unifier    = unificationProcedureWorker
+            , unifier    = unificationProcedure
             , logger
             , outputFile
             , mainModuleName
@@ -274,9 +280,10 @@ runRepl
 
     catchEverything :: a -> m a -> m a
     catchEverything a =
-        Exception.handleAll $ \e -> liftIO $ do
-            putStrLn "Stepper evaluation errored."
-            print e
+        Exception.handleAll $ \e -> do
+            case fromException e of
+                Just (Log.SomeEntry entry) -> Log.logEntry entry
+                Nothing -> errorException e
             pure a
 
     replGreeting :: m ()

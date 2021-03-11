@@ -16,6 +16,7 @@ builtin modules.
  -}
 
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE Strict    #-}
 
 module Kore.Builtin.Int
     ( sort
@@ -30,6 +31,7 @@ module Kore.Builtin.Int
     , asPartialPattern
     , parse
     , unifyIntEq
+    , unifyInt
       -- * keys
     , randKey
     , srandKey
@@ -65,8 +67,7 @@ module Kore.Builtin.Int
     , emod
     , pow
     , powmod
-    , log2
-    ) where
+    , log2 ) where
 
 import Prelude.Kore
 
@@ -81,6 +82,7 @@ import Data.Bits
     , (.&.)
     , (.|.)
     )
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -89,7 +91,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import GHC.Integer
     ( smallInteger
     )
@@ -109,9 +110,9 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import Kore.Builtin.Int.Int
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.InternalInt
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -123,6 +124,9 @@ import Kore.Internal.Symbol
     ( symbolHook
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -214,29 +218,26 @@ patternVerifierHook =
     patternVerifierWorker external =
         case externalChild of
             StringLiteral_ lit -> do
-                builtinIntValue <- Builtin.parseString parse lit
-                (return . BuiltinF . Domain.BuiltinInt)
-                    Domain.InternalInt
-                        { builtinIntSort = domainValueSort
-                        , builtinIntValue
+                internalIntValue <- Builtin.parseString parse lit
+                (return . InternalIntF . Const)
+                    InternalInt
+                        { internalIntSort
+                        , internalIntValue
                         }
             _ -> Kore.Error.koreFail "Expected literal string"
       where
-        DomainValue { domainValueSort } = external
+        DomainValue { domainValueSort = internalIntSort } = external
         DomainValue { domainValueChild = externalChild } = external
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue
     :: Text -- ^ error message Context
-    -> Builtin child
-    -> Integer
-extractIntDomainValue ctx =
+    -> TermLike variable
+    -> Maybe Integer
+extractIntDomainValue _ =
     \case
-        Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
-            builtinIntValue
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Int builtin should be internal"
+        InternalInt_ InternalInt { internalIntValue } -> Just internalIntValue
+        _ -> Nothing
 
 {- | Parse a string literal as an integer.
  -}
@@ -257,16 +258,9 @@ expectBuiltinInt
     => Text  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Integer
-expectBuiltinInt ctx =
+expectBuiltinInt _ =
     \case
-        Builtin_ domain ->
-            case domain of
-                Domain.BuiltinInt Domain.InternalInt { builtinIntValue } ->
-                    return builtinIntValue
-                _ ->
-                    Builtin.verifierBug
-                    $ Text.unpack ctx
-                    ++ ": Domain value is not a string or internal value"
+        InternalInt_ InternalInt { internalIntValue } -> return internalIntValue
         _ -> empty
 
 {- | Implement builtin function evaluation.
@@ -394,9 +388,9 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
             empty
 
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.topOf resultSort
+      | TermLike.isDefinedPattern termLike = Condition.top
       | otherwise =
-        Condition.fromPredicate (makeCeilPredicate resultSort termLike)
+        Condition.fromPredicate (makeCeilPredicate termLike)
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments
 
@@ -412,20 +406,39 @@ matchIntEqual =
             Monad.guard (hook2 == eqKey)
         & isJust
 
+{- | Unification of Int values.
+ -}
+unifyInt
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyInt term1@(InternalInt_ int1) term2@(InternalInt_ int2) =
+    assert (on (==) internalIntSort int1 int2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | on (==) internalIntValue int1 int2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = explainAndReturnBottom "distinct integers" term1 term2
+unifyInt _ _ = empty
+
 {- | Unification of the @INT.eq@ symbol.
 
 This function is suitable only for equality simplification.
 
  -}
 unifyIntEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIntEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where

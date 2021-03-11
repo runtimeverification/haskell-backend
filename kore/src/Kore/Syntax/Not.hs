@@ -10,9 +10,6 @@ module Kore.Syntax.Not
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -46,6 +43,14 @@ instance Unparse child => Unparse (Not Sort child) where
     unparse Not { notSort, notChild } =
         "\\not"
         <> parameters [notSort]
+        <> arguments [notChild]
+
+    unparse2 Not { notChild } =
+        Pretty.parens (Pretty.fillSep ["\\not", unparse2 notChild])
+
+instance Unparse child => Unparse (Not () child) where
+    unparse Not { notChild } =
+        "\\not"
         <> arguments [notChild]
 
     unparse2 Not { notChild } =

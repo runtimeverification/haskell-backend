@@ -8,5 +8,5 @@ module ALL-PATH-F-SPEC
   imports PATH
 
   // This should be provable as both one-path and all-path.
-  rule <k> a => f </k> [all-path]
+  claim <k> a => f </k> [all-path]
 endmodule

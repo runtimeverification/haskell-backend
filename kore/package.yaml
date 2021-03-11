@@ -1,18 +1,16 @@
 name:                kore
-version:             0.32.0.0
+version:             0.41.0.0
 github:              "kframework/kore"
 license:             NCSA
 license-file:        LICENSE
-author:              "Virgil Serbanuta"
-maintainer:          "virgil.serbanuta@runtimeverification.com"
+author:              "Runtime Verification Inc"
+maintainer:          "thomas.tuegel@runtimeverification.com"
 copyright:           "2018-2020 Runtime Verification Inc"
 category:            Language
 
 extra-source-files:
   - README.md
   - CHANGELOG.md
-  - test/resources/*.kore
-  - test/resources/*.kore.golden
 
 data-dir: data
 

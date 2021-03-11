@@ -6,10 +6,14 @@ License     : NCSA
 
 module Kore.Reachability
     ( AllPathClaim (..)
+    , mkAllPathClaim
     , allPathRuleToTerm
     , OnePathClaim (..)
+    , mkOnePathClaim
     , onePathRuleToTerm
     , SomeClaim (..)
+    , mkSomeClaimAllPath
+    , mkSomeClaimOnePath
     , makeTrusted
     , lensClaimPattern
     , getConfiguration

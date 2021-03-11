@@ -33,6 +33,7 @@ module Kore.Unparser
     , escapeChar
     , escapeCharT
     , unparseAssoc'
+    , unparseConcat'
     ) where
 
 import Prelude.Kore
@@ -329,3 +330,19 @@ unparseAssoc' oper ident =
             , indent 4 x <> comma <> line
             , worker' y rest
             ]
+
+{- | Unparse a concatenation of elements, given the @unit@ and @concat@ symbols.
+
+The children are already unparsed. If they are @element@s of the collection,
+they are wrapped by the @element@ symbol.
+
+ -}
+unparseConcat'
+    :: Pretty.Doc ann  -- ^ unit symbol
+    -> Pretty.Doc ann  -- ^ concat symbol
+    -> [Pretty.Doc ann]      -- ^ children
+    -> Pretty.Doc ann
+unparseConcat' unitSymbol concatSymbol =
+    unparseAssoc' concatSymbol applyUnit
+  where
+    applyUnit = unitSymbol <> noArguments

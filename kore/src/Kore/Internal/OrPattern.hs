@@ -8,6 +8,7 @@ module Kore.Internal.OrPattern
     , coerceSort
     , isSimplified
     , hasSimplifiedChildren
+    , hasSimplifiedChildrenIgnoreConditions
     , forgetSimplified
     , fromPatterns
     , toPatterns
@@ -22,6 +23,7 @@ module Kore.Internal.OrPattern
     , toTermLike
     , targetBinder
     , substitute
+    , mapVariables
     , MultiOr.flatten
     , MultiOr.filterOr
     , MultiOr.gather
@@ -32,7 +34,6 @@ module Kore.Internal.OrPattern
 
 import Prelude.Kore
 
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -95,6 +96,18 @@ hasSimplifiedChildren
 hasSimplifiedChildren sideCondition =
     all (Pattern.hasSimplifiedChildren sideCondition)
 
+{- | Checks whether all patterns in the disjunction have simplified children,
+ignoring the conditions used to simplify them.
+
+See also: 'Pattern.hasSimplifiedChildrenIgnoreConditions'
+
+ -}
+hasSimplifiedChildrenIgnoreConditions
+    :: InternalVariable variable
+    => OrPattern variable -> Bool
+hasSimplifiedChildrenIgnoreConditions =
+    all Pattern.hasSimplifiedChildrenIgnoreConditions
+
 forgetSimplified
     :: InternalVariable variable => OrPattern variable -> OrPattern variable
 forgetSimplified = fromPatterns . map Pattern.forgetSimplified . toPatterns
@@ -110,7 +123,7 @@ fromPatterns
     :: (Foldable f, InternalVariable variable)
     => f (Pattern variable)
     -> OrPattern variable
-fromPatterns = from . Foldable.toList
+fromPatterns = from . toList
 
 {- | Examine a disjunction of 'Pattern.Pattern's.
  -}
@@ -166,10 +179,10 @@ toPattern
     => OrPattern variable
     -> Pattern variable
 toPattern multiOr =
-    case Foldable.toList multiOr of
+    case toList multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
-        patts -> Foldable.foldr1 mergeWithOr patts
+        patts -> foldr1 mergeWithOr patts
   where
     mergeWithOr :: Pattern variable -> Pattern variable -> Pattern variable
     mergeWithOr patt1 patt2
@@ -202,10 +215,10 @@ toTermLike
     :: InternalVariable variable
     => OrPattern variable -> TermLike variable
 toTermLike multiOr =
-    case Foldable.toList multiOr of
+    case toList multiOr of
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
-        patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
+        patts -> foldr1 mkOr (Pattern.toTermLike <$> patts)
 
 coerceSort
     :: (HasCallStack, InternalVariable variable)
@@ -247,3 +260,10 @@ substitute
     -> OrPattern variable
 substitute subst =
     fromPatterns . fmap (Pattern.substitute subst) . toPatterns
+
+mapVariables
+    :: (InternalVariable variable1, InternalVariable variable2)
+    => AdjSomeVariableName (variable1 -> variable2)
+    -> OrPattern variable1
+    -> OrPattern variable2
+mapVariables = MultiOr.map . Pattern.mapVariables

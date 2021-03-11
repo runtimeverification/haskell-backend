@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Or
     ( test_anyBottom
     , test_deduplicateMiddle
@@ -19,15 +21,19 @@ import Data.Text
 
 import Kore.Internal.Predicate
     ( Predicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
     )
 import Kore.Internal.Substitution
     ( Substitution
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Kore.Step.Simplification.Or
     ( simplify
     , simplifyEvaluated
@@ -35,9 +41,6 @@ import Kore.Step.Simplification.Or
 import qualified Kore.Unparser as Unparser
 import qualified Pretty
 
-import Test.Kore.Internal.OrPattern
-    ( OrTestPattern
-    )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -90,16 +93,16 @@ test_simplify =
             (simplifyEvaluated          orPattern1 orPattern2 )
         ]
   where
-    orPattern1 :: OrTestPattern
+    orPattern1 :: OrPattern.OrPattern RewritingVariableName
     orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrTestPattern
+    orPattern2 :: OrPattern.OrPattern RewritingVariableName
     orPattern2 = wrapInOrPattern (tm, pm, sm)
 
     binaryOr
-      :: OrTestPattern
-      -> OrTestPattern
-      -> Or Sort OrTestPattern
+      :: OrPattern.OrPattern RewritingVariableName
+      -> OrPattern.OrPattern RewritingVariableName
+      -> Or Sort (OrPattern.OrPattern RewritingVariableName)
     binaryOr orFirst orSecond =
         Or { orSort = Mock.testSort, orFirst, orSecond }
 
@@ -122,67 +125,69 @@ Key for variable names:
 
 See also: 'orChild'
  -}
-type TestConfig = (TestTerm, TestPredicate, TestSubstitution)
+type TestConfig =
+    ( TermLike RewritingVariableName
+    , Predicate RewritingVariableName
+    , Substitution RewritingVariableName
+    )
 
-tT :: TestTerm
+tT :: TermLike RewritingVariableName
 tT = mkTop Mock.testSort
 
-tm :: TestTerm
-tm = mkElemVar Mock.x
+tm :: TermLike RewritingVariableName
+tm = mkElemVar Mock.xConfig
 
-tM :: TestTerm
-tM = mkElemVar Mock.y
+tM :: TermLike RewritingVariableName
+tM = mkElemVar Mock.yConfig
 
-t_ :: TestTerm
+t_ :: TermLike RewritingVariableName
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> ElementVariable VariableName
+testVar :: Text -> ElementVariable RewritingVariableName
 testVar ident =
     Variable
     { variableName =
-        ElementVariableName VariableName
-        { base = testId ident
-        , counter = mempty
-        }
+        ElementVariableName
+        $ mkConfigVariable
+            VariableName
+            { base = testId ident
+            , counter = mempty
+            }
     , variableSort = Mock.testSort
     }
 
-type TestPredicate = Predicate VariableName
+pT :: Predicate RewritingVariableName
+pT = makeTruePredicate
 
-pT :: TestPredicate
-pT = makeTruePredicate_
-
-pm :: TestPredicate
+pm :: Predicate RewritingVariableName
 pm =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ testVar "left")
         (mkElemVar $ testVar "right")
 
-pM :: TestPredicate
+pM :: Predicate RewritingVariableName
 pM =
-    makeEqualsPredicate_
+    makeEqualsPredicate
         (mkElemVar $ testVar "LEFT")
         (mkElemVar $ testVar "RIGHT")
 
-p_ :: TestPredicate
-p_ = makeFalsePredicate_
+p_ :: Predicate RewritingVariableName
+p_ = makeFalsePredicate
 
-type TestSubstitution = Substitution VariableName
-
-sT :: TestSubstitution
+sT :: Substitution RewritingVariableName
 sT = mempty
 
-sm :: TestSubstitution
+sm :: Substitution RewritingVariableName
 sm =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
-    [(inject Mock.x, Mock.a)] -- I'd rather these were meaningful
+    [(inject Mock.xConfig, Mock.a)] -- I'd rather these were meaningful
 
-sM :: TestSubstitution
+sM :: Substitution RewritingVariableName
 sM =
     Substitution.wrap
     $ Substitution.mkUnwrappedSubstitution
-    [(inject Mock.y, Mock.b)] -- I'd rather these were meaningful
+    [(inject Mock.yConfig, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =
@@ -212,7 +217,7 @@ test_valueProperties =
 becomes
   :: HasCallStack
   => (TestConfig, TestConfig)
-  -> [TestPattern]
+  -> [Pattern RewritingVariableName]
   -> TestTree
 becomes
     (orChild -> or1, orChild -> or2)
@@ -255,8 +260,8 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
 -- * Support Functions
 
 prettyOr
-    :: TestPattern
-    -> TestPattern
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
     -> Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse Or { orSort, orFirst, orSecond }
@@ -268,14 +273,20 @@ stateIntention actualAndSoOn =
     Unparser.renderDefault $ Pretty.vsep ("expected: " : actualAndSoOn)
 
 orChild
-    :: (TestTerm, TestPredicate, TestSubstitution)
-    -> TestPattern
+    ::  ( TermLike RewritingVariableName
+        , Predicate RewritingVariableName
+        , Substitution RewritingVariableName
+        )
+    -> Pattern RewritingVariableName
 orChild (term, predicate, substitution) =
     Conditional { term, predicate, substitution }
 
 -- Note: we intentionally take care *not* to simplify out tops or bottoms
 -- during conversion of a Conditional into an OrPattern
 wrapInOrPattern
-    :: (TestTerm, TestPredicate, TestSubstitution)
-    -> OrTestPattern
+    ::  ( TermLike RewritingVariableName
+        , Predicate RewritingVariableName
+        , Substitution RewritingVariableName
+        )
+    ->  OrPattern.OrPattern RewritingVariableName
 wrapInOrPattern tuple = OrPattern.fromPatterns [orChild tuple]

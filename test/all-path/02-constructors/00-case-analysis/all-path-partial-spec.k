@@ -9,6 +9,6 @@ module ALL-PATH-PARTIAL-SPEC
 
   // This should not be provable both one-path and all-path.
   // because it does not hold for X = c
-  rule <k> partial(X:S) => end </k> [all-path]
+  claim <k> partial(X:S) => end </k> [all-path]
 
 endmodule

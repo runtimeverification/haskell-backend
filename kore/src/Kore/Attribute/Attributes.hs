@@ -17,9 +17,6 @@ module Kore.Attribute.Attributes
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Default
     ( Default (..)
     )

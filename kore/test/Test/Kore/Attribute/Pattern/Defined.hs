@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Attribute.Pattern.Defined
     ( test_instance_Synthetic
     ) where
@@ -7,13 +9,18 @@ import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Maybe
+    ( fromJust
+    )
+
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.InternalSet
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Key
     , TermLikeF (..)
+    , retractKey
     )
 import Kore.Syntax hiding
     ( PatternF (..)
@@ -75,8 +82,8 @@ test_instance_Synthetic =
         [ is . asSetBuiltin
             $ emptyNormalizedSet
         , is . asSetBuiltin
-            $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a, ConcreteElement Mock.b]
+            $ with emptyNormalizedSet
+            $ map (retractKey >>> fromJust) [ Mock.a @Concrete, Mock.b ]
         , is . asSetBuiltin
             $ emptyNormalizedSet `with` VariableElement defined
         , isn't . asSetBuiltin
@@ -86,7 +93,7 @@ test_instance_Synthetic =
                 `with` [VariableElement defined, VariableElement defined]
         , isn't . asSetBuiltin
             $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a]
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
                 `with` VariableElement defined
         , is . asSetBuiltin
             $ emptyNormalizedSet `with` OpaqueSet defined
@@ -97,7 +104,7 @@ test_instance_Synthetic =
                 `with` [OpaqueSet defined, OpaqueSet defined]
         , isn't . asSetBuiltin
             $ emptyNormalizedSet
-                `with` [ConcreteElement Mock.a]
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
                 `with` OpaqueSet defined
         ]
     ]
@@ -145,7 +152,6 @@ test_instance_Synthetic =
       | otherwise   = isn't
 
     asSetBuiltin
-        :: Domain.NormalizedAc Domain.NormalizedSet (TermLike Concrete) Defined
-        -> Domain.Builtin (TermLike Concrete) Defined
-    asSetBuiltin =
-        Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc
+        :: NormalizedAc NormalizedSet Key Defined
+        -> InternalAc NormalizedSet Key Defined
+    asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

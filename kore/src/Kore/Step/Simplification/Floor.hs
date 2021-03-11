@@ -7,14 +7,14 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Floor
     ( simplify
     , makeEvaluateFloor
     ) where
 
 import Prelude.Kore
-
-import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
@@ -23,12 +23,15 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeFloorPredicate_
+    ( makeFloorPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
@@ -42,9 +45,8 @@ However, we don't take into account things like
 floor(a and b) = floor(a) and floor(b).
 -}
 simplify
-    :: InternalVariable variable
-    => Floor Sort (OrPattern variable)
-    -> OrPattern variable
+    :: Floor Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -62,11 +64,10 @@ to carry around.
 
 -}
 simplifyEvaluatedFloor
-    :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
+    :: OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 simplifyEvaluatedFloor child =
-    case Foldable.toList child of
+    case toList child of
         [childP] -> makeEvaluateFloor childP
         _ -> makeEvaluateFloor (OrPattern.toPattern child)
 
@@ -75,18 +76,16 @@ simplifyEvaluatedFloor child =
 See 'simplify' for details.
 -}
 makeEvaluateFloor
-    :: InternalVariable variable
-    => Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateFloor child
   | Pattern.isTop child    = OrPattern.top
   | Pattern.isBottom child = OrPattern.bottom
   | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
-    :: InternalVariable variable
-    => Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
     OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
@@ -98,6 +97,6 @@ makeEvaluateNonBoolFloor patt =
   where
     (term, condition) = Pattern.splitTerm patt
     floorCondition =
-        makeFloorPredicate_ term
+        makeFloorPredicate term
         & Predicate.markSimplified
         & Condition.fromPredicate

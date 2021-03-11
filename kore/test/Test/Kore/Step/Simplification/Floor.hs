@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.Floor
     ( test_floorSimplification
     ) where
@@ -26,9 +28,9 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeEqualsPredicate_
-    , makeFloorPredicate_
-    , makeTruePredicate_
+    , makeEqualsPredicate
+    , makeFloorPredicate
+    , makeTruePredicate
     )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
@@ -38,6 +40,10 @@ import Kore.Step.Simplification.Floor
     , simplify
     )
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    )
 import Test.Kore
     ( testId
     )
@@ -55,7 +61,7 @@ test_floorSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeFloorPredicate_ (mkOr a b)
+                    , predicate = makeFloorPredicate (mkOr a b)
                     , substitution = mempty
                     }
                 ]
@@ -108,7 +114,7 @@ test_floorSimplification =
                     [ Pattern.top ]
                 )
                 (makeEvaluate
-                    (Pattern.top :: Pattern VariableName)
+                    (Pattern.top :: Pattern RewritingVariableName)
                 )
             -- floor(bottom) = bottom
             assertEqual "floor(bottom)"
@@ -116,7 +122,7 @@ test_floorSimplification =
                     []
                 )
                 (makeEvaluate
-                    (Pattern.bottom :: Pattern VariableName)
+                    (Pattern.bottom :: Pattern RewritingVariableName)
                 )
         )
     , testCase "floor with predicates and substitutions"
@@ -128,8 +134,8 @@ test_floorSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeFloorPredicate_ a)
-                            (makeEqualsPredicate_ fOfA gOfA)
+                            (makeFloorPredicate a)
+                            (makeEqualsPredicate fOfA gOfA)
                     , substitution =
                         Substitution.wrap
                         $ Substitution.mkUnwrappedSubstitution
@@ -140,7 +146,7 @@ test_floorSimplification =
             (makeEvaluate
                 Conditional
                     { term = a
-                    , predicate = makeEqualsPredicate_ fOfA gOfA
+                    , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
                             Substitution.wrap
                             $ Substitution.mkUnwrappedSubstitution
@@ -162,29 +168,30 @@ test_floorSimplification =
     bSymbol = symbol "b" [] testSort
     fSymbol = symbol "f" [testSort] testSort
     gSymbol = symbol "g" [testSort] testSort
-    x = mkElementVariable (testId "x") testSort
-    a :: TermLike VariableName
+    x =
+        mkElementVariable (testId "x") testSort
+        & mapElementVariable (pure mkConfigVariable)
+    a :: TermLike RewritingVariableName
     a = mkApplySymbol aSymbol []
-    b :: TermLike VariableName
+    b :: TermLike RewritingVariableName
     b = mkApplySymbol bSymbol []
     fOfA = mkApplySymbol fSymbol [a]
     fOfB = mkApplySymbol fSymbol [b]
     gOfA = mkApplySymbol gSymbol [a]
     aExpanded = Conditional
         { term = a
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
     bExpanded = Conditional
         { term = b
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate
         , substitution = mempty
         }
 
 makeFloor
-    :: InternalVariable variable
-    => [Pattern variable]
-    -> Floor Sort (OrPattern variable)
+    :: [Pattern RewritingVariableName]
+    -> Floor Sort (OrPattern RewritingVariableName)
 makeFloor patterns =
     Floor
         { floorOperandSort = testSort
@@ -192,8 +199,10 @@ makeFloor patterns =
         , floorChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate :: Floor Sort (OrPattern VariableName) -> OrPattern VariableName
+evaluate
+    :: Floor Sort (OrPattern RewritingVariableName)
+    -> OrPattern RewritingVariableName
 evaluate = simplify . fmap simplifiedOrPattern
 
-makeEvaluate :: Pattern VariableName -> OrPattern VariableName
+makeEvaluate :: Pattern RewritingVariableName -> OrPattern RewritingVariableName
 makeEvaluate = makeEvaluateFloor . simplifiedPattern

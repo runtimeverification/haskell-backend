@@ -14,7 +14,8 @@ module Kore.Internal.Alias
 import Prelude.Kore
 
 import Control.DeepSeq
-import qualified Data.Foldable as Foldable
+    ( deepseq
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -73,7 +74,7 @@ instance
     Synthetic (FreeVariables variable) (Application (Alias patternType))
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Application (Alias patternType)) where

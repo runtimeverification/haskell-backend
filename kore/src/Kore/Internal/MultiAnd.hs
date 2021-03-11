@@ -16,7 +16,6 @@ module Kore.Internal.MultiAnd
     , top
     , make
     , toPredicate
-    , toPredicateSorted
     , fromPredicate
     , fromTermLike
     , singleton
@@ -29,28 +28,28 @@ import Prelude.Kore hiding
     , traverse
     )
 
-import Control.DeepSeq
-    ( NFData
-    )
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
+import Kore.Attribute.Pattern.FreeVariables
+    ( HasFreeVariables (..)
+    )
 
 import Debug
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Predicate
     ( Predicate
     , getMultiAndPredicate
     , makeAndPredicate
     , makeTruePredicate
-    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-    ( Sort
-    , TermLike
+    ( TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
@@ -84,6 +83,11 @@ instance TopBottom child => TopBottom (MultiAnd child) where
     isBottom (MultiAnd [child]) = isBottom child
     isBottom _ = False
 
+instance (Ord variable, HasFreeVariables a variable) =>
+    HasFreeVariables (MultiAnd a) variable
+  where
+    freeVariables = foldMap' freeVariables
+
 instance Debug child => Debug (MultiAnd child)
 
 instance (Debug child, Diff child) => Diff (MultiAnd child)
@@ -108,6 +112,13 @@ instance
     => From (Predicate variable) (MultiAnd (Predicate variable))
   where
     from = fromPredicate
+    {-# INLINE from #-}
+
+instance
+    InternalVariable variable
+    => From (Condition variable) (MultiAnd (Predicate variable))
+  where
+    from = fromPredicate . from @_ @(Predicate _)
     {-# INLINE from #-}
 
 instance
@@ -207,17 +218,7 @@ toPredicate
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
     case predicates of
-        [] -> makeTruePredicate_
-        _  -> foldr1 makeAndPredicate predicates
-
-toPredicateSorted
-    :: InternalVariable variable
-    => Sort
-    -> MultiAnd (Predicate variable)
-    -> Predicate variable
-toPredicateSorted sort (MultiAnd predicates) =
-    case predicates of
-        [] -> makeTruePredicate sort
+        [] -> makeTruePredicate
         _  -> foldr1 makeAndPredicate predicates
 
 fromPredicate
@@ -241,7 +242,7 @@ map
     => (child1 -> child2)
     -> MultiAnd child1
     -> MultiAnd child2
-map f = make . fmap f . Foldable.toList
+map f = make . fmap f . toList
 {-# INLINE map #-}
 
 traverse
@@ -251,5 +252,5 @@ traverse
     => (child1 -> f child2)
     -> MultiAnd child1
     -> f (MultiAnd child2)
-traverse f = fmap make . Traversable.traverse f . Foldable.toList
+traverse f = fmap make . Traversable.traverse f . toList
 {-# INLINE traverse #-}

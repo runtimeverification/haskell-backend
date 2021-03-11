@@ -10,10 +10,6 @@ module Kore.Syntax.Or
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -22,6 +18,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
@@ -43,6 +42,12 @@ data Or sort child = Or
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance Pretty child => Pretty (Or Sort child) where
+    pretty Or { orSort, orFirst, orSecond } =
+        "\\or"
+        <> parameters [orSort]
+        <> arguments' (pretty <$> [orFirst, orSecond])
+
 instance Unparse child => Unparse (Or Sort child) where
     unparse Or { orSort, orFirst, orSecond } =
         "\\or"
@@ -56,8 +61,24 @@ instance Unparse child => Unparse (Or Sort child) where
             , unparse2 orSecond
             ])
 
+instance Pretty child => Pretty (Or () child) where
+    pretty Or { orFirst, orSecond } =
+        "\\or"
+        <> arguments' (pretty <$> [orFirst, orSecond])
+instance Unparse child => Unparse (Or () child) where
+    unparse Or { orFirst, orSecond } =
+        "\\or"
+        <> arguments [orFirst, orSecond]
+
+    unparse2 Or { orFirst, orSecond } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\or"
+            , unparse2 orFirst
+            , unparse2 orSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Or Sort) where

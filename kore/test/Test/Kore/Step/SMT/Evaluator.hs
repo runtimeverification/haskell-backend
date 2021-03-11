@@ -25,12 +25,16 @@ import Kore.Internal.Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeEqualsPredicate_
-    , makeFalsePredicate_
+    , makeEqualsPredicate
+    , makeFalsePredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import SMT
@@ -55,11 +59,11 @@ import Test.Tasty.HUnit.Ext
 contradictoryPredicate :: Predicate VariableName
 contradictoryPredicate =
     makeAndPredicate
-        (makeEqualsPredicate_
+        (makeEqualsPredicate
             (mkElemVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
             (Mock.builtinBool False)
         )
-        (makeEqualsPredicate_
+        (makeEqualsPredicate
             (mkElemVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
             (Mock.builtinBool True)
         )
@@ -68,7 +72,7 @@ test_evaluableSyntaxPredicate :: [TestTree]
 test_evaluableSyntaxPredicate =
     [ testCase "refutes false predicate" $ do
         let expected = Just False
-        actual <- evaluatePredicate makeFalsePredicate_
+        actual <- evaluatePredicate makeFalsePredicate
         assertEqual "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
         let expected = Just False
@@ -83,7 +87,7 @@ test_evaluableConditional =
         let expected = Just False
         actual <- evaluateConditional Conditional
             { term = Mock.a
-            , predicate = makeFalsePredicate_
+            , predicate = makeFalsePredicate
             , substitution = mempty
             }
         assertEqual "false refuted to false" expected actual
@@ -104,7 +108,7 @@ test_evaluableMultiOr =
         let expected = MultiOr.make
                 [ Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -112,12 +116,12 @@ test_evaluableMultiOr =
             (MultiOr.make
                 [ Conditional
                     { term = Mock.a
-                    , predicate = makeFalsePredicate_
+                    , predicate = makeFalsePredicate
                     , substitution = mempty
                     }
                 , Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -127,7 +131,7 @@ test_evaluableMultiOr =
         let expected = MultiOr.make
                 [ Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -140,7 +144,7 @@ test_evaluableMultiOr =
                     }
                 , Conditional
                     { term = Mock.b
-                    , predicate = makeTruePredicate_
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -163,13 +167,13 @@ evaluateMultiOr
     :: MultiOr (Conditional VariableName (TermLike VariableName))
     -> IO (MultiOr (Conditional VariableName (TermLike VariableName)))
 evaluateMultiOr =
-    runSimplifier Mock.env . SMT.Evaluator.filterMultiOr
+    runSimplifierSMT Mock.env . SMT.Evaluator.filterMultiOr
 
 evaluate
     :: SMT.Evaluator.Evaluable thing
     => thing
     -> IO (Maybe Bool)
-evaluate = runSimplifier Mock.env . SMT.Evaluator.evaluate
+evaluate = runSimplifierSMT Mock.env . SMT.Evaluator.evaluate
 
 test_andNegation :: TestTree
 test_andNegation =
@@ -202,84 +206,84 @@ evaluateSMT = lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 -- ----------------------------------------------------------------
 -- Refute Int predicates
 
-vInt :: Id -> TermLike VariableName
-vInt s = mkElemVar (mkElementVariable s Builtin.intSort)
+vInt :: Id -> TermLike RewritingVariableName
+vInt s = mkElemVar (configElementVariableFromId s Builtin.intSort)
 
-a, b, c :: TermLike VariableName
+a, b, c :: TermLike RewritingVariableName
 a = vInt (testId "a")
 b = vInt (testId "b")
 c = vInt (testId "c")
 
-vBool :: Id -> TermLike VariableName
-vBool s = mkElemVar (mkElementVariable s Builtin.boolSort)
+vBool :: Id -> TermLike RewritingVariableName
+vBool s = mkElemVar (configElementVariableFromId s Builtin.boolSort)
 
-p, q :: TermLike VariableName
+p, q :: TermLike RewritingVariableName
 p = vBool (testId "p")
 q = vBool (testId "q")
 
-assertRefuted :: HasCallStack => Predicate VariableName -> Assertion
+assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
         SMT.Evaluator.decidePredicate (prop :| [])
-        & Test.runSimplifier testEnv
+        & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 
-true, false :: TermLike VariableName
+true, false :: TermLike RewritingVariableName
 true = Builtin.Bool.asInternal True
 false = Builtin.Bool.asInternal False
 
-int :: Integer -> TermLike VariableName
+int :: Integer -> TermLike RewritingVariableName
 int = Builtin.Int.intLiteral
 
 test_Int_contradictions :: [TestTree]
 test_Int_contradictions =
     [ testCase "a < 0 ∧ 0 < a" . assertRefuted
-        $ makeEqualsPredicate_ true
+        $ makeEqualsPredicate true
         $ andBool (a `ltInt` int 0) (int 0 `ltInt` a)
     , testCase "(a + a < a + b) ∧ (b + b < a + b)" . assertRefuted
-        $ makeEqualsPredicate_ true
+        $ makeEqualsPredicate true
         $ andBool
             ((a `addInt` a) `ltInt` (a `addInt` b))
             ((b `addInt` b) `ltInt` (a `addInt` b))
     , testCase "¬(a < b → b < c → a < c)" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ impliesBool (a `ltInt` b) (impliesBool (b `ltInt` c) (a `ltInt` c))
     , testCase "1 + 2 a (odd) = 2 b (even)" . assertRefuted
-        $ makeEqualsPredicate_ true
+        $ makeEqualsPredicate true
         $ eqInt
             (addInt (int 1) (int 2 `mulInt` a))
             (int 2 `mulInt` b)
     , testCase "¬((0 - a² = b²) → a = 0)" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ impliesBool
             (eqInt (int 0 `subInt` (a `mulInt` a)) (b `mulInt` b))
             (eqInt a (int 0))
     , testCase "f(0) = 123 ∧ f(0) = 456  -- uninterpreted functions"
         . assertRefuted
-        $ makeEqualsPredicate_ true
+        $ makeEqualsPredicate true
         $ andBool
-            (eqInt (dummyInt (int 0)) (int 123))
-            (eqInt (dummyInt (int 0)) (int 456))
+            (eqInt (dummyFunctionalInt (int 0)) (int 123))
+            (eqInt (dummyFunctionalInt (int 0)) (int 456))
     , testCase "¬(0 < a → (a / 2) < a)" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)
     , testCase "¬(2 a % 2 = 0)" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ eqInt (tmodInt (a `mulInt` int 2) (int 2)) (int 0)
     ]
 
 test_Bool_contradictions :: [TestTree]
 test_Bool_contradictions =
     [ testCase "¬(((p → q) → p) → p)  -- Pierce" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ ((p `impliesBool` q) `impliesBool` p) `impliesBool` p
     , testCase "¬(¬(p ∨ q) = ¬p ∧ ¬q)  -- de Morgan" . assertRefuted
-        $ makeEqualsPredicate_ false
+        $ makeEqualsPredicate false
         $ eqBool (notBool (p `orBool` q)) (andBool (notBool p) (notBool q))
-    , testCase "¬⊤" . assertRefuted $ makeNotPredicate makeTruePredicate_
+    , testCase "¬⊤" . assertRefuted $ makeNotPredicate makeTruePredicate
     , testCase "¬(¬p = p → false)" . assertRefuted
         $ makeNotPredicate
-        $ makeEqualsPredicate_ true
+        $ makeEqualsPredicate true
         $ eqBool (notBool p) (p `impliesBool` false)
     ]

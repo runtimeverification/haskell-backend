@@ -8,6 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Step.Simplification.Data
@@ -51,6 +52,10 @@ import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.TermLike
     ( TermLike
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkEquationVariable
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
@@ -115,8 +120,7 @@ instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
 
 traceProfSimplify
     :: MonadProf prof
-    => InternalVariable variable
-    => TermLike variable
+    => TermLike RewritingVariableName
     -> prof a
     -> prof a
 traceProfSimplify termLike =
@@ -245,6 +249,7 @@ evalSimplifier verifiedModule simplifier = do
     initialize = do
         equations <-
             Equation.simplifyExtractedEquations
+            $ (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
             $ Equation.extractEquations verifiedModule'
         let
             builtinEvaluators, userEvaluators, simplifierAxioms

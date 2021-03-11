@@ -10,9 +10,6 @@ module Kore.Syntax.Bottom
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -39,6 +36,11 @@ newtype Bottom sort child = Bottom { bottomSort :: sort }
 instance Unparse (Bottom Sort child) where
     unparse Bottom { bottomSort } =
         "\\bottom" <> parameters [bottomSort] <> noArguments
+    unparse2 _ = "\\bottom"
+
+instance Unparse (Bottom () child) where
+    unparse _ =
+        "\\bottom" <> noArguments
     unparse2 _ = "\\bottom"
 
 instance Synthetic (FreeVariables variable) (Bottom sort) where

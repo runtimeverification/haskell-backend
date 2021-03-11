@@ -3,6 +3,9 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
  -}
+
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.Bool
     ( sort
     , assertSort
@@ -13,7 +16,7 @@ module Kore.Builtin.Bool
     , asPattern
     , extractBoolDomainValue
     , parse
-    , unifyBoolValues
+    , unifyBool
     , unifyBoolAnd
     , unifyBoolOr
     , unifyBoolNot
@@ -36,6 +39,7 @@ import Control.Error
     ( MaybeT
     )
 import qualified Control.Monad as Monad
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -44,7 +48,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
@@ -53,8 +56,8 @@ import Kore.Attribute.Hook
     )
 import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.InternalBool
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -122,11 +125,11 @@ patternVerifierHook =
     patternVerifierWorker domainValue =
         case externalChild of
             StringLiteral_ lit -> do
-                builtinBoolValue <- Builtin.parseString parse lit
-                (return . BuiltinF . Domain.BuiltinBool)
-                    Domain.InternalBool
-                        { builtinBoolSort = domainValueSort
-                        , builtinBoolValue
+                internalBoolValue <- Builtin.parseString parse lit
+                (return . InternalBoolF . Const)
+                    InternalBool
+                        { internalBoolSort = domainValueSort
+                        , internalBoolValue
                         }
             _ -> Kore.Error.koreFail "Expected literal string"
       where
@@ -136,15 +139,9 @@ patternVerifierHook =
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue
     :: Text -- ^ error message Context
-    -> Builtin child
-    -> Bool
-extractBoolDomainValue ctx =
-    \case
-        Domain.BuiltinBool Domain.InternalBool { builtinBoolValue } ->
-            builtinBoolValue
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Bool builtin should be internal"
+    -> TermLike variable
+    -> Maybe Bool
+extractBoolDomainValue _ = matchBool
 
 {- | Parse an integer string literal.
  -}
@@ -177,14 +174,16 @@ builtinFunctions =
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
 
-unifyBoolValues
+{- | Unification of @BOOL.Bool@ values.
+ -}
+unifyBool
     :: forall variable unifier
     .  InternalVariable variable
     => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-unifyBoolValues a b =
+unifyBool a b =
     worker a b <|> worker b a
   where
     worker termLike1 termLike2
@@ -285,8 +284,8 @@ unifyBoolNot unifyChildren a b =
 {- | Match a @BOOL.Bool@ builtin value.
  -}
 matchBool :: TermLike variable -> Maybe Bool
-matchBool (BuiltinBool_ Domain.InternalBool { builtinBoolValue }) =
-    Just builtinBoolValue
+matchBool (InternalBool_ InternalBool { internalBoolValue }) =
+    Just internalBoolValue
 matchBool _ = Nothing
 
 {- | The @BOOL.and@ hooked symbol applied to @term@-type arguments.

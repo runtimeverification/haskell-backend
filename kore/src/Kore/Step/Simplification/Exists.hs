@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Exists
     ( simplify
     , makeEvaluate
@@ -18,7 +20,6 @@ import Prelude.Kore
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
 import Data.List
     ( sortBy
     )
@@ -55,7 +56,6 @@ import Kore.Internal.Substitution
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
     ( ElementVariable
-    , pattern Equals_
     , Exists (Exists)
     , SomeVariableName
     , Sort
@@ -73,8 +73,8 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Sort
-    ( predicateSort
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
@@ -83,7 +83,7 @@ import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplify
+    ( makeEvaluate
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.TopBottom as TopBottom
@@ -126,10 +126,10 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Exists Sort variable (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Exists Sort RewritingVariableName (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Exists { existsVariable, existsChild } =
     simplifyEvaluated sideCondition existsVariable existsChild
 
@@ -147,11 +147,11 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> ElementVariable variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> ElementVariable RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
@@ -169,21 +169,21 @@ in the substitution are evaluated with the pattern first.
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: forall simplifier variable
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> [ElementVariable variable]
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> [ElementVariable RewritingVariableName]
+    -> Pattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
     foldM (flip makeEvaluateWorker) original sortedVariables
         & OrPattern.observeAllT
   where
     makeEvaluateWorker
-        :: ElementVariable variable
-        -> Pattern variable
-        -> LogicT simplifier (Pattern variable)
+        :: ElementVariable RewritingVariableName
+        -> Pattern RewritingVariableName
+        -> LogicT simplifier (Pattern RewritingVariableName)
     makeEvaluateWorker variable original' = do
         normalized <- simplifyCondition sideCondition original'
         let Conditional { substitution = normalizedSubstitution } = normalized
@@ -200,7 +200,7 @@ makeEvaluate sideCondition variables original = do
                     normalized { Conditional.substitution = boundSubstitution }
                 if matched
                     then return normalized
-                        { Conditional.predicate = Predicate.makeTruePredicate_
+                        { Conditional.predicate = Predicate.makeTruePredicate
                         , Conditional.substitution = freeSubstitution
                         }
                     else makeEvaluateBoundRight
@@ -211,8 +211,8 @@ makeEvaluate sideCondition variables original = do
                             { Conditional.substitution = boundSubstitution }
 
     substVariablesFirst
-        :: ElementVariable variable
-        -> ElementVariable variable
+        :: ElementVariable RewritingVariableName
+        -> ElementVariable RewritingVariableName
         -> Ordering
     substVariablesFirst var1 var2
         | var1 `elem` substVariables
@@ -226,22 +226,21 @@ makeEvaluate sideCondition variables original = do
     substVariables =
         mapMaybe
             retractElementVariable
-            $ Foldable.toList
+            $ toList
             $ Substitution.variables
                 (Conditional.substitution original)
 
 
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
-    -> Pattern variable
+    :: MonadSimplify simplifier
+    => ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
     -> simplifier Bool
 matchesToVariableSubstitution
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
-  | Equals_ _sort1 _sort2 first second <-
-        Predicate.fromPredicate predicateSort predicate
+  | Predicate.PredicateEquals first second <- predicate
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
@@ -251,13 +250,13 @@ matchesToVariableSubstitution
         Just (Predicate.PredicateTrue, results) ->
             return (singleVariableSubstitution variable results)
         _ -> return False
-
-matchesToVariableSubstitution _ _ = return False
+  | otherwise = return False
 
 singleVariableSubstitution
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Map.Map (SomeVariableName variable) (TermLike variable)
+    :: ElementVariable RewritingVariableName
+    -> Map.Map
+        (SomeVariableName RewritingVariableName)
+        (TermLike RewritingVariableName)
     -> Bool
 singleVariableSubstitution
     variable
@@ -290,12 +289,12 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> ElementVariable variable  -- ^ quantified variable
-    -> TermLike variable  -- ^ substituted term
-    -> Pattern variable
-    -> LogicT simplifier (Pattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> ElementVariable RewritingVariableName  -- ^ quantified variable
+    -> TermLike RewritingVariableName  -- ^ substituted term
+    -> Pattern RewritingVariableName
+    -> LogicT simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundLeft sideCondition variable boundTerm normalized
   = withoutFreeVariable someVariableName boundTerm $ do
         let
@@ -310,8 +309,8 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized
                         $ Conditional.predicate normalized
                     }
         orPattern <-
-            lift $ Pattern.simplify sideCondition substituted
-        Logic.scatter (Foldable.toList orPattern)
+            lift $ Pattern.makeEvaluate sideCondition substituted
+        Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
 
@@ -326,13 +325,13 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    :: forall variable simplifier
-    . (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> ElementVariable variable  -- ^ variable to be quantified
-    -> Substitution variable  -- ^ free substitution
-    -> Pattern variable  -- ^ pattern to quantify
-    -> LogicT simplifier (Pattern variable)
+    :: forall simplifier
+    . MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> ElementVariable RewritingVariableName  -- ^ variable to be quantified
+    -> Substitution RewritingVariableName  -- ^ free substitution
+    -> Pattern RewritingVariableName  -- ^ pattern to quantify
+    -> LogicT simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <- lift $ And.simplifyEvaluatedMultiPredicate
         sideCondition
@@ -364,11 +363,13 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    :: (InternalVariable variable, HasCallStack)
-    => ElementVariable variable
-    -> Substitution variable
-    ->  ( Either (TermLike variable) (Substitution variable)
-        , Substitution variable
+    :: HasCallStack
+    => ElementVariable RewritingVariableName
+    -> Substitution RewritingVariableName
+    ->  ( Either
+            (TermLike RewritingVariableName)
+            (Substitution RewritingVariableName)
+        , Substitution RewritingVariableName
         )
 splitSubstitution variable substitution =
     (bound, independent)
@@ -396,10 +397,9 @@ if possible.
 
  -}
 quantifyPattern
-    :: InternalVariable variable
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
+    :: ElementVariable RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
 quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm, quantifyPredicate
   = (error . unlines)

@@ -7,13 +7,13 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
 import Prelude.Kore
-
-import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
@@ -26,19 +26,21 @@ import Kore.Internal.OrCondition
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Logic as LogicT
 
 simplifyEvaluatedMultiPredicate
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> MultiAnd (OrCondition variable)
-    -> simplifier (OrCondition variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> MultiAnd (OrCondition RewritingVariableName)
+    -> simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedMultiPredicate sideCondition predicates = do
     let crossProduct = MultiOr.distributeAnd predicates
     MultiOr.observeAllT $ do
@@ -47,8 +49,8 @@ simplifyEvaluatedMultiPredicate sideCondition predicates = do
   where
     andConditions predicates' =
         fmap markSimplified
-        $ Substitution.normalize sideCondition (Foldable.fold predicates')
+        $ Substitution.normalize sideCondition (fold predicates')
       where
         markSimplified =
             Condition.setPredicateSimplified
-                (Foldable.foldMap Condition.simplifiedAttribute predicates')
+                (foldMap Condition.simplifiedAttribute predicates')

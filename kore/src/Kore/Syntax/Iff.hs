@@ -10,10 +10,6 @@ module Kore.Syntax.Iff
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -56,8 +52,20 @@ instance Unparse child => Unparse (Iff Sort child) where
             , unparse2 iffSecond
             ])
 
+instance Unparse child => Unparse (Iff () child) where
+    unparse Iff { iffFirst, iffSecond } =
+        "\\iff"
+        <> arguments [iffFirst, iffSecond]
+
+    unparse2 Iff { iffFirst, iffSecond } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\iff"
+            , unparse2 iffFirst
+            , unparse2 iffSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Iff sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Iff Sort) where

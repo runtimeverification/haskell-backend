@@ -4,31 +4,27 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Pattern.Defined
     ( Defined (..)
+    , alwaysDefined
     ) where
 
 import Prelude.Kore
 
-import Control.DeepSeq
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
-import qualified Data.Map.Strict as Map
 import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.Inj
     ( Inj
     )
 import qualified Kore.Internal.Inj as Inj
-import Kore.Internal.InternalBytes
-    ( InternalBytes
-    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 
@@ -42,6 +38,9 @@ newtype Defined = Defined { isDefined :: Bool }
     deriving anyclass (Debug, Diff)
     deriving (Semigroup, Monoid) via All
 
+alwaysDefined :: a -> Defined
+alwaysDefined = const (Defined True)
+
 instance Synthetic Defined (And sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
@@ -54,7 +53,7 @@ instance Synthetic Defined (Bottom sort) where
 -- arguments are 'Defined'.
 instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
-        totalSymbol <> Foldable.fold children
+        totalSymbol <> fold children
       where
         totalSymbol = Defined (Internal.isTotal symbol)
         children = applicationChildren application
@@ -120,78 +119,33 @@ instance Synthetic Defined (Nu sort) where
 
 -- | An 'Or' pattern is 'Defined' if any of its subterms is 'Defined'.
 instance Synthetic Defined (Or sort) where
-    synthetic = Defined . getAny . Foldable.foldMap (Any . isDefined)
+    synthetic = Defined . getAny . foldMap (Any . isDefined)
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined (Rewrites sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
--- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
-instance Synthetic Defined (Builtin key) where
-    synthetic
-        (BuiltinSet InternalAc
-            {builtinAcChild = NormalizedSet builtinSetChild}
-        )
-      = normalizedAcDefined builtinSetChild
-    synthetic
-        (BuiltinMap InternalAc
-            {builtinAcChild = NormalizedMap builtinMapChild}
-        )
-      = normalizedAcDefined builtinMapChild
-    synthetic builtin = Foldable.fold builtin
-    {-# INLINE synthetic #-}
-
-normalizedAcDefined
-    :: (Foldable (Element collection), Foldable (Value collection))
-    => NormalizedAc collection key Defined -> Defined
-normalizedAcDefined ac@(NormalizedAc _ _ _) =
-    case ac of
-        NormalizedAc
-            { elementsWithVariables = []
-            , opaque = []
-            } -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = [_]
-            , concreteElements
-            , opaque = []
-            }
-          | Map.null concreteElements -> sameAsChildren
-        NormalizedAc
-            { elementsWithVariables = []
-            , concreteElements
-            , opaque = [_]
-            }
-          | Map.null concreteElements -> sameAsChildren
-        _ -> Defined False
-  where
-    sameAsChildren = Foldable.fold ac
-
-
 -- | A 'Top' pattern is always 'Defined'.
 instance Synthetic Defined (Top sort) where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
 instance Synthetic Defined (Const StringLiteral) where
-    synthetic = const (Defined True)
-    {-# INLINE synthetic #-}
-
--- | A 'Bytes' pattern is always 'Defined'.
-instance Synthetic Defined (Const InternalBytes) where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | An 'Inhabitant' pattern is always 'Defined'.
 instance Synthetic Defined Inhabitant where
-    synthetic = const (Defined True)
+    synthetic = alwaysDefined
     {-# INLINE synthetic #-}
 
 -- | An element variable pattern is always 'Defined'.
 --   A set variable is not.
 instance Synthetic Defined (Const (SomeVariable variable)) where
-    synthetic (Const unifiedVariable)= Defined (isElementVariable unifiedVariable)
+    synthetic (Const unifiedVariable) =
+        Defined (isElementVariable unifiedVariable)
     {-# INLINE synthetic #-}
 
 instance Synthetic Defined Inj where

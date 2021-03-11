@@ -8,6 +8,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 module Kore.Unification.SubstitutionNormalization
     ( Normalization (..)
     , normalize
@@ -17,7 +19,6 @@ import Prelude.Kore
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( (<&>)
     )
@@ -93,13 +94,13 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             Var_ _ -> True
             _      -> False
 
-    renamingCycle =
+    ~renamingCycle =
         error
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
 
     setCtorCycle variables = do
-        let substitution' = Foldable.foldl' assignBottom substitutionMap variables
+        let substitution' = foldl' assignBottom substitutionMap variables
         normalize substitution'
 
     mixedCtorCycle _ = empty
@@ -163,7 +164,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
       where
         substitution :: [Assignment variable]
         substitution =
-            order <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
+            order
+            <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Builtin.String
     ( test_eq
     , test_lt
@@ -13,6 +15,7 @@ module Test.Kore.Builtin.String
     , test_token2String
     , test_string2Token
     , test_unifyStringEq
+    , test_contradiction
     --
     , asPattern
     , asInternal
@@ -43,6 +46,10 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , configElementVariableFromId
+    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -297,10 +304,10 @@ test_string2Base =
         [asInternal "42", Test.Int.asInternal 16]
         (Test.Int.asPattern 66)
     , Test.Int.testInt
-        "string2Base hex negative is bottom"
+        "string2Base hex negative"
         string2BaseStringSymbol
         [asInternal "-42", Test.Int.asInternal 16]
-        bottom
+        (Test.Int.asPattern (-66))
     , Test.Int.testInt
         "string2Base hex is bottom"
         string2BaseStringSymbol
@@ -317,7 +324,7 @@ test_string2Base =
         [asInternal "foobar", Test.Int.asInternal 16]
         bottom
     , Test.Int.testInt
-        "string2Base hex from hex is bottom"
+        "string2Base hex from hex"
         string2BaseStringSymbol
         [asInternal "baad", Test.Int.asInternal 16]
         (Test.Int.asPattern 47789)
@@ -390,24 +397,24 @@ test_string2Token =
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
-asInternal :: Text -> TermLike VariableName
+asInternal :: InternalVariable variable => Text -> TermLike variable
 asInternal = String.asInternal stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
-asPattern :: Text -> Pattern VariableName
+asPattern :: Text -> Pattern RewritingVariableName
 asPattern = String.asPattern stringSort
 
 testString
     :: HasCallStack
     => String
     -> Symbol
-    -> [TermLike VariableName]
-    -> Pattern VariableName
+    -> [TermLike RewritingVariableName]
+    -> Pattern RewritingVariableName
     -> TestTree
 testString name = testSymbolWithoutSolver evaluate name
 
-ofSort :: Text.Text -> Sort -> ElementVariable VariableName
-idName `ofSort` sort = mkElementVariable (testId idName) sort
+ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
+idName `ofSort` sort = configElementVariableFromId (testId idName) sort
 
 test_unifyStringEq :: [TestTree]
 test_unifyStringEq =
@@ -415,7 +422,7 @@ test_unifyStringEq =
         let term1 = Test.Bool.asInternal False
             term2 = eqString (mkElemVar x) (mkElemVar y)
             expect =
-                makeEqualsPredicate_ (mkElemVar x) (mkElemVar y)
+                makeEqualsPredicate (mkElemVar x) (mkElemVar y)
                 & makeNotPredicate
                 & Condition.fromPredicate
                 & Pattern.fromCondition_
@@ -426,7 +433,7 @@ test_unifyStringEq =
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
@@ -439,25 +446,21 @@ test_unifyStringEq =
         -- unit test
         do
             actual <- unifyStringEq term1 term2
-            let expect' = expect { predicate = makeTruePredicate stringSort }
+            let expect' = expect { predicate = makeTruePredicate }
             assertEqual "" [Just expect'] actual
         -- integration test
         do
             actual <-
-                makeEqualsPredicate_ term1 term2
+                makeEqualsPredicate term1 term2
                 & Condition.fromPredicate
                 & simplifyCondition'
             assertEqual "" [expect { term = () }] actual
     ]
   where
-    x, y :: ElementVariable VariableName
-    x = "x" `ofSort` stringSort
-    y = "y" `ofSort` stringSort
-
     unifyStringEq
-        :: TermLike VariableName
-        -> TermLike VariableName
-        -> IO [Maybe (Pattern VariableName)]
+        :: TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> IO [Maybe (Pattern RewritingVariableName)]
     unifyStringEq term1 term2 =
         String.unifyStringEq
             (termUnification Not.notSimplifier)
@@ -470,8 +473,37 @@ test_unifyStringEq =
         & runNoSMT
 
     simplifyCondition'
-        :: Condition VariableName
-        -> IO [Condition VariableName]
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
+    simplifyCondition' condition =
+        simplifyCondition SideCondition.top condition
+        & runSimplifierBranch testEnv
+        & runNoSMT
+
+x, y :: ElementVariable RewritingVariableName
+x = "x" `ofSort` stringSort
+y = "y" `ofSort` stringSort
+
+test_contradiction :: TestTree
+test_contradiction =
+    testCase "concatString(x, y) = \"zero\" ∧ concatString(x, y) = \"one\"" $ do
+        let clause0 =
+                makeEqualsPredicate
+                    (asInternal "zero")
+                    (concatString (mkElemVar x) (mkElemVar y))
+            clause1 =
+                makeEqualsPredicate
+                    (asInternal "one")
+                    (concatString (mkElemVar x) (mkElemVar y))
+            condition =
+                makeAndPredicate clause0 clause1
+                & Condition.fromPredicate
+        actual <- simplifyCondition' condition
+        assertEqual "expected bottom" [] actual
+  where
+    simplifyCondition'
+        :: Condition RewritingVariableName
+        -> IO [Condition RewritingVariableName]
     simplifyCondition' condition =
         simplifyCondition SideCondition.top condition
         & runSimplifierBranch testEnv

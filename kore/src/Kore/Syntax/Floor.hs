@@ -10,9 +10,6 @@ module Kore.Syntax.Floor
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -48,6 +45,14 @@ instance Unparse child => Unparse (Floor Sort child) where
     unparse Floor { floorOperandSort, floorResultSort, floorChild } =
         "\\floor"
         <> parameters [floorOperandSort, floorResultSort]
+        <> arguments [floorChild]
+
+    unparse2 Floor { floorChild } =
+        Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
+
+instance Unparse child => Unparse (Floor () child) where
+    unparse Floor { floorChild } =
+        "\\floor"
         <> arguments [floorChild]
 
     unparse2 Floor { floorChild } =

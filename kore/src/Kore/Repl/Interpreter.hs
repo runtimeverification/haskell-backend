@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Repl.Interpreter
     ( replInterpreter
@@ -23,7 +24,9 @@ module Kore.Repl.Interpreter
     , showCurrentClaimIndex
     ) where
 
-import Prelude.Kore
+import Prelude.Kore hiding
+    ( toList
+    )
 
 import Control.Lens
     ( (%=)
@@ -69,7 +72,6 @@ import Control.Monad.Trans.Except
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -191,6 +193,7 @@ import Kore.Reachability
     , isTrusted
     , makeTrusted
     )
+import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -208,6 +211,9 @@ import Kore.Unparser
     ( Unparse
     , unparse
     , unparseToString
+    )
+import Pretty
+    ( Pretty (..)
     )
 import qualified Pretty
 
@@ -287,7 +293,7 @@ replInterpreter0 printAux printKore replCmd = do
                 DebugEquation op        -> debugEquation op        $> Continue
                 Exit                    -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
-    liftIO $ Foldable.traverse_
+    liftIO $ traverse_
             ( replOut
                 (unPrintAuxOutput printAux)
                 (unPrintKoreOutput printKore)
@@ -597,7 +603,7 @@ showClaimStateComponent name transformer maybeNode = do
         Just (ReplNode node, config) -> do
             omit <- Lens.use (field @"omit")
             putStrLn' $ name <> " at node " <> show node <> " is:"
-            unparseClaimStateComponent
+            prettyClaimStateComponent
                 transformer
                 omit
                 config
@@ -621,7 +627,7 @@ omitCell =
         omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
-            else Foldable.traverse_ putStrLn' omit
+            else traverse_ putStrLn' omit
 
     addOrRemove :: String -> ReplM m ()
     addOrRemove str = field @"omit" %= toggle str
@@ -733,7 +739,7 @@ showRules (ReplNode node1, ReplNode node2) = do
         <> "\n  to reach node "
         <> show node
         <> " the following rules were applied:"
-        <> case Foldable.toList rules of
+        <> case toList rules of
               [] -> " Implication checking."
               rules' -> foldr oneStepRuleIndexes "" rules'
     oneStepRuleIndexes rule result =
@@ -991,17 +997,18 @@ tryAxiomClaimWorker mode ref = do
         -> ReplM m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
-            runStepper'
-                (either mempty pure   axiomOrClaim)
-                (either pure   mempty axiomOrClaim)
-                node
+            tryApplyAxiomOrClaim axiomOrClaim node
         case result of
-            NoResult ->
+            DoesNotApply ->
                 showUnificationFailure axiomOrClaim node
-            SingleResult nextNode -> do
+            GetsProven -> do
+                updateExecutionGraph graph
+                putStrLn'
+                    "The proof was proven without applying any rewrite rules."
+            OneResult nextNode -> do
                 updateExecutionGraph graph
                 field @"node" .= nextNode
-            BranchResult _ ->
+            MultipleResults ->
                 updateExecutionGraph graph
 
     runUnifier'
@@ -1250,7 +1257,7 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
                 parsedCommand =
                     fromMaybe
                         ShowUsage
-                        $ parseMaybe commandParser command
+                        $ parseMaybe commandParser (Text.pack command)
             config <- ask
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
@@ -1308,7 +1315,7 @@ recursiveForcedStep n node
     case result of
         NoResult -> pure ()
         SingleResult sr -> (recursiveForcedStep $ n-1) sr
-        BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
+        BranchResult xs -> traverse_ (recursiveForcedStep (n-1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule
@@ -1320,31 +1327,31 @@ showRewriteRule rule =
     makeKoreReplOutput (unparseToString rule)
     <> makeAuxReplOutput (show . Pretty.pretty . from @_ @SourceLocation $ rule)
 
--- | Unparses a strategy node, using an omit list to hide specified children.
-unparseClaimStateComponent
+-- | Pretty prints a strategy node, using an omit list to hide specified children.
+prettyClaimStateComponent
     :: (SomeClaim -> Pattern RewritingVariableName)
     -> Set String
     -- ^ omit list
     -> CommonClaimState
     -- ^ pattern
     -> ReplOutput
-unparseClaimStateComponent transformation omitList =
+prettyClaimStateComponent transformation omitList =
     claimState ClaimStateTransformer
         { claimedTransformer =
-            makeKoreReplOutput . unparseComponent
-        , remainingTransformer = \goal ->
-            makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
+            makeKoreReplOutput . prettyComponent
+        , remainingTransformer =
+            makeKoreReplOutput . prettyComponent
         , rewrittenTransformer =
-            makeKoreReplOutput . unparseComponent
+            makeKoreReplOutput . prettyComponent
         , stuckTransformer = \goal ->
             makeAuxReplOutput "Stuck: \n"
-            <> makeKoreReplOutput (unparseComponent goal)
-        , provenValue = makeAuxReplOutput "Reached bottom"
+            <> makeKoreReplOutput (prettyComponent goal)
+        , provenValue = makeAuxReplOutput "Proven."
         }
   where
-    unparseComponent =
-        unparseToString . fmap hide . getRewritingPattern . transformation
+    prettyComponent =
+        unparseToString . fmap hide . getRewritingPattern
+            . transformation
     hide
         :: TermLike VariableName
         -> TermLike VariableName
@@ -1385,9 +1392,10 @@ showDotGraph
     => From axiom RuleIndex
     => Gr CommonClaimState (Maybe (Seq axiom))
     -> IO ()
-showDotGraph =
+showDotGraph gr =
     flip Graph.runGraphvizCanvas' Graph.Xlib
-        . Graph.graphToDot graphParams
+    . Graph.graphToDot (graphParams gr)
+    $ gr
 
 saveDotGraph
     :: From axiom AttrLabel.Label
@@ -1404,7 +1412,7 @@ saveDotGraph gr format file =
         void
         $ Graph.addExtension
             (Graph.runGraphviz
-                (Graph.graphToDot graphParams gr)
+                (Graph.graphToDot (graphParams gr) gr)
             )
             format
             path
@@ -1412,15 +1420,16 @@ saveDotGraph gr format file =
 graphParams
     :: From axiom AttrLabel.Label
     => From axiom RuleIndex
-    => Graph.GraphvizParams
+    => Gr CommonClaimState (Maybe (Seq axiom))
+    -> Graph.GraphvizParams
          Graph.Node
          CommonClaimState
          (Maybe (Seq axiom))
          ()
          CommonClaimState
-graphParams = Graph.nonClusteredParams
-    { Graph.fmtEdge = \(_, _, l) ->
-        [ Graph.textLabel (maybe "" ruleIndex l)
+graphParams gr = Graph.nonClusteredParams
+    { Graph.fmtEdge = \(_, resN, l) ->
+        [ Graph.textLabel (maybe "" (ruleIndex resN) l)
         , Graph.Attr.Style [dottedOrSolidEdge l]
         ]
     , Graph.fmtNode = \(_, ps) ->
@@ -1428,8 +1437,7 @@ graphParams = Graph.nonClusteredParams
             $ case ps of
                 Proven      -> toColorList green
                 Stuck _     -> toColorList red
-                Remaining _ -> toColorList red
-                _                               -> []
+                _           -> []
         ]
     }
   where
@@ -1438,14 +1446,22 @@ graphParams = Graph.nonClusteredParams
             (Graph.Attr.SItem Graph.Attr.Dotted mempty)
             (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
             lbl
-    ruleIndex lbl =
-        case headMay . toList $ lbl of
-            Nothing -> "Simpl/RD"
-            Just rule ->
-                Text.Lazy.pack (showRuleIdentifier rule)
+    ruleIndex resultNode lbl =
+        let appliedRule = lbl & toList & headMay
+            labelWithoutRule
+              | isRemaining resultNode = "Remaining"
+              | otherwise = "CheckImplication"
+         in
+            maybe
+                labelWithoutRule
+                (Text.Lazy.pack . showRuleIdentifier)
+                appliedRule
     toColorList col = [Graph.Attr.WC col (Just 1.0)]
     green = Graph.Attr.RGB 0 200 0
     red = Graph.Attr.RGB 200 0 0
+    isRemaining n =
+        let (_, _, state, _) = Graph.context gr n
+         in ClaimState.isRemaining state
 
 showAliasError :: AliasError -> String
 showAliasError =
@@ -1499,7 +1515,7 @@ parseEvalScript file scriptModeOutput = do
     if exists
         then do
             contents <- lift . liftIO $ readFile file
-            let result = runParser scriptParser file contents
+            let result = runParser scriptParser file (Text.pack contents)
             either parseFailed executeScript result
         else lift . liftIO . putStrLn $ "Cannot find " <> file
 
@@ -1513,7 +1529,7 @@ parseEvalScript file scriptModeOutput = do
     toReplScriptParseErrors errorBundle =
         errorBundle
             { bundleErrors =
-                mapParseError ReplScriptParseError
+                mapParseError (ReplScriptParseError . unReplParseError)
                 <$> bundleErrors errorBundle
             }
 
@@ -1527,7 +1543,7 @@ parseEvalScript file scriptModeOutput = do
         executeCommands config st =
            lift
                $ execStateReader config st
-               $ Foldable.for_ cmds
+               $ for_ cmds
                $ if scriptModeOutput == EnableOutput
                     then executeCommandWithOutput
                     else executeCommand
@@ -1564,7 +1580,7 @@ formatUnificationMessage docOrCondition =
         . (:) (AuxOut "Succeeded with unifiers:\n")
         . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
         . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
-        . Foldable.toList
+        . toList
     unparseUnifier c =
         unparse
         . Pattern.toTermLike

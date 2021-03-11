@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.InjSimplifier
     ( Distinct (..)
     , InjSimplifier (..)
@@ -28,6 +30,9 @@ import Kore.IndexedModule.SortGraph
     )
 import Kore.Internal.Inj
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Pair
 
 {- | Two 'Inj' are 'Distinct' if they are known not to unify.
@@ -226,10 +231,9 @@ mkInjSimplifier sortGraph =
         injFrom = termLikeSort injChild
 
 normalize
-    :: InternalVariable variable
-    => InjSimplifier
-    -> TermLike variable
-    -> TermLike variable
+    :: InjSimplifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
 normalize InjSimplifier { evaluateInj } =
     Recursive.fold worker
   where

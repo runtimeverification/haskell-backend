@@ -10,9 +10,6 @@ module Kore.Syntax.Exists
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -49,6 +46,20 @@ instance
     unparse Exists { existsSort, existsVariable, existsChild } =
         "\\exists"
         <> parameters [existsSort]
+        <> arguments' [unparse existsVariable, unparse existsChild]
+
+    unparse2 Exists { existsVariable, existsChild } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\exists"
+            , unparse2SortedVariable existsVariable
+            , unparse2 existsChild
+            ])
+
+instance
+    (Unparse variable, Unparse child) => Unparse (Exists () variable child)
+  where
+    unparse Exists { existsVariable, existsChild } =
+        "\\exists"
         <> arguments' [unparse existsVariable, unparse existsChild]
 
     unparse2 Exists { existsVariable, existsChild } =

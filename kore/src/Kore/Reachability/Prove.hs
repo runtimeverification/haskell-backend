@@ -8,7 +8,9 @@ This should be imported qualified.
 
 module Kore.Reachability.Prove
     ( CommonClaimState
-    , ProofStuck (..)
+    , ProveClaimsResult (..)
+    , StuckClaim (..)
+    , StuckClaims
     , AllClaims (..)
     , Axioms (..)
     , ToProve (..)
@@ -27,9 +29,6 @@ import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
     )
-import qualified Control.Monad as Monad
-    ( foldM_
-    )
 import Control.Monad.Catch
     ( MonadCatch
     , MonadMask
@@ -39,13 +38,18 @@ import Control.Monad.Catch
     )
 import Control.Monad.Except
     ( ExceptT
-    , withExceptT
+    , MonadError
+    , runExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
+import qualified Control.Monad.State.Strict as State
 import Data.Coerce
     ( coerce
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List.Extra
     ( groupSortOn
@@ -68,27 +72,25 @@ import Kore.Debug
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.MultiAnd
+    ( MultiAnd
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( getMultiAndPredicate
-    , unwrapPredicate
-    )
-import Kore.Internal.TermLike
-    ( pattern Ceil_
-    , pattern Not_
-    , TermLike (..)
+    ( Predicate
+    , pattern PredicateCeil
+    , pattern PredicateNot
+    , getMultiAndPredicate
     )
 import Kore.Log.DebugClaimState
 import Kore.Log.DebugProven
 import Kore.Log.InfoExecBreadth
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState
@@ -121,7 +123,7 @@ import Kore.Step.Transition
     ( runTransitionT
     )
 import qualified Kore.Step.Transition as Transition
-import Kore.Syntax.Variable
+import Kore.TopBottom
 import Kore.Unparser
 import Log
     ( MonadLog (..)
@@ -160,31 +162,36 @@ The action may throw an exception if the proof fails; the exception is a single
 @'Pattern' 'VariableName'@, the first unprovable configuration.
 
  -}
-type Verifier m = ExceptT (OrPattern VariableName) m
-
-{- | Verifies a set of claims. When it verifies a certain claim, after the
-first step, it also uses the claims as axioms (i.e. it does coinductive proofs).
-
-If the verification fails, returns an error containing a pattern that could
-not be rewritten (either because no axiom could be applied or because we
-didn't manage to verify a claim within the its maximum number of steps).
-
-If the verification succeeds, it returns ().
--}
-data ProofStuck =
-    ProofStuck
-    { stuckPatterns :: !(OrPattern VariableName)
-    , provenClaims :: ![SomeClaim]
-    }
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+type VerifierT = ExceptT StuckClaims
 
 newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
 newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
 newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
 newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
+
+newtype StuckClaim = StuckClaim { getStuckClaim :: SomeClaim }
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
+instance TopBottom StuckClaim where
+    isTop = const False
+    isBottom = const False
+
+type StuckClaims = MultiAnd StuckClaim
+
+type ProvenClaims = MultiAnd SomeClaim
+
+-- | The result of proving some claims.
+data ProveClaimsResult =
+    ProveClaimsResult
+    { stuckClaims :: !StuckClaims
+    -- ^ The conjuction of stuck claims, that is: of claims which must still be
+    -- proven. If all claims were proved, then the remaining claims are @\\top@.
+    , provenClaims :: !ProvenClaims
+    -- ^ The conjunction of all claims which were proven.
+    }
 
 proveClaims
     :: forall simplifier
@@ -199,7 +206,7 @@ proveClaims
     -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT ProofStuck simplifier ()
+    -> simplifier ProveClaimsResult
 proveClaims
     breadthLimit
     searchOrder
@@ -207,9 +214,15 @@ proveClaims
     axioms
     (AlreadyProven alreadyProven)
     (ToProve toProve)
-  =
-    proveClaimsWorker breadthLimit searchOrder claims axioms unproven
-    & withExceptT addStillProven
+  = do
+    (result, provenClaims) <-
+        proveClaimsWorker breadthLimit searchOrder claims axioms unproven
+        & runExceptT
+        & flip runStateT (MultiAnd.make stillProven)
+    pure ProveClaimsResult
+        { stuckClaims = fromLeft MultiAnd.top result
+        , provenClaims
+        }
   where
     unproven :: ToProve SomeClaim
     stillProven :: [SomeClaim]
@@ -226,10 +239,6 @@ proveClaims
                 then Right rule
                 else Left claim
 
-    addStillProven :: ProofStuck -> ProofStuck
-    addStillProven stuck@ProofStuck { provenClaims } =
-        stuck { provenClaims = stillProven ++ provenClaims }
-
 proveClaimsWorker
     :: forall simplifier
     .  MonadSimplify simplifier
@@ -242,22 +251,19 @@ proveClaimsWorker
     -> ToProve SomeClaim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT ProofStuck simplifier ()
+    -> ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
 proveClaimsWorker breadthLimit searchOrder claims axioms (ToProve toProve) =
-    Monad.foldM_ verifyWorker [] toProve
+    traverse_ verifyWorker toProve
   where
     verifyWorker
-        :: [SomeClaim]
-        -> (SomeClaim, Limit Natural)
-        -> ExceptT ProofStuck simplifier [SomeClaim]
-    verifyWorker provenClaims unprovenClaim@(claim, _) =
-        withExceptT wrapStuckPattern $ do
-            proveClaim breadthLimit searchOrder claims axioms unprovenClaim
-            return (claim : provenClaims)
-      where
-        wrapStuckPattern :: OrPattern VariableName -> ProofStuck
-        wrapStuckPattern stuckPatterns =
-            ProofStuck { stuckPatterns, provenClaims }
+        :: (SomeClaim, Limit Natural)
+        -> ExceptT StuckClaims (StateT ProvenClaims simplifier) ()
+    verifyWorker unprovenClaim@(claim, _) = do
+        proveClaim breadthLimit searchOrder claims axioms unprovenClaim
+        addProvenClaim claim
+
+    addProvenClaim claim =
+        State.modify' (mappend (MultiAnd.singleton claim))
 
 proveClaim
     :: forall simplifier
@@ -269,7 +275,7 @@ proveClaim
     -> AllClaims SomeClaim
     -> Axioms SomeClaim
     -> (SomeClaim, Limit Natural)
-    -> ExceptT (OrPattern VariableName) simplifier ()
+    -> ExceptT StuckClaims simplifier ()
 proveClaim
     breadthLimit
     searchOrder
@@ -282,7 +288,7 @@ proveClaim
         startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
         limitedStrategy =
             strategy
-            & Foldable.toList
+            & toList
             & Limit.takeWithin depthLimit
     proofDepths <-
         Strategy.leavesM
@@ -300,16 +306,11 @@ proveClaim
 
     handleLimitExceeded
         :: Strategy.LimitExceeded (ProofDepth, CommonClaimState)
-        -> Verifier simplifier a
-    handleLimitExceeded (Strategy.LimitExceeded states) =
-        let finalPattern =
-                ClaimState.claimState lhsClaimStateTransformer . snd
-                <$> states
-         in
-            Monad.Except.throwError
-            . OrPattern.map getRewritingPattern
-            . OrPattern.fromPatterns
-            $ finalPattern
+        -> VerifierT simplifier a
+    handleLimitExceeded (Strategy.LimitExceeded states) = do
+        let extractStuckClaim = fmap StuckClaim . extractUnproven . snd
+            stuckClaims = mapMaybe extractStuckClaim states
+        Monad.Except.throwError (MultiAnd.make $ toList stuckClaims)
 
     updateQueue = \as ->
         Strategy.unfoldSearchOrder searchOrder as
@@ -322,16 +323,15 @@ proveClaim
         genericLength = fromIntegral . length
 
     throwUnproven
-        :: LogicT (Verifier simplifier) (ProofDepth, CommonClaimState)
-        -> Verifier simplifier [ProofDepth]
+        :: LogicT (VerifierT simplifier) (ProofDepth, CommonClaimState)
+        -> VerifierT simplifier [ProofDepth]
     throwUnproven acts =
         do
             (proofDepth, proofState) <- acts
             let maybeUnproven = extractUnproven proofState
-            Foldable.for_ maybeUnproven $ \unproven -> do
+            for_ maybeUnproven $ \unproven -> do
                 infoUnprovenDepth proofDepth
-                Monad.Except.throwError . OrPattern.fromPattern
-                    $ (getRewritingPattern . getConfiguration) unproven
+                throwStuckClaim unproven
             pure proofDepth
         & Logic.observeAllT
 
@@ -410,6 +410,7 @@ transitionRule'
 transitionRule' claims axioms = \prim proofState ->
     deepseq proofState
         (transitionRule claims axiomGroups
+            & withWarnings
             & profTransitionRule
             & withConfiguration
             & withDebugClaimState
@@ -420,6 +421,22 @@ transitionRule' claims axioms = \prim proofState ->
         prim proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+
+withWarnings
+    :: forall m
+    .  MonadSimplify m
+    => CommonTransitionRule m
+    -> CommonTransitionRule m
+withWarnings rule prim claimState = do
+    claimState' <- rule prim claimState
+    case prim of
+        Prim.CheckImplication | ClaimState.Stuck _ <- claimState' ->
+            case claimState of
+                ClaimState.Remaining claim -> warnStuckClaimStateTermsNotUnifiable claim
+                ClaimState.Claimed claim -> warnStuckClaimStateTermsUnifiable claim
+                _ -> return ()
+        _ -> return ()
+    return claimState'
 
 profTransitionRule
     :: forall m
@@ -451,10 +468,10 @@ checkStuckConfiguration
     -> CommonTransitionRule m
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
-    Foldable.for_ (extractStuck proofState) $ \rule' -> do
+    for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
-        when (any (isNot_Ceil_ . unwrapPredicate) multiAndPredicate) $
+        when (any isNot_Ceil_ multiAndPredicate) $
             error . show . Pretty.vsep $
                 [ "Found '\\not(\\ceil(_))' in stuck configuration:"
                 , Pretty.pretty rule'
@@ -463,27 +480,28 @@ checkStuckConfiguration rule prim proofState = do
                 ]
     return proofState'
   where
-    isNot_Ceil_ :: TermLike variable -> Bool
-    isNot_Ceil_ (Not_ _ (Ceil_ _ _ _)) = True
+    isNot_Ceil_ :: Predicate variable -> Bool
+    isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
     isNot_Ceil_ _ = False
+
+throwStuckClaim :: MonadError StuckClaims m => SomeClaim -> m x
+throwStuckClaim = Monad.Except.throwError . MultiAnd.singleton . StuckClaim
 
 {- | Terminate the prover at the first stuck step.
  -}
 throwStuckClaims
     ::  forall m rule
     .   MonadLog m
-    =>  TransitionRule (Verifier m) rule
+    =>  TransitionRule (VerifierT m) rule
             (ProofDepth, ClaimState SomeClaim)
-    ->  TransitionRule (Verifier m) rule
+    ->  TransitionRule (VerifierT m) rule
             (ProofDepth, ClaimState SomeClaim)
 throwStuckClaims rule prim state = do
     state'@(proofDepth', proofState') <- rule prim state
     case proofState' of
         ClaimState.Stuck unproven -> do
             infoUnprovenDepth proofDepth'
-            Monad.Except.throwError $ OrPattern.fromPattern config
-          where
-            config = getConfiguration unproven & getRewritingPattern
+            throwStuckClaim unproven
         _ -> return state'
 
 {- | Modify a 'TransitionRule' to track the depth of a proof.

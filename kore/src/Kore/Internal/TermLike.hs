@@ -4,6 +4,7 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike
@@ -11,9 +12,9 @@ module Kore.Internal.TermLike
     , TermLike (..)
     , Evaluated (..)
     , Defined (..)
-    , Builtin
     , extractAttributes
     , isSimplified
+    , isSimplifiedSomeCondition
     , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
@@ -28,7 +29,6 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
-    , freshSymbolInstance
     , removeEvaluated
     , termLikeSort
     , hasFreeVariable
@@ -38,10 +38,12 @@ module Kore.Internal.TermLike
     , asConcrete
     , isConcrete
     , fromConcrete
+    , retractKey
     , Substitute.substitute
     , refreshElementBinder
     , refreshSetBinder
     , depth
+    , makeSortsAgree
     -- * Utility functions for dealing with sorts
     , forceSort
     , fullyOverrideSort
@@ -57,10 +59,13 @@ module Kore.Internal.TermLike
     , mkBottom
     , mkInternalBytes
     , mkInternalBytes'
-    , mkBuiltin
-    , mkBuiltinList
-    , mkBuiltinMap
-    , mkBuiltinSet
+    , mkInternalBool
+    , mkInternalInt
+    , mkInternalString
+    , mkInternalList
+    , Key
+    , mkInternalMap
+    , mkInternalSet
     , mkCeil
     , mkDomainValue
     , mkEquals
@@ -117,13 +122,12 @@ module Kore.Internal.TermLike
     , pattern App_
     , pattern Bottom_
     , pattern InternalBytes_
-    , pattern Builtin_
-    , pattern BuiltinBool_
-    , pattern BuiltinInt_
-    , pattern BuiltinList_
-    , pattern BuiltinMap_
-    , pattern BuiltinSet_
-    , pattern BuiltinString_
+    , pattern InternalBool_
+    , pattern InternalInt_
+    , pattern InternalList_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , pattern InternalString_
     , pattern Ceil_
     , pattern DV_
     , pattern Equals_
@@ -183,6 +187,7 @@ module Kore.Internal.TermLike
     , module Variable
     -- * For testing
     , mkDefinedAtTop
+    , containsSymbolWithId
     ) where
 
 import Prelude.Kore
@@ -195,7 +200,6 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
     ( Const (..)
     )
@@ -205,6 +209,9 @@ import Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
     ( field
+    )
+import Data.Map.Strict
+    ( Map
     )
 import qualified Data.Map.Strict as Map
 import Data.Monoid
@@ -235,11 +242,19 @@ import Kore.Builtin.Endianness.Endianness
 import Kore.Builtin.Signedness.Signedness
     ( Signedness
     )
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.Inj
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+import Kore.Internal.InternalString
+import Kore.Internal.Key
+    ( Key
+    )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
     )
@@ -257,6 +272,7 @@ import Kore.Syntax.Ceil
 import Kore.Syntax.Definition hiding
     ( Alias
     , Symbol
+    , symbolConstructor
     )
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.DomainValue
@@ -309,28 +325,6 @@ refreshVariables (FreeVariables.toNames -> avoid) term =
     originalFreeVariables = FreeVariables.toSet (freeVariables term)
     subst = mkVar <$> rename
 
--- | Generates fresh variables as arguments for a symbol to create a pattern.
-freshSymbolInstance
-    :: forall variable
-     . InternalVariable variable
-    => FreeVariables variable
-    -> Symbol
-    -> Text
-    -> TermLike variable
-freshSymbolInstance freeVars sym base =
-    mkApplySymbol sym varTerms
-    & refreshVariables freeVars
-  where
-    sorts = applicationSortsOperands $ symbolSorts sym
-    varTerms = mkElemVar <$> zipWith mkVariable [1..] sorts
-
-    mkVariable :: Integer -> Sort -> ElementVariable variable
-    mkVariable vIdx vSort =
-        mkElementVariable
-            (generatedId $ base <> (Text.pack . show) vIdx)
-            vSort
-        & (fmap . fmap) fromVariableName
-
 {- | Is the 'TermLike' a function pattern?
  -}
 isFunctionPattern :: TermLike variable -> Bool
@@ -350,12 +344,12 @@ hasConstructorLikeTop :: TermLike variable -> Bool
 hasConstructorLikeTop = \case
     App_ symbol _ -> isConstructor symbol
     DV_ _ _ -> True
-    BuiltinBool_ _ -> True
-    BuiltinInt_ _ -> True
-    BuiltinList_ _ -> True
-    BuiltinMap_ _ -> True
-    BuiltinSet_ _ -> True
-    BuiltinString_ _ -> True
+    InternalBool_ _ -> True
+    InternalInt_ _ -> True
+    InternalList_ _ -> True
+    InternalMap_ _ -> True
+    InternalSet_ _ -> True
+    InternalString_ _ -> True
     StringLiteral_ _ -> True
     _ -> False
 
@@ -429,9 +423,32 @@ fromConcrete
     -> TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)
 
+{- | Is the 'TermLike' fully simplified under the given side condition?
+
+See also: 'isSimplifiedAnyCondition', 'isSimplifiedSomeCondition'.
+
+ -}
 isSimplified :: SideCondition.Representation -> TermLike variable -> Bool
 isSimplified sideCondition =
     Attribute.isSimplified sideCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under any side condition?
+
+See also: 'isSimplified', 'isSimplifiedSomeCondition'.
+
+ -}
+isSimplifiedAnyCondition :: TermLike variable -> Bool
+isSimplifiedAnyCondition =
+    Attribute.isSimplifiedAnyCondition . extractAttributes
+
+{- | Is the 'TermLike' fully simplified under some side condition?
+
+See also: 'isSimplified', 'isSimplifiedAnyCondition'.
+
+ -}
+isSimplifiedSomeCondition :: TermLike variable -> Bool
+isSimplifiedSomeCondition =
+    Attribute.isSimplifiedSomeCondition . extractAttributes
 
 {- | Forget the 'simplifiedAttribute' associated with the 'TermLike'.
 
@@ -446,9 +463,6 @@ forgetSimplified
     -> TermLike variable
 forgetSimplified = resynthesize
 
-isFullySimplified :: TermLike variable -> Bool
-isFullySimplified = Attribute.isFullySimplified . extractAttributes
-
 simplifiedAttribute :: TermLike variable -> Pattern.Simplified
 simplifiedAttribute = Attribute.simplifiedAttribute . extractAttributes
 
@@ -462,7 +476,8 @@ assertConstructorLikeKeys
 assertConstructorLikeKeys keys a
     | any (not . Pattern.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
+                filter (not . Pattern.isConstructorLike)
+                $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected constructor-like patterns,\
@@ -471,9 +486,9 @@ assertConstructorLikeKeys keys a
                 , Pretty.indent 2 "Non-constructor-like patterns:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-    | any (not . isFullySimplified) keys =
+    | any (not . isSimplifiedAnyCondition) keys =
         let simplifiableKeys =
-                filter (not . isFullySimplified) $ Foldable.toList keys
+                filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Internal error: expected fully simplified patterns,\
@@ -707,11 +722,16 @@ forceSortPredicate
         NuF _ -> illSorted forcedSort original
         ApplySymbolF _ -> illSorted forcedSort original
         ApplyAliasF _ -> illSorted forcedSort original
-        BuiltinF _ -> illSorted forcedSort original
+        InternalBoolF _ -> illSorted forcedSort original
+        InternalBytesF _ -> illSorted forcedSort original
+        InternalIntF _ -> illSorted forcedSort original
+        InternalStringF _ -> illSorted forcedSort original
+        InternalListF _ -> illSorted forcedSort original
+        InternalMapF _ -> illSorted forcedSort original
+        InternalSetF _ -> illSorted forcedSort original
         DomainValueF _ -> illSorted forcedSort original
         StringLiteralF _ -> illSorted forcedSort original
         VariableF _ -> illSorted forcedSort original
-        InternalBytesF _ -> illSorted forcedSort original
         InhabitantF _ -> illSorted forcedSort original
         EndiannessF _ -> illSorted forcedSort original
         SignednessF _ -> illSorted forcedSort original
@@ -947,7 +967,7 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 applySymbol
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -- ^ 'Symbol' declaration
     -> [Sort]
     -- ^ 'Symbol' sort parameters
@@ -979,7 +999,7 @@ See also: 'mkApplySymbol', 'applySymbol'
 applySymbol_
     :: HasCallStack
     => InternalVariable variable
-    => SentenceSymbol pattern''
+    => SentenceSymbol
     -> [TermLike variable]
     -> TermLike variable
 applySymbol_ sentence = updateCallStack . applySymbol sentence []
@@ -1043,41 +1063,59 @@ mkCeil_
     -> TermLike variable
 mkCeil_ = updateCallStack . mkCeil predicateSort
 
-{- | Construct a builtin pattern.
+{- | Construct an internal bool pattern.
  -}
-mkBuiltin
+mkInternalBool
     :: HasCallStack
     => InternalVariable variable
-    => Domain.Builtin (TermLike Concrete) (TermLike variable)
+    => InternalBool
     -> TermLike variable
-mkBuiltin = updateCallStack . synthesize . BuiltinF
+mkInternalBool = updateCallStack . synthesize . InternalBoolF . Const
+
+{- | Construct an internal integer pattern.
+ -}
+mkInternalInt
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalInt
+    -> TermLike variable
+mkInternalInt = updateCallStack . synthesize . InternalIntF . Const
+
+{- | Construct an internal string pattern.
+ -}
+mkInternalString
+    :: HasCallStack
+    => InternalVariable variable
+    => InternalString
+    -> TermLike variable
+mkInternalString = updateCallStack . synthesize . InternalStringF . Const
 
 {- | Construct a builtin list pattern.
  -}
-mkBuiltinList
+mkInternalList
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalList (TermLike variable)
+    => InternalList (TermLike variable)
     -> TermLike variable
-mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
+mkInternalList = updateCallStack . synthesize . InternalListF
 
 {- | Construct a builtin map pattern.
  -}
-mkBuiltinMap
+mkInternalMap
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    => InternalMap Key (TermLike variable)
     -> TermLike variable
-mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
+mkInternalMap = updateCallStack . synthesize . InternalMapF
 
 {- | Construct a builtin set pattern.
  -}
-mkBuiltinSet
+mkInternalSet
     :: HasCallStack
     => InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    => InternalSet Key (TermLike variable)
     -> TermLike variable
-mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
+mkInternalSet = updateCallStack . synthesize . InternalSetF
 
 {- | Construct a 'DomainValue' pattern.
  -}
@@ -1425,8 +1463,8 @@ mkInternalBytes
 mkInternalBytes sort value =
     updateCallStack . synthesize . InternalBytesF . Const
         $ InternalBytes
-            { bytesSort = sort
-            , bytesValue = value
+            { internalBytesSort = sort
+            , internalBytesValue = value
             }
 
 mkInternalBytes'
@@ -1492,19 +1530,16 @@ mkDefined = worker
                     \ a \\bottom pattern as defined."
             CeilF _ -> term
             DomainValueF _  -> term
-            BuiltinF (Domain.BuiltinBool _) -> term
-            BuiltinF (Domain.BuiltinInt _) -> term
-            BuiltinF (Domain.BuiltinString _) -> term
-            BuiltinF (Domain.BuiltinList _) ->
+            InternalListF _ ->
                 -- mkDefinedAtTop is not needed because the list is always
                 -- defined if its elements are all defined.
                 embed (worker <$> termF)
-            BuiltinF (Domain.BuiltinMap internalMap) ->
-                let map' = Domain.BuiltinMap (mkDefinedInternalAc internalMap)
-                in (mkDefined1 . embed) (BuiltinF map')
-            BuiltinF (Domain.BuiltinSet internalSet) ->
-                let set' = Domain.BuiltinSet (mkDefinedInternalAc internalSet)
-                in (mkDefined1 . embed) (BuiltinF set')
+            InternalMapF internalMap ->
+                let map' = mkDefinedInternalAc internalMap
+                in (mkDefined1 . embed) (InternalMapF map')
+            InternalSetF internalSet ->
+                let set' = mkDefinedInternalAc internalSet
+                in (mkDefined1 . embed) (InternalSetF set')
             EqualsF _ -> term
             ExistsF _ -> mkDefinedAtTop term
             FloorF _ -> term
@@ -1530,20 +1565,35 @@ mkDefined = worker
             SignednessF _ -> term
             InjF _ -> mkDefined1 term
             InhabitantF _ -> mkDefined1 term
+            InternalBoolF _ -> term
             InternalBytesF _ -> term
+            InternalIntF _ -> term
+            InternalStringF _ -> term
 
+    mkDefinedInternalAc
+        :: forall normalized
+        .  AcWrapper normalized
+        => Functor (Value normalized)
+        => Functor (Element normalized)
+        => InternalAc normalized Key (TermLike variable)
+        -> InternalAc normalized Key (TermLike variable)
     mkDefinedInternalAc internalAc =
         Lens.over (field @"builtinAcChild") mkDefinedNormalized internalAc
       where
+        mkDefinedNormalized
+            :: normalized Key (TermLike variable)
+            -> normalized Key (TermLike variable)
         mkDefinedNormalized =
-            Domain.unwrapAc
+            unwrapAc
             >>> Lens.over (field @"concreteElements") mkDefinedConcrete
             >>> Lens.over (field @"elementsWithVariables") mkDefinedAbstract
             >>> Lens.over (field @"opaque") mkDefinedOpaque
-            >>> Domain.wrapAc
+            >>> wrapAc
+        mkDefinedConcrete
+            :: Map Key (Value normalized (TermLike variable))
+            -> Map Key (Value normalized (TermLike variable))
         mkDefinedConcrete =
             (fmap . fmap) mkDefined
-            . Map.mapKeys mkDefined
         mkDefinedAbstract = (fmap . fmap) mkDefined
         mkDefinedOpaque = map mkDefined
 
@@ -1613,7 +1663,7 @@ mkSymbol
     -> [SortVariable]
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol symbolConstructor symbolParams argumentSorts resultSort' =
     SentenceSymbol
         { sentenceSymbolSymbol =
@@ -1635,7 +1685,7 @@ mkSymbol_
     :: Id
     -> [Sort]
     -> Sort
-    -> SentenceSymbol (TermLike variable)
+    -> SentenceSymbol
 mkSymbol_ symbolConstructor = mkSymbol symbolConstructor []
 
 {- | Construct an alias declaration with the given parameters and sorts.
@@ -1716,33 +1766,27 @@ pattern DV_
     -> TermLike variable
     -> TermLike variable
 
-pattern Builtin_
-    :: Domain.Builtin (TermLike Concrete) (TermLike variable)
+pattern InternalBool_
+    :: InternalBool
     -> TermLike variable
 
-pattern BuiltinBool_
-    :: Domain.InternalBool
+pattern InternalInt_
+    :: InternalInt
     -> TermLike variable
 
-pattern BuiltinInt_
-    :: Domain.InternalInt
+pattern InternalList_
+    :: InternalList (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinList_
-    :: Domain.InternalList (TermLike variable)
+pattern InternalMap_
+    :: InternalMap Key (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinMap_
-    :: Domain.InternalMap (TermLike Concrete) (TermLike variable)
+pattern InternalSet_
+    :: InternalSet Key (TermLike variable)
     -> TermLike variable
 
-pattern BuiltinSet_
-    :: Domain.InternalSet (TermLike Concrete) (TermLike variable)
-    -> TermLike variable
-
-pattern BuiltinString_
-    :: Domain.InternalString
-    -> TermLike variable
+pattern InternalString_ :: InternalString -> TermLike variable
 
 pattern Equals_
     :: Sort
@@ -1857,9 +1901,9 @@ pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
 
 pattern InternalBytes_ :: Sort -> ByteString -> TermLike variable
-pattern InternalBytes_ bytesSort bytesValue <-
+pattern InternalBytes_ internalBytesSort internalBytesValue <-
     (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
-        { bytesSort, bytesValue }
+        { internalBytesSort, internalBytesValue }
     ))
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
@@ -1872,20 +1916,23 @@ pattern DV_ domainValueSort domainValueChild <-
         _ :< DomainValueF DomainValue { domainValueSort, domainValueChild }
     )
 
-pattern Builtin_ builtin <- (Recursive.project -> _ :< BuiltinF builtin)
+pattern InternalBool_ internalBool <-
+    (Recursive.project -> _ :< InternalBoolF (Const internalBool))
 
-pattern BuiltinBool_ internalBool <- Builtin_ (Domain.BuiltinBool internalBool)
+pattern InternalInt_ internalInt <-
+    (Recursive.project -> _ :< InternalIntF (Const internalInt))
 
-pattern BuiltinInt_ internalInt <- Builtin_ (Domain.BuiltinInt internalInt)
+pattern InternalString_ internalString <-
+    (Recursive.project -> _ :< InternalStringF (Const internalString))
 
-pattern BuiltinList_ internalList <- Builtin_ (Domain.BuiltinList internalList)
+pattern InternalList_ internalList <-
+    (Recursive.project -> _ :< InternalListF internalList)
 
-pattern BuiltinMap_ internalMap <- Builtin_ (Domain.BuiltinMap internalMap)
+pattern InternalMap_ internalMap <-
+    (Recursive.project -> _ :< InternalMapF internalMap)
 
-pattern BuiltinSet_ internalSet <- Builtin_ (Domain.BuiltinSet internalSet)
-
-pattern BuiltinString_ internalString
-    <- Builtin_ (Domain.BuiltinString internalString)
+pattern InternalSet_ internalSet <-
+    (Recursive.project -> _ :< InternalSetF internalSet)
 
 pattern Equals_ equalsOperandSort equalsResultSort equalsFirst equalsSecond <-
     (Recursive.project ->
@@ -2091,3 +2138,11 @@ applyModality modality term =
             mkApplyAlias (wAF sort) [term]
   where
     sort = termLikeSort term
+
+containsSymbolWithId :: String -> TermLike variable -> Bool
+containsSymbolWithId symId term
+    | App_ sym _ <- term
+    , getId (symbolConstructor sym) == Text.pack symId = True
+    | otherwise = any
+        (containsSymbolWithId symId)
+        (Cofree.tailF $ Recursive.project term)

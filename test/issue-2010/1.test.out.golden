@@ -1,9 +1,19 @@
-  <k>
-    I:Int ~> .
-  </k>
-#And
-  {
-    Some I
-  #Equals
-    f ( )
-  }
+    <k>
+      true ~> .
+    </k>
+  #And
+    {
+      None
+    #Equals
+      f ( )
+    }
+#Or
+    <k>
+      I:Int ~> .
+    </k>
+  #And
+    {
+      Some I:Int
+    #Equals
+      f ( )
+    }

@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.OrPattern
     ( simplifyConditionsWithSmt
     ) where
@@ -38,7 +40,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import Kore.Internal.SideCondition
     ( SideCondition
@@ -47,9 +49,11 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( toPredicate
     , top
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
-    ( InternalVariable
-    , MonadSimplify
+    ( MonadSimplify
     , simplifyCondition
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -64,17 +68,19 @@ import Logic
 import qualified Logic
 
 simplifyConditionsWithSmt
-    ::  forall variable simplifier
-    .   (MonadSimplify simplifier, InternalVariable variable)
-    => SideCondition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyConditionsWithSmt sideCondition unsimplified =
     OrPattern.observeAllT $ do
         unsimplified1 <- Logic.scatter unsimplified
         simplifyAndPrune unsimplified1
   where
-    simplifyAndPrune :: Pattern variable -> LogicT simplifier (Pattern variable)
+    simplifyAndPrune
+        :: Pattern RewritingVariableName
+        -> LogicT simplifier (Pattern RewritingVariableName)
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
         filtered <-
@@ -85,9 +91,9 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         return (term `Pattern.withCondition` filtered)
 
     resultWithFilter
-        :: (Condition variable -> simplifier (Maybe Bool))
-        -> simplifier (Condition variable)
-        -> simplifier (Condition variable)
+        :: (Condition RewritingVariableName -> simplifier (Maybe Bool))
+        -> simplifier (Condition RewritingVariableName)
+        -> simplifier (Condition RewritingVariableName)
     resultWithFilter conditionFilter previousResult = do
         previous <- previousResult
         if isTop previous || isBottom previous
@@ -103,7 +109,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                         -- so we may remove a substitution here. However,
                         -- we are not able to handle that properly.
                         return previous
-                            { Conditional.predicate = makeTruePredicate_ }
+                            { Conditional.predicate = makeTruePredicate }
                     Just False -> return Condition.bottom
                     Nothing -> return previous
 
@@ -122,7 +128,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
     @side ∧ ¬arg@ is not satisfiable iff @side → arg@ is @⊤@.
     @side ∧ ¬arg@ is always true iff @side → arg@ is @⊥@
     -}
-    pruneCondition :: Condition variable -> simplifier (Maybe Bool)
+    pruneCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
     pruneCondition condition = do
         implicationNegation <-
             makeAndPredicate sidePredicate
@@ -137,7 +143,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                 then return (Just True)
                 else return Nothing
 
-    rejectCondition :: Condition variable -> simplifier (Maybe Bool)
+    rejectCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
     rejectCondition condition = do
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)
@@ -152,6 +158,8 @@ simplifyConditionsWithSmt sideCondition unsimplified =
 
     sidePredicate = SideCondition.toPredicate sideCondition
 
-    addPredicate :: Conditional variable term -> Conditional variable term
+    addPredicate
+        :: Conditional RewritingVariableName term
+        -> Conditional RewritingVariableName term
     addPredicate c@Conditional {predicate} =
         c {Conditional.predicate = makeAndPredicate predicate sidePredicate}

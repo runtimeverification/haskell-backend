@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Builtin.Encoding
     ( encode8Bit
     , decode8Bit
+    , parse8Bit
     , parseBase16
     , toBase16
     ) where
@@ -33,6 +34,7 @@ import Data.Word
     )
 import Text.Megaparsec
     ( Parsec
+    , (<?>)
     )
 import qualified Text.Megaparsec as Parsec
 
@@ -61,6 +63,23 @@ encode8Bit =
                 , "found:"
                 , show int
                 ]
+
+{- | Encode text using an 8-bit encoding.
+
+Each 'Char' in the text is interpreted as a 'Data.Word.Word8'. It is an error if
+any character falls outside that representable range.
+
+ -}
+parse8Bit :: Parsec Void Text ByteString
+parse8Bit =
+    ByteString.pack <$> many parseByte
+  where
+    parseByte :: Parsec Void Text Word8
+    parseByte =
+        fromIntegral . Char.ord <$> Parsec.satisfy is8Bit <?> "8-bit value"
+
+    is8Bit :: Char -> Bool
+    is8Bit c = c < '\x100'
 
 decode8Bit :: ByteString -> Text
 decode8Bit =

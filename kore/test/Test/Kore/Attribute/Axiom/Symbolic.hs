@@ -17,7 +17,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 
 import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Pattern.FreeVariables
@@ -33,7 +32,7 @@ parseSymbolic
     -> Attributes
     -> Parser (Symbolic VariableName)
 parseSymbolic freeVariables (Attributes attrs) =
-    Foldable.foldlM
+    foldlM
         (flip $ parseSymbolicAttribute freeVariables )
         Default.def
         attrs

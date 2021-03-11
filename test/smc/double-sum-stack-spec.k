@@ -15,7 +15,7 @@ module DOUBLE-SUM-STACK-SPEC
   imports VERIFICATION
 
 
-rule
+claim
     <k>
       while (!(p <= 0)) {
         sum = sum + (p + (p + (p + (p + (p + p)))));
@@ -25,14 +25,14 @@ rule
       .K
     ...</k>
   <mem>
-      n   |-> N:Int
+      n   |-> _:Int
       p   |-> (P:Int => 0)
       sum |-> (S:Int => S +Int (3 *Int ((P +Int 1) *Int P)))
   </mem>
   <stack> VS:ValStack </stack>
 requires P >=Int 0 andBool stackSize(VS) <=Int 1
 
-rule
+claim
     <k>
       while (!(n <= 0)) {
         p = n;
@@ -54,7 +54,7 @@ rule
 requires N >=Int 0 andBool stackSize(VS) <=Int 1
 
 /*
-rule
+claim
     <k>
       int n, p, sum;
       n = N:Int;

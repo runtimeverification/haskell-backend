@@ -14,6 +14,8 @@ builtin modules.
     import qualified Kore.Builtin.KEqual as KEqual
 @
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.KEqual
     ( verifiers
     , builtinFunctions
@@ -29,10 +31,8 @@ import Prelude.Kore
 
 import Control.Error
     ( MaybeT
-    , hoistMaybe
     )
 import qualified Control.Monad as Monad
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -62,11 +62,14 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate_
+    ( makeCeilPredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
@@ -162,34 +165,31 @@ evalKEq true (valid :< app) =
         -> TermLike variable
         -> MaybeT simplifier (AttemptedAxiom variable)
     evalEq termLike1 termLike2 = do
-        asConcrete1 <- hoistMaybe $ Builtin.toKey termLike1
-        asConcrete2 <- hoistMaybe $ Builtin.toKey termLike2
+        -- Here we handle the case when both patterns are constructor-like
+        -- (so that equality is syntactic). If either pattern is not
+        -- constructor-like, we postpone evaluation until we know more.
+        Monad.guard (TermLike.isConstructorLike termLike1)
+        Monad.guard (TermLike.isConstructorLike termLike2)
         Builtin.appliedFunction
             $ Bool.asPattern sort
-            $ comparison asConcrete1 asConcrete2
+            $ comparison termLike1 termLike2
 
 evalKIte
-    :: forall variable simplifier
-    .  (InternalVariable variable, MonadSimplify simplifier)
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => CofreeF
         (Application Symbol)
-        (Attribute.Pattern variable)
-        (TermLike variable)
-    -> simplifier (AttemptedAxiom variable)
+        (Attribute.Pattern RewritingVariableName)
+        (TermLike RewritingVariableName)
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 evalKIte (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where
-    evaluate
-        :: TermLike variable
-        -> Maybe Bool
-    evaluate (Recursive.project -> _ :< pat) =
-        case pat of
-            BuiltinF dv ->
-                Just (Bool.extractBoolDomainValue iteKey dv)
-            _ -> Nothing
+    evaluate :: TermLike RewritingVariableName -> Maybe Bool
+    evaluate = Bool.matchBool
 
     evalIte expr t1 t2 =
         case evaluate expr of
@@ -218,14 +218,13 @@ matchKequalEq =
         & isJust
 
 unifyKequalsEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyKequalsEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where
@@ -254,18 +253,17 @@ matchIfThenElse (App_ symbol [condition, branch1, branch2]) = do
 matchIfThenElse _ = Nothing
 
 unifyIfThenElse
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren a b =
     worker a b <|> worker b a
   where
     takeCondition value condition' =
-        makeCeilPredicate_ (mkAnd (Bool.asInternal sort value) condition')
+        makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
         & Condition.fromPredicate
       where
         sort = termLikeSort condition'

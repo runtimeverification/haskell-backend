@@ -5,6 +5,8 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Search
     ( Config (..)
     , SearchType (..)
@@ -44,6 +46,9 @@ import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -55,7 +60,7 @@ import Kore.Step.Substitution
     )
 import Kore.TopBottom
 import Kore.Unification.Procedure
-    ( unificationProcedureWorker
+    ( unificationProcedure
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Logic
@@ -124,26 +129,26 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m
-    .  (InternalVariable variable, MonadSimplify m)
-    => SideCondition variable
-    -> Pattern variable
-    -> Pattern variable
-    -> MaybeT m (OrCondition variable)
+    :: forall m
+    .  MonadSimplify m
+    => SideCondition RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> MaybeT m (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
     unifiers <-
         lift $ Unifier.runUnifierT Not.notSimplifier
-        $ unificationProcedureWorker sideCondition t1 t2
+        $ unificationProcedure sideCondition t1 t2
     let
         mergeAndEvaluate
-            :: Condition variable
-            -> m (OrCondition variable)
+            :: Condition RewritingVariableName
+            -> m (OrCondition RewritingVariableName)
         mergeAndEvaluate predSubst = do
             results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
-            :: Condition variable
-            -> LogicT m (Condition variable)
+            :: Condition RewritingVariableName
+            -> LogicT m (Condition RewritingVariableName)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
@@ -171,7 +176,7 @@ matchWith sideCondition e1 e2 = do
                         )
     results <- lift $ traverse mergeAndEvaluate unifiers
     let
-        orResults :: OrCondition variable
+        orResults :: OrCondition RewritingVariableName
         orResults = MultiOr.mergeAll results
     guardAgainstBottom orResults
     return orResults

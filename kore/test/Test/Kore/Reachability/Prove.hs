@@ -1,21 +1,13 @@
 module Test.Kore.Reachability.Prove
-    ( test_reachabilityVerification
+    ( test_proveClaims
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import qualified Control.Lens as Lens
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
-import qualified Data.Bifunctor as Bifunctor
 import Data.Default
     ( def
-    )
-import Data.Generics.Product
-    ( field
     )
 import Data.Limit
     ( Limit (..)
@@ -26,25 +18,20 @@ import Numeric.Natural
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Conditional
-    ( Conditional (..)
-    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
-    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , mkRewritingPattern
     , mkRuleVariable
     )
 import Kore.Step.ClaimPattern
@@ -67,1743 +54,625 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-test_reachabilityVerification :: [TestTree]
-test_reachabilityVerification =
-    [ testCase "OnePath: Runs zero steps" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 0)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleOnePathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "AllPath: Runs zero steps" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 0)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAllPathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "Mixed: Runs zero steps" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 0)
-            [simpleAxiom Mock.a Mock.b]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "OnePath: Breadth limit zero" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            (Limit 0)
-            Unlimited
-            [simpleAxiom Mock.a Mock.b]
-            [simpleOnePathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "AllPath: Breadth limit zero" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            (Limit 0)
-            Unlimited
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAllPathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "Mixed: Breadth limit zero" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            (Limit 0)
-            Unlimited
-            [simpleAxiom Mock.a Mock.b]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "OnePath: Runs one step" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error b
-        -- Note that the check that we have reached the destination happens
-        -- at the beginning of each step. At the beginning of the first step
-        -- the pattern is 'a', so we didn't reach our destination yet, even if
-        -- the rewrite transforms 'a' into 'b'. We detect the success at the
-        -- beginning of the second step, which does not run here.
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleOnePathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "AllPath: Runs one step" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error b
-        -- Note that the check that we have reached the destination happens
-        -- at the beginning of each step. At the beginning of the first step
-        -- the pattern is 'a', so we didn't reach our destination yet, even if
-        -- the rewrite transforms 'a' into 'b'. We detect the success at the
-        -- beginning of the second step, which does not run here.
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAllPathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "Mixed: Runs one step" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error b
-        -- Note that the check that we have reached the destination happens
-        -- at the beginning of each step. At the beginning of the first step
-        -- the pattern is 'a', so we didn't reach our destination yet, even if
-        -- the rewrite transforms 'a' into 'b'. We detect the success at the
-        -- beginning of the second step, which does not run here.
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a Mock.b]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "OnePath: Identity spec" $ do
-        -- Axioms: []
-        -- Claims: a => a
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            []
-            [ simpleOnePathClaim Mock.a Mock.a ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Identity spec" $ do
-        -- Axioms: []
-        -- Claims: a => a
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            []
-            [ simpleAllPathClaim Mock.a Mock.a ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Identity spec" $ do
-        -- Axioms: []
-        -- Claims: a => a
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            []
-            [ simpleOnePathClaim Mock.a Mock.a
-            , simpleAllPathClaim Mock.a Mock.a
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Distinct spec" $ do
-        -- Axioms: []
-        -- Claims: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            []
-            [ simpleOnePathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "AllPath: Distinct spec" $ do
-        -- Axioms: []
-        -- Claims: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            []
-            [ simpleAllPathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "Mixed: Distinct spec" $ do
-        -- Axioms: []
-        -- Claims: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            []
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "OnePath: b or c spec" $ do
-        -- Axioms: a => b
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            (Limit 2)
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b ]
-            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c) ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: b or c spec" $ do
-        -- Axioms: a => b
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            (Limit 2)
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b ]
-            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c) ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: b or c spec" $ do
-        -- Axioms: a => b
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            (Limit 2)
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b ]
-            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c)
-            , simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c)
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Everything is provable when we have cyclic rules" $ do
-        -- Axioms: a => a
-        -- Claims: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.a ]
-            [ simpleOnePathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Everything is provable when we have cyclic rules" $ do
-        -- Axioms: a => a
-        -- Claims: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.a ]
-            [ simpleAllPathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Everything is provable when we have cyclic rules" $ do
-        -- Axioms: a => a
-        -- Claims: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.a ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Concurrent rules" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c) ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Concurrent rules" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleAllPathClaim Mock.a (mkOr Mock.b Mock.c) ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Concurrent rules" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c)
-            , simpleOnePathClaim Mock.a (mkOr Mock.b Mock.c)
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Returns first failing claim" $ do
-        -- Axiom: a => b or c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
-            [simpleOnePathClaim Mock.a Mock.d]
-            []
-        assertEqual ""
-            (Left . OrPattern.fromTermLike $ Mock.b)
-            actual
-    , testCase "AllPath: Returns first failing claim" $ do
-        -- Axiom: a => b or c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
-            [simpleAllPathClaim Mock.a Mock.d]
-            []
-        assertEqual ""
-            (Left . OrPattern.fromTermLike $ Mock.b)
-            actual
-    , testCase "Mixed: Returns first failing claim" $ do
-        -- Axiom: a => b or c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 1)
-            [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left . OrPattern.fromTermLike $ Mock.b)
-            actual
-    , testCase "OnePath: Verifies one claim" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleOnePathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Verifies one claim" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleAllPathClaim Mock.a Mock.b]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Verifies one claim" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 2)
-            [simpleAxiom Mock.a Mock.b]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Trusted claim cannot prove itself" $ do
-        -- Trusted Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            []
-            [ simpleOnePathTrustedClaim Mock.a Mock.b
-            , simpleOnePathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "AllPath: Trusted claim cannot prove itself" $ do
-        -- Trusted Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            []
-            [ simpleAllPathTrustedClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "Mixed: Trusted claim cannot prove itself" $ do
-        -- Trusted Claim: a => b
-        -- Expected: error a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            []
-            [ simpleOnePathTrustedClaim Mock.a Mock.b
-            , simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathTrustedClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.a)
-            actual
-    , testCase "OnePath: Verifies one claim multiple steps" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [simpleOnePathClaim Mock.a Mock.c]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Verifies one claim multiple steps" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [simpleAllPathClaim Mock.a Mock.c]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Verifies one claim multiple steps" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a Mock.c
-            , simpleAllPathClaim Mock.a Mock.c
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Verifies one claim stops early" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [simpleOnePathClaim Mock.a Mock.c]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Verifies one claim stops early" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [simpleAllPathClaim Mock.a Mock.c]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Verifies one claim stops early" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a Mock.c
-            , simpleAllPathClaim Mock.a Mock.c
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: Verifies one claim with branching" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr11(x) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual "" (Right ()) actual
-    , testCase "AllPath: Verifies one claim with branching" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr11(x) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual "" (Right ()) actual
-    , testCase "Mixed: Verifies one claim with branching" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr11(x) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            , simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual "" (Right ()) actual
-    , testCase "OnePath: Partial verification failure" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPattern
-            $ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
-                        )
-                , substitution = mempty
-                }
-            )
-            actual
-    , testCase "AllPath: Partial verification failure" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPattern
-            $ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
-                        )
-                , substitution = mempty
-                }
-            )
-            actual
-    , testCase "Mixed: Partial verification failure" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            , simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPattern
-            $ Conditional
-                { term = Mock.functionalConstr11 (mkElemVar Mock.x)
-                , predicate =
-                    makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
-                        )
-                , substitution = mempty
-                }
-            )
-            actual
-    , testCase "OnePath: Stops at branching because of breadth limit" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            (Limit 1)
-            Unlimited
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPatterns $
-            [ Pattern.withCondition
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-                (Condition.fromPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
+test_proveClaims :: [TestTree]
+test_proveClaims =
+    [ testGroup "runs zero steps with depth = 0" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.b
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 0)
+                        [simpleAxiom Mock.a Mock.b]
+                        [claim]
+                        []
+                    let expect = MultiAnd.singleton (StuckClaim claim)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "runs zero steps with breadth = 0" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.b
+                    actual <- proveClaims_
+                        (Limit 0)
+                        Unlimited
+                        [simpleAxiom Mock.a Mock.b]
+                        [claim]
+                        []
+                    let expect = MultiAnd.singleton (StuckClaim claim)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "runs one step with depth = 1" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.b
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 1)
+                        [simpleAxiom Mock.a Mock.b]
+                        [claim]
+                        []
+                    -- Note that the check that we have reached the destination
+                    -- happens at the beginning of each step. At the beginning
+                    -- of the first step the pattern is 'a', so we didn't reach
+                    -- our destination yet, even if the rewrite transforms 'a'
+                    -- into 'b'. We detect the success at the beginning of the
+                    -- second step, which does not run here.
+                    let stuck = mkSimpleClaim Mock.b Mock.b
+                        expect = MultiAnd.singleton (StuckClaim stuck)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves direct implication" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 1)
+                        []
+                        [mkSimpleClaim Mock.a Mock.a]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "does not prove implication without rewriting" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.b
+                    actual <- proveClaims_
+                        Unlimited
+                        Unlimited
+                        []
+                        [claim]
+                        []
+                    let expect = MultiAnd.singleton (StuckClaim claim)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves by rewriting into disjunction" $
+        let mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        (Limit 2)
+                        Unlimited
+                        [ simpleAxiom Mock.a Mock.b ]
+                        [ mkSomeClaim
+                            (Pattern.fromTermLike Mock.a)
+                            (OrPattern.fromPatterns $ map Pattern.fromTermLike
+                                [ Mock.b
+                                , Mock.c
+                                ]
+                            )
+                            []
+                        ]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        ]
+    , testGroup "proves anything with cyclic rules" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        [ simpleAxiom Mock.a Mock.a ]
+                        [ mkSimpleClaim Mock.a Mock.b ]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves disjunction with non-deterministic rules" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.a Mock.c
+                ]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 2)
+                        axioms
+                        [ mkSimpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "returns first stuck claim after disjunction" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 1)
+                        axioms
+                        [mkSimpleClaim Mock.a Mock.d]
+                        []
+                    let stuck = mkSimpleClaim Mock.b Mock.d
+                        expect = MultiAnd.singleton (StuckClaim stuck)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves one claim" $
+        let axioms = [simpleAxiom Mock.a Mock.b]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 2)
+                        axioms
+                        [mkSimpleClaim Mock.a Mock.b]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "does not apply trusted claims in first step" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claim = mkSimpleClaim Mock.a Mock.b
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 4)
+                        []
+                        [makeTrusted claim, claim]
+                        []
+                    let expect = MultiAnd.singleton (StuckClaim claim)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves claim with multiple rewrites" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                ]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        axioms
+                        [mkSimpleClaim Mock.a Mock.c]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "stops rewriting when claim is proven" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                , simpleAxiom Mock.c Mock.d
+                ]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        axioms
+                        [mkSimpleClaim Mock.a Mock.c]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves claim with narrowed branch" $
+        let axioms =
+                [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+                , simpleAxiom
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                    Mock.b
+                , simpleAxiom
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                ]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 4)
+                        axioms
+                        [ mkSimpleClaim
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            Mock.b
+                        ]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "reports only failed branch of proof" $
+        let stuckCondition =
+                makeNotPredicate
+                    (makeEqualsPredicate
+                        (mkElemVar Mock.x)
+                        Mock.a
+                    )
+                & Condition.fromPredicate
+            stuckConfig =
+                Pattern.withCondition
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                    stuckCondition
+                & mkRewritingPattern
+            initialConfig =
+                Mock.functionalConstr10 (mkElemVar Mock.x)
+                & Pattern.fromTermLike
+                & mkRewritingPattern
+            finalConfigs = OrPattern.fromTermLike Mock.b
+            axioms =
+                [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+                , simpleAxiom
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                ]
+            mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        axioms
+                        [mkSomeClaim initialConfig finalConfigs []]
+                        []
+                    let stuck = mkSomeClaim stuckConfig finalConfigs []
+                        expect = MultiAnd.singleton (StuckClaim stuck)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        ]
+    , testGroup "stops when breadth limit is exceeded" $
+        let axioms =
+                [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
+                , simpleAxiom
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                ]
+            stuckConfigs =
+                map mkRewritingPattern
+                [ Pattern.withCondition
+                    (Mock.functionalConstr11 (mkElemVar Mock.x))
+                    (Condition.fromPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate
+                                (mkElemVar Mock.x)
+                                Mock.a
+                            )
                         )
                     )
-                )
-            , Pattern.withCondition
-                Mock.b
-                (Condition.assign (inject Mock.x) Mock.a)
-            ]
-            )
-            actual
-    , testCase "AllPath: Stops at branching because of breadth limit" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            (Limit 1)
-            Unlimited
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPatterns $
-            [ Pattern.withCondition
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-                (Condition.fromPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
-                        )
-                    )
-                )
-            , Pattern.withCondition
-                Mock.b
-                (Condition.assign (inject Mock.x) Mock.a)
-            ]
-            )
-            actual
-    , testCase "Mixed: Stops at branching because of breadth limit" $ do
-        -- Axiom: constr11(a) => b
-        -- Axiom: constr10(x) => constr11(x)
-        -- Claim: constr10(x) => b
-        -- Expected: error constr11(x) and x != a
-        actual <- proveClaims_
-            (Limit 1)
-            Unlimited
-            [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
-            , simpleAxiom
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-            ]
-            [ simpleOnePathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            , simpleAllPathClaim
-                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                Mock.b
-            ]
-            []
-        assertEqual ""
-            ( Left . OrPattern.fromPatterns $
-            [ Pattern.withCondition
-                (Mock.functionalConstr11 (mkElemVar Mock.x))
-                (Condition.fromPredicate
-                    (makeNotPredicate
-                        (makeEqualsPredicate Mock.testSort
-                            (mkElemVar Mock.x)
-                            Mock.a
-                        )
-                    )
-                )
-            , Pattern.withCondition
-                Mock.b
-                (Condition.assign (inject Mock.x) Mock.a)
-            ]
-            )
-            actual
-    , testCase "OnePath: Verifies two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => e
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.c
-            , simpleOnePathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Verifies two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => e
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.c
-            , simpleAllPathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: Verifies two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => e
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.c
-            , simpleOnePathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: fails first of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => e
-        -- Claim: d => e
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.e
-            , simpleOnePathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "AllPath: fails first of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => e
-        -- Claim: d => e
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.e
-            , simpleAllPathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "Mixed: fails first of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => e
-        -- Claim: d => e
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.e
-            , simpleAllPathClaim Mock.d Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "OnePath: fails second of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => c
-        -- Expected: error e
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.c
-            , simpleOnePathClaim Mock.d Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "AllPath: fails second of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => c
-        -- Expected: error e
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.c
-            , simpleAllPathClaim Mock.d Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "Mixed: fails second of two claims" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: d => e
-        -- Claim: a => c
-        -- Claim: d => c
-        -- Expected: error e
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.c
-            , simpleAllPathClaim Mock.d Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "OnePath: skips proven claim" $ do
-        -- Axiom: d => e
-        -- Claim: a => b
-        -- Claim: d => e
-        -- Already proven: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleOnePathClaim Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            ]
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: skips proven claim" $ do
-        -- Axiom: d => e
-        -- Claim: a => b
-        -- Claim: d => e
-        -- Already proven: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.d Mock.e
-            ]
-            [ simpleAllPathClaim Mock.a Mock.b
-            ]
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: skips proven claim" $ do
-        -- Axiom: d => e
-        -- Claim: a => b
-        -- Claim: d => e
-        -- Already proven: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 3)
-            [ simpleAxiom Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.d Mock.e
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            ]
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath: second proves first but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => c
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "AllPath: second proves first but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => c
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "Mixed: second proves first but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => c
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "Mixed: different claim types so\
-               \ second can't prove first" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => c
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "OnePath: first proves second but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.b Mock.c
-            , simpleOnePathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "AllPath: first proves second but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleAllPathClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "Mixed: first proves second but fails" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.b Mock.c
-            , simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "Mixed: first doesn't prove second\
-               \ because they are different claim types" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "OnePath: trusted second proves first" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Trusted Claim: b => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathTrustedClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: trusted second proves first" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Trusted Claim: b => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathTrustedClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: trusted second proves first" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Trusted Claim: b => c
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathTrustedClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathTrustedClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: trusted second doesn't prove first\
-               \ because of different claim types" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Trusted Claim: b => c
-        -- Expected: error b
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathTrustedClaim Mock.b Mock.c
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "OnePath: trusted first proves second" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathTrustedClaim Mock.b Mock.c
-            , simpleOnePathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: trusted first proves second" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleAllPathTrustedClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed: trusted first doesn't proves second\
-                \ because they are different claim types" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: b => c
-        -- Claim: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathTrustedClaim Mock.b Mock.c
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.b)
-            actual
-    , testCase "OnePath: Prefers using claims for rewriting" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => e
-        -- Expected: error e
-        --    first verification: a=>b=>e,
-        --        without second claim would be: a=>b=>c=>d
-        --    second verification: b=>c=>d, not visible here
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathClaim Mock.b Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "AllPath: Prefers using claims for rewriting" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => e
-        -- Expected: error e
-        --    first verification: a=>b=>e,
-        --        without second claim would be: a=>b=>c=>d
-        --    second verification: b=>c=>d, not visible here
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "Mixed: Prefers using claims for rewriting" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => e
-        -- Expected: error e
-        --    first verification: a=>b=>e,
-        --        without second claim would be: a=>b=>c=>d
-        --    second verification: b=>c=>d, not visible here
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleOnePathClaim Mock.b Mock.e
-            , simpleAllPathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.e)
-            actual
-    , testCase "Mixed: Doesn't apply claim because of\
-               \ different claim type" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Claim: b => e
-        -- Expected: error d
-        --    first verification: a=>b=>c=>d
-        --    second verification: b=>c=>d is now visible here
-        actual <- proveClaims_
-            Unlimited
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.b Mock.e
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.d)
-            actual
-    , testCase "OnePath: Provable using one-path; not provable\
-               \ using all-path" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claim: a => b
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            (Limit 5)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath: Provable using one-path; not provable\
-               \ using all-path" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claim: a => b
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            (Limit 5)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleAllPathClaim Mock.a Mock.b ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "Mixed: Provable using one-path; not provable\
-               \ using all-path" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claim: a => b
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            (Limit 5)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleOnePathClaim Mock.a Mock.b
-            , simpleAllPathClaim Mock.a Mock.b
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "OnePath Priority: can get stuck by choosing second axiom" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c
-        --     b => d
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.b Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "AllPath Priority: can get stuck by choosing second axiom" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c
-        --     b => d
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.b Mock.d
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "Mixed Priority: can get stuck by choosing second axiom" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c
-        --     b => d
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            , simpleAxiom Mock.b Mock.d
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "OnePath Priority: should succeed, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.c 2
-            , simplePriorityAxiom Mock.b Mock.d 1
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "AllPath Priority: should succeed, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.c 2
-            , simplePriorityAxiom Mock.b Mock.d 1
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "Mixed Priority: should succeed, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: success
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.c 2
-            , simplePriorityAxiom Mock.b Mock.d 1
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Right ())
-            actual
-    , testCase "OnePath Priority: should fail, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.d 2
-            , simplePriorityAxiom Mock.b Mock.c 1
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "AllPath Priority: should fail, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.d 2
-            , simplePriorityAxiom Mock.b Mock.c 1
-            ]
-            [ simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
-    , testCase "Mixed Priority: should fail, prefering axiom with priority 1" $ do
-        -- Axioms:
-        --     a => b
-        --     b => c [priority(2)]
-        --     b => d [priority(1)]
-        -- Claims: a => d
-        -- Expected: error c
-        actual <- proveClaims_
-            Unlimited
-            Unlimited
-            [ simpleAxiom Mock.a Mock.b
-            , simplePriorityAxiom Mock.b Mock.d 2
-            , simplePriorityAxiom Mock.b Mock.c 1
-            ]
-            [ simpleOnePathClaim Mock.a Mock.d
-            , simpleAllPathClaim Mock.a Mock.d
-            ]
-            []
-        assertEqual ""
-            (Left $ OrPattern.fromTermLike Mock.c)
-            actual
+                , Pattern.withCondition
+                    Mock.b
+                    (Condition.assign (inject Mock.x) Mock.a)
+                ]
+            initialPattern =
+                Pattern.fromTermLike
+                    (Mock.functionalConstr10 (mkElemVar Mock.x))
+                & mkRewritingPattern
+            finalPatterns = OrPattern.fromTermLike Mock.b
+            mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        (Limit 1)
+                        Unlimited
+                        axioms
+                        [mkSomeClaim initialPattern finalPatterns []]
+                        []
+                    let stuckClaims =
+                            map
+                                (\left -> mkSomeClaim left finalPatterns [])
+                                stuckConfigs
+                        expect = MultiAnd.make (StuckClaim <$> stuckClaims)
+                    assertEqual "" expect actual
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        ]
+    , testGroup "proves two claims" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                , simpleAxiom Mock.d Mock.e
+                ]
+            mkTest name mkSimpleClaim1 mkSimpleClaim2 =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        axioms
+                        [ mkSimpleClaim1 Mock.a Mock.c
+                        , mkSimpleClaim2 Mock.d Mock.e
+                        ]
+                        []
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath, OnePath" simpleOnePathClaim simpleOnePathClaim
+        , mkTest "OnePath, AllPath" simpleOnePathClaim simpleAllPathClaim
+        , mkTest "AllPath, AllPath" simpleAllPathClaim simpleAllPathClaim
+        , mkTest "AllPath, OnePath" simpleAllPathClaim simpleOnePathClaim
+        ]
+    , testGroup "does not prove first of two claims" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                , simpleAxiom Mock.d Mock.e
+                ]
+            right = OrPattern.fromTermLike Mock.e
+            mkTest name mkSomeClaim1 mkSomeClaim2 =
+                testCase name $ do
+                    actual <- proveClaims_ Unlimited (Limit 3) axioms claims []
+                    assertEqual "" expect actual
+              where
+                claims =
+                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
+                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) right []
+                    ]
+                stuck = mkSomeClaim1 (Pattern.fromTermLike Mock.c) right []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath mkSomeClaimAllPath
+        , mkTest "OnePath, AllPath" mkSomeClaimOnePath mkSomeClaimAllPath
+        , mkTest "AllPath, OnePath" mkSomeClaimAllPath mkSomeClaimOnePath
+        ]
+    , testGroup "does not prove second of two claims" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                , simpleAxiom Mock.d Mock.e
+                ]
+            right = OrPattern.fromTermLike Mock.c
+            mkTest name mkSomeClaim1 mkSomeClaim2 =
+                testCase name $ do
+                    actual <- proveClaims_ Unlimited (Limit 3) axioms claims []
+                    assertEqual "" expect actual
+              where
+                claims =
+                    [ mkSomeClaim1 (Pattern.fromTermLike Mock.a) right []
+                    , mkSomeClaim2 (Pattern.fromTermLike Mock.d) right []
+                    ]
+                stuck = mkSomeClaim2 (Pattern.fromTermLike Mock.e) right []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath mkSomeClaimAllPath
+        , mkTest "OnePath, AllPath" mkSomeClaimOnePath mkSomeClaimAllPath
+        , mkTest "AllPath, OnePath" mkSomeClaimAllPath mkSomeClaimOnePath
+        ]
+    , testGroup "skips proven claim" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 3)
+                        []
+                        [ mkSimpleClaim Mock.a Mock.b ]
+                        [ mkSimpleClaim Mock.a Mock.b ]
+                    assertEqual "" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "proves first claim circularly, but proving circularity fails" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.c Mock.d
+                ]
+            mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_ Unlimited (Limit 4) axioms claims []
+                    assertEqual "" expect actual
+              where
+                proven =
+                    mkSomeClaim
+                        (Pattern.fromTermLike Mock.a)
+                        (OrPattern.fromTermLike Mock.d)
+                        []
+                circularity =
+                    mkSomeClaim
+                        (Pattern.fromTermLike Mock.b)
+                        (OrPattern.fromTermLike Mock.c)
+                        []
+                claims = [proven, circularity]
+                stuck = circularity
+                expect = MultiAnd.singleton (StuckClaim stuck)
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        , testCase "does not use different claim types" $ do
+            actual <- proveClaims_
+                Unlimited
+                (Limit 4)
+                axioms
+                [ simpleOnePathClaim Mock.a Mock.d
+                , simpleAllPathClaim Mock.b Mock.c
+                ]
+                []
+            let stuck =
+                    mkSomeClaimOnePath
+                        (Pattern.fromTermLike Mock.b)
+                        (OrPattern.fromTermLike Mock.d)
+                        []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+            assertEqual "" expect actual
+        ]
+    , testGroup "proves first claim with trusted circularity" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.c Mock.d
+                ]
+            proven mkSomeClaim =
+                mkSomeClaim
+                    (Pattern.fromTermLike Mock.a)
+                    (OrPattern.fromTermLike Mock.d)
+                    []
+            trusted mkSomeClaim =
+                mkSomeClaim
+                    (Pattern.fromTermLike Mock.b)
+                    (OrPattern.fromTermLike Mock.c)
+                    []
+                & makeTrusted
+            mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_ Unlimited (Limit 4) axioms claims []
+                    assertEqual "" MultiAnd.top actual
+              where
+                claims = [proven mkSomeClaim, trusted mkSomeClaim]
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        , testCase "does not use different claim types" $ do
+            -- Axiom: a => b
+            -- Axiom: c => d
+            -- Claim: a => d
+            -- Trusted Claim: b => c
+            -- Expected: error b
+            let claims = [proven mkSomeClaimOnePath, trusted mkSomeClaimAllPath]
+            actual <- proveClaims_ Unlimited (Limit 4) axioms claims []
+            let stuck =
+                    mkSomeClaimOnePath
+                        (Pattern.fromTermLike Mock.b)
+                        (OrPattern.fromTermLike Mock.d)
+                        []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+            assertEqual "" expect actual
+        ]
+    , testGroup "prefer claims over axioms" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.b Mock.c
+                , simpleAxiom Mock.c Mock.d
+                ]
+            proveable mkSomeClaim =
+                mkSomeClaim
+                    (Pattern.fromTermLike Mock.a)
+                    (OrPattern.fromTermLike Mock.d)
+                    []
+            misdirection mkSomeClaim =
+                mkSomeClaim
+                    (Pattern.fromTermLike Mock.b)
+                    (OrPattern.fromTermLike Mock.e)
+                    []
+            mkTest name mkSomeClaim =
+                testCase name $ do
+                    actual <- proveClaims_
+                        Unlimited
+                        (Limit 4)
+                        axioms
+                        claims
+                        []
+                    assertEqual "" expect actual
+              where
+                claims = [proveable mkSomeClaim, misdirection mkSomeClaim]
+                stuck =
+                    mkSomeClaim
+                        (Pattern.fromTermLike Mock.e)
+                        (OrPattern.fromTermLike Mock.d)
+                        []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+        in
+        [ mkTest "OnePath" mkSomeClaimOnePath
+        , mkTest "AllPath" mkSomeClaimAllPath
+        ]
+    , testGroup "one-path claim about non-deterministic axioms" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.b
+                , simpleAxiom Mock.a Mock.c
+                ]
+            claims mkSomeClaim =
+                [ mkSomeClaim
+                    (Pattern.fromTermLike Mock.a)
+                    (OrPattern.fromTermLike Mock.b)
+                    []
+                ]
+            claimsOnePath = claims mkSomeClaimOnePath
+            claimsAllPath = claims mkSomeClaimAllPath
+        in
+        [ testCase "proves one-path claim" $ do
+            actual <- proveClaims_ Unlimited (Limit 5) axioms claimsOnePath []
+            assertEqual "" MultiAnd.top actual
+        , testCase "does not prove all-path claim" $ do
+            actual <- proveClaims_ Unlimited (Limit 5) axioms claimsAllPath []
+            let stuck =
+                    mkSomeClaimAllPath
+                        (Pattern.fromTermLike Mock.c)
+                        (OrPattern.fromTermLike Mock.b)
+                        []
+                expect = MultiAnd.singleton (StuckClaim stuck)
+            assertEqual "" expect actual
+        ]
+    , testGroup "applies axioms in priority order" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claims = [mkSimpleClaim Mock.a Mock.d]
+
+                    actual1 <- proveClaims_
+                        Unlimited
+                        Unlimited
+                        [ simpleAxiom Mock.a Mock.b
+                        , simplePriorityAxiom Mock.b Mock.c 2
+                        , simplePriorityAxiom Mock.b Mock.d 1
+                        ]
+                        claims
+                        []
+                    assertEqual "succeeds with preferred axiom"
+                        MultiAnd.top
+                        actual1
+
+                    actual2 <- proveClaims_
+                        Unlimited
+                        Unlimited
+                        [ simpleAxiom Mock.a Mock.b
+                        , simplePriorityAxiom Mock.b Mock.c 1
+                        , simplePriorityAxiom Mock.b Mock.d 2
+                        ]
+                        claims
+                        []
+                    let stuck = mkSimpleClaim Mock.c Mock.d
+                        expect = MultiAnd.singleton (StuckClaim stuck)
+                    assertEqual "fails with preferred axiom" expect actual2
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
+    , testGroup "LHS is undefined" $
+        let mkTest name mkSimpleClaim =
+                testCase name $ do
+                    let claims = [mkSimpleClaim mkBottom_ Mock.a]
+                    actual <- proveClaims_
+                        Unlimited
+                        Unlimited
+                        []
+                        claims
+                        []
+                    assertEqual "Result is \\top" MultiAnd.top actual
+        in
+        [ mkTest "OnePath" simpleOnePathClaim
+        , mkTest "AllPath" simpleAllPathClaim
+        ]
     ]
 
 simpleAxiom
@@ -1824,12 +693,10 @@ simpleClaim
     ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate
-                    left
-                    (makeTruePredicate (termLikeSort left))
+                    left makeTruePredicate
             , right =
                 Pattern.fromTermAndPredicate
-                    right
-                    (makeTruePredicate (termLikeSort right))
+                    right makeTruePredicate
                 & OrPattern.fromPattern
             , existentials = []
             , attributes = def
@@ -1849,30 +716,6 @@ simpleAllPathClaim
 simpleAllPathClaim left right =
     AllPath . AllPathClaim $ simpleClaim left right
 
-simpleOnePathTrustedClaim
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> SomeClaim
-simpleOnePathTrustedClaim left right =
-    Lens.set
-        (lensClaimPattern . field @"attributes" . field @"trusted")
-        (Attribute.Trusted True)
-    . OnePath
-    . OnePathClaim
-    $ simpleClaim left right
-
-simpleAllPathTrustedClaim
-    :: TermLike VariableName
-    -> TermLike VariableName
-    -> SomeClaim
-simpleAllPathTrustedClaim left right =
-    Lens.set
-        (lensClaimPattern . field @"attributes" . field @"trusted")
-        (Attribute.Trusted True)
-    . AllPath
-    . AllPathClaim
-    $ simpleClaim left right
-
 simplePriorityAxiom
     :: TermLike VariableName
     -> TermLike VariableName
@@ -1883,7 +726,7 @@ simplePriorityAxiom left right priority =
     $ RulePattern
         { left = left
         , antiLeft = Nothing
-        , requires = makeTruePredicate_
+        , requires = makeTruePredicate
         , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.priority = Attribute.Priority (Just priority)
@@ -1904,7 +747,7 @@ proveClaims
     -> [Rule SomeClaim]
     -> [SomeClaim]
     -> [SomeClaim]
-    -> IO (Either ProofStuck ())
+    -> IO ProveClaimsResult
 proveClaims breadthLimit depthLimit axioms claims alreadyProven =
     Kore.Reachability.proveClaims
         breadthLimit
@@ -1913,8 +756,7 @@ proveClaims breadthLimit depthLimit axioms claims alreadyProven =
         (Axioms axioms)
         (AlreadyProven (map unparseToText2 alreadyProven))
         (ToProve (map applyDepthLimit . selectUntrusted $ claims))
-    & runExceptT
-    & runSimplifier mockEnv
+    & runSimplifierSMT mockEnv
   where
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)
@@ -1926,16 +768,14 @@ proveClaims_
     -> [Rule SomeClaim]
     -> [SomeClaim]
     -> [SomeClaim]
-    -> IO (Either (OrPattern VariableName) ())
+    -> IO StuckClaims
 proveClaims_ breadthLimit depthLimit axioms claims alreadyProven =
     do
-        stuck <- Test.Kore.Reachability.Prove.proveClaims
-            breadthLimit
-            depthLimit
-            axioms
-            claims
-            alreadyProven
-        return (toPattern stuck)
-  where
-    toPattern :: Either ProofStuck a -> Either (OrPattern VariableName) a
-    toPattern = Bifunctor.first stuckPatterns
+        ProveClaimsResult { stuckClaims } <-
+            Test.Kore.Reachability.Prove.proveClaims
+                breadthLimit
+                depthLimit
+                axioms
+                claims
+                alreadyProven
+        pure stuckClaims

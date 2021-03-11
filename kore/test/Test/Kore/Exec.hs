@@ -30,7 +30,6 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
-import qualified Data.Limit as Limit
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
@@ -48,13 +47,12 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate_
+    ( makeTruePredicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step
-    ( priorityAllStrategy
-    , priorityAnyStrategy
+    ( ExecutionMode (..)
     )
 import Kore.Step.AntiLeft
     ( AntiLeft (AntiLeft)
@@ -91,13 +89,12 @@ import Test.Tasty.HUnit.Ext
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     actual =
         exec
             Unlimited
+            Unlimited
             verifiedModule
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             inputPattern
         & runNoSMT
     verifiedModule = verifiedMyModule Module
@@ -129,13 +126,12 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     actual =
         exec
             Unlimited
+            Unlimited
             verifiedModule
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             inputPattern
         & runNoSMT
     verifiedModule = verifiedMyModule Module
@@ -163,8 +159,6 @@ test_searchPriority :: [TestTree]
 test_searchPriority =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     makeTestCase searchType =
         testCase ("searchPriority " <> show searchType) (assertion searchType)
     assertion searchType =
@@ -173,8 +167,8 @@ test_searchPriority =
         finalPattern <-
             search
                 Unlimited
+                Unlimited
                 verifiedModule
-                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
@@ -227,8 +221,6 @@ test_searchExceedingBreadthLimit :: [TestTree]
 test_searchExceedingBreadthLimit =
     [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
     makeTestCase searchType =
         testCase
             ("Exceed breadth limit: " <> show searchType)
@@ -248,9 +240,9 @@ test_searchExceedingBreadthLimit =
     actual searchType = do
         finalPattern <-
             search
+                Unlimited
                 (Limit 0)
                 verifiedModule
-                (Limit.replicate unlimited . priorityAllStrategy)
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
@@ -306,7 +298,7 @@ searchVar = mkElemVar $ mkElementVariable (testId "V") mySort
 searchPattern :: Pattern VariableName
 searchPattern = Conditional
     { term = searchVar
-    , predicate = makeTruePredicate_
+    , predicate = makeTruePredicate
     , substitution = mempty
     }
 
@@ -454,7 +446,7 @@ rewriteAxiomPriority lhsName rhsName priority antiLeft =
     $ RewriteRule RulePattern
         { left = applyToNoArgs mySort lhsName
         , antiLeft
-        , requires = makeTruePredicate_
+        , requires = makeTruePredicate
         , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
         , attributes = def
         }
@@ -510,9 +502,6 @@ test_execGetExitCode =
               testModuleSuccessfulSimplification 42 $ ExitFailure 42
         ]
   where
-    unlimited :: Limit Integer
-    unlimited = Unlimited
-
     makeTestCase name testModule inputInteger expectedCode =
         testCase name
             $ actual testModule inputInteger >>= assertEqual "" expectedCode
@@ -520,8 +509,9 @@ test_execGetExitCode =
     actual testModule exitCode =
         exec
             Unlimited
+            Unlimited
             (verifiedMyModule testModule)
-            (Limit.replicate unlimited . priorityAnyStrategy)
+            Any
             (Int.asInternal myIntSort exitCode)
         & runNoSMT
         & fmap takeExitCode

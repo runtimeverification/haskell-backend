@@ -44,22 +44,40 @@ If using `cabal`, version 3.0 or later is recommended.
 
 ## Developing
 
-Developers will require all the dependencies listed above.
-We also recommend (but not require!) the following dependencies.
+Developers will require all the dependencies listed above,
+in addition to the requirements and recommendations below.
+
+### Required dependencies
+
+For integration testing, we require:
+
+- GNU [make]
+- The [K Framework] frontend.
+
+Instead of installing the frontend, you can use our `Dockerfile`
+to run the integration tests inside a container.
+Use `docker.sh` to run commands inside the container:
+
+``` sh
+./docker/build.sh  # run once when dependencies change
+./docker/run.sh make test  # run all tests
+./docker/run.sh make -C test/imp test  # run all tests in test/imp
+```
+
+### Recommended dependencies
 
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [ghcide] or [haskell-ide-engine], [language servers] for Haskell that are
+- [ghcide] or [haskell-language-server], [language servers] for Haskell that are
   compatible with most editors. See instructions
   [below](#running-a-language-server) to run a language server.
 - [hlint] and [stylish-haskell] for compliance with project guidelines.
+- [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
 
-For integration testing, we also recommend:
-
-- GNU [make]
-- The [K Framework] frontend, or [curl] to fetch an appropriate version.
-  The frontend has other dependencies, most notably a Java runtime.
+We recommend to keep `./entr.sh` running in the background
+to keep important files (such as package descriptions) up-to-date,
+especially if the developer is using Cabal.
 
 ### Running a language server
 
@@ -85,9 +103,18 @@ cabal build --enable-tests --enable-benchmarks --only-dependencies kore
 
 ### Developing with Nix
 
-For developers so inclined, we provide a `shell.nix` expression with a suitable
-development environment and a binary cache at [kore.cachix.org]. The development
-environment is intended to be used with `nix-shell` and `cabal`.
+We provide a `shell.nix` expression with a suitable development environment and
+a binary cache at [kore.cachix.org]. The development environment is intended to
+be used with `nix-shell` and `cabal`.
+
+When the `.cabal` package description file changes, run:
+
+```.sh
+# Requires Nix to be installed.
+./nix/rematerialize.sh
+```
+
+This script is also run by an automatic workflow.
 
 
 [git]: https://git-scm.com/
@@ -98,8 +125,11 @@ environment is intended to be used with `nix-shell` and `cabal`.
 [make]: https://www.gnu.org/software/make/
 [direnv]: https://github.com/direnv/direnv
 [ghcide]: https://github.com/digital-asset/ghcide
-[haskell-ide-engine]: https://github.com/haskell/haskell-ide-engine
+[haskell-language-server]: https://github.com/haskell/haskell-language-server
 [language servers]: https://langserver.org/
 [hlint]: https://github.com/ndmitchell/hlint
 [stylish-haskell]: https://github.com/jaspervdj/stylish-haskell
 [kore.cachix.org]: https://kore.cachix.org/
+[Nix]: https://nixos.org
+[entr]: https://github.com/eradman/entr
+[fd]: https://github.com/sharkdp/fd

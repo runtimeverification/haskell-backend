@@ -27,7 +27,6 @@ import Prelude.Kore
 
 import qualified Data.Char as Char
 import Data.Default
-import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
     )
@@ -69,6 +68,7 @@ import Kore.Log.DebugSolver
     )
 import Kore.Log.Registry
     ( getEntryTypesAsText
+    , getNoErrEntryTypesAsText
     , parseEntryType
     )
 import Kore.Log.SQLite
@@ -97,6 +97,7 @@ data KoreLogOptions = KoreLogOptions
     , startTime :: !TimeSpec
     , logSQLiteOptions :: !LogSQLiteOptions
     , warningSwitch :: !WarningSwitch
+    , turnedIntoErrors :: !EntryTypes
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
@@ -118,6 +119,7 @@ defaultKoreLogOptions exeName startTime =
         , startTime
         , logSQLiteOptions = def @LogSQLiteOptions
         , warningSwitch = def @WarningSwitch
+        , turnedIntoErrors = mempty
         , debugApplyEquationOptions = def @DebugApplyEquationOptions
         , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
         , debugEquationOptions = def @DebugEquationOptions
@@ -183,6 +185,7 @@ parseKoreLogOptions exeName startTime =
     <*> pure startTime
     <*> parseLogSQLiteOptions
     <*> parseWarningSwitch
+    <*> (mconcat <$> many parseErrorEntries)
     <*> parseDebugApplyEquationOptions
     <*> parseDebugAttemptEquationOptions
     <*> parseDebugEquationOptions
@@ -202,21 +205,22 @@ parseEntryTypes =
             [ "Log entries: logs entries of supplied types"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getEntryTypesAsText)
+                ( OptPretty.text <$> getEntryTypesAsText )
             ]
 
-    parseCommaSeparatedEntries =
-        Options.maybeReader $ Parser.parseMaybe parseEntryTypes'
-
-    parseEntryTypes' :: Parser.Parsec String String EntryTypes
+parseCommaSeparatedEntries :: Options.ReadM EntryTypes
+parseCommaSeparatedEntries =
+    Options.maybeReader $ Parser.parseMaybe parseEntryTypes' . Text.pack
+  where
+    parseEntryTypes' :: Parser.Parsec String Text EntryTypes
     parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
 
     comma = void (Parser.char ',')
 
-    parseSomeTypeRep :: Parser.Parsec String String SomeTypeRep
+    parseSomeTypeRep :: Parser.Parsec String Text SomeTypeRep
     parseSomeTypeRep =
         Parser.takeWhile1P (Just "SomeTypeRep") (flip notElem [',', ' '])
-        >>= parseEntryType . Text.pack
+        >>= parseEntryType
 
 parseSeverity :: Parser Severity
 parseSeverity =
@@ -244,6 +248,27 @@ parseWarningSwitch =
         ( Options.long "warnings-to-errors"
         <> Options.help "Turn warnings into errors"
         )
+
+parseErrorEntries :: Parser EntryTypes
+parseErrorEntries =
+    option parseCommaSeparatedEntries info
+  where
+    info =
+        mempty
+        <> Options.long "error-entries"
+        <> Options.helpDoc ( Just nonErrorEntryTypes )
+
+    nonErrorEntryTypes :: OptPretty.Doc
+    nonErrorEntryTypes =
+        OptPretty.vsep
+            [ "Turn arbitrary log entries into errors"
+            , "Available entry types:"
+            , (OptPretty.indent 4 . OptPretty.vsep)
+                (OptPretty.text <$> getNoErrEntryTypesAsText)
+            {- The user can still give error entries as arguments, but it's
+                useless, so we don't list them here
+            -}
+            ]
 
 -- | Caller of the logging function
 newtype ExeName = ExeName { getExeName :: String }
@@ -397,6 +422,7 @@ unparseKoreLogOptions
         _
         logSQLiteOptions
         warningSwitch
+        toError
         debugApplyEquationOptions
         debugAttemptEquationOptions
         debugEquationOptions
@@ -410,6 +436,7 @@ unparseKoreLogOptions
         , debugSolverOptionsFlag debugSolverOptions
         , logSQLiteOptionsFlag logSQLiteOptions
         , ["--warnings-to-errors" | AsError <- [warningSwitch] ]
+        , logEntriesFlag toError
         , debugApplyEquationOptionsFlag debugApplyEquationOptions
         , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
         , debugEquationOptionsFlag debugEquationOptions
@@ -425,7 +452,7 @@ unparseKoreLogOptions
       | Set.null entries = []
       | otherwise
       = [ "--log-entries"
-        , intercalate "," (fmap show (Foldable.toList entries))
+        , intercalate "," (fmap show (toList entries))
         ]
 
     debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
@@ -438,12 +465,12 @@ unparseKoreLogOptions
 
     debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) = concat $
         ("--debug-apply-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set
 
     debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) = concat $
         ("--debug-attempt-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set
 
     debugEquationOptionsFlag (DebugEquationOptions set) = concat $
         ("--debug-equation" :) . (:[]) . Text.unpack
-            <$> Foldable.toList set
+            <$> toList set

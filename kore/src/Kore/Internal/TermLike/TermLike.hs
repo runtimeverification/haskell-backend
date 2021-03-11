@@ -4,14 +4,15 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike.TermLike
-    ( Builtin
-    , Evaluated (..)
+    ( Evaluated (..)
     , Defined (..)
     , TermLike (..)
     , TermLikeF (..)
+    , retractKey
     , extractAttributes
     , freeVariables
     , mapVariables
@@ -27,13 +28,11 @@ import Prelude.Kore
 import Control.Comonad.Trans.Cofree
     ( tailF
     )
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import Control.Lens
     ( Lens'
     )
 import qualified Control.Lens as Lens
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import Data.Functor.Const
     ( Const (..)
@@ -48,25 +47,19 @@ import Data.Functor.Identity
     ( Identity (..)
     )
 import qualified Data.Generics.Product as Lens.Product
-import Data.List
-    ( foldl'
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Pattern.ConstructorLike
     ( HasConstructorLike (extractConstructorLike)
     )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
-import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Attribute.Pattern.Function as Pattern
-import qualified Kore.Attribute.Pattern.Functional as Pattern
-import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Simplified
     ( unparseTag
     )
@@ -78,10 +71,20 @@ import Kore.Builtin.Signedness.Signedness
     ( Signedness
     )
 import Kore.Debug
-import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Alias
 import Kore.Internal.Inj
+import Kore.Internal.InternalBool
 import Kore.Internal.InternalBytes
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+import Kore.Internal.InternalString
+import Kore.Internal.Key
+    ( Key
+    , KeyF
+    )
+import qualified Kore.Internal.Key as Key
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     )
@@ -178,36 +181,42 @@ instance {-# OVERLAPS #-} Synthetic Pattern.Defined Defined where
 
 -}
 data TermLikeF variable child
-    = AndF           !(And Sort child)
-    | ApplySymbolF   !(Application Symbol child)
-    | ApplyAliasF    !(Application (Alias (TermLike VariableName)) child)
-    | BottomF        !(Bottom Sort child)
-    | CeilF          !(Ceil Sort child)
-    | DomainValueF   !(DomainValue Sort child)
-    | EqualsF        !(Equals Sort child)
-    | ExistsF        !(Exists Sort variable child)
-    | FloorF         !(Floor Sort child)
-    | ForallF        !(Forall Sort variable child)
-    | IffF           !(Iff Sort child)
-    | ImpliesF       !(Implies Sort child)
-    | InF            !(In Sort child)
-    | MuF            !(Mu variable child)
-    | NextF          !(Next Sort child)
-    | NotF           !(Not Sort child)
-    | NuF            !(Nu variable child)
-    | OrF            !(Or Sort child)
-    | RewritesF      !(Rewrites Sort child)
-    | TopF           !(Top Sort child)
-    | InhabitantF    !(Inhabitant child)
-    | BuiltinF       !(Builtin child)
-    | EvaluatedF     !(Evaluated child)
-    | StringLiteralF !(Const StringLiteral child)
-    | InternalBytesF !(Const InternalBytes child)
-    | VariableF      !(Const (SomeVariable variable) child)
-    | EndiannessF    !(Const Endianness child)
-    | SignednessF    !(Const Signedness child)
-    | InjF           !(Inj child)
-    | DefinedF       !(Defined child)
+    = AndF            !(And Sort child)
+    | ApplySymbolF    !(Application Symbol child)
+    -- TODO (thomas.tuegel): Expand aliases during validation?
+    | ApplyAliasF     !(Application (Alias (TermLike VariableName)) child)
+    | BottomF         !(Bottom Sort child)
+    | CeilF           !(Ceil Sort child)
+    | DomainValueF    !(DomainValue Sort child)
+    | EqualsF         !(Equals Sort child)
+    | ExistsF         !(Exists Sort variable child)
+    | FloorF          !(Floor Sort child)
+    | ForallF         !(Forall Sort variable child)
+    | IffF            !(Iff Sort child)
+    | ImpliesF        !(Implies Sort child)
+    | InF             !(In Sort child)
+    | MuF             !(Mu variable child)
+    | NextF           !(Next Sort child)
+    | NotF            !(Not Sort child)
+    | NuF             !(Nu variable child)
+    | OrF             !(Or Sort child)
+    | RewritesF       !(Rewrites Sort child)
+    | TopF            !(Top Sort child)
+    | InhabitantF     !(Inhabitant child)
+    | EvaluatedF      !(Evaluated child)
+    | StringLiteralF  !(Const StringLiteral child)
+    | InternalBoolF   !(Const InternalBool child)
+    | InternalBytesF  !(Const InternalBytes child)
+    | InternalIntF    !(Const InternalInt child)
+    | InternalStringF !(Const InternalString child)
+    | InternalListF   !(InternalList child)
+    | InternalMapF    !(InternalMap Key child)
+    | InternalSetF    !(InternalSet Key child)
+    | VariableF       !(Const (SomeVariable variable) child)
+    | EndiannessF     !(Const Endianness child)
+    | SignednessF     !(Const Signedness child)
+    | InjF            !(Inj child)
+    | DefinedF        !(Defined child)
     deriving (Eq, Ord, Show)
     deriving (Foldable, Functor, Traversable)
     deriving (GHC.Generic)
@@ -247,10 +256,15 @@ instance
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -281,10 +295,15 @@ instance Synthetic Sort (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -315,10 +334,15 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -349,10 +373,15 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -383,10 +412,15 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -417,10 +451,15 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
@@ -451,15 +490,34 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            BuiltinF builtin -> synthetic builtin
             EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
+            InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
+            InternalIntF internalInt -> synthetic internalInt
+            InternalStringF internalString -> synthetic internalString
+            InternalListF internalList -> synthetic internalList
+            InternalMapF internalMap -> synthetic internalMap
+            InternalSetF internalSet -> synthetic internalSet
             VariableF variable -> synthetic variable
             EndiannessF endianness -> synthetic endianness
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
             DefinedF defined -> synthetic defined
+
+instance From (KeyF child) (TermLikeF variable child) where
+    from (Key.ApplySymbolF app) = ApplySymbolF app
+    from (Key.InjF inj) = InjF inj
+    from (Key.DomainValueF domainValue) = DomainValueF domainValue
+    from (Key.InternalBoolF internalBool) = InternalBoolF internalBool
+    from (Key.InternalIntF internalInt) = InternalIntF internalInt
+    from (Key.InternalStringF internalString) = InternalStringF internalString
+    from (Key.InternalSetF internalSet) = InternalSetF internalSet
+    from (Key.InternalMapF internalMap) = InternalMapF internalMap
+    from (Key.InternalListF internalList) = InternalListF internalList
+    from (Key.InternalBytesF internalBytes) = InternalBytesF internalBytes
+    from (Key.StringLiteralF stringLiteral) = StringLiteralF stringLiteral
+    {-# INLINE from #-}
 
 {- | @TermLike@ is a term-like Kore pattern.
 
@@ -647,8 +705,52 @@ instance
     from = mapVariables (pure $ from @Concrete)
     {-# INLINE from #-}
 
--- | The type of internal domain values.
-type Builtin = Domain.Builtin (TermLike Concrete)
+instance Ord variable => From Key (TermLike variable) where
+    from = Recursive.unfold worker
+      where
+        worker key =
+            attrs' :< from @(KeyF _) keyF
+          where
+            attrs :< keyF = Recursive.project key
+            attrs' :: Attribute.Pattern variable
+            attrs' = Attribute.mapVariables (pure coerceVariable) attrs
+            coerceVariable = from @Concrete @variable
+
+{- | Ensure that a 'TermLike' is a concrete, constructor-like term.
+ -}
+retractKey :: TermLike variable -> Maybe Key
+retractKey =
+    Recursive.fold worker
+  where
+    worker (attrs :< termLikeF) = do
+        Monad.guard (Pattern.isConstructorLike attrs)
+        attrs' <- Pattern.traverseVariables (pure toConcrete) attrs
+        keyF <-
+            case termLikeF of
+                InternalBoolF internalBool ->
+                    sequence (Key.InternalBoolF internalBool)
+                InternalBytesF internalBytes ->
+                    sequence (Key.InternalBytesF internalBytes)
+                InternalIntF internalInt ->
+                    sequence (Key.InternalIntF internalInt)
+                InternalStringF internalString ->
+                    sequence (Key.InternalStringF internalString)
+                DomainValueF domainValue ->
+                    sequence (Key.DomainValueF domainValue)
+                InjF inj ->
+                    sequence (Key.InjF inj)
+                ApplySymbolF application ->
+                    sequence (Key.ApplySymbolF application)
+                InternalListF internalList ->
+                    sequence (Key.InternalListF internalList)
+                InternalMapF internalMap ->
+                    sequence (Key.InternalMapF internalMap)
+                InternalSetF internalSet ->
+                    sequence (Key.InternalSetF internalSet)
+                StringLiteralF stringLiteral ->
+                    sequence (Key.StringLiteralF stringLiteral)
+                _ -> empty
+        pure (Recursive.embed (attrs' :< keyF))
 
 instance
     ( AstWithLocation variable
@@ -692,9 +794,20 @@ instance
             InjF Inj { injChild } -> locationFromAst injChild
             SignednessF (Const signedness) -> locationFromAst signedness
             EndiannessF (Const endianness) -> locationFromAst endianness
-            InternalBytesF (Const InternalBytes { bytesSort }) ->
-                locationFromAst bytesSort
-            BuiltinF builtin -> locationFromAst (Domain.builtinSort builtin)
+            InternalBoolF (Const InternalBool { internalBoolSort }) ->
+                locationFromAst internalBoolSort
+            InternalBytesF (Const InternalBytes { internalBytesSort }) ->
+                locationFromAst internalBytesSort
+            InternalIntF (Const InternalInt { internalIntSort }) ->
+                locationFromAst internalIntSort
+            InternalStringF (Const InternalString { internalStringSort }) ->
+                locationFromAst internalStringSort
+            InternalListF InternalList { internalListSort } ->
+                locationFromAst internalListSort
+            InternalMapF InternalAc { builtinAcSort } ->
+                locationFromAst builtinAcSort
+            InternalSetF InternalAc { builtinAcSort } ->
+                locationFromAst builtinAcSort
             DefinedF Defined { getDefined } ->
                 locationFromAst getDefined
 
@@ -726,7 +839,6 @@ traverseVariablesF adj =
         ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
         ApplyAliasF applyAliasF -> pure (ApplyAliasF applyAliasF)
         BottomF botP -> pure (BottomF botP)
-        BuiltinF builtinP -> pure (BuiltinF builtinP)
         CeilF ceilP -> pure (CeilF ceilP)
         DomainValueF dvP -> pure (DomainValueF dvP)
         EqualsF eqP -> pure (EqualsF eqP)
@@ -739,7 +851,13 @@ traverseVariablesF adj =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
+        InternalBoolF boolP -> pure (InternalBoolF boolP)
         InternalBytesF bytesP -> pure (InternalBytesF bytesP)
+        InternalIntF intP -> pure (InternalIntF intP)
+        InternalStringF stringP -> pure (InternalStringF stringP)
+        InternalListF listP -> pure (InternalListF listP)
+        InternalMapF mapP -> pure (InternalMapF mapP)
+        InternalSetF setP -> pure (InternalSetF setP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)

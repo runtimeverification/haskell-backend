@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore
     ( testId
     , Gen
@@ -19,18 +21,23 @@ module Test.Kore
     , predicateGen
     , predicateChildGen
     , elementVariableGen
+    , configElementVariableGen
     , setVariableGen
     , elementTargetVariableGen
     , setTargetVariableGen
     , unifiedTargetVariableGen
     , unifiedVariableGen
-    , genBuiltin
+    , genInternalInt
+    , genInternalBool
+    , genInternalString
     , couple
     , symbolOrAliasGen
     , addVariable
+    , sentenceAxiomGen
+    , korePatternUnifiedGen
       -- * Re-exports
     , ParsedPattern
-    , asParsedPattern
+    , embedParsedPattern
     , Log.emptyLogger
     ) where
 
@@ -53,11 +60,16 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
-import qualified Kore.Domain.Builtin as Domain
+import Data.Functor
+    ( (<&>)
+    )
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
 import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import Kore.Internal.InternalBool
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalString
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -73,10 +85,14 @@ import qualified Kore.Log as Log
     ( emptyLogger
     )
 import Kore.Parser
-    ( asParsedPattern
+    ( embedParsedPattern
     )
 import Kore.Parser.Parser
     ( parseVariableCounter
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkElementConfigVariable
     )
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
@@ -251,6 +267,10 @@ elementVariableGen patternSort = do
     variableGen' patternSort variables idGen
         & (fmap . fmap) ElementVariableName
 
+configElementVariableGen :: Sort -> Gen (ElementVariable RewritingVariableName)
+configElementVariableGen patternSort =
+    elementVariableGen patternSort <&> mkElementConfigVariable
+
 setVariableGen :: Sort -> Gen (SetVariable VariableName)
 setVariableGen sort = do
     Context { objectVariables } <- Reader.ask
@@ -396,26 +416,19 @@ genDomainValue :: (Sort -> Gen child) -> Sort -> Gen (DomainValue Sort child)
 genDomainValue childGen domainValueSort =
     DomainValue domainValueSort <$> childGen stringMetaSort
 
-genBuiltin :: Sort -> Gen (TermLike.Builtin (TermLike variable))
-genBuiltin domainValueSort = Gen.choice
-    [ Domain.BuiltinInt <$> genInternalInt domainValueSort
-    , Domain.BuiltinBool <$> genInternalBool domainValueSort
-    , Domain.BuiltinString <$> genInternalString domainValueSort
-    ]
-
-genInternalInt :: Sort -> Gen Domain.InternalInt
+genInternalInt :: Sort -> Gen InternalInt
 genInternalInt builtinIntSort =
-    Domain.InternalInt builtinIntSort <$> genInteger
+    InternalInt builtinIntSort <$> genInteger
   where
     genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genInternalBool :: Sort -> Gen Domain.InternalBool
+genInternalBool :: Sort -> Gen InternalBool
 genInternalBool builtinBoolSort =
-    Domain.InternalBool builtinBoolSort <$> Gen.bool
+    InternalBool builtinBoolSort <$> Gen.bool
 
-genInternalString :: Sort -> Gen Domain.InternalString
+genInternalString :: Sort -> Gen InternalString
 genInternalString internalStringSort =
-    Domain.InternalString internalStringSort
+    InternalString internalStringSort
     <$> Gen.text (Range.linear 0 1024) (Reader.lift Gen.unicode)
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort VariableName child)
@@ -501,31 +514,31 @@ korePatternChildGen patternSort' =
 
     korePatternGenLevel :: Gen ParsedPattern
     korePatternGenLevel =
-        asParsedPattern <$> patternGen korePatternChildGen patternSort'
+        embedParsedPattern <$> patternGen korePatternChildGen patternSort'
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralF . Const
+        embedParsedPattern . Syntax.StringLiteralF . Const
         <$> stringLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        asParsedPattern . Syntax.DomainValueF
+        embedParsedPattern . Syntax.DomainValueF
             <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        asParsedPattern . Syntax.NextF
+        embedParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        asParsedPattern . Syntax.RewritesF
+        embedParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariableF . Const
+        embedParsedPattern . Syntax.VariableF . Const
         <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
@@ -546,8 +559,8 @@ predicateChildGen childGen quantifierSort patternSort' =
     Gen.recursive
         Gen.choice
         -- non-recursive generators
-        [ pure Predicate.makeFalsePredicate_
-        , pure Predicate.makeTruePredicate_
+        [ pure Predicate.makeFalsePredicate
+        , pure Predicate.makeTruePredicate
         , predicateChildGenCeil
         , predicateChildGenEquals
         , predicateChildGenFloor
@@ -583,12 +596,12 @@ predicateChildGen childGen quantifierSort patternSort' =
         Predicate.makeImpliesPredicate
             <$> go patternSort'
             <*> go patternSort'
-    predicateChildGenCeil = Predicate.makeCeilPredicate_ <$> childGen
-    predicateChildGenFloor = Predicate.makeFloorPredicate_ <$> childGen
+    predicateChildGenCeil = Predicate.makeCeilPredicate <$> childGen
+    predicateChildGenFloor = Predicate.makeFloorPredicate <$> childGen
     predicateChildGenEquals =
-        Predicate.makeEqualsPredicate_ <$> childGen <*> childGen
+        Predicate.makeEqualsPredicate <$> childGen <*> childGen
     predicateChildGenIn =
-        Predicate.makeInPredicate_ <$> childGen <*> childGen
+        Predicate.makeInPredicate <$> childGen <*> childGen
     predicateChildGenNot =
         Predicate.makeNotPredicate
             <$> go patternSort'
@@ -646,7 +659,7 @@ sentenceAliasGen patGen =
                 , sentenceAliasAttributes
                 }
 
-sentenceSymbolGen :: Gen (SentenceSymbol patternType)
+sentenceSymbolGen :: Gen SentenceSymbol
 sentenceSymbolGen = do
     sentenceSymbolSymbol <- symbolGen
     let Symbol { symbolParams } = sentenceSymbolSymbol
@@ -661,7 +674,7 @@ sentenceSymbolGen = do
             , sentenceSymbolAttributes
             }
 
-sentenceImportGen :: Gen (SentenceImport patternType)
+sentenceImportGen :: Gen SentenceImport
 sentenceImportGen =
     SentenceImport
         <$> moduleNameGen
@@ -681,9 +694,7 @@ sentenceAxiomGen patGen = do
             , sentenceAxiomAttributes
             }
 
-sentenceSortGen
-    :: forall patternType
-    .  Gen (SentenceSort patternType)
+sentenceSortGen :: Gen SentenceSort
 sentenceSortGen = do
     sentenceSortName <- idGen
     sentenceSortParameters <- couple sortVariableGen

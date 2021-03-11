@@ -454,7 +454,7 @@ sortVisibilityTests =
                     , applicationChildren = []
                     }
             , sentenceAliasRightPattern =
-                Builtin.externalize $ mkTop sort
+                Builtin.externalize $ mkTop sort :: ParsedPattern
             , sentenceAliasAttributes = Attributes []
             }
     sortReferenceInSentenceAliasSortsSentence =
@@ -477,7 +477,7 @@ sortVisibilityTests =
                         ]
                     }
             , sentenceAliasRightPattern =
-                Builtin.externalize $ mkTop anotherSort
+                Builtin.externalize $ mkTop anotherSort :: ParsedPattern
             , sentenceAliasAttributes = Attributes []
             }
     sortReferenceInSentenceAliasSortsSupportSentences =
@@ -1297,7 +1297,7 @@ duplicatedNameFailureTest message duplicatedName module1 module2 =
         message
         Error
             { errorContext = ["module 'M2'", "(<test data>, <test data>)"]
-            , errorError = "Duplicated name: '" ++ duplicatedName ++ "'."
+            , errorError = "Duplicated name: " ++ duplicatedName ++ "."
             }
         Definition
             { definitionAttributes = Attributes []

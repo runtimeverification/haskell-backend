@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
@@ -41,6 +43,8 @@ import Data.Text
 import qualified Data.Text as Text
 
 import Data.Sup
+import qualified Kore.Attribute.Concat as Attribute
+import qualified Kore.Attribute.Element as Attribute
 import Kore.Attribute.Hook
     ( Hook (..)
     )
@@ -48,30 +52,31 @@ import Kore.Attribute.Pattern.ConstructorLike
     ( isConstructorLike
     )
 import qualified Kore.Attribute.Sort as Attribute
-import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
-import qualified Kore.Attribute.Sort.Element as Attribute
-import qualified Kore.Attribute.Sort.Unit as Attribute
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import qualified Kore.Attribute.Unit as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.KEqual as Builtin.KEqual
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as Builtin.String
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.OverloadGraph as OverloadGraph
 import qualified Kore.IndexedModule.SortGraph as SortGraph
+import Kore.Internal.InternalList
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
 import Kore.Internal.Symbol hiding
     ( isConstructorLike
     , sortInjection
@@ -79,6 +84,7 @@ import Kore.Internal.Symbol hiding
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
+    , retractKey
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
@@ -111,6 +117,11 @@ import Kore.Syntax.Variable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    , mkConfigVariable
+    , mkRuleVariable
+    )
 import qualified Test.ConsistentKore as ConsistentKore
     ( CollectionSorts (..)
     , Setup (..)
@@ -149,6 +160,8 @@ eId :: Id
 eId = testId "e"
 fId :: Id
 fId = testId "f"
+fMapId :: Id
+fMapId = testId "fMap"
 fSort0Id :: Id
 fSort0Id = testId "fSort0"
 gId :: Id
@@ -173,8 +186,14 @@ fSetId :: Id
 fSetId = testId "fSet"
 fIntId :: Id
 fIntId = testId "fInt"
+fBoolId :: Id
+fBoolId = testId "fBool"
+fStringId :: Id
+fStringId = testId "fString"
 fTestIntId :: Id
 fTestIntId = testId "fTestInt"
+fTestFunctionalIntId :: Id
+fTestFunctionalIntId = testId "fTestFunctionalInt"
 plain00Id :: Id
 plain00Id = testId "plain00"
 plain00Sort0Id :: Id
@@ -269,6 +288,8 @@ elementSetId :: Id
 elementSetId = testId "elementSet"
 unitSetId :: Id
 unitSetId = testId "unitSet"
+keqBoolId :: Id
+keqBoolId = testId "keqBool"
 sigmaId :: Id
 sigmaId = testId "sigma"
 anywhereId :: Id
@@ -281,6 +302,10 @@ otherOverloadId :: Id
 otherOverloadId = testId "otherOverload"
 topOverloadId :: Id
 topOverloadId = testId "topOverload"
+functionSMTId :: Id
+functionSMTId = testId "functionSMT"
+functionalSMTId :: Id
+functionalSMTId = testId "functionalSMT"
 
 symbol :: Id -> [Sort] -> Sort -> Symbol
 symbol name operands result =
@@ -371,8 +396,18 @@ fSetSymbol = symbol fSetId [setSort] setSort & function
 fIntSymbol :: Symbol
 fIntSymbol = symbol fIntId [intSort] intSort & function
 
+fBoolSymbol :: Symbol
+fBoolSymbol = symbol fBoolId [boolSort] boolSort & function
+
+fStringSymbol :: Symbol
+fStringSymbol = symbol fStringId [stringSort] stringSort & function
+
 fTestIntSymbol :: Symbol
 fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
+
+fTestFunctionalIntSymbol :: Symbol
+fTestFunctionalIntSymbol =
+    symbol fTestFunctionalIntId [testSort] intSort & function & functional
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -479,6 +514,10 @@ functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
     symbol functionalTopConstr21Id [testSort, topSort] testSort
     & functional & constructor
+
+fMapSymbol :: Symbol
+fMapSymbol =
+    symbol fMapId [mapSort] testSort & function
 
 injective10Symbol :: Symbol
 injective10Symbol = symbol injective10Id [testSort] testSort & injective
@@ -630,6 +669,11 @@ unitSetSymbol :: Symbol
 unitSetSymbol =
     symbol unitSetId [] setSort & functional & hook "SET.unit"
 
+keqBoolSymbol :: Symbol
+keqBoolSymbol =
+    symbol keqBoolId [testSort, testSort] boolSort
+    & function & functional & hook "KEQUAL.eq"
+
 opaqueSetSymbol :: Symbol
 opaqueSetSymbol =
     symbol opaqueSetId [testSort] setSort
@@ -648,6 +692,14 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
+functionSMTSymbol :: Symbol
+functionSMTSymbol =
+    symbol functionSMTId [testSort] testSort & function
+
+functionalSMTSymbol :: Symbol
+functionalSMTSymbol =
+    symbol functionalSMTId [testSort] testSort & function & functional
+
 type MockElementVariable = ElementVariable VariableName
 
 pattern MockElementVariable
@@ -655,6 +707,27 @@ pattern MockElementVariable
 pattern MockElementVariable base counter variableSort =
     Variable
     { variableName = ElementVariableName VariableName { base, counter }
+    , variableSort
+    }
+
+type MockRewritingElementVariable = ElementVariable RewritingVariableName
+
+mkRuleElementVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkRuleElementVariable base counter variableSort =
+    Variable
+    { variableName =
+        ElementVariableName
+        $ mkRuleVariable VariableName { base, counter }
+    , variableSort
+    }
+mkConfigElementVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingElementVariable
+mkConfigElementVariable base counter variableSort =
+    Variable
+    { variableName =
+        ElementVariableName
+        $ mkConfigVariable VariableName { base, counter }
     , variableSort
     }
 
@@ -668,64 +741,199 @@ pattern MockSetVariable base counter variableSort =
     , variableSort
     }
 
+type MockRewritingSetVariable = SetVariable RewritingVariableName
+
+mkRuleSetVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkRuleSetVariable base counter variableSort =
+    Variable
+    { variableName
+        = SetVariableName
+        $ mkRuleVariable VariableName { base, counter }
+    , variableSort
+    }
+
+mkConfigSetVariable
+    :: Id -> VariableCounter -> Sort -> MockRewritingSetVariable
+mkConfigSetVariable base counter variableSort =
+    Variable
+    { variableName =
+        SetVariableName
+        $ mkConfigVariable VariableName { base, counter }
+    , variableSort
+    }
+
 var_x_0 :: MockElementVariable
 var_x_0 = MockElementVariable (testId "x") (Just (Element 0)) testSort
+var_xRule_0 :: MockRewritingElementVariable
+var_xRule_0 = mkRuleElementVariable (testId "x") (Just (Element 0)) testSort
+var_xConfig_0 :: MockRewritingElementVariable
+var_xConfig_0 = mkConfigElementVariable (testId "x") (Just (Element 0)) testSort
 var_x_1 :: MockElementVariable
 var_x_1 = MockElementVariable (testId "x") (Just (Element 1)) testSort
+var_xRule_1 :: MockRewritingElementVariable
+var_xRule_1 = mkRuleElementVariable (testId "x") (Just (Element 1)) testSort
+var_xConfig_1 :: MockRewritingElementVariable
+var_xConfig_1 = mkConfigElementVariable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: MockElementVariable
 var_y_1 = MockElementVariable (testId "y") (Just (Element 1)) testSort
+var_yRule_1 :: MockRewritingElementVariable
+var_yRule_1 = mkRuleElementVariable (testId "y") (Just (Element 1)) testSort
+var_yConfig_1 :: MockRewritingElementVariable
+var_yConfig_1 = mkConfigElementVariable (testId "y") (Just (Element 1)) testSort
 var_z_1 :: MockElementVariable
 var_z_1 = MockElementVariable (testId "z") (Just (Element 1)) testSort
+var_zRule_1 :: MockRewritingElementVariable
+var_zRule_1 = mkRuleElementVariable (testId "z") (Just (Element 1)) testSort
+var_zConfig_1 :: MockRewritingElementVariable
+var_zConfig_1 = mkConfigElementVariable (testId "z") (Just (Element 1)) testSort
 x :: MockElementVariable
 x = MockElementVariable (testId "x") mempty testSort
+xRule :: MockRewritingElementVariable
+xRule = mkRuleElementVariable (testId "x") mempty testSort
+xConfig :: MockRewritingElementVariable
+xConfig = mkConfigElementVariable (testId "x") mempty testSort
 setX :: MockSetVariable
 setX = MockSetVariable (testId "@x") mempty testSort
+setXRule :: MockRewritingSetVariable
+setXRule = mkRuleSetVariable (testId "@x") mempty testSort
+setXConfig :: MockRewritingSetVariable
+setXConfig = mkConfigSetVariable (testId "@x") mempty testSort
 var_setX_0 :: MockSetVariable
 var_setX_0 = MockSetVariable (testId "@x") (Just (Element 0)) testSort
+var_setXConfig_0 :: MockRewritingSetVariable
+var_setXConfig_0 =
+    mkConfigSetVariable (testId "@x") (Just (Element 0)) testSort
+var_setXRule_0 :: MockRewritingSetVariable
+var_setXRule_0 =
+    mkRuleSetVariable (testId "@x") (Just (Element 0)) testSort
 x0 :: MockElementVariable
 x0 = MockElementVariable (testId "x0") mempty testSort0
+xConfig0 :: MockRewritingElementVariable
+xConfig0 = mkConfigElementVariable (testId "x0") mempty testSort0
 y :: MockElementVariable
 y = MockElementVariable (testId "y") mempty testSort
+yRule :: MockRewritingElementVariable
+yRule = mkRuleElementVariable (testId "y") mempty testSort
+yConfig :: MockRewritingElementVariable
+yConfig = mkConfigElementVariable (testId "y") mempty testSort
 setY :: MockSetVariable
 setY = MockSetVariable (testId "@y") mempty testSort
+setYRule :: MockRewritingSetVariable
+setYRule = mkRuleSetVariable (testId "@y") mempty testSort
+setYConfig :: MockRewritingSetVariable
+setYConfig = mkConfigSetVariable (testId "@y") mempty testSort
 z :: MockElementVariable
 z = MockElementVariable (testId "z") mempty testSort
+zRule :: MockRewritingElementVariable
+zRule = mkRuleElementVariable (testId "z") mempty testSort
+zConfig :: MockRewritingElementVariable
+zConfig = mkConfigElementVariable (testId "z") mempty testSort
 t :: MockElementVariable
 t = MockElementVariable (testId "t") mempty testSort
+tRule :: MockRewritingElementVariable
+tRule = mkRuleElementVariable (testId "t") mempty testSort
+tConfig :: MockRewritingElementVariable
+tConfig = mkConfigElementVariable (testId "t") mempty testSort
 u :: MockElementVariable
 u = MockElementVariable (testId "u") mempty testSort
+uRule :: MockRewritingElementVariable
+uRule = mkRuleElementVariable (testId "u") mempty testSort
+uConfig :: MockRewritingElementVariable
+uConfig = mkConfigElementVariable (testId "u") mempty testSort
 m :: MockElementVariable
 m = MockElementVariable (testId "m") mempty mapSort
+mRule :: MockRewritingElementVariable
+mRule = mkRuleElementVariable (testId "m") mempty mapSort
+mConfig :: MockRewritingElementVariable
+mConfig = mkConfigElementVariable (testId "m") mempty mapSort
 xSet :: MockElementVariable
 xSet = MockElementVariable (testId "xSet") mempty setSort
+xRuleSet :: MockRewritingElementVariable
+xRuleSet = mkRuleElementVariable (testId "xSet") mempty setSort
+xConfigSet :: MockRewritingElementVariable
+xConfigSet = mkConfigElementVariable (testId "xSet") mempty setSort
 ySet :: MockElementVariable
 ySet = MockElementVariable (testId "ySet") mempty setSort
 xInt :: MockElementVariable
 xInt = MockElementVariable (testId "xInt") mempty intSort
+xRuleInt :: MockRewritingElementVariable
+xRuleInt = mkRuleElementVariable (testId "xInt") mempty intSort
+xConfigInt :: MockRewritingElementVariable
+xConfigInt = mkConfigElementVariable (testId "xInt") mempty intSort
 yInt :: MockElementVariable
 yInt = MockElementVariable (testId "yInt") mempty intSort
 xBool :: MockElementVariable
 xBool = MockElementVariable (testId "xBool") mempty boolSort
+xRuleBool :: MockRewritingElementVariable
+xRuleBool = mkRuleElementVariable (testId "xBool") mempty boolSort
+xConfigBool :: MockRewritingElementVariable
+xConfigBool = mkConfigElementVariable (testId "xBool") mempty boolSort
 xString :: MockElementVariable
 xString = MockElementVariable (testId "xString") mempty stringSort
+xRuleString :: MockRewritingElementVariable
+xRuleString = mkRuleElementVariable (testId "xString") mempty stringSort
+xConfigString :: MockRewritingElementVariable
+xConfigString = mkConfigElementVariable (testId "xString") mempty stringSort
 xList :: MockElementVariable
 xList = MockElementVariable (testId "xList") mempty listSort
+xConfigList :: MockRewritingElementVariable
+xConfigList = mkConfigElementVariable (testId "xList") mempty listSort
 xMap :: MockElementVariable
 xMap = MockElementVariable (testId "xMap") mempty mapSort
+yMap :: MockElementVariable
+yMap = MockElementVariable (testId "yMap") mempty mapSort
+zMap :: MockElementVariable
+zMap = MockElementVariable (testId "zMap") mempty mapSort
+xMapRule :: MockRewritingElementVariable
+xMapRule = mkRuleElementVariable (testId "xMap") mempty mapSort
+xMapConfig :: MockRewritingElementVariable
+xMapConfig = mkConfigElementVariable (testId "xMap") mempty mapSort
+yMapRule :: MockRewritingElementVariable
+yMapRule = mkRuleElementVariable (testId "yMap") mempty mapSort
+yMapConfig :: MockRewritingElementVariable
+yMapConfig = mkConfigElementVariable (testId "yMap") mempty mapSort
+zMapRule :: MockRewritingElementVariable
+zMapRule = mkRuleElementVariable (testId "zMap") mempty mapSort
+zMapConfig :: MockRewritingElementVariable
+zMapConfig = mkConfigElementVariable (testId "zMap") mempty mapSort
 xSubSort :: MockElementVariable
 xSubSort = MockElementVariable (testId "xSubSort") mempty subSort
+xRuleSubSort :: MockRewritingElementVariable
+xRuleSubSort = mkRuleElementVariable (testId "xSubSort") mempty subSort
+xConfigSubSort :: MockRewritingElementVariable
+xConfigSubSort = mkConfigElementVariable (testId "xSubSort") mempty subSort
 xSubSubSort :: MockElementVariable
 xSubSubSort =
     MockElementVariable (testId "xSubSubSort") mempty subSubsort
+xConfigSubSubSort :: MockRewritingElementVariable
+xConfigSubSubSort =
+    mkConfigElementVariable (testId "xSubSubSort") mempty subSubsort
 xSubOtherSort :: MockElementVariable
 xSubOtherSort =
     MockElementVariable (testId "xSubOtherSort") mempty subOthersort
+xRuleSubOtherSort :: MockRewritingElementVariable
+xRuleSubOtherSort =
+    mkRuleElementVariable (testId "xSubOtherSort") mempty subOthersort
+xConfigSubOtherSort :: MockRewritingElementVariable
+xConfigSubOtherSort =
+    mkConfigElementVariable (testId "xSubOtherSort") mempty subOthersort
 xOtherSort :: MockElementVariable
 xOtherSort = MockElementVariable (testId "xOtherSort") mempty otherSort
+xConfigOtherSort :: MockRewritingElementVariable
+xConfigOtherSort = mkConfigElementVariable (testId "xOtherSort") mempty otherSort
 xTopSort :: MockElementVariable
 xTopSort = MockElementVariable (testId "xTopSort") mempty topSort
+xConfigTopSort :: MockRewritingElementVariable
+xConfigTopSort = mkConfigElementVariable (testId "xTopSort") mempty topSort
 xStringMetaSort :: MockSetVariable
 xStringMetaSort = MockSetVariable (testId "xStringMetaSort") mempty stringMetaSort
+xRuleStringMetaSort :: MockRewritingSetVariable
+xRuleStringMetaSort =
+    mkRuleSetVariable (testId "xStringMetaSort") mempty stringMetaSort
+xConfigStringMetaSort :: MockRewritingSetVariable
+xConfigStringMetaSort =
+    mkConfigSetVariable (testId "xStringMetaSort") mempty stringMetaSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
@@ -740,11 +948,31 @@ makeSomeVariable name variableSort =
       | Text.head name == '@' = inject . SetVariableName
       | otherwise = inject . ElementVariableName
 
+makeSomeConfigVariable :: Text -> Sort -> SomeVariable RewritingVariableName
+makeSomeConfigVariable name variableSort =
+    Variable
+    { variableSort
+    , variableName
+    }
+  where
+    variableName =
+        injectVariableName
+        $ mkConfigVariable VariableName { base = testId name, counter = mempty }
+    injectVariableName
+      | Text.head name == '@' = inject . SetVariableName
+      | otherwise = inject . ElementVariableName
+
 makeTestSomeVariable :: Text -> SomeVariable VariableName
 makeTestSomeVariable = (`makeSomeVariable` testSort)
 
+makeTestSomeConfigVariable :: Text -> SomeVariable RewritingVariableName
+makeTestSomeConfigVariable = (`makeSomeConfigVariable` testSort)
+
 mkTestSomeVariable :: Text -> TermLike VariableName
 mkTestSomeVariable = Internal.mkVar . makeTestSomeVariable
+
+mkTestSomeConfigVariable :: Text -> TermLike RewritingVariableName
+mkTestSomeConfigVariable = Internal.mkVar . makeTestSomeConfigVariable
 
 a :: InternalVariable variable => TermLike variable
 a = Internal.mkApplySymbol aSymbol []
@@ -840,12 +1068,34 @@ fTestInt
     -> TermLike variable
 fTestInt arg = Internal.mkApplySymbol fTestIntSymbol [arg]
 
+fTestFunctionalInt
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fTestFunctionalInt arg =
+    Internal.mkApplySymbol fTestFunctionalIntSymbol [arg]
+
 fInt
     :: InternalVariable variable
     => HasCallStack
     => TermLike variable
     -> TermLike variable
 fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
+
+fBool
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fBool arg = Internal.mkApplySymbol fBoolSymbol [arg]
+
+fString
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fString arg = Internal.mkApplySymbol fStringSymbol [arg]
 
 plain00 :: InternalVariable variable => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
@@ -1287,6 +1537,13 @@ unitList
     => TermLike variable
 unitList = Internal.mkApplySymbol unitListSymbol []
 
+keqBool
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+keqBool t1 t2 = Internal.mkApplySymbol keqBoolSymbol [t1, t2]
+
 sigma
     :: InternalVariable variable
     => HasCallStack
@@ -1297,6 +1554,16 @@ sigma child1 child2 = Internal.mkApplySymbol sigmaSymbol [child1, child2]
 
 anywhere :: InternalVariable variable => TermLike variable
 anywhere = Internal.mkApplySymbol anywhereSymbol []
+
+functionSMT, functionalSMT
+    :: InternalVariable variable
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+functionSMT arg =
+    Internal.mkApplySymbol functionSMTSymbol [arg]
+functionalSMT arg =
+    Internal.mkApplySymbol functionalSMTSymbol [arg]
 
 attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
 attributesMapping =
@@ -1393,12 +1660,15 @@ symbols =
     , lessIntSymbol
     , greaterEqIntSymbol
     , tdivIntSymbol
+    , keqBoolSymbol
     , sigmaSymbol
     , anywhereSymbol
     , subsubOverloadSymbol
     , subOverloadSymbol
     , otherOverloadSymbol
     , topOverloadSymbol
+    , functionSMTSymbol
+    , functionalSMTSymbol
     ]
 
 sortAttributesMapping :: [(Sort, Attribute.Sort)]
@@ -1469,6 +1739,9 @@ sortAttributesMapping =
     ,   ( boolSort
         , Default.def { Attribute.hook = Hook (Just "BOOL.Bool") }
         )
+    ,   ( stringSort
+        , Default.def { Attribute.hook = Hook (Just "STRING.String") }
+        )
 
     -- Also add attributes for the implicitly defined sorts.
     ,   ( stringMetaSort
@@ -1499,21 +1772,6 @@ builtinZeroarySmtSort sExpr =
         , declaration = SMT.SortDeclaredIndirectly (SMT.AlreadyEncoded sExpr)
         }
 
-smtConstructor :: Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
-smtConstructor symbolId argumentSorts resultSort =
-    SMT.Symbol
-        { smtFromSortArgs = const (const (Just encodedId))
-        , declaration =
-            SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
-                { name = encodableId
-                , sortDependencies =
-                    SMT.SortReference <$> resultSort : argumentSorts
-                }
-        }
-  where
-    encodableId = SMT.encodable symbolId
-    encodedId = SMT.encode encodableId
-
 smtBuiltinSymbol
     :: Text -> [Sort] -> Sort -> SMT.UnresolvedSymbol
 smtBuiltinSymbol builtin argumentSorts resultSort =
@@ -1524,6 +1782,19 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
                 { name = SMT.AlreadyEncoded $ SMT.Atom builtin
                 , sortDependencies =
                     SMT.SortReference <$> resultSort : argumentSorts
+                }
+        }
+
+smtDeclaredSymbol
+    :: Text -> Id -> [Sort] -> Sort -> SMT.UnresolvedSymbol
+smtDeclaredSymbol smtName id' argumentSorts resultSort =
+    SMT.Symbol
+        { smtFromSortArgs = const (const (Just (SMT.Atom smtName)))
+        , declaration =
+            SMT.SymbolDeclaredDirectly SMT.FunctionDeclaration
+                { name = SMT.encodable id'
+                , inputSorts = SMT.SortReference <$> argumentSorts
+                , resultSort = SMT.SortReference resultSort
                 }
         }
 
@@ -1553,18 +1824,18 @@ smtUnresolvedDeclarations = SMT.Declarations
         , (boolSortId, builtinZeroarySmtSort SMT.tBool)
         ]
     , symbols = Map.fromList
-        [ ( aSort0Id, smtConstructor aSort0Id [] testSort1)
-        , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
-        , ( aSubsortId, smtConstructor aSubsortId [] subSort)
-        , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
-        , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
-        , ( aTopSortId, smtConstructor aTopSortId [] topSort)
-        , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
-        , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
-        , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
+        [ ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( tdivIntId, smtBuiltinSymbol "div" [intSort, intSort] intSort)
-        , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
+        , ( functional00Id
+            , smtDeclaredSymbol "functional00" functional00Id [] testSort
+          )
+        , ( functionSMTId
+            , smtDeclaredSymbol "functionSMT" functionSMTId [testSort] testSort
+          )
+        , ( functionalSMTId
+            , smtDeclaredSymbol "functionalSMT" functionalSMTId [testSort] testSort
+          )
         ]
     }
 
@@ -1762,23 +2033,30 @@ framedMap
     -> [TermLike variable]
     -> TermLike variable
 framedMap elements opaque =
-    Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
+    framedInternalMap elements opaque & Internal.mkInternalMap
+
+framedInternalMap
+    :: [(TermLike variable, TermLike variable)]
+    -> [TermLike variable]
+    -> InternalMap Internal.Key (TermLike variable)
+framedInternalMap elements opaque =
+    InternalAc
         { builtinAcSort = mapSort
-        , builtinAcUnit = unitMapSymbol
-        , builtinAcElement = elementMapSymbol
-        , builtinAcConcat = concatMapSymbol
-        , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcUnit = Attribute.toUnit unitMapSymbol
+        , builtinAcElement = Attribute.toElement elementMapSymbol
+        , builtinAcConcat = Attribute.toConcat concatMapSymbol
+        , builtinAcChild = NormalizedMap NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> Builtin.toKey key <*> pure value
+        (,) <$> retractKey key <*> pure value
         & maybe (Left element) Right
     (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
         & partitionEithers
 
 builtinList
@@ -1786,12 +2064,12 @@ builtinList
     => [TermLike variable]
     -> TermLike variable
 builtinList child =
-    Internal.mkBuiltin $ Domain.BuiltinList Domain.InternalList
-        { builtinListSort = listSort
-        , builtinListUnit = unitListSymbol
-        , builtinListElement = elementListSymbol
-        , builtinListConcat = concatListSymbol
-        , builtinListChild = Seq.fromList child
+    Internal.mkInternalList InternalList
+        { internalListSort = listSort
+        , internalListUnit = unitListSymbol
+        , internalListElement = elementListSymbol
+        , internalListConcat = concatListSymbol
+        , internalListChild = Seq.fromList child
         }
 
 builtinSet
@@ -1816,13 +2094,20 @@ framedSet
     -> [TermLike variable]
     -> TermLike variable
 framedSet elements opaque =
-    Internal.mkBuiltin $ Domain.BuiltinSet Domain.InternalAc
+    framedInternalSet elements opaque & Internal.mkInternalSet
+
+framedInternalSet
+    :: [TermLike variable]
+    -> [TermLike variable]
+    -> InternalSet Internal.Key (TermLike variable)
+framedInternalSet elements opaque =
+    InternalAc
         { builtinAcSort = setSort
-        , builtinAcUnit = unitSetSymbol
-        , builtinAcElement = elementSetSymbol
-        , builtinAcConcat = concatSetSymbol
-        , builtinAcChild = Domain.NormalizedSet Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
+        , builtinAcUnit = Attribute.toUnit unitSetSymbol
+        , builtinAcElement = Attribute.toElement elementSetSymbol
+        , builtinAcConcat = Attribute.toConcat concatSetSymbol
+        , builtinAcChild = NormalizedSet NormalizedAc
+            { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
             , opaque
             }
@@ -1831,8 +2116,8 @@ framedSet elements opaque =
     asConcrete key =
         do
             Monad.guard (isConstructorLike key)
-            (,) <$> Internal.asConcrete key <*> pure Domain.SetValue
-        & maybe (Left (key, Domain.SetValue)) Right
+            (,) <$> retractKey key <*> pure SetValue
+        & maybe (Left (key, SetValue)) Right
     (abstractElements, Map.fromList -> concreteElements) =
         asConcrete <$> elements
         & partitionEithers
@@ -1973,5 +2258,9 @@ builtinSimplifiers =
         ,   ( AxiomIdentifier.Application greaterEqIntId
             , builtinEvaluation
                 (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            )
+        ,   ( AxiomIdentifier.Application keqBoolId
+            , builtinEvaluation
+                (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )
         ]

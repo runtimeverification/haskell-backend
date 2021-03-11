@@ -5,44 +5,38 @@
         /*  */ \not{SortGeneratedTopCell{}}(/*  */ priorityLE1{}()),
         /* Spa */
         \and{SortGeneratedTopCell{}}(
-            /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
             /* Sfa */
             \and{SortGeneratedTopCell{}}(
-                /* Sfa */
-                \equals{SortBool{}, SortGeneratedTopCell{}}(
-                    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortBool{}}("true"),
-                    /* Fl Fn D Sfa */
-                    Lbl'Unds-GT-'Int'Unds'{}(
-                        /* Fl Fn D Sfa */ VarX0:SortInt{},
-                        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("8")
-                    )
-                ),
-                /* Created: Kore.Internal.MultiAnd.makeAndPredicate */
                 /* Spa */
                 \and{SortGeneratedTopCell{}}(
                     /* Sfa */
                     \equals{SortBool{}, SortGeneratedTopCell{}}(
-                        /* Fl Fn D Sfa Cl */
-                        /* builtin: */ \dv{SortBool{}}("true"),
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
                         /* Fl Fn D Sfa */
-                        Lbl'Unds-LT-'Int'Unds'{}(
+                        Lbl'Unds-GT-'Int'Unds'{}(
                             /* Fl Fn D Sfa */ VarX0:SortInt{},
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortInt{}}("10")
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("8")
                         )
                     ),
                     /* Sfa */
-                    \not{SortGeneratedTopCell{}}(
-                        /* Sfa */
-                        \equals{SortBool{}, SortGeneratedTopCell{}}(
-                            /* Fl Fn D Sfa Cl */
-                            /* builtin: */ \dv{SortBool{}}("true"),
-                            /* Fl Fn D Sfa */
-                            Lbl'Unds-LT-'Int'Unds'{}(
-                                /* Fl Fn D Sfa */ VarX0:SortInt{},
-                                /* Fl Fn D Sfa Cl */
-                                /* builtin: */ \dv{SortInt{}}("6")
-                            )
+                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                        /* Fl Fn D Sfa */
+                        Lbl'Unds-LT-'Int'Unds'{}(
+                            /* Fl Fn D Sfa */ VarX0:SortInt{},
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("10")
+                        )
+                    )
+                ),
+                /* Sfa */
+                \not{SortGeneratedTopCell{}}(
+                    /* Sfa */
+                    \equals{SortBool{}, SortGeneratedTopCell{}}(
+                        /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("true"),
+                        /* Fl Fn D Sfa */
+                        Lbl'Unds-LT-'Int'Unds'{}(
+                            /* Fl Fn D Sfa */ VarX0:SortInt{},
+                            /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("6")
                         )
                     )
                 )

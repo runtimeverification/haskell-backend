@@ -1,6 +1,0 @@
-./test/resources//test-exception-5.kore:6:5:
-  |
-6 |     -X:S []
-  |     ^
-unexpected '-'
-expecting first identifier character

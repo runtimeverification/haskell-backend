@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Bottom
     ( simplify
     ) where
@@ -17,13 +19,13 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Variable
-    ( InternalVariable
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Sort
 import Kore.Syntax.Bottom
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
-simplify :: InternalVariable variable => Bottom Sort child -> OrPattern variable
+simplify :: Bottom Sort child -> OrPattern RewritingVariableName
 simplify Bottom {} = OrPattern.bottom

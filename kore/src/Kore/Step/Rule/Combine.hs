@@ -2,6 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Step.Rule.Combine
     ( mergeRules
@@ -20,7 +21,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Default
     ( Default (..)
     )
-import qualified Data.Foldable as Foldable
 import qualified Kore.Step.AntiLeft as AntiLeft
     ( antiLeftPredicate
     )
@@ -39,10 +39,10 @@ import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate_
+    , makeCeilPredicate
     , makeMultipleAndPredicate
     , makeNotPredicate
-    , makeTruePredicate_
+    , makeTruePredicate
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
@@ -52,6 +52,9 @@ import Kore.Internal.TermLike
     )
 import Kore.Internal.Variable
     ( InternalVariable
+    )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
     )
 import Kore.Step.RulePattern
     ( RHS (RHS)
@@ -122,14 +125,14 @@ mergeRulePairPredicate
     )
   =
     makeMultipleAndPredicate
-        [ makeCeilPredicate_ (mkAnd right1 left2)
+        [ makeCeilPredicate (mkAnd right1 left2)
         , ensures1
         , requires2
         , antiLeftPredicate
         ]
   where
     antiLeftPredicate = case antiLeft2 of
-        Nothing -> makeTruePredicate_
+        Nothing -> makeTruePredicate
         Just antiLeft ->
             makeNotPredicate $ AntiLeft.antiLeftPredicate antiLeft right1
 
@@ -149,11 +152,11 @@ renameRulesVariables rules =
         (rewriteRule', used <> freeVariables rewriteRule')
 
 mergeRules
-    :: (MonadSimplify simplifier, InternalVariable variable)
-    => NonEmpty (RewriteRule variable)
-    -> simplifier [RewriteRule variable]
+    :: MonadSimplify simplifier
+    => NonEmpty (RewriteRule RewritingVariableName)
+    -> simplifier [RewriteRule RewritingVariableName]
 mergeRules (a :| []) = return [a]
-mergeRules (renameRulesVariables . Foldable.toList -> rules) =
+mergeRules (renameRulesVariables . toList -> rules) =
     Logic.observeAllT $ do
         Conditional {term = (), predicate, substitution} <-
             simplifyCondition SideCondition.topTODO . Condition.fromPredicate
@@ -161,7 +164,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
             Nothing -> return predicate
-            Just True -> return makeTruePredicate_
+            Just True -> return makeTruePredicate
             Just False -> empty
 
         let finalRule =
@@ -193,12 +196,12 @@ first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
 into rule 7', then returns the result of merging 7', 8 and 9.
 -}
 mergeRulesConsecutiveBatches
-    :: (MonadSimplify simplifier, InternalVariable variable)
+    :: MonadSimplify simplifier
     => Int
     -- ^ Batch size
-    -> NonEmpty (RewriteRule variable)
+    -> NonEmpty (RewriteRule RewritingVariableName)
     -- Rules to merge
-    -> simplifier [RewriteRule variable]
+    -> simplifier [RewriteRule RewritingVariableName]
 mergeRulesConsecutiveBatches
     batchSize
     (rule :| rules)

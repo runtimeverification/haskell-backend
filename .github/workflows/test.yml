@@ -1,0 +1,173 @@
+name: "Test"
+on:
+  pull_request:
+jobs:
+  nix:
+    name: 'Nix'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
+        with:
+          extra_nix_config: |
+            substituters = http://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: Install Cachix
+        uses: cachix/cachix-action@v8
+        with:
+          name: kore
+          signingKey: '${{ secrets.KORE_CACHIX_SIGNING_KEY }}'
+
+      - name: Check materialization
+        run: |
+          ./nix/rematerialize.sh
+          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+            git diff
+            exit 1
+          fi
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4.7.2
+        with:
+          commit_message: 'Materialize Nix expressions'
+          file_pattern: 'nix/'
+
+      - name: Build
+        run: nix-build -A kore
+
+      - name: Run unit tests
+        run: nix-build -A project.kore.checks
+
+      - name: Check shell
+        run: nix-shell --run "echo OK"
+
+  cabal:
+    name: 'Cabal'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - uses: actions/setup-haskell@v1.1.4
+        id: setup-haskell-cabal
+        with:
+          ghc-version: "8.10.1"
+          cabal-version: "3.2"
+
+      - name: Cache Cabal store
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('cabal.project.freeze') }}
+
+      - name: Build
+        run: cabal v2-build --enable-tests --enable-benchmarks all
+
+      - name: Run unit tests
+        run: cabal v2-test --test-show-details=direct all
+
+      - name: Configure with profiling
+        run: cabal v2-configure --enable-profiling -f-threaded
+
+  stack:
+    name: 'Stack'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - uses: actions/setup-haskell@v1.1.4
+        id: setup-haskell-stack
+        with:
+          enable-stack: true
+          stack-no-global: true
+          stack-setup-ghc: true
+
+      - name: Locate Stack root
+        id: locate-stack-root
+        run: |
+          echo "::set-output name=stack-root::$(stack path --stack-root)"
+
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.locate-stack-root.outputs.stack-root }}
+          key: ${{ runner.os }}-ghc-8.10.1-${{ hashFiles('stack.yaml.lock') }}
+
+      - name: Build dependencies
+        run: |
+          stack build --only-dependencies
+          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+            git diff
+            exit 1
+          fi
+
+      - name: Build project
+        run: stack build --pedantic
+
+      - name: Run unit tests
+        run: stack test --pedantic
+
+  hlint:
+    name: 'HLint'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Run hlint
+        run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s kore -j
+
+  stylish-haskell:
+    name: 'stylish-haskell'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install stylish-haskell
+        run: |
+          cd $(mktemp -d)
+          wget https://github.com/jaspervdj/stylish-haskell/releases/download/v0.11.0.0/stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          tar xaf stylish-haskell-v0.11.0.0-linux-x86_64.tar.gz
+          sudo mv stylish-haskell-v0.11.0.0-linux-x86_64/stylish-haskell /usr/local/bin/
+          stylish-haskell --version
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - name: Format with stylish-haskell
+        run: stylish-haskell -i -r kore
+
+      - name: Check for changes
+        run: |
+          if [ ! $(git status --porcelain | wc -l) -eq 0 ]; then
+            git diff
+            exit 1
+          fi

@@ -24,9 +24,6 @@ module Kore.Error
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Monad.Except
     ( MonadError (..)
     )

@@ -224,7 +224,7 @@ simpleSortSentence (SortName name) =
 
 simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
-    asSentence (simpleAliasSentenceAux alias sort r)
+    asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
   where
     r = Builtin.externalize $ Internal.mkTop (simpleSort sort)
 
@@ -262,10 +262,7 @@ simpleSymbolSentence :: SymbolName -> SortName -> ParsedSentence
 simpleSymbolSentence name sort =
     asSentence (simpleSymbolSentenceAux name sort)
 
-simpleSymbolSentenceAux
-    :: SymbolName
-    -> SortName
-    -> SentenceSymbol patternType
+simpleSymbolSentenceAux :: SymbolName -> SortName -> SentenceSymbol
 simpleSymbolSentenceAux (SymbolName name) (SortName sort) =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
@@ -311,7 +308,7 @@ metaAliasSentenceWithSortParameters
 metaAliasSentenceWithSortParameters
     (AliasName name) sort parameters
   =
-    asSentence SentenceAlias
+    asSentence @ParsedSentenceAlias SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = testId name
             , aliasParams = parameters
@@ -462,7 +459,7 @@ symbolSentenceWithSortParametersAux
     :: SymbolName
     -> Sort
     -> [SortVariable]
-    -> SentenceSymbol patternType
+    -> SentenceSymbol
 symbolSentenceWithSortParametersAux (SymbolName name) sort parameters =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol

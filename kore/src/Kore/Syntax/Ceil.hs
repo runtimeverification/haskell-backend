@@ -10,9 +10,6 @@ module Kore.Syntax.Ceil
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -49,6 +46,14 @@ instance Unparse child => Unparse (Ceil Sort child) where
     unparse Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
         "\\ceil"
         <> parameters [ceilOperandSort, ceilResultSort]
+        <> arguments [ceilChild]
+
+    unparse2 Ceil { ceilChild } =
+        Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
+
+instance Unparse child => Unparse (Ceil () child) where
+    unparse Ceil { ceilChild } =
+        "\\ceil"
         <> arguments [ceilChild]
 
     unparse2 Ceil { ceilChild } =

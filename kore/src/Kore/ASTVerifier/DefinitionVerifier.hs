@@ -11,14 +11,23 @@ module Kore.ASTVerifier.DefinitionVerifier
     ( verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
+    , sortModuleClaims
     ) where
 
 import Prelude.Kore
 
+import Control.Lens
+    ( (%~)
+    )
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
+import Data.Generics.Product
+    ( field
+    )
+import Data.List
+    ( sortOn
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -35,7 +44,7 @@ import Kore.ASTVerifier.ModuleVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Parser as Attribute.Parser
-import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -82,7 +91,7 @@ verifyAndIndexDefinition
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol.Symbol))
 verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -118,12 +127,12 @@ verifyAndIndexDefinitionWithBase
         implicitModule
             :: ImplicitIndexedModule
                 Verified.Pattern
-                Attribute.Symbol
+                Attribute.Symbol.Symbol
                 (Attribute.Axiom Internal.Symbol.Symbol VariableName)
         implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
-        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
+        verifyModules = traverse_ verifyModule definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-
@@ -138,3 +147,11 @@ verifyAndIndexDefinitionWithBase
     return (index, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+
+sortModuleClaims
+    :: VerifiedModule declAtts
+    -> VerifiedModule declAtts
+sortModuleClaims verifiedModule =
+    verifiedModule
+    & field @"indexedModuleClaims"
+        %~ sortOn (Attribute.sourceLocation . fst)

@@ -20,7 +20,6 @@ import Control.Monad.Reader
     ( runReaderT
     )
 import Data.Default
-import qualified Data.Foldable as Foldable
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
 import qualified Options.Applicative as Options
@@ -154,4 +153,4 @@ logSQLite =
     logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
 
     maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()
-    maybeInsertRow = Foldable.traverse_ SQL.insertRow
+    maybeInsertRow = traverse_ SQL.insertRow

@@ -15,7 +15,7 @@ module UNREACHABLE-SPEC
   imports IMP
   imports VERIFICATION
 
-  rule
+  claim
     <k>
       if (a <= b) {
           if (!(a <= b)) {
@@ -25,8 +25,8 @@ module UNREACHABLE-SPEC
       => .K
     </k>
     <state>
-      a |-> A:Int
-      b |-> B:Int
-      r |-> R:Int
+      a |-> _:Int
+      b |-> _:Int
+      r |-> _:Int
     </state>
 endmodule

@@ -10,9 +10,6 @@ module Kore.Syntax.Forall
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -49,6 +46,20 @@ instance
     unparse Forall { forallSort, forallVariable, forallChild } =
         "\\forall"
         <> parameters [forallSort]
+        <> arguments' [unparse forallVariable, unparse forallChild]
+
+    unparse2 Forall { forallVariable, forallChild } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\forall"
+            , unparse2SortedVariable forallVariable
+            , unparse2 forallChild
+            ])
+
+instance
+    (Unparse variable, Unparse child) => Unparse (Forall () variable child)
+  where
+    unparse Forall { forallVariable, forallChild } =
+        "\\forall"
         <> arguments' [unparse forallVariable, unparse forallChild]
 
     unparse2 Forall { forallVariable, forallChild } =

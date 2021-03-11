@@ -41,15 +41,11 @@ module Kore.Sort
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Control.Exception
     ( Exception (..)
     , throw
     )
 import Data.Align
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.These
 import qualified Generics.SOP as SOP
@@ -144,7 +140,7 @@ sortSubstitution
     -> [Sort]
     -> Map.Map SortVariable Sort
 sortSubstitution variables sorts =
-    Foldable.foldl' insertSortVariable Map.empty (align variables sorts)
+    foldl' insertSortVariable Map.empty (align variables sorts)
   where
     insertSortVariable map' =
         \case
@@ -317,7 +313,7 @@ matchSorts = alignWith matchTheseSorts
     matchTheseSorts (These sort1 sort2) = matchSort sort1 sort2
 
 alignSorts :: Foldable f => f Sort -> Sort
-alignSorts = fromMaybe predicateSort . Foldable.foldl' worker Nothing
+alignSorts = fromMaybe predicateSort . foldl' worker Nothing
   where
     worker Nothing      sort2 = rigidSort sort2
     worker (Just sort1) sort2 =

@@ -28,9 +28,6 @@ module Kore.Internal.Conditional
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -46,6 +43,8 @@ import qualified Kore.Attribute.Pattern.Simplified as Attribute
 import Kore.Debug
 import Kore.Internal.Predicate
     ( Predicate
+    , unparse2WithSort
+    , unparseWithSort
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
@@ -65,13 +64,13 @@ import Kore.Internal.TermLike
     , TermLike
     , termLikeSort
     )
-import qualified Kore.Internal.TermLike as Internal
 import Kore.TopBottom
     ( TopBottom (..)
     )
 import Kore.Unparser
 import Pretty
     ( Doc
+    , Pretty (..)
     )
 import qualified Pretty
 import qualified SQL
@@ -91,7 +90,7 @@ quadratic complexity.
  -}
 data Conditional variable child =
     Conditional
-        { term :: child
+        { term :: !child
         , predicate :: !(Predicate variable)
         , substitution :: !(Substitution variable)
         }
@@ -122,7 +121,7 @@ instance
     mempty =
         Conditional
             { term = mempty
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
     {-# INLINE mempty #-}
@@ -134,21 +133,19 @@ instance InternalVariable variable => Applicative (Conditional variable) where
     pure term =
         Conditional
             { term
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
 
     (<*>) predicated1 predicated2 =
         Conditional
             { term = f a
-            , predicate = Predicate.makeAndPredicate predicate1 sortedPredicate2
+            , predicate = Predicate.makeAndPredicate predicate1 predicate2
             , substitution = substitution1 <> substitution2
             }
       where
         Conditional f predicate1 substitution1 = predicated1
         Conditional a predicate2 substitution2 = predicated2
-        sort = Predicate.predicateSort predicate1
-        sortedPredicate2 = Predicate.coerceSort sort predicate2
 
 {- | 'Conditional' is equivalent to the 'Control.Comonad.Env.Env' comonad.
 
@@ -182,10 +179,7 @@ instance
   where
     from Conditional { predicate, substitution } =
         Predicate.makeAndPredicate predicate
-        $ Predicate.coerceSort sort
         $ from substitution
-      where
-        sort = (termLikeSort . Predicate.unwrapPredicate) predicate
 
 instance
     InternalVariable variable
@@ -201,7 +195,7 @@ instance
     from substitution =
         Conditional
             { term = ()
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution
             }
 
@@ -212,7 +206,7 @@ instance
     from assignment =
         Conditional
             { term = ()
-            , predicate = Predicate.makeTruePredicate_
+            , predicate = Predicate.makeTruePredicate
             , substitution = from assignment
             }
 
@@ -238,13 +232,13 @@ instance
             @(Map (SomeVariable variable) (TermLike variable))
             @(Substitution variable)
 
-unparseConditional
+prettyConditional
     :: Sort
     -> Doc ann    -- ^ term
     -> Doc ann    -- ^ predicate
     -> [Doc ann]  -- ^ substitution
     -> Doc ann
-unparseConditional sort termDoc predicateDoc substitutionDocs =
+prettyConditional sort termDoc predicateDoc substitutionDocs =
     unparseAssoc' andHead andIdent
         [ below "/* term: */" termDoc
         , below "/* predicate: */" predicateDoc
@@ -256,59 +250,77 @@ unparseConditional sort termDoc predicateDoc substitutionDocs =
     andIdent = "\\top" <> parameters' [unparse sort] <> noArguments
     below first second = (Pretty.align . Pretty.vsep) [first, second]
 
-instance InternalVariable variable => Unparse (Conditional variable ()) where
-    unparse conditional@Conditional { predicate } =
-        unparse conditional { term = Internal.mkTop sort :: TermLike variable }
-      where
-        sort = termLikeSort termLikePredicate
-        termLikePredicate = Predicate.unwrapPredicate predicate
+prettyConditional'
+    :: Doc ann    -- ^ term
+    -> Doc ann    -- ^ predicate
+    -> [Doc ann]  -- ^ substitution
+    -> Doc ann
+prettyConditional' termDoc predicateDoc substitutionDocs =
+    unparseAssoc' andHead andIdent
+        [ below "/* term: */" termDoc
+        , below "/* predicate: */" predicateDoc
+        , below "/* substitution: */"
+            (unparseAssoc' andHead andIdent substitutionDocs)
+        ]
+  where
+    andHead = "\\and"
+    andIdent = "\\top" <> noArguments
+    below first second = (Pretty.align . Pretty.vsep) [first, second]
 
-    unparse2 conditional@Conditional { predicate } =
-        unparse2 conditional { term = Internal.mkTop sort :: TermLike variable }
-      where
-        sort = termLikeSort termLikePredicate
-        termLikePredicate = Predicate.unwrapPredicate predicate
+instance InternalVariable variable => Pretty (Conditional variable ()) where
+    pretty conditional =
+        pretty conditional { term = Predicate.makeTruePredicate :: Predicate variable }
 
 instance
     InternalVariable variable
     => Unparse (Conditional variable (TermLike variable))
   where
     unparse Conditional { term, predicate, substitution } =
-        unparseConditional
+        prettyConditional
             sort
             (unparse term)
-            (unparse termLikePredicate)
-            (unparse <$> termLikeSubstitution)
+            (unparseWithSort sort predicate)
+            (unparseWithSort sort <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.coerceSort sort
-            . Substitution.singleSubstitutionToPredicate
+            Substitution.singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
     unparse2 Conditional { term, predicate, substitution } =
-        unparseConditional
+        prettyConditional
             sort
             (unparse2 term)
-            (unparse2 termLikePredicate)
-            (unparse2 <$> termLikeSubstitution)
+            (unparse2WithSort sort predicate)
+            (unparse2WithSort sort <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.coerceSort sort
-            . Substitution.singleSubstitutionToPredicate
+            Substitution.singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
 instance
-    ( InternalVariable variable, Typeable variable
+    InternalVariable variable
+    => Pretty (Conditional variable (Predicate variable))
+  where
+    pretty Conditional { term, predicate, substitution } =
+        prettyConditional'
+            (pretty term)
+            (pretty predicate)
+            (pretty <$> termLikeSubstitution)
+      where
+        termLikeSubstitution =
+            Substitution.singleSubstitutionToPredicate
+            <$> Substitution.unwrap substitution
+
+instance
+    ( InternalVariable variable
     , SQL.Column term, Typeable term
     )
     => SQL.Table (Conditional variable term)
 
 instance
-    ( InternalVariable variable, Typeable variable
+    ( InternalVariable variable
     , SQL.Column term, Typeable term
     )
     => SQL.Column (Conditional variable term)

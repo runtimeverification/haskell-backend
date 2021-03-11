@@ -28,7 +28,7 @@ module THREE-SPEC
   imports VERIFICATION
 
   // test claim
-  rule
+  claim
     <k> b(f(X)) => t(t(X)) </k>
 
 endmodule

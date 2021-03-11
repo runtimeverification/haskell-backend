@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-
+{-# LANGUAGE Strict #-}
 module Test.Kore.Internal.TermLike
     ( test_substitute
     , test_refreshVariables
     , test_hasConstructorLikeTop
     , test_renaming
     , test_mkDefined
+    , test_orientSubstitution
     --
     , termLikeGen
     , termLikeChildGen
@@ -22,6 +23,7 @@ import Test.Tasty
 
 import qualified Control.Lens as Lens
 import Control.Monad.Reader as Reader
+import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Identity
     ( runIdentity
     )
@@ -42,11 +44,8 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
     ( resynthesize
     )
-import Kore.Domain.Builtin
-    ( Builtin (..)
-    , InternalInt (..)
-    )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.InternalInt
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -56,6 +55,9 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
     ( Representation
+    )
+import Kore.Internal.Substitution
+    ( orientSubstitution
     )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
@@ -89,7 +91,9 @@ termLikeChildGen patternSort =
               | otherwise ->
                 Gen.choice
                     [ mkElemVar <$> elementVariableGen patternSort
-                    , mkBuiltin <$> genBuiltin patternSort
+                    , mkInternalBool <$> genInternalBool patternSort
+                    , mkInternalInt <$> genInternalInt patternSort
+                    , mkInternalString <$> genInternalString patternSort
                     ]
       | otherwise =
         (Gen.small . Gen.frequency)
@@ -174,6 +178,73 @@ mkSubst
     -> ElementVariable variable
     -> Map (SomeVariableName variable) (TermLike variable)
 mkSubst x' y' = Map.singleton (inject $ variableName x') (mkElemVar y')
+
+test_orientSubstitution :: [TestTree]
+test_orientSubstitution =
+    [ testCase "Applies reversed substitution" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, Mock.f $ mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, Mock.f $ mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Duplicate keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.y)
+                , (Mock.u, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.u, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.x, mkElemVar Mock.y)
+                , (Mock.t, mkElemVar Mock.y)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.y, mkElemVar Mock.t)
+                , (Mock.x, mkElemVar Mock.t)
+                ]
+        assertEqual "" expect (orientSubstitution toLeft subst)
+    , testCase "Orient duplicated keys - negated" $ do
+        let subst, expect
+                :: Map (SomeVariableName VariableName) (TermLike VariableName)
+            subst =
+                mkSubsts
+                [ (Mock.t, mkElemVar Mock.u)
+                , (Mock.x, mkElemVar Mock.u)
+                ]
+            expect =
+                mkSubsts
+                [ (Mock.u, mkElemVar Mock.x)
+                , (Mock.t, mkElemVar Mock.x)
+                ]
+        assertEqual "" expect (orientSubstitution (not . toLeft) subst)
+    ]
+  where
+    mkSubsts = Map.fromList . map (Bifunctor.first (inject . variableName))
+
+    toLeft :: SomeVariableName VariableName -> Bool
+    toLeft someVariableName =
+        someVariableName == inject (variableName Mock.x)
+        || someVariableName == inject (variableName Mock.y)
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -277,6 +348,13 @@ test_substitute =
             [ testCase "Exists" (renaming mkExists)
             , testCase "Forall" (renaming mkForall)
             ]
+
+    , testCase "Preserves the identity of free variables" $ do
+        let actual = substitute (mkSubst Mock.x Mock.y)
+                $ mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
+        let expect = mkAnd (mkElemVar Mock.y) (mkElemVar Mock.y)
+        assertEqual "Expected y to remain as it is"
+            expect actual
     ]
 
 test_refreshVariables :: [TestTree]
@@ -322,16 +400,13 @@ test_hasConstructorLikeTop =
                 True
                 $ isConstructorLikeTop (mkDomainValue dv)
             let
-                b :: Kore.Domain.Builtin.Builtin key child
-                b = BuiltinInt
-                        (InternalInt
-                            { builtinIntSort = Mock.intSort
-                            , builtinIntValue = 1
-                            }
-                        )
+                b = InternalInt
+                    { internalIntSort = Mock.intSort
+                    , internalIntValue = 1
+                    }
             assertEqual "BuiltinF is constructor-like-top"
                 True
-                (isConstructorLikeTop $ mkBuiltin b)
+                (isConstructorLikeTop $ mkInternalInt b)
             assertEqual "StringLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop $ mkStringLiteral "")

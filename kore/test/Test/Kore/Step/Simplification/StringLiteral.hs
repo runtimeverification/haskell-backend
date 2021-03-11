@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Test.Kore.Step.Simplification.StringLiteral
     ( test_stringLiteralSimplification
     ) where
@@ -17,6 +19,9 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.StringLiteral
     ( simplify
     )
@@ -30,7 +35,7 @@ test_stringLiteralSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkStringLiteral "a"
-                    , predicate = makeTruePredicate stringMetaSort
+                    , predicate = makeTruePredicate
                     , substitution = mempty
                     }
                 ]
@@ -41,5 +46,5 @@ test_stringLiteralSimplification =
         )
     ]
 
-evaluate :: StringLiteral -> OrPattern VariableName
+evaluate :: StringLiteral -> OrPattern RewritingVariableName
 evaluate = simplify

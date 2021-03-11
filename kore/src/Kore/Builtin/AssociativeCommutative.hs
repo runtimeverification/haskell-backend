@@ -15,11 +15,11 @@ builtin modules.
 @
 -}
 
+{-# LANGUAGE Strict               #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Builtin.AssociativeCommutative
-    ( asInternal
-    , asInternalConcrete
+    ( asInternalConcrete
     , asPattern
     , asTermLike
     , ConcatSymbol(..)
@@ -35,6 +35,8 @@ module Kore.Builtin.AssociativeCommutative
     , unifyEqualsNormalized
     , UnitSymbol(..)
     , VariableElements (..)
+    , toNormalizedInternalMap
+    , toNormalizedInternalSet
     ) where
 
 import Prelude.Kore
@@ -43,7 +45,6 @@ import Control.Error
     ( MaybeT
     )
 import qualified Control.Monad as Monad
-import qualified Data.Foldable as Foldable
 import Data.Kind
     ( Type
     )
@@ -60,17 +61,25 @@ import qualified Data.Reflection as Reflection
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Attribute.Concat as Att hiding
+    ( concatSymbol
+    )
+import qualified Kore.Attribute.Element as Att hiding
+    ( elementSymbol
+    )
 import qualified Kore.Attribute.Pattern.Simplified as Attribute
     ( Simplified
     )
 import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
+    ( Symbol (..)
+    )
+import qualified Kore.Attribute.Unit as Att hiding
+    ( unitSymbol
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
 import Kore.Debug
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
@@ -84,6 +93,9 @@ import Kore.Internal.Conditional
     , withCondition
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.InternalMap
+import Kore.Internal.InternalSet
+import qualified Kore.Internal.Key as Key
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -92,23 +104,27 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.Symbol
-    ( Symbol
+    ( Symbol (..)
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern BuiltinMap_
-    , pattern BuiltinSet_
     , pattern Defined_
     , pattern ElemVar_
+    , pattern InternalMap_
+    , pattern InternalSet_
+    , Key
     , TermLike
     , mkApplySymbol
-    , mkBuiltin
     , mkElemVar
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Sort
     ( Sort
+    , sameSort
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Syntax.Variable
@@ -127,22 +143,33 @@ import Pretty
     )
 import qualified Pretty
 
-{- | Class for things that can fill the @builtinAcChild@ value of a
-@InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
+{- | Any @TermWrapper@ may be inside of an 'InternalAc'.
 -}
 class
-    Domain.AcWrapper (normalized :: Type -> Type -> Type)
+    AcWrapper (normalized :: Type -> Type -> Type)
     => TermWrapper normalized
   where
-    {- | Render a normalized value (e.g. 'NormalizedSet') as a Domain.Builtin.
+    {- | Render a normalized value (e.g. 'NormalizedSet') as an 'InternalAc'.
 
     The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
     -}
     asInternalBuiltin
         :: SmtMetadataTools Attribute.Symbol
         -> Sort
-        -> normalized key child
-        -> Domain.Builtin key child
+        -> normalized Key child
+        -> InternalAc normalized Key child
+
+    -- TODO (thomas.tuegel): Use From.
+    {- | Render a normalized value (e.g. 'NormalizedSet') as a 'TermLike'.
+
+    The result sort must be hooked to the builtin normalized sort (e.g. @Set@).
+    -}
+    asInternal
+        :: InternalVariable variable
+        => SmtMetadataTools Attribute.Symbol
+        -> Sort
+        -> normalized Key (TermLike variable)
+        -> TermLike variable
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
 
@@ -169,27 +196,30 @@ class
      -}
     matchBuiltin
         :: TermLike variable
-        -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+        -> Maybe (normalized Key (TermLike variable))
 
     simplifiedAttributeValue
-        :: Domain.Value normalized (TermLike variable) -> Attribute.Simplified
+        :: Value normalized (TermLike variable) -> Attribute.Simplified
 
-instance TermWrapper Domain.NormalizedMap where
-    {- | Render a 'NormalizedMap' as a Domain.Builtin.
+instance TermWrapper NormalizedMap where
+    {- | Render a 'NormalizedMap' as an 'InternalAc'.
 
     The result sort must be hooked to the builtin @Map@ sort.
     -}
     asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinMap Domain.InternalAc
+        InternalAc
             { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcUnit = Att.toUnit $ Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Att.toElement $ Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Att.toConcat $ Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
 
-    matchBuiltin (BuiltinMap_ internalMap) =
-        Just (Domain.builtinAcChild internalMap)
+    asInternal tools sort child =
+        TermLike.mkInternalMap (asInternalBuiltin tools sort child)
+
+    matchBuiltin (InternalMap_ internalMap) =
+        Just (builtinAcChild internalMap)
     matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
@@ -204,26 +234,26 @@ instance TermWrapper Domain.NormalizedMap where
     concat(X:Map, concat({1}, X:Map))
     @
     -}
-    toNormalized (BuiltinMap_ Domain.InternalAc { builtinAcChild }) =
+    toNormalized (InternalMap_ InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Map.isSymbolUnit symbol =
         case args of
-            [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
+            [] -> (Normalized . wrapAc) emptyNormalizedAc
             _ -> Builtin.wrongArity "MAP.unit"
       | Map.isSymbolElement symbol =
         case args of
             [key, value]
-              | Just key' <- Builtin.toKey key ->
-                (Normalized . Domain.wrapAc) Domain.NormalizedAc
+              | Just key' <- TermLike.retractKey key ->
+                (Normalized . wrapAc) NormalizedAc
                     { elementsWithVariables = []
                     , concreteElements =
-                        Map.singleton key' (Domain.MapValue value)
+                        Map.singleton key' (MapValue value)
                     , opaque = []
                     }
               | otherwise ->
-                (Normalized . Domain.wrapAc) Domain.NormalizedAc
-                    { elementsWithVariables = [Domain.MapElement (key, value)]
+                (Normalized . wrapAc) NormalizedAc
+                    { elementsWithVariables = [MapElement (key, value)]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -234,30 +264,128 @@ instance TermWrapper Domain.NormalizedMap where
             _ -> Builtin.wrongArity "MAP.concat"
     toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
-        (Normalized . Domain.wrapAc) Domain.NormalizedAc
+        (Normalized . wrapAc) NormalizedAc
             { elementsWithVariables = []
             , concreteElements = Map.empty
             , opaque = [patt]
             }
 
-    simplifiedAttributeValue = TermLike.simplifiedAttribute . Domain.getMapValue
+    simplifiedAttributeValue = TermLike.simplifiedAttribute . getMapValue
 
-instance TermWrapper Domain.NormalizedSet where
-    {- | Render a 'NormalizedSet' as a Domain.Builtin.
+{- | Normalizes and internalizes an term representing an internal map
+
+This function was written to combine asInternal and toNormalized from above
+into a single function. The problem with having them separate was that
+information about the internal's unit, element or concat symbols was lost
+while now it can be carried over so that using MetadataTools (the first
+argument of asInternal) for lookup is no longer required.
+-}
+toNormalizedInternalMap
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+toNormalizedInternalMap termLike =
+    case toNormalizedInternalMapWorker termLike of
+        Just internal
+          | InternalAc { builtinAcChild } <- internal
+          , NormalizedMap { getNormalizedMap } <- builtinAcChild
+          , Just singleOpaqueTerm <- asSingleOpaqueElem getNormalizedMap
+            -> singleOpaqueTerm
+          | otherwise -> TermLike.mkInternalMap internal
+        Nothing -> TermLike.mkBottom (termLikeSort termLike)
+
+{- | Helper function called in toNormalizedInternalMap
+-}
+toNormalizedInternalMapWorker
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> Maybe (InternalMap Key (TermLike variable))
+toNormalizedInternalMapWorker (InternalMap_ internal) =
+    setAsChild <$> renormalize builtinAcChild
+  where
+    InternalAc { builtinAcChild } = internal
+    setAsChild renormalized = internal {builtinAcChild = renormalized}
+toNormalizedInternalMapWorker term@(App_ symbol args)
+  | Map.isSymbolUnit symbol =
+    case args of
+        [] -> Just (emptyInternalAc (termLikeSort term))
+            { builtinAcUnit = Att.toUnit symbol
+            }
+        _ -> Builtin.wrongArity "MAP.unit"
+  | Map.isSymbolElement symbol =
+    case args of
+        [key, value] ->
+            Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+            { builtinAcElement = Att.toElement symbol
+            , builtinAcChild = wrapAc $ case TermLike.retractKey key of
+                Just key' -> emptyNormalizedAc
+                    { concreteElements =
+                        Map.singleton key' (MapValue value)
+                    }
+                _ -> emptyNormalizedAc
+                    { elementsWithVariables = [MapElement (key, value)]
+                    }
+            }
+        _ -> Builtin.wrongArity "MAP.element"
+  | Map.isSymbolConcat symbol =
+    case args of
+        [map1, map2] -> do
+            internal1 <- toNormalizedInternalMapWorker map1
+            internal2 <- toNormalizedInternalMapWorker map2
+            normalized <- concatNormalized
+                (builtinAcChild internal1)
+                (builtinAcChild internal2)
+            let internal = InternalAc
+                    { builtinAcSort = sameSort
+                        (builtinAcSort internal1)
+                        (builtinAcSort internal2)
+                    , builtinAcUnit = Att.mergeUnit
+                        (builtinAcUnit internal1)
+                        (builtinAcUnit internal2)
+                    , builtinAcElement = Att.mergeElement
+                        (builtinAcElement internal1)
+                        (builtinAcElement internal2)
+                    , builtinAcConcat = Att.mergeConcat
+                        ( Att.mergeConcat
+                            (builtinAcConcat internal1)
+                            (builtinAcConcat internal2)
+                        )
+                        (Att.toConcat symbol)
+                    , builtinAcChild = normalized
+                    }
+            return internal
+        _ -> Builtin.wrongArity "MAP.concat"
+toNormalizedInternalMapWorker (Defined_ child) =
+    toNormalizedInternalMapWorker child
+toNormalizedInternalMapWorker term =
+    Just (emptyInternalAc @NormalizedMap (termLikeSort term))
+        { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+        }
+
+instance TermWrapper NormalizedSet where
+    {- | Render a 'NormalizedSet' as an 'InternalAc'.
 
     The result sort must be hooked to the builtin @Set@ sort.
     -}
     asInternalBuiltin tools builtinAcSort builtinAcChild =
-        Domain.BuiltinSet Domain.InternalAc
+        InternalAc
             { builtinAcSort
-            , builtinAcUnit = Builtin.lookupSymbolUnit tools builtinAcSort
-            , builtinAcElement = Builtin.lookupSymbolElement tools builtinAcSort
-            , builtinAcConcat = Builtin.lookupSymbolConcat tools builtinAcSort
+            , builtinAcUnit = Att.toUnit
+                $ Builtin.lookupSymbolUnit tools builtinAcSort
+            , builtinAcElement = Att.toElement
+                $ Builtin.lookupSymbolElement tools builtinAcSort
+            , builtinAcConcat = Att.toConcat
+                $ Builtin.lookupSymbolConcat tools builtinAcSort
             , builtinAcChild
             }
 
-    matchBuiltin (BuiltinSet_ internalSet) =
-        Just (Domain.builtinAcChild internalSet)
+    asInternal tools sort child =
+        TermLike.mkInternalSet (asInternalBuiltin tools sort child)
+
+    matchBuiltin (InternalSet_ internalSet) =
+        Just (builtinAcChild internalSet)
     matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
@@ -272,25 +400,25 @@ instance TermWrapper Domain.NormalizedSet where
     concat(X:Set, concat({1}, X:Set))
     @
     -}
-    toNormalized (BuiltinSet_ Domain.InternalAc { builtinAcChild }) =
+    toNormalized (InternalSet_ InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (renormalize builtinAcChild)
     toNormalized (App_ symbol args)
       | Set.isSymbolUnit symbol =
         case args of
-            [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
+            [] -> (Normalized . wrapAc) emptyNormalizedAc
             _ -> Builtin.wrongArity "SET.unit"
       | Set.isSymbolElement symbol =
         case args of
             [elem1]
-              | Just elem1' <- Builtin.toKey elem1 ->
-                (Normalized . Domain.wrapAc) Domain.NormalizedAc
+              | Just elem1' <- TermLike.retractKey elem1 ->
+                (Normalized . wrapAc) NormalizedAc
                     { elementsWithVariables = []
-                    , concreteElements = Map.singleton elem1' Domain.SetValue
+                    , concreteElements = Map.singleton elem1' SetValue
                     , opaque = []
                     }
               | otherwise ->
-                (Normalized . Domain.wrapAc) Domain.NormalizedAc
-                    { elementsWithVariables = [Domain.SetElement elem1]
+                (Normalized . wrapAc) NormalizedAc
+                    { elementsWithVariables = [SetElement elem1]
                     , concreteElements = Map.empty
                     , opaque = []
                     }
@@ -301,22 +429,115 @@ instance TermWrapper Domain.NormalizedSet where
             _ -> Builtin.wrongArity "SET.concat"
     toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
-        (Normalized . Domain.wrapAc)
-        Domain.emptyNormalizedAc { Domain.opaque = [patt] }
+        (Normalized . wrapAc)
+        emptyNormalizedAc { opaque = [patt] }
 
-    simplifiedAttributeValue Domain.SetValue = mempty
+    simplifiedAttributeValue SetValue = mempty
+
+{- | Normalizes and internalizes an term representing an internal map
+
+This function was written to combine asInternal and toNormalized from above
+into a single function. The problem with having them separate was that
+information about the internal's unit, element or concat symbols was lost
+while now it can be carried over so that using MetadataTools (the first
+argument of asInternal) for lookup is no longer required.
+-}
+toNormalizedInternalSet
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+toNormalizedInternalSet termLike =
+    case toNormalizedInternalSetWorker termLike of
+        Just internal
+          | InternalAc { builtinAcChild } <- internal
+          , NormalizedSet { getNormalizedSet } <- builtinAcChild
+          , Just singleOpaqueTerm <- asSingleOpaqueElem getNormalizedSet
+            -> singleOpaqueTerm
+          | otherwise -> TermLike.mkInternalSet internal
+        Nothing -> TermLike.mkBottom (termLikeSort termLike)
+
+{- | Helper function called in toNormalizedInternalSet
+-}
+toNormalizedInternalSetWorker
+    :: HasCallStack
+    => InternalVariable variable
+    => TermLike variable
+    -> Maybe (InternalSet Key (TermLike variable))
+toNormalizedInternalSetWorker (InternalSet_ internal) =
+    setAsChild <$> renormalize builtinAcChild
+  where
+    InternalAc { builtinAcChild } = internal
+    setAsChild renormalized = internal {builtinAcChild = renormalized}
+toNormalizedInternalSetWorker term@(App_ symbol args)
+  | Set.isSymbolUnit symbol =
+    case args of
+        [] -> Just (emptyInternalAc (termLikeSort term))
+            { builtinAcUnit = Att.toUnit symbol
+            }
+        _ -> Builtin.wrongArity "SET.unit"
+  | Set.isSymbolElement symbol =
+    case args of
+        [key] ->
+            Just (emptyInternalAc @NormalizedSet (termLikeSort term))
+            { builtinAcElement = Att.toElement symbol
+            , builtinAcChild = wrapAc $ case TermLike.retractKey key of
+                Just key' -> emptyNormalizedAc
+                    { concreteElements =
+                        Map.singleton key' SetValue
+                    }
+                _ -> emptyNormalizedAc
+                    { elementsWithVariables =
+                        [ SetElement { getSetElement = key } ]
+                    }
+            }
+        _ -> Builtin.wrongArity "SET.element"
+  | Set.isSymbolConcat symbol =
+    case args of
+        [set1, set2] -> do
+            internal1 <- toNormalizedInternalSetWorker set1
+            internal2 <- toNormalizedInternalSetWorker set2
+            normalized <- concatNormalized
+                (builtinAcChild internal1)
+                (builtinAcChild internal2)
+            let internal = InternalAc
+                    { builtinAcSort = sameSort
+                        (builtinAcSort internal1)
+                        (builtinAcSort internal2)
+                    , builtinAcUnit = Att.mergeUnit
+                        (builtinAcUnit internal1)
+                        (builtinAcUnit internal2)
+                    , builtinAcElement = Att.mergeElement
+                        (builtinAcElement internal1)
+                        (builtinAcElement internal2)
+                    , builtinAcConcat = Att.mergeConcat
+                        ( Att.mergeConcat
+                            (builtinAcConcat internal1)
+                            (builtinAcConcat internal2)
+                        )
+                        (Att.toConcat symbol)
+                    , builtinAcChild = normalized
+                    }
+            return internal
+        _ -> Builtin.wrongArity "SET.concat"
+toNormalizedInternalSetWorker (Defined_ child) =
+    toNormalizedInternalSetWorker child
+toNormalizedInternalSetWorker term =
+    Just (emptyInternalAc @NormalizedSet (termLikeSort term))
+        { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
+        }
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
-after converting @TermLike Concrete@ to @TermLike variable@.
+after converting @Key@ to @TermLike variable@.
 -}
 data ConcreteOrWithVariable normalized variable
-    = ConcretePat (TermLike variable, Domain.Value normalized (TermLike variable))
-    | WithVariablePat (TermLike variable, Domain.Value normalized (TermLike variable))
+    = ConcretePat (TermLike variable, Value normalized (TermLike variable))
+    | WithVariablePat (TermLike variable, Value normalized (TermLike variable))
 
 instance
     From
         (ConcreteOrWithVariable normalized variable)
-        (TermLike variable, Domain.Value normalized (TermLike variable))
+        (TermLike variable, Value normalized (TermLike variable))
   where
     from =
         \case
@@ -325,13 +546,13 @@ instance
 
 fromConcreteOrWithVariable
     :: ConcreteOrWithVariable normalized variable
-    -> (TermLike variable, Domain.Value normalized (TermLike variable))
+    -> (TermLike variable, Value normalized (TermLike variable))
 fromConcreteOrWithVariable = from
 
-{- | Particularizes @Domain.NormalizedAc@ to the most common types.
+{- | Particularizes @NormalizedAc@ to the most common types.
 -}
 type TermNormalizedAc normalized variable =
-    normalized (TermLike Concrete) (TermLike variable)
+    normalized Key (TermLike variable)
 
 {-| A normalized representation of an associative-commutative structure that
 also allows bottom values.
@@ -358,12 +579,12 @@ instance SOP.Generic (NormalizedOrBottom collection variable)
 instance SOP.HasDatatypeInfo (NormalizedOrBottom collection variable)
 
 instance
-    Debug (collection (TermLike Concrete) (TermLike variable))
+    Debug (collection Key (TermLike variable))
     => Debug (NormalizedOrBottom collection variable)
 
 instance
-    ( Debug (collection (TermLike Concrete) (TermLike variable))
-    , Diff (collection (TermLike Concrete) (TermLike variable))
+    ( Debug (collection Key (TermLike variable))
+    , Diff (collection Key (TermLike variable))
     )
     => Diff (NormalizedOrBottom collection variable)
 
@@ -381,16 +602,16 @@ instance
 concatNormalized
     :: forall normalized variable
     .  (TermWrapper normalized, Ord variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    => normalized Key (TermLike variable)
+    -> normalized Key (TermLike variable)
+    -> Maybe (normalized Key (TermLike variable))
 concatNormalized normalized1 normalized2 = do
     Monad.guard disjointConcreteElements
     abstract' <-
-        updateAbstractElements $ onBoth (++) Domain.elementsWithVariables
-    let concrete' = onBoth Map.union Domain.concreteElements
-        opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
-    renormalize $ Domain.wrapAc Domain.NormalizedAc
+        updateAbstractElements $ onBoth (++) elementsWithVariables
+    let concrete' = onBoth Map.union concreteElements
+        opaque'   = Data.List.sort $ onBoth (++) opaque
+    renormalize $ wrapAc NormalizedAc
         { elementsWithVariables = abstract'
         , concreteElements = concrete'
         , opaque = opaque'
@@ -398,16 +619,16 @@ concatNormalized normalized1 normalized2 = do
   where
     onBoth
         ::  (a -> a -> r)
-        ->  (   Domain.NormalizedAc
+        ->  (   NormalizedAc
                     normalized
-                    (TermLike Concrete)
+                    Key
                     (TermLike variable)
             ->  a
             )
         -> r
-    onBoth f g = on f (g . Domain.unwrapAc) normalized1 normalized2
+    onBoth f g = on f (g . unwrapAc) normalized1 normalized2
     disjointConcreteElements =
-        null $ onBoth Map.intersection Domain.concreteElements
+        null $ onBoth Map.intersection concreteElements
 
 {- | Take a (possibly de-normalized) internal representation to its normal form.
 
@@ -421,10 +642,9 @@ internal representations themselves; this "flattening" step also recurses to
 
  -}
 renormalize
-    :: HasCallStack
-    => (TermWrapper normalized, Ord variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
+    :: (TermWrapper normalized, Ord variable)
+    => normalized Key (TermLike variable)
+    -> Maybe (normalized Key (TermLike variable))
 renormalize = normalizeAbstractElements >=> flattenOpaque
 
 -- | Insert the @key@-@value@ pair if it is missing from the 'Map'.
@@ -444,14 +664,11 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: HasCallStack
-    => Map (TermLike Concrete) value
-    -> [(TermLike Concrete, value)]
-    -> Maybe (Map (TermLike Concrete) value)
+    :: Map Key value
+    -> [(Key, value)]
+    -> Maybe (Map Key value)
 updateConcreteElements elems newElems =
-    Foldable.foldrM (uncurry insertMissing) elems newElems
-    & TermLike.assertConstructorLikeKeys (Map.keys elems)
-    & TermLike.assertConstructorLikeKeys (fst <$> newElems)
+    foldrM (uncurry insertMissing) elems newElems
 
 {- | Sort the abstract elements.
 
@@ -459,13 +676,13 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateAbstractElements
-    :: (Domain.AcWrapper collection, Ord child)
-    => [Domain.Element collection child]
-    -> Maybe [Domain.Element collection child]
+    :: (AcWrapper collection, Ord child)
+    => [Element collection child]
+    -> Maybe [Element collection child]
 updateAbstractElements elements =
-    fmap (map Domain.wrapElement . Map.toList)
-    $ Foldable.foldrM (uncurry insertMissing) Map.empty
-    $ map Domain.unwrapElement elements
+    fmap (map wrapElement . Map.toList)
+    $ foldrM (uncurry insertMissing) Map.empty
+    $ map unwrapElement elements
 
 {- | Make any abstract elements into concrete elements if possible.
 
@@ -473,37 +690,35 @@ Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 
  -}
 normalizeAbstractElements
-    :: HasCallStack
-    => (TermWrapper normalized, Ord variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-normalizeAbstractElements (Domain.unwrapAc -> normalized) = do
+    :: (TermWrapper normalized, Ord variable)
+    => normalized Key (TermLike variable)
+    -> Maybe (normalized Key (TermLike variable))
+normalizeAbstractElements (unwrapAc -> normalized) = do
     concrete' <- updateConcreteElements concrete newConcrete
     abstract' <- updateAbstractElements newAbstract
-    return $ Domain.wrapAc Domain.NormalizedAc
+    return $ wrapAc NormalizedAc
         { elementsWithVariables = abstract'
         , concreteElements = concrete'
-        , opaque = Domain.opaque normalized
+        , opaque = opaque normalized
         }
   where
-    abstract = Domain.elementsWithVariables normalized
-    concrete = Domain.concreteElements normalized
+    abstract = elementsWithVariables normalized
+    concrete = concreteElements normalized
     (newConcrete, newAbstract) =
         partitionEithers (extractConcreteElement <$> abstract)
 
 -- | 'Left' if the element's key can be concretized, or 'Right' if it
 -- remains abstract.
 extractConcreteElement
-    ::  Domain.AcWrapper collection
-    =>  Ord variable
-    =>  Domain.Element collection (TermLike variable)
+    ::  AcWrapper collection
+    =>  Element collection (TermLike variable)
     ->  Either
-            (TermLike Concrete, Domain.Value collection (TermLike variable))
-            (Domain.Element collection (TermLike variable))
+            (Key, Value collection (TermLike variable))
+            (Element collection (TermLike variable))
 extractConcreteElement element =
-    maybe (Right element) (Left . flip (,) value) (Builtin.toKey key)
+    maybe (Right element) (Left . flip (,) value) (TermLike.retractKey key)
   where
-    (key, value) = Domain.unwrapElement element
+    (key, value) = unwrapElement element
 
 {- | Move any @normalized@ children to the top-level by concatenation.
 
@@ -512,13 +727,13 @@ extractConcreteElement element =
  -}
 flattenOpaque
     :: (TermWrapper normalized, Ord variable)
-    => normalized (TermLike Concrete) (TermLike variable)
-    -> Maybe (normalized (TermLike Concrete) (TermLike variable))
-flattenOpaque (Domain.unwrapAc -> normalized) = do
-    let opaque = Domain.opaque normalized
+    => normalized Key (TermLike variable)
+    -> Maybe (normalized Key (TermLike variable))
+flattenOpaque (unwrapAc -> normalized) = do
+    let NormalizedAc { opaque } = normalized
         (builtin, opaque') = partitionEithers (extractBuiltin <$> opaque)
-        transparent = Domain.wrapAc normalized { Domain.opaque = opaque' }
-    Foldable.foldrM concatNormalized transparent builtin
+        transparent = wrapAc normalized { opaque = opaque' }
+    foldrM concatNormalized transparent builtin
   where
     extractBuiltin termLike =
         maybe (Right termLike) Left (matchBuiltin termLike)
@@ -529,7 +744,7 @@ instance
     (Ord variable, TermWrapper normalized)
     => Monoid (NormalizedOrBottom normalized variable)
   where
-    mempty = Normalized $ Domain.wrapAc Domain.emptyNormalizedAc
+    mempty = Normalized $ wrapAc emptyNormalizedAc
 
 {- | Computes the union of two maps if they are disjoint. Returns @Nothing@
 otherwise.
@@ -573,33 +788,15 @@ returnConcreteAc
         , TermWrapper normalized
         )
     => Sort
-    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
+    -> Map Key (Value normalized (TermLike variable))
     -> m (Pattern variable)
 returnConcreteAc resultSort concrete =
-    (returnAc resultSort . Domain.wrapAc)
-    Domain.NormalizedAc
+    (returnAc resultSort . wrapAc)
+    NormalizedAc
         { elementsWithVariables = []
         , concreteElements = concrete
         , opaque = []
         }
-
-{- | Render an Ac structure as an internal domain value pattern of the given
-sort.
-
-The result sort must be hooked to the right builtin sort. The pattern will use
-the internal representation of the domain values; it will not use a
-valid external representation. Use 'asPattern' to construct an externally-valid
-pattern.
-
--}
-asInternal
-    :: (InternalVariable variable, TermWrapper normalized)
-    => SmtMetadataTools Attribute.Symbol
-    -> Sort
-    -> TermNormalizedAc normalized variable
-    -> TermLike variable
-asInternal tools builtinAcSort builtinAcChild =
-    mkBuiltin $ asInternalBuiltin tools builtinAcSort builtinAcChild
 
 {- | The same as 'asInternal', but for ac structures made only of concrete
 elements.
@@ -608,11 +805,11 @@ asInternalConcrete
     :: (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
+    -> Map Key (Value normalized (TermLike variable))
     -> TermLike variable
 asInternalConcrete tools sort1 concreteAc =
     asInternal tools sort1
-    $ Domain.wrapAc Domain.NormalizedAc
+    $ wrapAc NormalizedAc
         { elementsWithVariables = []
         , concreteElements = concreteAc
         , opaque = []
@@ -623,24 +820,23 @@ elementListAsInternal
     .  (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
-    -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
+    -> [(TermLike variable, Value normalized (TermLike variable))]
     -> Maybe (TermLike variable)
 elementListAsInternal tools sort1 terms =
-    asInternal tools sort1 . Domain.wrapAc
+    asInternal tools sort1 . wrapAc
     <$> elementListAsNormalized terms
 
 elementListAsNormalized
     :: forall normalized variable
     .  (InternalVariable variable, TermWrapper normalized)
-    => [(TermLike variable, Domain.Value normalized (TermLike variable))]
-    -> Maybe
-        (Domain.NormalizedAc normalized (TermLike Concrete) (TermLike variable))
+    => [(TermLike variable, Value normalized (TermLike variable))]
+    -> Maybe (NormalizedAc normalized Key (TermLike variable))
 elementListAsNormalized terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
     _checkDisjoinVariables <- disjointMap withVariables
     concreteAc <- disjointMap concrete
-    return Domain.NormalizedAc
-        { elementsWithVariables = Domain.wrapElement <$> withVariables
+    return NormalizedAc
+        { elementsWithVariables = wrapElement <$> withVariables
         , concreteElements = concreteAc
         , opaque = []
         }
@@ -697,17 +893,16 @@ disjointMap input =
 
 splitVariableConcrete
     :: forall variable a
-    .  Ord variable
-    =>  [(TermLike variable, a)]
-    -> ([(TermLike variable, a)], [(TermLike Concrete, a)])
+    .   [(TermLike variable, a)]
+    -> ([(TermLike variable, a)], [(Key, a)])
 splitVariableConcrete terms =
     partitionEithers (map toConcreteEither terms)
   where
     toConcreteEither
         :: (TermLike variable, a)
-        -> Either (TermLike variable, a) (TermLike Concrete, a)
+        -> Either (TermLike variable, a) (Key, a)
     toConcreteEither (term, a) =
-        case TermLike.asConcrete term of
+        case TermLike.retractKey term of
             Nothing -> Left (term, a)
             Just result -> Right (result, a)
 
@@ -722,20 +917,22 @@ multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
 unifyEqualsNormalized
-    :: forall normalized unifier variable
-    .   ( InternalVariable variable
-        , Traversable (Domain.Value normalized)
+    :: forall normalized unifier
+    .   ( Traversable (Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
         )
     => HasCallStack
     => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
-    -> Domain.InternalAc (TermLike Concrete) normalized (TermLike variable)
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    ->  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> InternalAc normalized Key (TermLike RewritingVariableName)
+    -> InternalAc normalized Key (TermLike RewritingVariableName)
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyEqualsNormalized
     tools
     first
@@ -745,9 +942,9 @@ unifyEqualsNormalized
     normalized2
   = do
     let
-        Domain.InternalAc { builtinAcChild = firstNormalized } =
+        InternalAc { builtinAcChild = firstNormalized } =
             normalized1
-        Domain.InternalAc { builtinAcChild = secondNormalized } =
+        InternalAc { builtinAcChild = secondNormalized } =
             normalized2
 
     unifierNormalized <-
@@ -759,37 +956,38 @@ unifyEqualsNormalized
             firstNormalized
             secondNormalized
     let
-        unifierNormalizedTerm :: TermNormalizedAc normalized variable
-        unifierCondition :: Condition variable
+        unifierNormalizedTerm
+            :: TermNormalizedAc normalized RewritingVariableName
+        unifierCondition :: Condition RewritingVariableName
         (unifierNormalizedTerm, unifierCondition) =
             Conditional.splitTerm unifierNormalized
-        normalizedTerm :: TermLike variable
+        normalizedTerm :: TermLike RewritingVariableName
         normalizedTerm = asInternal tools sort1 unifierNormalizedTerm
 
     -- TODO(virgil): Check whether this normalization is still needed
     -- (the normalizedTerm may already be re-normalized) and remove it if not.
     renormalized <- normalize1 normalizedTerm
 
-    let unifierTerm :: TermLike variable
+    let unifierTerm :: TermLike RewritingVariableName
         unifierTerm = markSimplified $ asInternal tools sort1 renormalized
 
         markSimplified =
             TermLike.setSimplified
-                (  Foldable.foldMap TermLike.simplifiedAttribute opaque
-                <> Foldable.foldMap TermLike.simplifiedAttribute abstractKeys
-                <> Foldable.foldMap simplifiedAttributeValue abstractValues
-                <> Foldable.foldMap TermLike.simplifiedAttribute concreteKeys
-                <> Foldable.foldMap simplifiedAttributeValue concreteValues
+                (  foldMap TermLike.simplifiedAttribute opaque
+                <> foldMap TermLike.simplifiedAttribute abstractKeys
+                <> foldMap simplifiedAttributeValue abstractValues
+                <> foldMap Key.simplifiedAttribute concreteKeys
+                <> foldMap simplifiedAttributeValue concreteValues
                 )
           where
-            unwrapped = Domain.unwrapAc renormalized
-            Domain.NormalizedAc { opaque } = unwrapped
+            unwrapped = unwrapAc renormalized
+            NormalizedAc { opaque } = unwrapped
             (abstractKeys, abstractValues) =
-                (unzip . map Domain.unwrapElement)
-                    (Domain.elementsWithVariables unwrapped)
+                (unzip . map unwrapElement)
+                    (elementsWithVariables unwrapped)
             (concreteKeys, concreteValues) =
                 (unzip . Map.toList)
-                    (Domain.concreteElements unwrapped)
+                    (concreteElements unwrapped)
 
     return (unifierTerm `Pattern.withCondition` unifierCondition)
   where
@@ -797,6 +995,7 @@ unifyEqualsNormalized
 
     normalize1
         :: HasCallStack
+        => InternalVariable variable
         => TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
@@ -812,21 +1011,26 @@ unifyEqualsNormalized
 Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
-    ::  forall normalized variable unifier
-    .   ( InternalVariable variable
-        , Traversable (Domain.Value normalized)
+    ::  forall normalized unifier
+    .   ( Traversable (Value normalized)
         , TermWrapper normalized
         , MonadUnify unifier
         )
     => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> TermNormalizedAc normalized variable
-    -> TermNormalizedAc normalized variable
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    ->  (  TermLike RewritingVariableName
+        -> TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
+        )
+    -> TermNormalizedAc normalized RewritingVariableName
+    -> TermNormalizedAc normalized RewritingVariableName
     -> MaybeT
         unifier
-        (Conditional variable (TermNormalizedAc normalized variable))
+        (Conditional
+            RewritingVariableName
+            (TermNormalizedAc normalized RewritingVariableName)
+        )
 unifyEqualsNormalizedAc
     tools
     first
@@ -909,24 +1113,24 @@ unifyEqualsNormalizedAc
     unifyOpaqueVariable' =
         unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
 
-    Domain.NormalizedAc
+    NormalizedAc
         { elementsWithVariables = preElementsWithVariables1
         , concreteElements = concreteElements1
         , opaque = opaque1
         }
-        = Domain.unwrapAc normalized1
-    Domain.NormalizedAc
+        = unwrapAc normalized1
+    NormalizedAc
         { elementsWithVariables = preElementsWithVariables2
         , concreteElements = concreteElements2
         , opaque = opaque2
         }
-        = Domain.unwrapAc normalized2
+        = unwrapAc normalized2
 
     opaque1Map = listToMap opaque1
     opaque2Map = listToMap opaque2
 
-    elementsWithVariables1 = Domain.unwrapElement <$> preElementsWithVariables1
-    elementsWithVariables2 = Domain.unwrapElement <$> preElementsWithVariables2
+    elementsWithVariables1 = unwrapElement <$> preElementsWithVariables1
+    elementsWithVariables2 = unwrapElement <$> preElementsWithVariables2
     elementsWithVariables1Map = Map.fromList elementsWithVariables1
     elementsWithVariables2Map = Map.fromList elementsWithVariables2
 
@@ -970,30 +1174,33 @@ unifyEqualsNormalizedAc
         ++ map toConcretePat elementDifference2
 
     toConcretePat
-        :: (TermLike Concrete, Domain.Value normalized (TermLike variable))
-        -> ConcreteOrWithVariable normalized variable
-    toConcretePat (a, b) = ConcretePat (TermLike.fromConcrete a, b)
+        :: (Key, Value normalized (TermLike RewritingVariableName))
+        -> ConcreteOrWithVariable
+            normalized
+            RewritingVariableName
+    toConcretePat (a, b) =
+        ConcretePat (from @Key @(TermLike RewritingVariableName) a, b)
 
     unifyElementList
         :: forall key
         .   [
                 (key
-                ,   ( Domain.Value normalized (TermLike variable)
-                    , Domain.Value normalized (TermLike variable)
+                ,   ( Value normalized (TermLike RewritingVariableName)
+                    , Value normalized (TermLike RewritingVariableName)
                     )
                 )
             ]
         -> unifier
-            ( [(key, Domain.Value normalized (TermLike variable))]
-            , Condition variable
+            ( [(key, Value normalized (TermLike RewritingVariableName))]
+            , Condition RewritingVariableName
             )
     unifyElementList elements = do
         result <- mapM (unifyCommonElements unifyEqualsChildren) elements
         let
-            terms :: [(key, Domain.Value normalized (TermLike variable))]
-            predicates :: [Condition variable]
+            terms :: [(key, Value normalized (TermLike RewritingVariableName))]
+            predicates :: [Condition RewritingVariableName]
             (terms, predicates) = unzip (map Conditional.splitTerm result)
-            predicate :: Condition variable
+            predicate :: Condition RewritingVariableName
             predicate = List.foldl'
                 andCondition
                 Condition.top
@@ -1001,16 +1208,22 @@ unifyEqualsNormalizedAc
 
         return (terms, predicate)
 
-    simplify :: TermLike variable -> unifier (Pattern variable)
+    simplify
+        :: TermLike RewritingVariableName
+        -> unifier (Pattern RewritingVariableName)
     simplify term =
         lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
     simplifyPair
-        :: (TermLike variable, Domain.Value normalized (TermLike variable))
+        ::  ( TermLike RewritingVariableName
+            , Value normalized (TermLike RewritingVariableName)
+            )
         -> unifier
             (Conditional
-                variable
-                (TermLike variable, Domain.Value normalized (TermLike variable))
+                RewritingVariableName
+                    ( TermLike RewritingVariableName
+                    , Value normalized (TermLike RewritingVariableName)
+                    )
             )
     simplifyPair (key, value) = do
         simplifiedKey <- simplifyTermLike' key
@@ -1018,17 +1231,20 @@ unifyEqualsNormalizedAc
         simplifiedValue <- traverse simplifyTermLike' value
         let
             splitSimplifiedValue
-                :: Domain.Value
+                :: Value
                     normalized
-                    (TermLike variable, Condition variable)
+                    ( TermLike RewritingVariableName
+                    , Condition RewritingVariableName
+                    )
             splitSimplifiedValue =
                 fmap Conditional.splitTerm simplifiedValue
-            simplifiedValueTerm :: Domain.Value normalized (TermLike variable)
+            simplifiedValueTerm
+                :: Value normalized (TermLike RewritingVariableName)
             simplifiedValueTerm = fmap fst splitSimplifiedValue
             simplifiedValueConditions
-                :: Domain.Value normalized (Condition variable)
+                :: Value normalized (Condition RewritingVariableName)
             simplifiedValueConditions = fmap snd splitSimplifiedValue
-            simplifiedValueCondition :: Condition variable
+            simplifiedValueCondition :: Condition RewritingVariableName
             simplifiedValueCondition =
                 foldr
                     andCondition
@@ -1040,7 +1256,9 @@ unifyEqualsNormalizedAc
             `andCondition` simplifiedValueCondition
             )
       where
-        simplifyTermLike' :: TermLike variable -> unifier (Pattern variable)
+        simplifyTermLike'
+            :: TermLike RewritingVariableName
+            -> unifier (Pattern RewritingVariableName)
         simplifyTermLike' term =
             lowerLogicT $ simplifyConditionalTerm SideCondition.topTODO term
 
@@ -1051,12 +1269,12 @@ buildResultFromUnifiers
         , TermWrapper normalized
         )
     => (forall result . Doc () -> unifier result)
-    -> [(TermLike Concrete, Domain.Value normalized (TermLike variable))]
-    -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
+    -> [(Key, Value normalized (TermLike variable))]
+    -> [(TermLike variable, Value normalized (TermLike variable))]
     -> [TermLike variable]
     ->  [ Conditional
             variable
-            (TermLike variable, Domain.Value normalized (TermLike variable))
+            (TermLike variable, Value normalized (TermLike variable))
         ]
     -> [Pattern variable]
     -> [Condition variable]
@@ -1073,7 +1291,7 @@ buildResultFromUnifiers
     let
         almostResultTerms
             ::  [   ( TermLike variable
-                    , Domain.Value normalized (TermLike variable)
+                    , Value normalized (TermLike variable)
                     )
                 ]
         almostResultConditions :: [Condition variable]
@@ -1085,18 +1303,18 @@ buildResultFromUnifiers
         (opaquesTerms, opaquesConditions) =
             unzip (map Conditional.splitTerm opaquesSimplified)
         opaquesNormalized :: NormalizedOrBottom normalized variable
-        opaquesNormalized = Foldable.foldMap toNormalized opaquesTerms
+        opaquesNormalized = foldMap toNormalized opaquesTerms
 
-    Domain.NormalizedAc
+    NormalizedAc
         { elementsWithVariables = preOpaquesElementsWithVariables
         , concreteElements = opaquesConcreteTerms
         , opaque = opaquesOpaque
         } <- case opaquesNormalized of
             Bottom ->
                 bottomWithExplanation "Duplicated elements after unification."
-            Normalized result -> return (Domain.unwrapAc result)
+            Normalized result -> return (unwrapAc result)
     let opaquesElementsWithVariables =
-            Domain.unwrapElement <$> preOpaquesElementsWithVariables
+            unwrapElement <$> preOpaquesElementsWithVariables
 
     -- Add back all the common objects that were removed before
     -- unification.
@@ -1124,11 +1342,11 @@ buildResultFromUnifiers
             (almostResultConditions ++ opaquesConditions ++ predicates)
         result
             :: Conditional variable
-                (normalized (TermLike Concrete) (TermLike variable))
+                (normalized Key (TermLike variable))
         result =
-            Domain.wrapAc Domain.NormalizedAc
+            wrapAc NormalizedAc
                 { elementsWithVariables =
-                    Domain.wrapElement <$> Map.toList withVariableMap
+                    wrapElement <$> Map.toList withVariableMap
                 , concreteElements = concreteMap
                 , opaque = allOpaque
                 }
@@ -1149,21 +1367,21 @@ addAllDisjoint bottomWithExplanation existing elements =
         Just result -> return result
 
 unifyCommonElements
-    :: forall key normalized unifier variable
-    .   ( Domain.AcWrapper normalized
+    :: forall normalized key unifier variable
+    .   ( AcWrapper normalized
         , MonadUnify unifier
         , InternalVariable variable
-        , Traversable (Domain.Value normalized)
+        , Traversable (Value normalized)
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     ->  ( key
-        ,   ( Domain.Value normalized (TermLike variable)
-            , Domain.Value normalized (TermLike variable)
+        ,   ( Value normalized (TermLike variable)
+            , Value normalized (TermLike variable)
             )
         )
     ->  unifier
         ( Conditional variable
-            (key, Domain.Value normalized (TermLike variable))
+            (key, Value normalized (TermLike variable))
         )
 unifyCommonElements
     unifier
@@ -1177,26 +1395,26 @@ unifyCommonElements
 
 unifyWrappedValues
     :: forall normalized unifier variable
-    .   ( Domain.AcWrapper normalized
+    .   ( AcWrapper normalized
         , MonadUnify unifier
         , InternalVariable variable
-        , Traversable (Domain.Value normalized)
+        , Traversable (Value normalized)
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> Domain.Value normalized (TermLike variable)
-    -> Domain.Value normalized (TermLike variable)
+    -> Value normalized (TermLike variable)
+    -> Value normalized (TermLike variable)
     ->  unifier
-            (Conditional variable (Domain.Value normalized (TermLike variable)))
+            (Conditional variable (Value normalized (TermLike variable)))
 unifyWrappedValues unifier firstValue secondValue = do
-    let aligned = Domain.alignValues firstValue secondValue
+    let aligned = alignValues firstValue secondValue
     unifiedValues <- traverse (uncurry unifier) aligned
     let
         splitValues
-            :: Domain.Value normalized (TermLike variable, Condition variable)
+            :: Value normalized (TermLike variable, Condition variable)
         splitValues = fmap Pattern.splitTerm unifiedValues
-        valueUnifierTerm :: Domain.Value normalized (TermLike variable)
+        valueUnifierTerm :: Value normalized (TermLike variable)
         valueUnifierTerm = fmap fst splitValues
-        valueConditions :: Domain.Value normalized (Condition variable)
+        valueConditions :: Value normalized (Condition variable)
         valueConditions = fmap snd splitValues
         valueUnifierCondition :: Condition variable
         valueUnifierCondition =
@@ -1216,7 +1434,7 @@ unifyEqualsElementLists
     .   ( InternalVariable variable
         , MonadUnify unifier
         , TermWrapper normalized
-        , Traversable (Domain.Value normalized)
+        , Traversable (Value normalized)
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -1232,7 +1450,7 @@ unifyEqualsElementLists
     -> unifier
         ( Conditional
             variable
-            [(TermLike variable, Domain.Value normalized (TermLike variable))]
+            [(TermLike variable, Value normalized (TermLike variable))]
         , [TermLike variable]
         )
 unifyEqualsElementLists
@@ -1277,7 +1495,7 @@ unifyEqualsElementLists
         -> unifier
             (Conditional variable
                 [   ( TermLike variable
-                    , Domain.Value normalized (TermLike variable)
+                    , Value normalized (TermLike variable)
                     )
                 ]
             , [ConcreteOrWithVariable normalized variable]
@@ -1362,7 +1580,7 @@ unifyOpaqueVariable
     -> MaybeT unifier
         ( Conditional
             variable
-            [(TermLike variable, Domain.Value normalized (TermLike variable))]
+            [(TermLike variable, Value normalized (TermLike variable))]
         , [TermLike variable]
         )
 unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] =
@@ -1383,8 +1601,8 @@ unifyOpaqueVariable
                     asInternal
                         tools
                         sort
-                        (Domain.wrapAc
-                            elementTerm {Domain.opaque = opaqueTerms}
+                        (wrapAc
+                            elementTerm {opaque = opaqueTerms}
                         )
             in if TermLike.isFunctionPattern secondTerm
                 then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
@@ -1403,7 +1621,7 @@ noCheckUnifyOpaqueChildren
     -> MaybeT unifier
         ( Conditional
             variable
-            [(TermLike variable, Domain.Value normalized (TermLike variable))]
+            [(TermLike variable, Value normalized (TermLike variable))]
         , [TermLike variable]
         )
 noCheckUnifyOpaqueChildren unifyChildren v1 second = lift $ do
@@ -1427,9 +1645,9 @@ and it would probably be more useful to have a concrete term as the
 unification term. Also, tests are easier to write.
 -}
 unifyEqualsConcreteOrWithVariable
-    ::  ( Domain.AcWrapper normalized
+    ::  ( AcWrapper normalized
         , MonadUnify unifier
-        , Traversable (Domain.Value normalized)
+        , Traversable (Value normalized)
         , InternalVariable variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
@@ -1438,7 +1656,7 @@ unifyEqualsConcreteOrWithVariable
     -> unifier
         (Conditional
             variable
-            (TermLike variable, Domain.Value normalized (TermLike variable))
+            (TermLike variable, Value normalized (TermLike variable))
         )
 unifyEqualsConcreteOrWithVariable
     unifier
@@ -1463,18 +1681,18 @@ unifyEqualsConcreteOrWithVariable
 
 unifyEqualsPair
     :: forall normalized unifier variable
-    .   ( Domain.AcWrapper normalized
+    .   ( AcWrapper normalized
         , MonadUnify unifier
         , InternalVariable variable
-        , Traversable (Domain.Value normalized)
+        , Traversable (Value normalized)
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
-    -> (TermLike variable, Domain.Value normalized (TermLike variable))
-    -> (TermLike variable, Domain.Value normalized (TermLike variable))
+    -> (TermLike variable, Value normalized (TermLike variable))
+    -> (TermLike variable, Value normalized (TermLike variable))
     -> unifier
         (Conditional
             variable
-            (TermLike variable, Domain.Value normalized (TermLike variable))
+            (TermLike variable, Value normalized (TermLike variable))
         )
 unifyEqualsPair
     unifier
@@ -1486,7 +1704,7 @@ unifyEqualsPair
     valueUnifier <- unifyWrappedValues unifier firstValue secondValue
 
     let
-        valueUnifierTerm :: Domain.Value normalized (TermLike variable)
+        valueUnifierTerm :: Value normalized (TermLike variable)
         valueUnifierCondition :: Condition variable
         (valueUnifierTerm, valueUnifierCondition) =
             Conditional.splitTerm valueUnifier
@@ -1582,7 +1800,7 @@ nonEmptyRemainderError
     :: forall a normalized variable
     .   ( HasCallStack
         , InternalVariable variable
-        , Domain.AcWrapper normalized
+        , AcWrapper normalized
         )
     => TermLike variable
     -> TermLike variable
@@ -1603,7 +1821,7 @@ nonEmptyRemainderError first second input1 input2 remainder =
   where
     unparseWrapped =
         Unparser.renderDefault . unparsePair . fromConcreteOrWithVariable
-    unparsePair = Domain.unparseElement unparse . Domain.wrapElement
+    unparsePair = unparseElement unparse . wrapElement
 
 -- | Wrapper for giving names to arguments.
 newtype UnitSymbol = UnitSymbol {getUnitSymbol :: Symbol}
@@ -1619,7 +1837,7 @@ newtype VariableElements variable =
 newtype Opaque variable =
     Opaque {getOpaque :: [TermLike variable]}
 
-{- | Externalizes a 'Domain.InternalAc' as a 'TermLike'.
+{- | Externalizes a 'InternalAc' as a 'TermLike'.
 -}
 asTermLike
     :: forall variable

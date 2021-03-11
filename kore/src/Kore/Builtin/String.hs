@@ -15,6 +15,8 @@ builtin modules.
 @
  -}
 
+{-# LANGUAGE Strict #-}
+
 module Kore.Builtin.String
     ( sort
     , assertSort
@@ -26,6 +28,7 @@ module Kore.Builtin.String
     , asTermLike
     , asPartialPattern
     , parse
+    , unifyString
     , unifyStringEq
       -- * keys
     , ltKey
@@ -52,6 +55,7 @@ import Data.Char
     ( chr
     , ord
     )
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.List
     ( findIndex
@@ -78,8 +82,8 @@ import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.EqTerm
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.String.String
-import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
+import Kore.Internal.InternalString
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -88,6 +92,9 @@ import Kore.Internal.Symbol
     ( symbolHook
     )
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.NotSimplifier
     ( NotSimplifier (..)
     )
@@ -189,8 +196,8 @@ patternVerifierHook =
     patternVerifierWorker domainValue =
         case externalChild of
             StringLiteral_ internalStringValue ->
-                (return . BuiltinF . Domain.BuiltinString)
-                    Domain.InternalString
+                (return . InternalStringF . Const)
+                    InternalString
                         { internalStringSort
                         , internalStringValue
                         }
@@ -201,18 +208,16 @@ patternVerifierHook =
 
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue
-    :: Text -- ^ error message Context
-    -> Builtin (TermLike variable)
-    -> Text
-extractStringDomainValue ctx =
+    :: Text -- ^ error message context
+    -> TermLike variable
+    -> Maybe Text
+extractStringDomainValue _ =
     \case
-        Domain.BuiltinString internal ->
-            internalStringValue
+        InternalString_ internal ->
+            Just internalStringValue
           where
-            Domain.InternalString { internalStringValue } = internal
-        _ ->
-            Builtin.verifierBug
-            $ Text.unpack ctx ++ ": Domain value is not a string"
+            InternalString { internalStringValue } = internal
+        _ -> Nothing
 
 {- | Parse a string literal.
  -}
@@ -231,17 +236,12 @@ expectBuiltinString
     => String  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Text
-expectBuiltinString ctx =
+expectBuiltinString _ =
     \case
-        Builtin_ domain ->
-            case domain of
-                Domain.BuiltinString internal ->
-                    return internalStringValue
-                  where
-                    Domain.InternalString { internalStringValue } = internal
-                _ ->
-                    Builtin.verifierBug
-                    $ ctx ++ ": Domain value is not a string"
+        InternalString_ internal ->
+            return internalStringValue
+          where
+            InternalString { internalStringValue } = internal
         _ -> empty
 
 
@@ -305,7 +305,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
                             [(result, "")] -> Right (result, "")
                             _              -> Left ""
                     10 -> Text.signed Text.decimal
-                    16 -> Text.hexadecimal
+                    16 -> Text.signed Text.hexadecimal
                     _  -> const empty
         case readN _str of
             Right (result, Text.unpack -> "") ->
@@ -414,20 +414,39 @@ matchStringEqual =
             Monad.guard (hook2 == eqKey)
         & isJust
 
+{- | Unification of String values.
+ -}
+unifyString
+    :: forall unifier variable
+    .  InternalVariable variable
+    => MonadUnify unifier
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyString term1@(InternalString_ int1) term2@(InternalString_ int2) =
+    assert (on (==) internalStringSort int1 int2) $ lift worker
+  where
+    worker :: unifier (Pattern variable)
+    worker
+      | on (==) internalStringValue int1 int2 =
+        return $ Pattern.fromTermLike term1
+      | otherwise = explainAndReturnBottom "distinct strings" term1 term2
+unifyString _ _ = empty
+
 {- | Unification of the @STRING.eq@ symbol
 
 This function is suitable only for equality simplification.
 
 -}
 unifyStringEq
-    :: forall variable unifier
-    .  InternalVariable variable
-    => MonadUnify unifier
-    => TermSimplifier variable unifier
+    :: forall unifier
+    .  MonadUnify unifier
+    => TermSimplifier RewritingVariableName unifier
     -> NotSimplifier unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> TermLike RewritingVariableName
+    -> TermLike RewritingVariableName
+    -> MaybeT unifier (Pattern RewritingVariableName)
 unifyStringEq unifyChildren notSimplifier a b =
     worker a b <|> worker b a
   where

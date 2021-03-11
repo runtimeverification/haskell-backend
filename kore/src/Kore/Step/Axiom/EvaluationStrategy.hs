@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE Strict #-}
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
@@ -27,7 +29,6 @@ import Control.Monad.Except
 import Data.EitherR
     ( ExceptRT (..)
     )
-import qualified Data.Foldable as Foldable
 import Data.Semigroup
     ( Min (..)
     , Option (..)
@@ -50,6 +51,9 @@ import Kore.Internal.SideCondition
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
@@ -61,6 +65,9 @@ import Kore.Variables.Target
     ( Target
     )
 import qualified Kore.Variables.Target as Target
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
@@ -78,18 +85,15 @@ acceptsMultipleResults OnlyOneResult = False
 that define it.
 -}
 definitionEvaluation
-    :: [Equation VariableName]
+    :: [Equation RewritingVariableName]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equations' =
-                Equation.mapVariables (pure fromVariableName)
-                <$> equations
-            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
+        let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
         result <-
             attemptEquations
                 (attemptEquationAndAccumulateErrors condition term')
-                equations'
+                equations
         case result of
             Right results ->
                 (return . Applied) AttemptedAxiomResults
@@ -104,20 +108,23 @@ definitionEvaluation equations =
                     _ -> return NotApplicable
 
 attemptEquationAndAccumulateErrors
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> TermLike (Target variable)
-    -> Equation variable
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> TermLike (Target RewritingVariableName)
+    -> Equation RewritingVariableName
     -> ExceptRT
-        (OrPattern variable)
+        (OrPattern RewritingVariableName)
         simplifier
-        (Option (Min (AttemptEquationError variable)))
+        (Option (Min (AttemptEquationError RewritingVariableName)))
 attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
   where
     attemptEquation =
         ExceptRT . ExceptT
-        $ Equation.attemptEquation condition term equation
+        $ Equation.attemptEquation
+            condition
+            (TermLike.mapVariables (pure Target.unTarget) term)
+            equation
         >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
@@ -128,7 +135,7 @@ attemptEquations
     -> [Equation variable]
     -> simplifier (Either error result)
 attemptEquations accumulator equations =
-    Foldable.foldlM
+    foldlM
         (\err equation -> mappend err <$> accumulator equation)
         mempty
         equations
@@ -136,14 +143,16 @@ attemptEquations accumulator equations =
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
-    :: Equation VariableName
+    :: Equation RewritingVariableName
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation equation =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let equation' = Equation.mapVariables (pure fromVariableName) equation
-            term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        result <- Equation.attemptEquation condition term' equation'
-        let apply = Equation.applyEquation condition equation'
+        result <-
+            Equation.attemptEquation
+                condition
+                term
+                equation
+        let apply = Equation.applyEquation condition equation
         case result of
             Right applied -> do
                 results <- apply applied
@@ -192,15 +201,13 @@ builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
 evaluateBuiltin
-    :: forall variable simplifier
-    .  ( InternalVariable variable
-       , MonadSimplify simplifier
-       )
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => BuiltinAndAxiomSimplifier
     -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     patt
@@ -250,29 +257,25 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks
-    :: forall variable simplifier
-    .  ( InternalVariable variable
-       , MonadSimplify simplifier
-       )
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker
-    :: forall variable simplifier
-    .  ( InternalVariable variable
-       , MonadSimplify simplifier
-       )
+    :: forall simplifier
+    .  MonadSimplify simplifier
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> NonSimplifiability
-    -> TermLike variable
-    -> SideCondition variable
-    -> simplifier (AttemptedAxiom variable)
+    -> TermLike RewritingVariableName
+    -> SideCondition RewritingVariableName
+    -> simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
@@ -295,7 +298,7 @@ applyFirstSimplifierThatWorksWorker
             }
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
-          | length (Foldable.toList orResults) > 1 ->
+          | length orResults > 1 ->
             -- We should only allow multiple simplification results
             -- when they are created by unification splitting the
             -- configuration.
@@ -308,10 +311,10 @@ applyFirstSimplifierThatWorksWorker
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orResults)
+                    (unparse <$> toList orResults)
                 , Pretty.indent 2 "remainders:"
                 , (Pretty.indent 4 . Pretty.vsep)
-                    (unparse <$> Foldable.toList orRemainders)
+                    (unparse <$> toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->
             tryNextSimplifier Conditional

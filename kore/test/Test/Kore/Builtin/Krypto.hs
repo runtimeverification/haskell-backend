@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# LANGUAGE Strict              #-}
 
 module Test.Kore.Builtin.Krypto
     ( test_ecdsaRecover
@@ -48,6 +49,9 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.TopBottom as TopBottom
 
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import Test.Kore.Builtin.Builtin hiding
     ( evaluate
     )
@@ -286,7 +290,10 @@ test_hashRipemd160 =
                 & evaluate "HASH.ripemd160"
             assertEqual "" expect actual
 
-evaluate :: Text -> TermLike VariableName -> IO (Pattern VariableName)
+evaluate
+    :: Text
+    -> TermLike RewritingVariableName
+    -> IO (Pattern RewritingVariableName)
 evaluate builtin termLike = do
     evaluator <-
         Map.lookup builtin Krypto.builtinFunctions

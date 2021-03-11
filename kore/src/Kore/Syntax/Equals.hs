@@ -10,10 +10,6 @@ module Kore.Syntax.Equals
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -22,6 +18,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Pretty
+    ( Pretty (..)
+    )
 import qualified Pretty
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
@@ -45,6 +44,19 @@ data Equals sort child = Equals
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+instance Pretty child => Pretty (Equals Sort child) where
+    pretty
+        Equals
+            { equalsOperandSort
+            , equalsResultSort
+            , equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> parameters [equalsOperandSort, equalsResultSort]
+        <> arguments' (pretty <$> [equalsFirst, equalsSecond])
 
 instance Unparse child => Unparse (Equals Sort child) where
     unparse
@@ -70,8 +82,39 @@ instance Unparse child => Unparse (Equals Sort child) where
             , unparse2 equalsSecond
             ])
 
+instance Pretty child => Pretty (Equals () child) where
+    pretty
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> arguments' (pretty <$> [equalsFirst, equalsSecond])
+
+instance Unparse child => Unparse (Equals () child) where
+    unparse
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      =
+        "\\equals"
+        <> arguments [equalsFirst, equalsSecond]
+
+    unparse2
+        Equals
+            { equalsFirst
+            , equalsSecond
+            }
+      = Pretty.parens (Pretty.fillSep
+            [ "\\equals"
+            , unparse2 equalsFirst
+            , unparse2 equalsSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Equals sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Equals Sort) where

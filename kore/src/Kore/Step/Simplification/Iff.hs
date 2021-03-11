@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Step.Simplification.Iff
     ( makeEvaluate
     , simplify
@@ -14,8 +16,6 @@ module Kore.Step.Simplification.Iff
     ) where
 
 import Prelude.Kore
-
-import qualified Data.Foldable as Foldable
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -31,6 +31,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Rewriting.RewritingVariable
+    ( RewritingVariableName
+    )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , simplifyEvaluated
@@ -44,10 +47,10 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> Iff Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> Iff Sort (OrPattern RewritingVariableName)
+    -> simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Iff { iffFirst = first, iffSecond = second } =
     simplifyEvaluated sideCondition first second
 
@@ -69,11 +72,11 @@ carry around.
 
 -}
 simplifyEvaluated
-    :: (InternalVariable variable, MonadSimplify simplifier)
-    => SideCondition variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    :: MonadSimplify simplifier
+    => SideCondition RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> OrPattern RewritingVariableName
+    -> simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated
     sideCondition
     first
@@ -90,18 +93,17 @@ simplifyEvaluated
                 (OrPattern.toPattern first)
                 (OrPattern.toPattern second)
   where
-    firstPatterns = Foldable.toList first
-    secondPatterns = Foldable.toList second
+    firstPatterns = toList first
+    secondPatterns = toList second
 
 {-| evaluates an 'Iff' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluate first second
   | Pattern.isTop first = OrPattern.fromPatterns [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -110,10 +112,9 @@ makeEvaluate first second
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
-    :: InternalVariable variable
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+    :: Pattern RewritingVariableName
+    -> Pattern RewritingVariableName
+    -> OrPattern RewritingVariableName
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm

@@ -15,7 +15,6 @@ import Prelude.Kore
 import Control.Monad
     ( zipWithM
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -276,8 +275,7 @@ sortWithConstructor sortConstructors sortId = do  -- Maybe
     constructors <- Map.lookup sortId sortConstructors
     constructorLikeList <- Attribute.Constructors.getConstructors constructors
     constructorList <- traverse constructorFromLike constructorLikeList
-    finalConstructors <-
-        traverse buildConstructor (Foldable.toList constructorList)
+    finalConstructors <- traverse buildConstructor (toList constructorList)
     return
         ( sortId
         , AST.Sort

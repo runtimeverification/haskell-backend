@@ -1,6 +1,20 @@
 { profiling ? false
 , release ? false
 , threaded ? !profiling
+, checkMaterialization ? false
+
+# Override `src` when this project is imported as a Git submodule:
+#
+# > ttuegel.cleanGitSubtree {
+# >   name = "kore";
+# >   src = ./parent/repo;
+# >   subDir = "path/to/submodule";
+# > };
+#
+# Use `cleanGitSubtree` whenever possible to preserve the same source code
+# layout as the kframework/kore repository (to enable cache re-use).
+#
+, src ? null
 }:
 
 let
@@ -12,40 +26,66 @@ let
       inherit (haskell-nix) nixpkgsArgs;
       args = nixpkgsArgs // { };
     in import haskell-nix.sources.nixpkgs-2003 args;
+  inherit (pkgs) lib;
 
-  local =
-    if builtins.pathExists ./local.nix
-    then import ./local.nix { inherit default; }
-    else x: x;
+  ttuegel =
+    let
+      src = builtins.fetchGit {
+        url = "https://github.com/ttuegel/nix-lib";
+        rev = "66bb0ab890ff4d828a2dcfc7d5968465d0c7084f";
+      };
+    in import src { inherit pkgs; };
+in
 
-  project =
-    (args: pkgs.haskell-nix.stackProject (local args)) {
-      src = pkgs.haskell-nix.haskellLib.cleanGit { name = "kore"; src = ./.; };
-      modules = [
-        {
-          # package *
-          enableLibraryProfiling = true;
-          profilingDetail = "none";
-          # package kore
-          packages.kore = {
-            flags = {
-              inherit release threaded;
-            };
-            enableLibraryProfiling = profiling;
-            enableExecutableProfiling = profiling;
-            profilingDetail = "toplevel-functions";
-          };
-        }
+let
+  project = pkgs.haskell-nix.stackProject {
+    src = ttuegel.cleanSourceWith {
+      name = "kore";
+      src = ttuegel.orElse src (ttuegel.cleanGitSubtree { src = ./.; });
+      ignore = [
+        "/*"
+        "!/stack.yaml"
+        "!/kore"
+        "*.cabal"
       ];
     };
+    inherit checkMaterialization;
+    materialized = ./nix/kore.nix.d;
+    modules = [
+      {
+        # package *
+        enableLibraryProfiling = true;
+        profilingDetail = "none";
+        # package kore
+        packages.kore = {
+          flags = {
+            inherit release threaded;
+          };
+          enableLibraryProfiling = profiling;
+          enableExecutableProfiling = profiling;
+          profilingDetail = "toplevel-functions";
 
-  shell = import ./shell.nix { inherit default; };
+          # Add Z3 to PATH for unit tests.
+          components.tests.kore-test.preCheck = ''
+            export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
+          '';
+        };
+      }
+    ];
+  };
+
+  shell = import ./shell.nix { inherit default checkMaterialization; };
 
   version = project.kore.components.exes.kore-exec.version;
 
+  rematerialize = pkgs.writeScript "rematerialize.sh" ''
+    #!/bin/sh
+    ${project.stack-nix.passthru.updateMaterialized}
+  '';
+
   default =
     {
-      inherit pkgs project;
+      inherit pkgs project rematerialize;
       cache = [
         project.roots
         (pkgs.haskell-nix.withInputs shell)

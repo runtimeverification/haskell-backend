@@ -10,10 +10,6 @@ module Kore.Syntax.Implies
 
 import Prelude.Kore
 
-import Control.DeepSeq
-    ( NFData (..)
-    )
-import qualified Data.Foldable as Foldable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -56,8 +52,20 @@ instance Unparse child => Unparse (Implies Sort child) where
             , unparse2 impliesSecond
             ])
 
+instance Unparse child => Unparse (Implies () child) where
+    unparse Implies { impliesFirst, impliesSecond } =
+        "\\implies"
+        <> arguments [impliesFirst, impliesSecond]
+
+    unparse2 Implies { impliesFirst, impliesSecond } =
+        Pretty.parens (Pretty.fillSep
+            [ "\\implies"
+            , unparse2 impliesFirst
+            , unparse2 impliesSecond
+            ])
+
 instance Ord variable => Synthetic (FreeVariables variable) (Implies sort) where
-    synthetic = Foldable.fold
+    synthetic = fold
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Implies Sort) where
