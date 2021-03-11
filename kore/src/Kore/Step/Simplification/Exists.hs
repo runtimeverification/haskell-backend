@@ -196,13 +196,10 @@ makeEvaluate sideCondition variables original = do
                     normalized { Conditional.substitution = freeSubstitution }
             (Right boundSubstitution, freeSubstitution) -> do
                 matched <-
-                    lift
-                    $ matchesToVariableSubstitution
-                        sideCondition
-                        variable
-                        normalized
-                            { Conditional.substitution = boundSubstitution
-                            }
+                    normalized
+                        { Conditional.substitution = boundSubstitution }
+                    & matchesToVariableSubstitution sideCondition variable
+                    & lift
                 if matched
                     then return normalized
                         { Conditional.predicate = Predicate.makeTruePredicate
