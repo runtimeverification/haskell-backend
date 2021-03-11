@@ -52,9 +52,9 @@ symbolAttributeGen =
         <*> klabelAttributeGen
         <*> symbolKywdAttributeGen
         <*> noEvaluatorsAttributeGen
-        <*> unitHookAttributeGen
-        <*> elementHookAttributeGen
-        <*> concatHookAttributeGen
+        <*> builtinUnitAttributeGen
+        <*> builtinElementAttributeGen
+        <*> builtinConcatAttributeGen
         <*> sourceLocationAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
@@ -96,14 +96,14 @@ symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
 noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
 noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
 
-unitHookAttributeGen :: Gen (Attribute.Unit SymbolOrAlias)
-unitHookAttributeGen = pure Default.def
+builtinUnitAttributeGen :: Gen (Attribute.Unit SymbolOrAlias)
+builtinUnitAttributeGen = pure Default.def
 
-elementHookAttributeGen :: Gen (Attribute.Element SymbolOrAlias)
-elementHookAttributeGen = pure Default.def
+builtinElementAttributeGen :: Gen (Attribute.Element SymbolOrAlias)
+builtinElementAttributeGen = pure Default.def
 
-concatHookAttributeGen :: Gen (Attribute.Concat SymbolOrAlias)
-concatHookAttributeGen = pure Default.def
+builtinConcatAttributeGen :: Gen (Attribute.Concat SymbolOrAlias)
+builtinConcatAttributeGen = pure Default.def
 
 sourceLocationAttributeGen :: Gen Kore.Attribute.SourceLocation.SourceLocation
 sourceLocationAttributeGen = pure Default.def

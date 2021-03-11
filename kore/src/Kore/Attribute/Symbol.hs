@@ -108,29 +108,29 @@ view the effective attributes, use the functions defined in this module.
  -}
 data Symbol =
     Symbol
-    { function      :: !Function
+    { function       :: !Function
       -- ^ Whether a symbol represents a function
-    , functional    :: !Functional
+    , functional     :: !Functional
       -- ^ Whether a symbol is functional
-    , constructor   :: !Constructor
+    , constructor    :: !Constructor
       -- ^ Whether a symbol represents a constructor
-    , injective     :: !Injective
+    , injective      :: !Injective
       -- ^ Whether a symbol represents an injective function
-    , sortInjection :: !SortInjection
+    , sortInjection  :: !SortInjection
       -- ^ Whether a symbol is a sort injection
-    , anywhere      :: !Anywhere
-    , hook          :: !Hook
+    , anywhere       :: !Anywhere
+    , hook           :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
-    , smtlib        :: !Smtlib
-    , smthook       :: !Smthook
-    , memo          :: !Memo
-    , klabel        :: !Klabel
-    , symbolKywd    :: !SymbolKywd
-    , noEvaluators  :: !NoEvaluators
-    , unitHook      :: !(Unit SymbolOrAlias)
-    , elementHook   :: !(Element SymbolOrAlias)
-    , concatHook    :: !(Concat SymbolOrAlias)
-    -- ^ The above three are only populated if the symbol is a concat
+    , smtlib         :: !Smtlib
+    , smthook        :: !Smthook
+    , memo           :: !Memo
+    , klabel         :: !Klabel
+    , symbolKywd     :: !SymbolKywd
+    , noEvaluators   :: !NoEvaluators
+    , builtinUnit    :: !(Unit SymbolOrAlias)
+    , builtinElement :: !(Element SymbolOrAlias)
+    , builtinConcat  :: !(Concat SymbolOrAlias)
+    -- ^ The above three are only populated if the symbol is a builtinAc symbol
     , sourceLocation :: !SourceLocation
     -- ^ Location in the original (source) file.
     }
@@ -180,9 +180,9 @@ instance From Symbol Attributes where
             , from . klabel
             , from . symbolKywd
             , from . noEvaluators
-            , from . unitHook
-            , from . elementHook
-            , from . concatHook
+            , from . builtinUnit
+            , from . builtinElement
+            , from . builtinConcat
             , from . sourceLocation
             ]
 
@@ -204,9 +204,9 @@ defaultSymbolAttributes =
         , klabel         = def
         , symbolKywd     = def
         , noEvaluators   = def
-        , unitHook       = def
-        , elementHook    = def
-        , concatHook     = def
+        , builtinUnit    = def
+        , builtinElement = def
+        , builtinConcat  = def
         , sourceLocation = def
         }
 
