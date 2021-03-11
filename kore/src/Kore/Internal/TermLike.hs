@@ -546,7 +546,7 @@ setSimplified
     :: (HasCallStack, InternalVariable variable)
     => Pattern.Simplified -> TermLike variable -> TermLike variable
 setSimplified
-    ~simplified
+    simplified
     (Recursive.project -> attrs :< termLikeF)
   =
     Recursive.embed
@@ -555,11 +555,11 @@ setSimplified
         )
   where
     childSimplified = simplifiedFromChildren termLikeF
-    ~mergedSimplified = case (childSimplified, simplified) of
+    mergedSimplified = case (childSimplified, simplified) of
         (Pattern.NotSimplified, Pattern.NotSimplified) -> Pattern.NotSimplified
-        (Pattern.NotSimplified, ~_) -> cannotSimplifyNotSimplifiedError termLikeF
-        (~_, Pattern.NotSimplified) -> Pattern.NotSimplified
-        ~_ -> childSimplified <> simplified
+        (Pattern.NotSimplified, _) -> cannotSimplifyNotSimplifiedError termLikeF
+        (_, Pattern.NotSimplified) -> Pattern.NotSimplified
+        _ -> childSimplified <> simplified
 
 {-|Marks a term as being simplified as long as the side condition stays
 unchanged.

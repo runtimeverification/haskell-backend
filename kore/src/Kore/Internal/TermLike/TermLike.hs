@@ -927,7 +927,7 @@ traverseVariables
     => AdjSomeVariableName (variable1 -> m variable2)
     -> TermLike variable1
     -> m (TermLike variable2)
-traverseVariables adj ~termLike =
+traverseVariables adj termLike =
     renameFreeVariables adj (freeVariables @_ @variable1 termLike)
     >>= Reader.runReaderT (Recursive.fold worker termLike)
   where
