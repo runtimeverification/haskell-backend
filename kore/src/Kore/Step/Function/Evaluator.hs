@@ -26,6 +26,7 @@ import Control.Error
 import Control.Monad.Catch
     ( MonadThrow
     )
+import qualified Data.Functor.Foldable as Recursive
 
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
@@ -105,7 +106,7 @@ evaluateApplication
     let unexpectedBottomResult =
             Symbol.isFunctional symbol
             && isBottom results
-            && not (any isBottom (applicationChildren application))
+            && not (anyBottom termLike)
             && not (isBottom (predicate childrenCondition))
     when unexpectedBottomResult $
         lift $ errorBottomTotalFunction termLike
@@ -176,6 +177,10 @@ evaluateApplication
         record key term
       | otherwise
       = return ()
+
+    anyBottom term = isBottom term || any isBottom termF
+      where
+        _ :< termF = Recursive.project term
 
 {-| Evaluates axioms on patterns.
 -}
