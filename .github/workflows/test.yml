@@ -54,10 +54,9 @@ jobs:
 
   cabal:
     name: 'Cabal'
-    strategy:
-      matrix:
-        ghc: ["8.10.4"]
     runs-on: ubuntu-latest
+    env:
+      ghc_version: "8.10.4"
     steps:
       - name: Install prerequisites
         run: |
@@ -72,14 +71,14 @@ jobs:
       - uses: haskell/actions/setup@v1
         id: setup-haskell-cabal
         with:
-          ghc-version: ${{ matrix.ghc }}
+          ghc-version: ${{ env.ghc_version }}
           cabal-version: "3.2"
 
       - name: Cache Cabal store
         uses: actions/cache@v2
         with:
           path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}
+          key: ${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Build
         run: cabal v2-build --enable-tests --enable-benchmarks all
