@@ -80,6 +80,10 @@ import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( pattern App_
     , pattern InternalSet_
@@ -255,7 +259,7 @@ returnConcreteSet
 returnConcreteSet = Ac.returnConcreteAc
 
 evalElement :: Builtin.Function
-evalElement resultSort [_elem] =
+evalElement _ resultSort [_elem] =
     case retractKey _elem of
         Just concrete ->
             TermLike.assertConstructorLikeKeys [_elem]
@@ -270,10 +274,10 @@ evalElement resultSort [_elem] =
                 , concreteElements = Map.empty
                 , opaque = []
                 }
-evalElement _ _ = Builtin.wrongArity Set.elementKey
+evalElement _ _ _ = Builtin.wrongArity Set.elementKey
 
 evalIn :: Builtin.Function
-evalIn resultSort [_elem, _set] = do
+evalIn _ resultSort [_elem, _set] = do
     let setSymbolic = do
             _elem <- hoistMaybe $ retractKey _elem
             _set' <- expectBuiltinSet Set.inKey _set
@@ -306,29 +310,31 @@ evalIn resultSort [_elem, _set] = do
                     condition
         return trueWithCondition
       | otherwise = empty
-evalIn _ _ = Builtin.wrongArity Set.inKey
+evalIn _ _ _ = Builtin.wrongArity Set.inKey
 
 evalUnit :: Builtin.Function
-evalUnit resultSort =
+evalUnit _ resultSort =
     \case
         [] -> returnConcreteSet resultSort Map.empty
         _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
-evalConcat resultSort [set1, set2] =
+evalConcat _ resultSort [set1, set2] =
     Ac.evalConcatNormalizedOrBottom @NormalizedSet
         resultSort
         (Ac.toNormalized set1)
         (Ac.toNormalized set2)
-evalConcat _ _ = Builtin.wrongArity Set.concatKey
+evalConcat _ _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference
         :: forall variable simplifier
         .  InternalVariable variable
         => MonadSimplify simplifier
-        => TermLike.Application TermLike.Symbol (TermLike variable)
+        => SideCondition variable
+        -> TermLike.Application TermLike.Symbol (TermLike variable)
         -> MaybeT simplifier (Pattern variable)
 evalDifference
+    sideCondition
     ( TermLike.Application
         symbol@TermLike.Symbol { symbolSorts = ApplicationSorts _ resultSort }
         args@[_set1, _set2]
@@ -347,7 +353,7 @@ evalDifference
             _set1 <- expectBuiltinSet ctx _set1
             _set2 <- expectBuiltinSet ctx _set2
             let definedArgs =
-                    filter (not . TermLike.isDefinedPattern) args
+                    filter (not . SideCondition.isDefined sideCondition) args
                     & map makeCeilPredicate
                     & makeMultipleAndPredicate
                     & Conditional.fromPredicate
@@ -401,11 +407,11 @@ evalDifference
   where
     ctx = Set.differenceKey
     differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
-evalDifference _ =
+evalDifference _ _ =
     Builtin.wrongArity Set.differenceKey
 
 evalToList :: Builtin.Function
-evalToList resultSort [_set] = do
+evalToList _ resultSort [_set] = do
     _set <- expectConcreteBuiltinSet Set.toListKey _set
     map dropNoValue (Map.toList _set)
         & Seq.fromList
@@ -413,45 +419,45 @@ evalToList resultSort [_set] = do
         & List.returnList resultSort
   where
     dropNoValue (a, SetValue) = a
-evalToList _ _ = Builtin.wrongArity Set.toListKey
+evalToList _ _ _ = Builtin.wrongArity Set.toListKey
 
 
 evalSize :: Builtin.Function
-evalSize resultSort [_set] = do
+evalSize _ resultSort [_set] = do
     _set <- expectConcreteBuiltinSet Set.sizeKey _set
     Map.size _set
         & toInteger
         & Int.asPattern resultSort
         & return
-evalSize _ _ = Builtin.wrongArity Set.sizeKey
+evalSize _ _ _ = Builtin.wrongArity Set.sizeKey
 
 evalIntersection :: Builtin.Function
-evalIntersection resultSort [_set1, _set2] = do
+evalIntersection _ resultSort [_set1, _set2] = do
     _set1 <- expectConcreteBuiltinSet ctx _set1
     _set2 <- expectConcreteBuiltinSet ctx _set2
     returnConcreteSet resultSort (Map.intersection _set1 _set2)
   where
     ctx = Set.intersectionKey
-evalIntersection _ _ = Builtin.wrongArity Set.intersectionKey
+evalIntersection _ _ _ = Builtin.wrongArity Set.intersectionKey
 
 evalList2set :: Builtin.Function
-evalList2set resultSort [_list] = do
+evalList2set _ resultSort [_list] = do
     _list <- List.expectConcreteBuiltinList Set.list2setKey _list
     let _set =
             fmap (\x -> (x, SetValue)) _list
             & toList
             & Map.fromList
     returnConcreteSet resultSort _set
-evalList2set _ _ = Builtin.wrongArity Set.list2setKey
+evalList2set _ _ _ = Builtin.wrongArity Set.list2setKey
 
 evalInclusion :: Builtin.Function
-evalInclusion resultSort [_setLeft, _setRight] = do
+evalInclusion _ resultSort [_setLeft, _setRight] = do
     _setLeft <- expectConcreteBuiltinSet Set.inclusionKey _setLeft
     _setRight <- expectConcreteBuiltinSet Set.inclusionKey _setRight
     Map.isSubmapOf _setLeft _setRight
         & Bool.asPattern resultSort
         & return
-evalInclusion _ _ = Builtin.wrongArity Set.inclusionKey
+evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey
 
 {- | Implement builtin function evaluation.
  -}

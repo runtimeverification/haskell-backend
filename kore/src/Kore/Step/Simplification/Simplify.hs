@@ -44,6 +44,9 @@ import Control.Monad.Morph
     ( MFunctor
     )
 import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict
+    ( RWST
+    )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -236,6 +239,8 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
 -- * Term simplifiers
 
@@ -509,7 +514,8 @@ purePatternAxiomEvaluator p =
 applicationAxiomSimplifier
     ::  (  forall simplifier
         .  MonadSimplify simplifier
-        => CofreeF
+        => SideCondition RewritingVariableName
+        -> CofreeF
             (Application Symbol)
             (Attribute.Pattern RewritingVariableName)
             (TermLike RewritingVariableName)
@@ -525,9 +531,10 @@ applicationAxiomSimplifier applicationSimplifier =
         => TermLike RewritingVariableName
         -> SideCondition RewritingVariableName
         -> simplifier (AttemptedAxiom RewritingVariableName)
-    helper termLike _ =
+    helper termLike sideCondition =
         case Recursive.project termLike of
-            (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
+            (valid :< ApplySymbolF p) ->
+                applicationSimplifier sideCondition (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)
 

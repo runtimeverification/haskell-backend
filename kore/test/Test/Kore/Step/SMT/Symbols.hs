@@ -36,6 +36,7 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate
     , makeNotPredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
     ( Symbol (..)
     )
@@ -229,7 +230,7 @@ test_sortDeclaration =
     encodePredicate tools predicate = do
         expr <-
             runMaybeT $ evalTranslator $ give tools
-            $ translatePredicateWith translateTerm predicate
+            $ translatePredicateWith SideCondition.top translateTerm predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id

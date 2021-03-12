@@ -102,7 +102,6 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( isFunctionPattern
-    , mkDefined
     , mkIn
     , termLikeSort
     )
@@ -134,7 +133,7 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Pattern
-    ( simplifyTopConfiguration
+    ( simplifyTopConfigurationDefined
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -607,10 +606,13 @@ simplify' lensClaimPattern claim = do
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
             Monad.guard (not . isBottom . Conditional.term $ config)
             let definedConfig =
-                    Pattern.andCondition (mkDefined <$> config)
+                    Pattern.andCondition config
                     $ from $ makeCeilPredicate (Conditional.term config)
+                assumedDefined = Pattern.term config
             configs <-
-                simplifyTopConfiguration definedConfig
+                simplifyTopConfigurationDefined
+                    definedConfig
+                    assumedDefined
                 >>= SMT.Evaluator.filterMultiOr
                 & lift
             asum (pure <$> toList configs)

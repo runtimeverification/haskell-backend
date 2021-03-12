@@ -183,31 +183,31 @@ evalBytes2String =
     Builtin.functionEvaluator evalBytes2String0
   where
     evalBytes2String0 :: Builtin.Function
-    evalBytes2String0 resultSort [_bytes] = do
+    evalBytes2String0 _ resultSort [_bytes] = do
             _bytes <- matchBuiltinBytes _bytes
             Encoding.decode8Bit _bytes
                 & String.asPattern resultSort
                 & return
-    evalBytes2String0 _ _ = Builtin.wrongArity bytes2StringKey
+    evalBytes2String0 _ _ _ = Builtin.wrongArity bytes2StringKey
 
 evalString2Bytes :: BuiltinAndAxiomSimplifier
 evalString2Bytes =
     Builtin.functionEvaluator evalString2Bytes0
   where
     evalString2Bytes0 :: Builtin.Function
-    evalString2Bytes0 resultSort [_string] = do
+    evalString2Bytes0 _ resultSort [_string] = do
         _string <- String.expectBuiltinString string2BytesKey _string
         Encoding.encode8Bit _string
             & asPattern resultSort
             & return
-    evalString2Bytes0 _ _ = Builtin.wrongArity string2BytesKey
+    evalString2Bytes0 _ _ _ = Builtin.wrongArity string2BytesKey
 
 evalUpdate :: BuiltinAndAxiomSimplifier
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
     evalUpdate0 :: Builtin.Function
-    evalUpdate0 resultSort [_bytes, _index, _value] = do
+    evalUpdate0 _ resultSort [_bytes, _index, _value] = do
         _bytes <- matchBuiltinBytes _bytes
         _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
         _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
@@ -219,14 +219,14 @@ evalUpdate =
                 & asPattern resultSort
               | otherwise = Pattern.bottomOf resultSort
         return result
-    evalUpdate0 _ _ = Builtin.wrongArity updateKey
+    evalUpdate0 _ _ _ = Builtin.wrongArity updateKey
 
 evalGet :: BuiltinAndAxiomSimplifier
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
     evalGet0 :: Builtin.Function
-    evalGet0 resultSort [_bytes, _index] = do
+    evalGet0 _ resultSort [_bytes, _index] = do
         _bytes <- matchBuiltinBytes _bytes
         _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
         let result
@@ -237,14 +237,14 @@ evalGet =
               | otherwise =
                 Pattern.bottomOf resultSort
         return result
-    evalGet0 _ _ = Builtin.wrongArity getKey
+    evalGet0 _ _ _ = Builtin.wrongArity getKey
 
 evalSubstr :: BuiltinAndAxiomSimplifier
 evalSubstr =
     Builtin.functionEvaluator evalSubstr0
   where
     evalSubstr0 :: Builtin.Function
-    evalSubstr0 resultSort [_bytes, _start, _end] = do
+    evalSubstr0 _ resultSort [_bytes, _start, _end] = do
         _bytes <- matchBuiltinBytes _bytes
         _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
         _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
@@ -256,21 +256,21 @@ evalSubstr =
                 & asPattern resultSort
               | otherwise = Pattern.bottomOf resultSort
         return result
-    evalSubstr0 _ _ = Builtin.wrongArity substrKey
+    evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
 evalReplaceAt :: BuiltinAndAxiomSimplifier
 evalReplaceAt =
     Builtin.functionEvaluator evalReplaceAt0
   where
     evalReplaceAt0 :: Builtin.Function
-    evalReplaceAt0 resultSort [_bytes, _index, _new] = do
+    evalReplaceAt0 _ resultSort [_bytes, _index, _new] = do
         _bytes <- matchBuiltinBytes _bytes
         _index <- fromInteger <$> Int.expectBuiltinInt replaceAtKey _index
         _new   <- matchBuiltinBytes _new
         go _bytes _index _new
             & maybe (Pattern.bottomOf resultSort) (asPattern resultSort)
             & return
-    evalReplaceAt0 _ _ = Builtin.wrongArity replaceAtKey
+    evalReplaceAt0 _ _ _ = Builtin.wrongArity replaceAtKey
 
     go bytes index replacement
       | delta == 0 = Just bytes
@@ -290,12 +290,12 @@ evalPadRight =
     Builtin.functionEvaluator evalPadRight0
   where
     evalPadRight0 :: Builtin.Function
-    evalPadRight0 resultSort [_bytes, _length, _value] = do
+    evalPadRight0 _ resultSort [_bytes, _length, _value] = do
             _bytes  <- matchBuiltinBytes _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padRightKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padRightKey _value
             (return . asPattern resultSort) (go _bytes _length _value)
-    evalPadRight0 _ _ = Builtin.wrongArity padRightKey
+    evalPadRight0 _ _ _ = Builtin.wrongArity padRightKey
 
     go bytes len2 val =
         bytes <> ByteString.replicate (max 0 delta) val
@@ -308,12 +308,12 @@ evalPadLeft =
     Builtin.functionEvaluator evalPadLeft0
   where
     evalPadLeft0 :: Builtin.Function
-    evalPadLeft0 resultSort [_bytes, _length, _value] = do
+    evalPadLeft0 _ resultSort [_bytes, _length, _value] = do
             _bytes  <- matchBuiltinBytes _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padLeftKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padLeftKey _value
             return . asPattern resultSort $ go _bytes _length _value
-    evalPadLeft0 _ _ = Builtin.wrongArity padLeftKey
+    evalPadLeft0 _ _ _ = Builtin.wrongArity padLeftKey
 
     go bytes len2 val =
         ByteString.replicate (max 0 delta) val <> bytes
@@ -326,51 +326,51 @@ evalReverse =
     Builtin.functionEvaluator evalReverse0
   where
     evalReverse0 :: Builtin.Function
-    evalReverse0 resultSort [_bytes] = do
+    evalReverse0 _ resultSort [_bytes] = do
         _bytes  <- matchBuiltinBytes _bytes
         ByteString.reverse _bytes
             & asPattern resultSort
             & return
-    evalReverse0 _ _ = Builtin.wrongArity reverseKey
+    evalReverse0 _ _ _ = Builtin.wrongArity reverseKey
 
 evalLength :: BuiltinAndAxiomSimplifier
 evalLength =
     Builtin.functionEvaluator evalLength0
   where
     evalLength0 :: Builtin.Function
-    evalLength0 resultSort [_bytes] = do
+    evalLength0 _ resultSort [_bytes] = do
         _bytes  <- matchBuiltinBytes _bytes
         toInteger (ByteString.length _bytes)
             & Int.asPattern resultSort
             & return
-    evalLength0 _ _ = Builtin.wrongArity lengthKey
+    evalLength0 _ _ _ = Builtin.wrongArity lengthKey
 
 evalConcat :: BuiltinAndAxiomSimplifier
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
     evalConcat0 :: Builtin.Function
-    evalConcat0 resultSort [_lhs, _rhs] = do
+    evalConcat0 _ resultSort [_lhs, _rhs] = do
             _lhs  <- matchBuiltinBytes _lhs
             _rhs  <- matchBuiltinBytes _rhs
             _lhs <> _rhs
                 & asPattern resultSort
                 & return
-    evalConcat0 _ _ = Builtin.wrongArity concatKey
+    evalConcat0 _ _ _ = Builtin.wrongArity concatKey
 
 evalInt2bytes :: BuiltinAndAxiomSimplifier
 evalInt2bytes =
     Builtin.functionEvaluator evalInt2bytes0
   where
     evalInt2bytes0 :: Builtin.Function
-    evalInt2bytes0 resultSort [len, int, _end] = do
+    evalInt2bytes0 _ resultSort [len, int, _end] = do
         _end <- matchEndianness _end
         len' <- Int.expectBuiltinInt int2bytesKey len
         int' <- Int.expectBuiltinInt int2bytesKey int
         int2bytes (fromInteger len') int' _end
             & asPattern resultSort
             & return
-    evalInt2bytes0 _ _ = Builtin.wrongArity int2bytesKey
+    evalInt2bytes0 _ _ _ = Builtin.wrongArity int2bytesKey
 
 matchEndianness :: Alternative f => TermLike variable -> f Endianness
 matchEndianness (Endianness_ endianness) = pure endianness
@@ -402,14 +402,14 @@ evalBytes2int =
     Builtin.functionEvaluator evalBytes2int0
   where
     evalBytes2int0 :: Builtin.Function
-    evalBytes2int0 resultSort [bytes, _end, _sign] = do
+    evalBytes2int0 _ resultSort [bytes, _end, _sign] = do
         _end <- matchEndianness _end
         _sign <- matchSignedness _sign
         bytes' <- matchBuiltinBytes bytes
         bytes2int bytes' _end _sign
             & Int.asPattern resultSort
             & return
-    evalBytes2int0 _ _ = Builtin.wrongArity bytes2intKey
+    evalBytes2int0 _ _ _ = Builtin.wrongArity bytes2intKey
 
 bytes2int :: ByteString -> Endianness -> Signedness -> Integer
 bytes2int bytes end sign =
