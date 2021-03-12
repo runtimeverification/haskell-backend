@@ -12,10 +12,12 @@ module Options.SMT (
     ensureSmtPreludeExists,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Extra as Monad
 import qualified Data.Char as Char
+import Data.Limit (
+    Limit (..),
+    maybeLimit,
+ )
 import Data.List (
     intercalate,
  )
@@ -32,21 +34,17 @@ import Options.Applicative (
     value,
  )
 import qualified Options.Applicative as Options
+import Prelude.Kore
+import SMT hiding (
+    Solver,
+    not,
+ )
 import System.Directory (
     copyFile,
     doesFileExist,
  )
 import System.FilePath (
     (</>),
- )
-
-import Data.Limit (
-    Limit (..),
-    maybeLimit,
- )
-import SMT hiding (
-    Solver,
-    not,
  )
 
 -- | Command line options for the SMT solver.

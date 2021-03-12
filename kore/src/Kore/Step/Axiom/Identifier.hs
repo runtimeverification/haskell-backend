@@ -2,7 +2,6 @@
 Module      : Kore.Step.Axiom.Identifier
 Description : Data structures and manipulation helpers used for axiom
               evaluation identifiers.
-
               The expectation is that an axiom can be applied to a term
               only if the identifier of its left-hand-side is the same
               as the term's identifier.
@@ -11,7 +10,6 @@ License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
-
 This module is intended to be imported qualified:
 @
 import Kore.Step.Axiom.Identifier ( AxiomIdentifier )
@@ -23,12 +21,9 @@ module Kore.Step.Axiom.Identifier (
     matchAxiomIdentifier,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Builtin.External as Builtin
 import Kore.Debug
 import Kore.Internal.TermLike (
@@ -46,6 +41,7 @@ import Kore.Syntax.PatternF
 import Kore.Unparser (
     unparse,
  )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

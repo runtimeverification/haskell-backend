@@ -15,13 +15,10 @@ module Kore.IndexedModule.MetadataTools (
     findSortConstructors,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute (
     Constructors,
@@ -36,6 +33,7 @@ import qualified Kore.Step.SMT.AST as SMT.AST (
 import Kore.Syntax.Application (
     SymbolOrAlias (..),
  )
+import Prelude.Kore
 
 {- |'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.

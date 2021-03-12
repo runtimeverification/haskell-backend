@@ -31,8 +31,6 @@ module Kore.Internal.Condition (
     Conditional.andCondition,
 ) where
 
-import Prelude.Kore
-
 import ErrorContext
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
@@ -61,6 +59,7 @@ import qualified Kore.Internal.TermLike as TermLike (
  )
 import Kore.Internal.Variable
 import Kore.Syntax
+import Prelude.Kore
 
 -- | A predicate and substitution without an accompanying term.
 type Condition variable = Conditional variable ()

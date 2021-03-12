@@ -7,10 +7,9 @@ module Kore.Log.InfoReachability (
     whileReachability,
 ) where
 
-import Prelude.Kore
-
 import Kore.Reachability.Prim
 import Log
+import Prelude.Kore
 import Pretty (
     Doc,
     Pretty,

@@ -3,11 +3,6 @@ module Test.Kore.Step.SMT.Symbols (
     test_resolve,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-
 import Control.Monad.Trans.Maybe (
     MaybeT (..),
  )
@@ -18,7 +13,6 @@ import Data.Maybe (
 import Data.Reflection (
     give,
  )
-
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
     indexBySort,
  )
@@ -36,6 +30,7 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeNotPredicate,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     Symbol (..),
  )
@@ -77,12 +72,12 @@ import Kore.Syntax.Variable
 import Log (
     MonadLog (..),
  )
+import Prelude.Kore
 import SMT (
     MonadSMT,
     SExpr (..),
  )
 import qualified SMT
-
 import Test.Kore (
     testId,
  )
@@ -116,6 +111,8 @@ import qualified Test.Kore.Step.SMT.Helpers as Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =
@@ -237,7 +234,7 @@ test_sortDeclaration =
             runMaybeT $
                 evalTranslator $
                     give tools $
-                        translatePredicateWith translateTerm predicate
+                        translatePredicateWith SideCondition.top translateTerm predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id

@@ -10,8 +10,6 @@ module Kore.Builtin.AssocComm.CeilSimplifier (
     generalizeMapElement,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -21,7 +19,6 @@ import Control.Monad.Reader (
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Map.Strict as Map
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -71,6 +68,7 @@ import Kore.Step.Simplification.Simplify (
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
+import Prelude.Kore
 
 type BuiltinAssocComm normalized variable =
     InternalAc normalized Key (TermLike variable)

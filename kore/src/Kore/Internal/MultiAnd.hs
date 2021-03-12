@@ -22,22 +22,16 @@ module Kore.Internal.MultiAnd (
     traverse,
 ) where
 
-import Prelude.Kore hiding (
-    map,
-    traverse,
- )
-
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
+import Debug
 import qualified GHC.Exts as GHC
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
-
-import Debug
 import Kore.Internal.Condition (
     Condition,
  )
@@ -54,6 +48,10 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable
 import Kore.TopBottom (
     TopBottom (..),
+ )
+import Prelude.Kore hiding (
+    map,
+    traverse,
  )
 
 -- | 'MultiAnd' is a Matching logic and of its children

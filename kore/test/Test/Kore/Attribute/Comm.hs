@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Comm (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Comm
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseComm :: Attributes -> Parser Comm
 parseComm = parseAttributes

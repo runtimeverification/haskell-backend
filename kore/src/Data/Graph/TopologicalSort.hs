@@ -12,8 +12,6 @@ module Data.Graph.TopologicalSort (
     TopologicalSortCycles (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Graph (
     SCC (..),
     stronglyConnComp,
@@ -21,8 +19,8 @@ import Data.Graph (
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
+import Prelude.Kore
 
 newtype TopologicalSortCycles node = TopologicalSortCycles [node]
     deriving (Eq, GHC.Generic, Show)

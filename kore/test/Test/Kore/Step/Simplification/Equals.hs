@@ -6,10 +6,6 @@ module Test.Kore.Step.Simplification.Equals (
     test_equalsSimplification_Pattern,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -53,9 +49,10 @@ import Kore.Step.Simplification.Equals (
     simplify,
  )
 import Kore.Unparser
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_equalsSimplification_Or_Pattern :: [TestTree]

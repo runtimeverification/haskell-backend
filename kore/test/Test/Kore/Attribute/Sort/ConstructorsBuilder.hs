@@ -2,16 +2,10 @@ module Test.Kore.Attribute.Sort.ConstructorsBuilder (
     test_sortParsing,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Data.Default (
     def,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Sort.Constructors as Attribute (
     Constructor (Constructor),
     ConstructorLike (..),
@@ -42,7 +36,7 @@ import Kore.Sort (
 import Kore.Syntax.Id (
     Id (getId),
  )
-
+import Prelude.Kore
 import Test.Kore.Step.SMT.Builders (
     emptyModule,
     hookedSortDeclaration,
@@ -62,6 +56,8 @@ import Test.Kore.Step.SMT.Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_sortParsing :: [TestTree]
 test_sortParsing =

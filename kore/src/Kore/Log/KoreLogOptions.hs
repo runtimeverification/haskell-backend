@@ -21,8 +21,6 @@ module Kore.Log.KoreLogOptions (
     defaultSeverity,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Char as Char
 import Data.Default
 import Data.Functor (
@@ -43,18 +41,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import Options.Applicative (
-    Parser,
-    option,
- )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
-import qualified Text.Megaparsec as Parser
-import qualified Text.Megaparsec.Char as Parser
-import Type.Reflection (
-    SomeTypeRep (..),
- )
-
 import Kore.Equation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
@@ -74,9 +60,21 @@ import Kore.Log.SQLite (
     parseLogSQLiteOptions,
  )
 import Log
+import Options.Applicative (
+    Parser,
+    option,
+ )
+import qualified Options.Applicative as Options
+import qualified Options.Applicative.Help.Pretty as OptPretty
+import Prelude.Kore
 import qualified Pretty
 import System.Clock (
     TimeSpec,
+ )
+import qualified Text.Megaparsec as Parser
+import qualified Text.Megaparsec.Char as Parser
+import Type.Reflection (
+    SomeTypeRep (..),
  )
 
 -- | Command line options for logging.

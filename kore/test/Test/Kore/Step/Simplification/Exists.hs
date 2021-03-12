@@ -5,10 +5,6 @@ module Test.Kore.Step.Simplification.Exists (
     test_simplify,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -26,8 +22,8 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -39,6 +35,7 @@ import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]

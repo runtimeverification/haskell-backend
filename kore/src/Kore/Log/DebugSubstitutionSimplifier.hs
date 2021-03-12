@@ -8,13 +8,10 @@ module Kore.Log.DebugSubstitutionSimplifier (
     debugSubstitutionSimplifierResult,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Log
-
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Rewrites (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -27,6 +25,7 @@ import qualified Kore.Internal.TermLike as TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 

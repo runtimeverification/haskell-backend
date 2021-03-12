@@ -7,16 +7,12 @@ module Test.SQL (
     test_NonEmpty,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Int (
     Int64,
  )
-
+import Prelude.Kore
 import SQL
-
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 testTable :: forall table. Table table => [table] -> TestTree

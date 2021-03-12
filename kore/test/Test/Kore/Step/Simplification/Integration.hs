@@ -9,8 +9,6 @@ module Test.Kore.Step.Simplification.Integration (
     test_simplifySideCondition,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Generics.Product
@@ -19,8 +17,6 @@ import Data.Maybe (
     fromJust,
  )
 import qualified Data.Set as Set
-import Test.Tasty
-
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -63,7 +59,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     makeEvaluate,
  )
 import Kore.Step.Simplification.Simplify
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification,
@@ -80,6 +76,7 @@ import Test.Kore.Internal.Substitution as Substitution hiding (
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type SideCondition' = SideCondition RewritingVariableName
@@ -1091,41 +1088,7 @@ test_simplificationIntegration =
 
         actual <- evaluate patt
         assertEqual "" expected actual
-    , testCase "Defined is kept after simplification" $ do
-        let patt =
-                mkOr
-                    (Mock.f (mkElemVar Mock.xConfig))
-                    (Mock.g Mock.a)
-                    & mkDefined
-                    & Pattern.fromTermLike
-            expected =
-                OrPattern.fromPatterns
-                    [ mkElemVar Mock.xConfig
-                        & Pattern.fromTermLike
-                    , defined (Mock.g Mock.a)
-                        & Pattern.fromTermLike
-                    ]
-        actual <-
-            evaluateWithAxioms
-                ( mkEvaluatorRegistry
-                    ( Map.fromList
-                        [
-                            ( AxiomIdentifier.Application Mock.fId
-                            ,
-                                [ axiom
-                                    (Mock.f (mkElemVar Mock.xConfig))
-                                    (mkElemVar Mock.xConfig)
-                                    makeTruePredicate
-                                ]
-                            )
-                        ]
-                    )
-                )
-                patt
-        assertEqual "" expected actual
     ]
-  where
-    defined = mkDefinedAtTop
 
 test_simplificationIntegrationUnification :: [TestTree]
 test_simplificationIntegrationUnification =

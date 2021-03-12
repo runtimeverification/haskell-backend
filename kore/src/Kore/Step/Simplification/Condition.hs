@@ -13,8 +13,7 @@ module Kore.Step.Simplification.Condition (
     simplifyPredicates,
 ) where
 
-import Prelude.Kore
-
+import Changed
 import qualified Control.Lens as Lens
 import Control.Monad.State.Strict (
     StateT,
@@ -23,8 +22,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product (
     field,
  )
-
-import Changed
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -53,6 +50,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier (
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unparser
 import Logic
+import Prelude.Kore
 import qualified Pretty
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.

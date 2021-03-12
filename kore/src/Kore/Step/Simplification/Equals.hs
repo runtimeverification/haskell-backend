@@ -16,12 +16,9 @@ module Kore.Step.Simplification.Equals (
     termEquals,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT (..),
  )
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -83,6 +80,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 {- ORMOLU_DISABLE -}
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.

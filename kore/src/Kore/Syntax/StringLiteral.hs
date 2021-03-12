@@ -6,15 +6,12 @@ module Kore.Syntax.StringLiteral (
     StringLiteral (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Const
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     emptyFreeVariables,
@@ -23,6 +20,7 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'StringLiteral' corresponds to the @string@ literal from the Semantics of K,

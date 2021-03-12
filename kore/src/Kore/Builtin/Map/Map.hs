@@ -43,13 +43,10 @@ module Kore.Builtin.Map.Map (
     inclusionKey,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import Data.String (
     IsString,
  )
-
 import Kore.Attribute.Element hiding (
     elementSymbol,
  )
@@ -66,6 +63,7 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Internal.InternalMap
 import Kore.Internal.TermLike as TermLike
+import Prelude.Kore
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"

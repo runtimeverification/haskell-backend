@@ -3,11 +3,6 @@ module Test.Kore.IndexedModule.Resolvers (
     test_resolver_undefined_messages,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Data.Default
 import qualified Data.List as List
 import Data.Map.Strict (
@@ -15,7 +10,6 @@ import Data.Map.Strict (
  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Ord
-
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -32,9 +26,11 @@ import Kore.Syntax.Definition
 import Kore.Syntax.PatternF (
     groundHead,
  )
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Tasty
+import Test.Tasty.HUnit
 
 objectS1 :: Sort
 objectS1 = simpleSort (SortName "s1")

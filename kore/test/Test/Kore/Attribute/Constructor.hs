@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Constructor (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Constructor
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseConstructor :: Attributes -> Parser Constructor
 parseConstructor = parseAttributes

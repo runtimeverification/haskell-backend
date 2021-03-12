@@ -4,12 +4,7 @@ module Test.Kore.Step.Simplification.Ceil (
     test_ceilSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
-
 import qualified Data.Sup as Sup
 import Kore.Internal.Condition as Condition
 import Kore.Internal.Predicate (
@@ -44,7 +39,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-
+import Prelude.Kore
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -55,6 +50,7 @@ import Test.Kore.Step.MockSymbols (
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_ceilSimplification :: [TestTree]

@@ -2,13 +2,10 @@ module Test.Kore.Attribute.Pattern.ConstructorLike (
     test_TermLike,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.TermLike
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_TermLike :: [TestTree]

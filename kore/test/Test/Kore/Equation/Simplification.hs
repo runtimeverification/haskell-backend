@@ -4,8 +4,6 @@ module Test.Kore.Equation.Simplification (
     test_simplifyEquation,
 ) where
 
-import Prelude.Kore
-
 import Kore.Equation.Equation
 import Kore.Equation.Simplification
 import Kore.Internal.MultiAnd (
@@ -13,17 +11,16 @@ import Kore.Internal.MultiAnd (
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
-
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
+import Prelude.Kore
 import Test.Kore.Equation.Common (
     functionAxiomUnification_,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification (
     runSimplifier,
- )
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

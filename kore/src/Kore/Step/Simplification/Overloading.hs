@@ -15,10 +15,6 @@ module Kore.Step.Simplification.Overloading (
     OverloadingResolution (..),
 ) where
 
-import Prelude.Kore hiding (
-    concat,
- )
-
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except (
     ExceptT,
@@ -31,11 +27,6 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Step.Simplification.Simplify as Simplifier (
-    MonadSimplify (..),
-    isConstructorOrOverloaded,
- )
-
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import Kore.Attribute.Synthetic (
@@ -55,7 +46,14 @@ import Kore.Rewriting.RewritingVariable (
     mkConfigVariable,
  )
 import Kore.Step.Simplification.OverloadSimplifier
+import Kore.Step.Simplification.Simplify as Simplifier (
+    MonadSimplify (..),
+    isConstructorOrOverloaded,
+ )
 import Pair
+import Prelude.Kore hiding (
+    concat,
+ )
 
 -- | Overload solution requiring narrowing
 data Narrowing variable = Narrowing

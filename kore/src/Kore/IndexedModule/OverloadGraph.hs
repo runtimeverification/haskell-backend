@@ -14,8 +14,6 @@ module Kore.IndexedModule.OverloadGraph (
     fromOverloads,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
@@ -24,10 +22,9 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule (
@@ -35,6 +32,7 @@ import Kore.IndexedModule.IndexedModule (
     recursiveIndexedModuleAxioms,
  )
 import Kore.Internal.Symbol
+import Prelude.Kore
 
 -- | 'OverloadGraph' maps symbols to symbols overloading them and the reverse
 data OverloadGraph = OverloadGraph

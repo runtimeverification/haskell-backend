@@ -10,10 +10,6 @@ module Test.Kore.Internal.OrPattern (
     module OrPattern,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Hedgehog (
     Property,
     (===),
@@ -21,7 +17,6 @@ import Hedgehog (
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -39,7 +34,7 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Variable
 import Kore.TopBottom
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.Internal.Pattern (
     TermLike,
@@ -47,6 +42,7 @@ import Test.Kore.Internal.Pattern (
     internalPatternGen,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type OrTestPattern = OrPattern VariableName

@@ -8,13 +8,10 @@ module Kore.Equation.Sentence (
     MatchEquationError (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Bifunctor as Bifunctor
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor (
     Constructor (..),
@@ -42,6 +39,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 fromSentenceAxiom ::
     (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->

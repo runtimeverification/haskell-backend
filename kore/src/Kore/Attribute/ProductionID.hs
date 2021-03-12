@@ -12,16 +12,14 @@ module Kore.Attribute.ProductionID (
     productionIDAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @ProductionID@ represents the @productionID@ attribute.
 newtype ProductionID = ProductionID {getProductionID :: Maybe Text}

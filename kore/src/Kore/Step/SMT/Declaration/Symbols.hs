@@ -9,8 +9,6 @@ module Kore.Step.SMT.Declaration.Symbols (
     declare,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Step.SMT.AST as AST (
     Declarations (Declarations),
     KoreSymbolDeclaration (SymbolBuiltin, SymbolConstructor, SymbolDeclaredDirectly),
@@ -20,6 +18,7 @@ import qualified Kore.Step.SMT.AST as AST (
     Symbol (Symbol),
  )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import Prelude.Kore
 import qualified SMT
 
 -- | Sends all symbols in the given declarations to the SMT.

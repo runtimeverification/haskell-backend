@@ -31,13 +31,10 @@ module Kore.Builtin.Set.Set (
     inclusionKey,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import Data.String (
     IsString,
  )
-
 import Kore.Attribute.Element hiding (
     elementSymbol,
  )
@@ -54,6 +51,7 @@ import Kore.IndexedModule.IndexedModule (
  )
 import Kore.Internal.InternalSet
 import Kore.Internal.TermLike as TermLike
+import Prelude.Kore
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"

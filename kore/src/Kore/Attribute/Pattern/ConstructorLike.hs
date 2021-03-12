@@ -11,11 +11,8 @@ module Kore.Attribute.Pattern.ConstructorLike (
     assertConstructorLike,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Alias (
@@ -32,6 +29,7 @@ import Kore.Internal.Symbol (
  )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Syntax
+import Prelude.Kore
 
 {- | A pattern is 'ConstructorLike' if logical equality is syntactic equality.
 

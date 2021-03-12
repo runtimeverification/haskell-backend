@@ -12,12 +12,9 @@ module Kore.Step.RewriteStep (
     applyClaimsSequence,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Sequence as Seq
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -77,6 +74,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 withoutUnification :: UnifiedRule rule -> rule
 withoutUnification = Conditional.term

@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.Forall (
     test_forallSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -22,15 +18,16 @@ import Kore.Internal.Predicate (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import qualified Kore.Step.Simplification.Forall as Forall (
     makeEvaluate,
     simplify,
  )
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_forallSimplification :: [TestTree]

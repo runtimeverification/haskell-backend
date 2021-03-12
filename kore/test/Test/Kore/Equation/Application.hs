@@ -6,10 +6,6 @@ module Test.Kore.Equation.Application (
     test_applySubstitutionAndSimplify,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Monad (
     (>=>),
  )
@@ -20,7 +16,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Equation as Equation
 import Kore.Equation.Application hiding (
     attemptEquation,
@@ -35,15 +30,16 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry (
     mkEvaluatorRegistry,
  )
+import Prelude.Kore
 import qualified Pretty
-import Test.Kore.Equation.Common
-
 import Test.Expect
+import Test.Kore.Equation.Common
 import Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.SideCondition as SideCondition
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type AttemptEquationError' = AttemptEquationError RewritingVariableName

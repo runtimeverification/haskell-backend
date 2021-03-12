@@ -5,18 +5,15 @@ module Test.Kore.Attribute.Subsort (
     test_arguments,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Subsort
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore (
     sortActual,
  )
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 sub :: Sort
 sub = sortActual "sub" []

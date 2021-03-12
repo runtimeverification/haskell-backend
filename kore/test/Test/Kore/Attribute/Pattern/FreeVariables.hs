@@ -3,11 +3,6 @@ module Test.Kore.Attribute.Pattern.FreeVariables (
     test_instance_Synthetic_TermLike,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -20,8 +15,10 @@ import Kore.Internal.TermLike (
 import Kore.Syntax hiding (
     PatternF (..),
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_Synthetic :: [TestTree]
 test_Synthetic =

@@ -5,17 +5,6 @@ module Test.Kore.Step.Simplification.IntegrationProperty (
     test_regressionGeneratedTerms,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog (
-    PropertyT,
-    annotate,
-    discard,
-    forAll,
-    (===),
- )
-import Test.Tasty
-
 import Control.Exception (
     ErrorCall (..),
  )
@@ -28,7 +17,13 @@ import Data.List (
     isInfixOf,
  )
 import qualified Data.Map.Strict as Map
-
+import Hedgehog (
+    PropertyT,
+    annotate,
+    discard,
+    forAll,
+    (===),
+ )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -48,6 +43,10 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkRewritingTerm,
+ )
 import Kore.Step.Axiom.EvaluationStrategy (
     simplifierWithFallback,
  )
@@ -56,19 +55,16 @@ import qualified Kore.Step.Simplification.Pattern as Pattern (
     simplify,
  )
 import Kore.Step.Simplification.Simplify
-import qualified SMT
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkRewritingTerm,
- )
 import Kore.Unparser
+import Prelude.Kore
+import qualified SMT
 import Test.ConsistentKore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.SMT (
     testPropertyWithoutSolver,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplifiesToSimplified :: TestTree

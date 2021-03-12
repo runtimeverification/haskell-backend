@@ -9,10 +9,7 @@ module Kore.Step.SMT.Representation.Symbols (
     buildRepresentations,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Constructor as Attribute (
     Constructor (Constructor, isConstructor),
  )
@@ -49,6 +46,7 @@ import qualified Kore.Syntax.Sentence as Sentence.Symbol (
     Symbol (..),
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import qualified SMT
 
 {- | Builds smt representations for symbols in the given module.

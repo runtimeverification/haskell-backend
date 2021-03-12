@@ -10,15 +10,8 @@ module Test.Kore.Internal.Substitution (
     module Test.Kore.Internal.TermLike,
 ) where
 
-import Prelude.Kore hiding (
-    null,
- )
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import Kore.Internal.Substitution as Substitution
 import Kore.TopBottom (
     isBottom,
@@ -28,7 +21,9 @@ import Kore.Variables.Target (
     mkElementNonTarget,
     mkElementTarget,
  )
-
+import Prelude.Kore hiding (
+    null,
+ )
 import Test.Kore
 import Test.Kore.Internal.Predicate (
     TestPredicate,
@@ -47,6 +42,7 @@ import Test.Kore.Internal.TermLike hiding (
     test_substitute,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Terse (
     gives_,

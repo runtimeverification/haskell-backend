@@ -8,14 +8,6 @@ module Test.Tasty.HUnit.Ext (
     module Kore.Debug,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty.HUnit hiding (
-    assertEqual,
-    (@=?),
-    (@?=),
- )
-
 import Control.Exception (
     SomeException,
  )
@@ -23,9 +15,14 @@ import qualified Control.Exception as Exception
 import Data.List (
     isInfixOf,
  )
-
 import Kore.Debug
+import Prelude.Kore
 import qualified Pretty
+import Test.Tasty.HUnit hiding (
+    assertEqual,
+    (@=?),
+    (@?=),
+ )
 
 assertEqual ::
     (Diff a, MonadIO io, HasCallStack) =>

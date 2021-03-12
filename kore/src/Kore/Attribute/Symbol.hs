@@ -2,7 +2,6 @@
 Description : Symbol declaration attributes
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 This module is intended to be imported qualified:
 @
 import qualified Kore.Attribute.Symbol as Attribute
@@ -80,8 +79,6 @@ module Kore.Attribute.Symbol (
     isInjective,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad (
     (>=>),
@@ -90,7 +87,6 @@ import Data.Default
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
 import Kore.Attribute.Element
@@ -114,6 +110,7 @@ import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Attribute.Unit
 import Kore.Debug
+import Prelude.Kore
 
 {- | Symbol attributes used during Kore execution.
 

@@ -6,12 +6,11 @@ module Kore.Log.DebugProven (
     DebugProven (..),
 ) where
 
-import Prelude.Kore
-
 import Kore.Reachability.SomeClaim (
     SomeClaim (..),
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

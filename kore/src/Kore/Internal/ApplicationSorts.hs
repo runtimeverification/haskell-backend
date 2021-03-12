@@ -8,21 +8,19 @@ module Kore.Internal.ApplicationSorts (
     symbolOrAliasSorts,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Error
 import Kore.Sort hiding (
     substituteSortVariables,
  )
 import Kore.Syntax.Sentence
+import Prelude.Kore
 
 data ApplicationSorts = ApplicationSorts
     { applicationSortsOperands :: ![Sort]

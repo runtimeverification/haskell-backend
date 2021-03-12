@@ -15,14 +15,11 @@ module Kore.Attribute.Axiom.Symbolic (
     FreeVariables,
 ) where
 
-import Prelude.Kore
-
 import Data.Set (
     Set,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Axiom.Concrete (
     parseFreeVariables,
  )
@@ -35,6 +32,7 @@ import Kore.Attribute.Pattern.FreeVariables (
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Debug
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 -- | @Symbolic@ represents the @symbolic@ attribute for axioms.
 newtype Symbolic variable = Symbolic {unSymbolic :: FreeVariables variable}

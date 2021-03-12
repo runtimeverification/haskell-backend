@@ -2,16 +2,11 @@ module Test.Kore.Step.Rule.Expand (
     test_expandRule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
+import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
 import qualified Data.Map.Strict as Map
-
-import qualified Control.Lens as Lens
 import Data.Sup (
     Sup (Element),
  )
@@ -54,7 +49,7 @@ import Kore.Syntax.Id (
     Id,
  )
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -67,6 +62,7 @@ import qualified Test.Kore.Step.Rule.Common as Common
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_expandRule :: [TestTree]

@@ -11,8 +11,6 @@ module Kore.Step.Remainder (
     ceilChildOfApplicationOrTop,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -48,6 +46,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify (
     MonadSimplify (..),
  )
+import Prelude.Kore
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 

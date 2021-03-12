@@ -4,19 +4,16 @@ module Test.Kore.Attribute.Smtlib (
     test_fill_SExpr_templates,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Parser
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
+import Prelude.Kore
+import Test.Tasty
+import Test.Tasty.HUnit
 
 -- | A list of arguments to @smtlib@, extracted from the K distribution
 extracted :: [Text]

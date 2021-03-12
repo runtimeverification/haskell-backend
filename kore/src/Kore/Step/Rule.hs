@@ -22,8 +22,6 @@ module Kore.Step.Rule (
     complexRewriteTermToRule,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.Extra (
@@ -31,7 +29,6 @@ import Data.List.Extra (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Axiom.Constructor (
     isConstructor,
@@ -95,6 +92,7 @@ import Kore.Unparser (
     unparse,
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import qualified Pretty
 
 -- | Error encountered when parsing patterns

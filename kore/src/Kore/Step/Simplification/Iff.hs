@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Iff (
     simplifyEvaluated,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -39,6 +37,7 @@ import qualified Kore.Step.Simplification.Not as Not (
     simplifyEvaluated,
  )
 import Kore.Step.Simplification.Simplify
+import Prelude.Kore
 
 {- |'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.

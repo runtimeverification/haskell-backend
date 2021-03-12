@@ -4,12 +4,7 @@ module Test.Kore.Step.Simplification.Floor (
     test_floorSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Default as Default
-
 import qualified Kore.Internal.Condition as Condition (
     top,
  )
@@ -35,15 +30,15 @@ import Kore.Internal.Predicate (
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Floor (
-    makeEvaluateFloor,
-    simplify,
- )
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
  )
+import Kore.Step.Simplification.Floor (
+    makeEvaluateFloor,
+    simplify,
+ )
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -51,6 +46,7 @@ import Test.Kore.Step.MockSymbols (
     testSort,
  )
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_floorSimplification :: [TestTree]

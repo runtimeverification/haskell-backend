@@ -11,8 +11,6 @@ module Kore.Log.ErrorRuleMergeDuplicate (
     errorRuleMergeDuplicateLabels,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
@@ -33,7 +31,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
  )
@@ -44,6 +41,7 @@ import Kore.Step.RulePattern (
     RewriteRule (..),
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

@@ -1,14 +1,11 @@
 module Test.Kore.Attribute.Symbol.Klabel (test_Klabel) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Symbol.Klabel
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseKlabel :: Attributes -> Parser Klabel
 parseKlabel = parseAttributes

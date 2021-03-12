@@ -14,11 +14,6 @@ module Test.Kore.Step.SMT.Helpers (
     testsForModule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Control.Exception (
     ErrorCall,
     catch,
@@ -38,10 +33,6 @@ import Data.Sup (
 import Data.Text (
     Text,
  )
-import Numeric.Natural (
-    Natural,
- )
-
 import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
@@ -66,6 +57,10 @@ import Kore.Syntax.Sentence (
 import qualified Kore.Syntax.Sentence as SentenceAxiom (
     SentenceAxiom (..),
  )
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 import SMT (
     Config (..),
     SMT,
@@ -73,7 +68,6 @@ import SMT (
     defaultConfig,
  )
 import qualified SMT
-
 import Test.Kore (
     testId,
  )
@@ -87,6 +81,8 @@ import Test.Kore.Step.SMT.Builders (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
+import Test.Tasty.HUnit
 
 newtype SmtPrelude = SmtPrelude {getSmtPrelude :: SMT ()}
 

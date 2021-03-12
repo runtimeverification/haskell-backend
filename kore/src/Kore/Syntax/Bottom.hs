@@ -6,16 +6,14 @@ module Kore.Syntax.Bottom (
     Bottom (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 
 {- | 'Bottom' corresponds to the @\bottom@ branches of the @pattern@ syntactic
 category from the Semantics of K, Section 9.1.4 (Patterns).

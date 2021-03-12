@@ -154,19 +154,6 @@ module SMT.SimpleSMT (
     existsQ,
 ) where
 
-import Prelude.Kore hiding (
-    abs,
-    and,
-    assert,
-    concat,
-    const,
-    div,
-    extract,
-    mod,
-    not,
-    or,
- )
-
 import qualified Colog
 import Control.Concurrent (
     forkIO,
@@ -198,11 +185,33 @@ import qualified GHC.Generics as GHC
 import GHC.Stack (
     callStack,
  )
+import Kore.Debug hiding (
+    debug,
+ )
+import Kore.Log.DebugSolver (
+    logDebugSolverRecvWith,
+    logDebugSolverSendWith,
+ )
+import qualified Log
 import Numeric (
     readHex,
     showFFloat,
     showHex,
  )
+import Prelude.Kore hiding (
+    abs,
+    and,
+    assert,
+    concat,
+    const,
+    div,
+    extract,
+    mod,
+    not,
+    or,
+ )
+import qualified Pretty
+import SMT.AST
 import System.Exit (
     ExitCode (..),
  )
@@ -223,17 +232,6 @@ import Text.Read (
     readMaybe,
  )
 import qualified Prelude
-
-import Kore.Debug hiding (
-    debug,
- )
-import Kore.Log.DebugSolver (
-    logDebugSolverRecvWith,
-    logDebugSolverSendWith,
- )
-import qualified Log
-import qualified Pretty
-import SMT.AST
 
 -- ---------------------------------------------------------------------
 

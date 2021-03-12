@@ -32,8 +32,6 @@ module Kore.Builtin.Krypto (
     hashKeccak256Key,
 ) where
 
-import Prelude.Kore
-
 import Crypto.Hash (
     HashAlgorithm,
     Keccak_256 (..),
@@ -66,16 +64,16 @@ import qualified Data.Text as Text
 import Data.Word (
     Word8,
  )
+import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.Encoding (
     encode8Bit,
  )
-
-import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
  )
+import Prelude.Kore
 
 keccak256Key
     , ecdsaRecoverKey
@@ -183,13 +181,13 @@ evalHashFunction context algorithm =
     Builtin.functionEvaluator evalHashFunctionWorker
   where
     evalHashFunctionWorker :: Builtin.Function
-    evalHashFunctionWorker resultSort [input] = do
+    evalHashFunctionWorker _ resultSort [input] = do
         str <- String.expectBuiltinString context input
         let bytes = encode8Bit str
             digest = hashWith algorithm bytes
             result = fromString (show digest)
         return (String.asPattern resultSort result)
-    evalHashFunctionWorker _ _ = Builtin.wrongArity context
+    evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
 
 evalKeccak :: BuiltinAndAxiomSimplifier
 evalKeccak = evalHashFunction keccak256Key Keccak_256
@@ -208,7 +206,7 @@ evalECDSARecover =
     Builtin.functionEvaluator eval0
   where
     eval0 :: Builtin.Function
-    eval0 resultSort [messageHash0, v0, r0, s0] = do
+    eval0 _ resultSort [messageHash0, v0, r0, s0] = do
         messageHash <-
             string2Integer . Text.unpack
                 <$> String.expectBuiltinString "" messageHash0
@@ -224,7 +222,7 @@ evalECDSARecover =
             & Text.pack
             & String.asPattern resultSort
             & return
-    eval0 _ _ = Builtin.wrongArity ecdsaRecoverKey
+    eval0 _ _ _ = Builtin.wrongArity ecdsaRecoverKey
 
 pad :: Int -> Word8 -> ByteString -> ByteString
 pad n w s = ByteString.append s padding

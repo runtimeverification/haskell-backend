@@ -8,15 +8,12 @@ module Kore.Step.Simplification.TermLike (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens.Combinators as Lens
 import Control.Monad.Catch (
     MonadThrow,
  )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
  )
@@ -74,9 +71,6 @@ import qualified Kore.Step.Simplification.Bottom as Bottom (
     simplify,
  )
 import qualified Kore.Step.Simplification.Ceil as Ceil (
-    simplify,
- )
-import qualified Kore.Step.Simplification.Defined as Defined (
     simplify,
  )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue (
@@ -167,6 +161,7 @@ import Kore.Unparser (
  )
 import qualified Kore.Variables.Binding as Binding
 import qualified Logic
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
@@ -452,8 +447,6 @@ simplify sideCondition = \termLike ->
                     return $ InternalString.simplify (getConst internalStringF)
                 VariableF variableF ->
                     return $ Variable.simplify (getConst variableF)
-                DefinedF definedF ->
-                    Defined.simplify <$> simplifyChildren definedF
 
 {- | We expect each predicate in the result to have been fully
  simplified with a different side condition.

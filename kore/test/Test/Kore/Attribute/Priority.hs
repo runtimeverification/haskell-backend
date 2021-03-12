@@ -7,15 +7,12 @@ module Test.Kore.Attribute.Priority (
     test_negative,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Priority
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parsePriority :: Attributes -> Parser Priority
 parsePriority = parseAttributes

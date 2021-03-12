@@ -2,12 +2,9 @@ module Test.Kore.Step.Transition (
     test_ifte,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Step.Transition
-
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_ifte :: [TestTree]

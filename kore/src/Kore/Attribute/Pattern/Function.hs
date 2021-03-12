@@ -9,13 +9,10 @@ module Kore.Attribute.Pattern.Function (
     alwaysFunction,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Const
 import Data.Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.Alias as Internal
@@ -25,6 +22,7 @@ import Kore.Internal.Inj (
 import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
+import Prelude.Kore
 
 -- | A pattern is 'Function' if it matches zero or one elements.
 newtype Function = Function {isFunction :: Bool}

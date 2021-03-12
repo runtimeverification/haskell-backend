@@ -57,8 +57,6 @@ module Kore.Syntax.Variable (
     toConcrete,
 ) where
 
-import Prelude.Kore
-
 import Data.Distributive (
     Distributive (..),
  )
@@ -77,17 +75,17 @@ import Data.Functor.Rep (
 import Data.Generics.Sum (
     _Ctor,
  )
+import Data.Sup
 import qualified Data.Text as Text
 import Data.Void
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Numeric.Natural
-
-import Data.Sup
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Numeric.Natural
+import Prelude.Kore
 import qualified Pretty
 
 -- | Error thrown when 'variableCounter' takes an illegal value.

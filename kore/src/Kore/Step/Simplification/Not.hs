@@ -18,8 +18,6 @@ module Kore.Step.Simplification.Not (
     notSimplifier,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -70,6 +68,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Logic
+import Prelude.Kore
 
 {- |'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.

@@ -1,9 +1,7 @@
 {- |
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-
 This module should be imported qualified:
-
 @
 import qualified Kore.Step.Function.Memo as Memo
 @
@@ -17,8 +15,6 @@ module Kore.Step.Function.Memo (
     liftSelf,
     new,
 ) where
-
-import Prelude.Kore
 
 import Control.Monad.State.Class (
     MonadState,
@@ -34,8 +30,8 @@ import Data.HashMap.Strict (
 import qualified Data.HashMap.Strict as HashMap
 import Data.IORef
 import qualified Data.Tuple as Tuple
-
 import Kore.Internal.TermLike
+import Prelude.Kore
 
 -- | A function application memoizer.
 data Self monad = Self

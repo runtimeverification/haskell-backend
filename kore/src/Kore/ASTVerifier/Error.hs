@@ -17,16 +17,14 @@ module Kore.ASTVerifier.Error (
     noConstructorWithDomainValues,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import Kore.Error
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 -- | 'VerifyError' is a tag for verification errors.

@@ -38,8 +38,6 @@ module Kore.Builtin.AssociativeCommutative (
     toNormalizedInternalSet,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -59,7 +57,6 @@ import Data.Reflection (
 import qualified Data.Reflection as Reflection
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Concat as Att hiding (
     concatSymbol,
  )
@@ -112,7 +109,6 @@ import Kore.Internal.TermLike (
     mkElemVar,
     termLikeSort,
     pattern App_,
-    pattern Defined_,
     pattern ElemVar_,
     pattern InternalMap_,
     pattern InternalSet_,
@@ -137,6 +133,7 @@ import Kore.Unparser (
  )
 import qualified Kore.Unparser as Unparser
 import Logic
+import Prelude.Kore
 import Pretty (
     Doc,
  )
@@ -210,7 +207,6 @@ instance TermWrapper NormalizedMap where
 
     matchBuiltin (InternalMap_ internalMap) =
         Just (builtinAcChild internalMap)
-    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
     toNormalized (InternalMap_ InternalAc{builtinAcChild}) =
         maybe Bottom Normalized (renormalize builtinAcChild)
@@ -242,7 +238,6 @@ instance TermWrapper NormalizedMap where
             case args of
                 [map1, map2] -> toNormalized map1 <> toNormalized map2
                 _ -> Builtin.wrongArity "MAP.concat"
-    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . wrapAc)
             NormalizedAc
@@ -348,8 +343,6 @@ toNormalizedInternalMapWorker term@(App_ symbol args)
                             }
                 return internal
             _ -> Builtin.wrongArity "MAP.concat"
-toNormalizedInternalMapWorker (Defined_ child) =
-    toNormalizedInternalMapWorker child
 toNormalizedInternalMapWorker term =
     Just
         (emptyInternalAc @NormalizedMap (termLikeSort term))
@@ -377,7 +370,6 @@ instance TermWrapper NormalizedSet where
 
     matchBuiltin (InternalSet_ internalSet) =
         Just (builtinAcChild internalSet)
-    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
     toNormalized (InternalSet_ InternalAc{builtinAcChild}) =
         maybe Bottom Normalized (renormalize builtinAcChild)
@@ -408,7 +400,6 @@ instance TermWrapper NormalizedSet where
             case args of
                 [set1, set2] -> toNormalized set1 <> toNormalized set2
                 _ -> Builtin.wrongArity "SET.concat"
-    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . wrapAc)
             emptyNormalizedAc{opaque = [patt]}
@@ -511,8 +502,6 @@ toNormalizedInternalSetWorker term@(App_ symbol args)
                             }
                 return internal
             _ -> Builtin.wrongArity "SET.concat"
-toNormalizedInternalSetWorker (Defined_ child) =
-    toNormalizedInternalSetWorker child
 toNormalizedInternalSetWorker term =
     Just
         (emptyInternalAc @NormalizedSet (termLikeSort term))

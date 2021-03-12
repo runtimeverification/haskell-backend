@@ -8,14 +8,13 @@ module Kore.Attribute.Sort.Constructors (
     Constructor (..),
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Symbol (
     Symbol,
  )
 import Kore.Sort (
     Sort,
  )
+import Prelude.Kore
 
 data Constructor = Constructor
     { name :: !Symbol

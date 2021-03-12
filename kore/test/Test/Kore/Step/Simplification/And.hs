@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.And (
     test_andSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -33,12 +29,13 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Step.Simplification.And
 import qualified Kore.Step.Simplification.Not as Not
-
+import Prelude.Kore
 import Test.Kore.Step.MockSymbols (
     testSort,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_andSimplification :: [TestTree]

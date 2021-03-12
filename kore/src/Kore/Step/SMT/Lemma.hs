@@ -11,8 +11,6 @@ module Kore.Step.SMT.Lemma (
     declareSMTLemmas,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error (
     runMaybeT,
@@ -26,13 +24,13 @@ import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Text as Text
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.SmtLemma
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Step.SMT.Declaration.All as SMT.All (
@@ -45,6 +43,7 @@ import Kore.Syntax.Sentence (
 import Log (
     MonadLog (..),
  )
+import Prelude.Kore
 import SMT (
     MonadSMT (..),
     Result (..),
@@ -86,7 +85,7 @@ declareSMTLemmas m = do
         guard (isSmtLemma $ Attribute.smtLemma atts)
         (lemma, TranslatorState{terms}) <-
             runTranslator $
-                translatePredicateWith translateUninterpreted $
+                translatePredicateWith SideCondition.top translateUninterpreted $
                     wrapPredicate $ sentenceAxiomPattern axiomDeclaration
         SMT.assert (addQuantifiers terms lemma)
 

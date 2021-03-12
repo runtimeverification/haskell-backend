@@ -9,16 +9,14 @@ module Kore.Attribute.Symbol.Klabel (
     klabelAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 import Pretty
 
 -- | @Klabel@ represents the @klabel@ attribute for symbols.

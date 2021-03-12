@@ -5,10 +5,6 @@ module Test.Kore.Step.Simplification.Iff (
     test_makeEvaluate,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -33,9 +29,10 @@ import qualified Kore.Step.Simplification.Iff as Iff (
     makeEvaluate,
     simplify,
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 

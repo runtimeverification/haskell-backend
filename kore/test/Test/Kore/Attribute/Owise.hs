@@ -6,14 +6,11 @@ module Test.Kore.Attribute.Owise (
     test_arguments,
 ) where
 
+import Kore.Attribute.Owise
 import Prelude.Kore
-
+import Test.Kore.Attribute.Parser
 import Test.Tasty
 import Test.Tasty.HUnit
-
-import Kore.Attribute.Owise
-
-import Test.Kore.Attribute.Parser
 
 parseOwise :: Attributes -> Parser Owise
 parseOwise = parseAttributes

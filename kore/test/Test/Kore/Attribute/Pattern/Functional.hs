@@ -4,15 +4,9 @@ module Test.Kore.Attribute.Pattern.Functional (
     test_instance_Synthetic,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Data.Maybe (
     fromJust,
  )
-
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -25,12 +19,14 @@ import Kore.Internal.TermLike (
 import Kore.Syntax hiding (
     PatternF (..),
  )
-
+import Prelude.Kore
 import Test.Kore.Builtin.Builtin (
     emptyNormalizedSet,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.With
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =

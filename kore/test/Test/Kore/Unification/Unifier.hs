@@ -6,10 +6,6 @@ module Test.Kore.Unification.Unifier (
     test_evaluated,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Exception (
     ErrorCall (ErrorCall),
     catch,
@@ -20,11 +16,16 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Predicate (
+    Predicate,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition (
     top,
     topTODO,
+ )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
  )
 import Kore.Step.Simplification.Data (
     Env (..),
@@ -41,14 +42,8 @@ import Kore.Unification.Procedure
 import qualified Kore.Unification.SubstitutionSimplifier as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
-import Kore.Internal.Predicate (
-    Predicate,
- )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
 import Test.Kore
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
@@ -60,6 +55,7 @@ import Test.Kore.Variables.W
 import Test.SMT (
     runNoSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 var :: Text -> Sort -> Mock.MockRewritingElementVariable

@@ -11,8 +11,6 @@ module Kore.Step.Rule.Combine (
     renameRulesVariables,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.State.Strict (
     State,
     evalState,
@@ -21,10 +19,6 @@ import qualified Control.Monad.State.Strict as State
 import Data.Default (
     Default (..),
  )
-import qualified Kore.Step.AntiLeft as AntiLeft (
-    antiLeftPredicate,
- )
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     freeVariables,
@@ -56,6 +50,9 @@ import Kore.Internal.Variable (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import qualified Kore.Step.AntiLeft as AntiLeft (
+    antiLeftPredicate,
+ )
 import Kore.Step.RulePattern (
     RHS (RHS),
     RewriteRule (RewriteRule),
@@ -76,6 +73,7 @@ import Kore.Step.Step (
     refreshRule,
  )
 import qualified Logic
+import Prelude.Kore
 
 {-
 Given a list of rules

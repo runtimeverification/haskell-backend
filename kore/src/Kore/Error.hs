@@ -22,8 +22,6 @@ module Kore.Error (
     module Control.Monad.Except,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Except (
     MonadError (..),
  )
@@ -33,8 +31,8 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
+import Prelude.Kore
 import qualified Pretty
 
 {- |'Error' represents a Kore error with a stacktrace-like context.

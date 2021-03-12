@@ -19,8 +19,6 @@ module Kore.Reachability.Prove (
     lhsClaimStateTransformer,
 ) where
 
-import Prelude.Kore
-
 import Control.DeepSeq (
     deepseq,
  )
@@ -50,6 +48,10 @@ import Data.Coerce (
     coerce,
  )
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Limit (
+    Limit,
+ )
+import qualified Data.Limit as Limit
 import Data.List.Extra (
     groupSortOn,
  )
@@ -58,14 +60,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Numeric.Natural (
-    Natural,
- )
-
-import Data.Limit (
-    Limit,
- )
-import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import Kore.Debug
 import Kore.Internal.Conditional (
@@ -131,6 +125,10 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 import qualified Pretty
 import Prof
 

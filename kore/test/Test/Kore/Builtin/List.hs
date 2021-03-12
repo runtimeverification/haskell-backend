@@ -25,14 +25,6 @@ module Test.Kore.Builtin.List (
     genSeqInteger,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Data.Map.Strict (
     Map,
  )
@@ -45,7 +37,9 @@ import qualified Data.Sequence as Seq
 import Data.Text (
     Text,
  )
-
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.List as List
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -56,7 +50,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -66,6 +60,8 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
+import Test.Tasty
+import Test.Tasty.HUnit
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)

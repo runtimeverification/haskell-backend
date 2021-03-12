@@ -3,16 +3,13 @@ module Test.Kore.Options (
     test_options,
 ) where
 
-import Prelude.Kore
-
 import Data.Maybe (
     fromJust,
  )
-
+import Kore.Options
+import Prelude.Kore
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-import Kore.Options
 
 test_flags :: [TestTree]
 test_flags =

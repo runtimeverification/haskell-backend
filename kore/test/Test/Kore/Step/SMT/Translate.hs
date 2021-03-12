@@ -2,24 +2,22 @@ module Test.Kore.Step.SMT.Translate (
     test_translatePredicateWith,
 ) where
 
-import Prelude.Kore hiding (
-    and,
- )
-
-import Test.Tasty
-
 import Control.Error (
     runMaybeT,
  )
+import qualified Data.HashSet as HashSet
 import Data.Reflection (
     give,
  )
 import qualified Data.Text as Text
-
 import Kore.Internal.Predicate (
     Predicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
  )
@@ -31,12 +29,15 @@ import Kore.Step.SMT.Translate (
     evalTranslator,
  )
 import qualified Kore.Step.SMT.Translate as SMT
+import Prelude.Kore hiding (
+    and,
+ )
 import SMT
 import qualified SMT.SimpleSMT
-
 import Test.Expect
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_translatePredicateWith :: [TestTree]
@@ -143,10 +144,6 @@ test_translatePredicateWith =
         yields
             (translatingPred (peq n (Mock.tdivInt n m)))
             (var 0 `eq` (var 0 `sdiv` var 1))
-    , testCase "X:Int = \\defined X:Int /Int Y:Int" $
-        yields
-            (translatingPred (peq n (TermLike.mkDefined $ Mock.tdivInt n m)))
-            (var 0 `eq` (var 0 `sdiv` var 1))
     , testCase "erases predicate sorts" $ do
         -- Two inputs: the same \ceil in different outer sorts.
         let input1 = pceil (Mock.tdivInt n m)
@@ -173,17 +170,22 @@ test_translatePredicateWith =
     , testCase "s() = a, s arbitrary symbol, a constructor" $
         translatingPred (peq Mock.plain00 Mock.a)
             `yields` var 0
-    , -- -- This should fail because we don't know if it is defined.
+    , -- This should fail because we don't know if it is defined.
       -- , testCase "function(x)" $
-      --     translatingPatt (Mock.functionSMT x) & fails
+      --     translatingPatt SideCondition.top (Mock.functionSMT x) & fails
       -- -- This should fail because we don't know if it is defined.
       -- , testCase "functional(function(x))" $
-      --     translatingPatt (Mock.functionalSMT (Mock.functionSMT x)) & fails
+      --     translatingPatt
+      --         SideCondition.top
+      --         (Mock.functionalSMT (Mock.functionSMT x))
+      --     & fails
       testCase "function(x), where function(x) is defined" $
-        translatingPatt (defined (function x))
+        translatingPatt (defined (function x)) (function x)
             `yields` functionSMT (var 0)
     , testCase "functional(function(x)) where function(x) is defined" $
-        translatingPatt (defined (functional (function x)))
+        translatingPatt
+            (defined (functional (function x)))
+            (functional (function x))
             `yields` functionalSMT (functionSMT (var 0))
     ]
   where
@@ -196,7 +198,6 @@ test_translatePredicateWith =
     var i = Atom $ "<" <> Text.pack (show i) <> ">"
     function = Mock.functionSMT
     functional = Mock.functionalSMT
-    defined = TermLike.mkDefined
     functionSMT sexpr = List [Atom "functionSMT", sexpr]
     functionalSMT sexpr = List [Atom "functionalSMT", sexpr]
     pleq = Mock.lessInt
@@ -212,28 +213,44 @@ test_translatePredicateWith =
     existst i p = existsQ [List [var i, Atom "|HB_testSort|"]] p
     fun i p = SMT.SimpleSMT.List (var i : p)
     sdiv i j = List [Atom "div", i, j]
+    defined term =
+        term
+            & HashSet.singleton
+            & SideCondition.fromDefinedTerms
 
 translatePredicate ::
     HasCallStack =>
     Predicate VariableName ->
     Translator VariableName NoSMT SExpr
-translatePredicate = Evaluator.translatePredicate Mock.metadataTools
+translatePredicate =
+    Evaluator.translatePredicate SideCondition.top Mock.metadataTools
 
 translatePattern ::
     HasCallStack =>
+    SideCondition VariableName ->
     TermLike VariableName ->
     Translator VariableName NoSMT SExpr
-translatePattern =
+translatePattern sideCondition =
     give Mock.metadataTools $
-        SMT.translatePattern Evaluator.translateTerm Mock.testSort
+        SMT.translatePattern
+            sideCondition
+            Evaluator.translateTerm
+            Mock.testSort
 
 translatingPred :: HasCallStack => Predicate VariableName -> IO (Maybe SExpr)
 translatingPred =
     Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePredicate
 
-translatingPatt :: HasCallStack => TermLike VariableName -> IO (Maybe SExpr)
-translatingPatt =
-    Test.SMT.runNoSMT . runMaybeT . evalTranslator . translatePattern
+translatingPatt ::
+    HasCallStack =>
+    SideCondition VariableName ->
+    TermLike VariableName ->
+    IO (Maybe SExpr)
+translatingPatt sideCondition =
+    Test.SMT.runNoSMT
+        . runMaybeT
+        . evalTranslator
+        . translatePattern sideCondition
 
 yields :: HasCallStack => IO (Maybe SExpr) -> SExpr -> IO ()
 actual `yields` expected = actual >>= assertEqual "" (Just expected)

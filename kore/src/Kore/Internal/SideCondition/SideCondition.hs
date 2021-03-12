@@ -7,17 +7,11 @@ module Kore.Internal.SideCondition.SideCondition (
     mkRepresentation,
 ) where
 
-import Prelude.Kore
-import Pretty (
-    Pretty (..),
- )
-
 import Data.Hashable (
     Hashed,
     hashed,
     unhashed,
  )
-
 import Data.Type.Equality (
     testEquality,
     (:~:) (..),
@@ -25,6 +19,10 @@ import Data.Type.Equality (
 import Kore.Debug (
     Debug (..),
     Diff (..),
+ )
+import Prelude.Kore
+import Pretty (
+    Pretty (..),
  )
 import Type.Reflection (
     SomeTypeRep (..),

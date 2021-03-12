@@ -2,13 +2,7 @@
 
 module Test.Kore.Step.Function.Evaluator (test_evaluateApplication) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import qualified Data.Map.Strict as Map
-
 import Kore.Attribute.Synthetic (
     synthesize,
  )
@@ -40,9 +34,11 @@ import qualified Kore.Step.Simplification.Simplify as Kore
 import Kore.Syntax.Application (
     Application (..),
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_evaluateApplication :: [TestTree]
 test_evaluateApplication =

@@ -10,8 +10,6 @@ module Kore.Step.Simplification.Rule (
     simplifyClaimPattern,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Conditional (
     Conditional (..),
  )
@@ -46,6 +44,7 @@ import Kore.Step.Simplification.Simplify (
     MonadSimplify,
  )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
+import Prelude.Kore
 
 {- | Simplify a 'Rule' using only matching logic rules.
 

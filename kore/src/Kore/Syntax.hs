@@ -31,13 +31,12 @@ module Kore.Syntax (
     Const (..),
 ) where
 
-import Prelude.Kore
-
 import Kore.Sort
 import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
+import Prelude.Kore
 
 -- TODO (thomas.tuegel): export Kore.Syntax.Definition here
 import Kore.Syntax.DomainValue

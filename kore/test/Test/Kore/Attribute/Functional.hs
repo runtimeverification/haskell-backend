@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Functional (
     test_arguments,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Functional
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseFunctional :: Attributes -> Parser Functional
 parseFunctional = parseAttributes

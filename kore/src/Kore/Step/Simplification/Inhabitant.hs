@@ -9,8 +9,6 @@ module Kore.Step.Simplification.Inhabitant (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -22,6 +20,7 @@ import qualified Kore.Internal.TermLike as TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- | 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.

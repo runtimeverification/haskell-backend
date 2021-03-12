@@ -8,11 +8,8 @@ module Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
@@ -48,6 +45,7 @@ import Kore.TopBottom (
  )
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Prelude.Kore
 import qualified Pretty
 
 checkImplicationIsTop ::

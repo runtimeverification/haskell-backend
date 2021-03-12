@@ -7,17 +7,15 @@ module Kore.Attribute.Pattern.Created (
     hasKnownCreator,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import GHC.Stack (
     SrcLoc (..),
  )
 import qualified GHC.Stack as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

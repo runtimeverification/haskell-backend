@@ -9,8 +9,6 @@ module Kore.Log.ErrorRewriteLoop (
     errorRewriteLoop,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
@@ -22,7 +20,6 @@ import GHC.Stack (
     CallStack,
     callStack,
  )
-
 import Kore.Attribute.Axiom (
     Axiom (..),
  )
@@ -34,9 +31,9 @@ import Kore.Step.RulePattern (
     RulePattern (..),
     getRewriteRule,
  )
-import Pretty
-
 import Log
+import Prelude.Kore
+import Pretty
 
 data ErrorRewriteLoop = ErrorRewriteLoop
     { rule :: !(RewriteRule RewritingVariableName)

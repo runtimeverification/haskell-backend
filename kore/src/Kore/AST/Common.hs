@@ -19,16 +19,14 @@ module Kore.AST.Common (
     patternString,
 ) where
 
-import Prelude.Kore
-
 import Data.String (
     fromString,
  )
 import GHC.Generics (
     Generic,
  )
-
 import Kore.Unparser
+import Prelude.Kore
 
 -- |Enumeration of patterns starting with @\@
 data MLPatternType

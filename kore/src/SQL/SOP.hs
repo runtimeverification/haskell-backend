@@ -47,8 +47,6 @@ module SQL.SOP (
     SOP.Code,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Product
 import Data.Proxy (
     Proxy (..),
@@ -63,10 +61,7 @@ import Generics.SOP (
     Shape (..),
  )
 import qualified Generics.SOP as SOP
-import Type.Reflection (
-    someTypeRep,
- )
-
+import Prelude.Kore
 import SQL.ColumnDef as Column
 import SQL.Key as Key
 import SQL.Query (
@@ -74,6 +69,9 @@ import SQL.Query (
  )
 import qualified SQL.Query as Query
 import SQL.SQL as SQL
+import Type.Reflection (
+    someTypeRep,
+ )
 
 {- | @ColumnImpl@ is a concrete implementation of the 'SQL.Column' typeclass.
 

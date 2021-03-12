@@ -4,11 +4,9 @@ module Test.Kore.Attribute.Parser (
     expectFailure,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Parser
+import Prelude.Kore
+import Test.Tasty.HUnit
 
 expectSuccess ::
     (Eq attr, Eq e, Show attr, Show e) =>

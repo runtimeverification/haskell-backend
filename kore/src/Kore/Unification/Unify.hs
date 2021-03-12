@@ -10,8 +10,6 @@ module Kore.Unification.Unify (
     module Logic,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -20,6 +18,7 @@ import Kore.Step.Simplification.Simplify (
     MonadSimplify (..),
  )
 import Logic
+import Prelude.Kore
 import Pretty (
     Doc,
  )

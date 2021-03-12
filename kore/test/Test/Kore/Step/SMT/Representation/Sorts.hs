@@ -2,10 +2,6 @@ module Test.Kore.Step.SMT.Representation.Sorts (
     test_sortParsing,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
     indexBySort,
  )
@@ -27,7 +23,7 @@ import Kore.Step.SMT.Representation.Sorts
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -64,6 +60,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_sortParsing :: [TestTree]

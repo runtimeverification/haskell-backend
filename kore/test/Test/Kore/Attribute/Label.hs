@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Label (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Label
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseLabel :: Attributes -> Parser Label
 parseLabel = parseAttributes

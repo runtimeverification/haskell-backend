@@ -7,12 +7,6 @@ module Test.ConsistentKore (
     termLikeGen,
 ) where
 
-import Prelude.Kore
-
-import qualified Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-
 import qualified Control.Arrow as Arrow
 import qualified Control.Monad as Monad
 import Control.Monad.Reader (
@@ -28,7 +22,9 @@ import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
-
+import qualified Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Attribute.Constructor as Attribute.Constructor (
     Constructor (..),
  )
@@ -118,7 +114,7 @@ import Kore.Sort (
     Sort,
  )
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import Test.Kore (
     idGen,
  )
@@ -336,7 +332,6 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (EndiannessF _) = term -- Not implemented.
     checkTermF (SignednessF _) = term -- Not implemented.
     checkTermF (InjF _) = term -- Not implemented.
-    checkTermF (DefinedF _) = term -- Not implemented.
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do

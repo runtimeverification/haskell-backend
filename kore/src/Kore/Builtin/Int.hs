@@ -71,8 +71,6 @@ module Kore.Builtin.Int (
     log2,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -103,8 +101,6 @@ import GHC.Integer.GMP.Internals (
 import GHC.Integer.Logarithms (
     integerLog2#,
  )
-import qualified Text.Megaparsec.Char.Lexer as Parsec
-
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -122,6 +118,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol (
     symbolHook,
  )
@@ -137,6 +134,8 @@ import Kore.Step.Simplification.Simplify (
     TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
+import Prelude.Kore
+import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -392,7 +391,7 @@ powmod b e m
     | otherwise = Just (powModInteger b e m)
 
 evalEq :: Builtin.Function
-evalEq resultSort arguments@[_intLeft, _intRight] =
+evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     concrete <|> symbolicReflexivity
   where
     concrete = do
@@ -411,12 +410,12 @@ evalEq resultSort arguments@[_intLeft, _intRight] =
             else empty
 
     mkCeilUnlessDefined termLike
-        | TermLike.isDefinedPattern termLike = Condition.top
+        | SideCondition.isDefined sideCondition termLike = Condition.top
         | otherwise =
             Condition.fromPredicate (makeCeilPredicate termLike)
     returnPattern = return . flip Pattern.andCondition conditions
     conditions = foldMap mkCeilUnlessDefined arguments
-evalEq _ _ = Builtin.wrongArity eqKey
+evalEq _ _ _ = Builtin.wrongArity eqKey
 
 -- | Match the @INT.eq@ hooked symbol.
 matchIntEqual :: TermLike variable -> Maybe (EqTerm (TermLike variable))

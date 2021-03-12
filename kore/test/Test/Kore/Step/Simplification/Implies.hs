@@ -4,11 +4,6 @@ module Test.Kore.Step.Simplification.Implies (
     test_simplifyEvaluated,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Internal.Condition (
     Condition,
     andCondition,
@@ -26,13 +21,15 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Step.Simplification.Implies as Implies
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import Test.Kore.Internal.Predicate as Predicate
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =

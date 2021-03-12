@@ -16,8 +16,6 @@ module SQL.ColumnDef (
     columnNotNull,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product.Fields
 import Data.Set (
@@ -25,6 +23,7 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
+import Prelude.Kore
 
 newtype TypeName = TypeName {getTypeName :: String}
     deriving (Eq, Ord, Read, Show)

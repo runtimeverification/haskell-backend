@@ -7,10 +7,6 @@ module Test.Kore.Reachability.MockAllPath (
     test_runStrategy,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Monad.Catch (
     MonadCatch (catch),
     MonadThrow (throwM),
@@ -26,7 +22,6 @@ import Data.Sequence (
 import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Reachability.Claim (
@@ -51,13 +46,14 @@ import Kore.TopBottom (
 import Log (
     MonadLog (..),
  )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
 import SMT (
     MonadSMT (..),
  )
-
+import Test.Tasty
 import Test.Terse
 
 newtype MockInteger = MockInteger {unMockInteger :: Integer}

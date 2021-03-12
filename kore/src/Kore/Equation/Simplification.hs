@@ -9,8 +9,6 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Except (
     runExceptT,
@@ -19,7 +17,6 @@ import Control.Monad.Trans.Except (
 import Data.Map.Strict (
     Map,
  )
-
 import Kore.Equation.Equation
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -42,6 +39,7 @@ import Kore.Step.Simplification.Simplify (
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
 import qualified Logic
+import Prelude.Kore
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 

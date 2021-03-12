@@ -9,14 +9,12 @@ module Kore.Attribute.Symbol.Anywhere (
     anywhereAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Anywhere@ represents the @anywhere@ attribute for symbols.
 newtype Anywhere = Anywhere {isAnywhere :: Bool}

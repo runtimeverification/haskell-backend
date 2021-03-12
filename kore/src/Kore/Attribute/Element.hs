@@ -14,15 +14,13 @@ module Kore.Attribute.Element (
     elementAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified Generics.SOP as SOP
-import qualified Pretty
-
 import Kore.Attribute.Parser
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
+import qualified Pretty
 
 -- | @Element@ represents the @element@ attribute.
 newtype Element symbol = Element {getElement :: Maybe symbol}

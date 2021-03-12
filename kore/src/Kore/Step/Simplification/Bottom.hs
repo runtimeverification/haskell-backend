@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Bottom (
     simplify,
 ) where
 
-import Prelude.Kore ()
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -24,6 +22,7 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Sort
 import Kore.Syntax.Bottom
+import Prelude.Kore ()
 
 -- | simplifies a Bottom pattern, which means returning an always-false or.
 simplify :: Bottom Sort child -> OrPattern RewritingVariableName

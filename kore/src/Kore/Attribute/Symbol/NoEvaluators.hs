@@ -9,13 +9,11 @@ module Kore.Attribute.Symbol.NoEvaluators (
     noEvaluatorsAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 newtype NoEvaluators = NoEvaluators {hasNoEvaluators :: Bool}
     deriving (Eq, Ord, Show)

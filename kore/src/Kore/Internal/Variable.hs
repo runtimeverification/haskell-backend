@@ -10,10 +10,7 @@ module Kore.Internal.Variable (
     module Kore.Syntax.Variable,
 ) where
 
-import Prelude.Kore
-
 import Data.Void
-
 import Kore.Debug (
     Debug,
  )
@@ -25,6 +22,7 @@ import Kore.Variables.Fresh (
     FreshName,
     FreshPartialOrd,
  )
+import Prelude.Kore
 
 {- | @SubstitutionOrd@ orders variables for substitution.
 

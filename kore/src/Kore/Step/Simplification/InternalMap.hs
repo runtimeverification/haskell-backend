@@ -8,12 +8,9 @@ module Kore.Step.Simplification.InternalMap (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Functor.Compose
 import Data.Generics.Product
-
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
 import Kore.Internal.InternalMap
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -26,6 +23,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Logic
+import Prelude.Kore
 
 -- | Simplify an 'InternalMap' pattern.
 simplify ::

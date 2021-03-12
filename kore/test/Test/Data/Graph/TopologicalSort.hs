@@ -1,13 +1,9 @@
 module Test.Data.Graph.TopologicalSort (test_topologicalSort) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
-import qualified Data.Map.Strict as Map
-
 import Data.Graph.TopologicalSort
-
+import qualified Data.Map.Strict as Map
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_topologicalSort :: [TestTree]

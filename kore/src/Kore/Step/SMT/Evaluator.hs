@@ -14,21 +14,18 @@ module Kore.Step.SMT.Evaluator (
     translatePredicate,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
     runMaybeT,
  )
 import qualified Control.Lens as Lens
+import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 import Data.Reflection
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-
-import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
@@ -51,6 +48,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike (
     TermLike,
     Variable (..),
@@ -76,6 +74,7 @@ import Log
 import Logic (
     LogicT,
  )
+import Prelude.Kore
 import qualified Pretty
 import SMT (
     Result (..),
@@ -96,7 +95,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate (predicate :| [])
+            _ -> decidePredicate SideCondition.top (predicate :| [])
 
 instance
     InternalVariable variable =>
@@ -107,7 +106,7 @@ instance
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
             _ ->
-                decidePredicate $
+                decidePredicate sideCondition $
                     predicate :| [from @_ @(Predicate _) sideCondition]
 
 instance InternalVariable variable => Evaluable (Conditional variable term) where
@@ -167,9 +166,10 @@ decidePredicate ::
     forall variable simplifier.
     InternalVariable variable =>
     MonadSimplify simplifier =>
+    SideCondition variable ->
     NonEmpty (Predicate variable) ->
     simplifier (Maybe Bool)
-decidePredicate predicates =
+decidePredicate sideCondition predicates =
     whileDebugEvaluateCondition predicates go
   where
     go =
@@ -189,7 +189,10 @@ decidePredicate predicates =
     query =
         SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
-            predicates' <- traverse (translatePredicate tools) predicates
+            predicates' <-
+                traverse
+                    (translatePredicate sideCondition tools)
+                    predicates
             traverse_ SMT.assert predicates'
             SMT.check
 
@@ -205,11 +208,13 @@ translatePredicate ::
     , SMT.MonadSMT m
     , MonadLog m
     ) =>
+    SideCondition variable ->
     SmtMetadataTools Attribute.Symbol ->
     Predicate variable ->
     Translator variable m SExpr
-translatePredicate tools predicate =
-    give tools $ translatePredicateWith translateTerm predicate
+translatePredicate sideCondition tools predicate =
+    give tools $
+        translatePredicateWith sideCondition translateTerm predicate
 
 translateTerm ::
     forall m variable.

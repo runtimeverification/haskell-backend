@@ -6,8 +6,6 @@ module Kore.Step.AxiomPattern (
     AxiomPattern (..),
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -21,6 +19,7 @@ import Kore.Step.RulePattern (
 import Kore.Unparser (
     Unparse (..),
  )
+import Prelude.Kore
 
 {- | A wrapper over 'TermLike variable'. It represents a rewrite axiom
  or claim as a Matching Logic pattern.

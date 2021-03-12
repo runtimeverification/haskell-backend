@@ -6,15 +6,12 @@ module Test.Kore.Syntax.Id (
     module Kore.Syntax.Id,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Syntax.Id
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
+import Test.Tasty
 import Test.Terse
 
 test_Id :: [TestTree]

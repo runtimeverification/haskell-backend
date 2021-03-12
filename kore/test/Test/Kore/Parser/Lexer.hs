@@ -13,23 +13,19 @@ module Test.Kore.Parser.Lexer (
     test_space,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
     unpack,
  )
-
-import Test.Tasty (
-    TestTree,
- )
-
 import Kore.Parser.Lexer
 import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.Parser
+import Test.Tasty (
+    TestTree,
+ )
 
 test_colon :: [TestTree]
 test_colon =

@@ -12,8 +12,6 @@ module Kore.ModelChecker.Bounded (
     checkClaim,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad.Catch (
     MonadThrow,
@@ -77,6 +75,7 @@ import qualified Log
 import Numeric.Natural (
     Natural,
  )
+import Prelude.Kore
 
 data CheckResult patt claim
     = -- | Property is proved within the bound.

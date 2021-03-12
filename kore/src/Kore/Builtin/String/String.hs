@@ -26,21 +26,19 @@ module Kore.Builtin.String.String (
     string2TokenKey,
 ) where
 
-import Prelude.Kore
-
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
-
 import Kore.Internal.InternalString
 import Kore.Internal.Pattern (
     Pattern,
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
+import Prelude.Kore
 
 -- | Builtin name of the @String@ sort.
 sort :: Text

@@ -7,8 +7,6 @@ module Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
 ) where
 
-import Prelude.Kore
-
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
@@ -24,6 +22,7 @@ import Kore.Internal.Variable (
 import Kore.Rewriting.RewritingVariable
 import Kore.Unparser
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

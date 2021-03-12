@@ -2,10 +2,6 @@ module Test.Kore.Internal.Key (
     test_retractKey,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.TermLike (
     Concrete,
     DomainValue (..),
@@ -14,7 +10,7 @@ import Kore.Internal.TermLike (
     mkStringLiteral,
     retractKey,
  )
-
+import Prelude.Kore
 import Test.Kore.Builtin.Definition (
     mkBool,
     mkBytes,
@@ -25,6 +21,7 @@ import Test.Kore.Builtin.Definition (
     mkString,
     userTokenSort,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_retractKey :: [TestTree]

@@ -21,23 +21,18 @@ module Test.Kore.Builtin.String (
     asInternal,
 ) where
 
-import Prelude.Kore
-
+import Control.Monad.Trans.Maybe (
+    runMaybeT,
+ )
+import Data.Text (
+    Text,
+ )
+import qualified Data.Text as Text
 import Hedgehog hiding (
     Concrete,
  )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Test.Tasty
-
-import Data.Text (
-    Text,
- )
-import qualified Data.Text as Text
-
-import Control.Monad.Trans.Maybe (
-    runMaybeT,
- )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.Condition as Condition
@@ -61,7 +56,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -70,6 +65,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text

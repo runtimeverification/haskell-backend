@@ -8,8 +8,6 @@ module Kore.Syntax.Module (
     Module (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Kind (
     Type,
  )
@@ -22,10 +20,10 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- | 'ModuleName' corresponds to the @module-name@ syntactic category

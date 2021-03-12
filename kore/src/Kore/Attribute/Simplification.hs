@@ -20,16 +20,14 @@ module Kore.Attribute.Simplification (
     defaultSimplificationPriority,
 ) where
 
-import Prelude.Kore
-
 import Data.Maybe (
     maybeToList,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 type SimplificationPriority = Maybe Integer
 

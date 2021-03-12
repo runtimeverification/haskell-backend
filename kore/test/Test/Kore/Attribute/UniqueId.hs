@@ -6,15 +6,12 @@ module Test.Kore.Attribute.UniqueId (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.UniqueId
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseUniqueId :: Attributes -> Parser UniqueId
 parseUniqueId = parseAttributes

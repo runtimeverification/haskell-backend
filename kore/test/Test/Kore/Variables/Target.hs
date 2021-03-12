@@ -6,27 +6,23 @@ module Test.Kore.Variables.Target (
     test_FreshName,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import Test.Tasty
-import Test.Tasty.Hedgehog
-
 import qualified Control.Monad as Monad
 import qualified Data.Set as Set
-
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Variables.Target
 import Pair
-
+import Prelude.Kore
 import Test.Kore (
     elementVariableGen,
     standaloneGen,
     testId,
  )
 import Test.Kore.Variables.Fresh
+import Test.Tasty
+import Test.Tasty.Hedgehog
 
 test_Eq :: [TestTree]
 test_Eq =

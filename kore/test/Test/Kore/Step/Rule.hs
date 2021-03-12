@@ -4,11 +4,6 @@ module Test.Kore.Step.Rule (
     test_rewritePatternToRewriteRuleAndBack,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-
 import Control.DeepSeq (
     force,
  )
@@ -21,7 +16,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -39,12 +33,14 @@ import Kore.Syntax.Definition hiding (
     Alias (..),
  )
 import qualified Kore.Verified as Verified
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 test_axiomPatterns :: [TestTree]
 test_axiomPatterns =

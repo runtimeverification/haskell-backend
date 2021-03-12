@@ -6,11 +6,8 @@ module Kore.Syntax.Inhabitant (
     Inhabitant (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
     emptyFreeVariables,
@@ -19,6 +16,7 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
 newtype Inhabitant child = Inhabitant {inhSort :: Sort}

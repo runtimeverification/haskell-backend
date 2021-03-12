@@ -12,13 +12,10 @@ module Kore.Unification.SubstitutionSimplifier (
     module Kore.Step.Simplification.SubstitutionSimplifier,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
     maybeT,
  )
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -40,7 +37,6 @@ import Kore.Internal.Substitution (
 import Kore.Internal.TermLike (
     TermLike,
  )
-
 import Kore.Log.DebugSubstitutionSimplifier (
     debugSubstitutionSimplifierResult,
     whileDebugSubstitutionSimplifier,
@@ -62,6 +58,7 @@ import Kore.Step.Simplification.SubstitutionSimplifier (
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
 import qualified Logic
+import Prelude.Kore
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 

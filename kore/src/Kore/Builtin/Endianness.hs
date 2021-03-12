@@ -10,8 +10,6 @@ module Kore.Builtin.Endianness (
     module Kore.Builtin.Endianness.Endianness,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -20,7 +18,6 @@ import qualified Data.HashMap.Strict as HashMap
 import Data.String (
     IsString,
  )
-
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Builtin
 import Kore.Builtin.Endianness.Endianness
@@ -36,6 +33,7 @@ import Kore.Unification.Unify (
     explainAndReturnBottom,
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 verifiers :: Verifiers
 verifiers =

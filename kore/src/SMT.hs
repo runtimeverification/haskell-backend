@@ -52,15 +52,14 @@ module SMT (
     SimpleSMT.existsQ,
 ) where
 
-import Prelude.Kore hiding (
-    assert,
- )
-
 import Control.Concurrent.MVar
 import Control.Exception (
     IOException,
  )
 import qualified Control.Lens as Lens
+import Control.Monad (
+    join,
+ )
 import qualified Control.Monad as Monad
 import Control.Monad.Catch (
     MonadCatch,
@@ -70,6 +69,9 @@ import Control.Monad.Catch (
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Counter as Counter
 import qualified Control.Monad.Morph as Morph
+import Control.Monad.RWS.Strict (
+    RWST,
+ )
 import Control.Monad.Reader (
     ReaderT,
     runReaderT,
@@ -94,10 +96,6 @@ import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
-
-import Control.Monad (
-    join,
- )
 import Log (
     LogAction,
     LoggerT,
@@ -108,6 +106,9 @@ import qualified Log
 import Logic (
     LogicT,
     mapLogicT,
+ )
+import Prelude.Kore hiding (
+    assert,
  )
 import Prof
 import SMT.SimpleSMT (
@@ -417,6 +418,8 @@ instance MonadSMT m => MonadSMT (Counter.CounterT m)
 instance MonadSMT m => MonadSMT (State.Strict.StateT s m)
 
 instance MonadSMT m => MonadSMT (ExceptT e m)
+
+instance MonadSMT m => MonadSMT (RWST r () s m)
 
 -- | Time-limit for SMT queries.
 newtype TimeOut = TimeOut {getTimeOut :: Limit Integer}

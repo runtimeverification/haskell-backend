@@ -30,8 +30,6 @@ module Kore.Builtin.List.List (
     updateAllKey,
 ) where
 
-import Prelude.Kore
-
 import Data.Reflection (
     Given,
  )
@@ -46,7 +44,6 @@ import Data.String (
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Error as Kore
@@ -62,6 +59,7 @@ import Kore.Internal.Pattern (
  )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import Prelude.Kore
 
 -- | Builtin variable name of the @List@ sort.
 sort :: Text

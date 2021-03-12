@@ -9,16 +9,14 @@ module Kore.Attribute.Symbol.SymbolKywd (
     symbolKywdAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Monoid (
     Any (..),
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
 newtype SymbolKywd = SymbolKywd {isSymbolKywd :: Bool}

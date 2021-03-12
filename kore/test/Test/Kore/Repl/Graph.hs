@@ -4,13 +4,6 @@ module Test.Kore.Repl.Graph (
     test_graph,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext hiding (
-    assert,
- )
-
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -23,9 +16,13 @@ import Data.Set (
     isSubsetOf,
  )
 import qualified Data.Set as Set
-
 import Kore.Repl.State (
     smoothOutGraph,
+ )
+import Prelude.Kore
+import Test.Tasty
+import Test.Tasty.HUnit.Ext hiding (
+    assert,
  )
 
 test_graph :: [TestTree]

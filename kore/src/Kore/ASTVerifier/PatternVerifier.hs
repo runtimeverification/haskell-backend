@@ -12,8 +12,6 @@ module Kore.ASTVerifier.PatternVerifier (
     module Kore.ASTVerifier.PatternVerifier.PatternVerifier,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
@@ -24,7 +22,6 @@ import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
-
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier.PatternVerifier
@@ -53,6 +50,7 @@ import Kore.Syntax.Definition
 import Kore.Unparser
 import qualified Kore.Variables.Free as Variables
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import Pretty (
     (<+>),
  )

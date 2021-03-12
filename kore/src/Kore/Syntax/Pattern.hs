@@ -21,8 +21,6 @@ module Kore.Syntax.Pattern (
     module Control.Comonad,
 ) where
 
-import Prelude.Kore
-
 import Control.Comonad
 import Control.Comonad.Trans.Cofree (
     ComonadCofree (..),
@@ -49,7 +47,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Debug
 import Kore.Sort
@@ -84,6 +81,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 import qualified SQL
 

@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Symbol.Memo (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Symbol.Memo
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseMemo :: Attributes -> Parser Memo
 parseMemo = parseAttributes

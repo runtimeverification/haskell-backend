@@ -18,8 +18,6 @@ module Kore.Step.SMT.Translate (
     translatePattern,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error (
     MaybeT,
@@ -58,7 +56,6 @@ import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
-
 import Kore.Attribute.Hook
 import Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
@@ -83,6 +80,10 @@ import Kore.Internal.Predicate hiding (
     OrF,
     TopF,
  )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
@@ -97,6 +98,7 @@ import Kore.Step.Simplification.Simplify (
 import Log (
     MonadLog (..),
  )
+import Prelude.Kore
 import SMT (
     SExpr (..),
  )
@@ -128,20 +130,25 @@ translatePredicateWith ::
     , MonadLog m
     , InternalVariable variable
     ) =>
+    SideCondition variable ->
     TranslateTerm variable m ->
     Predicate variable ->
     Translator variable m SExpr
-translatePredicateWith translateTerm predicate =
+translatePredicateWith sideCondition translateTerm predicate =
     translatePredicatePattern $
         fromPredicate_ predicate
   where
     translatePredicatePattern :: p -> Translator variable m SExpr
-    translatePredicatePattern pat =
+    translatePredicatePattern pat
+        | SideCondition.isDefined sideCondition pat =
+            withDefinednessAssumption $
+                translatePredicatePatternWorker pat
+        | otherwise = translatePredicatePatternWorker pat
+
+    translatePredicatePatternWorker :: p -> Translator variable m SExpr
+    translatePredicatePatternWorker pat =
         case Cofree.tailF (Recursive.project pat) of
             EvaluatedF child -> translatePredicatePattern (getEvaluated child)
-            DefinedF child ->
-                withDefinednessAssumption $
-                    translatePredicatePattern (getDefined child)
             -- Logical connectives: translate as connectives
             AndF and' -> translatePredicateAnd and'
             BottomF _ -> return (SMT.bool False)
@@ -207,7 +214,7 @@ translatePredicateWith translateTerm predicate =
                 -- Attempt to translate patterns in builtin sorts, or failing that,
                 -- as predicates.
                 (<|>)
-                    (translatePattern translateTerm equalsOperandSort child)
+                    (translatePattern sideCondition translateTerm equalsOperandSort child)
                     (translatePredicatePattern child)
 
     translatePredicateIff Iff{iffFirst, iffSecond} =
@@ -276,11 +283,12 @@ translatePattern ::
     Given (SmtMetadataTools Attribute.Symbol) =>
     MonadLog monad =>
     InternalVariable variable =>
+    SideCondition variable ->
     TranslateTerm variable monad ->
     Sort ->
     TermLike variable ->
     Translator variable monad SExpr
-translatePattern translateTerm sort pat =
+translatePattern sideCondition translateTerm sort pat =
     case getHook of
         Just builtinSort
             | builtinSort == Builtin.Bool.sort -> translateBool pat
@@ -291,9 +299,6 @@ translatePattern translateTerm sort pat =
                 translateUninterpreted translateTerm smtSort pat
             ApplySymbolF app ->
                 translateApplication (translateSort sort) pat app
-            DefinedF (Defined child) ->
-                withDefinednessAssumption $
-                    translatePattern translateTerm sort child
             _ -> empty
   where
     tools :: SmtMetadataTools Attribute.Symbol
@@ -302,19 +307,32 @@ translatePattern translateTerm sort pat =
         sortAttributes tools sort
 
     translateInt :: TermLike variable -> Translator variable monad SExpr
-    translateInt pat' =
+    translateInt pat'
+        | SideCondition.isDefined sideCondition pat' =
+            withDefinednessAssumption $
+                translateIntWorker pat'
+        | otherwise =
+            translateIntWorker pat'
+
+    translateIntWorker :: TermLike variable -> Translator variable monad SExpr
+    translateIntWorker pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tInt pat'
             InternalIntF (Const InternalInt{internalIntValue}) ->
                 return $ SMT.int internalIntValue
             ApplySymbolF app ->
                 translateApplication (Just SMT.tInt) pat' app
-            DefinedF (Defined child) ->
-                withDefinednessAssumption $
-                    translateInt child
             _ -> empty
     translateBool :: TermLike variable -> Translator variable monad SExpr
-    translateBool pat' =
+    translateBool pat'
+        | SideCondition.isDefined sideCondition pat' =
+            withDefinednessAssumption $
+                translateBoolWorker pat'
+        | otherwise =
+            translateBoolWorker pat'
+
+    translateBoolWorker :: TermLike variable -> Translator variable monad SExpr
+    translateBoolWorker pat' =
         case Cofree.tailF (Recursive.project pat') of
             VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
             InternalBoolF (Const InternalBool{internalBoolValue}) ->
@@ -326,9 +344,6 @@ translatePattern translateTerm sort pat =
                 SMT.not <$> translateBool notChild
             ApplySymbolF app ->
                 translateApplication (Just SMT.tBool) pat' app
-            DefinedF (Defined child) ->
-                withDefinednessAssumption $
-                    translateBool child
             _ -> empty
 
     translateApplication ::
@@ -359,7 +374,7 @@ translatePattern translateTerm sort pat =
                 sexpr <- maybe warnAndDiscard return translated
                 children <-
                     zipWithM
-                        (translatePattern translateTerm)
+                        (translatePattern sideCondition translateTerm)
                         applicationChildrenSorts
                         applicationChildren
                 return $ shortenSExpr (applySExpr sexpr children)

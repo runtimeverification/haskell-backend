@@ -9,8 +9,6 @@ module Kore.Step.SMT.Declaration.All (
     declare,
 ) where
 
-import Prelude.Kore ()
-
 import qualified Kore.Step.SMT.AST as AST (
     SmtDeclarations,
  )
@@ -20,6 +18,7 @@ import qualified Kore.Step.SMT.Declaration.Sorts as Sorts (
 import qualified Kore.Step.SMT.Declaration.Symbols as Symbols (
     declare,
  )
+import Prelude.Kore ()
 import qualified SMT
 
 -- | Sends all given declarations to the SMT.

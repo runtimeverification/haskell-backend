@@ -3,16 +3,6 @@ module Test.Kore.Builtin.Encoding (
     test_parseBase16,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog hiding (
-    Concrete,
- )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-import Test.Tasty.Hedgehog
-
 import qualified Data.ByteString as ByteString
 import Data.Text (
     Text,
@@ -21,11 +11,17 @@ import qualified Data.Text as Text
 import Data.Word (
     Word8,
  )
-import qualified Text.Megaparsec as Parsec
-
+import Hedgehog hiding (
+    Concrete,
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Kore.Builtin.Encoding
-
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog
+import qualified Text.Megaparsec as Parsec
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1

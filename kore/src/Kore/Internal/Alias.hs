@@ -10,14 +10,11 @@ module Kore.Internal.Alias (
     module Kore.Internal.ApplicationSorts,
 ) where
 
-import Prelude.Kore
-
 import Control.DeepSeq (
     deepseq,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -29,6 +26,7 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Prelude.Kore
 
 data Alias patternType = Alias
     { aliasConstructor :: !Id

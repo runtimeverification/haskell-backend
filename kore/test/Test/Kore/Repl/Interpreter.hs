@@ -4,17 +4,6 @@ module Test.Kore.Repl.Interpreter (
     test_replInterpreter,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-import Test.Tasty.HUnit (
-    Assertion,
-    testCase,
-    (@?=),
- )
-
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad.Reader (
@@ -41,7 +30,6 @@ import qualified Data.Sequence as Seq
 import Data.Text (
     pack,
  )
-
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Condition (
@@ -84,6 +72,7 @@ import Kore.Unification.Unify (
 import Kore.Unparser (
     unparseToString,
  )
+import Prelude.Kore
 import qualified Pretty
 import qualified SMT
 import System.Clock (
@@ -91,10 +80,17 @@ import System.Clock (
     TimeSpec,
     getTime,
  )
-
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Simplification
+import Test.Tasty (
+    TestTree,
+ )
+import Test.Tasty.HUnit (
+    Assertion,
+    testCase,
+    (@?=),
+ )
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =

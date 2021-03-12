@@ -18,8 +18,6 @@ module Kore.Step.ClaimPattern (
     claimPatternToTerm,
 ) where
 
-import Prelude.Kore
-
 import Control.Error.Util (
     hush,
  )
@@ -35,7 +33,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -88,7 +85,7 @@ import Kore.Unparser (
 import Kore.Variables.Fresh (
     refreshVariables,
  )
-
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

@@ -45,8 +45,6 @@ module Kore.Builtin.Builtin (
     module Kore.Builtin.Verifiers,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT (..),
  )
@@ -54,7 +52,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import qualified Kore.Attribute.Concat as Attribute.Sort
 import qualified Kore.Attribute.Element as Attribute.Sort
 import Kore.Attribute.Hook (
@@ -96,6 +93,9 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import qualified Kore.Internal.SideCondition as SideCondition (
     topTODO,
  )
@@ -127,6 +127,7 @@ import qualified Kore.Unification.Unify as Monad.Unify (
     scatter,
  )
 import Kore.Unparser
+import Prelude.Kore
 
 -- TODO (thomas.tuegel): Include hook name here.
 
@@ -185,7 +186,7 @@ unaryOperator extractVal asPattern ctx op =
     get = extractVal ctx
 
     unaryOperator0 :: Function
-    unaryOperator0 resultSort children =
+    unaryOperator0 _ resultSort children =
         case children of
             [termLike]
                 | Just a <- get termLike -> do
@@ -227,7 +228,7 @@ binaryOperator extractVal asPattern ctx op =
     get = extractVal ctx
 
     binaryOperator0 :: Function
-    binaryOperator0 resultSort children =
+    binaryOperator0 _ resultSort children =
         case children of
             [get -> Just a, get -> Just b] -> do
                 -- Apply the operator to two domain values
@@ -268,7 +269,7 @@ ternaryOperator extractVal asPattern ctx op =
     get = extractVal ctx
 
     ternaryOperator0 :: Function
-    ternaryOperator0 resultSort children =
+    ternaryOperator0 _ resultSort children =
         case children of
             [get -> Just a, get -> Just b, get -> Just c] -> do
                 -- Apply the operator to three domain values
@@ -282,22 +283,24 @@ type Function =
     InternalVariable variable =>
     HasCallStack =>
     MonadSimplify simplifier =>
+    SideCondition variable ->
     Sort ->
     [TermLike variable] ->
     MaybeT simplifier (Pattern variable)
 
 functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
-    applicationEvaluator $ \app -> do
+    applicationEvaluator $ \sideCondition app -> do
         let Application{applicationSymbolOrAlias = symbol} = app
             Application{applicationChildren = args} = app
             resultSort = symbolSorts symbol & applicationSortsResult
-        impl resultSort args
+        impl sideCondition resultSort args
 
 applicationEvaluator ::
     ( forall variable simplifier.
       InternalVariable variable =>
       MonadSimplify simplifier =>
+      SideCondition variable ->
       Application Symbol (TermLike variable) ->
       MaybeT simplifier (Pattern variable)
     ) ->
@@ -308,14 +311,16 @@ applicationEvaluator impl =
     evaluator ::
         InternalVariable variable =>
         MonadSimplify simplifier =>
+        SideCondition variable ->
         CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable) ->
         simplifier (AttemptedAxiom variable)
-    evaluator (_ :< app) = do
+    evaluator sideCondition (_ :< app) = do
         let app' = fmap TermLike.removeEvaluated app
-        getAttemptedAxiom (impl app' >>= appliedFunction)
+        getAttemptedAxiom
+            (impl sideCondition app' >>= appliedFunction)
 
 {- | Run a parser on a verified domain value.
 

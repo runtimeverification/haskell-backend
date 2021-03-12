@@ -19,15 +19,13 @@ module Kore.Syntax.Application (
     mapHead,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the

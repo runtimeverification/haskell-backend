@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.StringLiteral (
     test_stringLiteralSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -25,7 +21,8 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Step.Simplification.StringLiteral (
     simplify,
  )
-
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_stringLiteralSimplification :: [TestTree]

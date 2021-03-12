@@ -4,12 +4,6 @@ module Test.Kore.Step.Simplification.Not (
     test_simplifyEvaluated,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -24,14 +18,17 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Internal.Predicate as Predicate
 import Test.Kore.Internal.Substitution as Substitution
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty (
+    TestTree,
+ )
 import Test.Tasty.HUnit.Ext
 
 test_simplifyEvaluated :: [TestTree]

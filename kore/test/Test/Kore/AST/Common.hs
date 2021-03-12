@@ -3,12 +3,10 @@ module Test.Kore.AST.Common (
     test_prettyPrintAstLocation,
 ) where
 
+import Kore.Syntax.Id
 import Prelude.Kore
-
 import Test.Tasty
 import Test.Tasty.HUnit
-
-import Kore.Syntax.Id
 
 test_prettyPrintAstLocation :: TestTree
 test_prettyPrintAstLocation =

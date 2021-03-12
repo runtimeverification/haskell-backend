@@ -6,11 +6,8 @@ module Kore.Attribute.Sort.ConstructorsBuilder (
     indexBySort,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import qualified Kore.Attribute.Axiom as Attribute (
     Axiom,
  )
@@ -56,6 +53,7 @@ import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified (
     SentenceAxiom,
  )
+import Prelude.Kore
 
 indexBySort ::
     VerifiedModule symbolAttribute ->

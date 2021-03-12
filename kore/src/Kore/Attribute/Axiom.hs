@@ -33,8 +33,6 @@ module Kore.Attribute.Axiom (
     getPriorityOfAxiom,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Data.Default (
@@ -45,7 +43,6 @@ import Data.Generics.Product
 import Data.Proxy
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Assoc
 import Kore.Attribute.Attributes
 import Kore.Attribute.Axiom.Concrete
@@ -81,6 +78,7 @@ import Kore.Internal.Symbol (
 import Kore.Syntax.Variable hiding (
     Concrete,
  )
+import Prelude.Kore
 import qualified SQL
 
 -- | Attributes specific to Kore axiom sentences.

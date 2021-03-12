@@ -16,15 +16,14 @@ module Kore.Parser.ParserUtils (
     peekChar',
 ) where
 
-import Prelude.Kore hiding (
-    takeWhile,
- )
-
 import Data.Text (
     Text,
  )
 import Data.Void (
     Void,
+ )
+import Prelude.Kore hiding (
+    takeWhile,
  )
 import Text.Megaparsec (
     Parsec,

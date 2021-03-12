@@ -11,8 +11,6 @@ module Kore.Repl (
     runRepl,
 ) where
 
-import Prelude.Kore
-
 import Control.Concurrent.MVar
 import Control.Exception (
     AsyncException (UserInterrupt),
@@ -52,20 +50,15 @@ import Kore.Attribute.RuleIndex (
     RuleIndex (..),
  )
 import qualified Kore.Attribute.RuleIndex as Attribute
-import System.IO (
-    hFlush,
-    stdout,
- )
-import Text.Megaparsec (
-    parseMaybe,
- )
-
 import Kore.Internal.TermLike (
     TermLike,
     mkSortVariable,
     mkTop,
  )
 import qualified Kore.Log as Log
+import Kore.Log.ErrorException (
+    errorException,
+ )
 import Kore.Reachability (
     SomeClaim,
     lensClaimPattern,
@@ -84,23 +77,27 @@ import Kore.Syntax.Module (
     ModuleName (..),
  )
 import Kore.Syntax.Variable
-import Prof (
-    MonadProf,
- )
-
-import Kore.Log.ErrorException (
-    errorException,
- )
 import Kore.Unification.Procedure (
     unificationProcedure,
  )
 import Kore.Unparser (
     unparseToString,
  )
+import Prelude.Kore
+import Prof (
+    MonadProf,
+ )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
+ )
+import System.IO (
+    hFlush,
+    stdout,
+ )
+import Text.Megaparsec (
+    parseMaybe,
  )
 
 {- | Runs the repl for proof mode. It requires all the tooling and simplifiers

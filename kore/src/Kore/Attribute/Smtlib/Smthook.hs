@@ -13,17 +13,15 @@ module Kore.Attribute.Smtlib.Smthook (
     smthookAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser
 import Kore.Debug
+import Prelude.Kore
 import SMT.SimpleSMT (
     SExpr (..),
     showSExpr,

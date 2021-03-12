@@ -40,8 +40,6 @@ module Kore.Builtin.Int.Int (
     log2Key,
 ) where
 
-import Prelude.Kore
-
 import Data.String (
     IsString,
  )
@@ -49,10 +47,10 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import Kore.Internal.InternalInt
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
+import Prelude.Kore
 
 -- | Builtin name of the @Int@ sort.
 sort :: Text

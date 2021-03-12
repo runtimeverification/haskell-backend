@@ -60,12 +60,13 @@ module Kore.Internal.Predicate (
     pattern PredicateForall,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Env as Env
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import Data.Functor.Compose (
+    Compose (..),
+ )
 import Data.Functor.Const (
     Const (Const),
  )
@@ -75,6 +76,9 @@ import Data.Functor.Foldable (
     Recursive,
  )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Identity (
+    Identity (..),
+ )
 import Data.List.Extra (
     nubOrd,
  )
@@ -85,17 +89,9 @@ import qualified Data.Map.Strict as Map
 import Data.Set (
     Set,
  )
-
-import Data.Functor.Compose (
-    Compose (..),
- )
-import Data.Functor.Identity (
-    Identity (..),
- )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Pattern as APattern
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables (
     FreeVariables,
@@ -114,10 +110,6 @@ import Kore.Attribute.PredicatePattern (
  )
 import qualified Kore.Attribute.PredicatePattern as Attribute
 import Kore.Attribute.Synthetic
-import Kore.Variables.Fresh (
-    refreshElementVariable,
- )
-
 import Kore.Debug
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
@@ -154,11 +146,14 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort (
     predicateSort,
  )
-
 import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import Kore.Variables.Fresh (
+    refreshElementVariable,
+ )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

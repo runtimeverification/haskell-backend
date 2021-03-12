@@ -3,17 +3,6 @@ module Test.Kore.Step (
     test_executionStrategy,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog (
-    Gen,
- )
-import qualified Hedgehog
-import qualified Hedgehog.Gen
-import qualified Hedgehog.Range
-import Test.Tasty
-import Test.Tasty.Hedgehog
-
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
 import Control.Monad.Catch (
@@ -23,10 +12,15 @@ import Data.Generics.Product
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
-
 import Data.Limit (
     Limit (..),
  )
+import Hedgehog (
+    Gen,
+ )
+import qualified Hedgehog
+import qualified Hedgehog.Gen
+import qualified Hedgehog.Range
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern (
@@ -57,11 +51,13 @@ import Kore.Step.RulePattern as RulePattern (
  )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =

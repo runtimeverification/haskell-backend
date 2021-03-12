@@ -10,8 +10,6 @@ module Kore.Log.SQLite (
     withLogSQLite,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad.Catch as Exception
 import qualified Control.Monad.Extra as Monad
 import Control.Monad.Reader (
@@ -20,9 +18,6 @@ import Control.Monad.Reader (
 import Data.Default
 import Data.Proxy
 import qualified Database.SQLite.Simple as SQLite
-import qualified Options.Applicative as Options
-import qualified System.Directory as Directory
-
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
@@ -46,10 +41,13 @@ import Log (
     fromEntry,
     fromLogAction,
  )
+import qualified Options.Applicative as Options
+import Prelude.Kore
 import SQL (
     SQL,
  )
 import qualified SQL
+import qualified System.Directory as Directory
 
 -- | @LogSQLiteOptions@ are the command-line options for the SQLite logger.
 newtype LogSQLiteOptions = LogSQLiteOptions

@@ -11,13 +11,7 @@ module Test.Kore.Attribute.Axiom.Concrete (
     test_arguments,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import qualified Data.Default as Default
-
 import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariable,
@@ -25,9 +19,11 @@ import Kore.Attribute.Pattern.FreeVariables (
 import Kore.Syntax.Variable hiding (
     Concrete,
  )
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseConcrete ::
     FreeVariables VariableName ->

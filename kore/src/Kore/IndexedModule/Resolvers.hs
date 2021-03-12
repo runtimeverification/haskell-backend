@@ -24,8 +24,6 @@ module Kore.IndexedModule.Resolvers (
     getHeadApplicationSorts,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     hush,
  )
@@ -39,7 +37,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import Kore.AST.Error (
     koreFailWithLocations,
  )
@@ -74,17 +71,16 @@ import Kore.Syntax.Definition hiding (
 import qualified Kore.Syntax.Definition as Syntax (
     Symbol (..),
  )
+import Prelude.Kore
 
 symbolSentencesMap ::
     IndexedModule patternType declAtts axiomAtts ->
     Map.Map Id (declAtts, SentenceSymbol)
 symbolSentencesMap = indexedModuleSymbolSentences
-
 aliasSentencesMap ::
     IndexedModule patternType declAtts axiomAtts ->
     Map.Map Id (declAtts, SentenceAlias patternType)
 aliasSentencesMap = indexedModuleAliasSentences
-
 sortSentencesMap ::
     IndexedModule patternType declAtts axiomAtts ->
     Map.Map Id (Attribute.Sort, SentenceSort)
@@ -121,7 +117,6 @@ getSortAttributes m (SortActualSort (SortActual sortId _)) =
         Right (atts, _) -> atts
         Left _ -> error $ noSort sortId
 getSortAttributes _ _ = error "Can't lookup attributes for sort variables"
-
 getSymbolAttributes ::
     HasCallStack =>
     IndexedModule patternType declAtts axiomAtts ->

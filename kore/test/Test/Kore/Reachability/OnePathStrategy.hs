@@ -4,32 +4,22 @@ module Test.Kore.Reachability.OnePathStrategy (
     test_onePathStrategy,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Coerce (
     coerce,
  )
 import Data.Default (
     def,
  )
+import Data.Limit (
+    Limit (..),
+ )
+import qualified Data.Limit as Limit
 import Data.List.Extra (
     groupSortOn,
     nub,
     sort,
  )
-import Numeric.Natural (
-    Natural,
- )
-
-import Data.Limit (
-    Limit (..),
- )
-import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import Kore.Rewriting.RewritingVariable
-
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
@@ -45,6 +35,7 @@ import Kore.Internal.TermLike (
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Reachability
 import qualified Kore.Reachability.ClaimState as ClaimState
+import Kore.Rewriting.RewritingVariable
 import Kore.Step.ClaimPattern (
     ClaimPattern (..),
  )
@@ -60,9 +51,13 @@ import Kore.Step.Strategy (
     runStrategy,
  )
 import Kore.Syntax.Variable
-
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type TermLike' = TermLike VariableName

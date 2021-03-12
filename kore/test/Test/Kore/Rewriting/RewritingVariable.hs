@@ -3,21 +3,18 @@ module Test.Kore.Rewriting.RewritingVariable (
     test_FreshPartialOrd_SomeVariableName_RewritingVariableName,
 ) where
 
-import Prelude.Kore
-
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
-import Test.Tasty
-
 import Kore.Rewriting.RewritingVariable
 import Kore.Syntax.Variable
 import Pair
-
+import Prelude.Kore
 import Test.Kore.Variables.Fresh (
     relatedVariableNameGen,
     someVariableNameGen,
     testFreshPartialOrd,
  )
+import Test.Tasty
 
 test_FreshPartialOrd_RewritingVariableName :: TestTree
 test_FreshPartialOrd_RewritingVariableName =

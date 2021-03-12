@@ -13,8 +13,6 @@ module Kore.Unification.Procedure (
     unificationProcedure,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -45,6 +43,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Logic (
     lowerLogicT,
  )
+import Prelude.Kore
 
 {- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
  @t2@ are terms (functional patterns) to a substitution.

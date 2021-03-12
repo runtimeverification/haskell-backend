@@ -7,8 +7,6 @@ module Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     Exception (..),
     MonadThrow,
@@ -16,17 +14,16 @@ import Control.Monad.Catch (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Internal.TermLike
 import Kore.Unparser (
     unparse,
  )
+import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )
 import qualified Pretty
-
-import Log
 import qualified SQL
 
 newtype ErrorBottomTotalFunction = ErrorBottomTotalFunction

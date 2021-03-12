@@ -4,8 +4,6 @@ License     : NCSA
 -}
 module Kore.ASTVerifier.AliasVerifier (verifyAliases) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad.Reader (
     ReaderT,
@@ -24,7 +22,6 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
-
 import Kore.AST.Error
 import Kore.ASTVerifier.SentenceVerifier (
     SentenceVerifier,
@@ -40,6 +37,7 @@ import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 {- | Project the 'SentenceAlias'es from the list and verify them.
 

@@ -33,8 +33,6 @@ module Kore.Step.RulePattern (
     unRewritingRule,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     Lens',
  )
@@ -58,7 +56,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -131,6 +128,7 @@ import Kore.Unparser (
 import Kore.Variables.Fresh hiding (
     refreshVariables',
  )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

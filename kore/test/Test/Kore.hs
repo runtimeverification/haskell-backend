@@ -42,28 +42,24 @@ module Test.Kore (
     Log.emptyLogger,
 ) where
 
-import Prelude.Kore
-
+import Control.Monad.Reader (
+    ReaderT,
+ )
+import qualified Control.Monad.Reader as Reader
+import Data.Functor (
+    (<&>),
+ )
+import Data.Functor.Const
+import Data.Text (
+    Text,
+ )
+import qualified Data.Text as Text
 import Hedgehog (
     MonadGen,
  )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-import Control.Monad.Reader (
-    ReaderT,
- )
-import qualified Control.Monad.Reader as Reader
-import Data.Functor.Const
-import Data.Text (
-    Text,
- )
-import qualified Data.Text as Text
-
-import Data.Functor (
-    (<&>),
- )
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (ApplicationSorts),
  )
@@ -104,6 +100,7 @@ import Kore.Variables.Target (
     mkSetNonTarget,
     mkSetTarget,
  )
+import Prelude.Kore
 
 -- | @Context@ stores the variables and sort variables in scope.
 data Context = Context

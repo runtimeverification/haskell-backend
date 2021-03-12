@@ -7,8 +7,6 @@ module Injection (
     Prism',
 ) where
 
-import Prelude
-
 import Control.Lens (
     Prism',
  )
@@ -20,6 +18,7 @@ import Data.Dynamic (
     toDyn,
  )
 import Data.Void
+import Prelude
 
 {- | The canonical injection or inclusion of @from ↪ into@.
 

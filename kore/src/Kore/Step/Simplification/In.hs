@@ -13,8 +13,6 @@ module Kore.Step.Simplification.In (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -36,6 +34,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil (
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify
 import qualified Logic
+import Prelude.Kore
 
 {- |'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.

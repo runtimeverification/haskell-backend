@@ -9,15 +9,12 @@ module Kore.Step.SMT.Representation.Sorts (
     buildRepresentations,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     zipWithM,
  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-
 import Kore.Attribute.Hook (
     Hook (Hook),
  )
@@ -60,6 +57,7 @@ import Kore.Unparser (
     unparseToString,
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import qualified SMT (
     Constructor (Constructor),
     ConstructorArgument (ConstructorArgument),

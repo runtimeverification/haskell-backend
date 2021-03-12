@@ -8,14 +8,11 @@ module Kore.Builtin.External (
     externalize,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Functor.Const (
     Const (..),
  )
 import qualified Data.Functor.Foldable as Recursive
-
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
@@ -34,6 +31,7 @@ import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
+import Prelude.Kore
 
 {- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
 
@@ -134,10 +132,6 @@ externalize =
                         mapHead Symbol.toSymbolOrAlias $
                             Signedness.toApplication $
                                 getConst signednessF
-                DefinedF definedF ->
-                    Cofree.tailF $
-                        worker $
-                            getDefined definedF
                 InjF _ -> error "Unexpected sort injection"
                 InternalBoolF _ -> error "Unexpected internal builtin"
                 InternalBytesF _ -> error "Unexpected internal builtin"

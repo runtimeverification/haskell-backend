@@ -12,12 +12,11 @@ module Kore.Log.DebugUnification (
     whileDebugUnification,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

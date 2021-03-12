@@ -6,8 +6,6 @@ module Kore.Log.DebugClaimState (
     DebugClaimState (..),
 ) where
 
-import Prelude.Kore
-
 import Kore.Reachability.ClaimState (
     ClaimState (..),
  )
@@ -18,6 +16,7 @@ import Kore.Reachability.SomeClaim (
     SomeClaim (..),
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

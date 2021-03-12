@@ -12,8 +12,6 @@ module Kore.VersionInfo (
     versionInfo,
 ) where
 
-import Prelude.Kore
-
 import Data.Aeson (
     FromJSON,
  )
@@ -30,6 +28,7 @@ import Language.Haskell.TH.Syntax (
     Lift,
  )
 import qualified Language.Haskell.TH.Syntax as TH
+import Prelude.Kore
 import qualified System.Directory as Directory
 import System.FilePath (
     isRelative,

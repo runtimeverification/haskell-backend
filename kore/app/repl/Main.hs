@@ -4,30 +4,9 @@
 
 module Main (main) where
 
-import Prelude.Kore
-
 import Control.Concurrent.MVar
 import Data.Reflection
-import Options.Applicative (
-    InfoMod,
-    Parser,
-    argument,
-    flag,
-    fullDesc,
-    header,
-    help,
-    long,
-    metavar,
-    progDesc,
-    short,
-    str,
-    strOption,
- )
-import System.Exit (
-    exitFailure,
-    exitWith,
- )
-
+import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
     proveWithRepl,
@@ -52,18 +31,36 @@ import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module (
     ModuleName (..),
  )
+import Options.Applicative (
+    InfoMod,
+    Parser,
+    argument,
+    flag,
+    fullDesc,
+    header,
+    help,
+    long,
+    metavar,
+    progDesc,
+    short,
+    str,
+    strOption,
+ )
 import Options.SMT (
     KoreSolverOptions (..),
     parseKoreSolverOptions,
  )
+import Prelude.Kore
 import qualified SMT
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
     getTime,
  )
-
-import GlobalMain
+import System.Exit (
+    exitFailure,
+    exitWith,
+ )
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule

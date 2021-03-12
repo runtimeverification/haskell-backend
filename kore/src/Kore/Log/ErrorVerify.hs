@@ -7,20 +7,18 @@ module Kore.Log.ErrorVerify (
     errorVerify,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     Exception (..),
     MonadThrow,
     throwM,
  )
-import Pretty
-
 import Kore.ASTVerifier.Error (
     VerifyError,
  )
 import qualified Kore.Error as Kore
 import Log
+import Prelude.Kore
+import Pretty
 
 newtype ErrorVerify = ErrorVerify {koreError :: Kore.Error VerifyError}
     deriving (Show)

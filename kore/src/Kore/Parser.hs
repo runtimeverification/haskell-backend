@@ -1,12 +1,9 @@
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-
 This is a parser for the Kore language. Sample usage:
-
 @
 import Kore.Parser
-
 import           Kore.Parser.ParserUtils (parseOnly)
 import           System.Environment (getArgs)
 
@@ -31,19 +28,17 @@ module Kore.Parser (
     ParsedDefinition,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
-import Text.Megaparsec (
-    eof,
- )
-
 import qualified Kore.Parser.Lexer as Lexer
 import qualified Kore.Parser.Parser as Parser
 import Kore.Parser.ParserUtils
 import Kore.Syntax.Definition
+import Prelude.Kore
+import Text.Megaparsec (
+    eof,
+ )
 
 {- |'koreParser' is a parser for Kore.
 The input must contain a full valid Kore defininition and nothing else.

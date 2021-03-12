@@ -14,14 +14,12 @@ module Kore.Attribute.Smtlib (
     shortenSExpr,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Error as Error
 import qualified Data.Text as Text
-import SMT.SimpleSMT
-
 import Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
+import Prelude.Kore
+import SMT.SimpleSMT
 
 shortenSExpr :: SExpr -> SExpr
 shortenSExpr (List [e]) = e

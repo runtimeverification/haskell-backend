@@ -15,8 +15,6 @@ module Kore.Verified (
     SentenceSymbol,
 ) where
 
-import Prelude.Kore ()
-
 import qualified Kore.Internal.Alias as Internal (
     Alias,
  )
@@ -25,6 +23,7 @@ import Kore.Internal.TermLike (
     VariableName,
  )
 import qualified Kore.Syntax.Sentence as Syntax
+import Prelude.Kore ()
 
 type Pattern = TermLike VariableName
 

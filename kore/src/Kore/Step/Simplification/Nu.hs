@@ -9,8 +9,6 @@ module Kore.Step.Simplification.Nu (
     makeEvaluate,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -35,6 +33,7 @@ import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- |'simplify' simplifies a 'Nu' pattern with an 'OrPattern'
 child.

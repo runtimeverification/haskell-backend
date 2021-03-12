@@ -7,8 +7,6 @@ module Kore.Log.WarnRetrySolverQuery (
     warnRetrySolverQuery,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -19,6 +17,7 @@ import Kore.Internal.Variable (
     toVariableName,
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

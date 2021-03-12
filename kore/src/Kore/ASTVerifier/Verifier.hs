@@ -16,8 +16,6 @@ module Kore.ASTVerifier.Verifier (
     whileImporting,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad.RWS.Strict (
     MonadReader,
@@ -33,7 +31,6 @@ import Data.Map.Strict (
  )
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
-
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
@@ -47,6 +44,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 type ImplicitModule =
     ImplicitIndexedModule

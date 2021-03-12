@@ -19,8 +19,6 @@ module Kore.Internal.TermLike.Renaming (
     askSetVariable,
 ) where
 
-import Prelude.Kore
-
 import Control.Comonad.Trans.Env (
     Env,
  )
@@ -41,7 +39,6 @@ import Data.Map.Strict (
  )
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -52,6 +49,7 @@ import Kore.Variables.Fresh (
     refreshElementVariable,
     refreshSetVariable,
  )
+import Prelude.Kore
 
 type VariableNameMap variable1 variable2 =
     AdjSomeVariableName (Map variable1 variable2)

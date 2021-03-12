@@ -12,14 +12,12 @@ module Kore.Attribute.Sort.HasDomainValues (
     hasDomainValuesAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @HasDomainValues@ represents the @hasDomainValues@ attribute for symbols.
 newtype HasDomainValues = HasDomainValues {getHasDomainValues :: Bool}

@@ -6,10 +6,7 @@ module Kore.Builtin.Inj (
     verifiers,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Functor.Foldable as Recursive
-
 import Kore.ASTVerifier.PatternVerifier.PatternVerifier (
     PatternVerifier,
  )
@@ -24,6 +21,7 @@ import Kore.Error
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Verified as Verified
+import Prelude.Kore
 
 verifiers :: Verifiers
 verifiers =

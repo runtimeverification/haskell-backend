@@ -6,17 +6,15 @@ module Kore.Syntax.DomainValue (
     DomainValue (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@

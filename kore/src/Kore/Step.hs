@@ -23,11 +23,13 @@ module Kore.Step (
     runStrategy,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     foldM,
  )
+import Data.Limit (
+    Limit (..),
+ )
+import qualified Data.Limit as Limit
 import Data.List.Extra (
     groupSortOn,
  )
@@ -37,11 +39,8 @@ import Data.Stream.Infinite (
 import qualified Data.Stream.Infinite as Stream
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Numeric.Natural (
-    Natural,
- )
-
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Debug
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -52,19 +51,13 @@ import Kore.Step.RulePattern (
     RewriteRule (..),
     RulePattern,
  )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
+    filterMultiOr,
+ )
 import qualified Kore.Step.Simplification.Pattern as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Step.Simplification.Simplify as Simplifier
-
-import Data.Limit (
-    Limit (..),
- )
-import qualified Data.Limit as Limit
-import Kore.Debug
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator (
-    filterMultiOr,
- )
 import Kore.Step.Strategy hiding (
     transitionRule,
  )
@@ -72,6 +65,10 @@ import qualified Kore.Step.Strategy as Strategy
 import Kore.Unparser (
     Unparse (..),
  )
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

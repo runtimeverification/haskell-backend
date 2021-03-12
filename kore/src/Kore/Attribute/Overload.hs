@@ -12,14 +12,12 @@ module Kore.Attribute.Overload (
     overloadAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload symbol = Overload {getOverload :: Maybe (symbol, symbol)}

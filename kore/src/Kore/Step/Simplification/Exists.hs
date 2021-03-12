@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Exists (
     simplifyEvaluated,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     foldM,
  )
@@ -24,7 +22,6 @@ import Data.List (
     sortBy,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -91,6 +88,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -196,10 +194,11 @@ makeEvaluate sideCondition variables original = do
                     normalized{Conditional.substitution = freeSubstitution}
             (Right boundSubstitution, freeSubstitution) -> do
                 matched <-
-                    lift $
-                        matchesToVariableSubstitution
-                            variable
-                            normalized{Conditional.substitution = boundSubstitution}
+                    normalized
+                        { Conditional.substitution = boundSubstitution
+                        }
+                        & matchesToVariableSubstitution sideCondition variable
+                        & lift
                 if matched
                     then
                         return
@@ -239,18 +238,20 @@ makeEvaluate sideCondition variables original = do
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution ::
     MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     ElementVariable RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier Bool
 matchesToVariableSubstitution
+    sideCondition
     variable
     Conditional{term, predicate, substitution = boundSubstitution}
         | Predicate.PredicateEquals first second <- predicate
           , Substitution.null boundSubstitution
           , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
             do
-                matchResultFS <- matchIncremental first second
-                matchResultSF <- matchIncremental second first
+                matchResultFS <- matchIncremental sideCondition first second
+                matchResultSF <- matchIncremental sideCondition second first
                 case matchResultFS <|> matchResultSF of
                     Just (Predicate.PredicateTrue, results) ->
                         return (singleVariableSubstitution variable results)

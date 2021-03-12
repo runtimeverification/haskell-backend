@@ -8,13 +8,10 @@ module Kore.Step.Simplification.Inj (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-
 import Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr (
     MultiOr,
@@ -34,6 +31,7 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom (
     TopBottom,
  )
+import Prelude.Kore
 
 -- |'simplify' simplifies an 'Inj' of 'OrPattern'.
 simplify ::

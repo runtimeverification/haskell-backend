@@ -55,22 +55,9 @@ module Test.Kore.ASTVerifier.DefinitionVerifier (
     namedSortVariable,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
-    testGroup,
- )
-import Test.Tasty.HUnit (
-    assertEqual,
-    assertFailure,
-    testCase,
- )
-
 import Data.Text (
     Text,
  )
-
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Symbol as Attribute
@@ -91,18 +78,25 @@ import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Unparser (
     unparseToString,
  )
-
+import Prelude.Kore
 import Test.Kore
+import Test.Tasty (
+    TestTree,
+    testGroup,
+ )
+import Test.Tasty.HUnit (
+    assertEqual,
+    assertFailure,
+    testCase,
+ )
 
 newtype ExpectedErrorMessage = ExpectedErrorMessage String
 newtype ErrorStack = ErrorStack [String]
-
 data TestData = TestData
     { testDataDescription :: !String
     , testDataError :: !(Error VerifyError)
     , testDataDefinition :: !(Definition ParsedSentence)
     }
-
 failureTestDataGroup ::
     HasCallStack =>
     String ->
@@ -114,7 +108,6 @@ failureTestDataGroup description errorMessage errorStack testData =
     testGroup
         description
         (map (failureTestData errorMessage errorStack) testData)
-
 failureTestData ::
     HasCallStack =>
     ExpectedErrorMessage ->
@@ -134,15 +127,12 @@ failureTestData
             (testDataDefinition testData)
       where
         err = testDataError testData
-
 successTestDataGroup :: HasCallStack => String -> [TestData] -> TestTree
 successTestDataGroup description testDatas =
     testGroup description (map successTestData testDatas)
-
 successTestData :: HasCallStack => TestData -> TestTree
 successTestData testData =
     expectSuccess (testDataDescription testData) (testDataDefinition testData)
-
 expectSuccess ::
     HasCallStack =>
     String ->
@@ -158,7 +148,6 @@ expectSuccess description unverifiedDefinition =
             verifySuccess
             (verifyDefinition Builtin.koreVerifiers unverifiedDefinition)
         )
-
 expectFailureWithError ::
     HasCallStack =>
     String ->
@@ -182,7 +171,6 @@ expectFailureWithError description expectedError unverifiedDefinition =
                     expectedError
                     actualError
         )
-
 printDefinition :: ParsedDefinition -> String
 printDefinition definition =
     (show . debug) definition
@@ -191,7 +179,6 @@ printDefinition definition =
         ++ "\n----------------------"
 
 -------------------------------------------------------------
-
 newtype AliasName = AliasName Text
 newtype SymbolName = SymbolName Text
 newtype SortName = SortName Text
@@ -203,7 +190,6 @@ newtype DeclaredSort = DeclaredSort Sort
 newtype TestedPatternSort = TestedPatternSort Sort
 newtype SortVariablesThatMustBeDeclared
     = SortVariablesThatMustBeDeclared [SortVariable]
-
 simpleDefinitionFromSentences ::
     ModuleName ->
     [sentence] ->
@@ -219,7 +205,6 @@ simpleDefinitionFromSentences name sentences =
                 }
             ]
         }
-
 simpleSortSentence :: SortName -> ParsedSentence
 simpleSortSentence (SortName name) =
     asSentence
@@ -228,13 +213,11 @@ simpleSortSentence (SortName name) =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-
 simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
     asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
   where
     r = Builtin.externalize $ Internal.mkTop (simpleSort sort)
-
 simpleAliasSentenceAux ::
     AliasName ->
     SortName ->
@@ -266,11 +249,9 @@ simpleAliasSentenceAux (AliasName name) (SortName sort) r =
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
         }
-
 simpleSymbolSentence :: SymbolName -> SortName -> ParsedSentence
 simpleSymbolSentence name sort =
     asSentence (simpleSymbolSentenceAux name sort)
-
 simpleSymbolSentenceAux :: SymbolName -> SortName -> SentenceSymbol
 simpleSymbolSentenceAux (SymbolName name) (SortName sort) =
     SentenceSymbol
@@ -288,7 +269,6 @@ simpleSymbolSentenceAux (SymbolName name) (SortName sort) =
                     }
         , sentenceSymbolAttributes = Attributes []
         }
-
 importSentence :: ModuleName -> ParsedSentence
 importSentence name =
     asSentence

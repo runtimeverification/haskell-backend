@@ -14,15 +14,13 @@ module Kore.Reachability.ClaimState (
     ClaimStateTransformer (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Unparser (
     Unparse (..),
  )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

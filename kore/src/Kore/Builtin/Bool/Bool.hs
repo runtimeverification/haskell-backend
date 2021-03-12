@@ -21,15 +21,12 @@ module Kore.Builtin.Bool.Bool (
     orElseKey,
 ) where
 
-import Prelude.Kore
-
 import Data.String (
     IsString,
  )
 import Data.Text (
     Text,
  )
-
 import Kore.Internal.InternalBool
 import Kore.Internal.Pattern (
     Pattern,
@@ -50,6 +47,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     markSimplified,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Prelude.Kore
 
 -- | Builtin name of the @Bool@ sort.
 sort :: Text

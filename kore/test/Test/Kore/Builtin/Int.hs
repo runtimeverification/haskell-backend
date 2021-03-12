@@ -60,15 +60,6 @@ module Test.Kore.Builtin.Int (
     testInt,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog hiding (
-    Concrete,
- )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )
@@ -83,7 +74,11 @@ import Data.Semigroup (
     Endo (..),
  )
 import qualified Data.Text as Text
-
+import Hedgehog hiding (
+    Concrete,
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Kore.Builtin.Int (
     ediv,
     emod,
@@ -117,7 +112,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
-
+import Prelude.Kore
 import Test.Kore (
     configElementVariableGen,
     standaloneGen,
@@ -127,6 +122,7 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genInteger :: Gen Integer

@@ -36,8 +36,6 @@ module Kore.Unparser (
     unparseConcat',
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Char as Char
 import Data.Functor.Const
 import Data.Map.Strict (
@@ -57,7 +55,7 @@ import Generics.SOP (
  )
 import qualified Generics.SOP as SOP
 import qualified Numeric
-
+import Prelude.Kore
 import Pretty hiding (
     list,
  )

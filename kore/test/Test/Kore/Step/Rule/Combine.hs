@@ -6,17 +6,12 @@ module Test.Kore.Step.Rule.Combine (
     test_combineRulesGrouped,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Default (
     def,
  )
 import Data.Text (
     Text,
  )
-
 import Kore.Internal.ApplicationSorts (
     applicationSorts,
  )
@@ -40,6 +35,10 @@ import Kore.Internal.TermLike (
     mkOr,
  )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+ )
 import Kore.Step.AntiLeft (
     AntiLeft,
     mapVariables,
@@ -60,11 +59,7 @@ import Kore.Syntax.Variable
 import Kore.Unparser (
     unparseToString,
  )
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkConfigVariable,
- )
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -73,6 +68,7 @@ import Test.Kore.Step.Simplification (
     runSimplifier,
     runSimplifierSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 class RewriteRuleBase base where

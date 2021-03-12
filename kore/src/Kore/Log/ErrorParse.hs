@@ -7,16 +7,14 @@ module Kore.Log.ErrorParse (
     errorParse,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     Exception (..),
     MonadThrow,
     throwM,
  )
-import Pretty
-
 import Log
+import Prelude.Kore
+import Pretty
 
 newtype ErrorParse = ErrorParse {message :: String}
     deriving (Show)

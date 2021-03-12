@@ -2,17 +2,14 @@ module Test.SMT.AST (
     test_parseSExpr,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Data.Text (
     Text,
  )
-import qualified Text.Megaparsec as Parser
-
+import Prelude.Kore
 import SMT.AST
+import Test.Tasty
+import Test.Tasty.HUnit
+import qualified Text.Megaparsec as Parser
 
 test_parseSExpr :: [TestTree]
 test_parseSExpr =

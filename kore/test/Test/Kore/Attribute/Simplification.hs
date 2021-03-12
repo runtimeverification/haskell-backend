@@ -10,15 +10,12 @@ module Test.Kore.Attribute.Simplification (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Simplification
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseSimplification :: Attributes -> Parser Simplification
 parseSimplification = parseAttributes

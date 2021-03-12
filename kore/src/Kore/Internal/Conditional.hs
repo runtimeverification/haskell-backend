@@ -24,14 +24,11 @@ module Kore.Internal.Conditional (
     setPredicateSimplified,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
@@ -66,6 +63,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import Prelude.Kore
 import Pretty (
     Doc,
     Pretty (..),

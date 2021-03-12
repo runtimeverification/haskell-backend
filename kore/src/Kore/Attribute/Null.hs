@@ -4,11 +4,9 @@ Description : Null attribute parser
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 The 'Null' attribute is used when we need a type to satisfy the attribute
 parser, but we do not actually care to parse any attributes. This parser simply
 ignores all attributes.
-
 This module is intended to be imported qualified:
 @
 import qualified Kore.Attribute.Null as Attribute
@@ -18,13 +16,11 @@ module Kore.Attribute.Null (
     Null (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
+import Prelude.Kore
 
 data Null = Null
     deriving (Eq, Ord, Show)

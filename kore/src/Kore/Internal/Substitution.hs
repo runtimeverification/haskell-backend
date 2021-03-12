@@ -49,10 +49,6 @@ module Kore.Internal.Substitution (
     orientSubstitution,
 ) where
 
-import Prelude.Kore hiding (
-    null,
- )
-
 import qualified Data.List as List
 import Data.Map.Strict (
     Map,
@@ -62,10 +58,9 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import ErrorContext
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import ErrorContext
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute (
     Simplified (..),
@@ -92,6 +87,9 @@ import Kore.Unparser (
     Unparse,
     unparse,
     unparseToString,
+ )
+import Prelude.Kore hiding (
+    null,
  )
 import Pretty (
     Pretty,
@@ -424,7 +422,7 @@ unsafeWrap =
             & assert (not $ any depends $ Map.keys subst)
             -- and if this is an element variable substitution, the substitution
             -- must be defined.
-            -- TODO (thomas.tuegel): isBottom -> isDefinedPattern
+            -- TODO (thomas.tuegel): isBottom -> SideCondition.isDefined
             & assert (not $ isElementVariable var && isBottom termLike)
             & withErrorContext "while wrapping substitution" (assign var termLike)
       where

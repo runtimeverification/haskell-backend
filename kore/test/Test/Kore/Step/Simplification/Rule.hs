@@ -2,11 +2,6 @@
 
 module Test.Kore.Step.Simplification.Rule (test_simplifyRulePattern) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -17,12 +12,14 @@ import Kore.Step.RulePattern (
     rulePattern,
  )
 import qualified Kore.Step.Simplification.Rule as Kore
-
+import Prelude.Kore
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.Kore.Step.Simplification
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_simplifyRulePattern :: [TestTree]
 test_simplifyRulePattern =

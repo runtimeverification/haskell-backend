@@ -12,13 +12,11 @@ module Kore.Attribute.Axiom.Constructor (
     constructorAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Constructor@ represents the @constructor@ attribute for axioms.
 newtype Constructor = Constructor {isConstructor :: Bool}

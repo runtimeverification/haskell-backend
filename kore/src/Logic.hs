@@ -10,10 +10,9 @@ module Logic (
     lowerLogicT,
 ) where
 
-import Prelude
-
 import Control.Applicative
 import Control.Monad.Logic
+import Prelude
 
 gather :: MonadLogic m => m a -> m [a]
 gather acts =

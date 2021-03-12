@@ -11,8 +11,6 @@ module Kore.IndexedModule.MetadataToolsBuilder (
     build,
 ) where
 
-import Prelude.Kore ()
-
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
     indexBySort,
  )
@@ -29,6 +27,7 @@ import Kore.IndexedModule.MetadataTools (
 import qualified Kore.Step.SMT.Representation.All as SMT.Representation (
     build,
  )
+import Prelude.Kore ()
 
 {- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.
 

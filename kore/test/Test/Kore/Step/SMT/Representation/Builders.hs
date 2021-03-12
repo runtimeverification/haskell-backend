@@ -11,15 +11,10 @@ module Test.Kore.Step.SMT.Representation.Builders (
     unresolvedSortMap,
 ) where
 
-import Prelude.Kore
-
-import Test.Kore.Step.SMT.Builders ()
-
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Sort as Kore (
     Sort,
  )
@@ -44,6 +39,7 @@ import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
+import Prelude.Kore
 import qualified SMT.AST as AST (
     Constructor (Constructor),
     ConstructorArgument (ConstructorArgument),
@@ -53,10 +49,10 @@ import qualified SMT.AST as AST (
     SortDeclaration (SortDeclaration),
  )
 import qualified SMT.AST as AST.DoNotUse
-
 import Test.Kore (
     testId,
  )
+import Test.Kore.Step.SMT.Builders ()
 
 emptyDeclarations :: AST.Declarations sort symbol name
 emptyDeclarations = AST.Declarations{sorts = Map.empty, symbols = Map.empty}

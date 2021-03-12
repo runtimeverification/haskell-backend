@@ -1,9 +1,8 @@
 module Main (main) where
 
-import Prelude
-
 import qualified Options.Applicative as Options
 import qualified Speedscope.Main as Speedscope
+import Prelude
 
 main :: IO ()
 main =

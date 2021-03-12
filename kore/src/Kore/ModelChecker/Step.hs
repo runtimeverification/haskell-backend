@@ -16,8 +16,6 @@ module Kore.ModelChecker.Step (
     defaultOneStepStrategy,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.State.Strict (
     StateT,
  )
@@ -26,7 +24,6 @@ import Data.Text (
     Text,
  )
 import GHC.Generics
-
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -59,6 +56,7 @@ import Kore.Step.Strategy (
  )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.TopBottom
+import Prelude.Kore
 import qualified Pretty
 
 data Prim patt rewrite

@@ -15,16 +15,14 @@ module Kore.Attribute.UniqueId (
     uniqueIdAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
 newtype UniqueId = UniqueId {getUniqueId :: Maybe Text}

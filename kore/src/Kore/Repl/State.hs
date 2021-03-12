@@ -49,16 +49,16 @@ module Kore.Repl.State (
     getNodeState,
 ) where
 
-import Prelude.Kore hiding (
-    toList,
- )
-
 import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
 import Control.Monad.Error.Class (
     MonadError,
  )
 import qualified Control.Monad.Error.Class as Monad.Error
+import Control.Monad.Reader (
+    MonadReader,
+    asks,
+ )
 import Control.Monad.State.Strict (
     MonadState,
     get,
@@ -101,18 +101,6 @@ import Data.Text (
  )
 import GHC.Exts (
     toList,
- )
-import Numeric.Natural
-import System.IO (
-    Handle,
-    IOMode (AppendMode),
-    hClose,
-    openFile,
- )
-
-import Control.Monad.Reader (
-    MonadReader,
-    asks,
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
@@ -160,6 +148,16 @@ import Kore.Syntax.Definition (
     SentenceImport (..),
  )
 import Kore.Syntax.Variable
+import Numeric.Natural
+import Prelude.Kore hiding (
+    toList,
+ )
+import System.IO (
+    Handle,
+    IOMode (AppendMode),
+    hClose,
+    openFile,
+ )
 
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph :: SomeClaim -> ExecutionGraph

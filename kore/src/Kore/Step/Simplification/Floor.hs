@@ -14,8 +14,6 @@ module Kore.Step.Simplification.Floor (
     makeEvaluateFloor,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -32,6 +30,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- | 'simplify' simplifies a 'Floor' of 'OrPattern'.
 

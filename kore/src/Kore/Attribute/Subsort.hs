@@ -10,13 +10,11 @@ module Kore.Attribute.Subsort (
     subsortAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | The @subsort@ attribute.
 data Subsort = Subsort

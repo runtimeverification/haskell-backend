@@ -9,13 +9,8 @@ module Kore.Attribute.Sort (
     Sort (..),
 ) where
 
-import Prelude.Kore hiding (
-    concat,
- )
-
 import qualified Control.Monad as Monad
 import Data.Generics.Product
-
 import Kore.Attribute.Concat
 import Kore.Attribute.Element
 import Kore.Attribute.Hook
@@ -27,6 +22,9 @@ import Kore.Attribute.Sort.HasDomainValues (
     HasDomainValues,
  )
 import Kore.Attribute.Unit
+import Prelude.Kore hiding (
+    concat,
+ )
 
 data Sort = Sort
     { -- | The builtin sort hooked to the sort.

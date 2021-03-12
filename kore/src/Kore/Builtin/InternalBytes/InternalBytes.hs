@@ -25,8 +25,6 @@ module Kore.Builtin.InternalBytes.InternalBytes (
     bytes2intKey,
 ) where
 
-import Prelude.Kore
-
 import Data.ByteString (
     ByteString,
  )
@@ -36,7 +34,6 @@ import Data.String (
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Symbols as Builtin
 import Kore.Internal.InternalBytes
@@ -61,6 +58,7 @@ import qualified Kore.Internal.TermLike as TermLike (
     pattern App_,
     pattern StringLiteral_,
  )
+import Prelude.Kore
 
 -- | Builtin name for the Bytes sort.
 sort :: Text

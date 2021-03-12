@@ -9,10 +9,7 @@ module Kore.Step.SMT.Declaration.Sorts (
     declare,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Step.SMT.AST as AST (
     Declarations (Declarations),
     KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly),
@@ -21,6 +18,7 @@ import qualified Kore.Step.SMT.AST as AST (
     Sort (Sort),
  )
 import qualified Kore.Step.SMT.AST as SMT.AST.DoNotUse
+import Prelude.Kore
 import qualified SMT
 
 -- | Sends all sorts in the given declarations to the SMT.

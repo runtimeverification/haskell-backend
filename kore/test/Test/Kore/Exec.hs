@@ -6,15 +6,14 @@ module Test.Kore.Exec (
     test_execGetExitCode,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Exception as Exception
 import Data.Default (
     def,
  )
 import qualified Data.Graph.Inductive.Graph as Graph
+import Data.Limit (
+    Limit (..),
+ )
 import qualified Data.Map.Strict as Map
 import Data.Set (
     Set,
@@ -22,13 +21,6 @@ import Data.Set (
 import qualified Data.Set as Set
 import Data.Text (
     Text,
- )
-import System.Exit (
-    ExitCode (..),
- )
-
-import Data.Limit (
-    Limit (..),
  )
 import Kore.ASTVerifier.DefinitionVerifier (
     verifyAndIndexDefinition,
@@ -78,12 +70,16 @@ import Kore.Syntax.Definition hiding (
  )
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
-
+import Prelude.Kore
+import System.Exit (
+    ExitCode (..),
+ )
 import Test.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.SMT (
     runNoSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_execPriority :: TestTree

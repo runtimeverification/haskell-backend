@@ -6,12 +6,7 @@ module Test.Kore.Step.Simplification.Condition (
     test_simplifyPredicates,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
-
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -52,9 +47,10 @@ import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.TopBottom
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplify_local_functions :: [TestTree]
@@ -84,13 +80,9 @@ test_simplify_local_functions =
     , test "contradiction: \"one\" = f(x) ∧ f(x) = \"two\"" fString (Left strOne) (Right strTwo)
     , test "contradiction: \"one\" = f(x) ∧ \"two\" = f(x)" fString (Left strOne) (Left strTwo)
     , test "contradiction: f(x) = \"one\" ∧ \"two\" = f(x)" fString (Right strOne) (Left strTwo)
-    , -- Ignore Defined marker
-      testDefined "contradiction: f(g(x)) = a ∧ f(g(x)) = b" (Right fg) (Right a) (Right b)
-    , testDefined "contradiction: f(g(x)) = a ∧ f(g(x)) = b" (Left fg) (Right a) (Right b)
     ]
   where
     f = Mock.f (mkElemVar Mock.xConfig)
-    fg = Mock.f (Mock.g (mkElemVar Mock.xConfig))
     fInt = Mock.fInt (mkElemVar Mock.xConfigInt)
     fBool = Mock.fBool (mkElemVar Mock.xConfigBool)
     fString = Mock.fString (mkElemVar Mock.xConfigString)
@@ -114,28 +106,11 @@ test_simplify_local_functions =
     mkLocalDefn func (Left t) = makeEqualsPredicate t func
     mkLocalDefn func (Right t) = makeEqualsPredicate func t
 
-    applyDefined1 (Left func) = mkDefined func
-    applyDefined1 (Right func) = func
-    applyDefined2 (Left func) = func
-    applyDefined2 (Right func) = mkDefined func
-
     test name func eitherC1 eitherC2 =
         testCase name $ do
             let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
                 equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
                 condition = defined <> equals1 <> defined <> equals2
-            actual <- simplify condition
-            assertBool "Expected \\bottom" $ isBottom actual
-
-    testDefined name eitherFunc eitherC1 eitherC2 =
-        testCase name $ do
-            let equals1 =
-                    mkLocalDefn (applyDefined1 eitherFunc) eitherC1
-                        & Condition.fromPredicate
-                equals2 =
-                    mkLocalDefn (applyDefined2 eitherFunc) eitherC2
-                        & Condition.fromPredicate
-                condition = equals1 <> equals2
             actual <- simplify condition
             assertBool "Expected \\bottom" $ isBottom actual
 

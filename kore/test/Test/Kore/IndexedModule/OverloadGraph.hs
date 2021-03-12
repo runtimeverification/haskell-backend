@@ -5,13 +5,8 @@ module Test.Kore.IndexedModule.OverloadGraph (
     test_fromIndexedModule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import Kore.ASTVerifier.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
@@ -36,10 +31,11 @@ import Kore.Syntax.Definition (
     Sentence (..),
     SentenceAxiom (..),
  )
-
+import Prelude.Kore
 import Test.Kore
 import qualified Test.Kore.Builtin.Definition as Definition
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 symbolA, symbolB, symbolC, symbolD, symbolE :: Symbol

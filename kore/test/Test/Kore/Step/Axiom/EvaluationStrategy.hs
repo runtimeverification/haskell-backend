@@ -8,16 +8,11 @@ module Test.Kore.Step.Axiom.EvaluationStrategy (
     test_attemptEquations,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.IORef (
     modifyIORef',
     newIORef,
     readIORef,
  )
-
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern (
     Conditional (Conditional),
@@ -43,7 +38,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
-
+import Prelude.Kore
 import Test.Kore.Equation.Common (
     axiom,
     axiom_,
@@ -51,6 +46,7 @@ import Test.Kore.Equation.Common (
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_attemptEquations :: [TestTree]

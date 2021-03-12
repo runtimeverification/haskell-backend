@@ -12,8 +12,6 @@ module Kore.IndexedModule.SortGraph (
     Subsort (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree (
     Gr,
@@ -28,10 +26,9 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.Attribute.Subsort (
     Subsort (..),
  )
@@ -40,6 +37,7 @@ import Kore.IndexedModule.IndexedModule (
     indexedModuleSubsorts,
  )
 import Kore.Sort
+import Prelude.Kore
 
 -- | 'SortGraph' represents the partial order on sorts.
 newtype SortGraph = SortGraph {unSortGraph :: Map Sort (Set Sort)}

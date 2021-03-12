@@ -13,8 +13,6 @@ module Pretty (
     prettyException,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception,
     displayException,
@@ -35,6 +33,7 @@ import Data.Text.Prettyprint.Doc.Render.Text (
     renderIO,
     renderStrict,
  )
+import Prelude.Kore
 
 {- | Lay out the document with no (automatic) line breaks.
 

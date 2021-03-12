@@ -3,16 +3,10 @@ module Test.Kore.Reachability.Claim (
     test_simplifyRightHandSide,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -53,11 +47,13 @@ import Kore.Step.ClaimPattern (
     mkClaimPattern,
  )
 import qualified Logic
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification (
     runSimplifierSMT,
  )
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 test_checkImplication :: [TestTree]
 test_checkImplication =

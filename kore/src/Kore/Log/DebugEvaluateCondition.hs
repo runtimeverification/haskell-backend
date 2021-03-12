@@ -8,17 +8,15 @@ module Kore.Log.DebugEvaluateCondition (
     debugEvaluateConditionResult,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Internal.Predicate (
     Predicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

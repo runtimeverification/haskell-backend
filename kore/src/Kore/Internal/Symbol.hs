@@ -31,8 +31,6 @@ module Kore.Internal.Symbol (
     module Kore.Internal.ApplicationSorts,
 ) where
 
-import Prelude.Kore
-
 import Control.DeepSeq (
     deepseq,
  )
@@ -43,7 +41,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
@@ -53,6 +50,7 @@ import Kore.Internal.ApplicationSorts
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 import SMT.AST (
     SExpr,

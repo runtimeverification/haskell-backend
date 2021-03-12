@@ -8,12 +8,9 @@ module Kore.Step.Rule.Simplify (
     SimplifyRuleLHS (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     (>=>),
  )
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -59,6 +56,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where

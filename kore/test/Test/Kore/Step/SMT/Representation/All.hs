@@ -2,15 +2,10 @@ module Test.Kore.Step.SMT.Representation.All (
     test_symbolParsing,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
     indexBySort,
  )
@@ -29,8 +24,8 @@ import qualified Kore.Step.SMT.AST as AST (
  )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Step.SMT.Representation.All as All
+import Prelude.Kore
 import qualified SMT
-
 import Test.Kore.Step.SMT.Builders (
     constructor,
     emptyModule,
@@ -48,6 +43,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
 
 test_symbolParsing :: [TestTree]
 test_symbolParsing =

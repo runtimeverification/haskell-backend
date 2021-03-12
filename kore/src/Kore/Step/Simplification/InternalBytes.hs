@@ -8,8 +8,6 @@ module Kore.Step.Simplification.InternalBytes (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.InternalBytes
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -19,6 +17,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 simplify ::
     InternalBytes ->

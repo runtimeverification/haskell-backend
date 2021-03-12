@@ -23,8 +23,6 @@ module Kore.Equation.Application (
     debugApplyEquation,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     ExceptT,
     MaybeT (..),
@@ -48,10 +46,9 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
@@ -126,6 +123,7 @@ import Log (
     logWhile,
  )
 import qualified Logic
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
@@ -174,7 +172,7 @@ attemptEquation sideCondition termLike equation =
             , matchEquation = equationRenamed
             }
     match term1 term2 =
-        matchIncremental term1 term2
+        matchIncremental sideCondition term1 term2
             & MaybeT
             & noteT matchError
 

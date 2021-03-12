@@ -23,17 +23,15 @@ module Kore.AST.Error (
     withModuleContext,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import Kore.AST.AstWithLocation
 import Kore.Error
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Prelude.Kore
 
 {- |'koreFailWithLocations' produces an error result with a context containing
 the provided locations.

@@ -17,8 +17,6 @@ module Kore.Variables.Binding (
     nuBinder,
 ) where
 
-import Prelude.Kore
-
 import Control.Comonad.Trans.Env
 import Control.Lens (
     (%~),
@@ -31,12 +29,12 @@ import Data.Monoid (
     Any (..),
  )
 import qualified GHC.Generics as GHC
-
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
 import Kore.Syntax.Mu
 import Kore.Syntax.Nu
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 {- | @Binding@ defines traversals for patterns with binders.
 

@@ -11,13 +11,11 @@ module Kore.Attribute.Priority (
     priorityAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 {- | @Priority@ represents the @priority@ attribute.
 

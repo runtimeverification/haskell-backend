@@ -6,14 +6,11 @@ module Kore.Internal.InternalList (
     InternalList (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Sequence (
     Seq,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables (
@@ -29,6 +26,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 -- | Internal representation of the builtin @LIST.List@ domain.

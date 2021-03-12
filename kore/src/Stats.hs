@@ -9,20 +9,18 @@ module Stats (
     readStats,
 ) where
 
-import Prelude.Kore
-
 import Data.Aeson (
     FromJSON,
     ToJSON,
  )
 import qualified Data.Aeson as Aeson
 import Data.Word
+import Debug
 import qualified GHC.Generics as GHC
 import qualified GHC.Stats as GHC
 import qualified Generics.SOP as SOP
+import Prelude.Kore
 import qualified System.Mem as System
-
-import Debug
 
 data Stats = Stats
     { gcs, major_gcs :: !Word32

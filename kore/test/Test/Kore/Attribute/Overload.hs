@@ -9,14 +9,8 @@ module Test.Kore.Attribute.Overload (
     test_dont_ignore,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
-
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
@@ -38,7 +32,7 @@ import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
  )
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.Attribute.Parser
 import Test.Kore.Builtin.Definition (
@@ -46,6 +40,8 @@ import Test.Kore.Builtin.Definition (
     symbolDecl,
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseOverload :: Attributes -> Parser (Overload SymbolOrAlias)
 parseOverload = parseAttributes

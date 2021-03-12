@@ -31,8 +31,6 @@ module Kore.ASTVerifier.PatternVerifier.PatternVerifier (
     applicationSortsFromSymbolOrAliasSentence,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     (>=>),
  )
@@ -49,7 +47,6 @@ import Data.Set (
     Set,
  )
 import qualified GHC.Generics as GHC
-
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.SortVerifier
@@ -65,6 +62,7 @@ import Kore.Syntax as Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import Pretty (
     (<+>),
  )

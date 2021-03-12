@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.Top (
     test_topSimplification,
 ) where
 
-import Prelude.Kore ()
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -20,10 +16,11 @@ import Kore.Step.Simplification.Top (
     simplify,
  )
 import Kore.Syntax
-
+import Prelude.Kore ()
 import Test.Kore.Step.MockSymbols (
     testSort,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_topSimplification :: [TestTree]

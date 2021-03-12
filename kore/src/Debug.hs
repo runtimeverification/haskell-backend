@@ -20,8 +20,6 @@ module Debug (
     formatExceptionInfo,
 ) where
 
-import Prelude.Kore
-
 import Control.Comonad.Trans.Cofree
 import Data.ByteString (
     ByteString,
@@ -58,6 +56,7 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import Data.Sup
 import Data.Text (
     Text,
  )
@@ -94,16 +93,15 @@ import qualified Generics.SOP as SOP
 import Numeric.Natural (
     Natural,
  )
-import System.Exit (
-    ExitCode (..),
- )
-
-import Data.Sup
+import Prelude.Kore
 import Pretty (
     Doc,
     (<+>),
  )
 import qualified Pretty
+import System.Exit (
+    ExitCode (..),
+ )
 
 {- | Insert a separator between the items and enclose them with the delimiters.
 

@@ -5,12 +5,7 @@ module Test.Kore.Step.SMT.Representation.Helpers (
     testsForModule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -26,10 +21,11 @@ import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
+import Prelude.Kore
 import qualified SMT.AST as AST (
     showSExpr,
  )
-
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 testsForModule ::

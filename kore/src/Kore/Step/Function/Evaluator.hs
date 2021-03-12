@@ -14,8 +14,6 @@ module Kore.Step.Function.Evaluator (
     evaluatePattern,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     ExceptT,
     MaybeT (..),
@@ -26,7 +24,6 @@ import Control.Error (
 import Control.Monad.Catch (
     MonadThrow,
  )
-
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
 import Kore.Attribute.Synthetic
 import qualified Kore.Internal.MultiOr as MultiOr (
@@ -66,6 +63,7 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser
 import qualified Logic
+import Prelude.Kore
 import qualified Pretty
 
 -- | Evaluates functions on an application pattern.

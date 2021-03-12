@@ -3,13 +3,6 @@ module Test.Kore.Builtin (
     test_sortModuleClaims,
 ) where
 
-import Prelude.Kore hiding (
-    concatMap,
- )
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Control.Lens (
     ix,
     (%~),
@@ -23,7 +16,6 @@ import qualified Data.Map.Internal as Data.Map
 import Data.Maybe (
     fromJust,
  )
-
 import Kore.ASTVerifier.DefinitionVerifier (
     sortModuleClaims,
  )
@@ -53,15 +45,19 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Test.Kore.Step.SMT.Builders (
-    indexModule,
+import Prelude.Kore hiding (
+    concatMap,
  )
-
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
+import Test.Kore.Step.SMT.Builders (
+    indexModule,
+ )
+import Test.Tasty
+import Test.Tasty.HUnit
 
 withUnit :: Bool
 withUnit = True

@@ -5,12 +5,7 @@ module Test.Kore.Unification.UnifierT (
     test_simplifyCondition,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Equation as Equation
 import Kore.Internal.Condition (
     Condition,
@@ -47,9 +42,10 @@ import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import qualified Logic
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 assertNormalized :: Condition RewritingVariableName -> IO ()

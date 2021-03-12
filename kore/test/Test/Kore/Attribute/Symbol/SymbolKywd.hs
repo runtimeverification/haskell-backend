@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Symbol.SymbolKywd (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseSymbolKywd :: Attributes -> Parser SymbolKywd
 parseSymbolKywd = parseAttributes

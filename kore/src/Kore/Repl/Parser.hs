@@ -13,10 +13,6 @@ module Kore.Repl.Parser (
     ReplParseError (..),
 ) where
 
-import Prelude.Kore hiding (
-    many,
- )
-
 import Data.Functor (
     void,
  )
@@ -36,6 +32,15 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
+import Kore.Log (
+    EntryTypes,
+ )
+import qualified Kore.Log as Log
+import qualified Kore.Log.Registry as Log
+import Kore.Repl.Data
+import Prelude.Kore hiding (
+    many,
+ )
 import Text.Megaparsec (
     Parsec,
     ShowErrorComponent (..),
@@ -53,13 +58,6 @@ import qualified Text.Megaparsec.Char.Lexer as L
 import Type.Reflection (
     SomeTypeRep,
  )
-
-import Kore.Log (
-    EntryTypes,
- )
-import qualified Kore.Log as Log
-import qualified Kore.Log.Registry as Log
-import Kore.Repl.Data
 
 type Parser = Parsec ReplParseError Text
 

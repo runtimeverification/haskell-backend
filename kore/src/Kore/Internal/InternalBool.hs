@@ -6,12 +6,9 @@ module Kore.Internal.InternalBool (
     InternalBool (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Const
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -22,6 +19,7 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 -- | Internal representation of the builtin @BOOL.Bool@ domain.

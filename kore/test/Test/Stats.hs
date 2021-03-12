@@ -1,16 +1,12 @@
 module Test.Stats (test_Stats) where
 
 import Prelude.Kore
-
-import Test.Tasty
-
+import Stats
 import System.IO (
     hClose,
  )
 import System.IO.Temp
-
-import Stats
-
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_Stats :: [TestTree]

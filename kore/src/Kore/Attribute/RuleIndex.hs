@@ -8,13 +8,11 @@ module Kore.Attribute.RuleIndex (
     RuleIndexCase (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
+import Prelude.Kore
 
 data RuleIndexCase
     = AxiomIndex !Int

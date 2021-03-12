@@ -18,13 +18,13 @@ module Kore.ASTVerifier.AttributesVerifier (
     parseAttributes,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Lens as Lens
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-
+import Kore.AST.AstWithLocation (
+    locationFromAst,
+ )
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute (
     Axiom,
@@ -34,14 +34,10 @@ import Kore.Attribute.Hook
 import Kore.Attribute.Overload (
     Overload (..),
  )
+import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Sort
 import Kore.Attribute.Sort.HasDomainValues
 import Kore.Attribute.Subsort as Subsort
-
-import Kore.AST.AstWithLocation (
-    locationFromAst,
- )
-import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -65,6 +61,7 @@ import Kore.Unparser (
     unparse,
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import Pretty
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook

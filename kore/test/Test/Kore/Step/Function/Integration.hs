@@ -14,19 +14,12 @@ module Test.Kore.Step.Function.Integration (
     test_Ceil,
 ) where
 
-import Prelude.Kore hiding (
-    succ,
- )
-
-import Test.Tasty
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import Data.Sup
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error (
@@ -101,8 +94,10 @@ import Kore.Syntax.Definition hiding (
     Symbol (..),
  )
 import Kore.Unparser
+import Prelude.Kore hiding (
+    succ,
+ )
 import qualified Pretty
-
 import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
@@ -122,6 +117,7 @@ import Test.Kore.Step.Axiom.Matcher (
  )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_functionIntegration :: [TestTree]

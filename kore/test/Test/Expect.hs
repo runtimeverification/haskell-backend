@@ -12,22 +12,19 @@ module Test.Expect (
     expectJustT,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
     maybeT,
  )
 import Data.These
-
 import Debug
 import Kore.Internal.InternalBool
 import Kore.Internal.TermLike
-import Kore.TopBottom
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.TopBottom
+import Prelude.Kore
 import Test.Tasty.HUnit.Ext
 
 expectRight :: HasCallStack => Debug left => Either left right -> IO right

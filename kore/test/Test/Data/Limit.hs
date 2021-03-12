@@ -5,11 +5,9 @@ module Test.Data.Limit (
     prop_identity,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty.QuickCheck
-
 import Data.Limit
+import Prelude.Kore
+import Test.Tasty.QuickCheck
 
 limit :: Integer -> Limit Integer
 limit = Limit

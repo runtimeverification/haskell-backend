@@ -8,10 +8,9 @@ module Kore.Log.InfoExecBreadth (
     infoExecBreadth,
 ) where
 
-import Prelude.Kore
-
 import Log
 import Numeric.Natural
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

@@ -4,25 +4,22 @@ module Test.Kore.Step.Simplification.DomainValue (
     test_simplify,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.DomainValue (
-    simplify,
- )
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Step.Simplification.DomainValue (
+    simplify,
+ )
+import Prelude.Kore
 import Test.Kore.Step.MockSymbols (
     testSort,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]

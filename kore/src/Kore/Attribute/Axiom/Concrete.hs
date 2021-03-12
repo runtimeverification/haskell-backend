@@ -16,8 +16,6 @@ module Kore.Attribute.Axiom.Concrete (
     FreeVariables,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Error as Safe
 import qualified Control.Monad as Monad
 import qualified Data.List as List
@@ -26,7 +24,6 @@ import Data.Set (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -40,6 +37,7 @@ import qualified Kore.Error
 import Kore.Syntax.Variable hiding (
     Concrete,
  )
+import Prelude.Kore
 
 -- | @Concrete@ represents the @concrete@ attribute for axioms.
 newtype Concrete variable = Concrete {unConcrete :: FreeVariables variable}

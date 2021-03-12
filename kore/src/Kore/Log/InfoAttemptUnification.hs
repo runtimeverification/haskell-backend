@@ -7,11 +7,8 @@ module Kore.Log.InfoAttemptUnification (
     infoAttemptUnification,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Internal.TermLike (
     InternalVariable,
     TermLike,
@@ -23,6 +20,7 @@ import Kore.Unparser (
     unparse,
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

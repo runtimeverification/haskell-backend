@@ -16,13 +16,10 @@ module Test.Kore.Step.SMT.Builders (
     koreSort,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import Kore.ASTVerifier.DefinitionVerifier (
     verifyAndIndexDefinition,
  )
@@ -52,7 +49,7 @@ import qualified Kore.Sort as SortActual (
     SortActual (..),
  )
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )

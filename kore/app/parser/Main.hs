@@ -1,14 +1,12 @@
 module Main (main) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     Exception (..),
     SomeException,
     handle,
  )
 import qualified Data.Map.Strict as Map
-
+import GlobalMain
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier (
     verifyAndIndexDefinition,
@@ -37,13 +35,11 @@ import Kore.Parser (
  )
 import Kore.Syntax.Definition
 import Kore.Unparser as Unparser
+import Prelude.Kore
 import Pretty (
     putDoc,
  )
-
 import System.Exit
-
-import GlobalMain
 
 {-
 Main module to run kore-parser

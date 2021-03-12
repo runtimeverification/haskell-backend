@@ -14,15 +14,13 @@ module Kore.Attribute.Concat (
     concatAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified Generics.SOP as SOP
-import qualified Pretty
-
 import Kore.Attribute.Parser
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
+import qualified Pretty
 
 -- | @Concat@ represents the @concat@ attribute.
 newtype Concat symbol = Concat {getConcat :: Maybe symbol}

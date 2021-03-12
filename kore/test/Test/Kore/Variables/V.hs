@@ -5,21 +5,19 @@ module Test.Kore.Variables.V (
     sortVariable,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-import Numeric.Natural
-
 import Data.Sup
 import Debug
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Internal.TermLike
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Numeric.Natural
+import Prelude.Kore
 import Pretty
 
 data V = V {value :: Integer, counter :: Maybe (Sup Natural)}

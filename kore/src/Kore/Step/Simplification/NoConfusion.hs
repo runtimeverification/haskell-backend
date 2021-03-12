@@ -9,16 +9,11 @@ module Kore.Step.Simplification.NoConfusion (
     constructorAndEqualsAssumesDifferentHeads,
 ) where
 
-import Prelude.Kore hiding (
-    concat,
- )
-
 import Control.Error (
     MaybeT (..),
  )
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
-
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -30,6 +25,9 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
+import Prelude.Kore hiding (
+    concat,
+ )
 
 {- | Unify two application patterns with equal, injective heads.
 

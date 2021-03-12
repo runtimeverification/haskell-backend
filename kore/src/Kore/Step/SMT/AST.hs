@@ -35,8 +35,6 @@ module Kore.Step.SMT.AST (
     mergePreferFirst,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
@@ -46,7 +44,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Smtlib.Smthook (
     SExpr (..),
  )
@@ -60,6 +57,7 @@ import Kore.Step.SMT.Encoder (
 import qualified Kore.Syntax.Id as Kore (
     Id (Id, getId),
  )
+import Prelude.Kore
 import qualified SMT.AST as AST
 
 {- | A representation of the Kore Sort type together with its related

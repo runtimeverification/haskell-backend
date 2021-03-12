@@ -6,12 +6,10 @@ module Pair (
     Pair (..),
 ) where
 
-import Prelude.Kore
-
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
+import Prelude.Kore
 
 -- | A tuple @(a, a)@ where both elements are the same type.
 data Pair a = Pair !a !a

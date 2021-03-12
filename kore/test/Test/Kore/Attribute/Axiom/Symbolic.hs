@@ -11,21 +11,17 @@ module Test.Kore.Attribute.Axiom.Symbolic (
     test_arguments,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import qualified Data.Default as Default
-
 import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariable,
  )
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseSymbolic ::
     FreeVariables VariableName ->

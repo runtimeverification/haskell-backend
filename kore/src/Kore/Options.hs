@@ -10,13 +10,11 @@ module Kore.Options (
     parseKoreParserOptions,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
-
 import Options.Applicative
+import Prelude.Kore
 
 {- |
 Parser builder to create an optional boolean flag,

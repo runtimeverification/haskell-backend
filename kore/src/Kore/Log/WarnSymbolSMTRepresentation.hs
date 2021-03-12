@@ -7,11 +7,8 @@ module Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
 ) where
 
-import Prelude.Kore
-
 import GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Symbol (
     getSmthook,
     getSmtlib,
@@ -22,6 +19,7 @@ import Kore.Unparser (
     unparse,
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

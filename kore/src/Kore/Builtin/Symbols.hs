@@ -10,12 +10,9 @@ module Kore.Builtin.Symbols (
     isSymbol,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Attribute.Concat as Attribute.Sort
 import qualified Kore.Attribute.Element as Attribute.Sort
 import Kore.Attribute.Hook (
@@ -39,6 +36,7 @@ import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.TermLike as TermLike
 import Kore.Unparser
+import Prelude.Kore
 
 -- | Look up the symbol hooked to the named builtin in the provided module.
 lookupSymbol ::

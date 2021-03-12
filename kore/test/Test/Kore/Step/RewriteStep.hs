@@ -10,10 +10,6 @@ module Test.Kore.Step.RewriteStep (
     test_narrowing,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Control.Exception as Exception
 import Data.Default as Default (
     def,
@@ -22,7 +18,6 @@ import Data.Maybe (
     fromJust,
  )
 import qualified Data.Set as Set
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -64,7 +59,7 @@ import Kore.Variables.Fresh (
     nextName,
  )
 import qualified Logic
-
+import Prelude.Kore
 import Test.Kore.Internal.Condition as Condition
 import Test.Kore.Internal.OrCondition (
     OrTestCondition,
@@ -76,6 +71,7 @@ import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type RewriteRule' = RewriteRule RewritingVariableName

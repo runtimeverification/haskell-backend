@@ -16,8 +16,6 @@ module SQL.Query (
     withParens,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Trans.Accum (
     AccumT,
     execAccumT,
@@ -26,7 +24,7 @@ import qualified Control.Monad.Trans.Accum as Accum
 import Data.String (
     fromString,
  )
-
+import Prelude.Kore
 import SQL.SQL as SQL
 
 build :: Monad monad => AccumT Query monad () -> monad Query

@@ -31,11 +31,6 @@ module Kore.Internal.MultiOr (
     Alternative (..),
 ) where
 
-import Prelude.Kore hiding (
-    map,
-    traverse,
- )
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
@@ -47,7 +42,6 @@ import GHC.Exts (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -65,6 +59,10 @@ import Logic (
     MonadLogic,
  )
 import qualified Logic
+import Prelude.Kore hiding (
+    map,
+    traverse,
+ )
 
 -- | 'MultiOr' is a Matching logic or of its children
 

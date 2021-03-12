@@ -61,17 +61,6 @@ module Test.Kore.Builtin.Set (
     asInternal,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog hiding (
-    Concrete,
-    opaque,
-    property,
- )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-
 import Control.Error (
     runMaybeT,
  )
@@ -90,7 +79,13 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-
+import Hedgehog hiding (
+    Concrete,
+    opaque,
+    property,
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
@@ -100,6 +95,7 @@ import Kore.Internal.InternalSet
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -124,7 +120,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
-
+import Prelude.Kore
 import Test.Expect
 import Test.Kore (
     configElementVariableGen,
@@ -150,6 +146,7 @@ import Test.Kore.With
 import Test.SMT hiding (
     runSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genKeys :: Gen [TermLike RewritingVariableName]
@@ -507,7 +504,9 @@ test_difference_symbolic =
         Assertion
     evalDifference expect args = do
         actual <-
-            Set.evalDifference (Application differenceSetSymbol args)
+            Set.evalDifference
+                SideCondition.top
+                (Application differenceSetSymbol args)
                 & runMaybeT
                 & runSimplifier testEnv
         assertEqual "" expect actual

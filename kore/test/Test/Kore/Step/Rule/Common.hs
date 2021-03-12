@@ -3,10 +3,7 @@ module Test.Kore.Step.Rule.Common (
     RuleBase (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Default as Default
-
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -32,6 +29,7 @@ import Kore.Step.RulePattern (
     RulePattern (RulePattern),
  )
 import qualified Kore.Step.RulePattern as OLD
+import Prelude.Kore
 
 newtype Pair variable = Pair (TermLike variable, Predicate variable)
 

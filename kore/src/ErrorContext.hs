@@ -7,8 +7,6 @@ module ErrorContext (
     withErrorContext,
 ) where
 
-import Prelude
-
 import Control.Exception (
     Exception (..),
     SomeException,
@@ -20,11 +18,11 @@ import Data.String (
 import Data.Typeable (
     Typeable,
  )
-
 import Pretty (
     Pretty,
  )
 import qualified Pretty
+import Prelude
 
 data ErrorContext where
     ErrorContext ::

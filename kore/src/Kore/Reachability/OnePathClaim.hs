@@ -9,14 +9,11 @@ module Kore.Reachability.OnePathClaim (
     Rule (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
 import Kore.Internal.Alias (
@@ -61,6 +58,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
+import Prelude.Kore
 
 -- | One-Path-Claim claim pattern.
 newtype OnePathClaim = OnePathClaim {getOnePathClaim :: ClaimPattern}

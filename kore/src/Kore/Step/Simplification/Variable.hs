@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Variable (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -23,6 +21,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- | 'simplify' simplifies a 'Variable' pattern, which means returning
 an or containing a term made of that variable.

@@ -7,8 +7,6 @@ module Kore.Log.WarnFunctionWithoutEvaluators (
     warnFunctionWithoutEvaluators,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
 import qualified Kore.Attribute.Symbol as Attribute (
@@ -27,6 +25,7 @@ import Log (
     Severity (Warning),
     logEntry,
  )
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

@@ -24,8 +24,6 @@ module GlobalMain (
     loadModule,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     evaluate,
  )
@@ -55,46 +53,6 @@ import Data.Version (
 import GHC.Stack (
     emptyCallStack,
  )
-import Options.Applicative (
-    InfoMod,
-    Parser,
-    ParserHelp (..),
-    defaultPrefs,
-    execParserPure,
-    flag,
-    handleParseResult,
-    help,
-    helper,
-    info,
-    long,
-    maybeReader,
-    metavar,
-    option,
-    overFailure,
-    readerError,
-    str,
-    strOption,
-    switch,
-    value,
-    (<**>),
- )
-import qualified Options.Applicative as Options
-import Options.Applicative.Help.Chunk (
-    Chunk (..),
-    vsepChunks,
- )
-import qualified Options.Applicative.Help.Pretty as Pretty
-import System.Clock (
-    Clock (Monotonic),
-    diffTimeSpec,
-    getTime,
- )
-import qualified System.Environment as Env
-import qualified Text.Megaparsec as Parser
-import Text.Read (
-    readMaybe,
- )
-
 import Kore.ASTVerifier.DefinitionVerifier (
     sortModuleClaims,
     verifyAndIndexDefinitionWithBase,
@@ -133,9 +91,48 @@ import Kore.Syntax.Definition (
  )
 import qualified Kore.Verified as Verified
 import Kore.VersionInfo
-
+import Options.Applicative (
+    InfoMod,
+    Parser,
+    ParserHelp (..),
+    defaultPrefs,
+    execParserPure,
+    flag,
+    handleParseResult,
+    help,
+    helper,
+    info,
+    long,
+    maybeReader,
+    metavar,
+    option,
+    overFailure,
+    readerError,
+    str,
+    strOption,
+    switch,
+    value,
+    (<**>),
+ )
+import qualified Options.Applicative as Options
+import Options.Applicative.Help.Chunk (
+    Chunk (..),
+    vsepChunks,
+ )
+import qualified Options.Applicative.Help.Pretty as Pretty
 import qualified Paths_kore as MetaData (
     version,
+ )
+import Prelude.Kore
+import System.Clock (
+    Clock (Monotonic),
+    diffTimeSpec,
+    getTime,
+ )
+import qualified System.Environment as Env
+import qualified Text.Megaparsec as Parser
+import Text.Read (
+    readMaybe,
  )
 
 type Main = LoggerT IO

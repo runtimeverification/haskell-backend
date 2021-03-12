@@ -13,19 +13,17 @@ module Kore.Syntax.Definition (
     module Kore.Syntax.Sentence,
 ) where
 
-import Prelude.Kore
-
 import Data.Kind (
     Type,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Syntax.Module
 import Kore.Syntax.Sentence
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- | Currently, a 'Definition' consists of some 'Attributes' and a 'Module'

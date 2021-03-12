@@ -21,14 +21,11 @@ module Kore.Attribute.Pattern.Simplified (
     unparseTag,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.Inj (
@@ -66,6 +63,7 @@ import Kore.Syntax (
     Top,
  )
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 -- | How well simplified is a pattern.
 data Type

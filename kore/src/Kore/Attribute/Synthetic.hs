@@ -13,8 +13,6 @@ module Kore.Attribute.Synthetic (
     synthesizeAux,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Functor.Const
 import Data.Functor.Foldable (
@@ -23,6 +21,7 @@ import Data.Functor.Foldable (
     Recursive,
  )
 import qualified Data.Functor.Foldable as Recursive
+import Prelude.Kore
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 

@@ -21,8 +21,6 @@ module Kore.Step.Axiom.EvaluationStrategy (
     attemptEquations,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Except (
     ExceptT (..),
     runExceptT,
@@ -35,7 +33,6 @@ import Data.Semigroup (
     Option (..),
  )
 import qualified Data.Text as Text
-
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Equation (
     AttemptEquationError,
@@ -66,6 +63,7 @@ import Kore.Variables.Target (
     Target,
  )
 import qualified Kore.Variables.Target as Target
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

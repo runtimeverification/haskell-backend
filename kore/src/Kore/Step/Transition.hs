@@ -22,8 +22,6 @@ module Kore.Step.Transition (
     Seq,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     MonadCatch (catch),
     MonadThrow (throwM),
@@ -42,7 +40,6 @@ import Data.Sequence (
     Seq,
  )
 import qualified Data.Sequence as Seq
-
 import Kore.Step.Simplification.Simplify (
     MonadSimplify (..),
  )
@@ -53,6 +50,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 import SMT (
     MonadSMT (..),
  )

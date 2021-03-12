@@ -2,12 +2,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.SentenceVerifier (
     test_FreeVarInRHS,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Generics.Product
@@ -41,12 +35,15 @@ import Kore.Step.ClaimPattern (
  )
 import Kore.Syntax
 import Kore.Syntax.Definition as Syntax
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty (
+    TestTree,
+ )
 
 test_FreeVarInRHS :: [TestTree]
 test_FreeVarInRHS =

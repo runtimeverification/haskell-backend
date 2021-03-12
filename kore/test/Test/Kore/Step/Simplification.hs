@@ -18,10 +18,7 @@ module Test.Kore.Step.Simplification (
     Kore.MonadSimplify,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Functor.Foldable as Recursive
-
 import qualified Kore.Attribute.Pattern as Attribute.Pattern (
     fullySimplified,
     setSimplified,
@@ -76,6 +73,7 @@ import qualified Kore.Step.Simplification.Data as Kore
 import Logic (
     LogicT,
  )
+import Prelude.Kore
 import SMT (
     NoSMT,
  )

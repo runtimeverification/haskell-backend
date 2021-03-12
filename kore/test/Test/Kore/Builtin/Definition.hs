@@ -4,8 +4,6 @@
 
 module Test.Kore.Builtin.Definition where
 
-import Prelude.Kore
-
 import qualified Data.Bifunctor as Bifunctor
 import Data.ByteString (
     ByteString,
@@ -23,7 +21,6 @@ import Data.Text (
 import Data.Word (
     Word8,
  )
-
 import Kore.Attribute.Concat hiding (
     concatAttribute,
  )
@@ -85,7 +82,7 @@ import Kore.Syntax (
  )
 import Kore.Syntax.Definition as Syntax
 import qualified Kore.Syntax.PatternF as PatternF
-
+import Prelude.Kore
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -106,50 +103,37 @@ builtinSymbol name resultSort operandSorts =
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
 unarySymbol name sort = builtinSymbol name sort [sort]
-
 binarySymbol :: Text -> Sort -> Internal.Symbol
 binarySymbol name sort = builtinSymbol name sort [sort, sort]
 -- ** Bool
-
 binaryBoolSymbol :: Text -> Internal.Symbol
 binaryBoolSymbol name = binarySymbol name boolSort
-
 orBoolSymbol :: Internal.Symbol
 orBoolSymbol = binaryBoolSymbol "orBool" & hook "BOOL.or" & smthook "or"
-
 orElseBoolSymbol :: Internal.Symbol
 orElseBoolSymbol = binaryBoolSymbol "orElseBool" & hook "BOOL.orElse"
-
 andBoolSymbol :: Internal.Symbol
 andBoolSymbol = binaryBoolSymbol "andBool" & hook "BOOL.and" & smthook "and"
-
 andThenBoolSymbol :: Internal.Symbol
 andThenBoolSymbol = binaryBoolSymbol "andThenBool" & hook "BOOL.andThen"
-
 xorBoolSymbol :: Internal.Symbol
 xorBoolSymbol = binaryBoolSymbol "xorBool" & hook "BOOL.xor" & smthook "xor"
-
 neBoolSymbol :: Internal.Symbol
 neBoolSymbol = binaryBoolSymbol "neBool" & hook "BOOL.ne" & smthook "distinct"
-
 eqBoolSymbol :: Internal.Symbol
 eqBoolSymbol = binaryBoolSymbol "eqBool" & hook "BOOL.eq" & smthook "="
-
 notBoolSymbol :: Internal.Symbol
 notBoolSymbol =
     unarySymbol "notBool" boolSort
         & hook "BOOL.not"
         & smthook "not"
-
 impliesBoolSymbol :: Internal.Symbol
 impliesBoolSymbol =
     binaryBoolSymbol "impliesBool"
         & hook "BOOL.implies"
         & smthook "=>"
-
 notBool :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 notBool x = mkApplySymbol notBoolSymbol [x]
-
 andBool
     , impliesBool
     , eqBool
@@ -164,19 +148,14 @@ eqBool x y = mkApplySymbol eqBoolSymbol [x, y]
 orBool x y = mkApplySymbol orBoolSymbol [x, y]
 andThenBool x y = mkApplySymbol andThenBoolSymbol [x, y]
 -- ** Int
-
 comparisonSymbol :: Text -> Sort -> Internal.Symbol
 comparisonSymbol name sort = builtinSymbol name boolSort [sort, sort]
-
 comparisonIntSymbol :: Text -> Internal.Symbol
 comparisonIntSymbol name = comparisonSymbol name intSort
-
 unaryIntSymbol :: Text -> Internal.Symbol
 unaryIntSymbol name = unarySymbol name intSort
-
 binaryIntSymbol :: Text -> Internal.Symbol
 binaryIntSymbol name = binarySymbol name intSort
-
 gtIntSymbol :: Internal.Symbol
 gtIntSymbol =
     comparisonIntSymbol "gtInt"
@@ -184,7 +163,6 @@ gtIntSymbol =
         & smthook ">"
         & function
         & functional
-
 geIntSymbol :: Internal.Symbol
 geIntSymbol =
     comparisonIntSymbol "geInt"
@@ -192,7 +170,6 @@ geIntSymbol =
         & smthook ">="
         & function
         & functional
-
 eqIntSymbol :: Internal.Symbol
 eqIntSymbol =
     comparisonIntSymbol "eqInt"
@@ -200,7 +177,6 @@ eqIntSymbol =
         & smthook "="
         & function
         & functional
-
 leIntSymbol :: Internal.Symbol
 leIntSymbol =
     comparisonIntSymbol "leInt"
@@ -208,7 +184,6 @@ leIntSymbol =
         & smthook "<="
         & function
         & functional
-
 ltIntSymbol :: Internal.Symbol
 ltIntSymbol =
     comparisonIntSymbol "ltInt"
@@ -216,7 +191,6 @@ ltIntSymbol =
         & smthook "<"
         & function
         & functional
-
 neIntSymbol :: Internal.Symbol
 neIntSymbol =
     comparisonIntSymbol "neInt"
@@ -224,7 +198,6 @@ neIntSymbol =
         & smthook "distinct"
         & function
         & functional
-
 minIntSymbol :: Internal.Symbol
 minIntSymbol =
     binaryIntSymbol "minInt"
@@ -232,7 +205,6 @@ minIntSymbol =
         & smthook "int_min"
         & function
         & functional
-
 maxIntSymbol :: Internal.Symbol
 maxIntSymbol =
     binaryIntSymbol "maxInt"
@@ -240,7 +212,6 @@ maxIntSymbol =
         & smthook "int_max"
         & function
         & functional
-
 addIntSymbol :: Internal.Symbol
 addIntSymbol =
     binaryIntSymbol "addInt"
@@ -248,7 +219,6 @@ addIntSymbol =
         & smthook "+"
         & function
         & functional
-
 subIntSymbol :: Internal.Symbol
 subIntSymbol =
     binaryIntSymbol "subInt"
@@ -256,7 +226,6 @@ subIntSymbol =
         & smthook "-"
         & function
         & functional
-
 mulIntSymbol :: Internal.Symbol
 mulIntSymbol =
     binaryIntSymbol "mulInt"
@@ -264,7 +233,6 @@ mulIntSymbol =
         & smthook "*"
         & function
         & functional
-
 absIntSymbol :: Internal.Symbol
 absIntSymbol =
     unaryIntSymbol "absInt"
@@ -272,58 +240,45 @@ absIntSymbol =
         & smthook "int_abs"
         & function
         & functional
-
 tdivIntSymbol :: Internal.Symbol
 tdivIntSymbol =
     binaryIntSymbol "tdivInt"
         & hook "INT.tdiv"
         & smthook "div"
         & function
-
 tmodIntSymbol :: Internal.Symbol
 tmodIntSymbol =
     binaryIntSymbol "tmodInt"
         & hook "INT.tmod"
         & smthook "mod"
         & function
-
 andIntSymbol :: Internal.Symbol
 andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and" & function & functional
-
 orIntSymbol :: Internal.Symbol
 orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or" & function & functional
-
 xorIntSymbol :: Internal.Symbol
 xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor" & function & functional
-
 notIntSymbol :: Internal.Symbol
 notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not" & function & functional
-
 shlIntSymbol :: Internal.Symbol
 shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl" & function & functional
-
 shrIntSymbol :: Internal.Symbol
 shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr" & function & functional
-
 powIntSymbol :: Internal.Symbol
 powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow" & function
-
 powmodIntSymbol :: Internal.Symbol
 powmodIntSymbol =
     builtinSymbol "powmodInt" intSort [intSort, intSort, intSort]
         & hook "INT.powmod"
         & function
-
 log2IntSymbol :: Internal.Symbol
 log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2" & function
-
 edivIntSymbol :: Internal.Symbol
 edivIntSymbol =
     binaryIntSymbol "edivInt"
         & hook "INT.ediv"
         & smthook "div"
         & function
-
 emodIntSymbol :: Internal.Symbol
 emodIntSymbol =
     binaryIntSymbol "emodInt"
@@ -334,19 +289,15 @@ emodIntSymbol =
 -- an unhooked, uninterpreted function f : Int -> Int
 dummyIntSymbol :: Internal.Symbol
 dummyIntSymbol = unaryIntSymbol "f" & function
-
 dummyInt ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
-
 dummyFunctionalIntSymbol :: Internal.Symbol
 dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
-
 dummyFunctionalInt ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
-
 addInt
     , subInt
     , mulInt
@@ -362,7 +313,6 @@ mulInt i j = mkApplySymbol mulIntSymbol [i, j]
 divInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
-
 eqInt
     , ltInt ::
         TermLike RewritingVariableName ->
@@ -371,29 +321,22 @@ eqInt
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 -- ** KEQUAL
-
 comparisonKSymbol :: Text -> Internal.Symbol
 comparisonKSymbol name = comparisonSymbol name kSort
-
 keqBoolSymbol :: Internal.Symbol
 keqBoolSymbol = comparisonKSymbol "keqBool" & hook "KEQUAL.eq"
-
 kneqBoolSymbol :: Internal.Symbol
 kneqBoolSymbol = comparisonKSymbol "kneqBool" & hook "KEQUAL.neq"
-
 kiteKSymbol :: Internal.Symbol
 kiteKSymbol =
     builtinSymbol "kiteK" kSort [boolSort, kSort, kSort]
         & hook "KEQUAL.ite"
-
 kseqSymbol :: Internal.Symbol
 kseqSymbol =
     builtinSymbol "kseq" kSort [kItemSort, kSort]
         & constructor
-
 dotkSymbol :: Internal.Symbol
 dotkSymbol = builtinSymbol "dotk" kSort [] & constructor
-
 injSymbol :: Sort -> Sort -> Internal.Symbol
 injSymbol lSort rSort =
     Internal.Symbol
@@ -404,7 +347,6 @@ injSymbol lSort rSort =
         }
         & sortInjection
         & injective
-
 inj ::
     InternalVariable variable =>
     Sort ->
@@ -418,7 +360,6 @@ inj injTo injChild =
     symbol = injSymbol injFrom injTo
     Internal.Symbol{symbolConstructor = injConstructor} = symbol
     Internal.Symbol{symbolAttributes = injAttributes} = symbol
-
 keqBool
     , kneqBool ::
         TermLike RewritingVariableName ->
@@ -426,16 +367,13 @@ keqBool
         TermLike RewritingVariableName
 keqBool x y = mkApplySymbol keqBoolSymbol [x, y]
 kneqBool x y = mkApplySymbol kneqBoolSymbol [x, y]
-
 kseq ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 kseq x y = mkApplySymbol kseqSymbol [x, y]
-
 dotk :: TermLike RewritingVariableName
 dotk = mkApplySymbol dotkSymbol []
-
 kiteK ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -443,44 +381,34 @@ kiteK ::
     TermLike RewritingVariableName
 kiteK i t e = mkApplySymbol kiteKSymbol [i, t, e]
 -- ** List
-
 unitListSymbol :: Internal.Symbol
 unitListSymbol = builtinSymbol "unitList" listSort [] & hook "LIST.unit"
-
 unitList2Symbol :: Internal.Symbol
 unitList2Symbol = builtinSymbol "unitList2" listSort2 [] & hook "LIST.unit"
-
 elementListSymbol :: Internal.Symbol
 elementListSymbol =
     builtinSymbol "elementList" listSort [intSort]
         & hook "LIST.element"
         & functional
-
 elementList2Symbol :: Internal.Symbol
 elementList2Symbol =
     builtinSymbol "elementList2" listSort2 [intSort]
         & hook "LIST.element"
         & functional
-
 concatListSymbol :: Internal.Symbol
 concatListSymbol =
     binarySymbol "concatList" listSort & hook "LIST.concat" & functional
-
 concatList2Symbol :: Internal.Symbol
 concatList2Symbol =
     binarySymbol "concatList2" listSort2 & hook "LIST.concat" & functional
-
 getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
-
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
-
 makeListSymbol :: Internal.Symbol
 makeListSymbol =
     builtinSymbol "makeList" listSort [intSort, intSort] & hook "LIST.make"
-
 updateListSymbol :: Internal.Symbol
 updateListSymbol =
     builtinSymbol
@@ -488,58 +416,47 @@ updateListSymbol =
         listSort
         [listSort, intSort, intSort]
         & hook "LIST.update"
-
 inListSymbol :: Internal.Symbol
 inListSymbol = builtinSymbol "inList" boolSort [intSort, listSort] & hook "LIST.in"
-
 updateAllListSymbol :: Internal.Symbol
 updateAllListSymbol =
     builtinSymbol "updateAllList" listSort [listSort, intSort, listSort]
         & hook "LIST.updateAll"
-
 unitList :: TermLike RewritingVariableName
 unitList = mkApplySymbol unitListSymbol []
-
 elementList ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 elementList x = mkApplySymbol elementListSymbol [x]
-
 concatList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 concatList x y = mkApplySymbol concatListSymbol [x, y]
-
 getList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 getList list poz = mkApplySymbol getListSymbol [list, poz]
-
 sizeList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 sizeList l = mkApplySymbol sizeListSymbol [l]
-
 makeList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 makeList len x = mkApplySymbol makeListSymbol [len, x]
-
 updateList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
-
 inList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 inList x list = mkApplySymbol inListSymbol [x, list]
-
 updateAllList ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -547,85 +464,67 @@ updateAllList ::
     TermLike RewritingVariableName
 updateAllList l1 ix l2 = mkApplySymbol updateAllListSymbol [l1, ix, l2]
 -- ** Map
-
 unitMapSymbol :: Internal.Symbol
 unitMapSymbol = builtinSymbol "unitMap" mapSort [] & hook "MAP.unit"
-
 updateMapSymbol :: Internal.Symbol
 updateMapSymbol =
     builtinSymbol "updateMap" mapSort [mapSort, intSort, intSort]
         & hook "MAP.update"
-
 lookupMapSymbol :: Internal.Symbol
 lookupMapSymbol =
     builtinSymbol "lookupMap" intSort [mapSort, intSort]
         & hook "MAP.lookup"
-
 lookupOrDefaultMapSymbol :: Internal.Symbol
 lookupOrDefaultMapSymbol =
     builtinSymbol "lookupOrDefaultMap" intSort [mapSort, intSort, intSort]
         & hook "MAP.lookupOrDefault"
-
 elementMapSymbol :: Internal.Symbol
 elementMapSymbol =
     builtinSymbol "elementMap" mapSort [intSort, intSort]
         & hook "MAP.element"
         & functional
-
 concatMapSymbol :: Internal.Symbol
 concatMapSymbol =
     binarySymbol "concatMap" mapSort & hook "MAP.concat" & function
-
 inKeysMapSymbol :: Internal.Symbol
 inKeysMapSymbol =
     builtinSymbol "inKeysMap" boolSort [intSort, mapSort]
         & hook "MAP.in_keys"
-
 keysMapSymbol :: Internal.Symbol
 keysMapSymbol =
     builtinSymbol "keysMap" setSort [mapSort] & hook "MAP.keys"
-
 keysListMapSymbol :: Internal.Symbol
 keysListMapSymbol =
     builtinSymbol "keysListMap" listSort [mapSort] & hook "MAP.keys_list"
-
 removeMapSymbol :: Internal.Symbol
 removeMapSymbol =
     builtinSymbol "removeMap" mapSort [mapSort, intSort] & hook "MAP.remove"
-
 removeAllMapSymbol :: Internal.Symbol
 removeAllMapSymbol =
     builtinSymbol "removeAllMap" mapSort [mapSort, setSort]
         & hook "MAP.removeAll"
-
 sizeMapSymbol :: Internal.Symbol
 sizeMapSymbol =
     builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
-
 valuesMapSymbol :: Internal.Symbol
 valuesMapSymbol =
     builtinSymbol "valuesMap" listSort [mapSort] & hook "MAP.values"
-
 inclusionMapSymbol :: Internal.Symbol
 inclusionMapSymbol =
     builtinSymbol "inclusionMap" boolSort [mapSort, mapSort] & hook "MAP.inclusion"
-
 unitMap :: TermLike RewritingVariableName
 unitMap = mkApplySymbol unitMapSymbol []
-
 updateMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 updateMap map' key value = mkApplySymbol updateMapSymbol [map', key, value]
-
 lookupMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
-
 lookupOrDefaultMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -633,64 +532,53 @@ lookupOrDefaultMap ::
     TermLike RewritingVariableName
 lookupOrDefaultMap map' key def' =
     mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
-
 elementMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 elementMap key value = mkApplySymbol elementMapSymbol [key, value]
-
 concatMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 concatMap map1 map2 = mkApplySymbol concatMapSymbol [map1, map2]
-
 inKeysMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 inKeysMap key map' = mkApplySymbol inKeysMapSymbol [key, map']
-
 keysMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 keysMap map' = mkApplySymbol keysMapSymbol [map']
-
 keysListMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 keysListMap map' = mkApplySymbol keysListMapSymbol [map']
-
 removeMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 removeMap map' key = mkApplySymbol removeMapSymbol [map', key]
-
 removeAllMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 removeAllMap map' set = mkApplySymbol removeAllMapSymbol [map', set]
-
 sizeMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
-
 valuesMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 valuesMap map' = mkApplySymbol valuesMapSymbol [map']
-
 inclusionMap ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 inclusionMap mapLeft mapRight = mkApplySymbol inclusionMapSymbol [mapLeft, mapRight]
 -- ** Pair
-
 pairSymbol :: Sort -> Sort -> Internal.Symbol
 pairSymbol lSort rSort =
     Internal.Symbol
@@ -701,7 +589,6 @@ pairSymbol lSort rSort =
         }
         & constructor
         & functional
-
 pair ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -712,91 +599,72 @@ pair l r =
     lSort = termLikeSort l
     rSort = termLikeSort r
 -- ** Set
-
 unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
-
 unitSet :: TermLike RewritingVariableName
 unitSet = mkApplySymbol unitSetSymbol []
-
 elementSetSymbol :: Internal.Symbol
 elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
         & hook "SET.element"
         & functional
-
 elementSetSymbolTestSort :: Internal.Symbol
 elementSetSymbolTestSort =
     builtinSymbol "elementSet" setSort [Mock.testSort]
         & hook "SET.element"
         & functional
-
 elementSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 elementSet x = mkApplySymbol elementSetSymbol [x]
-
 concatSetSymbol :: Internal.Symbol
 concatSetSymbol =
     binarySymbol "concatSet" setSort & hook "SET.concat" & function
-
 concatSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 concatSet s1 s2 = mkApplySymbol concatSetSymbol [s1, s2]
-
 inSetSymbol :: Internal.Symbol
 inSetSymbol =
     builtinSymbol "inSet" boolSort [intSort, setSort] & hook "SET.in"
-
 inSetSymbolTestSort :: Internal.Symbol
 inSetSymbolTestSort =
     builtinSymbol "inSet" boolSort [Mock.testSort, setSort] & hook "SET.in"
-
 differenceSetSymbol :: Internal.Symbol
 differenceSetSymbol =
     binarySymbol "differenceSet" setSort & hook "SET.difference"
-
 differenceSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 differenceSet set1 set2 = mkApplySymbol differenceSetSymbol [set1, set2]
-
 toListSetSymbol :: Internal.Symbol
 toListSetSymbol =
     builtinSymbol "toListSet" listSort [setSort] & hook "SET.set2list"
-
 sizeSetSymbol :: Internal.Symbol
 sizeSetSymbol = builtinSymbol "sizeSet" intSort [setSort] & hook "SET.size"
-
 intersectionSetSymbol :: Internal.Symbol
 intersectionSetSymbol =
     binarySymbol "intersectionSet" setSort & hook "SET.intersection"
-
 list2setSetSymbol :: Internal.Symbol
 list2setSetSymbol =
     builtinSymbol "list2setSet" setSort [listSort] & hook "SET.list2set"
-
 inclusionSetSymbol :: Internal.Symbol
 inclusionSetSymbol =
     builtinSymbol "inclusionSet" boolSort [setSort, setSort]
         & hook "SET.inclusion"
-
 intersectionSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 intersectionSet set1 set2 =
     mkApplySymbol intersectionSetSymbol [set1, set2]
-
 list2setSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 list2setSet list =
     mkApplySymbol list2setSetSymbol [list]
-
 inclusionSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -804,66 +672,52 @@ inclusionSet ::
 inclusionSet setLeft setRight =
     mkApplySymbol inclusionSetSymbol [setLeft, setRight]
 -- ** String
-
 eqStringSymbol :: Internal.Symbol
 eqStringSymbol =
     comparisonSymbol "eqString" stringSort & hook "STRING.eq"
-
 ltStringSymbol :: Internal.Symbol
 ltStringSymbol =
     comparisonSymbol "ltString" stringSort & hook "STRING.lt"
-
 concatStringSymbol :: Internal.Symbol
 concatStringSymbol =
     binarySymbol "concatString" stringSort & hook "STRING.concat"
-
 substrStringSymbol :: Internal.Symbol
 substrStringSymbol =
     builtinSymbol "substrString" stringSort [stringSort, intSort, intSort]
         & hook "STRING.substr"
-
 lengthStringSymbol :: Internal.Symbol
 lengthStringSymbol =
     builtinSymbol "lengthString" intSort [stringSort] & hook "STRING.length"
-
 chrStringSymbol :: Internal.Symbol
 chrStringSymbol =
     builtinSymbol "chrString" stringSort [intSort] & hook "STRING.chr"
-
 ordStringSymbol :: Internal.Symbol
 ordStringSymbol =
     builtinSymbol "ordString" intSort [stringSort] & hook "STRING.ord"
-
 findStringSymbol :: Internal.Symbol
 findStringSymbol =
     builtinSymbol "findString" intSort [stringSort, stringSort, intSort]
         & hook "STRING.find"
-
 string2BaseStringSymbol :: Internal.Symbol
 string2BaseStringSymbol =
     builtinSymbol "string2baseString" intSort [stringSort, intSort]
         & hook "STRING.string2base"
-
 string2IntStringSymbol :: Internal.Symbol
 string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
         & hook "STRING.string2int"
-
 int2StringStringSymbol :: Internal.Symbol
 int2StringStringSymbol =
     builtinSymbol "int2stringString" stringSort [intSort]
         & hook "STRING.int2string"
-
 token2StringStringSymbol :: Internal.Symbol
 token2StringStringSymbol =
     builtinSymbol "token2stringString" stringSort [userTokenSort]
         & hook "STRING.token2string"
-
 string2TokenStringSymbol :: Internal.Symbol
 string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
         & hook "STRING.string2token"
-
 eqString
     , concatString ::
         TermLike RewritingVariableName ->
@@ -872,114 +726,92 @@ eqString
 eqString i j = mkApplySymbol eqStringSymbol [i, j]
 concatString x y = mkApplySymbol concatStringSymbol [x, y]
 -- * Bytes
-
 littleEndianBytesSymbol :: Internal.Symbol
 littleEndianBytesSymbol =
     builtinSymbol "littleEndianBytes" endiannessSort []
         & klabel "littleEndianBytes"
         & symbolKywd
-
 littleEndianBytes :: InternalVariable variable => TermLike variable
 littleEndianBytes =
     mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
-
 bigEndianBytesSymbol :: Internal.Symbol
 bigEndianBytesSymbol =
     builtinSymbol "bigEndianBytes" endiannessSort []
         & klabel "bigEndianBytes"
         & symbolKywd
-
 bigEndianBytes :: InternalVariable variable => TermLike variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
-
 signedBytesSymbol :: Internal.Symbol
 signedBytesSymbol =
     builtinSymbol "signedBytes" signednessSort []
         & klabel "signedBytes"
         & symbolKywd
-
 signedBytes :: InternalVariable variable => TermLike variable
 signedBytes =
     mkSignedness (Signedness.Signed signedBytesSymbol)
-
 unsignedBytesSymbol :: Internal.Symbol
 unsignedBytesSymbol =
     builtinSymbol "unsignedBytes" signednessSort []
         & klabel "unsignedBytes"
         & symbolKywd
-
 unsignedBytes :: InternalVariable variable => TermLike variable
 unsignedBytes =
     mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
-
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =
     builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
         & hook "BYTES.bytes2string"
-
 string2bytesBytesSymbol :: Internal.Symbol
 string2bytesBytesSymbol =
     builtinSymbol "string2bytesBytes" bytesSort [stringSort]
         & hook "BYTES.string2bytes"
-
 updateBytesSymbol :: Internal.Symbol
 updateBytesSymbol =
     builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
         & hook "BYTES.update"
-
 getBytesSymbol :: Internal.Symbol
 getBytesSymbol =
     builtinSymbol "getBytes" intSort [bytesSort, intSort]
         & hook "BYTES.get"
-
 substrBytesSymbol :: Internal.Symbol
 substrBytesSymbol =
     builtinSymbol "substrBytes" bytesSort [bytesSort, intSort, intSort]
         & hook "BYTES.substr"
-
 replaceAtBytesSymbol :: Internal.Symbol
 replaceAtBytesSymbol =
     builtinSymbol "replaceAtBytes" bytesSort [bytesSort, intSort, bytesSort]
         & hook "BYTES.replaceAt"
-
 padRightBytesSymbol :: Internal.Symbol
 padRightBytesSymbol =
     builtinSymbol "padRightBytes" bytesSort [bytesSort, intSort, intSort]
         & hook "BYTES.padRight"
-
 padLeftBytesSymbol :: Internal.Symbol
 padLeftBytesSymbol =
     builtinSymbol "padLeftBytes" bytesSort [bytesSort, intSort, intSort]
         & hook "BYTES.padLeft"
-
 reverseBytesSymbol :: Internal.Symbol
 reverseBytesSymbol =
     builtinSymbol "reverseBytes" bytesSort [bytesSort]
         & hook "BYTES.reverse"
-
 lengthBytesSymbol :: Internal.Symbol
 lengthBytesSymbol =
     builtinSymbol "lengthBytes" intSort [bytesSort]
         & hook "BYTES.length"
-
 concatBytesSymbol :: Internal.Symbol
 concatBytesSymbol =
     builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
         & hook "BYTES.concat"
-
 int2bytesSymbol :: Internal.Symbol
 int2bytesSymbol =
     builtinSymbol "int2bytes" bytesSort [intSort, intSort, endiannessSort]
         & hook "BYTES.int2bytes"
-
 int2bytes ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
-
 bytes2intSymbol :: Internal.Symbol
 bytes2intSymbol =
     builtinSymbol
@@ -987,7 +819,6 @@ bytes2intSymbol =
         intSort
         [bytesSort, endiannessSort, signednessSort]
         & hook "BYTES.bytes2int"
-
 bytes2int ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -995,7 +826,6 @@ bytes2int ::
     TermLike RewritingVariableName
 bytes2int bytes end sign = mkApplySymbol bytes2intSymbol [bytes, end, sign]
 -- * Krypto
-
 ecdsaRecoverSymbol :: Internal.Symbol
 ecdsaRecoverSymbol =
     builtinSymbol
@@ -1003,27 +833,22 @@ ecdsaRecoverSymbol =
         stringSort
         [stringSort, intSort, stringSort, stringSort]
         & hook "KRYPTO.ecdsaRecover"
-
 keccak256Symbol :: Internal.Symbol
 keccak256Symbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
         & hook "KRYPTO.keccak256"
-
 sha256Symbol :: Internal.Symbol
 sha256Symbol =
     builtinSymbol "sha256Krypto" stringSort [stringSort]
         & hook "KRYPTO.sha256"
-
 sha3256Symbol :: Internal.Symbol
 sha3256Symbol =
     builtinSymbol "sha3256Krypto" stringSort [stringSort]
         & hook "KRYPTO.sha3256"
-
 ripemd160Symbol :: Internal.Symbol
 ripemd160Symbol =
     builtinSymbol "ripemd160Krypto" stringSort [stringSort]
         & hook "KRYPTO.ripemd160"
-
 ecdsaRecoverKrypto ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -1031,19 +856,15 @@ ecdsaRecoverKrypto ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
-
 keccak256Krypto ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
-
 sha256Krypto ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha256Krypto message = mkApplySymbol sha256Symbol [message]
-
 sha3256Krypto ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
-
 ripemd160Krypto ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
@@ -1130,10 +951,8 @@ builtinBool internalBoolValue =
         { internalBoolSort = boolSort
         , internalBoolValue
         }
-
 mkBool :: InternalVariable variable => Bool -> TermLike variable
 mkBool = mkInternalBool . builtinBool
-
 -- ** Int
 
 -- | A sort to hook to the builtin @INT.Int@.
@@ -1158,12 +977,9 @@ builtinInt internalIntValue =
         { internalIntSort = intSort
         , internalIntValue
         }
-
 mkInt :: InternalVariable variable => Integer -> TermLike variable
 mkInt = mkInternalInt . builtinInt
-
 -- ** KEQUAL
-
 kSort :: Sort
 kSort =
     SortActualSort
@@ -1171,7 +987,6 @@ kSort =
             { sortActualName = testId "SortK"
             , sortActualSorts = []
             }
-
 kItemSort :: Sort
 kItemSort =
     SortActualSort
@@ -1179,7 +994,6 @@ kItemSort =
             { sortActualName = testId "SortKItem"
             , sortActualSorts = []
             }
-
 idSort :: Sort
 idSort =
     SortActualSort
@@ -1187,7 +1001,6 @@ idSort =
             { sortActualName = testId "SortId"
             , sortActualSorts = []
             }
-
 -- ** List
 
 -- | A sort to hook to the builtin @LIST.List@.
@@ -1219,7 +1032,6 @@ builtinList children =
         , internalListConcat = concatListSymbol
         , internalListChild = Seq.fromList children
         }
-
 mkList :: InternalVariable variable => [TermLike variable] -> TermLike variable
 mkList = mkInternalList . builtinList
 
@@ -1284,7 +1096,6 @@ builtinMap children =
                     , opaque = []
                     }
         }
-
 mkMap ::
     InternalVariable variable =>
     [(TermLike Concrete, TermLike variable)] ->
@@ -1293,9 +1104,7 @@ mkMap =
     mkInternalMap
         . builtinMap
         . (map . Bifunctor.first) (retractKey >>> fromJust)
-
 -- ** Pair
-
 pairSort :: Sort -> Sort -> Sort
 pairSort lSort rSort =
     SortActualSort
@@ -1353,10 +1162,8 @@ testSort =
             { sortActualName = testId "testSort"
             , sortActualSorts = []
             }
-
 testSortDecl :: ParsedSentence
 testSortDecl = sortDecl testSort
-
 mkSet ::
     InternalVariable variable =>
     Foldable f =>
@@ -1385,7 +1192,6 @@ mkSet elements opaque =
     (abstractElements, Map.fromList -> concreteElements) =
         asKey <$> toList elements
             & partitionEithers
-
 mkSet_ ::
     InternalVariable variable =>
     Foldable f =>
@@ -1428,7 +1234,6 @@ userTokenSortDecl =
 
 mkString :: InternalVariable variable => Text -> TermLike variable
 mkString = mkInternalString . internalString
-
 internalString :: Text -> InternalString
 internalString internalStringValue =
     InternalString
@@ -1436,7 +1241,6 @@ internalString internalStringValue =
         , internalStringValue
         }
 -- ** Bytes
-
 bytesSort :: Sort
 bytesSort =
     SortActualSort
@@ -1444,7 +1248,6 @@ bytesSort =
             { sortActualName = testId "Bytes"
             , sortActualSorts = []
             }
-
 bytesSortDecl :: ParsedSentence
 bytesSortDecl =
     hookedSortDecl
@@ -1452,7 +1255,6 @@ bytesSortDecl =
         [ hookAttribute "BYTES.Bytes"
         , hasDomainValuesAttribute
         ]
-
 endiannessSort :: Sort
 endiannessSort =
     SortActualSort
@@ -1460,10 +1262,8 @@ endiannessSort =
             { sortActualName = testId "Endianness"
             , sortActualSorts = []
             }
-
 endiannessSortDecl :: ParsedSentence
 endiannessSortDecl = sortDecl endiannessSort
-
 signednessSort :: Sort
 signednessSort =
     SortActualSort
@@ -1471,24 +1271,20 @@ signednessSort =
             { sortActualName = testId "Signedness"
             , sortActualSorts = []
             }
-
 signednessSortDecl :: ParsedSentence
 signednessSortDecl = sortDecl signednessSort
-
 builtinBytes :: ByteString -> InternalBytes
 builtinBytes internalBytesValue =
     InternalBytes
         { internalBytesSort = bytesSort
         , internalBytesValue
         }
-
 mkBytes :: InternalVariable variable => [Word8] -> TermLike variable
 mkBytes = mkInternalBytes' . builtinBytes . ByteString.pack
 
 -- -------------------------------------------------------------
 
 -- * Modules
-
 unitAttribute
     , elementAttribute
     , concatAttribute ::
@@ -1541,7 +1337,6 @@ symbolDecl symbol =
             }
     sentenceSymbolSorts = applicationSortsOperands symbolSorts
     sentenceSymbolResultSort = applicationSortsResult symbolSorts
-
 importParsedModule :: ModuleName -> ParsedSentence
 importParsedModule moduleName =
     asSentence sentence

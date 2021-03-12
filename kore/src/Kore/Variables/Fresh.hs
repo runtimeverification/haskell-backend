@@ -16,8 +16,6 @@ module Kore.Variables.Fresh (
     module Kore.Syntax.Variable,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import Data.Generics.Product (
@@ -31,11 +29,11 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import Data.Void
-
 import Data.Sup
+import Data.Void
 import Kore.Sort
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 {- | @FreshPartialOrder@ defines a partial order for renaming variables.
 

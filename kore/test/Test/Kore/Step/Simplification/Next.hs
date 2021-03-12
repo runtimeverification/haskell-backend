@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.Next (
     test_nextSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -18,14 +14,15 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Next (
-    simplify,
- )
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Step.Simplification.Next (
+    simplify,
+ )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_nextSimplification :: [TestTree]

@@ -20,17 +20,12 @@ module Test.Kore.Builtin.Bool (
     asInternal,
 ) where
 
-import Prelude.Kore
-
+import Control.Monad.Trans.Maybe
+import qualified Data.Text as Text
 import Hedgehog hiding (
     test,
  )
 import qualified Hedgehog.Gen as Gen
-import Test.Tasty
-
-import Control.Monad.Trans.Maybe
-import qualified Data.Text as Text
-
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern as Pattern
@@ -55,11 +50,12 @@ import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,
  )
+import Prelude.Kore
 import qualified SMT
-
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_or :: TestTree

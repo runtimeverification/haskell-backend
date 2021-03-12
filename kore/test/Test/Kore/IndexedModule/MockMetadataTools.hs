@@ -9,10 +9,7 @@ module Test.Kore.IndexedModule.MockMetadataTools (
     sortInjectionAttributes,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
-
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
@@ -45,6 +42,7 @@ import Kore.Syntax.Application (
 import Kore.Syntax.Id (
     Id,
  )
+import Prelude.Kore
 
 makeMetadataTools ::
     HasCallStack =>

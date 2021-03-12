@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Axiom.Unit (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Axiom.Unit
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseUnit :: Attributes -> Parser Unit
 parseUnit = parseAttributes

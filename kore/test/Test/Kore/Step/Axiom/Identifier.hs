@@ -1,17 +1,14 @@
 module Test.Kore.Step.Axiom.Identifier (test_matchAxiomIdentifier) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.Identifier
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_matchAxiomIdentifier :: [TestTree]

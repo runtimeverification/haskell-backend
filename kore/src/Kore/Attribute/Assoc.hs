@@ -12,13 +12,11 @@ module Kore.Attribute.Assoc (
     assocAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Assoc@ represents the @assoc@ attribute for axioms.
 newtype Assoc = Assoc {isAssoc :: Bool}

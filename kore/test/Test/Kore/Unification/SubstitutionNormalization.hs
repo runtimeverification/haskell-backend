@@ -4,21 +4,17 @@ module Test.Kore.Unification.SubstitutionNormalization (
     test_normalize,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Map.Strict (
     Map,
  )
-
 import Kore.Internal.Substitution (
     mkUnwrappedSubstitution,
  )
 import Kore.Internal.TermLike
 import Kore.Unification.SubstitutionNormalization
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_normalize :: [TestTree]

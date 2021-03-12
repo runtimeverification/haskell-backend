@@ -12,8 +12,6 @@ module Kore.Unification.UnifierT (
     module Kore.Unification.Unify,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Reader (
     MonadReader (..),
  )
@@ -24,7 +22,6 @@ import Control.Monad.Trans.Reader (
 import Data.Kind (
     Type,
  )
-
 import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.NotSimplifier
 import Kore.Step.Simplification.Simplify (
@@ -38,6 +35,7 @@ import Kore.Unification.Unify
 import Log (
     MonadLog (..),
  )
+import Prelude.Kore
 import SMT (
     MonadSMT (..),
  )

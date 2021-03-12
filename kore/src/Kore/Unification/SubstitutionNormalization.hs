@@ -15,8 +15,6 @@ module Kore.Unification.SubstitutionNormalization (
     normalize,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.State.Strict as State
 import Data.Functor (
@@ -27,6 +25,7 @@ import Data.Functor.Foldable (
     Base,
  )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Graph.TopologicalSort
 import Data.Map.Strict (
     Map,
  )
@@ -35,8 +34,6 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-
-import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Substitution (
     Assignment,
@@ -48,6 +45,7 @@ import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
+import Prelude.Kore
 
 {- | 'normalize' a substitution as far as possible.
 

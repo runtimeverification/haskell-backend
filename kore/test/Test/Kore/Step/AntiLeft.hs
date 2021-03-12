@@ -2,17 +2,9 @@ module Test.Kore.Step.AntiLeft (
     test_antiLeft,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Text (
     Text,
  )
-import qualified Pretty (
-    vsep,
- )
-
 import Kore.Internal.Alias (
     Alias (Alias),
  )
@@ -47,9 +39,13 @@ import Kore.Syntax.Variable (
 import Kore.Unparser (
     unparse,
  )
-
+import Prelude.Kore
+import qualified Pretty (
+    vsep,
+ )
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 newtype AntiLeftTerm = AntiLeftTerm {_getAntileftTerm :: TermLike VariableName}

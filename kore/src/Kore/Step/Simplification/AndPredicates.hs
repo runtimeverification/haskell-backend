@@ -13,8 +13,6 @@ module Kore.Step.Simplification.AndPredicates (
     simplifyEvaluatedMultiPredicate,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -34,6 +32,7 @@ import Kore.Step.Simplification.Simplify (
  )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Logic as LogicT
+import Prelude.Kore
 
 simplifyEvaluatedMultiPredicate ::
     forall simplifier.

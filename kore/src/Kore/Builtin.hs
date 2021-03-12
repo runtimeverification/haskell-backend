@@ -34,8 +34,6 @@ module Kore.Builtin (
     internalize,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Functor.Foldable as Recursive
 import Data.Map.Strict (
     Map,
@@ -44,7 +42,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -85,6 +82,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier (
 import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier,
  )
+import Prelude.Kore
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -193,6 +191,6 @@ internalize tools =
   where
     internalize1 =
         List.internalize tools
-            . Map.internalize tools
-            . Set.internalize tools
+            . Map.internalize
+            . Set.internalize
             . InternalBytes.internalize

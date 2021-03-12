@@ -6,8 +6,6 @@ module Kore.Substitute (
     substitute,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Foldable (
     Corecursive,
     Recursive,
@@ -24,7 +22,6 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
@@ -34,6 +31,7 @@ import Kore.Internal.Variable
 import Kore.Syntax
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
+import Prelude.Kore
 
 {- | Traverse the pattern from the top down and apply substitutions.
 

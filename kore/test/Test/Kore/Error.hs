@@ -6,11 +6,6 @@ module Test.Kore.Error (
     test_assertRight,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Terse
-
 import Data.Void (
     Void,
  )
@@ -20,6 +15,9 @@ import Kore.Error (
     koreError,
     printError,
  )
+import Prelude.Kore
+import Test.Tasty
+import Test.Terse
 
 {-
    Considerable code uses an `Either (Error a) b` type.

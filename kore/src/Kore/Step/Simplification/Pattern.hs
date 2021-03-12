@@ -6,12 +6,14 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.Pattern (
     simplifyTopConfiguration,
+    simplifyTopConfigurationDefined,
     simplify,
     makeEvaluate,
 ) where
 
-import Prelude.Kore
-
+import Control.Monad (
+    (>=>),
+ )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
@@ -27,12 +29,14 @@ import Kore.Internal.SideCondition (
  )
 import qualified Kore.Internal.SideCondition as SideCondition (
     andCondition,
+    assumeDefined,
     top,
  )
 import Kore.Internal.Substitution (
     toMap,
  )
 import Kore.Internal.TermLike (
+    TermLike,
     pattern Exists_,
  )
 import Kore.Rewriting.RewritingVariable (
@@ -46,22 +50,43 @@ import Kore.Step.Simplification.Simplify (
 import Kore.Substitute (
     substitute,
  )
+import Prelude.Kore
 
--- | Simplifies the pattern and removes the exists quantifiers at the top.
+-- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
 simplifyTopConfiguration ::
     forall simplifier.
     MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
-simplifyTopConfiguration patt = do
-    simplified <- simplify patt
-    return (OrPattern.map removeTopExists simplified)
+simplifyTopConfiguration =
+    simplify >=> return . removeTopExists
+
+{- | Simplifies the 'Pattern' with the assumption that the 'TermLike' is defined
+and removes the exists quantifiers at the top.
+-}
+simplifyTopConfigurationDefined ::
+    MonadSimplify simplifier =>
+    Pattern RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    simplifier (OrPattern RewritingVariableName)
+simplifyTopConfigurationDefined patt defined =
+    makeEvaluate sideCondition patt
+        >>= return . removeTopExists
   where
-    removeTopExists ::
-        Pattern RewritingVariableName -> Pattern RewritingVariableName
-    removeTopExists p@Conditional{term = Exists_ _ _ quantified} =
-        removeTopExists p{term = quantified}
-    removeTopExists p = p
+    sideCondition = SideCondition.assumeDefined defined
+
+-- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
+removeTopExists ::
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName
+removeTopExists = OrPattern.map removeTopExistsWorker
+  where
+    removeTopExistsWorker ::
+        Pattern RewritingVariableName ->
+        Pattern RewritingVariableName
+    removeTopExistsWorker p@Conditional{term = Exists_ _ _ quantified} =
+        removeTopExistsWorker p{term = quantified}
+    removeTopExistsWorker p = p
 
 -- | Simplifies an 'Pattern', returning an 'OrPattern'.
 simplify ::

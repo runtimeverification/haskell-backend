@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Ceil (
     Ceil (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
     maybeT,
@@ -23,7 +21,6 @@ import Control.Monad.Reader (
  )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Functor.Foldable as Recursive
-
 import qualified Kore.Attribute.Symbol as Attribute.Symbol (
     isTotal,
  )
@@ -59,6 +56,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
     SideCondition,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
@@ -78,6 +76,7 @@ import Kore.TopBottom
 import Kore.Unparser (
     unparseToString,
  )
+import Prelude.Kore
 
 {- | Simplify a 'Ceil' of 'OrPattern'.
 
@@ -182,7 +181,7 @@ makeEvaluateTerm sideCondition ceilChild =
     ceilSimplifier =
         mconcat
             [ newPredicateCeilSimplifier
-            , newDefinedCeilSimplifier
+            , newDefinedCeilSimplifier sideCondition
             , -- We must apply user-defined \ceil rule before built-in rules
               -- because they may be more specific. In particular, Map and Set
               -- \ceil conditions are reduced to Bool expressions using in_keys.
@@ -205,12 +204,13 @@ newPredicateCeilSimplifier = CeilSimplifier $ \input ->
 
 newDefinedCeilSimplifier ::
     Monad simplifier =>
+    SideCondition RewritingVariableName ->
     CeilSimplifier
         simplifier
         (TermLike RewritingVariableName)
         (OrCondition RewritingVariableName)
-newDefinedCeilSimplifier = CeilSimplifier $ \input ->
-    if isDefinedPattern (ceilChild input)
+newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
+    if SideCondition.isDefined sideCondition (ceilChild input)
         then return OrCondition.top
         else empty
 
@@ -390,7 +390,6 @@ makeSimplifiedCeil
         needsChildCeils = case termLikeF of
             ApplyAliasF _ -> False
             EvaluatedF _ -> False
-            DefinedF _ -> False
             EndiannessF _ -> True
             SignednessF _ -> True
             AndF _ -> True

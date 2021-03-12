@@ -31,8 +31,6 @@ module Kore.Step.Step (
     Step.results,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor (
     (<&>),
  )
@@ -41,7 +39,6 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition (
     Condition,
@@ -95,6 +92,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 import qualified Pretty
 
 type UnifiedRule rule = Conditional (UnifyingRuleVariable rule) rule

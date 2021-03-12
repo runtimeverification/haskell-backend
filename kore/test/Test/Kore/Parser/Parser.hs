@@ -4,35 +4,31 @@ module Test.Kore.Parser.Parser (
     test_parseSort,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
-    testGroup,
- )
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
+import Data.Sup
 import Data.Text (
     Text,
     pack,
  )
-
-import Data.Sup
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Parser.Lexer
 import Kore.Parser.Parser
 import Kore.Syntax
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore hiding (
     sortVariable,
     sortVariableSort,
  )
 import Test.Kore.Parser
+import Test.Tasty (
+    TestTree,
+    testGroup,
+ )
 
 test_koreParser :: [TestTree]
 test_koreParser =

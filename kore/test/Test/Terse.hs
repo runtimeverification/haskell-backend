@@ -59,14 +59,12 @@ module Test.Terse (
     -- $rationale
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     ErrorCall (..),
     catch,
     evaluate,
  )
-
+import Prelude.Kore
 import Test.Tasty (
     TestTree,
  )

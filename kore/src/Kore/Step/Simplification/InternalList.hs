@@ -8,10 +8,7 @@ module Kore.Step.Simplification.InternalList (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Compose
-
 import Kore.Internal.InternalList
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
@@ -23,6 +20,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import qualified Logic
+import Prelude.Kore
 
 simplify ::
     InternalList (OrPattern RewritingVariableName) ->

@@ -12,8 +12,6 @@ module Kore.Step.AntiLeft (
     toTermLike,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
@@ -22,13 +20,12 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-import qualified Generics.SOP as SOP
-
 import Debug (
     Debug,
     Diff,
  )
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (freeVariables),
     bindVariables,
@@ -81,6 +78,7 @@ import Kore.Syntax.Variable (
 import Kore.Variables.Fresh (
     refreshElementVariable,
  )
+import Prelude.Kore
 
 {- | The part of an antileft pattern corresponding to a single rule.
 

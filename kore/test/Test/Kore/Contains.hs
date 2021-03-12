@@ -2,15 +2,10 @@ module Test.Kore.Contains (
     AssertContains (..),
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Step.SMT.AST as AST (
     Declarations (Declarations),
     Sort,
@@ -20,7 +15,8 @@ import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
-
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 class AssertContains container contained where

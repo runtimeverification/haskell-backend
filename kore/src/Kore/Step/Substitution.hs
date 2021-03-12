@@ -14,8 +14,6 @@ module Kore.Step.Substitution (
     normalize,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -44,6 +42,7 @@ import Kore.TopBottom (
     TopBottom,
  )
 import Logic
+import Prelude.Kore
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize ::

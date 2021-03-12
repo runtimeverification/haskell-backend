@@ -4,23 +4,11 @@ module Test.Kore.Step.Axiom.Registry (
     test_functionRegistry,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-import Test.Tasty.HUnit (
-    assertEqual,
-    assertFailure,
-    testCase,
- )
-
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Owise as Attribute
 import Kore.Attribute.Priority (
@@ -66,11 +54,19 @@ import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition hiding (
     Symbol,
  )
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty (
+    TestTree,
+ )
+import Test.Tasty.HUnit (
+    assertEqual,
+    assertFailure,
+    testCase,
+ )
 
 type PartitionedEquationsMap =
     Map.Map AxiomIdentifier.AxiomIdentifier PartitionedEquations

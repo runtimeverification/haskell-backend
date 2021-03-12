@@ -7,18 +7,10 @@ module Test.Kore.Step.Simplification.Or (
     test_valueProperties,
 ) where
 
-import Prelude.Kore
-
-import Test.Kore (
-    testId,
- )
-import Test.Tasty
-
 import qualified Data.List as List
 import Data.Text (
     Text,
  )
-
 import Kore.Internal.Predicate (
     Predicate,
     makeEqualsPredicate,
@@ -39,11 +31,15 @@ import Kore.Step.Simplification.Or (
     simplifyEvaluated,
  )
 import qualified Kore.Unparser as Unparser
+import Prelude.Kore
 import qualified Pretty
-
+import Test.Kore (
+    testId,
+ )
 import qualified Test.Kore.Internal.OrPattern as OrPattern
 import Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Terse
 
 -- * Part 1: 'simplifyEvaluated'

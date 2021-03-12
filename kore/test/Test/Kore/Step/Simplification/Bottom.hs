@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.Bottom (
     test_bottomSimplification,
 ) where
 
-import Prelude.Kore ()
-
-import Test.Tasty
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -15,16 +11,17 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern (
     bottom,
  )
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Sort
 import Kore.Step.Simplification.Bottom (
     simplify,
  )
 import Kore.Syntax.Bottom
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Prelude.Kore ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_bottomSimplification :: [TestTree]

@@ -14,15 +14,9 @@ module Kore.Step.Search (
     matchWith,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT (..),
  )
-import Numeric.Natural (
-    Natural,
- )
-
 import Data.Limit (
     Limit (..),
  )
@@ -67,6 +61,10 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 
 {- | Which configurations are considered for matching?
 

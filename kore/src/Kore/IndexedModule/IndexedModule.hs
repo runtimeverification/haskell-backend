@@ -54,8 +54,6 @@ module Kore.IndexedModule.IndexedModule (
     implicitModules,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad.Extra (
     unlessM,
@@ -79,7 +77,6 @@ import Data.Text (
 import GHC.Generics (
     Generic,
  )
-
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -95,6 +92,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 type SortDescription = SentenceSort
 

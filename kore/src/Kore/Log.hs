@@ -17,8 +17,6 @@ module Kore.Log (
     module KoreLogOptions,
 ) where
 
-import Prelude.Kore
-
 import Colog (
     LogAction (..),
  )
@@ -38,8 +36,6 @@ import Data.Functor.Contravariant (
 import Data.Text (
     Text,
  )
-import qualified Pretty
-
 import Kore.Log.DebugSolver (
     DebugSolverOptions (DebugSolverOptions),
     solverTranscriptLogger,
@@ -52,6 +48,8 @@ import Kore.Log.Registry (
  )
 import Kore.Log.SQLite
 import Log
+import Prelude.Kore
+import qualified Pretty
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,

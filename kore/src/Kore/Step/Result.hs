@@ -19,8 +19,6 @@ module Kore.Step.Result (
     toAttemptedAxiom,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
@@ -29,7 +27,6 @@ import Data.Sequence (
     Seq,
  )
 import qualified GHC.Generics as GHC
-
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -49,6 +46,7 @@ import qualified Kore.Step.Transition as Transition
 import Kore.TopBottom (
     TopBottom,
  )
+import Prelude.Kore
 
 -- | The result of applying a single rule.
 data Result rule config = Result

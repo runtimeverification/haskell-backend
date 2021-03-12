@@ -2,10 +2,6 @@ module Test.Kore.Step.SMT.Representation.Symbols (
     test_symbolParsing,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -25,7 +21,7 @@ import Kore.Step.SMT.Representation.Symbols
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -62,6 +58,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
 
 test_symbolParsing :: [TestTree]
 test_symbolParsing =

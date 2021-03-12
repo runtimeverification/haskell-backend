@@ -24,10 +24,6 @@ module Kore.Repl.Interpreter (
     showCurrentClaimIndex,
 ) where
 
-import Prelude.Kore hiding (
-    toList,
- )
-
 import Control.Lens (
     (%=),
     (.=),
@@ -115,41 +111,6 @@ import GHC.IO.Handle (
 import GHC.Natural (
     naturalToInt,
  )
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    getRewritingPattern,
- )
-import Numeric.Natural
-import System.Directory (
-    doesDirectoryExist,
-    doesFileExist,
-    findExecutable,
- )
-import System.Exit
-import System.FilePath (
-    splitFileName,
-    (<.>),
- )
-import System.IO (
-    IOMode (..),
-    withFile,
- )
-import System.Process (
-    StdStream (CreatePipe),
-    createProcess,
-    proc,
-    std_in,
-    std_out,
- )
-import Text.Megaparsec (
-    ParseErrorBundle (..),
-    ShowErrorComponent (..),
-    errorBundlePretty,
-    mapParseError,
-    parseMaybe,
-    runParser,
- )
-
 import Kore.Attribute.Axiom (
     SourceLocation (..),
  )
@@ -197,6 +158,10 @@ import qualified Kore.Reachability.ClaimState as ClaimState
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    getRewritingPattern,
+ )
 import qualified Kore.Step.RulePattern as RulePattern
 import Kore.Step.Simplification.Data (
     MonadSimplify,
@@ -212,10 +177,43 @@ import Kore.Unparser (
     unparse,
     unparseToString,
  )
+import Numeric.Natural
+import Prelude.Kore hiding (
+    toList,
+ )
 import Pretty (
     Pretty (..),
  )
 import qualified Pretty
+import System.Directory (
+    doesDirectoryExist,
+    doesFileExist,
+    findExecutable,
+ )
+import System.Exit
+import System.FilePath (
+    splitFileName,
+    (<.>),
+ )
+import System.IO (
+    IOMode (..),
+    withFile,
+ )
+import System.Process (
+    StdStream (CreatePipe),
+    createProcess,
+    proc,
+    std_in,
+    std_out,
+ )
+import Text.Megaparsec (
+    ParseErrorBundle (..),
+    ShowErrorComponent (..),
+    errorBundlePretty,
+    mapParseError,
+    parseMaybe,
+    runParser,
+ )
 
 {- | Warning: you should never use WriterT or RWST. It is used here with
  _great care_ of evaluating the RWST to a StateT immediately, and thus getting

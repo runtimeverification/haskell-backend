@@ -11,8 +11,6 @@ module Kore.Step.Simplification.And (
     termAnd,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     runMaybeT,
  )
@@ -26,12 +24,11 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -68,6 +65,7 @@ import Kore.Unification.UnifierT (
     runUnifierT,
  )
 import Logic
+import Prelude.Kore
 
 {- | Simplify a conjunction of 'OrPattern'.
 To do that, it first distributes the terms, making it an Or of And patterns,

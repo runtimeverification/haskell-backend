@@ -8,13 +8,10 @@ module Kore.Rewriting.UnifyingRule (
     Renaming,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -27,6 +24,7 @@ import Kore.Internal.TermLike (
  )
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 type Renaming variable =

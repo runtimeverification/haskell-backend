@@ -2,14 +2,9 @@ module Test.Kore.Reachability.SomeClaim (
     test_extractClaim,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Default (
     def,
  )
-
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
@@ -30,9 +25,10 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
     SentenceClaim (..),
  )
-
+import Prelude.Kore
 import Test.Expect
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_extractClaim :: [TestTree]

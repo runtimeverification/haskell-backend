@@ -9,14 +9,12 @@ module Kore.Log.InfoProofDepth (
     ProofDepth (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Semigroup as Semigroup
+import Log
 import Numeric.Natural (
     Natural,
  )
-
-import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

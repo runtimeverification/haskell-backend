@@ -32,8 +32,6 @@ module Kore.Builtin.Bool (
     orElseKey,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -47,9 +45,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-import qualified Text.Megaparsec as Parsec
-import qualified Text.Megaparsec.Char as Parsec
-
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -71,6 +66,9 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import qualified Kore.Unification.Unify as Unify
+import Prelude.Kore
+import qualified Text.Megaparsec as Parsec
+import qualified Text.Megaparsec.Char as Parsec
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 

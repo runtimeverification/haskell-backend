@@ -4,17 +4,12 @@ module Test.Kore.Step.Simplification.Application (
     test_applicationSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-
 import Data.Sup
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern (
@@ -48,10 +43,11 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom (
     AttemptedAxiom (..),
  )
 import qualified Kore.Syntax.Variable as Variable
-
+import Prelude.Kore
 import qualified Test.Kore.Internal.Pattern as Pattern
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_applicationSimplification :: [TestTree]

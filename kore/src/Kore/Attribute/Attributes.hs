@@ -14,8 +14,6 @@ module Kore.Attribute.Attributes (
     attributeVariable,
 ) where
 
-import Prelude.Kore
-
 import Data.Default (
     Default (..),
  )
@@ -25,13 +23,13 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Null as Attribute (
     Null,
  )
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 import qualified SQL
 

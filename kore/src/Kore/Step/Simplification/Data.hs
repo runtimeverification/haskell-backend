@@ -26,8 +26,6 @@ module Kore.Step.Simplification.Data (
     MonadProf,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
@@ -36,7 +34,6 @@ import Control.Monad.Catch (
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -75,6 +72,7 @@ import qualified Kore.Step.Simplification.SubstitutionSimplifier as Substitution
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import Log
 import Logic
+import Prelude.Kore
 import qualified Pretty
 import Prof
 import SMT (

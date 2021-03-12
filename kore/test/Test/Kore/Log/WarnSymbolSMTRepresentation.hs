@@ -2,14 +2,11 @@ module Test.Kore.Log.WarnSymbolSMTRepresentation (
     test_instance_Table_WarnSymbolSMTRepresentation,
 ) where
 
-import Prelude.Kore ()
-
-import Test.Tasty
-
 import Kore.Log.WarnSymbolSMTRepresentation
-
+import Prelude.Kore ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SQL
+import Test.Tasty
 
 test_instance_Table_WarnSymbolSMTRepresentation :: TestTree
 test_instance_Table_WarnSymbolSMTRepresentation =

@@ -5,10 +5,6 @@ module Test.Kore.Step.Simplification.InjSimplifier (
     test_normalize,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.Inj
 import Kore.Internal.TermLike hiding (
     Top (..),
@@ -19,9 +15,10 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Step.Simplification.InjSimplifier
 import Pair
-
+import Prelude.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Kore.Step.MockSymbols
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 mkInj :: Sort -> TermLike RewritingVariableName -> TermLike RewritingVariableName

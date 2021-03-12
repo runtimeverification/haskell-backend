@@ -7,8 +7,6 @@ module Prof (
     defaultTraceProf,
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     MonadMask,
     bracket_,
@@ -35,6 +33,7 @@ import qualified Data.Text as Text
 import Debug.Trace.Text (
     traceEventIO,
  )
+import Prelude.Kore
 
 class Monad prof => MonadProf prof where
     -- | Attribute an action to a particular name for profiling.

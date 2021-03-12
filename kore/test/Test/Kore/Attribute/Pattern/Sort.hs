@@ -2,13 +2,7 @@ module Test.Kore.Attribute.Pattern.Sort (
     test_instance_Synthetic,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import qualified Control.Exception as Exception
-
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike (
     TermLikeF (..),
@@ -17,8 +11,10 @@ import Kore.Sort
 import Kore.Syntax hiding (
     PatternF (..),
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =

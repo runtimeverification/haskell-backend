@@ -7,19 +7,17 @@ module Kore.Log.ErrorDecidePredicateUnknown (
     errorDecidePredicateUnknown,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
  )
-
 import Kore.Internal.Predicate (
     Predicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Variable
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

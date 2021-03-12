@@ -18,31 +18,17 @@ module Test.Kore.Step.Strategy (
     prop_pickPlus,
 ) where
 
-import Prelude.Kore hiding (
-    and,
-    const,
-    or,
-    seq,
- )
-
-import Test.QuickCheck.Instances ()
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
-
 import qualified Control.Exception as Exception
 import Control.Monad.Catch.Pure (
     Catch,
     runCatch,
  )
 import qualified Data.Graph.Inductive.Graph as Graph
-import qualified Data.Sequence as Seq
-import Numeric.Natural
-
 import Data.Limit (
     Limit (..),
  )
 import qualified Data.Limit as Limit
+import qualified Data.Sequence as Seq
 import Kore.Step.Strategy (
     ExecutionGraph (..),
     Strategy,
@@ -50,6 +36,17 @@ import Kore.Step.Strategy (
  )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
+import Numeric.Natural
+import Prelude.Kore hiding (
+    and,
+    const,
+    or,
+    seq,
+ )
+import Test.QuickCheck.Instances ()
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 data Prim
     = Const Natural

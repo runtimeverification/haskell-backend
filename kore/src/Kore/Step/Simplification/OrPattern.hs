@@ -8,8 +8,6 @@ module Kore.Step.Simplification.OrPattern (
     simplifyConditionsWithSmt,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -65,6 +63,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 simplifyConditionsWithSmt ::
     forall simplifier.

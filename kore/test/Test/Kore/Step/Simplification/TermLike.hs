@@ -5,18 +5,12 @@ module Test.Kore.Step.Simplification.TermLike (
     test_simplify_sideConditionReplacements,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Control.Monad (
     void,
  )
 import Control.Monad.Catch (
     MonadThrow,
  )
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -40,9 +34,11 @@ import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Logic
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_simplify :: [TestTree]
 test_simplify =

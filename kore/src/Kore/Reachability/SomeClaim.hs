@@ -19,8 +19,6 @@ module Kore.Reachability.SomeClaim (
     OnePathClaim (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Coerce (
     coerce,
@@ -30,7 +28,6 @@ import Data.Generics.Product
 import Data.Generics.Wrapped
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
 import Kore.Internal.OrPattern (
@@ -65,6 +62,7 @@ import Kore.Unparser (
     Unparse (..),
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

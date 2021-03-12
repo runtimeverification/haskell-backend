@@ -52,8 +52,6 @@ module Kore.Syntax.Sentence (
     module Kore.Syntax.Module,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad as Monad
 import Data.Generics.Sum.Typed (
     projectTyped,
@@ -63,7 +61,6 @@ import Data.Kind (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute (
     Null (..),
@@ -84,6 +81,7 @@ import Kore.Unparser
 import Kore.Variables.Free (
     freePureVariables,
  )
+import Prelude.Kore
 import qualified Pretty
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the

@@ -7,15 +7,12 @@ module Test.Kore.Attribute.Hook (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Hook
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseHook :: Attributes -> Parser Hook
 parseHook = parseAttributes

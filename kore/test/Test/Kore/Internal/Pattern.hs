@@ -12,24 +12,18 @@ module Test.Kore.Internal.Pattern (
     module Test.Kore.Internal.TermLike,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Align (
     align,
  )
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.Simplified (
     Condition (..),
     Type (..),
     pattern Simplified_,
  )
 import qualified Kore.Internal.Condition as Condition
-
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -54,7 +48,7 @@ import Kore.Internal.Substitution (
  )
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
-
+import Prelude.Kore
 import Test.Expect
 import Test.Kore (
     Gen,
@@ -71,6 +65,7 @@ import Test.Kore.Internal.TermLike hiding (
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Variables.V
 import Test.Kore.Variables.W
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type TestPattern = Pattern VariableName

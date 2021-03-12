@@ -43,13 +43,15 @@ module Kore.Step.Simplification.Simplify (
     MonadLog,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad as Monad
+import Control.Monad.Counter
 import Control.Monad.Morph (
     MFunctor,
  )
 import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict (
+    RWST,
+ )
 import qualified Control.Monad.State.Strict as Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
@@ -63,8 +65,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Control.Monad.Counter
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
@@ -125,6 +125,7 @@ import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
+import Prelude.Kore
 import Pretty (
     (<+>),
  )
@@ -244,6 +245,8 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+
+instance MonadSimplify m => MonadSimplify (RWST r () s m)
 
 -- * Term simplifiers
 
@@ -508,6 +511,7 @@ purePatternAxiomEvaluator p =
 applicationAxiomSimplifier ::
     ( forall simplifier.
       MonadSimplify simplifier =>
+      SideCondition RewritingVariableName ->
       CofreeF
         (Application Symbol)
         (Attribute.Pattern RewritingVariableName)
@@ -524,9 +528,10 @@ applicationAxiomSimplifier applicationSimplifier =
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
         simplifier (AttemptedAxiom RewritingVariableName)
-    helper termLike _ =
+    helper termLike sideCondition =
         case Recursive.project termLike of
-            (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
+            (valid :< ApplySymbolF p) ->
+                applicationSimplifier sideCondition (valid :< p)
             _ ->
                 error
                     ("Expected an application pattern, but got: " ++ show termLike)

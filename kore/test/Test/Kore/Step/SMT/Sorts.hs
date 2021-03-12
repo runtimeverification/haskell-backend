@@ -2,14 +2,9 @@ module Test.Kore.Step.SMT.Sorts (
     test_sortDeclaration,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Text (
     Text,
  )
-
 import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors (
     indexBySort,
  )
@@ -30,8 +25,8 @@ import qualified Kore.Step.SMT.Representation.All as Representation (
     build,
  )
 import Kore.Syntax.Definition
+import Prelude.Kore
 import qualified SMT
-
 import Test.Kore.Step.SMT.Builders (
     constructor,
     emptyModule,
@@ -60,6 +55,7 @@ import qualified Test.Kore.Step.SMT.Helpers as Helpers (
 import Test.Kore.With (
     with,
  )
+import Test.Tasty
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =

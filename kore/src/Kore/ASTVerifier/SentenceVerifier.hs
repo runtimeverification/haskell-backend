@@ -22,8 +22,6 @@ module Kore.ASTVerifier.SentenceVerifier (
     parseAndVerifyAxiomAttributes,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad (
     foldM,
@@ -43,7 +41,6 @@ import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
-
 import Kore.AST.Error
 import Kore.ASTVerifier.AttributesVerifier
 import Kore.ASTVerifier.Error
@@ -92,6 +89,7 @@ import Kore.Step.ClaimPattern (
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.

@@ -15,8 +15,6 @@ module Log.Entry (
     entryTypeText,
 ) where
 
-import Prelude.Kore
-
 import Colog (
     Severity (..),
  )
@@ -37,12 +35,12 @@ import qualified Data.Text as Text
 import qualified Data.Typeable (
     cast,
  )
-import qualified Type.Reflection as Reflection
-
+import Prelude.Kore
 import Pretty (
     Pretty,
  )
 import qualified Pretty
+import qualified Type.Reflection as Reflection
 
 class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry

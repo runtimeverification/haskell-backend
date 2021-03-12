@@ -26,13 +26,10 @@ module Kore.Attribute.Pattern (
     module Kore.Attribute.Pattern.Simplified,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created (
     Created (..),
@@ -81,6 +78,7 @@ import Kore.Sort (
     Sort,
  )
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 -- | @Pattern@ are the attributes of a pattern collected during verification.
 data Pattern variable = Pattern

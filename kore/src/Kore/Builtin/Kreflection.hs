@@ -6,11 +6,10 @@ module Kore.Builtin.Kreflection (
     verifiers,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.HashMap.Strict as HashMap
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
+import Prelude.Kore
 
 verifiers :: Builtin.Verifiers
 verifiers =

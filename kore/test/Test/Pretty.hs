@@ -2,14 +2,10 @@ module Test.Pretty (
     test_layoutOneLine,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Text as Text
-
+import Prelude.Kore
 import Pretty
-
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_layoutOneLine :: [TestTree]

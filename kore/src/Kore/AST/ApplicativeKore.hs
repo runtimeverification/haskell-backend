@@ -4,13 +4,10 @@ License     : NCSA
 -}
 module Kore.AST.ApplicativeKore (completeDefinition) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.TermLike as TermLike
 import Kore.Syntax.Definition (
@@ -19,6 +16,7 @@ import Kore.Syntax.Definition (
     Sentence (..),
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 completeDefinition ::
     Definition Verified.Sentence ->

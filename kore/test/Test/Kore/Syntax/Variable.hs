@@ -8,12 +8,8 @@ module Test.Kore.Syntax.Variable (
     module Kore.Syntax.Variable,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Syntax.Variable
-
+import Prelude.Kore
 import Test.Injection
 import Test.Kore (
     testId,
@@ -21,6 +17,7 @@ import Test.Kore (
 import Test.Kore.Step.MockSymbols (
     testSort,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_isSetVariable :: [TestTree]

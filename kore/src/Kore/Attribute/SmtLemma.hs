@@ -12,13 +12,11 @@ module Kore.Attribute.SmtLemma (
     smtLemmaAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @SmtLemma@ represents the @smt-lemma@ attribute for symbols.
 newtype SmtLemma = SmtLemma {isSmtLemma :: Bool}

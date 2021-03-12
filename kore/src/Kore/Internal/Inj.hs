@@ -12,16 +12,13 @@ module Kore.Internal.Inj (
     unorderedInj,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
  )
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -39,6 +36,7 @@ import Kore.TopBottom (
     TopBottom (..),
  )
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 data Inj a = Inj

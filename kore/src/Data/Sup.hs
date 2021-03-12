@@ -9,14 +9,12 @@ module Data.Sup (
     Sup (..),
 ) where
 
-import Prelude.Kore
-
 import Data.Data (
     Data,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

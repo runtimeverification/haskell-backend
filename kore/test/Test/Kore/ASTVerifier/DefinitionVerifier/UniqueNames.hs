@@ -2,19 +2,16 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames (
     test_uniqueNames,
 ) where
 
-import Prelude.Kore ()
-
-import Test.Tasty (
-    TestTree,
- )
-
 import Kore.Error
 import Kore.Syntax hiding (
     VariableName (..),
  )
 import Kore.Syntax.Definition
-
+import Prelude.Kore ()
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Tasty (
+    TestTree,
+ )
 
 test_uniqueNames :: [TestTree]
 test_uniqueNames =

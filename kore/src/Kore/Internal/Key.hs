@@ -8,8 +8,6 @@ module Kore.Internal.Key (
     simplifiedAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Const (
     Const (..),
  )
@@ -21,7 +19,6 @@ import Data.Functor.Foldable (
 import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Pattern as Attribute (
     Pattern,
     simplifiedAttribute,
@@ -61,6 +58,7 @@ import Kore.Syntax.Variable (
     Concrete,
  )
 import Kore.Unparser
+import Prelude.Kore
 
 -- | @Key@ is the type of patterns that may be concrete keys of maps and sets.
 newtype Key = Key {getKey :: CofreeF KeyF (Attribute.Pattern Concrete) Key}

@@ -18,8 +18,6 @@ module Kore.Internal.OrCondition (
     toPredicate,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -41,6 +39,7 @@ import Kore.Internal.TermLike hiding (
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Prelude.Kore
 
 -- | The disjunction of 'Condition'.
 type OrCondition variable = MultiOr (Condition variable)

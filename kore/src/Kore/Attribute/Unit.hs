@@ -14,15 +14,13 @@ module Kore.Attribute.Unit (
     unitAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified Generics.SOP as SOP
-import qualified Pretty
-
 import Kore.Attribute.Parser
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
+import qualified Pretty
 
 -- | @Unit@ represents the @unit@ attribute.
 newtype Unit symbol = Unit {getUnit :: Maybe symbol}

@@ -7,7 +7,6 @@ module Kore.Reachability.Prim (
 ) where
 
 import Prelude.Kore
-
 import Pretty
 
 -- | The primitive transitions of the reachability proof strategy.

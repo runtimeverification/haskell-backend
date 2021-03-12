@@ -2,12 +2,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables (
     test_uniqueSortVariables,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Internal.TermLike
@@ -16,9 +10,12 @@ import Kore.Syntax.Definition (
     ParsedSentenceAlias,
     asSentence,
  )
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Tasty (
+    TestTree,
+ )
 
 test_uniqueSortVariables :: [TestTree]
 test_uniqueSortVariables =

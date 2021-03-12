@@ -67,8 +67,6 @@ module Kore.Attribute.Parser (
     module Kore.Syntax.Application,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     Getter,
     Iso',
@@ -92,7 +90,6 @@ import qualified Data.Text as Text
 import GHC.Generics (
     Generic,
  )
-
 import Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
 import Kore.Attribute.Attributes
@@ -115,6 +112,7 @@ import Kore.Syntax.Variable (
     SomeVariable,
     VariableName,
  )
+import Prelude.Kore
 import SMT.SimpleSMT (
     SExpr,
     readSExprs,

@@ -8,10 +8,6 @@ module Kore.Step.Simplification.CeilSimplifier (
     runCeilSimplifierWith,
 ) where
 
-import Prelude.Kore hiding (
-    (.),
- )
-
 import Control.Category (
     Category (..),
  )
@@ -31,9 +27,11 @@ import Data.Profunctor (
 import Data.Profunctor.Choice (
     Choice (..),
  )
-
 import Kore.Sort
 import Kore.Syntax.Ceil
+import Prelude.Kore hiding (
+    (.),
+ )
 
 newtype CeilSimplifier simplifier input output = CeilSimplifier
     { runCeilSimplifier :: Ceil Sort input -> MaybeT simplifier output

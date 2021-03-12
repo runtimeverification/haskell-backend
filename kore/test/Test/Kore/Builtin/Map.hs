@@ -48,22 +48,6 @@ module Test.Kore.Builtin.Map (
     asInternal,
 ) where
 
-import Prelude.Kore hiding (
-    concatMap,
- )
-
-import Hedgehog (
-    Gen,
-    Property,
-    PropertyT,
-    discard,
-    forAll,
-    (===),
- )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-
 import Control.Error (
     runMaybeT,
  )
@@ -82,7 +66,16 @@ import qualified Data.Maybe as Maybe (
  )
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
-
+import Hedgehog (
+    Gen,
+    Property,
+    PropertyT,
+    discard,
+    forAll,
+    (===),
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
@@ -97,6 +90,7 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding (
     asConcrete,
@@ -109,10 +103,12 @@ import Kore.Rewriting.RewritingVariable (
     ruleElementVariableFromId,
  )
 import Kore.Step.RulePattern
+import Prelude.Kore hiding (
+    concatMap,
+ )
 import SMT (
     NoSMT,
  )
-
 import Test.Expect
 import Test.Kore (
     configElementVariableGen,
@@ -135,6 +131,7 @@ import Test.Kore.Step.Simplification (
     runSimplifier,
  )
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genMapInteger :: Gen a -> Gen (Map Integer a)
@@ -1435,7 +1432,10 @@ test_inKeys =
         IO (Maybe Bool)
     inKeys termKey termMap = do
         output <-
-            Map.evalInKeys boolSort [termKey, termMap]
+            Map.evalInKeys
+                SideCondition.top
+                boolSort
+                [termKey, termMap]
                 & runMaybeT
                 & runSimplifier testEnv
         case output of
@@ -1448,16 +1448,17 @@ test_inKeys =
                         | otherwise = makeMultipleAndPredicate predicates
                     predicates =
                         catMaybes
-                            [ do
-                                (guard . not) (isDefinedPattern termKey)
-                                pure (makeCeilPredicate termKey)
-                            , do
-                                (guard . not) (isDefinedPattern termMap)
-                                pure (makeCeilPredicate termMap)
+                            [ mkDefinedTerm termKey
+                            , mkDefinedTerm termMap
                             ]
                 assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term
                 return (Just bool)
+
+    mkDefinedTerm term = do
+        (guard . not)
+            (SideCondition.isDefined SideCondition.top term)
+        pure (makeCeilPredicate term)
 
 -- * Helpers
 

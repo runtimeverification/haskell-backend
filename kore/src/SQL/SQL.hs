@@ -17,8 +17,6 @@ module SQL.SQL (
     SQLData (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad.Catch as Exceptions
 import Control.Monad.Reader (
     ReaderT (ReaderT),
@@ -34,6 +32,7 @@ import Database.SQLite.Simple (
     SQLData (..),
  )
 import qualified Database.SQLite.Simple as SQLite
+import Prelude.Kore
 
 -- | @SQL@ is a 'Monad' for executing SQL statements.
 newtype SQL a = SQL {getSQL :: ReaderT SQLite.Connection IO a}

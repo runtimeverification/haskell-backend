@@ -6,16 +6,14 @@ module Kore.Syntax.Floor (
     Floor (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and

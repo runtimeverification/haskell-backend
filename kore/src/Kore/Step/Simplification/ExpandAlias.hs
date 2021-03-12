@@ -9,8 +9,6 @@ module Kore.Step.Simplification.ExpandAlias (
     substituteInAlias,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
@@ -18,7 +16,6 @@ import Control.Error.Util (
     nothing,
  )
 import qualified Data.Map.Strict as Map
-
 import Kore.Internal.Alias (
     Alias (..),
  )
@@ -42,6 +39,7 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Unification.Unify (
     MonadUnify,
  )
+import Prelude.Kore
 
 expandAlias ::
     forall unifier.

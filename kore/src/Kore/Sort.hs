@@ -41,8 +41,6 @@ module Kore.Sort (
     module Kore.Syntax.Id,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
@@ -52,10 +50,10 @@ import qualified Data.Map.Strict as Map
 import Data.These
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Syntax.Id
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- | @SortVariable@ is a Kore sort variable.

@@ -5,19 +5,15 @@ module Test.Debug (
     test_diff,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import qualified Pretty
-
-import Debug
 import Kore.Sort
 import Kore.Syntax.Variable
-
+import Prelude.Kore
+import qualified Pretty
 import Test.Kore
+import Test.Tasty
 import qualified Test.Terse as Terse
 
 -- A simple type with one constructor

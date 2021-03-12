@@ -15,10 +15,6 @@ module Test.Kore.Builtin.Krypto (
     test_hashRipemd160,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Control.Lens as Lens
 import Data.Generics.Sum.Constructors
 import qualified Data.Map.Strict as Map
@@ -28,7 +24,6 @@ import Data.Text (
  )
 import qualified Data.Text as Text
 import qualified GHC.TypeLits as TypeLits
-
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.String as String
@@ -40,6 +35,9 @@ import qualified Kore.Internal.SideCondition as SideCondition (
     top,
  )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.Data (
     runSimplifier,
  )
@@ -48,10 +46,7 @@ import Kore.Step.Simplification.Simplify (
     BuiltinAndAxiomSimplifier (..),
  )
 import qualified Kore.TopBottom as TopBottom
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Prelude.Kore
 import Test.Kore.Builtin.Builtin hiding (
     evaluate,
  )
@@ -60,6 +55,7 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import Test.SMT (
     runNoSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_ecdsaRecover :: [TestTree]

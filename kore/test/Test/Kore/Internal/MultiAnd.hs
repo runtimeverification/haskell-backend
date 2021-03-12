@@ -3,13 +3,8 @@ module Test.Kore.Internal.MultiAnd (
     test_multiAndMake,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -18,7 +13,8 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.TopBottom (
     TopBottom (..),
  )
-
+import Prelude.Kore
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer

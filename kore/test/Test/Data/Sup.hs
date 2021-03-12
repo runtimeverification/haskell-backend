@@ -17,13 +17,11 @@ module Test.Data.Sup (
     hprop_interchangeApplicative,
 ) where
 
-import Prelude.Kore
-
+import Data.Sup
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-import Data.Sup
+import Prelude.Kore
 
 genSup :: Gen a -> Gen (Sup a)
 genSup genA = Gen.choice [pure Sup, Element <$> genA]

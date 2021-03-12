@@ -7,13 +7,9 @@ module Test.Kore.Step.SMT.Evaluator (
     test_Bool_contradictions,
 ) where
 
-import Prelude.Kore
-
 import Hedgehog hiding (
     property,
  )
-import Test.Tasty
-
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -29,6 +25,7 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -36,10 +33,10 @@ import Kore.Rewriting.RewritingVariable (
  )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Simplification.Data as Kore
+import Prelude.Kore
 import SMT (
     SMT,
  )
-
 import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
 import Test.Kore.Builtin.Builtin (
@@ -53,6 +50,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import qualified Test.Kore.Step.Simplification as Test
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 contradictoryPredicate :: Predicate VariableName
@@ -238,7 +236,7 @@ assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.Evaluator.decidePredicate (prop :| [])
+        SMT.Evaluator.decidePredicate SideCondition.top (prop :| [])
             & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 

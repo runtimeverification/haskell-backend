@@ -19,8 +19,6 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
-import Prelude.Kore
-
 import Data.String (
     IsString (..),
  )
@@ -30,9 +28,9 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- | @Id@ is a Kore identifier.

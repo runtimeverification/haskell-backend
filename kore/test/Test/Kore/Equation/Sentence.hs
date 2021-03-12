@@ -2,23 +2,19 @@ module Test.Kore.Equation.Sentence (
     test_fromSentenceAxiom,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Default (
     def,
  )
-
 import Kore.Equation
 import Kore.Internal.Predicate (
     wrapPredicate,
  )
 import Kore.Internal.TermLike
-
+import Prelude.Kore
 import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_fromSentenceAxiom :: [TestTree]

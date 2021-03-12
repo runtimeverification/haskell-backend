@@ -8,14 +8,10 @@ module Test.Kore.Builtin.AssocComm.CeilSimplifier (
     test_Builtin_Set,
 ) where
 
-import Prelude.Kore
-
 import Hedgehog hiding (
     test,
  )
 import qualified Hedgehog.Gen as Gen
-import Test.Tasty
-
 import Kore.Builtin.AssocComm.CeilSimplifier (
     generalizeMapElement,
  )
@@ -44,9 +40,10 @@ import Kore.Rewriting.RewritingVariable (
 import qualified Kore.Step.Simplification.Ceil as Ceil (
     makeEvaluate,
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_Builtin_Map :: [TestTree]

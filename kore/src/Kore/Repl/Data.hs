@@ -53,8 +53,6 @@ module Kore.Repl.Data (
     TryApplyRuleResult (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Concurrent.MVar
 import Control.Monad.Trans.Accum (
     AccumT,
@@ -84,9 +82,6 @@ import Data.Set (
  )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
-import Numeric.Natural
-import qualified Pretty
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -115,8 +110,6 @@ import Kore.Step.Simplification.Data (
  )
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Strategy as Strategy
-import Logic
-
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -128,6 +121,10 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser (
     unparse,
  )
+import Logic
+import Numeric.Natural
+import Prelude.Kore
+import qualified Pretty
 import SMT (
     MonadSMT,
  )

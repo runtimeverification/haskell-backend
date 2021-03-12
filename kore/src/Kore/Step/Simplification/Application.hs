@@ -14,12 +14,9 @@ module Kore.Step.Simplification.Application (
     Application (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Monad.Catch (
     MonadThrow,
  )
-
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern (
@@ -49,6 +46,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))

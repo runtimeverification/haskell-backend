@@ -11,10 +11,7 @@ module Kore.Step.Simplification.OverloadSimplifier (
     mkOverloadSimplifier,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Set as Set
-
 import Kore.IndexedModule.OverloadGraph (
     OverloadGraph,
  )
@@ -30,6 +27,7 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Step.Simplification.InjSimplifier (
     InjSimplifier (..),
  )
+import Prelude.Kore
 
 {- | Consists of an overload symbol and an injection from the sort
  of the symbol; the injection can miss (@Nothing@) if not needed.

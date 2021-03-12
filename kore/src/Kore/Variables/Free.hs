@@ -13,8 +13,6 @@ module Kore.Variables.Free (
     pureAllVariables,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Monad.Extra as Monad
 import qualified Control.Monad.RWS.Strict as Monad.RWS
@@ -23,8 +21,8 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-
 import Kore.Syntax
+import Prelude.Kore
 
 -- | The free variables of a pure pattern.
 freePureVariables ::

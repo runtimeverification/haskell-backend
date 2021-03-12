@@ -8,11 +8,10 @@ module Kore.Log.WarnStuckClaimState (
     warnStuckClaimStateTermsNotUnifiable,
 ) where
 
-import Prelude.Kore
-
 import Kore.Attribute.SourceLocation
 import Kore.Reachability.SomeClaim
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

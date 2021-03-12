@@ -6,10 +6,6 @@ module Test.Kore.Step.Rule.Simplify (
     test_simplifyClaimRule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Control.Lens as Lens
 import Control.Monad.Morph (
     MFunctor (..),
@@ -24,7 +20,6 @@ import qualified Data.Bifunctor as Bifunctor
 import Data.Generics.Product (
     field,
  )
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -85,7 +80,7 @@ import Kore.Syntax.Variable (
     fromVariableName,
  )
 import Log
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Rule.Common (
     Pair (..),
@@ -96,6 +91,7 @@ import Test.Kore.Step.Simplification (
     runSimplifier,
     runSimplifierSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplifyRule_RewriteRule :: [TestTree]

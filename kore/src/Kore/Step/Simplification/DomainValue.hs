@@ -13,13 +13,10 @@ module Kore.Step.Simplification.DomainValue (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-
 import Kore.Internal.Conditional (
     Conditional,
  )
@@ -35,6 +32,7 @@ import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 {- | 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.

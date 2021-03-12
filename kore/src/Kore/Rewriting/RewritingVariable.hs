@@ -42,14 +42,11 @@ module Kore.Rewriting.RewritingVariable (
     getRewritingTerm,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.AST.AstWithLocation (
     AstWithLocation (..),
  )
@@ -69,6 +66,7 @@ import Kore.Internal.TermLike as TermLike hiding (
  )
 import Kore.Unparser
 import Kore.Variables.Fresh
+import Prelude.Kore
 
 -- | The name of a 'RewritingVariable'.
 data RewritingVariableName

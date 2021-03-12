@@ -9,10 +9,7 @@ module Kore.Step.SMT.Representation.All (
     build,
 ) where
 
-import Prelude.Kore ()
-
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Sort.Constructors as Attribute (
     Constructors,
  )
@@ -35,6 +32,7 @@ import qualified Kore.Step.SMT.Representation.Symbols as Symbols (
 import Kore.Syntax.Id (
     Id,
  )
+import Prelude.Kore ()
 
 {- | Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.

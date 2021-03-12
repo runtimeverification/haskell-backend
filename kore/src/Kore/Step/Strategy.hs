@@ -4,9 +4,7 @@ Description : Strategies for pattern rewriting
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 This module should be imported qualified to avoid collisions with "Prelude":
-
 @
 import Kore.Step.Strategy ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -57,17 +55,6 @@ module Kore.Step.Strategy (
     LimitExceeded (..),
 ) where
 
-import Prelude.Kore hiding (
-    all,
-    and,
-    any,
-    many,
-    or,
-    seq,
-    sequence,
-    some,
- )
-
 import Control.Error (
     maybeT,
  )
@@ -104,6 +91,16 @@ import qualified Data.Sequence as Seq
 import qualified GHC.Generics as GHC
 import Kore.Step.Transition
 import Numeric.Natural
+import Prelude.Kore hiding (
+    all,
+    and,
+    any,
+    many,
+    or,
+    seq,
+    sequence,
+    some,
+ )
 
 {- | An execution strategy.
 

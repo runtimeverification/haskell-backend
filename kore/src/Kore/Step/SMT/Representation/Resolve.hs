@@ -9,8 +9,6 @@ module Kore.Step.SMT.Representation.Resolve (
     resolve,
 ) where
 
-import Prelude.Kore
-
 import Control.Error.Safe (
     assertMay,
  )
@@ -18,7 +16,7 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
+import Kore.Debug
 import qualified Kore.Sort as Kore (
     Sort (SortActualSort),
     SortActual (SortActual),
@@ -54,9 +52,8 @@ import qualified Kore.Step.SMT.AST as DoNotUse
 import qualified Kore.Syntax.Id as Kore (
     Id,
  )
+import Prelude.Kore
 import qualified SMT
-
-import Kore.Debug
 
 data Resolvers sort symbol name = Resolvers
     { sortResolver :: SortReference -> Maybe sort

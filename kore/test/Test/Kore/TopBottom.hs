@@ -3,14 +3,6 @@ module Test.Kore.TopBottom (
     test_Predicate,
 ) where
 
-import Prelude.Kore hiding (
-    and,
-    floor,
-    or,
- )
-
-import qualified Test.Tasty as Tasty
-
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -21,8 +13,13 @@ import Kore.Internal.TermLike (
  )
 import qualified Kore.Internal.TermLike as AST
 import qualified Kore.TopBottom as TopBottom
-
+import Prelude.Kore hiding (
+    and,
+    floor,
+    or,
+ )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Tasty as Tasty
 import qualified Test.Terse as Terse
 
 -- TODO (thomas.tuegel): Add tests for other instances.

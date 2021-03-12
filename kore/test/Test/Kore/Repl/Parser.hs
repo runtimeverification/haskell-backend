@@ -4,13 +4,6 @@ module Test.Kore.Repl.Parser (
     test_replParser,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
-    testGroup,
- )
-
 import qualified Data.GraphViz as Graph
 import Data.HashSet (
     HashSet,
@@ -22,12 +15,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import Numeric.Natural
-import Type.Reflection (
-    SomeTypeRep,
-    someTypeRep,
- )
-
 import Kore.Equation.Application (
     DebugApplyEquation,
     DebugAttemptEquation,
@@ -35,8 +22,17 @@ import Kore.Equation.Application (
 import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
-
+import Numeric.Natural
+import Prelude.Kore
 import Test.Kore.Parser
+import Test.Tasty (
+    TestTree,
+    testGroup,
+ )
+import Type.Reflection (
+    SomeTypeRep,
+    someTypeRep,
+ )
 
 test_replParser :: [TestTree]
 test_replParser =

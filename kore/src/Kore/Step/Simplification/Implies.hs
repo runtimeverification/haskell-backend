@@ -14,8 +14,6 @@ module Kore.Step.Simplification.Implies (
     simplifyEvaluated,
 ) where
 
-import Prelude.Kore
-
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -42,6 +40,7 @@ import Logic (
     LogicT,
  )
 import qualified Logic
+import Prelude.Kore
 
 {- |'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.

@@ -14,8 +14,6 @@ module Kore.ASTVerifier.DefinitionVerifier (
     sortModuleClaims,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     (%~),
  )
@@ -35,7 +33,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import Kore.ASTVerifier.AttributesVerifier hiding (
     parseAttributes,
  )
@@ -54,6 +51,7 @@ import qualified Kore.Internal.Symbol as Internal.Symbol (
 import Kore.Syntax.Definition
 import Kore.Syntax.Variable
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 
 {- |'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 

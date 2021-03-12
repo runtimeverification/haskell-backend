@@ -12,13 +12,11 @@ module Kore.Attribute.Function (
     functionAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Function@ represents the @function@ attribute for symbols.
 newtype Function = Function {isDeclaredFunction :: Bool}

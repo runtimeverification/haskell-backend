@@ -6,17 +6,15 @@ module Kore.Syntax.Not (
     Not (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.TopBottom
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'Not' corresponds to the @\not@ branches of the @object-pattern@ and

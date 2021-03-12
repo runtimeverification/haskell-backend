@@ -2,13 +2,6 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports (
     test_imports,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
-    testGroup,
- )
-
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
@@ -23,9 +16,13 @@ import Kore.Internal.TermLike hiding (
     Symbol,
  )
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Tasty (
+    TestTree,
+    testGroup,
+ )
 
 test_imports :: [TestTree]
 test_imports =
@@ -33,7 +30,6 @@ test_imports =
     , nameVisibilityTests
     , nameDuplicationTests
     ]
-
 importTests :: TestTree
 importTests =
     testGroup

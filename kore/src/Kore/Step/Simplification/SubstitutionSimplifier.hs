@@ -14,8 +14,6 @@ module Kore.Step.Simplification.SubstitutionSimplifier (
     simplificationMakeAnd,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error (
     MaybeT,
@@ -37,9 +35,8 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-import qualified GHC.Generics as GHC
-
 import Debug
+import qualified GHC.Generics as GHC
 import Kore.Internal.Condition (
     Condition,
  )
@@ -100,6 +97,7 @@ import Kore.Unification.SubstitutionNormalization (
 import Logic (
     LogicT,
  )
+import Prelude.Kore
 import qualified Pretty
 
 newtype SubstitutionSimplifier simplifier = SubstitutionSimplifier

@@ -11,10 +11,7 @@ module Kore.Builtin.AssocComm.AssocComm (
     Opaque (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.List as List
-
 import Kore.Attribute.Concat
 import Kore.Attribute.Unit
 import Kore.Internal.Symbol (
@@ -26,6 +23,7 @@ import Kore.Internal.TermLike (
     TermLike,
     mkApplySymbol,
  )
+import Prelude.Kore
 
 -- | Particularizes @Domain.NormalizedAc@ to the most common types.
 type TermNormalizedAc normalized variable =

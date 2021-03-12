@@ -22,17 +22,6 @@ module Test.Kore.Builtin.Builtin (
     runSMTWithConfig,
 ) where
 
-import Prelude.Kore
-
-import qualified Hedgehog
-import Test.Tasty (
-    TestTree,
- )
-import Test.Tasty.HUnit (
-    assertEqual,
-    testCase,
- )
-
 import Control.Monad.Catch (
     MonadMask,
  )
@@ -43,7 +32,7 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
+import qualified Hedgehog
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error (
     VerifyError,
@@ -110,12 +99,19 @@ import Kore.Unparser (
     unparseToText,
  )
 import qualified Logic
+import Prelude.Kore
 import SMT (
     NoSMT,
  )
-
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty (
+    TestTree,
+ )
+import Test.Tasty.HUnit (
+    assertEqual,
+    testCase,
+ )
 
 emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc

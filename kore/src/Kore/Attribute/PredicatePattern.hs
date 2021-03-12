@@ -21,13 +21,10 @@ module Kore.Attribute.PredicatePattern (
     module Kore.Attribute.Pattern.FreeVariables,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern (
     Pattern,
  )
@@ -54,6 +51,7 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
     Representation,
  )
 import Kore.Syntax.Variable
+import Prelude.Kore
 
 -- | @Pattern@ are the attributes of a pattern collected during verification.
 data PredicatePattern variable = PredicatePattern

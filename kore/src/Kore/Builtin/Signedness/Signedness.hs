@@ -7,16 +7,13 @@ module Kore.Builtin.Signedness.Signedness (
     toApplication,
 ) where
 
-import Prelude.Kore
-
 import Data.Functor.Const
 import Data.Void (
     Void,
  )
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.AST.AstWithLocation
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
@@ -31,6 +28,7 @@ import Kore.Syntax.Application (
     Application (..),
  )
 import Kore.Unparser
+import Prelude.Kore
 
 data Signedness
     = Signed !Symbol

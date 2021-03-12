@@ -8,14 +8,11 @@ module Kore.Internal.InternalBytes (
     InternalBytes (..),
 ) where
 
-import Prelude.Kore
-
 import Data.ByteString (
     ByteString,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
@@ -25,6 +22,7 @@ import qualified Kore.Builtin.Encoding as Encoding
 import Kore.Debug
 import Kore.Syntax
 import Kore.Unparser
+import Prelude.Kore
 
 data InternalBytes = InternalBytes
     { internalBytesSort :: !Sort

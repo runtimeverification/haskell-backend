@@ -7,16 +7,13 @@ module Test.Kore.Attribute.Unit (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Unit
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseUnit :: Attributes -> Parser (Unit SymbolOrAlias)
 parseUnit = parseAttributes

@@ -10,13 +10,10 @@ module Kore.Builtin.EqTerm (
     unifyEqTerm,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT,
  )
 import qualified Control.Monad as Monad
-
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -36,6 +33,7 @@ import Kore.Step.Simplification.Simplify (
     TermSimplifier,
  )
 import Kore.Unification.Unify as Unify
+import Prelude.Kore
 
 -- | An equality-like symbol applied to @term@-type arguments.
 data EqTerm term = EqTerm

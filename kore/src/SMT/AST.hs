@@ -31,8 +31,6 @@ module SMT.AST (
     SmtFunctionDeclaration,
 ) where
 
-import Prelude.Kore
-
 import Data.Char (
     isSpace,
  )
@@ -52,8 +50,10 @@ import qualified Data.Text.Lazy as Text.Lazy
 import Data.Void (
     Void,
  )
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Prelude.Kore
 import System.IO (
     Handle,
     hPutChar,
@@ -64,8 +64,6 @@ import Text.Megaparsec (
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
-
-import Debug
 
 -- | S-expressions, the basic format for SMT-LIB 2.
 data SExpr

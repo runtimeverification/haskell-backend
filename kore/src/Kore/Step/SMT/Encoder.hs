@@ -7,11 +7,10 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 module Kore.Step.SMT.Encoder (encodeName) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
+import Prelude.Kore
 
 {- | Encodes a name in order to remove special characters and to
 prevent conflicts with SMT builtins.

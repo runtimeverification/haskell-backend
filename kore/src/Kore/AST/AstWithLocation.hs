@@ -12,14 +12,12 @@ module Kore.AST.AstWithLocation (
     prettyPrintLocationFromAst,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
-
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Prelude.Kore
 
 {- | 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

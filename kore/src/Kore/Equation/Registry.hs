@@ -10,8 +10,6 @@ module Kore.Equation.Registry (
     PartitionedEquations (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     hush,
  )
@@ -23,7 +21,6 @@ import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import Kore.Attribute.Axiom (
     Assoc (Assoc),
     Comm (Comm),
@@ -54,6 +51,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
 import qualified Kore.Verified as Verified
+import Prelude.Kore
 import qualified Pretty
 
 -- | Create a mapping from symbol identifiers to their defining axioms.

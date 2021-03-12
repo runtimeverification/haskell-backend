@@ -8,7 +8,6 @@ module Test.Kore.Step.MockSymbols where
    * Import qualified.
    * use attributesMapping to build mock MetadataTools.
    * Use things like a, b, c, x, y, z for testing.
-
    RULES:
    * Everything that does not obey the default rules must be clearly
      specified in the name, e.g. 'constantNotFunctional'.
@@ -24,10 +23,6 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
@@ -36,12 +31,11 @@ import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import Data.Sup
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
-import Data.Sup
 import qualified Kore.Attribute.Concat as Attribute
 import qualified Kore.Attribute.Element as Attribute
 import Kore.Attribute.Hook (
@@ -86,6 +80,11 @@ import Kore.Internal.TermLike (
     retractKey,
  )
 import qualified Kore.Internal.TermLike as Internal
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+    mkConfigVariable,
+    mkRuleVariable,
+ )
 import Kore.Sort
 import Kore.Step.Axiom.EvaluationStrategy (
     builtinEvaluation,
@@ -113,14 +112,9 @@ import Kore.Step.Simplification.Simplify (
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
+import Prelude.Kore
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
-    mkConfigVariable,
-    mkRuleVariable,
- )
 import qualified Test.ConsistentKore as ConsistentKore (
     CollectionSorts (..),
     Setup (..),
@@ -129,6 +123,7 @@ import Test.Kore (
     testId,
  )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 aId :: Id

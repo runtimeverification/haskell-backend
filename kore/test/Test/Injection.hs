@@ -11,21 +11,18 @@ module Test.Injection (
     genInt8,
 ) where
 
-import Prelude
-
-import Hedgehog hiding (
-    test,
- )
-import qualified Hedgehog.Gen as Gen
-
 import Data.Dynamic (
     Dynamic,
  )
 import Data.Int (
     Int8,
  )
-
+import Hedgehog hiding (
+    test,
+ )
+import qualified Hedgehog.Gen as Gen
 import Injection
+import Prelude
 
 {- | Create a property test for an 'Injection' instance.
 

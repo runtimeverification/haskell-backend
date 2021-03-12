@@ -12,8 +12,6 @@ module Kore.Attribute.Smtlib.Smtlib (
     smtlibAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Default (
     Default (..),
  )
@@ -23,7 +21,6 @@ import Data.Text (
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Syntax.Application (
@@ -32,6 +29,7 @@ import Kore.Syntax.Application (
 import Kore.Syntax.Id (
     Id,
  )
+import Prelude.Kore
 import SMT.SimpleSMT (
     SExpr,
     showSExpr,

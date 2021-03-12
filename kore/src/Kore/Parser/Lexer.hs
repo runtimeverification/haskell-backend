@@ -47,8 +47,6 @@ module Kore.Parser.Lexer (
     illegalSurrogate,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import Data.HashSet (
@@ -63,6 +61,11 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
+import Kore.Parser.ParserUtils as ParserUtils
+import Kore.Sort
+import Kore.Syntax.Definition
+import Kore.Syntax.StringLiteral
+import Prelude.Kore
 import Text.Megaparsec (
     SourcePos (..),
     anySingle,
@@ -73,11 +76,6 @@ import Text.Megaparsec (
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
-
-import Kore.Parser.ParserUtils as ParserUtils
-import Kore.Sort
-import Kore.Syntax.Definition
-import Kore.Syntax.StringLiteral
 
 {- |'lexeme' transforms a raw parser into one that skips the whitespace and any
 comments after the parsed element.

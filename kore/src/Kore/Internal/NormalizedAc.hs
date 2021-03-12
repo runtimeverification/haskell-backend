@@ -33,8 +33,6 @@ module Kore.Internal.NormalizedAc (
     generatePairWiseElements,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Lens.Iso (
     Iso',
@@ -52,7 +50,6 @@ import Data.Map.Strict (
 import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Concat as Att
 import qualified Kore.Attribute.Element as Att
 import Kore.Attribute.Pattern.ConstructorLike
@@ -66,6 +63,7 @@ import Kore.Internal.Symbol hiding (
  )
 import Kore.Sort
 import Kore.Unparser
+import Prelude.Kore
 import Pretty (
     (<+>),
  )

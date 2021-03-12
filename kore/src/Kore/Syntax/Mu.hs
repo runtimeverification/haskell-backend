@@ -6,17 +6,15 @@ module Kore.Syntax.Mu (
     Mu (..),
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
 
 {- |'Mu' corresponds to the @μ@ syntactic category from the

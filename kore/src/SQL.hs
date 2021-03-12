@@ -38,8 +38,6 @@ module SQL (
     module SQL.SQL,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Extra as Monad
 import Data.Generics.Wrapped
@@ -54,7 +52,7 @@ import Data.Text (
  )
 import qualified Database.SQLite.Simple as SQLite
 import qualified Generics.SOP as SOP
-
+import Prelude.Kore
 import qualified SMT.SimpleSMT as SMT (
     Result (..),
  )

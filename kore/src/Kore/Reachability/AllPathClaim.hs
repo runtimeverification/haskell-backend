@@ -9,8 +9,6 @@ module Kore.Reachability.AllPathClaim (
     Rule (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     foldM,
  )
@@ -19,7 +17,6 @@ import Data.Generics.Wrapped (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Debug
 import Kore.Internal.Alias (
@@ -64,6 +61,7 @@ import Kore.TopBottom (
 import Kore.Unparser (
     Unparse (..),
  )
+import Prelude.Kore
 
 -- | All-Path-Claim claim pattern.
 newtype AllPathClaim = AllPathClaim {getAllPathClaim :: ClaimPattern}

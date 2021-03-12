@@ -9,15 +9,13 @@ module Kore.Step.Axiom.Registry (
     extractEquations,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
-
 import Kore.Equation (
     Equation (..),
  )
+import Prelude.Kore
 
 -- TODO (thomas.tuegel): Remove private import
 import Kore.Equation.Registry

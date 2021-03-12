@@ -10,8 +10,6 @@ module Kore.Builtin.Encoding (
     toBase16,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Bits as Bits
 import Data.ByteString (
     ByteString,
@@ -31,6 +29,7 @@ import Data.Void
 import Data.Word (
     Word8,
  )
+import Prelude.Kore
 import Text.Megaparsec (
     Parsec,
     (<?>),

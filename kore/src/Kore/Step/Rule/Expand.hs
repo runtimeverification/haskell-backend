@@ -6,8 +6,6 @@ module Kore.Step.Rule.Expand (
     ExpandSingleConstructors (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     (%=),
  )
@@ -28,9 +26,8 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import qualified GHC.Generics as GHC
-
 import qualified Debug
+import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
  )
@@ -79,6 +76,7 @@ import Kore.Syntax.Variable
 import Kore.Variables.Fresh (
     refreshVariable,
  )
+import Prelude.Kore
 import qualified Pretty
 
 -- | Instantiate variables on sorts with a single constructor

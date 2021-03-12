@@ -11,18 +11,15 @@ module Test.Kore.Equation.Common (
     sortR,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
  )
-import GHC.Natural (
-    intToNatural,
- )
-
 import Data.Sup (
     Sup (..),
+ )
+import GHC.Natural (
+    intToNatural,
  )
 import Kore.Attribute.Axiom.Concrete (
     Concrete (..),
@@ -32,11 +29,11 @@ import Kore.Attribute.Axiom.Symbolic (
  )
 import Kore.Equation.Equation
 import Kore.Internal.TermLike
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
     mkRuleVariable,
  )
+import Prelude.Kore
 import Test.Kore (
     testId,
  )

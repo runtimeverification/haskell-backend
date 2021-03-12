@@ -12,13 +12,11 @@ module Kore.Attribute.Injective (
     injectiveAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Injective@ represents the @injective@ attribute for symbols.
 newtype Injective = Injective {isDeclaredInjective :: Bool}

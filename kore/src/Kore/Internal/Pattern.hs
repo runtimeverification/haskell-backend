@@ -45,12 +45,9 @@ module Kore.Internal.Pattern (
     Condition,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
-
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
@@ -94,9 +91,9 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Prelude.Kore
 
 {- | The conjunction of a pattern, predicate, and substitution.
-
 The form of @Pattern@ is intended to be a convenient representation of a
 program configuration for Kore execution.
 -}
@@ -113,40 +110,33 @@ fromTermAndPredicate term predicate =
         , predicate
         , substitution = mempty
         }
-
 fromCondition_ ::
     InternalVariable variable =>
     Condition variable ->
     Pattern variable
 fromCondition_ = (<$) mkTop_
-
 fromCondition ::
     InternalVariable variable =>
     Sort ->
     Condition variable ->
     Pattern variable
 fromCondition sort = (<$) (mkTop sort)
-
 fromPredicateSorted ::
     InternalVariable variable =>
     Sort ->
     Predicate variable ->
     Pattern variable
 fromPredicateSorted sort = fromCondition sort . Condition.fromPredicate
-
 isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
 isSimplified sideCondition (splitTerm -> (t, p)) =
     TermLike.isSimplified sideCondition t
         && Condition.isSimplified sideCondition p
 
 {- | Checks whether the conjunction a 'Pattern' has simplified children.
-
 A 'Pattern' is a conjunction at the top level:
-
 @
 \\and{S}('term', \\and{S}('predicate', 'substitution'))
 @
-
 where 'predicate' itself is generally a conjunction of many clauses. The
 children of the 'Pattern' are considered simplified if the 'term' and
 'substitution' are simplified and the individual clauses of the 'predicate' are
@@ -187,7 +177,6 @@ forgetSimplified patt =
         `withCondition` Condition.forgetSimplified condition
   where
     (term, condition) = Conditional.splitTerm patt
-
 markSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
 markSimplified patt =
@@ -195,11 +184,9 @@ markSimplified patt =
         `withCondition` Condition.markSimplified condition
   where
     (term, condition) = Conditional.splitTerm patt
-
 simplifiedAttribute :: Pattern variable -> Attribute.Simplified
 simplifiedAttribute (splitTerm -> (t, p)) =
     TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
-
 freeElementVariables ::
     InternalVariable variable =>
     Pattern variable ->
@@ -223,7 +210,6 @@ mapVariables adj Conditional{term, predicate, substitution} =
         }
 
 {- | Convert an 'Pattern' to an ordinary 'TermLike'.
-
 Conversion relies on the interpretation of 'Pattern' as a conjunction of
 patterns. Conversion erases the distinction between terms, predicates, and
 substitutions; this function should be used with care where that distinction is

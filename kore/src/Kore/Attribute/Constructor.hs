@@ -12,14 +12,12 @@ module Kore.Attribute.Constructor (
     constructorAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Constructor@ represents the @constructor@ attribute for symbols.
 newtype Constructor = Constructor {isConstructor :: Bool}

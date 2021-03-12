@@ -15,15 +15,6 @@ module Test.Kore.Variables.Fresh (
     module Kore.Variables.Fresh,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.Hedgehog
-
 import qualified Control.Lens as Lens
 import Data.Generics.Product (
     field,
@@ -35,13 +26,15 @@ import Data.Set (
     Set,
  )
 import qualified Data.Set as Set
-import Numeric.Natural
-
 import Data.Sup
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import Kore.Sort
 import Kore.Variables.Fresh
+import Numeric.Natural
 import Pair
-
+import Prelude.Kore
 import Test.Kore (
     idGen,
     testId,
@@ -50,6 +43,9 @@ import Test.Kore.Step.MockSymbols (
     testSort0,
     testSort1,
  )
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.Hedgehog
 
 type Variable' = Variable VariableName
 

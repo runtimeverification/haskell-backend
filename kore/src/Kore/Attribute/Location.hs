@@ -10,11 +10,13 @@ module Kore.Attribute.Location (
     LineColumn (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Text as Text
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
+import Kore.Attribute.Parser as AttributeParser
+import Kore.Debug
+import qualified Kore.Error
+import Prelude.Kore
 import Text.Megaparsec (
     Parsec,
     parseMaybe,
@@ -23,10 +25,6 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (
     decimal,
  )
-
-import Kore.Attribute.Parser as AttributeParser
-import Kore.Debug
-import qualified Kore.Error
 
 data LineColumn = LineColumn
     { line :: !Int

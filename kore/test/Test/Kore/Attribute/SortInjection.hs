@@ -6,15 +6,12 @@ module Test.Kore.Attribute.SortInjection (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.SortInjection
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseSortInjection :: Attributes -> Parser SortInjection
 parseSortInjection = parseAttributes

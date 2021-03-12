@@ -12,13 +12,11 @@ module Kore.Attribute.Axiom.Unit (
     unitAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Unit@ represents the @unit@ attribute for axioms.
 newtype Unit = Unit {isUnit :: Bool}

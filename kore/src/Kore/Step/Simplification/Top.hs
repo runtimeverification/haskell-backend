@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Top (
     simplify,
 ) where
 
-import Prelude.Kore ()
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -24,6 +22,7 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Sort
 import Kore.Syntax.Top
+import Prelude.Kore ()
 
 -- | simplifies a Top pattern, which means returning an always-true or.
 

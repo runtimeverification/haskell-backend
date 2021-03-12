@@ -6,15 +6,13 @@ module Test.Kore.IndexedModule.Error (
     test_undefineds,
 ) where
 
+import Kore.IndexedModule.Error
 import Prelude.Kore ()
-
 import Test.Kore (
     testId,
  )
 import Test.Tasty
 import Test.Terse
-
-import Kore.IndexedModule.Error
 
 test_undefineds :: TestTree
 test_undefineds =

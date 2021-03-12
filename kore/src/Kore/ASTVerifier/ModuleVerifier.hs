@@ -12,8 +12,6 @@ module Kore.ASTVerifier.ModuleVerifier (
     verifyUniqueNames,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     (%=),
  )
@@ -26,7 +24,6 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
-
 import Kore.AST.Error
 import Kore.ASTVerifier.AliasVerifier
 import Kore.ASTVerifier.Error
@@ -50,6 +47,7 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Prelude.Kore
 
 {- |'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set.

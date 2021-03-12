@@ -9,14 +9,13 @@ module Kore.Log.WarnBoundedModelChecker (
     warnBoundedModelChecker,
 ) where
 
-import Prelude.Kore
-
 import Kore.Attribute.SourceLocation
 import Kore.Internal.TermLike
 import Kore.Step.RulePattern (
     ImplicationRule,
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

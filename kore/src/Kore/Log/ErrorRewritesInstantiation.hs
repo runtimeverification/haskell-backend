@@ -7,8 +7,6 @@ module Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
 ) where
 
-import Prelude.Kore
-
 import Control.Exception (
     Exception (..),
     throw,
@@ -26,7 +24,6 @@ import GHC.Stack (
     callStack,
  )
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
@@ -56,6 +53,7 @@ import Kore.Unparser (
     unparse,
  )
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

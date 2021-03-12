@@ -4,16 +4,10 @@ module Test.Kore.Step.Implication (
     test_substitute,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-
 import Data.Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Conditional (
     fromPredicate,
@@ -27,8 +21,10 @@ import Kore.Internal.TermLike hiding (
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import Kore.Step.Implication
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 test_freeVariables :: TestTree
 test_freeVariables =

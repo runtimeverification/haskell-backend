@@ -2,11 +2,6 @@ module Test.Kore.Attribute.Pattern.Function (
     test_instance_Synthetic,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike (
@@ -15,8 +10,10 @@ import Kore.Internal.TermLike (
 import Kore.Syntax hiding (
     PatternF (..),
  )
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =

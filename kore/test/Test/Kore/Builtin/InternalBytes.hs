@@ -19,21 +19,11 @@ module Test.Kore.Builtin.InternalBytes (
     test_unparse,
 ) where
 
-import Prelude.Kore
-
-import qualified Data.ByteString.Char8 as BS
-import Hedgehog hiding (
-    Concrete,
-    test,
- )
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
-import Test.Tasty
-
 import Data.ByteString (
     ByteString,
  )
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as BS
 import Data.Char (
     ord,
  )
@@ -41,7 +31,12 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as T
-
+import Hedgehog hiding (
+    Concrete,
+    test,
+ )
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import Kore.Internal.Pattern
@@ -52,13 +47,14 @@ import Kore.Rewriting.RewritingVariable (
     mkConfigVariable,
  )
 import Kore.Unparser
+import Prelude.Kore
 import qualified Pretty
-
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text

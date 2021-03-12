@@ -15,8 +15,6 @@ module Kore.Step.Simplification.AndTerms (
     compareForEquals,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT (..),
  )
@@ -25,7 +23,6 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.String (
     fromString,
  )
-
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.Int as Builtin.Int
@@ -84,6 +81,7 @@ import Kore.TopBottom
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Pair
+import Prelude.Kore
 import qualified Pretty
 
 {- | Unify two terms without discarding the terms.
@@ -177,22 +175,15 @@ maybeTermEquals notSimplifier childTransformers first second =
             second
         , Builtin.Endianness.unifyEquals first second
         , Builtin.Signedness.unifyEquals first second
-        , unifyDefinedModifier
-            (Builtin.Map.unifyEquals childTransformers)
-            first
-            second
+        , Builtin.Map.unifyEquals childTransformers first second
         , Builtin.Map.unifyNotInKeys childTransformers notSimplifier first second
-        , unifyDefinedModifier
-            (Builtin.Set.unifyEquals childTransformers)
-            first
-            second
+        , Builtin.Set.unifyEquals childTransformers first second
         , Builtin.List.unifyEquals
             SimplificationType.Equals
             childTransformers
             first
             second
         , domainValueAndConstructorErrors first second
-        , unifyDefined childTransformers first second
         ]
 
 maybeTermAnd ::
@@ -239,21 +230,14 @@ maybeTermAnd notSimplifier childTransformers first second =
         , Builtin.KEqual.unifyIfThenElse childTransformers first second
         , Builtin.Endianness.unifyEquals first second
         , Builtin.Signedness.unifyEquals first second
-        , unifyDefinedModifier
-            (Builtin.Map.unifyEquals childTransformers)
-            first
-            second
-        , unifyDefinedModifier
-            (Builtin.Set.unifyEquals childTransformers)
-            first
-            second
+        , Builtin.Map.unifyEquals childTransformers first second
+        , Builtin.Set.unifyEquals childTransformers first second
         , Builtin.List.unifyEquals
             SimplificationType.And
             childTransformers
             first
             second
         , domainValueAndConstructorErrors first second
-        , unifyDefined childTransformers first second
         , Error.hoistMaybe (functionAnd first second)
         ]
 
@@ -308,8 +292,8 @@ equalAndEquals ::
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
 equalAndEquals first second =
-    if unDefined first == unDefined second
-        then -- TODO (thomas.tuegel): Preserve defined and simplified flags.
+    if first == second
+        then -- TODO (thomas.tuegel): Preserve simplified flags.
             return (Pattern.fromTermLike first)
         else empty
 
@@ -676,55 +660,3 @@ bytesDifferent
         | bytesFirst /= bytesSecond =
             return Pattern.bottom
 bytesDifferent _ _ = empty
-
--- | Unwrap a 'Defined' term if it is not handled elsewhere.
-unifyDefined ::
-    MonadUnify unifier =>
-    TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-unifyDefined unifyChildren term1 term2
-    | Defined_ child1 <- term1 = lift $ unifyChildren child1 term2
-    | Defined_ child2 <- term2 = lift $ unifyChildren term1 child2
-    | otherwise = empty
-
-unifyDefinedModifier ::
-    InternalVariable RewritingVariableName =>
-    Monad monad =>
-    ( TermLike RewritingVariableName ->
-      TermLike RewritingVariableName ->
-      monad (Pattern RewritingVariableName)
-    ) ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    monad (Pattern RewritingVariableName)
-unifyDefinedModifier unify (Defined_ def1) (Defined_ def2) = do
-    unified <- unify def1 def2
-    let Conditional{term} = unified
-        term'
-            | term == def1 || term == def2 =
-                mkDefined term
-            | otherwise = term
-        unified' = term' <$ unified
-    pure unified'
-unifyDefinedModifier unify (Defined_ def1) term2 = do
-    unified <- unify def1 term2
-    let Conditional{term} = unified
-        term'
-            | unDefined term == unDefined def1 =
-                mkDefined term
-            | otherwise = term
-        unified' = term' <$ unified
-    pure unified'
-unifyDefinedModifier unify term1 (Defined_ def2) = do
-    unified <- unify term1 def2
-    let Conditional{term} = unified
-        term'
-            | unDefined term == unDefined def2 =
-                mkDefined term
-            | otherwise = term
-        unified' = term' <$ unified
-    pure unified'
-unifyDefinedModifier unify term1 term2 =
-    unify term1 term2

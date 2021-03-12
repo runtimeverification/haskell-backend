@@ -22,11 +22,8 @@ module Kore.Variables.Target (
     isSomeNonTargetName,
 ) where
 
-import Prelude.Kore
-
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Internal.Variable
 import Kore.Unparser (
@@ -35,6 +32,7 @@ import Kore.Unparser (
 import Kore.Variables.Fresh (
     FreshPartialOrd (..),
  )
+import Prelude.Kore
 
 {- | Distinguish variables by their source.
 

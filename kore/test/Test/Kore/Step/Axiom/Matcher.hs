@@ -23,15 +23,10 @@ module Test.Kore.Step.Axiom.Matcher (
     doesn'tMatch,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Map.Strict (
     Map,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
@@ -40,6 +35,7 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeTruePredicate,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
@@ -49,7 +45,7 @@ import Kore.Rewriting.RewritingVariable (
 import Kore.Step.Axiom.Matcher (
     matchIncremental,
  )
-
+import Prelude.Kore
 import Test.Kore (
     testId,
  )
@@ -61,6 +57,7 @@ import qualified Test.Kore.Builtin.Map as Test.Map
 import qualified Test.Kore.Builtin.Set as Test.Set
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_matcherEqualHeads :: [TestTree]
@@ -1193,7 +1190,7 @@ match first second =
     runSimplifier Mock.env matchResult
   where
     matchResult :: SimplifierT NoSMT MatchResult
-    matchResult = matchIncremental first second
+    matchResult = matchIncremental SideCondition.top first second
 
 withMatch ::
     (MatchResult -> Assertion) ->

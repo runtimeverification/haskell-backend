@@ -8,17 +8,12 @@ module Test.Kore.Builtin.KEqual (
     test_KEqualSimplification,
 ) where
 
-import Prelude.Kore
-
-import Hedgehog
-import qualified Hedgehog.Gen as Gen
-import Test.Tasty
-
 import Control.Monad.Trans.Maybe (
     runMaybeT,
  )
 import qualified Data.Text as Text
-
+import Hedgehog
+import qualified Hedgehog.Gen as Gen
 import qualified Kore.Builtin.KEqual as KEqual
 import Kore.Internal.Pattern (
     Pattern,
@@ -39,10 +34,10 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )
+import Prelude.Kore
 import SMT (
     NoSMT,
  )
-
 import Test.Kore (
     testId,
  )
@@ -50,6 +45,7 @@ import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.SMT
+import Test.Tasty
 
 test_kneq :: TestTree
 test_kneq = testBinary kneqBoolSymbol (/=)

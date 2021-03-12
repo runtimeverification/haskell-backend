@@ -13,21 +13,12 @@ module Kore.Log.DebugSolver (
     solverTranscriptLogger,
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import Data.Text (
     Text,
  )
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Lazy.Builder as Text.Lazy.Builder
-import Options.Applicative (
-    Parser,
-    help,
-    long,
-    strOption,
- )
-
 import Log (
     ActualEntry (..),
     Entry (..),
@@ -36,6 +27,13 @@ import Log (
     SomeEntry,
     logWith,
  )
+import Options.Applicative (
+    Parser,
+    help,
+    long,
+    strOption,
+ )
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

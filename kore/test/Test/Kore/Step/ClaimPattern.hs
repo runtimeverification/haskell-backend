@@ -3,15 +3,9 @@ module Test.Kore.Step.ClaimPattern (
     test_refreshRule,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit.Ext
-
 import Data.Default
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
@@ -22,8 +16,10 @@ import Kore.Internal.TermLike hiding (
 import Kore.Rewriting.RewritingVariable
 import Kore.Rewriting.UnifyingRule
 import Kore.Step.ClaimPattern
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
+import Test.Tasty.HUnit.Ext
 
 test_freeVariables :: TestTree
 test_freeVariables =

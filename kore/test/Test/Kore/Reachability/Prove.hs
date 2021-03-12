@@ -2,20 +2,12 @@ module Test.Kore.Reachability.Prove (
     test_proveClaims,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Data.Default (
     def,
  )
 import Data.Limit (
     Limit (..),
  )
-import Numeric.Natural (
-    Natural,
- )
-
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -49,9 +41,13 @@ import Kore.Step.Strategy (
 import Kore.Unparser (
     unparseToText2,
  )
-
+import Numeric.Natural (
+    Natural,
+ )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_proveClaims :: [TestTree]

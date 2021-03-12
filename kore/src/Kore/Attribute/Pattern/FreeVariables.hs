@@ -19,10 +19,6 @@ module Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
 ) where
 
-import Prelude.Kore hiding (
-    toList,
- )
-
 import Data.Functor.Const
 import Data.Map.Strict (
     Map,
@@ -34,11 +30,13 @@ import Data.Set (
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.Variable
+import Prelude.Kore hiding (
+    toList,
+ )
 
 newtype FreeVariables variable = FreeVariables {getFreeVariables :: Map (SomeVariableName variable) Sort}
     deriving (Eq, Ord, Show)

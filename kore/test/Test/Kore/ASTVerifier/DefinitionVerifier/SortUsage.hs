@@ -2,16 +2,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage (
     test_sortUsage,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
-    testGroup,
- )
-
 import qualified Data.List as List
 import qualified Data.Text as Text
-
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
@@ -33,9 +25,13 @@ import Kore.Syntax.Definition (
     SentenceSort (..),
     asSentence,
  )
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Tasty (
+    TestTree,
+    testGroup,
+ )
 
 data TestFlag
     = CannotSeeSortVariables

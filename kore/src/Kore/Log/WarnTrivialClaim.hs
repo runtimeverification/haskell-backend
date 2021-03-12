@@ -8,12 +8,11 @@ module Kore.Log.WarnTrivialClaim (
     warnTrivialClaimRemoved,
 ) where
 
-import Prelude.Kore
-
 import Kore.Attribute.SourceLocation
 import Kore.Log.InfoProofDepth
 import Kore.Reachability.SomeClaim
 import Log
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

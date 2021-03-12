@@ -6,10 +6,6 @@ module Test.Kore.Builtin.Endianness (
     test_unify,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Pattern (
     Pattern,
@@ -19,6 +15,9 @@ import Kore.Internal.Substitution (
     Assignment,
  )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.AndTerms (
     termUnification,
  )
@@ -29,10 +28,7 @@ import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Prelude.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Step.Axiom.Matcher (
@@ -42,6 +38,7 @@ import Test.Kore.Step.Axiom.Matcher (
 import Test.SMT (
     runNoSMT,
  )
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_verify :: [TestTree]

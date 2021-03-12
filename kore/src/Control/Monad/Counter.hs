@@ -27,8 +27,6 @@ module Control.Monad.Counter (
     evalCounter,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
 import qualified Control.Monad.Morph as Morph
@@ -50,6 +48,7 @@ import Control.Monad.Trans.Maybe (
 import qualified Control.Monad.Writer.Lazy as Monad.Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Monad.Writer.Strict
 import Numeric.Natural
+import Prelude.Kore
 
 -- | A computation using a monotonic counter.
 type Counter = CounterT Monad.Identity.Identity

@@ -4,7 +4,6 @@ Description : Optionally-limited quantities
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
-
 This module is intended to be imported qualified:
 @
 import Data.Limit ( Limit (..) )

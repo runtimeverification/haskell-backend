@@ -11,13 +11,10 @@ module Kore.Step.Simplification.InjSimplifier (
     normalize,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Synthetic (
     synthesize,
  )
@@ -33,6 +30,7 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Pair
+import Prelude.Kore
 
 {- | Two 'Inj' are 'Distinct' if they are known not to unify.
 

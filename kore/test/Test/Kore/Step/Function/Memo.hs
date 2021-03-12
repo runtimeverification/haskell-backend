@@ -2,18 +2,14 @@ module Test.Kore.Step.Function.Memo (
     test_Self,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Monad.State.Strict (
     evalState,
  )
-
 import Kore.Internal.TermLike
 import Kore.Step.Function.Memo
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_Self :: [TestTree]

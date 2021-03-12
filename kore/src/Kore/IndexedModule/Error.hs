@@ -12,14 +12,12 @@ module Kore.IndexedModule.Error (
     noSymbolText,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-
 import Kore.Syntax
+import Prelude.Kore
 
 -- | A message declaring that a Sort is undefined
 noSort :: Id -> String

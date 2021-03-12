@@ -12,14 +12,11 @@ module Kore.Step.SMT.Resolvers (
     translateSymbol,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Map.Strict as Map
 import Data.Reflection (
     Given,
     given,
  )
-
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.MetadataTools (
     MetadataTools (MetadataTools),
@@ -39,6 +36,7 @@ import qualified Kore.Step.SMT.AST as AST (
     Symbol (Symbol),
  )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
+import Prelude.Kore
 import qualified SMT
 
 {- | Creates the SMT representation of a symbol assuming the smt declarations in

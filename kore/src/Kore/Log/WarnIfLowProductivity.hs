@@ -7,10 +7,9 @@ module Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
 ) where
 
-import Prelude.Kore
-
 import Log
 import Numeric.Natural
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

@@ -32,8 +32,6 @@ module Log (
     logWith,
 ) where
 
-import Prelude.Kore
-
 import Colog (
     LogAction (..),
     cmap,
@@ -44,6 +42,9 @@ import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
     MonadThrow,
+ )
+import Control.Monad.Counter (
+    CounterT,
  )
 import Control.Monad.Except (
     ExceptT,
@@ -77,12 +78,9 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
-
-import Control.Monad.Counter (
-    CounterT,
- )
 import Log.Entry
 import Logic
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

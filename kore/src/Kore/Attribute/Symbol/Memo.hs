@@ -9,16 +9,14 @@ module Kore.Attribute.Symbol.Memo (
     memoAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Monoid (
     Any (..),
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Memo@ represents the @memo@ attribute for symbols.
 newtype Memo = Memo {isMemo :: Bool}

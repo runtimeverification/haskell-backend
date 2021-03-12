@@ -12,14 +12,12 @@ module Kore.Attribute.Comm (
     commAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Default
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Comm@ represents the @comm@ attribute for axioms.
 newtype Comm = Comm {isComm :: Bool}

@@ -7,12 +7,7 @@ module Test.Kore.Internal.Predicate (
     module Predicate,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Set as Set
-
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition (
@@ -27,16 +22,16 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-
+import Kore.TopBottom (
+    TopBottom (..),
+ )
+import Prelude.Kore
 import Test.Expect
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-import Kore.TopBottom (
-    TopBottom (..),
- )
 
 type TestPredicate = Predicate VariableName
 

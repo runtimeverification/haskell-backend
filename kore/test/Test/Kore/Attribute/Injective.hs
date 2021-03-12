@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Injective (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Injective
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseInjective :: Attributes -> Parser Injective
 parseInjective = parseAttributes

@@ -14,8 +14,6 @@ module Kore.Equation.Equation (
     identifiers,
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import qualified Data.Functor.Foldable as Recursive
@@ -29,10 +27,9 @@ import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
  )
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import Kore.AST.AstWithLocation
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables (
@@ -67,6 +64,7 @@ import Kore.Unparser (
     Unparse (..),
  )
 import qualified Kore.Variables.Fresh as Fresh
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )

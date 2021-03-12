@@ -4,12 +4,7 @@ module Test.Kore.Step.Simplification.InternalList (
     test_simplify,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import qualified Data.Sequence as Seq
-
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalList
 import Kore.Internal.OrPattern (
@@ -24,14 +19,15 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.InternalList (
-    simplify,
- )
-
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Step.Simplification.InternalList (
+    simplify,
+ )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]

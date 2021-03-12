@@ -11,8 +11,6 @@ module Kore.Attribute.SourceLocation (
     Location (..),
 ) where
 
-import Prelude.Kore
-
 import Control.Monad (
     (>=>),
  )
@@ -20,7 +18,6 @@ import Data.Default
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Location (
     LineColumn (..),
     Location (..),
@@ -36,6 +33,7 @@ import Kore.Debug
 import Kore.Syntax (
     FileLocation (..),
  )
+import Prelude.Kore
 import Pretty (
     Pretty,
  )

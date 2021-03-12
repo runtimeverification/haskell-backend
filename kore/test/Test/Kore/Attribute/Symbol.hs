@@ -7,8 +7,15 @@ module Test.Kore.Attribute.Symbol (
     test_NoEvaluators,
 ) where
 
+import Data.Generics.Product
+import Kore.Attribute.Hook
+import Kore.Attribute.Parser
+import Kore.Attribute.Symbol
+import Kore.Error (
+    Error,
+ )
+import Kore.Syntax.Pattern
 import Prelude.Kore
-
 import Test.Tasty (
     TestTree,
  )
@@ -18,16 +25,6 @@ import Test.Tasty.HUnit (
     assertFailure,
     testCase,
  )
-
-import Data.Generics.Product
-
-import Kore.Attribute.Hook
-import Kore.Attribute.Parser
-import Kore.Attribute.Symbol
-import Kore.Error (
-    Error,
- )
-import Kore.Syntax.Pattern
 
 parse ::
     [AttributePattern] ->

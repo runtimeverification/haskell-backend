@@ -10,13 +10,13 @@ module Test.Kore.Parser (
     parse',
 ) where
 
-import Prelude.Kore
-
+import qualified Data.Bifunctor as Bifunctor
 import Data.Text (
     Text,
     unpack,
  )
-
+import Kore.Parser.ParserUtils
+import Prelude.Kore
 import Test.Tasty (
     TestTree,
     testGroup,
@@ -27,8 +27,6 @@ import Test.Tasty.HUnit (
     assertEqual,
     testCase,
  )
-
-import qualified Data.Bifunctor as Bifunctor
 import Text.Megaparsec (
     Parsec,
     ShowErrorComponent,
@@ -36,8 +34,6 @@ import Text.Megaparsec (
     errorBundlePretty,
     parse,
  )
-
-import Kore.Parser.ParserUtils
 
 data SuccessfulTest a = SuccessfulTest
     { successInput :: Text

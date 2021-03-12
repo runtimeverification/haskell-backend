@@ -3,16 +3,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier (
     test_verifyBinder,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty (
-    TestTree,
- )
-import Test.Tasty.HUnit
-
 import qualified Data.List as List
 import qualified Data.Text as Text
-
 import Kore.ASTVerifier.Error (
     sortNeedsDomainValueAttributeMessage,
  )
@@ -27,11 +19,15 @@ import Kore.IndexedModule.Error (
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Syntax
 import Kore.Syntax.Definition
-
+import Prelude.Kore
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
+import Test.Tasty (
+    TestTree,
+ )
+import Test.Tasty.HUnit
 
 data PatternRestrict
     = NeedsInternalDefinitions

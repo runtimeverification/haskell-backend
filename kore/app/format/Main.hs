@@ -1,13 +1,7 @@
 module Main (main) where
 
-import Prelude.Kore
-
 import qualified Data.Text.IO as Text
-import Options.Applicative
-import System.IO (
-    stdout,
- )
-
+import GlobalMain
 import Kore.Parser (
     parseKoreDefinition,
  )
@@ -15,6 +9,8 @@ import Kore.Syntax.Definition (
     ParsedDefinition,
  )
 import Kore.Unparser
+import Options.Applicative
+import Prelude.Kore
 import Pretty (
     LayoutOptions (..),
     PageWidth (..),
@@ -22,8 +18,9 @@ import Pretty (
     layoutPretty,
     renderIO,
  )
-
-import GlobalMain
+import System.IO (
+    stdout,
+ )
 
 data KoreFormatOptions = KoreFormatOptions
     { -- | file to unparse

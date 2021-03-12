@@ -14,17 +14,15 @@ module Kore.Attribute.Hook (
     getHookAttribute,
 ) where
 
-import Prelude.Kore
-
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Kore.Error
+import Prelude.Kore
 
 newtype Hook = Hook {getHook :: Maybe Text}
     deriving (Eq, Ord, Show)

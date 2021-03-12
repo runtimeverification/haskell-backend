@@ -4,10 +4,6 @@ module Test.Kore.Step.Simplification.OrPattern (
     test_orPatternSimplification,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Kore.Internal.Conditional (
     Conditional (Conditional),
  )
@@ -37,9 +33,10 @@ import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Step.Simplification.OrPattern
-
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 test_orPatternSimplification :: [TestTree]

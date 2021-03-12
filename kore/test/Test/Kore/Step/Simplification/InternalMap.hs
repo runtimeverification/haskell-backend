@@ -5,10 +5,6 @@ module Test.Kore.Step.Simplification.InternalMap (
     test_unparse,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.DeepSeq (
     force,
  )
@@ -25,7 +21,6 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (
     fromJust,
  )
-
 import Kore.Attribute.Concat
 import Kore.Attribute.Element
 import Kore.Attribute.Unit
@@ -43,15 +38,16 @@ import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
 import Kore.Internal.TermLike
+import Kore.Rewriting.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Step.Simplification.InternalMap (
     simplify,
  )
 import Kore.Unparser
-
-import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
- )
+import Prelude.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 shouldSucceed :: Bool

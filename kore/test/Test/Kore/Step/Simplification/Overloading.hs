@@ -5,14 +5,9 @@ module Test.Kore.Step.Simplification.Overloading (
     test_unifyOverloading,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-
 import Control.Monad.Trans.Except (
     runExceptT,
  )
-
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.String.String as String
@@ -23,11 +18,12 @@ import Kore.Rewriting.RewritingVariable (
  )
 import Kore.Step.Simplification.Overloading
 import Pair
-
+import Prelude.Kore
 import Test.Kore.Internal.TermLike
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Kore.Syntax.Id
+import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 type ElementVariable' = ElementVariable RewritingVariableName

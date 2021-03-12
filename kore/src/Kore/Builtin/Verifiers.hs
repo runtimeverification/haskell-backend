@@ -37,8 +37,6 @@ module Kore.Builtin.Verifiers (
     parseString,
 ) where
 
-import Prelude.Kore
-
 import Control.Error (
     MaybeT (..),
  )
@@ -59,11 +57,6 @@ import Data.Void (
     Void,
  )
 import qualified GHC.Generics as GHC
-import Text.Megaparsec (
-    Parsec,
- )
-import qualified Text.Megaparsec as Parsec
-
 import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import Kore.ASTVerifier.Error (
@@ -112,6 +105,11 @@ import Kore.Syntax.Definition (
  )
 import Kore.Unparser
 import qualified Kore.Verified as Verified
+import Prelude.Kore
+import Text.Megaparsec (
+    Parsec,
+ )
+import qualified Text.Megaparsec as Parsec
 
 type Parser = Parsec Void Text
 

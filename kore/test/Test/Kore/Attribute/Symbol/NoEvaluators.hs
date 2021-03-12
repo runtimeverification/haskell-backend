@@ -6,15 +6,12 @@ module Test.Kore.Attribute.Symbol.NoEvaluators (
     test_parameters,
 ) where
 
-import Prelude.Kore
-
-import Test.Tasty
-import Test.Tasty.HUnit
-
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Syntax.Pattern
-
+import Prelude.Kore
 import Test.Kore.Attribute.Parser
+import Test.Tasty
+import Test.Tasty.HUnit
 
 parseNoEvaluators :: Attributes -> Parser NoEvaluators
 parseNoEvaluators = parseAttributes

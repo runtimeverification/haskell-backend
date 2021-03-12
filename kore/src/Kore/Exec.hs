@@ -22,8 +22,6 @@ module Kore.Exec (
     Equality,
 ) where
 
-import Prelude.Kore
-
 import Control.Concurrent.MVar
 import Control.DeepSeq (
     deepseq,
@@ -49,16 +47,12 @@ import Data.Generics.Product (
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
+import Data.Limit (
+    Limit (..),
+ )
 import qualified Data.Map.Strict as Map
 import Data.Text (
     Text,
- )
-import System.Exit (
-    ExitCode (..),
- )
-
-import Data.Limit (
-    Limit (..),
  )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol (
@@ -183,10 +177,14 @@ import Logic (
     observeAllT,
  )
 import qualified Logic
+import Prelude.Kore
 import Prof
 import SMT (
     MonadSMT,
     SMT,
+ )
+import System.Exit (
+    ExitCode (..),
  )
 
 -- | Semantic rule used during execution.

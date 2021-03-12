@@ -18,8 +18,6 @@ module Kore.Log.Registry (
     entryTypeReps,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     (%~),
  )
@@ -36,13 +34,6 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import qualified Text.Megaparsec as Parser
-import Type.Reflection (
-    SomeTypeRep (..),
-    someTypeRep,
-    typeOf,
- )
-
 import Kore.Equation.Application (
     DebugApplyEquation,
     DebugAttemptEquation,
@@ -135,7 +126,14 @@ import Log (
     LogMessage,
     SomeEntry (..),
  )
+import Prelude.Kore
 import qualified Pretty
+import qualified Text.Megaparsec as Parser
+import Type.Reflection (
+    SomeTypeRep (..),
+    someTypeRep,
+    typeOf,
+ )
 
 data Registry = Registry
     { textToType :: !(Map Text SomeTypeRep)

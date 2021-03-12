@@ -14,8 +14,6 @@ module Kore.BugReport (
     ExitCode (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Codec.Archive.Tar as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception (
@@ -36,7 +34,11 @@ import GHC.IO.Exception (
     IOException (ioe_type),
  )
 import qualified Generics.SOP as SOP
+import Kore.Log.KoreLogOptions (
+    ExeName (..),
+ )
 import Options.Applicative
+import Prelude.Kore
 import System.Directory (
     listDirectory,
     removePathForcibly,
@@ -55,10 +57,6 @@ import System.IO (
 import System.IO.Temp (
     createTempDirectory,
     getCanonicalTemporaryDirectory,
- )
-
-import Kore.Log.KoreLogOptions (
-    ExeName (..),
  )
 
 newtype BugReport = BugReport {toReport :: FilePath}

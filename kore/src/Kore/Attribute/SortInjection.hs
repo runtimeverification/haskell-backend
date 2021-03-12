@@ -12,14 +12,12 @@ module Kore.Attribute.SortInjection (
     sortInjectionAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @SortInjection@ represents the @sortInjection@ attribute for symbols.
 newtype SortInjection = SortInjection {isSortInjection :: Bool}

@@ -14,8 +14,6 @@ module Kore.Parser.CString (
     oneCharEscapes,
 ) where
 
-import Prelude.Kore
-
 import Data.Char (
     chr,
     digitToInt,
@@ -36,6 +34,7 @@ import Numeric (
     showHex,
     showOct,
  )
+import Prelude.Kore
 
 oneCharEscapes :: Set Char
 oneCharEscapes = Set.fromList "'\"?\\abfnrtv"

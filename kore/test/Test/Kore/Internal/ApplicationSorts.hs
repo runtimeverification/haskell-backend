@@ -2,8 +2,12 @@ module Test.Kore.Internal.ApplicationSorts (
     test_symbolOrAliasSorts,
 ) where
 
+import Kore.Error
+import Kore.Internal.ApplicationSorts
+import Kore.Syntax
+import Kore.Syntax.Definition
 import Prelude.Kore
-
+import Test.Kore
 import Test.Tasty (
     TestTree,
  )
@@ -11,13 +15,6 @@ import Test.Tasty.HUnit (
     assertEqual,
     testCase,
  )
-
-import Kore.Error
-import Kore.Internal.ApplicationSorts
-import Kore.Syntax
-import Kore.Syntax.Definition
-
-import Test.Kore
 
 test_symbolOrAliasSorts :: [TestTree]
 test_symbolOrAliasSorts =

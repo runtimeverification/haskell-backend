@@ -9,15 +9,13 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.SortVerifier (verifySort) where
 
-import Prelude.Kore
-
 import qualified Data.Set as Set
-
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import Kore.Error
 import Kore.Syntax
 import Kore.Syntax.Definition
+import Prelude.Kore
 
 -- |'verifySort' verifies the welformedness of a Kore 'Sort'.
 verifySort ::

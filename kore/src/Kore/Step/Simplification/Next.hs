@@ -13,8 +13,6 @@ module Kore.Step.Simplification.Next (
     simplify,
 ) where
 
-import Prelude.Kore
-
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -27,6 +25,7 @@ import qualified Kore.Internal.TermLike as TermLike (
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
  )
+import Prelude.Kore
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done

@@ -1,7 +1,5 @@
 module Main (main) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Control.Monad.Catch (
     MonadMask,
@@ -13,6 +11,9 @@ import Control.Monad.Catch (
 import Control.Monad.Extra as Monad
 import Data.Default (
     def,
+ )
+import Data.Functor (
+    (<&>),
  )
 import Data.Generics.Product (
     field,
@@ -38,54 +39,7 @@ import qualified Data.Text.IO as Text (
     readFile,
  )
 import qualified GHC.Generics as GHC
-import Options.Applicative (
-    InfoMod,
-    Parser,
-    argument,
-    auto,
-    fullDesc,
-    header,
-    help,
-    long,
-    metavar,
-    option,
-    progDesc,
-    readerError,
-    str,
-    strOption,
-    value,
- )
-import qualified Options.Applicative as Options
-import qualified Options.Applicative.Help.Pretty as OptPretty
-import System.Clock (
-    Clock (Monotonic),
-    TimeSpec,
-    getTime,
- )
-import System.Directory (
-    copyFile,
-    doesFileExist,
-    emptyPermissions,
-    setOwnerExecutable,
-    setOwnerReadable,
-    setOwnerSearchable,
-    setOwnerWritable,
-    setPermissions,
- )
-import System.Exit (
-    exitWith,
- )
-import System.FilePath (
-    (</>),
- )
-import System.IO (
-    IOMode (WriteMode),
-    withFile,
- )
-
-import Data.Functor (
-    (<&>),
- )
+import GlobalMain
 import Kore.Attribute.Symbol as Attribute
 import Kore.BugReport
 import Kore.Exec
@@ -174,6 +128,25 @@ import Kore.TopBottom (
 import Kore.Unparser (
     unparse,
  )
+import Options.Applicative (
+    InfoMod,
+    Parser,
+    argument,
+    auto,
+    fullDesc,
+    header,
+    help,
+    long,
+    metavar,
+    option,
+    progDesc,
+    readerError,
+    str,
+    strOption,
+    value,
+ )
+import qualified Options.Applicative as Options
+import qualified Options.Applicative.Help.Pretty as OptPretty
 import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
@@ -182,6 +155,7 @@ import Options.SMT (
     unparseKoreSolverOptions,
     writeKoreSolverFiles,
  )
+import Prelude.Kore
 import Pretty (
     Doc,
     Pretty (..),
@@ -197,8 +171,31 @@ import SMT (
  )
 import qualified SMT
 import Stats
-
-import GlobalMain
+import System.Clock (
+    Clock (Monotonic),
+    TimeSpec,
+    getTime,
+ )
+import System.Directory (
+    copyFile,
+    doesFileExist,
+    emptyPermissions,
+    setOwnerExecutable,
+    setOwnerReadable,
+    setOwnerSearchable,
+    setOwnerWritable,
+    setPermissions,
+ )
+import System.Exit (
+    exitWith,
+ )
+import System.FilePath (
+    (</>),
+ )
+import System.IO (
+    IOMode (WriteMode),
+    withFile,
+ )
 
 {-
 Main module to run kore-exec

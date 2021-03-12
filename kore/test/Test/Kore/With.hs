@@ -7,15 +7,12 @@ module Test.Kore.With (
     VariableElement (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty (
     cons,
     reverse,
  )
 import qualified Data.Map.Strict as Map
-
 import qualified Kore.Attribute.Sort.Constructors as Attribute (
     Constructors (Constructors),
  )
@@ -86,6 +83,7 @@ import qualified Kore.Syntax.Sentence as SentenceSort (
 import qualified Kore.Syntax.Sentence as SentenceSymbol (
     SentenceSymbol (..),
  )
+import Prelude.Kore
 import qualified SMT.AST as AST (
     Constructor (Constructor),
     ConstructorArgument,

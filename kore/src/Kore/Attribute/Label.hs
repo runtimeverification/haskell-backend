@@ -9,17 +9,15 @@ module Kore.Attribute.Label (
     labelAttribute,
 ) where
 
-import Prelude.Kore
-
 import qualified Data.Monoid as Monoid
 import Data.Text (
     Text,
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
+import Prelude.Kore
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label {unLabel :: Maybe Text}

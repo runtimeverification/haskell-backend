@@ -31,12 +31,9 @@ module Kore.Internal.OrPattern (
     MultiOr.traverse,
 ) where
 
-import Prelude.Kore
-
 import Data.Map.Strict (
     Map,
  )
-
 import Kore.Internal.Condition (
     Condition,
  )
@@ -76,6 +73,7 @@ import Kore.Variables.Target (
     mkElementTarget,
     targetIfEqual,
  )
+import Prelude.Kore
 
 -- | The disjunction of 'Pattern'.
 type OrPattern variable = MultiOr (Pattern variable)

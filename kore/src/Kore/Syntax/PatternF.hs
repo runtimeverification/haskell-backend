@@ -15,8 +15,6 @@ module Kore.Syntax.PatternF (
     Const (..),
 ) where
 
-import Prelude.Kore
-
 import qualified Control.Lens as Lens
 import Data.Functor.Const
 import Data.Functor.Identity (
@@ -30,7 +28,6 @@ import Data.Text (
  )
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.And
@@ -56,6 +53,7 @@ import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Prelude.Kore
 
 -- | 'PatternF' is the 'Base' functor of Kore patterns
 data PatternF variable child

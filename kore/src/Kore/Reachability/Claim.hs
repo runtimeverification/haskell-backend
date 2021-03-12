@@ -37,8 +37,6 @@ module Kore.Reachability.Claim (
     simplifyRightHandSide,
 ) where
 
-import Prelude.Kore
-
 import Control.Lens (
     Lens',
  )
@@ -63,10 +61,9 @@ import Data.Stream.Infinite (
     Stream (..),
  )
 import qualified Data.Stream.Infinite as Stream
+import Debug
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-
-import Debug
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Label as Attribute (
     Label,
@@ -105,7 +102,6 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     isFunctionPattern,
-    mkDefined,
     mkIn,
     termLikeSort,
  )
@@ -138,7 +134,7 @@ import Kore.Step.Simplification.Data (
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Pattern (
-    simplifyTopConfiguration,
+    simplifyTopConfigurationDefined,
  )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Step as Step
@@ -160,6 +156,7 @@ import Logic (
     MonadLogic,
  )
 import qualified Logic
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
@@ -606,10 +603,13 @@ simplify' lensClaimPattern claim = do
         Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
             Monad.guard (not . isBottom . Conditional.term $ config)
             let definedConfig =
-                    Pattern.andCondition (mkDefined <$> config) $
+                    Pattern.andCondition config $
                         from $ makeCeilPredicate (Conditional.term config)
+                assumedDefined = Pattern.term config
             configs <-
-                simplifyTopConfiguration definedConfig
+                simplifyTopConfigurationDefined
+                    definedConfig
+                    assumedDefined
                     >>= SMT.Evaluator.filterMultiOr
                     & lift
             asum (pure <$> toList configs)
