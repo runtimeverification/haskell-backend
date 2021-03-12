@@ -130,10 +130,10 @@ test_regressionGeneratedTerms =
         simplified <- simplifyTerm term
         assertSimplified simplified
     , testCase "plain10{}(\\bottom) is \\bottom" $ do
-        let term = Mock.plain10 bottom
+        let term = Mock.plain10 (mkEvaluated bottom)
             bottom = mkBottom Mock.testSort
         simplified <- simplifyTerm term
-        assertBool "" $ isBottom simplified
+        assertEqual "" OrPattern.bottom simplified
     ]
 
 evaluateT
