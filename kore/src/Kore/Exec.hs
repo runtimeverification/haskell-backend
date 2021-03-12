@@ -106,6 +106,9 @@ import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions
     ( KoreLogOptions (..)
     )
+import Kore.Log.WarnDepthLimitExceeded
+    ( warnDepthLimitExceeded
+    )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Reachability
@@ -188,7 +191,6 @@ import SMT
     ( MonadSMT
     , SMT
     )
-import Kore.Log.WarnDepthLimitExceeded (warnDepthLimitExceeded)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName

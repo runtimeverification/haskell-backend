@@ -113,6 +113,9 @@ import Kore.Log.InfoReachability
 import Kore.Log.WarnBoundedModelChecker
     ( WarnBoundedModelChecker
     )
+import Kore.Log.WarnDepthLimitExceeded
+    ( WarnDepthLimitExceeded
+    )
 import Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators
     )
@@ -124,9 +127,6 @@ import Kore.Log.WarnRetrySolverQuery
     )
 import Kore.Log.WarnStuckClaimState
     ( WarnStuckClaimState
-    )
-import Kore.Log.WarnDepthLimitExceeded
-    ( WarnDepthLimitExceeded
     )
 import Kore.Log.WarnSymbolSMTRepresentation
     ( WarnSymbolSMTRepresentation

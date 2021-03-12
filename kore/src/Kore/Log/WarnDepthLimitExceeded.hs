@@ -12,14 +12,14 @@ module Kore.Log.WarnDepthLimitExceeded
 import Prelude.Kore
 
 import Log
+import Numeric.Natural
+    ( Natural
+    )
 import Pretty
     ( Pretty
     , pretty
     )
 import qualified Pretty
-import Numeric.Natural
-    ( Natural
-    )
 
 newtype WarnDepthLimitExceeded =
     WarnDepthLimitExceeded { limitExceeded :: Natural }
