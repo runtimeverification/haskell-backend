@@ -948,7 +948,7 @@ traverseVariables adj termLike =
                 (TermLike variable1)
                 (RenamingT variable1 variable2 m (TermLike variable2))
         ->  RenamingT variable1 variable2 m (TermLike variable2)
-    worker (~attrs :< termLikeF) = do
+    worker (attrs :< termLikeF) = do
         ~attrs' <- Attribute.traverseVariables askSomeVariableName attrs
         let ~avoiding = freeVariables attrs'
         termLikeF' <- case termLikeF of
