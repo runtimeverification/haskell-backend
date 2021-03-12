@@ -9,5 +9,5 @@ do
     tac "$each" > "$temp"
     sed -i '/^import/,/^module/{/^[[:space:]]*$/d}' -i "$temp"
     tac "$temp" > "$each"
-end
+done
 rm "$temp"
