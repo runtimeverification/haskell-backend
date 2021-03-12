@@ -33,6 +33,7 @@ import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
 import Kore.Internal.Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
@@ -85,7 +86,7 @@ declareSMTLemmas m = do
         guard (isSmtLemma $ Attribute.smtLemma atts)
         (lemma, TranslatorState { terms }) <-
             runTranslator
-            $ translatePredicateWith translateUninterpreted
+            $ translatePredicateWith SideCondition.top translateUninterpreted
             $ wrapPredicate $ sentenceAxiomPattern axiomDeclaration
         SMT.assert (addQuantifiers terms lemma)
 

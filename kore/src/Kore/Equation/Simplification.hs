@@ -24,25 +24,19 @@ import Data.Map.Strict
 import Kore.Equation.Equation
 import Kore.Internal.Conditional
     ( Conditional (..)
+    , fromPredicate
     )
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
-import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -82,16 +76,14 @@ simplifyEquation
     -> simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
-        simplifiedResults <-
-            simplifyPattern leftWithArgument
-        Monad.when
-            (any (not . isTop . predicate) simplifiedResults)
-            (throwE equation)
-        simplified <- lift $ Logic.scatter simplifiedResults
-        let Conditional { term, predicate, substitution } = simplified
-        Monad.unless (isTop predicate) (throwE equation)
+        simplifiedCond <-
+            Simplifier.simplifyCondition
+                SideCondition.top
+                (fromPredicate argument')
+        let Conditional { substitution, predicate } = simplifiedCond
+        lift $ Monad.unless (isTop predicate) (throwE equation)
         let subst = Substitution.toMap substitution
-            left' = TermLike.substitute subst term
+            left' = TermLike.substitute subst left
             requires' = Predicate.substitute subst requires
             antiLeft' = Predicate.substitute subst <$> antiLeft
             right' = TermLike.substitute subst right
@@ -105,17 +97,14 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
             , ensures = Predicate.forgetSimplified ensures'
             , attributes = attributes
             }
-    & returnOriginalIfAborted
     & Logic.observeAllT
+    & returnOriginalIfAborted
     & fmap MultiAnd.make
   where
-    leftWithArgument =
-        maybe
-            (Pattern.fromTermLike left)
-            (Pattern.fromTermAndPredicate left)
-            argument
+    argument' =
+        fromMaybe Predicate.makeTruePredicate argument
     returnOriginalIfAborted =
-        fmap (either id id) . runExceptT
+        fmap (either (: []) id) . runExceptT
     Equation
         { requires
         , argument
@@ -125,12 +114,3 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         , ensures
         , attributes
         } = equation
-
--- | Simplify a 'Pattern' using only matching logic rules.
-simplifyPattern
-    :: MonadSimplify simplifier
-    => Pattern RewritingVariableName
-    -> simplifier (OrPattern RewritingVariableName)
-simplifyPattern =
-    Simplifier.localSimplifierAxioms (const mempty)
-    . Pattern.simplify

@@ -95,6 +95,7 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
+    , withoutEquationVariables
     )
 import Kore.Step.Axiom.Matcher
     ( MatchResult
@@ -156,6 +157,7 @@ attemptEquation
     -> Equation RewritingVariableName
     -> simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation =
+    assertNoEquationVar (freeVariables termLike) $
     whileDebugAttemptEquation' $ runExceptT $ do
         let Equation { left, argument, antiLeft } = equationRenamed
         (equation', predicate) <- matchAndApplyResults left argument antiLeft
@@ -171,31 +173,33 @@ attemptEquation sideCondition termLike equation =
         , matchEquation = equationRenamed
         }
     match term1 term2 =
-        matchIncremental term1 term2
+        matchIncremental sideCondition term1 term2
         & MaybeT & noteT matchError
 
     matchAndApplyResults left' argument' antiLeft'
       | isNothing argument'
       , isNothing antiLeft' = do
-          matchResult <- match left' termLike & whileMatch
-          applyMatchResult equationRenamed matchResult
-              & whileApplyMatchResult
+        matchResult <- match left' termLike & whileMatch
+        applyMatchResult equationRenamed matchResult
+            & whileApplyMatchResult
       | otherwise = do
-          (matchPredicate, matchSubstitution) <-
-              match left' termLike
-              & whileMatch
-          matchResults <-
-              applySubstitutionAndSimplify
-                  argument'
-                  antiLeft'
-                  matchSubstitution
-              & whileMatch
-          (equation', predicate) <-
-              applyAndSelectMatchResult matchResults
-          return
-              ( equation'
-              , makeAndPredicate predicate matchPredicate
-              )
+        (matchPredicate, matchSubstitution) <-
+            match left' termLike
+            & whileMatch
+        matchResults <-
+            applySubstitutionAndSimplify
+                argument'
+                antiLeft'
+                matchSubstitution
+            & whileMatch
+        (equation', predicate) <-
+            applyAndSelectMatchResult matchResults
+        assertNoEquationVar (freeVariables equation' <> freeVariables predicate)
+            $ return
+                ( equation'
+                , makeAndPredicate predicate matchPredicate
+                )
+    assertNoEquationVar = assert . withoutEquationVariables
 
     applyAndSelectMatchResult
         :: [MatchResult RewritingVariableName]
