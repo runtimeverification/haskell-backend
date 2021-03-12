@@ -56,8 +56,10 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
     )
 import Kore.Step.Simplification.Simplify
+import Kore.TopBottom
+    ( isBottom
+    )
 import qualified SMT
-import Kore.TopBottom (isBottom)
 
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
