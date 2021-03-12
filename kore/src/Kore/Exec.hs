@@ -188,6 +188,7 @@ import SMT
     ( MonadSMT
     , SMT
     )
+import Kore.Log.WarnDepthLimitExceeded (warnDepthLimitExceeded)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -251,7 +252,7 @@ exec
                         & lift
                 Strategy.leavesM
                     updateQueue
-                    (Strategy.unfoldTransition transit)
+                    (unfoldTransition transit)
                     ( limitedExecutionStrategy depthLimit
                     , (ExecDepth 0, Start initialConfig)
                     )
@@ -280,6 +281,9 @@ exec
     -- are internalized.
     metadataTools = MetadataTools.build verifiedModule
     initialSort = termLikeSort initialTerm
+    unfoldTransition transit (instrs, config) = do
+        when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
+        Strategy.unfoldTransition transit (instrs, config)
 
 {- | Modify a 'TransitionRule' to track the depth of the execution graph.
  -}

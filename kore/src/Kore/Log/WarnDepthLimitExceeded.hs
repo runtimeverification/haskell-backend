@@ -27,7 +27,7 @@ newtype WarnDepthLimitExceeded =
 
 instance Pretty WarnDepthLimitExceeded where
     pretty (WarnDepthLimitExceeded n) =
-        Pretty.vsep
+        Pretty.hsep
             [ "The depth limit", pretty n, "was exceeded."]
 
 instance Entry WarnDepthLimitExceeded where
