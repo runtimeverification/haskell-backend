@@ -22,7 +22,6 @@ module Test.Kore.Step.MockSymbols where
    * symbols without any special attribute are called "plain<n><k>"
    * variables are called x, y, z...
 -}
-
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
