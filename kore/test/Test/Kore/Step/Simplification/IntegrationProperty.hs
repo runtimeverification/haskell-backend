@@ -57,6 +57,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified SMT
+import Kore.TopBottom (isBottom)
 
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
@@ -99,7 +100,7 @@ test_simplifiesToSimplified =
 
 test_regressionGeneratedTerms :: [TestTree]
 test_regressionGeneratedTerms =
-    [ testCase "Term simplifier should not crash with not simplified error" $ do
+    [ testCase "Complex term with \\nu is simplified" $ do
         let term =
                 mkFloor Mock.testSort1
                     (mkAnd
@@ -124,11 +125,13 @@ test_regressionGeneratedTerms =
                             )
                         )
                     )
-        simplified <-
-            Pattern.simplify
-                (Pattern.fromTermLike term)
-            & runSimplifier Mock.env
-        assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
+        simplified <- simplifyTerm term
+        assertSimplified simplified
+    , testCase "plain10{}(\\bottom) is \\bottom" $ do
+        let term = Mock.plain10 bottom
+            bottom = mkBottom Mock.testSort
+        simplified <- simplifyTerm term
+        assertBool "" $ isBottom simplified
     ]
 
 evaluateT
@@ -161,3 +164,14 @@ sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
     (SideCondition.top :: SideCondition VariableName)
+
+simplifyTerm
+    :: TermLike RewritingVariableName
+    -> IO (OrPattern RewritingVariableName)
+simplifyTerm term =
+    Pattern.simplify
+        (Pattern.fromTermLike term)
+    & runSimplifier Mock.env
+
+assertSimplified :: HasCallStack => OrPattern RewritingVariableName -> Assertion
+assertSimplified = assertBool "" . OrPattern.isSimplified sideRepresentation
