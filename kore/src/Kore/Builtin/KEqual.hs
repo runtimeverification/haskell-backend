@@ -64,6 +64,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeCeilPredicate
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
@@ -145,12 +148,13 @@ evalKEq
     :: forall variable simplifier
     .  (InternalVariable variable, MonadSimplify simplifier)
     => Bool
+    -> SideCondition variable
     -> CofreeF
         (Application Symbol)
         (Attribute.Pattern variable)
         (TermLike variable)
     -> simplifier (AttemptedAxiom variable)
-evalKEq true (valid :< app) =
+evalKEq true _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -177,12 +181,13 @@ evalKEq true (valid :< app) =
 evalKIte
     :: forall simplifier
     .  MonadSimplify simplifier
-    => CofreeF
+    => SideCondition RewritingVariableName
+    -> CofreeF
         (Application Symbol)
         (Attribute.Pattern RewritingVariableName)
         (TermLike RewritingVariableName)
     -> simplifier (AttemptedAxiom RewritingVariableName)
-evalKIte (_ :< app) =
+evalKIte _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

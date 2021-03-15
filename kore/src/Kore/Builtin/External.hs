@@ -137,10 +137,6 @@ externalize =
                 $ mapHead Symbol.toSymbolOrAlias
                 $ Signedness.toApplication
                 $ getConst signednessF
-            DefinedF definedF ->
-                Cofree.tailF
-                $ worker
-                $ getDefined definedF
             InjF _ -> error "Unexpected sort injection"
             InternalBoolF _ -> error "Unexpected internal builtin"
             InternalBytesF _ -> error "Unexpected internal builtin"
