@@ -70,6 +70,9 @@ import Kore.Step.Strategy hiding
     ( transitionRule
     )
 import qualified Kore.Step.Strategy as Strategy
+import Kore.TopBottom
+    ( isBottom
+    )
 import Kore.Unparser
     ( Unparse (..)
     )
@@ -77,7 +80,6 @@ import Pretty
     ( Pretty
     )
 import qualified Pretty
-import Kore.TopBottom (isBottom)
 
 {- | The program's state during symbolic execution.
 -}
