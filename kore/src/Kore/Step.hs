@@ -77,6 +77,7 @@ import Pretty
     ( Pretty
     )
 import qualified Pretty
+import Kore.TopBottom (isBottom)
 
 {- | The program's state during symbolic execution.
 -}
@@ -211,7 +212,7 @@ transitionRule rewriteGroups = transitionRuleWorker
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
         filteredConfigs <- SMT.Evaluator.filterMultiOr configs
-        if filteredConfigs == mempty
+        if isBottom filteredConfigs
             then pure Bottom
             else prim <$> asum (pure <$> toList filteredConfigs)
 
