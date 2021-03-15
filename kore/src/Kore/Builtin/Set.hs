@@ -52,6 +52,9 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes
     ( isConstructorModulo_
@@ -485,14 +488,18 @@ internalize subterms.
  -}
 internalize
     :: InternalVariable variable
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
-internalize termLike
+    -> TermLike variable
+internalize tools termLike
+  | fromMaybe False (isSetSort tools sort')
   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
   -- apply it if we know the term head is a constructor-like symbol.
-  | App_ symbol _ <- termLike
+  , App_ symbol _ <- termLike
   , isConstructorModulo_ symbol = Ac.toNormalizedInternalSet termLike
   | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 
