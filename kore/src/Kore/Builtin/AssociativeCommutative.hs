@@ -108,7 +108,6 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
-    , pattern Defined_
     , pattern ElemVar_
     , pattern InternalMap_
     , pattern InternalSet_
@@ -220,7 +219,6 @@ instance TermWrapper NormalizedMap where
 
     matchBuiltin (InternalMap_ internalMap) =
         Just (builtinAcChild internalMap)
-    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
@@ -262,7 +260,6 @@ instance TermWrapper NormalizedMap where
         case args of
             [map1, map2] -> toNormalized map1 <> toNormalized map2
             _ -> Builtin.wrongArity "MAP.concat"
-    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . wrapAc) NormalizedAc
             { elementsWithVariables = []
@@ -357,8 +354,6 @@ toNormalizedInternalMapWorker term@(App_ symbol args)
                     }
             return internal
         _ -> Builtin.wrongArity "MAP.concat"
-toNormalizedInternalMapWorker (Defined_ child) =
-    toNormalizedInternalMapWorker child
 toNormalizedInternalMapWorker term =
     Just (emptyInternalAc @NormalizedMap (termLikeSort term))
         { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }
@@ -386,7 +381,6 @@ instance TermWrapper NormalizedSet where
 
     matchBuiltin (InternalSet_ internalSet) =
         Just (builtinAcChild internalSet)
-    matchBuiltin (Defined_ child) = matchBuiltin child
     matchBuiltin _ = Nothing
 
     {- |Transforms a @TermLike@ representation into a @NormalizedSetOrBottom@.
@@ -427,7 +421,6 @@ instance TermWrapper NormalizedSet where
         case args of
             [set1, set2] -> toNormalized set1 <> toNormalized set2
             _ -> Builtin.wrongArity "SET.concat"
-    toNormalized (Defined_ child) = toNormalized child
     toNormalized patt =
         (Normalized . wrapAc)
         emptyNormalizedAc { opaque = [patt] }
@@ -520,8 +513,6 @@ toNormalizedInternalSetWorker term@(App_ symbol args)
                     }
             return internal
         _ -> Builtin.wrongArity "SET.concat"
-toNormalizedInternalSetWorker (Defined_ child) =
-    toNormalizedInternalSetWorker child
 toNormalizedInternalSetWorker term =
     Just (emptyInternalAc @NormalizedSet (termLikeSort term))
         { builtinAcChild = wrapAc emptyNormalizedAc { opaque = [term] }

@@ -198,6 +198,6 @@ internalize tools =
   where
     internalize1 =
             List.internalize tools
-        .   Map.internalize tools
-        .   Set.internalize tools
+        .   Map.internalize
+        .   Set.internalize
         .   InternalBytes.internalize

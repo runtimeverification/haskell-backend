@@ -173,7 +173,7 @@ attemptEquation sideCondition termLike equation =
         , matchEquation = equationRenamed
         }
     match term1 term2 =
-        matchIncremental term1 term2
+        matchIncremental sideCondition term1 term2
         & MaybeT & noteT matchError
 
     matchAndApplyResults left' argument' antiLeft'

@@ -195,9 +195,11 @@ makeEvaluate sideCondition variables original = do
                     boundTerm
                     normalized { Conditional.substitution = freeSubstitution }
             (Right boundSubstitution, freeSubstitution) -> do
-                matched <- lift $ matchesToVariableSubstitution
-                    variable
-                    normalized { Conditional.substitution = boundSubstitution }
+                matched <-
+                    normalized
+                        { Conditional.substitution = boundSubstitution }
+                    & matchesToVariableSubstitution sideCondition variable
+                    & lift
                 if matched
                     then return normalized
                         { Conditional.predicate = Predicate.makeTruePredicate
@@ -234,18 +236,20 @@ makeEvaluate sideCondition variables original = do
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution
     :: MonadSimplify simplifier
-    => ElementVariable RewritingVariableName
+    => SideCondition RewritingVariableName
+    -> ElementVariable RewritingVariableName
     -> Pattern RewritingVariableName
     -> simplifier Bool
 matchesToVariableSubstitution
+    sideCondition
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
   | Predicate.PredicateEquals first second <- predicate
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (inject $ variableName variable) term)
   = do
-    matchResultFS <- matchIncremental first second
-    matchResultSF <- matchIncremental second first
+    matchResultFS <- matchIncremental sideCondition first second
+    matchResultSF <- matchIncremental sideCondition second first
     case matchResultFS <|> matchResultSF of
         Just (Predicate.PredicateTrue, results) ->
             return (singleVariableSubstitution variable results)
