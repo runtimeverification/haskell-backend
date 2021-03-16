@@ -44,7 +44,7 @@ export KORE_EXEC
 export KORE_EXEC_OPTS
 
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
-KORE_REPL_OPTS =
+KORE_REPL_OPTS = --no-bug-report
 export KORE_REPL
 export KORE_REPL_OPTS
 

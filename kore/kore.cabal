@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80d27d36f0343e3b6779aa37ed5fccc747fd7c1b66c7b9bd2fb27c1f6a2d6403
+-- hash: e1fb37a3896c7ce0fd031723af0b1589be0df0d9b5f958befbe74dbbfdee231f
 
 name:           kore
 version:        0.41.0.0
@@ -284,7 +284,6 @@ library
       Kore.Step.Simplification.CeilSimplifier
       Kore.Step.Simplification.Condition
       Kore.Step.Simplification.Data
-      Kore.Step.Simplification.Defined
       Kore.Step.Simplification.DomainValue
       Kore.Step.Simplification.Equals
       Kore.Step.Simplification.Exists
@@ -468,7 +467,7 @@ library
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -544,7 +543,7 @@ executable kore-exec
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -624,7 +623,7 @@ executable kore-format
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -704,7 +703,7 @@ executable kore-parser
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -782,7 +781,7 @@ executable kore-prof
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -858,7 +857,7 @@ executable kore-repl
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -930,7 +929,6 @@ test-suite kore-test
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier
-      Test.Kore.Builtin.AssociativeCommutative
       Test.Kore.Builtin.Bool
       Test.Kore.Builtin.Builtin
       Test.Kore.Builtin.Definition
@@ -1145,7 +1143,7 @@ test-suite kore-test
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise

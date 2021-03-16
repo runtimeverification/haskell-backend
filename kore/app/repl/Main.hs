@@ -84,6 +84,7 @@ data KoreReplOptions = KoreReplOptions
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
     , koreLogOptions   :: !KoreLogOptions
+    , bugReportOption  :: !BugReportOption
     }
 
 -- | Parse options after being given the value of startTime for KoreLogOptions
@@ -98,6 +99,7 @@ parseKoreReplOptions startTime =
     <*> parseReplScript
     <*> parseOutputFile
     <*> parseKoreLogOptions (ExeName "kore-repl") startTime
+    <*> parseBugReportOption
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -189,10 +191,11 @@ mainWithOptions
         , scriptModeOutput
         , outputFile
         , koreLogOptions
+        , bugReportOption
         }
   = do
     exitCode <-
-        withBugReport Main.exeName BugReportOnError $ \tempDirectory ->
+        withBugReport Main.exeName bugReportOption $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
             mvarLogAction <- newMVar actualLogAction
             let swapLogAction = swappableLogger mvarLogAction
