@@ -4,8 +4,7 @@ License     : NCSA
 
  -}
 
-{-# LANGUAGE NoStrict   #-}
-{-# LANGUAGE StrictData #-}
+{-# LANGUAGE NoStrict #-}
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
@@ -101,7 +100,7 @@ data Condition
     = Any
     -- ^ The term and all its subterms are simplified the same regardless
     -- of the side condition.
-    | Condition ~SideCondition.Representation
+    | Condition SideCondition.Representation
     -- ^ The term is in its current simplified state only when using the
     -- given side condition. When the side condition changes, e.g. by
     -- adding extra conditions, then we may be able to further simplify the
@@ -135,8 +134,8 @@ instance Monoid Condition where
 
 data SimplifiedData =
     SimplifiedData
-        { sType :: ~Type
-        , condition :: ~Condition
+        { sType :: Type
+        , condition :: Condition
         }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -157,7 +156,7 @@ Most patterns are assumed un-simplified until marked otherwise, so the
 simplified status is reset by any substitution under the pattern.
 -}
 data Simplified
-    = Simplified ~SimplifiedData
+    = Simplified SimplifiedData
     | NotSimplified
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
