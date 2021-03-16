@@ -12,11 +12,15 @@ import Prelude.Kore
 import Test.Tasty
 
 import Control.Exception as Exception
-import Control.Monad.Catch (MonadMask, MonadCatch, MonadThrow)
-import qualified Control.Monad.State.Strict as State
+import Control.Monad.Catch
+    ( MonadCatch
+    , MonadMask
+    , MonadThrow
+    )
 import Control.Monad.State.Strict
     ( StateT (..)
     )
+import qualified Control.Monad.State.Strict as State
 import Data.Default
     ( def
     )
@@ -33,6 +37,7 @@ import System.Exit
     ( ExitCode (..)
     )
 
+import qualified Data.Bifunctor as Bifunctor
 import Data.Limit
     ( Limit (..)
     )
@@ -57,6 +62,7 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnDepthLimitExceeded
 import Kore.Step
     ( ExecutionMode (..)
     )
@@ -75,6 +81,9 @@ import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
+import Kore.Step.Simplification.Data
+    ( MonadProf
+    )
 import Kore.Step.Strategy
     ( LimitExceeded (..)
     )
@@ -84,11 +93,12 @@ import Kore.Syntax.Definition hiding
     )
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
-import Log (SomeEntry, MonadLog (..), Entry (..))
-import qualified Data.Bifunctor as Bifunctor
-import Kore.Log.WarnDepthLimitExceeded
+import Log
+    ( Entry (..)
+    , MonadLog (..)
+    , SomeEntry
+    )
 import qualified SMT
-import Kore.Step.Simplification.Data (MonadProf)
 
 import Test.Kore
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock

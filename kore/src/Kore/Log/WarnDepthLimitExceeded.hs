@@ -11,6 +11,7 @@ module Kore.Log.WarnDepthLimitExceeded
 
 import Prelude.Kore
 
+import Debug
 import Log
 import Numeric.Natural
     ( Natural
@@ -20,14 +21,13 @@ import Pretty
     , pretty
     )
 import qualified Pretty
-import Debug
 
 newtype WarnDepthLimitExceeded =
     WarnDepthLimitExceeded { limitExceeded :: Natural }
     deriving (Show, Eq)
 
 instance Debug WarnDepthLimitExceeded where
-    debugPrec w = \_ -> Pretty.pretty . show $ w 
+    debugPrec w = \_ -> Pretty.pretty . show $ w
 
 instance Diff WarnDepthLimitExceeded where
     diffPrec = diffPrecEq
