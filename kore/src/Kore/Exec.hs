@@ -28,6 +28,9 @@ import Control.Concurrent.MVar
 import Control.DeepSeq
     ( deepseq
     )
+import Control.Error
+    ( hoistMaybe
+    )
 import qualified Control.Lens as Lens
 import Control.Monad
     ( (>=>)
@@ -262,6 +265,7 @@ exec
         infoExecDepth (maximum depths)
         let finalConfigs' =
                 MultiOr.make
+                $ catMaybes
                 $ extractProgramState
                 <$> finalConfigs
         exitCode <- getExitCode verifiedModule finalConfigs'
@@ -413,11 +417,9 @@ search
         executionGraph <-
             runStrategy' (Start initialPattern)
         let
-            match target config1 config2 =
-                Search.matchWith
-                    target
-                    config1
-                    (extractProgramState config2)
+            match target config1 config2 = do
+                extracted <- hoistMaybe $ extractProgramState config2
+                Search.matchWith target config1 extracted
         solutionsLists <-
             searchGraph
                 searchConfig
