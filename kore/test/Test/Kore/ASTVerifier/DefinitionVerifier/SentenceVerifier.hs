@@ -1,6 +1,5 @@
 module Test.Kore.ASTVerifier.DefinitionVerifier.SentenceVerifier
     ( test_FreeVarInRHS
-    , test_ArgOfNotSimp
     ) where
 
 import Prelude.Kore
@@ -23,13 +22,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-    ( mkAnd
-    , mkApplySymbol
-    , mkElemVar
-    , mkEquals
-    , mkImplies
-    , mkIn
+    ( mkElemVar
     , mkSetVar
+    , mkTop
     , mkTop
     , weakExistsFinally
     )
@@ -58,7 +53,7 @@ test_FreeVarInRHS :: [TestTree]
 test_FreeVarInRHS =
     [ expectFailureWithError "Claim with free variable only in rhs"
         (Error
-            ["module 'MODULE'", "claim declaration"]
+            ["module 'MODULE'" ,"claim declaration"]
             "Found claim with universally-quantified variables\
             \ appearing only on the right-hand side"
         )
@@ -90,49 +85,6 @@ test_FreeVarInRHS =
         & Lens.over (field @"sentenceAliasLeftPattern")
             (setField @"applicationChildren" [inject x])
         & asSentence
-
-test_ArgOfNotSimp :: [TestTree]
-test_ArgOfNotSimp =
-    [ expectFailureWithError "NotSimplification equation axiom with bad argument"
-        (Error
-            ["module 'ISSUE2100'", "axiom declaration", "(<test data>)"]
-            "Argument of NotSimplification equation axiom\
-            \ contains non-constructor function symbol:\nf{}"
-        )
-        ( simpleDefinitionFromSentences (ModuleName "ISSUE2100")
-            [ simpleSortSentence (SortName (getId Mock.testSortId))
-            , symbolSentenceWithParamsArgsAndAttrs
-                (SymbolName (getId Mock.fId))
-                []
-                Mock.testSort
-                [Mock.testSort]
-                [function]
-            , symbolSentenceWithParamsArgsAndAttrs
-                (SymbolName (getId Mock.aId))
-                []
-                Mock.testSort
-                []
-                [functional, constructor]
-            , axiomSentenceWithSortParameters
-                patternArgumentFuncSym
-                []
-            ]
-        )
-    , expectSuccess "NotSimplification equation axiom with constructor argument"
-        ( simpleDefinitionFromSentences (ModuleName "ISSUE2100")
-            [ simpleSortSentence (SortName (getId Mock.testSortId))
-            , symbolSentenceWithParamsArgsAndAttrs
-                (SymbolName (getId Mock.aId))
-                []
-                Mock.testSort
-                []
-                [functional, constructor]
-            , axiomSentenceWithSortParameters
-                patternArgumentCons
-                []
-            ]
-        )
-    ]
 
 patternToSentence :: Pattern VariableName Null -> ParsedSentence
 patternToSentence patt =
@@ -179,72 +131,3 @@ patternNoFreeVarInRHS =
             & OrPattern.fromPattern
         , attributes = Default.def
         }
-
-patternArgumentFuncSym :: Pattern VariableName Null
-patternArgumentFuncSym =
-    externalize $ mkImplies
-        (mkAnd
-            (mkTop Mock.testSort)
-            (mkAnd
-                (mkIn Mock.testSort
-                    (mkTop Mock.testSort)
-                    (mkApplySymbol
-                        Mock.fSymbol
-                        [mkApplySymbol Mock.aSymbol []]
-                    )
-                )
-                (mkTop Mock.testSort)
-            )
-        )
-        (mkAnd
-            (mkEquals Mock.testSort
-                (mkTop Mock.testSort)
-                (mkTop Mock.testSort)
-            )
-            (mkTop Mock.testSort)
-        )
-
-patternArgumentCons :: Pattern VariableName Null
-patternArgumentCons =
-    externalize $ mkImplies
-        (mkAnd
-            (mkTop Mock.testSort)
-            (mkAnd
-                (mkIn Mock.testSort
-                    (mkTop Mock.testSort)
-                    (mkApplySymbol
-                        Mock.aSymbol
-                        []
-                    )
-                )
-                (mkTop Mock.testSort)
-            )
-        )
-        (mkAnd
-            (mkEquals Mock.testSort
-                (mkTop Mock.testSort)
-                (mkTop Mock.testSort)
-            )
-            (mkTop Mock.testSort)
-        )
-
-function :: ParsedPattern
-function = asAttributePattern
-    (ApplicationF $ Application
-        (SymbolOrAlias (testId "function") [])
-        []
-    )
-
-functional :: ParsedPattern
-functional = asAttributePattern
-    (ApplicationF $ Application
-        (SymbolOrAlias (testId "functional") [])
-        []
-    )
-
-constructor :: ParsedPattern
-constructor = asAttributePattern
-    (ApplicationF $ Application
-        (SymbolOrAlias (testId "constructor") [])
-        []
-    )
