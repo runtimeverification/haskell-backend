@@ -191,7 +191,7 @@ simplify sideCondition = \termLike ->
     simplifyInternalWorker termLike
     >>= ensureSimplifiedResult sideConditionRepresentation termLike
   where
-    ~sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
     simplifyChildren
         :: Traversable t
