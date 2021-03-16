@@ -55,7 +55,7 @@ import Kore.Internal.TermLike
     )
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
-    , mkRuleVariable
+    , mkEquationVariable
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import Kore.Step.Axiom.Identifier
@@ -249,7 +249,7 @@ evalSimplifier verifiedModule simplifier = do
     initialize = do
         equations <-
             Equation.simplifyExtractedEquations
-            $ (Map.map . fmap . Equation.mapVariables $ pure mkRuleVariable)
+            $ (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
             $ Equation.extractEquations verifiedModule'
         let
             builtinEvaluators, userEvaluators, simplifierAxioms

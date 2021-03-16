@@ -55,6 +55,8 @@ import qualified GHC.Generics as GHC
 
 import Changed
 import Debug
+import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
@@ -79,7 +81,10 @@ import Kore.Internal.NormalizedAc
     , PairWiseElements (..)
     , emptyNormalizedAc
     , generatePairWiseElements
+    , getConcreteKeysOfAc
+    , getConcreteValuesOfAc
     , getSymbolicKeysOfAc
+    , getSymbolicValuesOfAc
     )
 import Kore.Internal.Predicate
     ( Predicate
@@ -114,6 +119,7 @@ import Kore.Internal.TermLike
     , pattern Mu_
     , pattern Nu_
     , TermLike
+    , extractAttributes
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
@@ -446,7 +452,6 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         Recursive.fold $ \(_ :< termLikeF) ->
             case termLikeF of
                 TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
-                TermLike.DefinedF defined -> TermLike.getDefined defined
                 _ -> 1 + sum termLikeF
 
     predSize :: Predicate variable -> Int
@@ -477,10 +482,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
                         HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
-                PredicateEquals
-                    (TermLike.unDefined -> t1)
-                    (TermLike.unDefined -> t2)
-                  ->
+                PredicateEquals t1 t2 ->
                     case retractLocalFunction (TermLike.mkEquals_ t1 t2) of
                         Just (Pair t1' t2') ->
                             Lens.over (field @"termLikeMap") $
@@ -548,7 +550,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
         :: HashMap (TermLike variable) (TermLike variable)
         -> TermLike variable
         -> Changed (TermLike variable)
-    applyAssumptionsWorkerTerm assumptions (TermLike.unDefined -> original)
+    applyAssumptionsWorkerTerm assumptions original
       | Just result <- HashMap.lookup original assumptions = Changed result
 
       | HashMap.null assumptions' = Unchanged original
@@ -676,7 +678,7 @@ assumeDefined term =
                     \ a \\bottom pattern is defined."
             _ -> asSet term'
     asSet newTerm
-      | TermLike.isDefinedPattern newTerm = mempty
+      | isDefinedInternal newTerm = mempty
       | otherwise = HashSet.singleton newTerm
     checkFunctional symbol newTerm
       | isFunctional symbol = mempty
@@ -685,14 +687,20 @@ assumeDefined term =
     getDefinedElementsOfAc
         :: forall normalized
         .  AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
+        => Foldable (Value normalized)
+        => InternalAc normalized Key (TermLike variable)
         -> HashSet (TermLike variable)
     getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
         let symbolicKeys = getSymbolicKeysOfAc normalizedAc
+            values =
+                getSymbolicValuesOfAc normalizedAc
+                <> getConcreteValuesOfAc normalizedAc
+                & foldMap toList
             opaqueElems = opaque (unwrapAc normalizedAc)
          in HashSet.fromList
             $ symbolicKeys
             <> opaqueElems
+            <> values
 
 {- | Checks if a 'TermLike' is defined. It may always be defined,
 or be defined in the context of the `SideCondition`.
@@ -704,7 +712,7 @@ isDefined
     -> TermLike variable
     -> Bool
 isDefined sideCondition@SideCondition { definedTerms } term =
-    TermLike.isDefinedPattern term
+    isDefinedInternal term
     || isFunctionalSymbol term
     || HashSet.member term definedTerms
     || isDefinedAc
@@ -736,18 +744,26 @@ isDefined sideCondition@SideCondition { definedTerms } term =
 
     isSymbolicSingleton
         :: AcWrapper normalized
-        => InternalAc Key normalized (TermLike variable)
+        => Foldable (Value normalized)
+        => InternalAc normalized Key (TermLike variable)
         -> Bool
     isSymbolicSingleton InternalAc { builtinAcChild }
       | numberOfElements == 1 =
           all (isDefined sideCondition) symbolicKeys
           && all (isDefined sideCondition) opaqueElems
+          && all (isDefined sideCondition) values
       | otherwise = False
       where
         symbolicKeys = getSymbolicKeysOfAc builtinAcChild
+        concreteKeys = getConcreteKeysOfAc builtinAcChild
         opaqueElems = opaque . unwrapAc $ builtinAcChild
+        values =
+            getSymbolicValuesOfAc builtinAcChild
+            <> getConcreteValuesOfAc builtinAcChild
+            & foldMap toList
         numberOfElements =
             length symbolicKeys
+            + length concreteKeys
             + length opaqueElems
 
 {- | Generates the minimal set of defined collections
@@ -762,8 +778,8 @@ generateNormalizedAcs
     => Ord (normalized Key (TermLike variable))
     => Hashable (normalized Key (TermLike variable))
     => AcWrapper normalized
-    => InternalAc Key normalized (TermLike variable)
-    -> HashSet (InternalAc Key normalized (TermLike variable))
+    => InternalAc normalized Key (TermLike variable)
+    -> HashSet (InternalAc normalized Key (TermLike variable))
 generateNormalizedAcs internalAc =
     [ symbolicToAc <$> symbolicPairs
     , concreteToAc <$> concretePairs
@@ -842,3 +858,9 @@ generateNormalizedAcs internalAc =
              , builtinAcSort
              , builtinAcConcat
              }
+
+-- | Checks if a term is defined by only looking at the attributes.
+-- Should not be used outside this module.
+isDefinedInternal :: TermLike variable -> Bool
+isDefinedInternal =
+    Pattern.isDefined . Attribute.defined . extractAttributes

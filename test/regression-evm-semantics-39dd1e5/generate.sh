@@ -16,7 +16,7 @@ kollect() {
     shift
     echo '#!/bin/sh' > "$name.sh"
     # TODO Mircea: change debug to save-temps after the evm-semantics repo is updated to use the latest backend
-    "$@" --debug --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
+    "$@" --save-temps --dry-run | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
     chmod +x "$name.sh"
 }
 

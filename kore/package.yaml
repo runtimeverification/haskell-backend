@@ -90,7 +90,7 @@ dependencies:
   - transformers >=0.4
   - unordered-containers >=0.2
   - vector >= 0.12
-  - witherable >=0.3
+  - witherable >=0.3 && <0.4  # witherable >=0.4 deprecates module Data.Witherable
   - zlib >= 0.6
 
 build-tools:

@@ -52,7 +52,6 @@ import Data.Text
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes
     ( isConstructorModulo_
@@ -270,7 +269,7 @@ returnConcreteMap
 returnConcreteMap = Ac.returnConcreteAc
 
 evalLookup :: Builtin.Function
-evalLookup resultSort [_map, _key] = do
+evalLookup _ resultSort [_map, _key] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
             if Map.null _map
@@ -284,21 +283,21 @@ evalLookup resultSort [_map, _key] = do
     emptyMap <|> bothConcrete
     where
     maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
-evalLookup _ _ = Builtin.wrongArity Map.lookupKey
+evalLookup _ _ _ = Builtin.wrongArity Map.lookupKey
 
 evalLookupOrDefault :: Builtin.Function
-evalLookupOrDefault _ [_map, _key, _def] = do
+evalLookupOrDefault _ _ [_map, _key, _def] = do
     _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.lookupKey _map
     Map.lookup _key _map
         & maybe _def getMapValue
         & Pattern.fromTermLike
         & return
-evalLookupOrDefault _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
+evalLookupOrDefault _ _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
-evalElement resultSort [_key, _value] =
+evalElement _ resultSort [_key, _value] =
     case retractKey _key of
         Just concrete ->
             Map.singleton concrete (MapValue _value)
@@ -312,37 +311,37 @@ evalElement resultSort [_key, _value] =
                 , concreteElements = Map.empty
                 , opaque = []
                 }
-evalElement _ _ = Builtin.wrongArity Map.elementKey
+evalElement _ _ _ = Builtin.wrongArity Map.elementKey
 
 -- | evaluates the map concat builtin.
 evalConcat :: Builtin.Function
-evalConcat resultSort [map1, map2] =
+evalConcat _ resultSort [map1, map2] =
     Ac.evalConcatNormalizedOrBottom @NormalizedMap
         resultSort
         (Ac.toNormalized map1)
         (Ac.toNormalized map2)
-evalConcat _ _ = Builtin.wrongArity Map.concatKey
+evalConcat _ _ _ = Builtin.wrongArity Map.concatKey
 
 evalUnit :: Builtin.Function
-evalUnit resultSort =
+evalUnit _ resultSort =
     \case
         [] -> returnConcreteMap resultSort Map.empty
         _ -> Builtin.wrongArity Map.unitKey
 
 evalUpdate :: Builtin.Function
-evalUpdate resultSort [_map, _key, value] = do
+evalUpdate _ resultSort [_map, _key, value] = do
     _key <- hoistMaybe $ retractKey _key
     _map <- expectConcreteBuiltinMap Map.updateKey _map
     Map.insert _key (MapValue value) _map
         & returnConcreteMap resultSort
-evalUpdate _ _ = Builtin.wrongArity Map.updateKey
+evalUpdate _ _ _ = Builtin.wrongArity Map.updateKey
 
 evalInKeys :: Builtin.Function
-evalInKeys resultSort arguments@[_key, _map] =
+evalInKeys sideCondition resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
     mkCeilUnlessDefined termLike
-      | TermLike.isDefinedPattern termLike = Condition.top
+      | SideCondition.isDefined sideCondition termLike = Condition.top
       | otherwise =
         Condition.fromPredicate (makeCeilPredicate termLike)
 
@@ -378,35 +377,35 @@ evalInKeys resultSort arguments@[_key, _map] =
         -- We cannot decide if the key is absent because the Map is symbolic.
         Bool.asPattern resultSort True & returnPattern
 
-evalInKeys _ _ = Builtin.wrongArity Map.in_keysKey
+evalInKeys _ _ _ = Builtin.wrongArity Map.in_keysKey
 
 evalInclusion :: Builtin.Function
-evalInclusion resultSort [_mapLeft, _mapRight] = do
+evalInclusion _ resultSort [_mapLeft, _mapRight] = do
     _mapLeft <- expectConcreteBuiltinMap Map.inclusionKey _mapLeft
     _mapRight <- expectConcreteBuiltinMap Map.inclusionKey _mapRight
     Map.isSubmapOf _mapLeft _mapRight
         & Bool.asPattern resultSort
         & return
-evalInclusion _ _ = Builtin.wrongArity Map.inclusionKey
+evalInclusion _ _ _ = Builtin.wrongArity Map.inclusionKey
 
 evalKeys :: Builtin.Function
-evalKeys resultSort [_map] = do
+evalKeys _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.keysKey _map
     fmap (const SetValue) _map
         & Builtin.Set.returnConcreteSet resultSort
-evalKeys _ _ = Builtin.wrongArity Map.keysKey
+evalKeys _ _ _ = Builtin.wrongArity Map.keysKey
 
 evalKeysList :: Builtin.Function
-evalKeysList resultSort [_map] = do
+evalKeysList _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.keys_listKey _map
     Map.keys _map
         & fmap (from @Key)
         & Seq.fromList
         & Builtin.List.returnList resultSort
-evalKeysList _ _ = Builtin.wrongArity Map.keys_listKey
+evalKeysList _ _ _ = Builtin.wrongArity Map.keys_listKey
 
 evalRemove :: Builtin.Function
-evalRemove resultSort [_map, _key] = do
+evalRemove _ resultSort [_map, _key] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.removeKey _map
             if Map.null _map
@@ -417,10 +416,10 @@ evalRemove resultSort [_map, _key] = do
             _key <- hoistMaybe $ retractKey _key
             returnConcreteMap resultSort $ Map.delete _key _map
     emptyMap <|> bothConcrete
-evalRemove _ _ = Builtin.wrongArity Map.removeKey
+evalRemove _ _ _ = Builtin.wrongArity Map.removeKey
 
 evalRemoveAll :: Builtin.Function
-evalRemoveAll resultSort [_map, _set] = do
+evalRemoveAll _ resultSort [_map, _set] = do
     let emptyMap = do
             _map <- expectConcreteBuiltinMap Map.removeAllKey _map
             if Map.null _map
@@ -435,24 +434,24 @@ evalRemoveAll resultSort [_map, _set] = do
             Map.difference _map _set
                 & returnConcreteMap resultSort
     emptyMap <|> bothConcrete
-evalRemoveAll _ _ = Builtin.wrongArity Map.removeAllKey
+evalRemoveAll _ _ _ = Builtin.wrongArity Map.removeAllKey
 
 evalSize :: Builtin.Function
-evalSize resultSort [_map] = do
+evalSize _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.sizeKey _map
     Map.size _map
         & toInteger
         & Int.asPattern resultSort
         & return
-evalSize _ _ = Builtin.wrongArity Map.sizeKey
+evalSize _ _ _ = Builtin.wrongArity Map.sizeKey
 
 evalValues :: Builtin.Function
-evalValues resultSort [_map] = do
+evalValues _ resultSort [_map] = do
     _map <- expectConcreteBuiltinMap Map.valuesKey _map
     fmap getMapValue (Map.elems _map)
         & Seq.fromList
         & Builtin.List.returnList resultSort
-evalValues _ _ = Builtin.wrongArity Map.valuesKey
+evalValues _ _ _ = Builtin.wrongArity Map.valuesKey
 
 {- | Implement builtin function evaluation.
  -}
@@ -482,32 +481,17 @@ operates at the top-most level, it does not descend into the 'TermLike' to
 internalize subterms.
 
  -}
+
 internalize
     :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
+    => TermLike variable
     -> TermLike variable
-    -> TermLike variable
-internalize tools termLike
-  | fromMaybe False (isMapSort tools sort')
+internalize termLike
   -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
   -- apply it if we know the term head is a constructor-like symbol.
-  , App_ symbol _ <- termLike
-  , isConstructorModulo_ symbol =
-    case Ac.toNormalized @NormalizedMap termLike of
-        Ac.Bottom                    -> TermLike.mkBottom sort'
-        Ac.Normalized termNormalized
-          | let unwrapped = unwrapAc termNormalized
-          , null (elementsWithVariables unwrapped)
-          , null (concreteElements unwrapped)
-          , [singleOpaqueTerm] <- opaque unwrapped
-          ->
-            -- When the 'normalized' term consists of a single opaque Map-sorted
-            -- term, we should prefer to return only that term.
-            singleOpaqueTerm
-          | otherwise -> Ac.asInternal tools sort' termNormalized
+  | App_ symbol _ <- termLike
+  , isConstructorModulo_ symbol = Ac.toNormalizedInternalMap termLike
   | otherwise = termLike
-  where
-    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
