@@ -90,7 +90,6 @@ import Kore.Internal.TermLike
     , mkCeil
     , mkElemVar
     , mkEquals
-    , mkEvaluated
     , mkExists
     , mkFloor
     , mkForall
@@ -332,7 +331,6 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (InternalListF _) = term
     checkTermF (InternalMapF _) = term
     checkTermF (InternalSetF _) = term
-    checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
     checkTermF (SignednessF _) = term  -- Not implemented.
@@ -358,7 +356,6 @@ termGenerators = do
             , orGenerator
             , rewritesGenerator
             , topGenerator
-            , evaluatedGenerator
             ]
     literals <- filterGeneratorsAndGroup
         (catMaybes
@@ -586,9 +583,6 @@ rewritesGenerator = binaryOperatorGenerator mkRewrites
 
 topGenerator :: TermGenerator
 topGenerator = nullaryFreeSortOperatorGenerator mkTop
-
-evaluatedGenerator :: TermGenerator
-evaluatedGenerator = unaryOperatorGenerator mkEvaluated
 
 maybeStringLiteralGenerator :: Setup -> Maybe TermGenerator
 maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =

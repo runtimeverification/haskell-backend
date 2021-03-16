@@ -449,10 +449,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
     size :: TermLike variable -> Int
     size =
-        Recursive.fold $ \(_ :< termLikeF) ->
-            case termLikeF of
-                TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
-                _ -> 1 + sum termLikeF
+        Recursive.fold $ \(_ :< termLikeF) -> 1 + sum termLikeF
 
     predSize :: Predicate variable -> Int
     predSize =
