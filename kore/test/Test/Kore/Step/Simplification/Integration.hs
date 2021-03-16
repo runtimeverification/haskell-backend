@@ -15,13 +15,8 @@ import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromJust
-    )
-import qualified Data.Set as Set
 import Test.Tasty
 
-import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
@@ -32,7 +27,6 @@ import Kore.Equation
     , mkEquation
     )
 import qualified Kore.Equation as Equation
-import Kore.Internal.InternalSet
 import Kore.Internal.SideCondition
     ( SideCondition
     )
