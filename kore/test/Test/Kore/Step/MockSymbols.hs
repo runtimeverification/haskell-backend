@@ -43,8 +43,6 @@ import Data.Text
 import qualified Data.Text as Text
 
 import Data.Sup
-import qualified Kore.Attribute.Concat as Attribute
-import qualified Kore.Attribute.Element as Attribute
 import Kore.Attribute.Hook
     ( Hook (..)
     )
@@ -52,15 +50,17 @@ import Kore.Attribute.Pattern.ConstructorLike
     ( isConstructorLike
     )
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
+import qualified Kore.Attribute.Sort.Element as Attribute
+import qualified Kore.Attribute.Sort.Unit as Attribute
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
     ( synthesize
     )
-import qualified Kore.Attribute.Unit as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Builtin.Int
@@ -2042,9 +2042,9 @@ framedInternalMap
 framedInternalMap elements opaque =
     InternalAc
         { builtinAcSort = mapSort
-        , builtinAcUnit = Attribute.toUnit unitMapSymbol
-        , builtinAcElement = Attribute.toElement elementMapSymbol
-        , builtinAcConcat = Attribute.toConcat concatMapSymbol
+        , builtinAcUnit = unitMapSymbol
+        , builtinAcElement = elementMapSymbol
+        , builtinAcConcat = concatMapSymbol
         , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements
@@ -2103,9 +2103,9 @@ framedInternalSet
 framedInternalSet elements opaque =
     InternalAc
         { builtinAcSort = setSort
-        , builtinAcUnit = Attribute.toUnit unitSetSymbol
-        , builtinAcElement = Attribute.toElement elementSetSymbol
-        , builtinAcConcat = Attribute.toConcat concatSetSymbol
+        , builtinAcUnit = unitSetSymbol
+        , builtinAcElement = elementSetSymbol
+        , builtinAcConcat = concatSetSymbol
         , builtinAcChild = NormalizedSet NormalizedAc
             { elementsWithVariables = wrapElement <$> abstractElements
             , concreteElements

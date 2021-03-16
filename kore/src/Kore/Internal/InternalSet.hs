@@ -89,7 +89,7 @@ instance AcWrapper NormalizedSet where
 
 {- | Internal representation of the builtin @SET.Set@ domain.
  -}
-type InternalSet = InternalAc NormalizedSet
+type InternalSet key = InternalAc key NormalizedSet
 
 instance (Unparse key, Unparse child) => Unparse (InternalSet key child) where
     unparse internalMap =
@@ -129,17 +129,17 @@ instance
     {-# INLINE synthetic #-}
 
 -- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
-instance Synthetic Function (InternalAc NormalizedSet key) where
+instance Synthetic Function (InternalAc key NormalizedSet) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
 -- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (InternalAc NormalizedSet key) where
+instance Synthetic Functional (InternalAc key NormalizedSet) where
     synthetic InternalAc { builtinAcChild = NormalizedSet builtinSetChild } =
         normalizedAcFunctional builtinSetChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (InternalAc NormalizedSet key) where
+instance Synthetic Simplified (InternalAc key NormalizedSet) where
     synthetic = notSimplified
     {-# INLINE synthetic #-}
 
