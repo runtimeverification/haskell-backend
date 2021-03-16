@@ -52,6 +52,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.SideCondition
     ( SideCondition
     )
+import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
     ( TermLike
     , Variable (..)
@@ -98,7 +99,7 @@ instance InternalVariable variable => Evaluable (Predicate variable) where
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
-            _ -> decidePredicate (predicate :| [])
+            _ -> decidePredicate SideCondition.top (predicate :| [])
 
 instance
     InternalVariable variable
@@ -109,7 +110,7 @@ instance
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
             _ ->
-                decidePredicate
+                decidePredicate sideCondition
                 $ predicate :| [from @_ @(Predicate _) sideCondition]
 
 instance InternalVariable variable => Evaluable (Conditional variable term)
@@ -171,9 +172,10 @@ decidePredicate
     :: forall variable simplifier
     .  InternalVariable variable
     => MonadSimplify simplifier
-    => NonEmpty (Predicate variable)
+    => SideCondition variable
+    -> NonEmpty (Predicate variable)
     -> simplifier (Maybe Bool)
-decidePredicate predicates =
+decidePredicate sideCondition predicates =
     whileDebugEvaluateCondition predicates go
   where
     go =
@@ -195,7 +197,10 @@ decidePredicate predicates =
     query =
         SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
-            predicates' <- traverse (translatePredicate tools) predicates
+            predicates' <-
+                traverse
+                    (translatePredicate sideCondition tools)
+                    predicates
             traverse_ SMT.assert predicates'
             SMT.check
 
@@ -212,11 +217,13 @@ translatePredicate
         , SMT.MonadSMT m
         , MonadLog m
         )
-    => SmtMetadataTools Attribute.Symbol
+    => SideCondition variable
+    -> SmtMetadataTools Attribute.Symbol
     -> Predicate variable
     -> Translator variable m SExpr
-translatePredicate tools predicate =
-    give tools $ translatePredicateWith translateTerm predicate
+translatePredicate sideCondition tools predicate =
+    give tools
+    $ translatePredicateWith sideCondition translateTerm predicate
 
 translateTerm
     :: forall m variable

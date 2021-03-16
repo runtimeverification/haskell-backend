@@ -97,6 +97,7 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
 import qualified Kore.Internal.Substitution as Substitution
 import Kore.Internal.TermLike hiding
     ( asConcrete
@@ -1421,7 +1422,10 @@ test_inKeys =
         -> IO (Maybe Bool)
     inKeys termKey termMap = do
         output <-
-            Map.evalInKeys boolSort [termKey, termMap]
+            Map.evalInKeys
+                SideCondition.top
+                boolSort
+                [termKey, termMap]
             & runMaybeT
             & runSimplifier testEnv
         case output of
@@ -1434,16 +1438,17 @@ test_inKeys =
                       | otherwise = makeMultipleAndPredicate predicates
                     predicates =
                         catMaybes
-                        [ do
-                            (guard . not) (isDefinedPattern termKey)
-                            pure (makeCeilPredicate termKey)
-                        , do
-                            (guard . not) (isDefinedPattern termMap)
-                            pure (makeCeilPredicate termMap)
+                        [ mkDefinedTerm termKey
+                        , mkDefinedTerm termMap
                         ]
                 assertEqual "" expectPredicate (predicate condition)
                 bool <- expectBool term
                 return (Just bool)
+
+    mkDefinedTerm term = do
+        (guard . not)
+            (SideCondition.isDefined SideCondition.top term)
+        pure (makeCeilPredicate term)
 
 -- * Helpers
 
