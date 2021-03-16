@@ -430,7 +430,7 @@ verifyAxiomSentence sentence =
             ]
       where
         _ :< termLikeF = Recursive.project termLike
-        
+
         failOnJust Nothing = return ()
         failOnJust (Just sym') = koreFailWithLocations
             [sym']
