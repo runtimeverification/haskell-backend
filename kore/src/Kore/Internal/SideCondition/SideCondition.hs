@@ -3,6 +3,8 @@ Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
 -}
 
+{-# LANGUAGE NoStrict #-}
+
 module Kore.Internal.SideCondition.SideCondition
     ( Representation
     , mkRepresentation
@@ -34,7 +36,9 @@ import Type.Reflection
     )
 
 data Representation where
-    Representation :: (Ord a, Pretty a) => !(TypeRep a) -> !(Hashed a) -> Representation
+    Representation
+        :: (Ord a, Pretty a)
+        => !(TypeRep a) -> Hashed a -> Representation
 
 instance Eq Representation where
     (==) (Representation typeRep1 hashed1) (Representation typeRep2 hashed2) =
