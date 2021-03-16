@@ -63,6 +63,10 @@ import System.Clock
     )
 
 import GlobalMain
+import System.IO
+    ( hPutStrLn
+    , stderr
+    )
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule
@@ -80,6 +84,7 @@ data KoreReplOptions = KoreReplOptions
     , replScript       :: !ReplScript
     , outputFile       :: !OutputFile
     , koreLogOptions   :: !KoreLogOptions
+    , bugReportOption  :: !BugReportOption
     }
 
 -- | Parse options after being given the value of startTime for KoreLogOptions
@@ -94,6 +99,7 @@ parseKoreReplOptions startTime =
     <*> parseReplScript
     <*> parseOutputFile
     <*> parseKoreLogOptions (ExeName "kore-repl") startTime
+    <*> parseBugReportOption
   where
     parseMainModule :: Parser KoreModule
     parseMainModule  =
@@ -185,10 +191,11 @@ mainWithOptions
         , scriptModeOutput
         , outputFile
         , koreLogOptions
+        , bugReportOption
         }
   = do
     exitCode <-
-        withBugReport Main.exeName BugReportOnError $ \tempDirectory ->
+        withBugReport Main.exeName bugReportOption $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
             mvarLogAction <- newMVar actualLogAction
             let swapLogAction = swappableLogger mvarLogAction
@@ -210,7 +217,7 @@ mainWithOptions
                     && isNothing (unReplScript replScript)
                     )
                     $ lift $ do
-                        putStrLn
+                        hPutStrLn stderr
                             "You must supply the path to the repl script\
                             \ in order to run the repl in run-script mode."
                         exitFailure
@@ -220,7 +227,7 @@ mainWithOptions
                     && scriptModeOutput == EnableOutput
                     )
                     $ lift $ do
-                        putStrLn
+                        hPutStrLn stderr
                             "The --save-run-output flag is only available\
                             \ when running the repl in run-script mode."
                         exitFailure
