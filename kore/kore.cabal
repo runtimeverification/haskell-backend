@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 80d27d36f0343e3b6779aa37ed5fccc747fd7c1b66c7b9bd2fb27c1f6a2d6403
+-- hash: 2efec6a0024031e0d72609be302ec5298405ab977cfd1fac26ad002a0327ef18
 
 name:           kore
 version:        0.41.0.0
@@ -70,9 +70,7 @@ library
       Kore.Attribute.Axiom.Symbolic
       Kore.Attribute.Axiom.Unit
       Kore.Attribute.Comm
-      Kore.Attribute.Concat
       Kore.Attribute.Constructor
-      Kore.Attribute.Element
       Kore.Attribute.Function
       Kore.Attribute.Functional
       Kore.Attribute.Hook
@@ -103,9 +101,12 @@ library
       Kore.Attribute.Smtlib.Smthook
       Kore.Attribute.Smtlib.Smtlib
       Kore.Attribute.Sort
+      Kore.Attribute.Sort.Concat
       Kore.Attribute.Sort.Constructors
       Kore.Attribute.Sort.ConstructorsBuilder
+      Kore.Attribute.Sort.Element
       Kore.Attribute.Sort.HasDomainValues
+      Kore.Attribute.Sort.Unit
       Kore.Attribute.SortInjection
       Kore.Attribute.Source
       Kore.Attribute.SourceLocation
@@ -119,7 +120,6 @@ library
       Kore.Attribute.Synthetic
       Kore.Attribute.Trusted
       Kore.Attribute.UniqueId
-      Kore.Attribute.Unit
       Kore.BugReport
       Kore.Builtin
       Kore.Builtin.AssocComm.AssocComm
@@ -284,7 +284,6 @@ library
       Kore.Step.Simplification.CeilSimplifier
       Kore.Step.Simplification.Condition
       Kore.Step.Simplification.Data
-      Kore.Step.Simplification.Defined
       Kore.Step.Simplification.DomainValue
       Kore.Step.Simplification.Equals
       Kore.Step.Simplification.Exists
@@ -468,7 +467,7 @@ library
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -544,7 +543,7 @@ executable kore-exec
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -624,7 +623,7 @@ executable kore-format
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -704,7 +703,7 @@ executable kore-parser
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -782,7 +781,7 @@ executable kore-prof
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -858,7 +857,7 @@ executable kore-repl
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
@@ -916,6 +915,7 @@ test-suite kore-test
       Test.Kore.Attribute.Smtlib
       Test.Kore.Attribute.Sort.ConstructorsBuilder
       Test.Kore.Attribute.Sort.HasDomainValues
+      Test.Kore.Attribute.Sort.Unit
       Test.Kore.Attribute.SortInjection
       Test.Kore.Attribute.Subsort
       Test.Kore.Attribute.Symbol
@@ -926,11 +926,9 @@ test-suite kore-test
       Test.Kore.Attribute.Symbol.SymbolKywd
       Test.Kore.Attribute.Trusted
       Test.Kore.Attribute.UniqueId
-      Test.Kore.Attribute.Unit
       Test.Kore.BugReport
       Test.Kore.Builtin
       Test.Kore.Builtin.AssocComm.CeilSimplifier
-      Test.Kore.Builtin.AssociativeCommutative
       Test.Kore.Builtin.Bool
       Test.Kore.Builtin.Builtin
       Test.Kore.Builtin.Definition
@@ -1145,7 +1143,7 @@ test-suite kore-test
     , transformers >=0.4
     , unordered-containers >=0.2
     , vector >=0.12
-    , witherable >=0.3
+    , witherable >=0.3 && <0.4
     , zlib >=0.6
   if !flag(release)
     ghc-options: -fno-specialise
