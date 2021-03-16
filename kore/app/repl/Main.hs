@@ -63,6 +63,10 @@ import System.Clock
     )
 
 import GlobalMain
+import System.IO
+    ( hPutStrLn
+    , stderr
+    )
 
 -- | Represents a file name along with its module name passed.
 data KoreModule = KoreModule
@@ -213,7 +217,7 @@ mainWithOptions
                     && isNothing (unReplScript replScript)
                     )
                     $ lift $ do
-                        putStrLn
+                        hPutStrLn stderr
                             "You must supply the path to the repl script\
                             \ in order to run the repl in run-script mode."
                         exitFailure
@@ -223,7 +227,7 @@ mainWithOptions
                     && scriptModeOutput == EnableOutput
                     )
                     $ lift $ do
-                        putStrLn
+                        hPutStrLn stderr
                             "The --save-run-output flag is only available\
                             \ when running the repl in run-script mode."
                         exitFailure
