@@ -46,7 +46,7 @@ import Test.Terse
 
 {-
 
-`SimplifyEvaluated` is the core function. It converts two `OrPattern`
+`simplifyEvaluated` is the core function. It converts two `OrPattern`
 values into a simplifier that is to produce a single `OrPattern`. We
 run the simplifier to check correctness.
 

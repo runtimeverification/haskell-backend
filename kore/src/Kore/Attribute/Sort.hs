@@ -11,17 +11,17 @@ module Kore.Attribute.Sort (
 
 import qualified Control.Monad as Monad
 import Data.Generics.Product
-import Kore.Attribute.Concat
-import Kore.Attribute.Element
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser hiding (
     Sort,
  )
 import Kore.Attribute.Smtlib.Smtlib
+import Kore.Attribute.Sort.Concat
+import Kore.Attribute.Sort.Element
 import Kore.Attribute.Sort.HasDomainValues (
     HasDomainValues,
  )
-import Kore.Attribute.Unit
+import Kore.Attribute.Sort.Unit
 import Prelude.Kore hiding (
     concat,
  )
@@ -32,11 +32,11 @@ data Sort = Sort
     , -- | The user-defined translation of the sort for SMT.
       smtlib :: !Smtlib
     , -- | The unit symbol associated with the sort.
-      unit :: !(Unit SymbolOrAlias)
+      unit :: !Unit
     , -- | The element symbol associated with the sort.
-      element :: !(Element SymbolOrAlias)
+      element :: !Element
     , -- | The concat symbol associated with the sort.
-      concat :: !(Concat SymbolOrAlias)
+      concat :: !Concat
     , -- | whether the sort has domain values
       hasDomainValues :: !HasDomainValues
     }
@@ -63,9 +63,9 @@ instance ParseAttributes Sort where
     parseAttribute attr =
         typed @Hook (parseAttribute attr)
             Monad.>=> typed @Smtlib (parseAttribute attr)
-            Monad.>=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
-            Monad.>=> typed @(Element SymbolOrAlias) (parseAttribute attr)
-            Monad.>=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
+            Monad.>=> typed @Unit (parseAttribute attr)
+            Monad.>=> typed @Element (parseAttribute attr)
+            Monad.>=> typed @Concat (parseAttribute attr)
             Monad.>=> typed @HasDomainValues (parseAttribute attr)
 
 instance From Sort Attributes where

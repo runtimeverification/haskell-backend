@@ -1,13 +1,9 @@
 {-# LANGUAGE Strict #-}
 
 module Test.Kore.Step.Simplification.TermLike (
-    test_simplify,
     test_simplify_sideConditionReplacements,
 ) where
 
-import Control.Monad (
-    void,
- )
 import Control.Monad.Catch (
     MonadThrow,
  )
@@ -25,7 +21,6 @@ import Kore.Internal.SideCondition (
 import qualified Kore.Internal.SideCondition as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewriting.RewritingVariable (
-    RewritingVariableName,
     getRewritingPattern,
     mkConfigVariable,
     mkRewritingTerm,
@@ -39,13 +34,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty
 import Test.Tasty.HUnit
-
-test_simplify :: [TestTree]
-test_simplify =
-    [ testCase "Evaluated" $
-        void $
-            simplifyEvaluated $ mkEvaluated $ Mock.f Mock.a
-    ]
 
 test_simplify_sideConditionReplacements :: [TestTree]
 test_simplify_sideConditionReplacements =
@@ -113,20 +101,6 @@ simplifyWithSideCondition
             <$> runSimplifier Mock.env
                 . TermLike.simplify sideCondition
                 . mkRewritingTerm
-
-simplifyEvaluated ::
-    TermLike RewritingVariableName ->
-    IO (OrPattern RewritingVariableName)
-simplifyEvaluated original =
-    runSimplifier env . getTestSimplifier $
-        TermLike.simplify SideCondition.top original
-  where
-    env =
-        Mock.env
-            { simplifierCondition =
-                -- Throw an error if any predicate would be simplified.
-                ConditionSimplifier $ const undefined
-            }
 
 newtype TestSimplifier a = TestSimplifier {getTestSimplifier :: SimplifierT NoSMT a}
     deriving newtype (Functor, Applicative, Monad)

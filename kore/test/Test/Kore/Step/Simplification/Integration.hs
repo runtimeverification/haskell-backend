@@ -13,11 +13,6 @@ import qualified Control.Lens as Lens
 import qualified Data.Default as Default
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
-import Data.Maybe (
-    fromJust,
- )
-import qualified Data.Set as Set
-import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
@@ -28,7 +23,6 @@ import Kore.Equation (
     mkEquation,
  )
 import qualified Kore.Equation as Equation
-import Kore.Internal.InternalSet
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -41,7 +35,6 @@ import qualified Kore.Internal.SideCondition.SideCondition as SideCondition (
  )
 import Kore.Rewriting.RewritingVariable (
     RewritingVariableName,
-    configElementVariableFromId,
     mkConfigVariable,
     mkRuleVariable,
  )
@@ -792,171 +785,6 @@ test_simplificationIntegration =
         assertBool
             "Expecting simplification"
             (OrPattern.isSimplified sideRepresentation actual)
-    , testCase "Forall simplification" $ do
-        let expected =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop Mock.otherSort
-                        , predicate =
-                            makeCeilPredicate
-                                (mkEvaluated (mkBottom Mock.mapSort))
-                        , substitution = mempty
-                        }
-                    ]
-        actual <-
-            evaluate
-                Conditional
-                    { term =
-                        mkForall
-                            Mock.tConfig
-                            ( mkIn
-                                Mock.otherSort
-                                (mkNot (mkBottom Mock.mapSort))
-                                (mkEvaluated mkBottom_)
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertEqual "" expected actual
-    , testCase "Implies simplification" $ do
-        let zz = configElementVariableFromId (testId "zz") Mock.subOthersort
-            mci = configElementVariableFromId (testId "mci") Mock.subOthersort
-            mw = configElementVariableFromId (testId "mw") Mock.subOthersort
-            k =
-                mkSetVariable (testId "k") Mock.setSort
-                    & mapSetVariable (pure mkConfigVariable)
-
-        let expects =
-                [ Conditional
-                    { term = mkTop Mock.stringSort
-                    , predicate =
-                        makeAndPredicate
-                            ( makeImpliesPredicate
-                                ( makeAndPredicate
-                                    ( makeAndPredicate
-                                        ( makeCeilPredicate
-                                            ( mkAnd
-                                                (Mock.fSet mkTop_)
-                                                ( mkMu
-                                                    k
-                                                    (asInternal (Set.fromList [Mock.a]))
-                                                )
-                                            )
-                                        )
-                                        ( makeCeilPredicate
-                                            (Mock.fSet mkTop_)
-                                        )
-                                    )
-                                    ( makeCeilPredicate
-                                        ( mkMu
-                                            k
-                                            (asInternal (Set.fromList [Mock.a]))
-                                        )
-                                    )
-                                )
-                                ( makeIffPredicate
-                                    (makeEqualsPredicate Mock.aSubSubsort mkTop_)
-                                    ( makeFloorPredicate
-                                        (mkEvaluated (mkBottom Mock.testSort))
-                                    )
-                                )
-                            )
-                            ( makeImpliesPredicate
-                                ( makeAndPredicate
-                                    ( makeAndPredicate
-                                        ( makeCeilPredicate
-                                            ( mkAnd
-                                                (Mock.fSet mkTop_)
-                                                ( mkMu
-                                                    k
-                                                    (mkEvaluated Mock.unitSet)
-                                                )
-                                            )
-                                        )
-                                        ( makeCeilPredicate
-                                            (Mock.fSet mkTop_)
-                                        )
-                                    )
-                                    ( makeCeilPredicate
-                                        ( mkMu
-                                            k
-                                            (mkEvaluated Mock.unitSet)
-                                        )
-                                    )
-                                )
-                                ( makeIffPredicate
-                                    (makeEqualsPredicate Mock.aSubSubsort mkTop_)
-                                    ( makeFloorPredicate
-                                        (mkEvaluated (mkBottom Mock.testSort))
-                                    )
-                                )
-                            )
-                    , substitution = mempty
-                    }
-                ]
-                    & OrPattern.fromPatterns
-        actuals <-
-            evaluate
-                Conditional
-                    { term =
-                        mkImplies
-                            ( mkCeil_
-                                ( mkIn
-                                    Mock.testSort0
-                                    ( mkMu
-                                        k
-                                        ( mkOr
-                                            (mkEvaluated Mock.unitSet)
-                                            (mkExists mw (Mock.elementSet Mock.a))
-                                        )
-                                    )
-                                    (Mock.fSet (mkFloor_ (mkTop Mock.mapSort)))
-                                )
-                            )
-                            ( mkEquals
-                                Mock.stringSort
-                                ( mkFloor
-                                    Mock.testSort0
-                                    (mkEvaluated (mkBottom Mock.testSort))
-                                )
-                                ( mkFloor
-                                    Mock.testSort0
-                                    ( mkExists
-                                        mci
-                                        ( mkCeil
-                                            Mock.setSort
-                                            ( mkForall
-                                                zz
-                                                (mkEquals_ Mock.aSubSubsort mkTop_)
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        Pattern.assertEquivalentPatterns expects actuals
-    , testCase "Ceil simplification" $ do
-        actual <-
-            evaluate
-                Conditional
-                    { term =
-                        mkCeil
-                            Mock.topSort
-                            ( mkForall
-                                Mock.xConfig
-                                ( Mock.concatSet
-                                    (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
-                                    (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
-                                )
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertBool
-            "Expecting simplification"
-            (OrPattern.isSimplified sideRepresentation actual)
     , testCase "Equals-in simplification" $ do
         let gt =
                 mkSetVariable (testId "gt") Mock.stringSort
@@ -1066,28 +894,6 @@ test_simplificationIntegration =
                     }
         actual <- evaluate patt
         assertEqual "" (OrPattern.fromPattern expected) actual
-    , testCase "Not-iff-evaluated simplification" $ do
-        let patt =
-                Conditional
-                    { term =
-                        mkNot
-                            ( mkIff
-                                mkBottom_
-                                (mkEvaluated Mock.unitMap)
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-            expected =
-                OrPattern.fromPattern
-                    Conditional
-                        { term = mkEvaluated Mock.unitMap
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-
-        actual <- evaluate patt
-        assertEqual "" expected actual
     ]
 
 test_simplificationIntegrationUnification :: [TestTree]
@@ -1642,15 +1448,6 @@ axiom left right requires =
         , ensures = Predicate.makeTruePredicate
         , attributes = Default.def
         }
-
--- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
-asInternal ::
-    Set.Set (TermLike Concrete) ->
-    TermLike RewritingVariableName
-asInternal =
-    Ac.asInternalConcrete Mock.metadataTools Mock.setSort
-        . Map.fromSet (const SetValue)
-        . Set.map (retractKey >>> fromJust)
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

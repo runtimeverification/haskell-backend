@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict #-}
+{-# LANGUAGE NoStrict #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2019
@@ -96,7 +96,7 @@ data Condition
       -- given side condition. When the side condition changes, e.g. by
       -- adding extra conditions, then we may be able to further simplify the
       -- term.
-      Condition !SideCondition.Representation
+      Condition SideCondition.Representation
     | -- | Parts of the term are simplified under different side conditions.
       Unknown
     deriving (Eq, Ord, Show)
@@ -122,8 +122,8 @@ instance Monoid Condition where
     mempty = Any
 
 data SimplifiedData = SimplifiedData
-    { sType :: !Type
-    , condition :: !Condition
+    { sType :: Type
+    , condition :: Condition
     }
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
@@ -144,7 +144,7 @@ Most patterns are assumed un-simplified until marked otherwise, so the
 simplified status is reset by any substitution under the pattern.
 -}
 data Simplified
-    = Simplified !SimplifiedData
+    = Simplified SimplifiedData
     | NotSimplified
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)

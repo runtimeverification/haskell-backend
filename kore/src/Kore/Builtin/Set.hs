@@ -50,6 +50,9 @@ import qualified Data.Set as Set
 import Data.Text (
     Text,
  )
+import qualified Kore.Attribute.Symbol as Attribute (
+    Symbol,
+ )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import Kore.Builtin.Attributes (
     isConstructorModulo_,
@@ -494,15 +497,29 @@ internalize subterms.
 -}
 internalize ::
     InternalVariable variable =>
+    SmtMetadataTools Attribute.Symbol ->
     TermLike variable ->
     TermLike variable
-internalize termLike
-    -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
-    -- apply it if we know the term head is a constructor-like symbol.
-    | App_ symbol _ <- termLike
+internalize tools termLike
+    | fromMaybe False (isSetSort tools sort')
+      , -- Ac.toNormalized is greedy about 'normalizing' opaque terms, we should only
+        -- apply it if we know the term head is a constructor-like symbol.
+        App_ symbol _ <- termLike
       , isConstructorModulo_ symbol =
-        Ac.toNormalizedInternalSet termLike
+        case Ac.toNormalized @NormalizedSet termLike of
+            Ac.Bottom -> TermLike.mkBottom sort'
+            Ac.Normalized termNormalized
+                | let unwrapped = unwrapAc termNormalized
+                  , null (elementsWithVariables unwrapped)
+                  , null (concreteElements unwrapped)
+                  , [singleOpaqueTerm] <- opaque unwrapped ->
+                    -- When the 'normalized' term consists of a single opaque Map-sorted
+                    -- term, we should prefer to return only that term.
+                    singleOpaqueTerm
+                | otherwise -> Ac.asInternal tools sort' termNormalized
     | otherwise = termLike
+  where
+    sort' = termLikeSort termLike
 
 {- | Simplify the conjunction or equality of two concrete Set domain values.
 

@@ -47,9 +47,6 @@ import qualified Data.Map.Strict as Map
 import Data.String (
     IsString,
  )
-import Kore.Attribute.Element hiding (
-    elementSymbol,
- )
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol,
  )
@@ -206,13 +203,12 @@ isSymbolInclusion = Builtin.isSymbol inclusionKey
 asTermLike ::
     forall variable.
     InternalVariable variable =>
-    HasCallStack =>
     InternalMap Key (TermLike variable) ->
     TermLike variable
 asTermLike builtin =
     AssocComm.asTermLike
-        unitSymbol
-        concatSymbol
+        (AssocComm.UnitSymbol unitSymbol)
+        (AssocComm.ConcatSymbol concatSymbol)
         ( AssocComm.ConcreteElements
             (map concreteElement (Map.toAscList concreteElements))
         )
@@ -227,7 +223,7 @@ asTermLike builtin =
     isEmptyMap :: TermLike variable -> Bool
     isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
         unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = isSymbolUnit symbol
+    isEmptyMap (App_ symbol _) = unitSymbol == symbol
     isEmptyMap _ = False
 
     InternalAc{builtinAcChild} = builtin
@@ -247,8 +243,7 @@ asTermLike builtin =
     concreteElement (key, value) = element (into @(TermLike variable) key, value)
 
     element ::
-        HasCallStack =>
         (TermLike variable, MapValue (TermLike variable)) ->
         TermLike variable
     element (key, MapValue value) =
-        mkApplySymbol (fromElement elementSymbol) [key, value]
+        mkApplySymbol elementSymbol [key, value]

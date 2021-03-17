@@ -197,6 +197,8 @@ import System.FilePath (
  )
 import System.IO (
     IOMode (..),
+    hPutStrLn,
+    stderr,
     withFile,
  )
 import System.Process (
@@ -1205,7 +1207,7 @@ pipe cmd file args = do
         outputFunc str
         case maybeOutput of
             Nothing ->
-                putStrLn "Error: couldn't access output handle."
+                hPutStrLn stderr "Error: couldn't access output handle."
             Just handle -> do
                 output <- liftIO $ hGetContents handle
                 modifyIORef pipeOut (appReplOut . AuxOut $ output)
@@ -1531,10 +1533,10 @@ parseEvalScript file scriptModeOutput = do
             contents <- lift . liftIO $ readFile file
             let result = runParser scriptParser file (Text.pack contents)
             either parseFailed executeScript result
-        else lift . liftIO . putStrLn $ "Cannot find " <> file
+        else lift . liftIO . hPutStrLn stderr $ "Cannot find " <> file
   where
     parseFailed err =
-        lift . liftIO . putStrLn $
+        lift . liftIO . hPutStrLn stderr $
             "\nCouldn't parse repl script file."
                 <> "\nParser error at: "
                 <> (err & toReplScriptParseErrors & errorBundlePretty)
@@ -1632,4 +1634,4 @@ withExistingDirectory path action =
     ifM
         (doesParentDirectoryExist path)
         (action path)
-        $ liftIO . putStrLn $ "Directory does not exist."
+        $ liftIO . hPutStrLn stderr $ "Directory does not exist."

@@ -62,15 +62,6 @@ module Kore.Attribute.Symbol (
     NoEvaluators (..),
     noEvaluatorsAttribute,
 
-    -- * Unit symbols
-    Unit (..),
-
-    -- * Element symbols
-    Element (..),
-
-    -- * Concat symbols
-    Concat (..),
-
     -- * Derived attributes
     isConstructorLike,
     isFunctional,
@@ -87,9 +78,7 @@ import Data.Default
 import Data.Generics.Product
 import qualified GHC.Generics as GHC
 import qualified Generics.SOP as SOP
-import Kore.Attribute.Concat
 import Kore.Attribute.Constructor
-import Kore.Attribute.Element
 import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
@@ -97,7 +86,6 @@ import Kore.Attribute.Injective
 import Kore.Attribute.Parser (
     Attributes,
     ParseAttributes (..),
-    SymbolOrAlias (..),
  )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
@@ -108,7 +96,6 @@ import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
-import Kore.Attribute.Unit
 import Kore.Debug
 import Prelude.Kore
 
@@ -139,10 +126,6 @@ data Symbol = Symbol
     , klabel :: !Klabel
     , symbolKywd :: !SymbolKywd
     , noEvaluators :: !NoEvaluators
-    , unitHook :: !(Unit SymbolOrAlias)
-    , elementHook :: !(Element SymbolOrAlias)
-    , -- | The above three are only populated if the symbol is a concat
-      concatHook :: !(Concat SymbolOrAlias)
     , -- | Location in the original (source) file.
       sourceLocation :: !SourceLocation
     }
@@ -171,9 +154,6 @@ instance ParseAttributes Symbol where
             >=> typed @Klabel (parseAttribute attr)
             >=> typed @SymbolKywd (parseAttribute attr)
             >=> typed @NoEvaluators (parseAttribute attr)
-            >=> typed @(Unit SymbolOrAlias) (parseAttribute attr)
-            >=> typed @(Element SymbolOrAlias) (parseAttribute attr)
-            >=> typed @(Concat SymbolOrAlias) (parseAttribute attr)
             >=> typed @SourceLocation (parseAttribute attr)
 
 instance From Symbol Attributes where
@@ -193,9 +173,6 @@ instance From Symbol Attributes where
                 , from . klabel
                 , from . symbolKywd
                 , from . noEvaluators
-                , from . unitHook
-                , from . elementHook
-                , from . concatHook
                 , from . sourceLocation
                 ]
 
@@ -217,9 +194,6 @@ defaultSymbolAttributes =
         , klabel = def
         , symbolKywd = def
         , noEvaluators = def
-        , unitHook = def
-        , elementHook = def
-        , concatHook = def
         , sourceLocation = def
         }
 

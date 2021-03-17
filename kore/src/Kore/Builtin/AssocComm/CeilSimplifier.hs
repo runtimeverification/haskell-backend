@@ -71,7 +71,7 @@ import Kore.Variables.Fresh (
 import Prelude.Kore
 
 type BuiltinAssocComm normalized variable =
-    InternalAc normalized Key (TermLike variable)
+    InternalAc Key normalized (TermLike variable)
 
 type MkBuiltinAssocComm normalized variable =
     BuiltinAssocComm normalized variable -> TermLike variable
@@ -227,7 +227,7 @@ definePairWiseElements ::
     AcWrapper normalized =>
     MkBuiltinAssocComm normalized RewritingVariableName ->
     MkNotMember normalized RewritingVariableName ->
-    InternalAc normalized Key (TermLike RewritingVariableName) ->
+    InternalAc Key normalized (TermLike RewritingVariableName) ->
     PairWiseElements normalized Key (TermLike RewritingVariableName) ->
     MaybeT simplifier (MultiAnd (OrCondition RewritingVariableName))
 definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do

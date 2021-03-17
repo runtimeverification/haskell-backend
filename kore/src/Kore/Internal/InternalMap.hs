@@ -84,7 +84,7 @@ instance AcWrapper NormalizedMap where
         arguments' [keyUnparser key, childUnparser value]
 
 -- | Internal representation of the builtin @MAP.Map@ domain.
-type InternalMap = InternalAc NormalizedMap
+type InternalMap key = InternalAc key NormalizedMap
 
 instance (Unparse key, Unparse child) => Unparse (InternalMap key child) where
     unparse internalMap =

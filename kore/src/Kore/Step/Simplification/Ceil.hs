@@ -389,7 +389,6 @@ makeSimplifiedCeil
       where
         needsChildCeils = case termLikeF of
             ApplyAliasF _ -> False
-            EvaluatedF _ -> False
             EndiannessF _ -> True
             SignednessF _ -> True
             AndF _ -> True

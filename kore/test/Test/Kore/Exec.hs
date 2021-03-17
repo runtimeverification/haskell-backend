@@ -4,9 +4,20 @@ module Test.Kore.Exec (
     test_searchPriority,
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
+    test_execDepthLimitExceeded,
 ) where
 
 import Control.Exception as Exception
+import Control.Monad.Catch (
+    MonadCatch,
+    MonadMask,
+    MonadThrow,
+ )
+import Control.Monad.State.Strict (
+    StateT (..),
+ )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
 import Data.Default (
     def,
  )
@@ -43,6 +54,7 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Log.WarnDepthLimitExceeded
 import Kore.Step (
     ExecutionMode (..),
  )
@@ -61,6 +73,9 @@ import Kore.Step.Search (
     SearchType (..),
  )
 import qualified Kore.Step.Search as Search
+import Kore.Step.Simplification.Data (
+    MonadProf,
+ )
 import Kore.Step.Strategy (
     LimitExceeded (..),
  )
@@ -70,7 +85,13 @@ import Kore.Syntax.Definition hiding (
  )
 import qualified Kore.Syntax.Definition as Syntax
 import qualified Kore.Verified as Verified
+import Log (
+    Entry (..),
+    MonadLog (..),
+    SomeEntry,
+ )
 import Prelude.Kore
+import qualified SMT
 import System.Exit (
     ExitCode (..),
  )
@@ -120,6 +141,55 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
                 }
     inputPattern = applyToNoArgs mySort "a"
     expected = (ExitSuccess, applyToNoArgs mySort "d")
+
+newtype TestLog a = TestLog (StateT [SomeEntry] SMT.NoSMT a)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (State.MonadState [SomeEntry], MonadIO, SMT.MonadSMT)
+    deriving newtype (MonadThrow, MonadCatch, MonadMask, MonadProf)
+
+instance MonadLog TestLog where
+    logEntry entry = State.modify (toEntry entry :)
+    logWhile entry (TestLog state) =
+        TestLog $ State.mapStateT addEntry state
+      where
+        addEntry :: SMT.NoSMT (a, [SomeEntry]) -> SMT.NoSMT (a, [SomeEntry])
+        addEntry = fmap $ Bifunctor.second (toEntry entry :)
+
+runTestLog :: TestLog a -> IO [SomeEntry]
+runTestLog (TestLog state) = runNoSMT $ State.execStateT state []
+
+test_execDepthLimitExceeded :: TestTree
+test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
+    do
+        entries <- actual
+        let actualDepthWarnings =
+                catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
+            expectedWarning = WarnDepthLimitExceeded 1
+        assertEqual "" [expectedWarning] actualDepthWarnings
+  where
+    actual =
+        exec
+            (Limit 1)
+            Unlimited
+            verifiedModule
+            Any
+            inputPattern
+            & runTestLog
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , simpleRewriteAxiom "a" "b"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = applyToNoArgs mySort "a"
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqual "" expected

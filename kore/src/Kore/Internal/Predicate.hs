@@ -1068,8 +1068,23 @@ mapVariables ::
     AdjSomeVariableName (variable1 -> variable2) ->
     Predicate variable1 ->
     Predicate variable2
-mapVariables adj =
-    either undefined id . makePredicate . TermLike.mapVariables adj . fromPredicate_
+mapVariables adj predicate =
+    let termPredicate =
+            TermLike.mapVariables adj
+                . fromPredicate_
+                $ predicate
+     in either
+            errorMappingVariables
+            id
+            (makePredicate termPredicate)
+  where
+    errorMappingVariables termPredicate =
+        error . show . Pretty.vsep $
+            [ "Error when mapping the variables of predicate:"
+            , Pretty.pretty predicate
+            , "The resulting term is not a predicate:"
+            , Pretty.pretty termPredicate
+            ]
 
 -- |Is the predicate free of the given variables?
 isFreeOf ::

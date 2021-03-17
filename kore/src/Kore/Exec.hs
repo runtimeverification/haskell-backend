@@ -26,6 +26,9 @@ import Control.Concurrent.MVar
 import Control.DeepSeq (
     deepseq,
  )
+import Control.Error (
+    hoistMaybe,
+ )
 import qualified Control.Lens as Lens
 import Control.Monad (
     (>=>),
@@ -99,6 +102,9 @@ import Kore.Log.ErrorRuleMergeDuplicate (
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions (
     KoreLogOptions (..),
+ )
+import Kore.Log.WarnDepthLimitExceeded (
+    warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
 import qualified Kore.ModelChecker.Bounded as Bounded
@@ -248,7 +254,7 @@ exec
                                 & lift
                     Strategy.leavesM
                         updateQueue
-                        (Strategy.unfoldTransition transit)
+                        (unfoldTransition transit)
                         ( limitedExecutionStrategy depthLimit
                         , (ExecDepth 0, Start initialConfig)
                         )
@@ -256,8 +262,9 @@ exec
             infoExecDepth (maximum depths)
             let finalConfigs' =
                     MultiOr.make $
-                        extractProgramState
-                            <$> finalConfigs
+                        catMaybes $
+                            extractProgramState
+                                <$> finalConfigs
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
                     forceSort initialSort $
@@ -277,6 +284,9 @@ exec
         -- are internalized.
         metadataTools = MetadataTools.build verifiedModule
         initialSort = termLikeSort initialTerm
+        unfoldTransition transit (instrs, config) = do
+            when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
+            Strategy.unfoldTransition transit (instrs, config)
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
@@ -399,11 +409,9 @@ search
                         (limitedExecutionStrategy depthLimit)
             executionGraph <-
                 runStrategy' (Start initialPattern)
-            let match target config1 config2 =
-                    Search.matchWith
-                        target
-                        config1
-                        (extractProgramState config2)
+            let match target config1 config2 = do
+                    extracted <- hoistMaybe $ extractProgramState config2
+                    Search.matchWith target config1 extracted
             solutionsLists <-
                 searchGraph
                     searchConfig

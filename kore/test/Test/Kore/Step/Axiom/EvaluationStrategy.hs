@@ -117,44 +117,7 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.c)
         assertEqual "" expect actual
-    , {-
-      Uncomment this if we ever go back to having remainders for functions.
-
-      , testCase "Evaluation with remainder" $ do
-          let requirement = makeEqualsPredicate
-                  (Mock.f Mock.a)
-                  (Mock.g Mock.b)
-              expect =
-                  AttemptedAxiom.Applied AttemptedAxiomResults
-                      { results =
-                          OrPattern.fromPattern Conditional
-                              { term = Mock.g Mock.a
-                              , predicate = requirement
-                              , substitution = mempty
-                              }
-                      , remainders =
-                          OrPattern.fromPatterns
-                          $ map (fmap mkEvaluated)
-                              [ Conditional
-                                  { term = Mock.functionalConstr10 Mock.a
-                                  , predicate = makeNotPredicate requirement
-                                  , substitution = mempty
-                                  }
-                              ]
-                      }
-          actual <-
-              evaluate
-                  (definitionEvaluation
-                      [ axiom
-                          (Mock.functionalConstr10 Mock.a)
-                          (Mock.g Mock.a)
-                          requirement
-                      ]
-                  )
-                  (Mock.functionalConstr10 Mock.a)
-          assertEqual "" expect actual
-      -}
-      testCase "Failed evaluation" $ do
+    , testCase "Failed evaluation" $ do
         let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluate
@@ -486,53 +449,7 @@ test_simplifierWithFallback =
                 )
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
-    , {-
-      Uncomment this if we ever go back to having remainders for equality axioms.
-
-      , testCase "Uses first with remainder" $ do
-          let requirement = makeEqualsPredicate
-                  (Mock.f Mock.a)
-                  (Mock.g Mock.b)
-              expect =
-                  AttemptedAxiom.Applied AttemptedAxiomResults
-                      { results = OrPattern.fromPatterns
-                          [ Conditional
-                              { term = Mock.g Mock.a
-                              , predicate = requirement
-                              , substitution = mempty
-                              }
-                          ]
-                      , remainders =
-                          OrPattern.fromPatterns $ (map . fmap) mkEvaluated
-                              [ Conditional
-                                  { term = Mock.functionalConstr10 Mock.a
-                                  , predicate = makeNotPredicate requirement
-                                  , substitution = mempty
-                                  }
-                              ]
-                      }
-          actual <-
-              evaluate
-                  (simplifierWithFallback
-                      (definitionEvaluation
-                          [ axiom
-                              (Mock.functionalConstr10 Mock.a)
-                              (Mock.g Mock.a)
-                              requirement
-                          ]
-                      )
-                      (definitionEvaluation
-                          [ axiom
-                              (Mock.functionalConstr10 Mock.a)
-                              (Mock.f Mock.a)
-                              (makeNotPredicate requirement)
-                          ]
-                      )
-                  )
-                  (Mock.functionalConstr10 Mock.a)
-          assertEqual "" expect actual
-      -}
-      testCase "Falls back to second" $ do
+    , testCase "Falls back to second" $ do
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults

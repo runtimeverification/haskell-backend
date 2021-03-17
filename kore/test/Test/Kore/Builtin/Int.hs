@@ -33,8 +33,6 @@ module Test.Kore.Builtin.Int (
     test_pow,
     test_powmod,
     test_log2,
-    test_tdiv_evaluated_arguments,
-    test_ediv_evaluated_arguments,
     test_unifyEqual_NotEqual,
     test_unifyEqual_Equal,
     test_unifyAnd_NotEqual,
@@ -69,9 +67,6 @@ import Data.Bits (
     xor,
     (.&.),
     (.|.),
- )
-import Data.Semigroup (
-    Endo (..),
  )
 import qualified Data.Text as Text
 import Hedgehog hiding (
@@ -299,10 +294,6 @@ test_abs = testUnary absIntSymbol abs
 test_tdiv :: TestTree
 test_tdiv = testPartialBinary tdivIntSymbol tdiv
 
-test_tdiv_evaluated_arguments :: TestTree
-test_tdiv_evaluated_arguments =
-    testDivEvaluatedArguments tdivIntSymbol tdiv
-
 test_tmod :: TestTree
 test_tmod = testPartialBinary tmodIntSymbol tmod
 
@@ -314,10 +305,6 @@ test_tmodZero = testPartialBinaryZero tmodIntSymbol tmod
 
 test_ediv_property :: TestTree
 test_ediv_property = testPartialBinary edivIntSymbol ediv
-
-test_ediv_evaluated_arguments :: TestTree
-test_ediv_evaluated_arguments =
-    testDivEvaluatedArguments edivIntSymbol ediv
 
 test_emod_property :: TestTree
 test_emod_property = testPartialBinary emodIntSymbol emod
@@ -417,26 +404,6 @@ test_euclidian_division_theorem =
             InternalInt_ InternalInt{internalIntValue} ->
                 internalIntValue
             _ -> error "Expecting builtin int."
-
-testDivEvaluatedArguments ::
-    Symbol ->
-    (Integer -> Integer -> Maybe Integer) ->
-    TestTree
-testDivEvaluatedArguments symbol expected =
-    testPropertyWithSolver (Text.unpack name) $ do
-        a <- forAll genInteger
-        b <- forAll genInteger
-        na <- forAll $ Gen.integral (Range.linear 0 5)
-        nb <- forAll $ Gen.integral (Range.linear 0 5)
-        let expect = asPartialPattern $ expected a b
-        actual <-
-            evaluateT $
-                mkApplySymbol symbol [evaluated na a, evaluated nb b]
-        (===) expect actual
-  where
-    name = expectHook edivIntSymbol <> " with evaluated arguments"
-    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
-    evaluated n x = compose n mkEvaluated $ asInternal x
 
 -- Bitwise operations
 test_and :: TestTree

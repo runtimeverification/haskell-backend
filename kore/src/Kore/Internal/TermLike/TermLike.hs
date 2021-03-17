@@ -6,7 +6,6 @@ Copyright   : (c) Runtime Verification, 2019-2020
 License     : NCSA
 -}
 module Kore.Internal.TermLike.TermLike (
-    Evaluated (..),
     TermLike (..),
     TermLikeF (..),
     retractKey,
@@ -116,33 +115,6 @@ import Prelude.Kore
 import qualified Pretty
 import qualified SQL
 
-{- | @Evaluated@ wraps patterns which are fully evaluated.
-
-Fully-evaluated patterns will not be simplified further because no progress
-could be made.
--}
-newtype Evaluated child = Evaluated {getEvaluated :: child}
-    deriving (Eq, Ord, Show)
-    deriving (Foldable, Functor, Traversable)
-    deriving (GHC.Generic)
-    deriving anyclass (Hashable, NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
-
-instance Unparse child => Unparse (Evaluated child) where
-    unparse evaluated =
-        Pretty.vsep ["/* evaluated: */", Unparser.unparseGeneric evaluated]
-    unparse2 evaluated =
-        Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
-
-instance Synthetic syn Evaluated where
-    synthetic = getEvaluated
-    {-# INLINE synthetic #-}
-
-instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
-    synthetic = const Pattern.fullySimplified
-    {-# INLINE synthetic #-}
-
 -- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child
     = AndF !(And Sort child)
@@ -167,7 +139,6 @@ data TermLikeF variable child
     | RewritesF !(Rewrites Sort child)
     | TopF !(Top Sort child)
     | InhabitantF !(Inhabitant child)
-    | EvaluatedF !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
     | InternalBoolF !(Const InternalBool child)
     | InternalBytesF !(Const InternalBytes child)
@@ -215,7 +186,6 @@ instance Ord variable => Synthetic (FreeVariables variable) (TermLikeF variable)
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -253,7 +223,6 @@ instance Synthetic Sort (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -291,7 +260,6 @@ instance Synthetic Pattern.Functional (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -329,7 +297,6 @@ instance Synthetic Pattern.Function (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -367,7 +334,6 @@ instance Synthetic Pattern.Defined (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -405,7 +371,6 @@ instance Synthetic Pattern.Simplified (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -443,7 +408,6 @@ instance Synthetic Pattern.ConstructorLike (TermLikeF variable) where
             RewritesF rewrites -> synthetic rewrites
             TopF top -> synthetic top
             InhabitantF inhabitant -> synthetic inhabitant
-            EvaluatedF evaluated -> synthetic evaluated
             StringLiteralF stringLiteral -> synthetic stringLiteral
             InternalBoolF internalBool -> synthetic internalBool
             InternalBytesF internalBytes -> synthetic internalBytes
@@ -738,8 +702,6 @@ instance
             TopF Top{topSort} -> locationFromAst topSort
             VariableF (Const variable) -> locationFromAst variable
             InhabitantF Inhabitant{inhSort} -> locationFromAst inhSort
-            EvaluatedF Evaluated{getEvaluated} ->
-                locationFromAst getEvaluated
             InjF Inj{injChild} -> locationFromAst injChild
             SignednessF (Const signedness) -> locationFromAst signedness
             EndiannessF (Const endianness) -> locationFromAst endianness
@@ -805,7 +767,6 @@ traverseVariablesF adj =
         InternalSetF setP -> pure (InternalSetF setP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
-        EvaluatedF childP -> pure (EvaluatedF childP)
         EndiannessF endianness -> pure (EndiannessF endianness)
         SignednessF signedness -> pure (SignednessF signedness)
         InjF inj -> pure (InjF inj)
@@ -891,8 +852,8 @@ traverseVariables adj termLike =
             (RenamingT variable1 variable2 m (TermLike variable2)) ->
         RenamingT variable1 variable2 m (TermLike variable2)
     worker (attrs :< termLikeF) = do
-        attrs' <- Attribute.traverseVariables askSomeVariableName attrs
-        let avoiding = freeVariables attrs'
+        ~attrs' <- Attribute.traverseVariables askSomeVariableName attrs
+        let ~avoiding = freeVariables attrs'
         termLikeF' <- case termLikeF of
             VariableF (Const unifiedVariable) -> do
                 unifiedVariable' <- askSomeVariable unifiedVariable

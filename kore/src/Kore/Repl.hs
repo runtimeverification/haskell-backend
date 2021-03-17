@@ -94,6 +94,8 @@ import System.Clock (
  )
 import System.IO (
     hFlush,
+    hPutStrLn,
+    stderr,
     stdout,
  )
 import Text.Megaparsec (
@@ -269,7 +271,7 @@ runRepl
         catchInterruptWithDefault a =
             Exception.handle $ \case
                 UserInterrupt -> do
-                    liftIO $ putStrLn "Step evaluation interrupted."
+                    liftIO $ hPutStrLn stderr "Step evaluation interrupted."
                     pure a
                 e -> Exception.throwM e
 

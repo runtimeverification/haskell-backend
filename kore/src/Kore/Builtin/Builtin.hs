@@ -52,17 +52,17 @@ import Data.Text (
     Text,
  )
 import qualified Data.Text as Text
-import qualified Kore.Attribute.Concat as Attribute.Sort
-import qualified Kore.Attribute.Element as Attribute.Sort
 import Kore.Attribute.Hook (
     Hook (..),
  )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
+import qualified Kore.Attribute.Sort.Element as Attribute.Sort
+import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute (
     Symbol (..),
  )
-import qualified Kore.Attribute.Unit as Attribute.Sort
 import Kore.Builtin.Error
 import Kore.Builtin.Verifiers
 import Kore.Error (
@@ -318,9 +318,8 @@ applicationEvaluator impl =
             (TermLike variable) ->
         simplifier (AttemptedAxiom variable)
     evaluator sideCondition (_ :< app) = do
-        let app' = fmap TermLike.removeEvaluated app
         getAttemptedAxiom
-            (impl sideCondition app' >>= appliedFunction)
+            (impl sideCondition app >>= appliedFunction)
 
 {- | Run a parser on a verified domain value.
 
