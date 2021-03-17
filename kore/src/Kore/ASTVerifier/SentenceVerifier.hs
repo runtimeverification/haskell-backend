@@ -38,9 +38,6 @@ import qualified Control.Monad.State.Strict as State
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
-import Data.Monoid
-    ( First (..)
-    )
 import Data.Set
     ( Set
     )
@@ -90,9 +87,6 @@ import Kore.Equation.Sentence
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
-import Kore.Internal.Predicate
-    ( fromPredicate_
-    )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
     ( pattern App_
