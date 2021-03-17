@@ -534,9 +534,11 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/exec" "app/share" ];
-          mainPath = ([
+          mainPath = (((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.10") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-format" = {
           depends = [
@@ -606,9 +608,11 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/format" "app/share" ];
-          mainPath = ([
+          mainPath = (((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.10") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-parser" = {
           depends = [
@@ -678,9 +682,11 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/parser" "app/share" ];
-          mainPath = ([
+          mainPath = (((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.10") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         "kore-prof" = {
           depends = [
@@ -750,7 +756,9 @@
           buildable = true;
           modules = [ "Paths_kore" ];
           hsSourceDirs = [ "app/prof" ];
-          mainPath = [ "Main.hs" ] ++ (pkgs.lib).optional (!flags.release) "";
+          mainPath = ((([
+            "Main.hs"
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.10") "") ++ (pkgs.lib).optional (!flags.release) "";
           };
         "kore-repl" = {
           depends = [
@@ -820,9 +828,11 @@
           buildable = true;
           modules = [ "GlobalMain" "Paths_kore" ];
           hsSourceDirs = [ "app/repl" "app/share" ];
-          mainPath = ([
+          mainPath = (((([
             "Main.hs"
-            ] ++ (pkgs.lib).optional (!flags.release) "") ++ [ "" ];
+            ] ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8") "") ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.10") "") ++ (pkgs.lib).optional (!flags.release) "") ++ [
+            ""
+            ];
           };
         };
       tests = {
