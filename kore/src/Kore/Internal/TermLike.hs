@@ -10,7 +10,6 @@ License     : NCSA
 module Kore.Internal.TermLike
     ( TermLikeF (..)
     , TermLike (..)
-    , Evaluated (..)
     , extractAttributes
     , isSimplified
     , isSimplifiedSomeCondition
@@ -27,7 +26,6 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
-    , removeEvaluated
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -89,7 +87,6 @@ module Kore.Internal.TermLike
     , mkSort
     , mkSortVariable
     , mkInhabitant
-    , mkEvaluated
     , mkEndianness
     , mkSignedness
     -- * Predicate constructors
@@ -144,7 +141,6 @@ module Kore.Internal.TermLike
     , pattern ElemVar_
     , pattern SetVar_
     , pattern StringLiteral_
-    , pattern Evaluated_
     , pattern Endianness_
     , pattern Signedness_
     , pattern Inj_
@@ -652,7 +648,6 @@ forceSortPredicate
   =
     case pattern' of
         -- Recurse
-        EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
         -- Predicates: Force sort and stop.
         BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
         TopF top' -> TopF top' { topSort = forcedSort }
@@ -790,14 +785,6 @@ forceSorts operandSorts children =
         , "but found:"
         , Pretty.indent 4 (Unparser.arguments children)
         ]
-
-{- | Remove `Evaluated` if it appears on the top of the `TermLike`.
--}
-removeEvaluated :: TermLike variable -> TermLike variable
-removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
-    case termLikeF of
-        EvaluatedF (Evaluated e) -> removeEvaluated e
-        _                        -> termLike
 
 {- | Construct an 'Application' pattern.
 
@@ -1460,13 +1447,6 @@ mkInhabitant
     -> TermLike variable
 mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 
-mkEvaluated
-    :: HasCallStack
-    => Ord variable
-    => TermLike variable
-    -> TermLike variable
-mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
-
 {- | Construct an 'Endianness' pattern.
  -}
 mkEndianness
@@ -1730,8 +1710,6 @@ pattern SetVar_ :: SetVariable variable -> TermLike variable
 
 pattern StringLiteral_ :: Text -> TermLike variable
 
-pattern Evaluated_ :: TermLike variable -> TermLike variable
-
 pattern And_ andSort andFirst andSecond <-
     (Recursive.project -> _ :< AndF And { andSort, andFirst, andSecond })
 
@@ -1879,9 +1857,6 @@ pattern ElemVar_ elemVariable <- Var_ (retract -> Just elemVariable)
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
-
-pattern Evaluated_ child <-
-    (Recursive.project -> _ :< EvaluatedF (Evaluated child))
 
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-

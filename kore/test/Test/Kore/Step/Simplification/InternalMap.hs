@@ -2,22 +2,12 @@
 
 module Test.Kore.Step.Simplification.InternalMap
     ( test_simplify
-    , test_unparse
     ) where
 
 import Prelude.Kore
 
 import Test.Tasty
 
-import Control.DeepSeq
-    ( force
-    )
-import qualified Control.Exception as Exception
-    ( evaluate
-    )
-import Control.Monad
-    ( void
-    )
 import Data.Bifunctor
     ( bimap
     )
@@ -26,9 +16,6 @@ import Data.Maybe
     ( fromJust
     )
 
-import Kore.Attribute.Concat
-import Kore.Attribute.Element
-import Kore.Attribute.Unit
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
 import Kore.Internal.OrPattern
@@ -46,37 +33,12 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.InternalMap
     ( simplify
     )
-import Kore.Unparser
 
 import Kore.Rewriting.RewritingVariable
     ( RewritingVariableName
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
-
-shouldSucceed :: Bool
-shouldSucceed = True
-
-shouldFail :: Bool
-shouldFail = False
-
-withUnit :: Bool
-withUnit = True
-
-withoutUnit :: Bool
-withoutUnit = False
-
-withElement :: Bool
-withElement = True
-
-withoutElement :: Bool
-withoutElement = False
-
-withConcat :: Bool
-withConcat = True
-
-withoutConcat :: Bool
-withoutConcat = False
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -141,103 +103,6 @@ test_simplify =
             (OrPattern.fromPatterns expect)
             (evaluate origin)
 
-test_unparse :: [TestTree]
-test_unparse =
-    [ unparseTest
-        "empty"
-        shouldFail
-        withoutUnit
-        withElement
-        withConcat
-        $ wrapAc emptyNormalizedAc
-    , unparseTest
-        "empty"
-        shouldSucceed
-        withUnit
-        withoutElement
-        withoutConcat
-        $ wrapAc emptyNormalizedAc
-    , unparseTest
-        "one element"
-        shouldFail
-        withUnit
-        withoutElement
-        withConcat
-        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
-    , unparseTest
-        "one element"
-        shouldSucceed
-        withoutUnit
-        withElement
-        withoutConcat
-        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b)] [] []
-    , unparseTest
-        "two elements"
-        shouldFail
-        withUnit
-        withElement
-        withoutConcat
-        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
-    , unparseTest
-        "two elements"
-        shouldSucceed
-        withoutUnit
-        withElement
-        withConcat
-        $ builtinAcChild $ mkMapAux [(Mock.a, Mock.b), (Mock.c, Mock.d)] [] []
-    , unparseTest
-        "two opaque elements"
-        shouldFail
-        withUnit
-        withElement
-        withoutConcat
-        $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
-    , unparseTest
-        "two opaque elements"
-        shouldSucceed
-        withoutUnit
-        withoutElement
-        withConcat
-        $ builtinAcChild $ mkMapAux [] [] [Mock.a, Mock.b]
-    ]
-  where
-    unparseTest
-        :: String
-        -> Bool
-        -> Bool
-        -> Bool
-        -> Bool
-        -> NormalizedMap Key (TermLike VariableName)
-        -> TestTree
-    unparseTest testName expectSuccess hasUnit hasElement hasConcat child =
-        testCase fullTestName $ if expectSuccess
-            then void (Exception.evaluate $ force $ show unparsedMap)
-            else assertErrorIO
-                (void . return)
-                (Exception.evaluate $ force $ show unparsedMap)
-      where
-        (unitText, mockUnitSymbol) =
-            if hasUnit
-                then (" withUnit", toUnit Mock.unitMapSymbol)
-                else (" withoutUnit", Unit Nothing)
-        (elementText, mockElementSymbol) = if hasElement
-            then (" withElement", toElement Mock.elementMapSymbol)
-            else (" withoutElement", Element Nothing)
-        (concatText, mockConcatSymbol) = if hasConcat
-            then (" withConcat", toConcat Mock.concatMapSymbol)
-            else (" withoutConcat", Concat Nothing)
-        unparsedMap = unparse @(InternalMap Key (TermLike VariableName))
-            $ InternalAc
-                { builtinAcSort = Mock.mapSort
-                , builtinAcUnit = mockUnitSymbol
-                , builtinAcElement = mockElementSymbol
-                , builtinAcConcat = mockConcatSymbol
-                , builtinAcChild = child
-                }
-        fullTestName = "unparsing map"
-            ++ unitText ++ elementText ++ concatText
-            ++ " and child: " ++ testName
-
 mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []
 
@@ -249,9 +114,9 @@ mkMapAux
 mkMapAux concreteElements elements opaque =
     InternalAc
         { builtinAcSort = Mock.mapSort
-        , builtinAcUnit = toUnit Mock.unitMapSymbol
-        , builtinAcElement = toElement Mock.elementMapSymbol
-        , builtinAcConcat = toConcat Mock.concatMapSymbol
+        , builtinAcUnit = Mock.unitMapSymbol
+        , builtinAcElement = Mock.elementMapSymbol
+        , builtinAcConcat = Mock.concatMapSymbol
         , builtinAcChild = NormalizedMap NormalizedAc
             { elementsWithVariables = MapElement <$> elements
             , concreteElements =

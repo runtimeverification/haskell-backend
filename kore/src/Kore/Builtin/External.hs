@@ -12,7 +12,6 @@ module Kore.Builtin.External
 
 import Prelude.Kore
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import Data.Functor.Const
     ( Const (..)
     )
@@ -123,10 +122,6 @@ externalize =
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
-            EvaluatedF evaluatedF ->
-                Cofree.tailF
-                $ worker
-                $ getEvaluated evaluatedF
             EndiannessF endiannessF ->
                 Syntax.ApplicationF
                 $ mapHead Symbol.toSymbolOrAlias

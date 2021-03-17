@@ -3,7 +3,6 @@
 module Test.Kore.Unification.Unifier
     ( test_unification
     , test_unsupportedConstructs
-    , test_evaluated
     ) where
 
 import Prelude.Kore
@@ -657,29 +656,6 @@ test_unification =
     constr20 = Mock.constrFunct20TestMap
     x = mkElemVar Mock.xConfig
     y = mkElemVar Mock.yConfig
-
-test_evaluated :: [TestTree]
-test_evaluated =
-    [ testCase "variable and functional term" $ do
-        let evaluated = mkEvaluated a2
-        andSimplify
-            (UnificationTerm (mkElemVar Mock.xConfig))
-            (UnificationTerm evaluated)
-            [ UnificationResult
-                { term = evaluated
-                , substitution = [("x", evaluated)]
-                , predicate = Predicate.makeTruePredicate
-                }
-            ]
-    , unificationProcedureSuccess
-        "variable and non-functional term"
-        (UnificationTerm (mkElemVar Mock.xConfig))
-        (UnificationTerm (mkEvaluated a5))
-        [   ( [("x", mkEvaluated a5)]
-            , Predicate.makeCeilPredicate (mkEvaluated a5)
-            )
-        ]
-    ]
 
 test_unsupportedConstructs :: TestTree
 test_unsupportedConstructs =
