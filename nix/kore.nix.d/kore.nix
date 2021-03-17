@@ -11,7 +11,7 @@
     flags = { release = false; threaded = true; };
     package = {
       specVersion = "2.2";
-      identifier = { name = "kore"; version = "0.41.0.0"; };
+      identifier = { name = "kore"; version = "0.42.0.0"; };
       license = "NCSA";
       copyright = "2018-2020 Runtime Verification Inc";
       maintainer = "thomas.tuegel@runtimeverification.com";
@@ -283,6 +283,7 @@
           "Kore/Log/Registry"
           "Kore/Log/SQLite"
           "Kore/Log/WarnBoundedModelChecker"
+          "Kore/Log/WarnDepthLimitExceeded"
           "Kore/Log/WarnFunctionWithoutEvaluators"
           "Kore/Log/WarnIfLowProductivity"
           "Kore/Log/WarnRetrySolverQuery"
