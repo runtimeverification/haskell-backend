@@ -210,7 +210,7 @@ test_unifyOverloading =
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
                 )
             )
-        , narrows "qqdirect overload vs. variable, left side; var direct"
+        , narrows "direct overload vs. variable, left side; var direct"
             ( Mock.topOverload (Mock.sortInjectionOtherToTop Mock.aOtherSort)
             , Mock.sortInjectionSubToTop (mkElemVar Mock.xConfigSubSort)
             )

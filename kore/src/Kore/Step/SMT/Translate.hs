@@ -153,7 +153,6 @@ translatePredicateWith sideCondition translateTerm predicate =
     translatePredicatePatternWorker :: p -> Translator variable m SExpr
     translatePredicatePatternWorker pat =
         case Cofree.tailF (Recursive.project pat) of
-            EvaluatedF child -> translatePredicatePattern (getEvaluated child)
             -- Logical connectives: translate as connectives
             AndF and' -> translatePredicateAnd and'
             BottomF _ -> return (SMT.bool False)

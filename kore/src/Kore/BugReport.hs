@@ -146,7 +146,7 @@ withBugReport exeName bugReportOption act =
                     optionalWriteBugReport tmpDir
               | Just (ioe :: IOException) <- fromException someException
               , NoSuchThing <- ioe_type ioe -> do
-                    putStrLn $ displayException someException
+                    hPutStrLn stderr $ displayException someException
                     optionalWriteBugReport tmpDir
               | otherwise -> do
                     let message = displayException someException

@@ -449,10 +449,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
 
     size :: TermLike variable -> Int
     size =
-        Recursive.fold $ \(_ :< termLikeF) ->
-            case termLikeF of
-                TermLike.EvaluatedF evaluated -> TermLike.getEvaluated evaluated
-                _ -> 1 + sum termLikeF
+        Recursive.fold $ \(_ :< termLikeF) -> 1 + sum termLikeF
 
     predSize :: Predicate variable -> Int
     predSize =
@@ -688,7 +685,7 @@ assumeDefined term =
         :: forall normalized
         .  AcWrapper normalized
         => Foldable (Value normalized)
-        => InternalAc normalized Key (TermLike variable)
+        => InternalAc Key normalized (TermLike variable)
         -> HashSet (TermLike variable)
     getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
         let symbolicKeys = getSymbolicKeysOfAc normalizedAc
@@ -745,7 +742,7 @@ isDefined sideCondition@SideCondition { definedTerms } term =
     isSymbolicSingleton
         :: AcWrapper normalized
         => Foldable (Value normalized)
-        => InternalAc normalized Key (TermLike variable)
+        => InternalAc Key normalized (TermLike variable)
         -> Bool
     isSymbolicSingleton InternalAc { builtinAcChild }
       | numberOfElements == 1 =
@@ -778,8 +775,8 @@ generateNormalizedAcs
     => Ord (normalized Key (TermLike variable))
     => Hashable (normalized Key (TermLike variable))
     => AcWrapper normalized
-    => InternalAc normalized Key (TermLike variable)
-    -> HashSet (InternalAc normalized Key (TermLike variable))
+    => InternalAc Key normalized (TermLike variable)
+    -> HashSet (InternalAc Key normalized (TermLike variable))
 generateNormalizedAcs internalAc =
     [ symbolicToAc <$> symbolicPairs
     , concreteToAc <$> concretePairs

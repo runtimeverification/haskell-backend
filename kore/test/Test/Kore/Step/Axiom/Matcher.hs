@@ -355,31 +355,6 @@ test_matcherVariableFunction =
                     (Mock.constr10 Mock.cf)
             assertEqual "" expect actual
         ]
-    , testGroup "Evaluated"
-        [ testCase "Functional" $ do
-            let evaluated = mkEvaluated Mock.functional00
-                expect =
-                    mkMatchResult
-                        ( makeTruePredicate
-                        , Map.singleton
-                            (inject Mock.xConfig)
-                            evaluated
-                        )
-            actual <- matchDefinition (mkElemVar Mock.xConfig) evaluated
-            assertEqual "" expect actual
-
-        , testCase "Function" $ do
-            let evaluated = mkEvaluated Mock.cf
-                expect =
-                    mkMatchResult
-                        ( makeCeilPredicate evaluated
-                        , Map.singleton
-                            (inject Mock.xConfig)
-                            evaluated
-                        )
-            actual <- matchDefinition (mkElemVar Mock.xConfig) evaluated
-            assertEqual "" expect actual
-        ]
     ]
   where
     aSubSub = Mock.functional00SubSubSort
