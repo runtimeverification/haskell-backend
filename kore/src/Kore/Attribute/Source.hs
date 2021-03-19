@@ -6,6 +6,7 @@ License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.Source
     ( Source (..)
     ) where

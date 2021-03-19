@@ -15,6 +15,7 @@ import qualified Kore.Attribute.Null as Attribute
 @
 
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.Null
     ( Null (..)
     ) where

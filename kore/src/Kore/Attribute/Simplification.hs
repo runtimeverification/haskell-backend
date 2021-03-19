@@ -16,6 +16,7 @@ Informal example of an axiom that would use the simplification attribute:
 (x +Int y) +Int z = (x +Int z) +Int y
     if concrete(x) and concrete(z) and not concrete(y)
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.Simplification
     ( Simplification (..)
     , simplificationId, simplificationSymbol, simplificationAttribute

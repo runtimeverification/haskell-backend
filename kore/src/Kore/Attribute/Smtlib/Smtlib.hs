@@ -6,6 +6,8 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Smtlib.Smtlib
     ( Smtlib (..)
     , smtlibId

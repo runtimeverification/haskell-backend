@@ -9,6 +9,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 @
 
  -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Symbol
     ( Symbol (..)

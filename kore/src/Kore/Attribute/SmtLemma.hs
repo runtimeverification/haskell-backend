@@ -6,6 +6,7 @@ License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.SmtLemma
     ( SmtLemma (..)
     , smtLemmaId, smtLemmaSymbol, smtLemmaAttribute

@@ -6,6 +6,7 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.Constructor
     ( Constructor (..)
     , constructorId, constructorSymbol, constructorAttribute

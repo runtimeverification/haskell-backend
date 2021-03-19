@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Sort.Constructors
     ( Constructors (..)

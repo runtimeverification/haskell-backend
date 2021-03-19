@@ -6,6 +6,7 @@ License     : NCSA
  -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Synthetic
     ( Synthetic (..)

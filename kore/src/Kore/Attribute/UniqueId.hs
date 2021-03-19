@@ -8,6 +8,7 @@ various other things.
 Example:
 @UNIQUE'Unds'ID{}("07a34b11585162c291311c03441e08beb2532e48d4ece33b9d58a9456f2f7623")@
 -}
+{-# LANGUAGE Strict #-}
 module Kore.Attribute.UniqueId
     ( UniqueId (..)
     , uniqueIdId

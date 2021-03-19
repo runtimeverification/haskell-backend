@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds    #-}
+{-# LANGUAGE Strict #-}
 -- Added for outputFileName
 
 module Main (main) where

@@ -6,6 +6,8 @@ License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Axiom.Constructor
     ( Constructor (..)
     , constructorId, constructorSymbol, constructorAttribute

@@ -2,6 +2,8 @@
 Copyright   : (c) Runtime Verification, 2020
 License     : NCSA
  -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Axiom.Symbolic
     ( Symbolic (..), isSymbolic
     , symbolicId, symbolicSymbol, symbolicAttribute

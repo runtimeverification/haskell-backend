@@ -11,6 +11,7 @@ Portability : portable
 TODO(virgil): Get rid of this module and implement everything with normal
               attributes.
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Builtin.Attributes
     ( isConstructorModulo_

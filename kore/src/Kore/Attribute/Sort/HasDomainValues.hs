@@ -5,6 +5,7 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
+{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.Sort.HasDomainValues
     ( HasDomainValues (..)

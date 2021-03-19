@@ -12,6 +12,7 @@ concrete implementation of the class.
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Control.Monad.Counter
     ( -- * Class

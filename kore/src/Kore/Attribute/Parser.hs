@@ -18,6 +18,7 @@ This module is intended to be imported qualified or explicitly:
 @
 
 -}
+-- {-# LANGUAGE Strict #-}
 module Kore.Attribute.Parser
     ( -- * Parsing attributes
       ParseAttributes (..)

@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE Strict #-}
 
 module GlobalMain
     ( MainOptions(..)

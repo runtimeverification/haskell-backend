@@ -6,6 +6,8 @@ License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Smtlib.Smthook
     ( Smthook (..), SExpr (..)
     , smthookId, smthookSymbol, smthookAttribute

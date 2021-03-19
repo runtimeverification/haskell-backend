@@ -5,6 +5,7 @@ License     : NCSA
  -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.Attribute.PredicatePattern
     ( PredicatePattern (PredicatePattern, freeVariables)

@@ -4,6 +4,7 @@ License     : NCSA
 -}
 
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Kore.ASTVerifier.PatternVerifier.PatternVerifier
     ( PatternVerifier (..)

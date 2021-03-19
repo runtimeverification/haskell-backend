@@ -11,6 +11,9 @@ import Data.Limit ( Limit (..) )
 import qualified Data.Limit as Limit
 @
 -}
+
+{-# LANGUAGE Strict #-}
+
 module Data.Limit
     ( Limit (..)
     , enumFromLimit

@@ -7,6 +7,8 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 
+{-# LANGUAGE Strict #-}
+
 module Data.Sup
     ( Sup (..)
     ) where

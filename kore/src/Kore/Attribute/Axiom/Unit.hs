@@ -6,6 +6,8 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
+{-# LANGUAGE Strict #-}
+
 module Kore.Attribute.Axiom.Unit
     ( Unit (..)
     , unitId, unitSymbol, unitAttribute
