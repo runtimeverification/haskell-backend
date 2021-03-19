@@ -5,7 +5,6 @@ License     : NCSA
 -}
 
 {-# LANGUAGE Strict #-}
-{-# LANGUAGE Strict #-}
 
 module Kore.Builtin.AssocComm.CeilSimplifier
     ( newSetCeilSimplifier
